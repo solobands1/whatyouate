@@ -10,7 +10,7 @@ export async function POST(req: Request) {
       payloadJson = { message: rawBody };
     }
     const { message, userId, email, name } = payloadJson ?? {};
-    const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
+    const webhookUrl = (process.env.DISCORD_WEBHOOK_URL ?? "").trim();
     if (!webhookUrl) {
       return NextResponse.json({ error: "Missing Discord webhook" }, { status: 500 });
     }
@@ -40,7 +40,11 @@ export async function POST(req: Request) {
     });
 
     if (!res.ok) {
-      return NextResponse.json({ error: "Failed to send feedback" }, { status: 500 });
+      const detail = await res.text().catch(() => "");
+      return NextResponse.json(
+        { error: "Failed to send feedback", status: res.status, detail },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ ok: true });
