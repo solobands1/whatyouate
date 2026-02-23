@@ -320,25 +320,29 @@ export default function HomeScreen() {
     }
   };
 
-  const steps: Step[] = [
+  const steps = [
     {
       target: '[data-tour="food-action"]',
-      content: "Take photos. That’s it."
+      content: "Take photos. That’s it.",
+      disableBeacon: true
     },
     {
       target: '[data-tour="workout-markers"]',
-      content: "We look at food and workout patterns over time."
+      content: "We look at food and workout patterns over time.",
+      disableBeacon: true
     },
     {
       target: '[data-tour="nav-summary"]',
       content: "No strict macros.",
-      placement: "top"
+      placement: "top" as const,
+      disableBeacon: true
     },
     {
       target: "body",
-      content: "Everything is approximate to keep things light."
+      content: "Everything is approximate to keep things light.",
+      disableBeacon: true
     }
-  ];
+  ] as Step[];
 
   const handleTourCallback = (data: CallBackProps) => {
     if (!user) return;

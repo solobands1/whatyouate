@@ -163,16 +163,18 @@ export default function ProfileScreen() {
 
   if (!user) return null;
 
-  const profileTourSteps: Step[] = [
+  const profileTourSteps = [
     {
       target: '[data-tour="feedback-button"]',
-      content: "Send feedback any time. It helps us improve."
+      content: "Send feedback any time. It helps us improve.",
+      disableBeacon: true
     },
     {
       target: '[data-tour="profile-header"]',
-      content: "Fill out your profile then take your first food photo or log your first workout to get started!"
+      content: "Fill out your profile then take your first food photo or log your first workout to get started!",
+      disableBeacon: true
     }
-  ];
+  ] as Step[];
 
   const handleProfileTour = (data: CallBackProps) => {
     const finished = data.status === STATUS.FINISHED || data.status === STATUS.SKIPPED;

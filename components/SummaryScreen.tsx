@@ -206,18 +206,21 @@ export default function SummaryScreen() {
     return groups;
   }, [uniqueNudges]);
 
-  const summaryTourSteps: Step[] = [
+  const summaryTourSteps = [
     {
       target: '[data-tour="summary-today"]',
-      content: "View your calorie and protein intake throughout the day."
+      content: "View your calorie and protein intake throughout the day.",
+      disableBeacon: true
     },
     {
       target: '[data-tour="nudges-card"]',
-      content: "You get gentle nudges to help improve desired food, nutrient, and activity patterns."
+      content: "You get gentle nudges to help improve desired food, nutrient, and activity patterns.",
+      disableBeacon: true
     },
     {
       target: '[data-tour="insights-button"]',
-      content: "Tap Insights for deeper guidance on today’s nudges."
+      content: "Tap Insights for deeper guidance on today’s nudges.",
+      disableBeacon: true
     },
     {
       target: '[data-tour="summary-info"]',
@@ -228,13 +231,15 @@ export default function SummaryScreen() {
             i
           </div>
         </div>
-      )
+      ),
+      disableBeacon: true
     },
     {
       target: '[data-tour="dig-deeper"]',
-      content: "Dig Deeper shows longer-term nutrient patterns."
+      content: "Dig Deeper shows longer-term nutrient patterns.",
+      disableBeacon: true
     }
-  ];
+  ] as Step[];
 
   const handleSummaryTour = (data: CallBackProps) => {
     if (!user) return;

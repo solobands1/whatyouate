@@ -243,17 +243,19 @@ export default function InsightsPage() {
         width: patternBarWidth("Emerging pattern")
       }));
 
-  const insightsTourSteps: Step[] = [
+  const insightsTourSteps = [
     {
       target: '[data-tour="insights-energy"]',
-      content: "View your average macros updated over time to give you pattern insights."
+      content: "View your average macros updated over time to give you pattern insights.",
+      disableBeacon: true
     },
     {
       target: '[data-tour="insights-micro"]',
       content:
-        "Micronutrient patterns emerge over time as you log more meals to help you improve general health."
+        "Micronutrient patterns emerge over time as you log more meals to help you improve general health.",
+      disableBeacon: true
     }
-  ];
+  ] as Step[];
 
   const handleInsightsTour = (data: CallBackProps) => {
     if (!user) return;
