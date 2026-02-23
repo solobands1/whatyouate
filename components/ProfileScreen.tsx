@@ -175,7 +175,7 @@ export default function ProfileScreen() {
   ];
 
   const handleProfileTour = (data: CallBackProps) => {
-    const finished = [STATUS.FINISHED, STATUS.SKIPPED].includes(data.status);
+    const finished = data.status === STATUS.FINISHED || data.status === STATUS.SKIPPED;
     if (!finished || !user) return;
     localStorage.removeItem(`wya_walkthrough_profile_${user.id}`);
     setRunProfileTour(false);
