@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build && next-on-pages",
     "start": "next start"
   },
   "dependencies": {
@@ -16,6 +16,7 @@
     "react-joyride": "^2.9.3"
   },
   "devDependencies": {
+    "@cloudflare/next-on-pages": "^1.10.4",
     "@types/node": "^20.11.30",
     "@types/react": "^18.2.67",
     "@types/react-dom": "^18.2.22",
