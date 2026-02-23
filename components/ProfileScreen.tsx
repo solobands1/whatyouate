@@ -359,7 +359,6 @@ export default function ProfileScreen() {
           continuous
           showSkipButton
           hideCloseButton
-          disableBeacon
           scrollToFirstStep
           callback={handleProfileTour}
           locale={{

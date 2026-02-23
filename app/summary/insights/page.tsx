@@ -286,7 +286,6 @@ export default function InsightsPage() {
         continuous
         showSkipButton
         hideCloseButton
-        disableBeacon
         scrollToFirstStep
         callback={handleInsightsTour}
         locale={{

@@ -370,7 +370,6 @@ export default function HomeScreen() {
         continuous
         showSkipButton
         hideCloseButton
-        disableBeacon
         disableOverlayClose
         scrollToFirstStep
         callback={handleTourCallback}

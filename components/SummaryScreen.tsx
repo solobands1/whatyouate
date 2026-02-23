@@ -412,7 +412,6 @@ export default function SummaryScreen() {
         continuous
         showSkipButton
         hideCloseButton
-        disableBeacon
         scrollToFirstStep
         callback={handleSummaryTour}
         locale={{
