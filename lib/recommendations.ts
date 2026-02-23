@@ -89,8 +89,8 @@ export function generateRecommendations(profile: UserProfile | undefined, meals:
 
   const proteinTarget = toKg(profile.weight, profile.units) * 0.8;
   let energy_support_state: "likely_low" | "mixed" | "likely_ok" = "mixed";
-  if (todayTotals.protein_max < proteinTarget * 0.7) energy_support_state = "likely_low";
-  if (todayTotals.protein_min > proteinTarget * 0.9) energy_support_state = "likely_ok";
+  if (todayTotals.protein_g_max < proteinTarget * 0.7) energy_support_state = "likely_low";
+  if (todayTotals.protein_g_min > proteinTarget * 0.9) energy_support_state = "likely_ok";
 
   const notes: string[] = [];
   if (fueling_state === "under") {
