@@ -37,14 +37,6 @@ export default function BetaLandingPage() {
     setUnlockedMessage("Unlocked. You can install the web app now.");
   };
 
-  const handleInstall = async () => {
-    if (!installPrompt) return;
-    installPrompt.prompt();
-    await installPrompt.userChoice;
-    setInstallPrompt(null);
-    setInstallAvailable(false);
-  };
-
   return (
     <div className="min-h-screen bg-surface">
       <div className="mx-auto flex min-h-screen max-w-md flex-col items-center px-6 pb-20 pt-14 text-center">
@@ -69,21 +61,13 @@ export default function BetaLandingPage() {
           </div>
         </div>
 
-        <div className="mt-6 w-full space-y-3">
-          <button
-            type="button"
-            onClick={handleInstall}
-            disabled={!installAvailable || !unlocked}
-            className={`block w-full rounded-xl px-4 py-3 text-sm font-semibold transition ${
-              installAvailable && unlocked
-                ? "bg-ink text-white hover:bg-ink/90"
-                : "bg-ink/30 text-white/70"
-            }`}
-          >
-            Install Web App
-          </button>
-          <p className="text-[11px] text-muted/60">
-            On iPhone: Share → Add to Home Screen.
+        <div className="mt-6 w-full rounded-xl border border-ink/10 bg-white px-4 py-3 text-left text-[12px] text-ink/70">
+          <p className="font-semibold text-ink/80">How to install</p>
+          <p className="mt-2">
+            iPhone: Share → Add to Home Screen.
+          </p>
+          <p className="mt-2">
+            Android (Chrome): Menu → Install app.
           </p>
         </div>
 
