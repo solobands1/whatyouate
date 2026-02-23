@@ -285,7 +285,7 @@ export default function InsightsPage() {
         run={runInsightsTour}
         continuous
         showSkipButton
-        showCloseButton={false}
+        hideCloseButton
         disableBeacon
         scrollToFirstStep
         callback={handleInsightsTour}

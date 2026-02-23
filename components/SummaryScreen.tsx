@@ -411,7 +411,7 @@ export default function SummaryScreen() {
         run={runSummaryTour}
         continuous
         showSkipButton
-        showCloseButton={false}
+        hideCloseButton
         disableBeacon
         scrollToFirstStep
         callback={handleSummaryTour}

@@ -369,7 +369,7 @@ export default function HomeScreen() {
         run={runTour}
         continuous
         showSkipButton
-        showCloseButton={false}
+        hideCloseButton
         disableBeacon
         disableOverlayClose
         scrollToFirstStep

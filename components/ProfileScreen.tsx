@@ -358,7 +358,7 @@ export default function ProfileScreen() {
           run={runProfileTour}
           continuous
           showSkipButton
-          showCloseButton={false}
+          hideCloseButton
           disableBeacon
           scrollToFirstStep
           callback={handleProfileTour}
