@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Joyride, { CallBackProps, STATUS } from "react-joyride";
+import Joyride, { CallBackProps, STATUS, type Step } from "react-joyride";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { MealLog, UserProfile, WorkoutSession } from "../lib/types";
@@ -206,21 +206,18 @@ export default function SummaryScreen() {
     return groups;
   }, [uniqueNudges]);
 
-  const summaryTourSteps = [
+  const summaryTourSteps: Step[] = [
     {
       target: '[data-tour="summary-today"]',
-      content: "View your calorie and protein intake throughout the day.",
-      disableBeacon: true
+      content: "View your calorie and protein intake throughout the day."
     },
     {
       target: '[data-tour="nudges-card"]',
-      content: "You get gentle nudges to help improve desired food, nutrient, and activity patterns.",
-      disableBeacon: true
+      content: "You get gentle nudges to help improve desired food, nutrient, and activity patterns."
     },
     {
       target: '[data-tour="insights-button"]',
-      content: "Tap Insights for deeper guidance on today’s nudges.",
-      disableBeacon: true
+      content: "Tap Insights for deeper guidance on today’s nudges."
     },
     {
       target: '[data-tour="summary-info"]',
@@ -231,13 +228,11 @@ export default function SummaryScreen() {
             i
           </div>
         </div>
-      ),
-      disableBeacon: true
+      )
     },
     {
       target: '[data-tour="dig-deeper"]',
-      content: "Dig Deeper shows longer-term nutrient patterns.",
-      disableBeacon: true
+      content: "Dig Deeper shows longer-term nutrient patterns."
     }
   ];
 

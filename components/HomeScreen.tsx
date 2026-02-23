@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import Joyride, { CallBackProps, STATUS } from "react-joyride";
+import Joyride, { CallBackProps, STATUS, type Step } from "react-joyride";
 import { useRouter } from "next/navigation";
 import type { MealLog, UserProfile, WorkoutSession } from "../lib/types";
 import { formatApprox, formatDateShort, todayKey } from "../lib/utils";
@@ -320,27 +320,23 @@ export default function HomeScreen() {
     }
   };
 
-  const steps = [
+  const steps: Step[] = [
     {
       target: '[data-tour="food-action"]',
-      content: "Take photos. That’s it.",
-      disableBeacon: true
+      content: "Take photos. That’s it."
     },
     {
       target: '[data-tour="workout-markers"]',
-      content: "We look at food and workout patterns over time.",
-      disableBeacon: true
+      content: "We look at food and workout patterns over time."
     },
     {
       target: '[data-tour="nav-summary"]',
       content: "No strict macros.",
-      placement: "top",
-      disableBeacon: true
+      placement: "top"
     },
     {
       target: "body",
-      content: "Everything is approximate to keep things light.",
-      disableBeacon: true
+      content: "Everything is approximate to keep things light."
     }
   ];
 

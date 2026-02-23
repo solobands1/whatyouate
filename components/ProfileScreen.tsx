@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Joyride, { STATUS, CallBackProps } from "react-joyride";
+import Joyride, { STATUS, CallBackProps, type Step } from "react-joyride";
 import type { GoalDirection, Units, UserProfile } from "../lib/types";
 import { clearAllData, exportAllData, getProfile } from "../lib/supabaseDb";
 import { supabase } from "../lib/supabaseClient";
@@ -163,16 +163,14 @@ export default function ProfileScreen() {
 
   if (!user) return null;
 
-  const profileTourSteps = [
+  const profileTourSteps: Step[] = [
     {
       target: '[data-tour="feedback-button"]',
-      content: "Send feedback any time. It helps us improve.",
-      disableBeacon: true
+      content: "Send feedback any time. It helps us improve."
     },
     {
       target: '[data-tour="profile-header"]',
-      content: "Fill out your profile then take your first food photo or log your first workout to get started!",
-      disableBeacon: true
+      content: "Fill out your profile then take your first food photo or log your first workout to get started!"
     }
   ];
 

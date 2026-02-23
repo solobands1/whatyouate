@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Joyride, { CallBackProps, STATUS } from "react-joyride";
+import Joyride, { CallBackProps, STATUS, type Step } from "react-joyride";
 import { useRouter } from "next/navigation";
 import type { MealLog, UserProfile } from "../../../lib/types";
 import { summarizeWeek } from "../../../lib/summary";
@@ -243,17 +243,15 @@ export default function InsightsPage() {
         width: patternBarWidth("Emerging pattern")
       }));
 
-  const insightsTourSteps = [
+  const insightsTourSteps: Step[] = [
     {
       target: '[data-tour="insights-energy"]',
-      content: "View your average macros updated over time to give you pattern insights.",
-      disableBeacon: true
+      content: "View your average macros updated over time to give you pattern insights."
     },
     {
       target: '[data-tour="insights-micro"]',
       content:
-        "Micronutrient patterns emerge over time as you log more meals to help you improve general health.",
-      disableBeacon: true
+        "Micronutrient patterns emerge over time as you log more meals to help you improve general health."
     }
   ];
 
