@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  @apply bg-surface text-ink antialiased;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@keyframes cardFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-card-fade {
+  animation: cardFadeIn 180ms ease-out forwards;
+}
+
+.safe-bottom {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 16px);
+}
+
+.safe-top {
+  padding-top: calc(env(safe-area-inset-top) + 16px);
+}
+
+.react-joyride__button--skip {
+  display: inline-flex !important;
+}
