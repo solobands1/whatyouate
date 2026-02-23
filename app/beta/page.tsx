@@ -63,12 +63,9 @@ export default function BetaLandingPage() {
 
         <div className="mt-6 w-full rounded-xl border border-ink/10 bg-white px-4 py-3 text-left text-[12px] text-ink/70">
           <p className="font-semibold text-ink/80">How to install</p>
-          <p className="mt-2">
-            iPhone: Share → Add to Home Screen.
-          </p>
-          <p className="mt-2">
-            Android (Chrome): Menu → Install app.
-          </p>
+          <p className="mt-2">On iPhone: tap Share (⬆︎)</p>
+          <p className="mt-1">Tap More (⋯)</p>
+          <p className="mt-1">Tap Add to Home Screen (▢＋)</p>
         </div>
 
         <div className="mt-6 w-full">
