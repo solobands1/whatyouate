@@ -11,9 +11,18 @@ export function summarizeDay(meals: MealLog[], dateKey = todayKey()): DailyRange
         acc.calories_max += ranges.calories_max;
         acc.protein_g_min += ranges.protein_g_min;
         acc.protein_g_max += ranges.protein_g_max;
+        acc.fat_g_min += ranges.fat_g_min;
+        acc.fat_g_max += ranges.fat_g_max;
         return acc;
       },
-      { calories_min: 0, calories_max: 0, protein_g_min: 0, protein_g_max: 0 }
+      {
+        calories_min: 0,
+        calories_max: 0,
+        protein_g_min: 0,
+        protein_g_max: 0,
+        fat_g_min: 0,
+        fat_g_max: 0
+      }
     );
 
   return totals;

@@ -70,6 +70,8 @@ export interface DailyRange {
   calories_max: number;
   protein_g_min: number;
   protein_g_max: number;
+  fat_g_min: number;
+  fat_g_max: number;
 }
 
 export interface DerivedDaily {
