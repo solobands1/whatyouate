@@ -25,7 +25,7 @@ export default function ProfileScreen() {
   const [heightIn, setHeightIn] = useState("");
   const [weight, setWeight] = useState("");
   const [age, setAge] = useState("");
-  const [sex, setSex] = useState<"male" | "female" | "prefer_not">("prefer_not");
+  const [sex, setSex] = useState<UserProfile["sex"]>("prefer_not");
   const [goalDirection, setGoalDirection] = useState<GoalDirection>("maintain");
   const [bodyPriority, setBodyPriority] = useState("");
   const [units, setUnits] = useState<Units>("metric");
