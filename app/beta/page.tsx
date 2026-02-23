@@ -8,6 +8,7 @@ export default function BetaLandingPage() {
   const [error, setError] = useState("");
   const [installPrompt, setInstallPrompt] = useState<any>(null);
   const [installAvailable, setInstallAvailable] = useState(false);
+  const [unlockedMessage, setUnlockedMessage] = useState("");
 
   const betaPassword = process.env.NEXT_PUBLIC_BETA_PASSWORD ?? "";
   useEffect(() => {
@@ -27,11 +28,13 @@ export default function BetaLandingPage() {
   const handleUnlock = () => {
     if (!betaPassword || password.trim() !== betaPassword) {
       setError("Incorrect password.");
+      setUnlockedMessage("");
       setUnlocked(false);
       return;
     }
     setError("");
     setUnlocked(true);
+    setUnlockedMessage("Unlocked. You can install the web app now.");
   };
 
   const handleInstall = async () => {
@@ -70,9 +73,9 @@ export default function BetaLandingPage() {
           <button
             type="button"
             onClick={handleInstall}
-            disabled={!installAvailable}
+            disabled={!installAvailable || !unlocked}
             className={`block w-full rounded-xl px-4 py-3 text-sm font-semibold transition ${
-              installAvailable
+              installAvailable && unlocked
                 ? "bg-ink text-white hover:bg-ink/90"
                 : "bg-ink/30 text-white/70"
             }`}
@@ -105,6 +108,9 @@ export default function BetaLandingPage() {
             </button>
           </div>
           {error && <p className="mt-2 text-left text-[11px] text-red-500">{error}</p>}
+          {unlockedMessage && (
+            <p className="mt-2 text-left text-[11px] text-emerald-600">{unlockedMessage}</p>
+          )}
         </div>
       </div>
     </div>
