@@ -12,7 +12,7 @@ function toKg(weight: number, units: UserProfile["units"]) {
 }
 
 function estimateMaintenance(profile: UserProfile) {
-  const weightKg = toKg(profile.weight, profile.units);
+  const weightKg = toKg(profile.weight ?? 0, profile.units);
   const base = weightKg * 22;
   return base + 200;
 }
