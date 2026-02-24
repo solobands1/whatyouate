@@ -17,6 +17,7 @@
     "react-joyride": "^2.9.3"
   },
   "devDependencies": {
+    "@opennextjs/aws": "3.4.1",
     "@opennextjs/cloudflare": "^0.4.6",
     "@types/node": "^20.11.30",
     "@types/react": "^18.2.67",
@@ -25,5 +26,10 @@
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.4",
     "typescript": "^5.4.5"
+  },
+  "overrides": {
+    "@opennextjs/cloudflare": {
+      "@opennextjs/aws": "3.4.1"
+    }
   }
 }
