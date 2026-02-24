@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "cf:build": "npx opennextjs-cloudflare",
+    "cf:build": "npx opennextjs-cloudflare && node scripts/cf-worker-copy.js",
     "start": "next start"
   },
   "dependencies": {
