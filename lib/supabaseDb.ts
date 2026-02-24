@@ -202,9 +202,6 @@ export async function updateWorkout(
     workout_types: workoutTypes && workoutTypes.length > 0 ? workoutTypes : null,
     intensity: intensity ?? null
   };
-  if (Number.isFinite(durationMin) && durationMin >= 0) {
-    payload.duration_min = durationMin;
-  }
   let query = supabase.from("workouts").update(payload).eq("id", id);
   if (userId) {
     query = query.eq("user_id", userId);
