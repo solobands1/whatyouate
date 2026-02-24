@@ -33,5 +33,8 @@
     "@opennextjs/cloudflare": {
       "@opennextjs/aws": "3.4.1"
     }
+  },
+  "optionalDependencies": {
+    "@ast-grep/napi-linux-x64-gnu": "^0.34.1"
   }
 }
