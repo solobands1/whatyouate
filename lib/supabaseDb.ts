@@ -161,14 +161,19 @@ export async function listMeals(userId: string, limit = 50) {
   const { data, error } = await supabase
     .from("meals")
     .select("*")
+    .eq("user_id", userId)
     .order("created_at", { ascending: false })
     .limit(limit);
   if (error) handleSupabaseError("meals", error);
   return (data ?? []).map(mapMeal);
 }
 
-export async function deleteMeal(id: string) {
-  const { error } = await supabase.from("meals").delete().eq("id", id);
+export async function deleteMeal(id: string, userId?: string) {
+  let query = supabase.from("meals").delete().eq("id", id);
+  if (userId) {
+    query = query.eq("user_id", userId);
+  }
+  const { error } = await query;
   if (error) handleSupabaseError("meals", error);
 }
 
@@ -232,8 +237,12 @@ export async function endActiveWorkouts(
   return (data ?? []).map(mapWorkout);
 }
 
-export async function deleteWorkout(id: string) {
-  const { error } = await supabase.from("workouts").delete().eq("id", id);
+export async function deleteWorkout(id: string, userId?: string) {
+  let query = supabase.from("workouts").delete().eq("id", id);
+  if (userId) {
+    query = query.eq("user_id", userId);
+  }
+  const { error } = await query;
   if (error) handleSupabaseError("workouts", error);
 }
 
@@ -242,6 +251,7 @@ export async function listWorkouts(userId: string, limit = 50) {
   const { data, error } = await supabase
     .from("workouts")
     .select("*")
+    .eq("user_id", userId)
     .order("started_at", { ascending: false })
     .limit(limit);
   if (error) handleSupabaseError("workouts", error);

@@ -98,17 +98,18 @@ export default function HomeScreen() {
 
   const handleConfirmDelete = async () => {
     if (!pendingDelete) return;
+    if (!user) return;
     setDeletingItem(true);
     try {
       if (pendingDelete.type === "meal") {
-        await deleteMeal(pendingDelete.id);
+        await deleteMeal(pendingDelete.id, user.id);
       } else {
-        await deleteWorkout(pendingDelete.id);
+        await deleteWorkout(pendingDelete.id, user.id);
       }
       await loadData();
       window.dispatchEvent(new Event("meals-updated"));
-    } catch {
-      // Silent for now.
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : "Failed to delete item");
     } finally {
       setDeletingItem(false);
       setPendingDelete(null);
@@ -296,15 +297,27 @@ export default function HomeScreen() {
       } catch {
         workoutToEnd = null;
       }
-      if (!workoutToEnd) return;
+      if (!workoutToEnd) {
+        setLoadError("No active workout found to end.");
+        return;
+      }
     }
     try {
       const now = Date.now();
-      await endActiveWorkouts(user.id, now, selectedWorkoutTypes, selectedIntensity || undefined);
+      const ended = await endActiveWorkouts(
+        user.id,
+        now,
+        selectedWorkoutTypes,
+        selectedIntensity || undefined
+      );
+      if (!ended.length) {
+        setLoadError("No active workout found to end.");
+        return;
+      }
       setActiveWorkout(null);
       setSelectedWorkoutTypes([]);
       setSelectedIntensity("");
-      loadData();
+      await loadData();
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : "Failed to end workout");
     } finally {

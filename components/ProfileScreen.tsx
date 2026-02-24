@@ -65,36 +65,12 @@ export default function ProfileScreen() {
           setSex(data.sex ?? "prefer_not");
           setGoalDirection(data.goalDirection ?? "maintain");
           setBodyPriority(data.bodyPriority ?? "");
-          setUnits(data.units ?? "metric");
-
-          if ((data.units ?? "metric") === "imperial") {
-            const cm = data.height ?? null;
-            if (cm != null) {
-              const inchesTotal = cm / 2.54;
-              const ft = Math.floor(inchesTotal / 12);
-              const inch = Math.round(inchesTotal % 12);
-              setHeightFt(String(ft));
-              setHeightIn(String(inch));
-              setHeightCm("");
-            } else {
-              setHeightFt("");
-              setHeightIn("");
-              setHeightCm("");
-            }
-
-            const kg = data.weight ?? null;
-            if (kg != null) {
-              const lb = Math.round(kg * 2.20462);
-              setWeight(String(lb));
-            } else {
-              setWeight("");
-            }
-          } else {
-            setHeightCm(data.height != null ? String(data.height) : "");
-            setHeightFt("");
-            setHeightIn("");
-            setWeight(data.weight != null ? String(data.weight) : "");
-          }
+          // Default profile load to metric so imperial is unchecked.
+          setUnits("metric");
+          setHeightCm(data.height != null ? String(data.height) : "");
+          setHeightFt("");
+          setHeightIn("");
+          setWeight(data.weight != null ? String(data.weight) : "");
 
           setAge(data.age != null ? String(data.age) : "");
         } else {
@@ -237,36 +213,11 @@ export default function ProfileScreen() {
         setSex(freshProfile.sex ?? "prefer_not");
         setGoalDirection(freshProfile.goalDirection ?? "maintain");
         setBodyPriority(freshProfile.bodyPriority ?? "");
-        setUnits(freshProfile.units ?? "metric");
-
-        if ((freshProfile.units ?? "metric") === "imperial") {
-          const cm = freshProfile.height ?? null;
-          if (cm != null) {
-            const inchesTotal = cm / 2.54;
-            const ft = Math.floor(inchesTotal / 12);
-            const inch = Math.round(inchesTotal % 12);
-            setHeightFt(String(ft));
-            setHeightIn(String(inch));
-            setHeightCm("");
-          } else {
-            setHeightFt("");
-            setHeightIn("");
-            setHeightCm("");
-          }
-
-          const kg = freshProfile.weight ?? null;
-          if (kg != null) {
-            const lb = Math.round(kg * 2.20462);
-            setWeight(String(lb));
-          } else {
-            setWeight("");
-          }
-        } else {
-          setHeightCm(freshProfile.height != null ? String(freshProfile.height) : "");
-          setHeightFt("");
-          setHeightIn("");
-          setWeight(freshProfile.weight != null ? String(freshProfile.weight) : "");
-        }
+        setUnits("metric");
+        setHeightCm(freshProfile.height != null ? String(freshProfile.height) : "");
+        setHeightFt("");
+        setHeightIn("");
+        setWeight(freshProfile.weight != null ? String(freshProfile.weight) : "");
 
         setAge(freshProfile.age != null ? String(freshProfile.age) : "");
       }

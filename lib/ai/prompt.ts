@@ -47,6 +47,8 @@ DETECTED ITEMS
 - If the photo clearly resembles a named dish (e.g., poutine, philly cheesesteak, sushi roll, burrito bowl),
   use the specific dish name instead of a generic component (e.g., "fries", "sandwich").
 - Avoid returning a generic name like "Meal" unless the content is truly unclear.
+- If the item appears to be a packaged bar (protein bar, granola bar, candy bar), prefer a bar label
+  and do not classify it as soups/stews (e.g., pho) unless clearly visible.
 
 MACRONUTRIENT CALCULATION
 - Derive calorie and macro ranges from:
