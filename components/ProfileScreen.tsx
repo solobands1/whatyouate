@@ -28,7 +28,7 @@ export default function ProfileScreen() {
   const [sex, setSex] = useState<UserProfile["sex"]>("prefer_not");
   const [goalDirection, setGoalDirection] = useState<GoalDirection>("maintain");
   const [bodyPriority, setBodyPriority] = useState("");
-  const [units, setUnits] = useState<Units>("metric");
+  const [units, setUnits] = useState<Units>("imperial");
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -65,8 +65,8 @@ export default function ProfileScreen() {
           setSex(data.sex ?? "prefer_not");
           setGoalDirection(data.goalDirection ?? "maintain");
           setBodyPriority(data.bodyPriority ?? "");
-          // Default profile load to metric so imperial is unchecked.
-          setUnits("metric");
+          // Default to imperial when units are missing.
+          setUnits((data.units ?? "imperial") as Units);
           setHeightCm(data.height != null ? String(data.height) : "");
           setHeightFt("");
           setHeightIn("");
@@ -213,7 +213,7 @@ export default function ProfileScreen() {
         setSex(freshProfile.sex ?? "prefer_not");
         setGoalDirection(freshProfile.goalDirection ?? "maintain");
         setBodyPriority(freshProfile.bodyPriority ?? "");
-        setUnits("metric");
+        setUnits((freshProfile.units ?? "imperial") as Units);
         setHeightCm(freshProfile.height != null ? String(freshProfile.height) : "");
         setHeightFt("");
         setHeightIn("");
