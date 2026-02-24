@@ -17,7 +17,8 @@ import {
   getActiveWorkout,
   getProfile,
   listMeals,
-  listWorkouts
+  listWorkouts,
+  updateWorkout
 } from "../lib/supabaseDb";
 import { computeHomeMarkers, computeRecent } from "../lib/digestEngine";
 
@@ -310,7 +311,18 @@ export default function HomeScreen() {
         selectedWorkoutTypes,
         selectedIntensity || undefined
       );
-      if (!ended.length) {
+      if (!ended.length && workoutToEnd) {
+        const rawMinutes = (now - workoutToEnd.startTs) / 60000;
+        const durationMin = rawMinutes < 1 ? 0 : Math.ceil(rawMinutes);
+        await updateWorkout(
+          workoutToEnd.id,
+          user.id,
+          now,
+          durationMin,
+          selectedWorkoutTypes,
+          selectedIntensity || undefined
+        );
+      } else if (!ended.length) {
         setLoadError("No active workout found to end.");
         return;
       }
