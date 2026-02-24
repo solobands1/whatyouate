@@ -8,7 +8,7 @@ import { fileToBase64, fileToThumbnailDataUrl, minutesBetween, formatApprox } fr
 import { coerceAnalysis, LOW_CONFIDENCE_THRESHOLD, safeFallbackAnalysis } from "../lib/ai/schema";
 import Card from "./Card";
 import { useAuth } from "./AuthProvider";
-import { addMeal, addWorkout, getActiveWorkout, updateMeal, updateWorkout } from "../lib/supabaseDb";
+import { addMeal, addWorkout, endActiveWorkouts, getActiveWorkout, updateMeal } from "../lib/supabaseDb";
 
 export default function CaptureScreen() {
   const searchParams = useSearchParams();
@@ -241,7 +241,7 @@ const openCamera = async () => {
       const active = await getActiveWorkout(user.id);
       if (active) {
         const durationMin = minutesBetween(active.startTs, now);
-        await updateWorkout(active.id, user.id, now, durationMin);
+        await endActiveWorkouts(user.id, now);
         setWorkoutDuration(durationMin ?? null);
       } else {
         const durationMin = 45;

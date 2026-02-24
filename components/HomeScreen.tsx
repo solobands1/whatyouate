@@ -13,11 +13,11 @@ import {
   addWorkout,
   deleteMeal,
   deleteWorkout,
+  endActiveWorkouts,
   getActiveWorkout,
   getProfile,
   listMeals,
-  listWorkouts,
-  updateWorkout
+  listWorkouts
 } from "../lib/supabaseDb";
 import { computeHomeMarkers, computeRecent } from "../lib/digestEngine";
 
@@ -300,16 +300,7 @@ export default function HomeScreen() {
     }
     try {
       const now = Date.now();
-      const rawMinutes = (now - workoutToEnd.startTs) / 60000;
-      const durationMin = rawMinutes < 1 ? 0 : Math.ceil(rawMinutes);
-      await updateWorkout(
-        workoutToEnd.id,
-        user.id,
-        now,
-        durationMin,
-        selectedWorkoutTypes,
-        selectedIntensity || undefined
-      );
+      await endActiveWorkouts(user.id, now, selectedWorkoutTypes, selectedIntensity || undefined);
       setActiveWorkout(null);
       setSelectedWorkoutTypes([]);
       setSelectedIntensity("");

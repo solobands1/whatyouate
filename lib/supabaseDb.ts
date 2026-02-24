@@ -211,6 +211,27 @@ export async function updateWorkout(
   return mapWorkout(data);
 }
 
+export async function endActiveWorkouts(
+  userId: string,
+  endTs: number,
+  workoutTypes?: string[],
+  intensity?: "low" | "medium" | "high"
+) {
+  const payload: Record<string, unknown> = {
+    ended_at: new Date(endTs).toISOString(),
+    workout_types: workoutTypes && workoutTypes.length > 0 ? workoutTypes : null,
+    intensity: intensity ?? null
+  };
+  const { data, error } = await supabase
+    .from("workouts")
+    .update(payload)
+    .eq("user_id", userId)
+    .is("ended_at", null)
+    .select("*");
+  if (error) handleSupabaseError("workouts", error);
+  return (data ?? []).map(mapWorkout);
+}
+
 export async function deleteWorkout(id: string) {
   const { error } = await supabase.from("workouts").delete().eq("id", id);
   if (error) handleSupabaseError("workouts", error);
