@@ -224,13 +224,10 @@ export default function ProfileScreen() {
         units
       };
 
-      if (profileExistsRef.current) {
-        const { error } = await supabase.from("profiles").update(payload).eq("user_id", user.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("profiles").insert(payload);
-        if (error) throw error;
-      }
+      const { error } = await supabase
+        .from("profiles")
+        .upsert(payload, { onConflict: "user_id" });
+      if (error) throw error;
 
       const freshProfile = await getProfile(user.id);
       if (freshProfile) {
