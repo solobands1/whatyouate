@@ -2,3 +2,9 @@ name = "whatyouate"
 pages_build_output_dir = ".open-next"
 compatibility_date = "2026-02-24"
 compatibility_flags = ["nodejs_compat"]
+
+[env.production]
+compatibility_flags = ["nodejs_compat"]
+
+[env.preview]
+compatibility_flags = ["nodejs_compat"]
