@@ -304,6 +304,7 @@ export default function HomeScreen() {
       const durationMin = rawMinutes < 1 ? 0 : Math.ceil(rawMinutes);
       await updateWorkout(
         workoutToEnd.id,
+        user.id,
         now,
         durationMin,
         selectedWorkoutTypes,

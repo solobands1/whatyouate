@@ -191,6 +191,7 @@ export async function addWorkout(
 
 export async function updateWorkout(
   id: string,
+  userId: string | null,
   endTs: number,
   durationMin: number,
   workoutTypes?: string[],
@@ -198,10 +199,15 @@ export async function updateWorkout(
 ) {
   const payload = {
     ended_at: new Date(endTs).toISOString(),
+    duration_min: durationMin,
     workout_types: workoutTypes && workoutTypes.length > 0 ? workoutTypes : null,
     intensity: intensity ?? null
   };
-  const { data, error } = await supabase.from("workouts").update(payload).eq("id", id).select("*").single();
+  let query = supabase.from("workouts").update(payload).eq("id", id);
+  if (userId) {
+    query = query.eq("user_id", userId);
+  }
+  const { data, error } = await query.select("*").single();
   if (error) handleSupabaseError("workouts", error);
   return mapWorkout(data);
 }

@@ -241,7 +241,7 @@ const openCamera = async () => {
       const active = await getActiveWorkout(user.id);
       if (active) {
         const durationMin = minutesBetween(active.startTs, now);
-        await updateWorkout(active.id, now, durationMin);
+        await updateWorkout(active.id, user.id, now, durationMin);
         setWorkoutDuration(durationMin ?? null);
       } else {
         const durationMin = 45;
