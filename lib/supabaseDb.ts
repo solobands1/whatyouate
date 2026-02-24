@@ -83,6 +83,7 @@ export async function getProfile(userId: string): Promise<UserProfile | null> {
   const { data, error } = await supabase
     .from("profiles")
     .select("*")
+    .eq("user_id", userId)
     .maybeSingle();
 
   if (error) handleSupabaseError("profiles", error);
@@ -287,6 +288,7 @@ export async function listNudges(userId: string, limit = 50) {
   const { data, error } = await supabase
     .from("nudges")
     .select("*")
+    .eq("user_id", userId)
     .order("created_at", { ascending: false })
     .limit(limit);
   if (error) handleSupabaseError("nudges", error);
