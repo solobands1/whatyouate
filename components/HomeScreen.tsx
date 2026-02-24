@@ -77,7 +77,7 @@ export default function HomeScreen() {
       setProfile(profileData ?? undefined);
       setMeals(mealsData);
       setWorkouts(workoutsData);
-      setActiveWorkout(activeWorkoutData);
+      setActiveWorkout(activeWorkoutData ?? activeWorkout ?? null);
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : "Failed to load data");
     } finally {
@@ -279,7 +279,8 @@ export default function HomeScreen() {
       const now = Date.now();
       const session = await addWorkout(user.id, now);
       setActiveWorkout(session);
-      loadData();
+      await loadData();
+      setLoadError("Workout started.");
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : "Failed to start workout");
     } finally {
