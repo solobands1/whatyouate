@@ -13,7 +13,6 @@ import {
   addWorkout,
   deleteMeal,
   deleteWorkout,
-  endActiveWorkouts,
   getActiveWorkout,
   getProfile,
   listMeals,
@@ -77,7 +76,7 @@ export default function HomeScreen() {
       setProfile(profileData ?? undefined);
       setMeals(mealsData);
       setWorkouts(workoutsData);
-      setActiveWorkout(activeWorkoutData ?? activeWorkout ?? null);
+      setActiveWorkout(activeWorkoutData);
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : "Failed to load data");
     } finally {
@@ -99,18 +98,17 @@ export default function HomeScreen() {
 
   const handleConfirmDelete = async () => {
     if (!pendingDelete) return;
-    if (!user) return;
     setDeletingItem(true);
     try {
       if (pendingDelete.type === "meal") {
-        await deleteMeal(pendingDelete.id, user.id);
+        await deleteMeal(pendingDelete.id);
       } else {
-        await deleteWorkout(pendingDelete.id, user.id);
+        await deleteWorkout(pendingDelete.id);
       }
       await loadData();
       window.dispatchEvent(new Event("meals-updated"));
-    } catch (err) {
-      setLoadError(err instanceof Error ? err.message : "Failed to delete item");
+    } catch {
+      // Silent for now.
     } finally {
       setDeletingItem(false);
       setPendingDelete(null);
@@ -279,8 +277,7 @@ export default function HomeScreen() {
       const now = Date.now();
       const session = await addWorkout(user.id, now);
       setActiveWorkout(session);
-      await loadData();
-      setLoadError("Workout started.");
+      loadData();
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : "Failed to start workout");
     } finally {
@@ -299,38 +296,23 @@ export default function HomeScreen() {
       } catch {
         workoutToEnd = null;
       }
-      if (!workoutToEnd) {
-        setLoadError("No active workout found to end.");
-        return;
-      }
+      if (!workoutToEnd) return;
     }
     try {
       const now = Date.now();
-      const ended = await endActiveWorkouts(
-        user.id,
+      const rawMinutes = (now - workoutToEnd.startTs) / 60000;
+      const durationMin = rawMinutes < 1 ? 0 : Math.ceil(rawMinutes);
+      await updateWorkout(
+        workoutToEnd.id,
         now,
+        durationMin,
         selectedWorkoutTypes,
         selectedIntensity || undefined
       );
-      if (!ended.length && workoutToEnd) {
-        const rawMinutes = (now - workoutToEnd.startTs) / 60000;
-        const durationMin = rawMinutes < 1 ? 0 : Math.ceil(rawMinutes);
-        await updateWorkout(
-          workoutToEnd.id,
-          user.id,
-          now,
-          durationMin,
-          selectedWorkoutTypes,
-          selectedIntensity || undefined
-        );
-      } else if (!ended.length) {
-        setLoadError("No active workout found to end.");
-        return;
-      }
       setActiveWorkout(null);
       setSelectedWorkoutTypes([]);
       setSelectedIntensity("");
-      await loadData();
+      loadData();
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : "Failed to end workout");
     } finally {
@@ -592,7 +574,7 @@ export default function HomeScreen() {
               </span>
             </h1>
             <span className="inline-flex items-center rounded-full bg-primary/15 px-2 py-0.5 text-[9px] font-semibold text-primary">
-              Beta
+              BETA
             </span>
           </div>
           <p className="mt-1 text-[13px] text-muted/70">Take photos, get nudges, improve.</p>

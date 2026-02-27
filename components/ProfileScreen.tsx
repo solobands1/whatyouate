@@ -28,7 +28,7 @@ export default function ProfileScreen() {
   const [sex, setSex] = useState<UserProfile["sex"]>("prefer_not");
   const [goalDirection, setGoalDirection] = useState<GoalDirection>("maintain");
   const [bodyPriority, setBodyPriority] = useState("");
-  const [units, setUnits] = useState<Units>("imperial");
+  const [units, setUnits] = useState<Units>("metric");
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -65,12 +65,36 @@ export default function ProfileScreen() {
           setSex(data.sex ?? "prefer_not");
           setGoalDirection(data.goalDirection ?? "maintain");
           setBodyPriority(data.bodyPriority ?? "");
-          // Default to imperial when units are missing.
-          setUnits((data.units ?? "imperial") as Units);
-          setHeightCm(data.height != null ? String(data.height) : "");
-          setHeightFt("");
-          setHeightIn("");
-          setWeight(data.weight != null ? String(data.weight) : "");
+          setUnits(data.units ?? "metric");
+
+          if ((data.units ?? "metric") === "imperial") {
+            const cm = data.height ?? null;
+            if (cm != null) {
+              const inchesTotal = cm / 2.54;
+              const ft = Math.floor(inchesTotal / 12);
+              const inch = Math.round(inchesTotal % 12);
+              setHeightFt(String(ft));
+              setHeightIn(String(inch));
+              setHeightCm("");
+            } else {
+              setHeightFt("");
+              setHeightIn("");
+              setHeightCm("");
+            }
+
+            const kg = data.weight ?? null;
+            if (kg != null) {
+              const lb = Math.round(kg * 2.20462);
+              setWeight(String(lb));
+            } else {
+              setWeight("");
+            }
+          } else {
+            setHeightCm(data.height != null ? String(data.height) : "");
+            setHeightFt("");
+            setHeightIn("");
+            setWeight(data.weight != null ? String(data.weight) : "");
+          }
 
           setAge(data.age != null ? String(data.age) : "");
         } else {
@@ -200,10 +224,13 @@ export default function ProfileScreen() {
         units
       };
 
-      const { error } = await supabase
-        .from("profiles")
-        .upsert(payload, { onConflict: "user_id" });
-      if (error) throw error;
+      if (profileExistsRef.current) {
+        const { error } = await supabase.from("profiles").update(payload).eq("user_id", user.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("profiles").insert(payload);
+        if (error) throw error;
+      }
 
       const freshProfile = await getProfile(user.id);
       if (freshProfile) {
@@ -213,11 +240,36 @@ export default function ProfileScreen() {
         setSex(freshProfile.sex ?? "prefer_not");
         setGoalDirection(freshProfile.goalDirection ?? "maintain");
         setBodyPriority(freshProfile.bodyPriority ?? "");
-        setUnits((freshProfile.units ?? "imperial") as Units);
-        setHeightCm(freshProfile.height != null ? String(freshProfile.height) : "");
-        setHeightFt("");
-        setHeightIn("");
-        setWeight(freshProfile.weight != null ? String(freshProfile.weight) : "");
+        setUnits(freshProfile.units ?? "metric");
+
+        if ((freshProfile.units ?? "metric") === "imperial") {
+          const cm = freshProfile.height ?? null;
+          if (cm != null) {
+            const inchesTotal = cm / 2.54;
+            const ft = Math.floor(inchesTotal / 12);
+            const inch = Math.round(inchesTotal % 12);
+            setHeightFt(String(ft));
+            setHeightIn(String(inch));
+            setHeightCm("");
+          } else {
+            setHeightFt("");
+            setHeightIn("");
+            setHeightCm("");
+          }
+
+          const kg = freshProfile.weight ?? null;
+          if (kg != null) {
+            const lb = Math.round(kg * 2.20462);
+            setWeight(String(lb));
+          } else {
+            setWeight("");
+          }
+        } else {
+          setHeightCm(freshProfile.height != null ? String(freshProfile.height) : "");
+          setHeightFt("");
+          setHeightIn("");
+          setWeight(freshProfile.weight != null ? String(freshProfile.weight) : "");
+        }
 
         setAge(freshProfile.age != null ? String(freshProfile.age) : "");
       }
@@ -333,7 +385,12 @@ export default function ProfileScreen() {
         <header className="mb-4" data-tour="profile-header">
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-2xl font-semibold text-ink">Profile</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-semibold text-ink">Profile</h1>
+                <span className="inline-flex items-center rounded-full bg-primary/15 px-2 py-0.5 text-[9px] font-semibold text-primary">
+                  BETA
+                </span>
+              </div>
               <p className="mt-1 text-sm text-muted/70">
                 {[firstName, lastName].filter(Boolean).join(" ") || "Profile"}
               </p>
