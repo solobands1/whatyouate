@@ -269,20 +269,24 @@ export default function HomeScreen() {
 
   const handleStartWorkout = async () => {
     if (!user) return;
-    if (activeWorkout) {
-      setShowStartWorkoutModal(true);
-      return;
-    }
+
+    console.log("[workout] START clicked", user.id);
+
+    const now = Date.now();
+
     try {
-      const now = Date.now();
-      const session = await addWorkout(user.id, now);
-      setActiveWorkout(session);
-      loadData();
+      const inserted = await addWorkout(user.id, now);
+
+      console.log("[workout] INSERT OK", inserted);
+
+      const verify = await listWorkouts(user.id, 5);
+
+      console.log("[workout] VERIFY READ", verify);
     } catch (err) {
-      setLoadError(err instanceof Error ? err.message : "Failed to start workout");
-    } finally {
-      setShowStartWorkoutModal(false);
+      console.error("[workout] INSERT FAILED", err);
     }
+
+    await loadData();
   };
 
   const handleEndWorkout = async () => {

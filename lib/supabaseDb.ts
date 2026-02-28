@@ -184,15 +184,25 @@ export async function addWorkout(
   workoutTypes?: string[],
   intensity?: "low" | "medium" | "high"
 ) {
-  const payload = {
-    user_id: userId,
-    started_at: new Date(startTs).toISOString(),
-    workout_types: workoutTypes && workoutTypes.length > 0 ? workoutTypes : null,
-    intensity: intensity ?? null
-  };
-  const { data, error } = await supabase.from("workouts").insert(payload).select("*").single();
-  if (error) handleSupabaseError("workouts", error);
-  return mapWorkout(data);
+  console.log("[workout] DB insert", { userId, startTs });
+
+  const { data, error } = await supabase
+    .from("workouts")
+    .insert({
+      user_id: userId,
+      start_ts: startTs
+    })
+    .select("*")
+    .single();
+
+  if (error) {
+    console.error("[workout] DB error", error);
+    throw error;
+  }
+
+  console.log("[workout] DB inserted row", data);
+
+  return data;
 }
 
 export async function updateWorkout(
@@ -253,7 +263,7 @@ export async function listWorkouts(userId: string, limit = 50) {
     .from("workouts")
     .select("*")
     .eq("user_id", userId)
-    .order("started_at", { ascending: false })
+    .order("start_ts", { ascending: false })
     .limit(limit);
   if (error) handleSupabaseError("workouts", error);
   if (DEBUG) console.debug("[supabase] workouts rows:", data?.length ?? 0);
