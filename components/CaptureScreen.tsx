@@ -150,7 +150,7 @@ export default function CaptureScreen() {
       fileToThumbnailDataUrl(selected)
     ]);
     setImageBase64(resized);
-    const response = await fetch("/api/analyze-food", {
+    const response = await fetch("http://10.0.0.107:3000/api/analyze-food", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -169,17 +169,18 @@ export default function CaptureScreen() {
         ? parsed
         : widenRangesIfLowConfidence(parsed);
     setAnalysisError("");
+    setAnalysis(adjusted);
     let savedMeal: MealLog | null = null;
     try {
       savedMeal = await addMeal(user.id, adjusted, thumb);
     } catch (err) {
       console.error("Meal insert failed", err);
     }
-    if (!savedMeal) return;
-    setMeal(savedMeal);
-    setAnalysis(adjusted);
+    if (savedMeal) {
+      setMeal(savedMeal);
+      window.dispatchEvent(new Event("meals-updated"));
+    }
     setStatus("done");
-    window.dispatchEvent(new Event("meals-updated"));
   };
 
 async function startLiveCamera() {

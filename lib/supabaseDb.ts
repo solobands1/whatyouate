@@ -401,7 +401,8 @@ export async function updateWorkout(
   }
 
   const payload: Record<string, unknown> = {
-    end_ts: new Date(endTs).toISOString(),
+    end_ts: endTs,
+    duration_min: durationMin,
     workout_types: workoutTypes && workoutTypes.length > 0 ? workoutTypes : null,
     intensity: intensity ?? null
   };
