@@ -136,8 +136,8 @@ function mapMeal(row: any): MealLog {
 }
 
 function mapWorkout(row: any): WorkoutSession {
-  const startedAt = row.started_at ? new Date(row.started_at).getTime() : undefined;
-  const endedAt = row.ended_at ? new Date(row.ended_at).getTime() : undefined;
+  const startedAt = row.start_ts ? new Date(row.start_ts).getTime() : undefined;
+  const endedAt = row.end_ts ? new Date(row.end_ts).getTime() : undefined;
   let durationMin: number | undefined;
   if (startedAt && endedAt) {
     const rawMinutes = (endedAt - startedAt) / 60000;
@@ -401,7 +401,7 @@ export async function updateWorkout(
   }
 
   const payload: Record<string, unknown> = {
-    ended_at: new Date(endTs).toISOString(),
+    end_ts: new Date(endTs).toISOString(),
     workout_types: workoutTypes && workoutTypes.length > 0 ? workoutTypes : null,
     intensity: intensity ?? null
   };
@@ -442,7 +442,7 @@ export async function endActiveWorkouts(
   }
 
   const payload: Record<string, unknown> = {
-    ended_at: new Date(endTs).toISOString(),
+    end_ts: new Date(endTs).toISOString(),
     workout_types: workoutTypes && workoutTypes.length > 0 ? workoutTypes : null,
     intensity: intensity ?? null
   };
@@ -450,7 +450,7 @@ export async function endActiveWorkouts(
     .from("workouts")
     .update(payload)
     .eq("user_id", userId)
-    .is("ended_at", null)
+    .is("end_ts", null)
     .select("*");
   if (error) handleSupabaseError("workouts", error);
   return (data ?? []).map(mapWorkout);
@@ -512,8 +512,8 @@ export async function getActiveWorkout(userId: string) {
     .from("workouts")
     .select("*")
     .eq("user_id", userId)
-    .is("ended_at", null)
-    .order("started_at", { ascending: false })
+    .is("end_ts", null)
+    .order("start_ts", { ascending: false })
     .limit(1);
   if (error) handleSupabaseError("workouts", error);
   return data?.[0] ? mapWorkout(data[0]) : null;
