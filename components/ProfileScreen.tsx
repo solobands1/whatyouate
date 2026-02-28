@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Joyride, { STATUS, CallBackProps, type Step } from "react-joyride";
 import type { GoalDirection, Units, UserProfile } from "../lib/types";
-import { clearAllData, exportAllData, getProfile } from "../lib/supabaseDb";
+import { clearAllData, getProfile, saveProfile, LOCAL_MODE } from "../lib/supabaseDb";
 import { supabase } from "../lib/supabaseClient";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
@@ -17,6 +17,7 @@ export default function ProfileScreen() {
   const searchParams = useSearchParams();
   const { user, loading, signOut } = useAuth();
   const profileExistsRef = useRef(false);
+  const [mounted, setMounted] = useState(false);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -28,7 +29,7 @@ export default function ProfileScreen() {
   const [sex, setSex] = useState<UserProfile["sex"]>("prefer_not");
   const [goalDirection, setGoalDirection] = useState<GoalDirection>("maintain");
   const [bodyPriority, setBodyPriority] = useState("");
-  const [units, setUnits] = useState<Units>("metric");
+  const [units, setUnits] = useState<Units>("imperial");
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -37,10 +38,15 @@ export default function ProfileScreen() {
   const [showBodyInfo, setShowBodyInfo] = useState(false);
   const [showProfilePrompt, setShowProfilePrompt] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [showSexPicker, setShowSexPicker] = useState(false);
   const [feedbackText, setFeedbackText] = useState("");
   const [feedbackStatus, setFeedbackStatus] = useState<"idle" | "sending" | "sent">("idle");
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
   const [showFeedbackToast, setShowFeedbackToast] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -65,9 +71,9 @@ export default function ProfileScreen() {
           setSex(data.sex ?? "prefer_not");
           setGoalDirection(data.goalDirection ?? "maintain");
           setBodyPriority(data.bodyPriority ?? "");
-          setUnits(data.units ?? "metric");
+          setUnits(data.units ?? "imperial");
 
-          if ((data.units ?? "metric") === "imperial") {
+          if ((data.units ?? "imperial") === "imperial") {
             const cm = data.height ?? null;
             if (cm != null) {
               const inchesTotal = cm / 2.54;
@@ -224,12 +230,28 @@ export default function ProfileScreen() {
         units
       };
 
-      if (profileExistsRef.current) {
-        const { error } = await supabase.from("profiles").update(payload).eq("user_id", user.id);
-        if (error) throw error;
+      if (!LOCAL_MODE) {
+        if (profileExistsRef.current) {
+          const { error } = await supabase.from("profiles").update(payload).eq("user_id", user.id);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase.from("profiles").insert(payload);
+          if (error) throw error;
+        }
       } else {
-        const { error } = await supabase.from("profiles").insert(payload);
-        if (error) throw error;
+        await saveProfile(user.id, {
+          id: user.id,
+          firstName: payload.first_name ?? undefined,
+          lastName: payload.last_name ?? undefined,
+          height: payload.height ?? null,
+          weight: payload.weight ?? null,
+          age: payload.age ?? null,
+          sex,
+          goalDirection,
+          bodyPriority: payload.body_priority ?? "",
+          units
+        });
+        profileExistsRef.current = true;
       }
 
       const freshProfile = await getProfile(user.id);
@@ -240,9 +262,9 @@ export default function ProfileScreen() {
         setSex(freshProfile.sex ?? "prefer_not");
         setGoalDirection(freshProfile.goalDirection ?? "maintain");
         setBodyPriority(freshProfile.bodyPriority ?? "");
-        setUnits(freshProfile.units ?? "metric");
+        setUnits(freshProfile.units ?? "imperial");
 
-        if ((freshProfile.units ?? "metric") === "imperial") {
+        if ((freshProfile.units ?? "imperial") === "imperial") {
           const cm = freshProfile.height ?? null;
           if (cm != null) {
             const inchesTotal = cm / 2.54;
@@ -291,17 +313,6 @@ export default function ProfileScreen() {
     }
   };
 
-  const handleExport = async () => {
-    const data = await exportAllData(user.id);
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "what-you-ate-export.json";
-    link.click();
-    URL.revokeObjectURL(url);
-  };
-
   const handleClear = async () => {
     if (!confirm("Clear all data? This cannot be undone.")) return;
     await clearAllData(user.id);
@@ -316,7 +327,7 @@ export default function ProfileScreen() {
     setSex("prefer_not");
     setGoalDirection("maintain");
     setBodyPriority("");
-    setUnits("metric");
+    setUnits("imperial");
     setStatus("All data cleared.");
   };
 
@@ -328,6 +339,31 @@ export default function ProfileScreen() {
   const handleDeleteAccount = async () => {
     if (!confirm("Delete your account and all data? This cannot be undone.")) return;
     if (!user) return;
+    if (LOCAL_MODE) {
+      await clearAllData(user.id);
+      try {
+        const usersRaw = localStorage.getItem("wya_local_users");
+        const users = usersRaw ? (JSON.parse(usersRaw) as Array<{ id: string }>) : [];
+        const filtered = users.filter((entry) => entry.id !== user.id);
+        localStorage.setItem("wya_local_users", JSON.stringify(filtered));
+        localStorage.removeItem("wya_local_session");
+        localStorage.removeItem(`wya_walkthrough_${user.id}`);
+        localStorage.removeItem(`wya_walkthrough_active_${user.id}`);
+        localStorage.removeItem(`wya_walkthrough_stage_${user.id}`);
+        localStorage.removeItem(`wya_walkthrough_gate_${user.id}`);
+        localStorage.removeItem(`wya_walkthrough_profile_${user.id}`);
+        localStorage.removeItem(`wya_profile_updated_${user.id}`);
+        localStorage.removeItem(`wya_profile_prompt_opened_${user.id}`);
+        localStorage.removeItem(`wya_profile_prompt_last_${user.id}`);
+        localStorage.removeItem(`wya_nudge_view_count_${user.id}`);
+      } catch {
+        localStorage.removeItem("wya_local_users");
+        localStorage.removeItem("wya_local_session");
+      }
+      await signOut();
+      router.replace("/login");
+      return;
+    }
     const { data } = await supabase.auth.getSession();
     const accessToken = data.session?.access_token;
     if (!accessToken) {
@@ -350,47 +386,49 @@ export default function ProfileScreen() {
     router.replace("/login");
   };
 
+  if (!mounted) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-surface">
       <div className="mx-auto flex min-h-screen max-w-md flex-col px-5 pb-24 pt-8">
-        <Joyride
-          steps={profileTourSteps}
-          run={runProfileTour}
-          continuous
-          showSkipButton
-          hideCloseButton
-          scrollToFirstStep
-          callback={handleProfileTour}
-          locale={{
-            skip: "Skip",
-            last: "Done",
-            back: "Back",
-            close: "Skip"
-          }}
-          styles={{
-            options: {
-              primaryColor: "#6FA8FF",
-              textColor: "#1F2937",
-              backgroundColor: "#FFFFFF",
-              arrowColor: "#FFFFFF"
-            },
-            buttonClose: {
-              display: "none"
-            },
-            buttonSkip: {
-              display: "block"
-            }
-          }}
-        />
+        {mounted && (
+          <Joyride
+            steps={profileTourSteps}
+            run={runProfileTour}
+            continuous
+            showSkipButton
+            hideCloseButton
+            disableOverlayClose
+            scrollToFirstStep
+            callback={handleProfileTour}
+            locale={{
+              skip: "Skip",
+              back: "Back",
+              last: "Done",
+              close: "Skip"
+            }}
+            styles={{
+              options: {
+                primaryColor: "#6FA8FF",
+                textColor: "#1F2937",
+                backgroundColor: "#FFFFFF",
+                arrowColor: "#FFFFFF"
+              },
+              buttonClose: {
+                display: "none"
+              },
+              buttonSkip: {
+                display: "block"
+              }
+            }}
+          />
+        )}
         <header className="mb-4" data-tour="profile-header">
           <div className="flex items-start justify-between">
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-semibold text-ink">Profile</h1>
-                <span className="inline-flex items-center rounded-full bg-primary/15 px-2 py-0.5 text-[9px] font-semibold text-primary">
-                  BETA
-                </span>
-              </div>
+              <h1 className="text-2xl font-semibold text-ink">Profile</h1>
               <p className="mt-1 text-sm text-muted/70">
                 {[firstName, lastName].filter(Boolean).join(" ") || "Profile"}
               </p>
@@ -403,6 +441,9 @@ export default function ProfileScreen() {
                   onClick={() => {
                     if (!user) return;
                     localStorage.removeItem(`wya_walkthrough_${user.id}`);
+                    localStorage.removeItem(`wya_walkthrough_active_${user.id}`);
+                    localStorage.removeItem(`wya_walkthrough_stage_${user.id}`);
+                    localStorage.removeItem(`wya_walkthrough_gate_${user.id}`);
                     router.push("/");
                   }}
                 >
@@ -557,16 +598,22 @@ export default function ProfileScreen() {
               </label>
               <label className="text-[11px] text-muted/70">
                 Sex
-                <select
-                  className="mt-1 w-full rounded-xl border border-ink/10 bg-white px-3 py-2 text-sm"
-                  value={sex}
-                  onChange={(event) => setSex(event.target.value as UserProfile["sex"])}
+                <button
+                  type="button"
+                  className="mt-1 flex w-full items-center justify-between rounded-xl border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80"
+                  onClick={() => setShowSexPicker(true)}
                 >
-                  <option value="female">Female</option>
-                  <option value="male">Male</option>
-                  <option value="other">Other</option>
-                  <option value="prefer_not">Prefer not</option>
-                </select>
+                  <span>
+                    {sex === "female"
+                      ? "Female"
+                      : sex === "male"
+                        ? "Male"
+                        : sex === "other"
+                          ? "Other"
+                          : "Prefer not"}
+                  </span>
+                  <span className="text-ink/40">▾</span>
+                </button>
               </label>
             </div>
           </div>
@@ -643,12 +690,6 @@ export default function ProfileScreen() {
             Log out
           </button>
           <button
-            className="mt-3 w-full rounded-xl bg-ink/5 px-4 py-2.5 text-xs font-semibold text-ink/80"
-            onClick={handleExport}
-          >
-            Export JSON
-          </button>
-          <button
             className="mt-3 w-full rounded-xl border border-ink/10 px-4 py-2.5 text-xs font-semibold text-muted/70"
             onClick={handleClear}
           >
@@ -702,6 +743,49 @@ export default function ProfileScreen() {
               >
                 Close
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showSexPicker && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
+          <div className="w-full max-w-[280px] rounded-2xl bg-white p-4 shadow-lg">
+            <div className="flex items-center justify-end">
+              <button
+                type="button"
+                className="text-xs font-semibold text-ink/60"
+                onClick={() => setShowSexPicker(false)}
+              >
+                Close
+              </button>
+            </div>
+            <div className="mt-2 space-y-2">
+              {([
+                { value: "male", label: "Male" },
+                { value: "female", label: "Female" },
+                { value: "other", label: "Other" },
+                { value: "prefer_not", label: "Prefer not to say" }
+              ] as const).map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-sm ${
+                    sex === option.value
+                      ? "border-primary/30 bg-primary/10 text-ink"
+                      : "border-ink/10 bg-white text-ink/70"
+                  }`}
+                  onClick={() => {
+                    setSex(option.value);
+                    setShowSexPicker(false);
+                  }}
+                >
+                  <span>{option.label}</span>
+                  <span className="inline-flex h-4 w-4 items-center justify-center text-[11px]">
+                    {sex === option.value ? "✓" : ""}
+                  </span>
+                </button>
+              ))}
             </div>
           </div>
         </div>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "./AuthProvider";
+import { LOCAL_MODE } from "../lib/config";
 import Card from "./Card";
 
 export default function LoginClient() {
@@ -25,6 +26,34 @@ export default function LoginClient() {
   const [otpCode, setOtpCode] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [status, setStatus] = useState<string>("");
+  const togglePassword = () => setShowPassword((prev) => !prev);
+
+  const EyeIcon = ({ hidden }: { hidden: boolean }) => (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      className="h-4 w-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      {hidden ? (
+        <>
+          <path d="M3 3l18 18" />
+          <path d="M10.5 10.5a2.5 2.5 0 0 0 3.5 3.5" />
+          <path d="M6.5 6.5C4.2 8.2 2.7 10.4 2 12c2.1 4 6 7 10 7 2 0 4-.6 5.7-1.7" />
+          <path d="M9.9 4.3A9.5 9.5 0 0 1 12 4c4 0 7.9 3 10 8-0.6 1.2-1.5 2.4-2.6 3.5" />
+        </>
+      ) : (
+        <>
+          <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" />
+          <circle cx="12" cy="12" r="3" />
+        </>
+      )}
+    </svg>
+  );
 
   useEffect(() => {
     if (!loading && user) {
@@ -41,10 +70,16 @@ export default function LoginClient() {
       return;
     }
     setStatus("");
+    if (LOCAL_MODE) {
+      router.replace("/");
+    }
   };
 
   const handleSignUp = async () => {
-    if (!email || !password) return;
+    if (!firstName.trim() || !lastName.trim() || !email || !password || !confirmPassword) {
+      setStatus("Please fill out all fields.");
+      return;
+    }
     if (password !== confirmPassword) {
       setStatus("Passwords do not match.");
       return;
@@ -58,8 +93,8 @@ export default function LoginClient() {
       setStatus(result.error);
       return;
     }
-    setStatus("Account created. You can sign in.");
-    setMode("signin");
+    setStatus("");
+    router.replace("/");
   };
 
   const handleSendCode = async () => {
@@ -146,10 +181,11 @@ export default function LoginClient() {
                     />
                     <button
                       type="button"
-                      className="text-xs font-semibold text-ink/60"
-                      onClick={() => setShowPassword((prev) => !prev)}
+                      className="rounded-full border border-ink/10 p-2 text-ink/60"
+                      onClick={togglePassword}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
                     >
-                      {showPassword ? "Hide" : "Show"}
+                      <EyeIcon hidden={showPassword} />
                     </button>
                   </div>
                 </label>
@@ -195,6 +231,7 @@ export default function LoginClient() {
                     value={firstName}
                     onChange={(event) => setFirstName(event.target.value)}
                     placeholder="First name"
+                    required
                   />
                 </label>
                 <label className="mt-3 block text-xs text-muted/70">
@@ -205,6 +242,7 @@ export default function LoginClient() {
                     value={lastName}
                     onChange={(event) => setLastName(event.target.value)}
                     placeholder="Last name"
+                    required
                   />
                 </label>
                 <label className="mt-3 block text-xs text-muted/70">
@@ -216,6 +254,7 @@ export default function LoginClient() {
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     placeholder="you@example.com"
+                    required
                   />
                 </label>
                 <label className="mt-3 block text-xs text-muted/70">
@@ -228,26 +267,39 @@ export default function LoginClient() {
                       value={password}
                       onChange={(event) => setPassword(event.target.value)}
                       placeholder="••••••••"
+                      required
                     />
                     <button
                       type="button"
-                      className="text-xs font-semibold text-ink/60"
-                      onClick={() => setShowPassword((prev) => !prev)}
+                      className="rounded-full border border-ink/10 p-2 text-ink/60"
+                      onClick={togglePassword}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
                     >
-                      {showPassword ? "Hide" : "Show"}
+                      <EyeIcon hidden={showPassword} />
                     </button>
                   </div>
                 </label>
                 <label className="mt-3 block text-xs text-muted/70">
                   Confirm password
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    autoComplete="new-password"
-                    className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm"
-                    value={confirmPassword}
-                    onChange={(event) => setConfirmPassword(event.target.value)}
-                    placeholder="••••••••"
-                  />
+                  <div className="mt-1 flex items-center gap-2">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      autoComplete="new-password"
+                      className="w-full rounded-xl border border-ink/10 px-3 py-2 text-sm"
+                      value={confirmPassword}
+                      onChange={(event) => setConfirmPassword(event.target.value)}
+                      placeholder="••••••••"
+                      required
+                    />
+                    <button
+                      type="button"
+                      className="rounded-full border border-ink/10 p-2 text-ink/60"
+                      onClick={togglePassword}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      <EyeIcon hidden={showPassword} />
+                    </button>
+                  </div>
                 </label>
               </div>
               <div className="mt-4 flex gap-3">
@@ -323,25 +375,45 @@ export default function LoginClient() {
                 </label>
                 <label className="mt-3 block text-xs text-muted/70">
                   New password
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    autoComplete="new-password"
-                    className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm"
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    placeholder="••••••••"
-                  />
+                  <div className="mt-1 flex items-center gap-2">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      autoComplete="new-password"
+                      className="w-full rounded-xl border border-ink/10 px-3 py-2 text-sm"
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      placeholder="••••••••"
+                    />
+                    <button
+                      type="button"
+                      className="rounded-full border border-ink/10 p-2 text-ink/60"
+                      onClick={togglePassword}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      <EyeIcon hidden={showPassword} />
+                    </button>
+                  </div>
                 </label>
                 <label className="mt-3 block text-xs text-muted/70">
                   Confirm password
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    autoComplete="new-password"
-                    className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm"
-                    value={confirmPassword}
-                    onChange={(event) => setConfirmPassword(event.target.value)}
-                    placeholder="••••••••"
-                  />
+                  <div className="mt-1 flex items-center gap-2">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      autoComplete="new-password"
+                      className="w-full rounded-xl border border-ink/10 px-3 py-2 text-sm"
+                      value={confirmPassword}
+                      onChange={(event) => setConfirmPassword(event.target.value)}
+                      placeholder="••••••••"
+                    />
+                    <button
+                      type="button"
+                      className="rounded-full border border-ink/10 p-2 text-ink/60"
+                      onClick={togglePassword}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      <EyeIcon hidden={showPassword} />
+                    </button>
+                  </div>
                 </label>
               </div>
               <button

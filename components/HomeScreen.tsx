@@ -24,6 +24,7 @@ import { computeHomeMarkers, computeRecent } from "../lib/digestEngine";
 export default function HomeScreen() {
   const router = useRouter();
   const { user, loading } = useAuth();
+  const [mounted, setMounted] = useState(false);
   const [profile, setProfile] = useState<UserProfile | undefined>();
   const [meals, setMeals] = useState<MealLog[]>([]);
   const [workouts, setWorkouts] = useState<WorkoutSession[]>([]);
@@ -47,6 +48,10 @@ export default function HomeScreen() {
     id: string;
   } | null>(null);
   const [deletingItem, setDeletingItem] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -97,13 +102,13 @@ export default function HomeScreen() {
   };
 
   const handleConfirmDelete = async () => {
-    if (!pendingDelete) return;
+    if (!pendingDelete || !user) return;
     setDeletingItem(true);
     try {
       if (pendingDelete.type === "meal") {
-        await deleteMeal(pendingDelete.id);
+        await deleteMeal(pendingDelete.id, user.id);
       } else {
-        await deleteWorkout(pendingDelete.id);
+        await deleteWorkout(pendingDelete.id, user.id);
       }
       await loadData();
       window.dispatchEvent(new Event("meals-updated"));
@@ -119,6 +124,10 @@ export default function HomeScreen() {
     if (!user) return;
     loadData();
   }, [user]);
+
+  useEffect(() => {
+    setEditRecents(false);
+  }, []);
 
   useEffect(() => {
     if (!showEndWorkoutModal) return;
@@ -141,16 +150,19 @@ export default function HomeScreen() {
     if (!user) return;
     const key = `wya_walkthrough_${user.id}`;
     const seen = localStorage.getItem(key);
+    const gateKey = `wya_walkthrough_gate_${user.id}`;
+    const gateSeen = localStorage.getItem(gateKey);
     const activeKey = `wya_walkthrough_active_${user.id}`;
     const stageKey = `wya_walkthrough_stage_${user.id}`;
     const active = localStorage.getItem(activeKey) === "true";
     const stage = localStorage.getItem(stageKey) ?? "home";
-    if (!seen && active && stage === "home") {
+    if (active && stage === "home") {
       setRunTour(true);
       setShowTourGate(false);
       return;
     }
-    if (!seen && !active) {
+    if (!seen && !active && !gateSeen) {
+      localStorage.setItem(gateKey, "true");
       setShowTourGate(true);
     }
   }, [user]);
@@ -161,7 +173,8 @@ export default function HomeScreen() {
     () => computeHomeMarkers(meals, workouts, profile),
     [meals, workouts, profile]
   );
-  const recentItems = useMemo(() => computeRecent(meals, workouts), [meals, workouts]);
+  const completedWorkouts = useMemo(() => workouts.filter((workout) => workout.endTs), [workouts]);
+  const recentItems = useMemo(() => computeRecent(meals, completedWorkouts), [meals, completedWorkouts]);
 
   const formatTitle = (value: string) =>
     value
@@ -287,40 +300,45 @@ export default function HomeScreen() {
     }
 
     await loadData();
+    setShowStartWorkoutModal(false);
   };
 
   const handleEndWorkout = async () => {
-    if (!user) return;
-    let workoutToEnd = activeWorkout;
-    if (!workoutToEnd) {
-      try {
-        workoutToEnd = await getActiveWorkout(user.id);
-        if (!mountedRef.current) return;
-        setActiveWorkout(workoutToEnd);
-      } catch {
-        workoutToEnd = null;
-      }
-      if (!workoutToEnd) return;
-    }
+    if (!user || !activeWorkout) return;
+
     try {
-      const now = Date.now();
-      const rawMinutes = (now - workoutToEnd.startTs) / 60000;
+      const endTs = Date.now();
+
+      const rawMinutes = (endTs - activeWorkout.startTs) / 60000;
       const durationMin = rawMinutes < 1 ? 0 : Math.ceil(rawMinutes);
+
       await updateWorkout(
-        workoutToEnd.id,
-        now,
+        activeWorkout.id,
+        user.id,
+        endTs,
         durationMin,
         selectedWorkoutTypes,
         selectedIntensity || undefined
       );
+
+      // Immediately clear active workout UI
       setActiveWorkout(null);
+
+      // Reset modal selections
       setSelectedWorkoutTypes([]);
       setSelectedIntensity("");
-      loadData();
-    } catch (err) {
-      setLoadError(err instanceof Error ? err.message : "Failed to end workout");
-    } finally {
+
+      // Refresh workouts
+      await loadData();
+
       setShowEndWorkoutModal(false);
+
+    } catch (err) {
+      setLoadError(
+        err instanceof Error
+          ? err.message
+          : "Failed to end workout"
+      );
     }
   };
 
@@ -366,44 +384,53 @@ export default function HomeScreen() {
       router.push("/summary");
     }
   };
+  if (!mounted) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-surface">
-      <Joyride
-        steps={steps}
-        run={runTour}
-        continuous
-        showSkipButton
-        hideCloseButton
-        disableOverlayClose
-        scrollToFirstStep
-        callback={handleTourCallback}
-        locale={{
-          skip: "Skip",
-          back: "Back",
-          last: "Next",
-          close: "Skip"
-        }}
-        styles={{
-          options: {
-            primaryColor: "#6FA8FF",
-            textColor: "#1F2937",
-            backgroundColor: "#FFFFFF",
-            arrowColor: "#FFFFFF"
-          },
-          buttonClose: {
-            display: "none"
-          },
-          buttonSkip: {
-            display: "block"
-          }
-        }}
-      />
+      {typeof window !== "undefined" && (
+        <Joyride
+          steps={steps}
+          run={runTour}
+          continuous
+          showSkipButton
+          hideCloseButton
+          disableOverlayClose
+          scrollToFirstStep
+          callback={handleTourCallback}
+          locale={{
+            skip: "Skip",
+            back: "Back",
+            last: "Next",
+            close: "Skip"
+          }}
+          styles={{
+            options: {
+              primaryColor: "#6FA8FF",
+              textColor: "#1F2937",
+              backgroundColor: "#FFFFFF",
+              arrowColor: "#FFFFFF"
+            },
+            buttonClose: {
+              display: "none"
+            },
+            buttonSkip: {
+              display: "block"
+            }
+          }}
+        />
+      )}
       {showTourGate && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-white/70 backdrop-blur-sm">
           <div className="flex max-w-xs flex-col items-center gap-4 text-center">
             <div className="w-full px-5 py-1 text-center">
               <p className="text-[26px] font-semibold text-ink/80">
-                Hey {profile?.firstName || "there"}
+                Hey{" "}
+                {profile?.firstName ||
+                  (user as { user_metadata?: Record<string, string> })?.user_metadata?.first_name ||
+                  "there"}
               </p>
             </div>
             <div className="space-y-1 text-sm text-ink/70">
@@ -658,13 +685,13 @@ export default function HomeScreen() {
             </button>
           </div>
           {activeWorkout && (
-            <p className="text-center text-[11px] text-muted/60">Workout in progress.</p>
+            <p className="text-center text-[11px] text-muted/60">Workout in progress</p>
           )}
         </div>
 
         <Card className="mt-7">
           <div className="flex items-start justify-between">
-            <div />
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Today</p>
             <button
               type="button"
               className="text-[11px] font-semibold text-ink/70 underline"
@@ -680,9 +707,11 @@ export default function HomeScreen() {
           <div className="mt-3 space-y-4 text-sm text-ink/80">
             {groupedRecent.slice(0, 3).map((group) => (
               <div key={group.label}>
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">
-                  {group.label}
-                </p>
+                {group.label !== "Today" && (
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">
+                    {group.label}
+                  </p>
+                )}
                 <div className="mt-2 grid grid-cols-3 gap-2">
                   <div className="col-span-2 space-y-2">
                     {group.meals.map((meal) => (

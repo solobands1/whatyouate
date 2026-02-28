@@ -1,16 +1,91 @@
 import { supabase } from "./supabaseClient";
+import { LOCAL_MODE } from "./config";
 import type { MealAnalysis, MealLog, UserProfile, WorkoutSession } from "./types";
 import { approxFromRange } from "./utils";
 import { safeFallbackAnalysis } from "./ai/schema";
 
+export { LOCAL_MODE };
+
 const DEBUG = false;
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+const useMemory = LOCAL_MODE;
 if (DEBUG && supabaseUrl) {
   try {
     console.debug("[supabase] url host:", new URL(supabaseUrl).host);
   } catch {
     console.debug("[supabase] url host: invalid");
   }
+}
+
+type MealRecord = { userId: string; meal: MealLog };
+type WorkoutRecord = { userId: string; session: WorkoutSession };
+type NudgeRecord = { id: string; userId: string; type: string; message: string; createdAt: number };
+
+let memMeals: MealRecord[] = [];
+let memWorkouts: WorkoutRecord[] = [];
+let memProfiles: Record<string, UserProfile> = {};
+let memNudges: NudgeRecord[] = [];
+const LOCAL_DATA_KEY = "wya_local_data_v1";
+let localLoaded = false;
+
+const ensureLocalLoaded = () => {
+  if (!useMemory || typeof window === "undefined" || localLoaded) return;
+  localLoaded = true;
+  try {
+    const raw = localStorage.getItem(LOCAL_DATA_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw) as {
+      memMeals?: MealRecord[];
+      memWorkouts?: WorkoutRecord[];
+      memProfiles?: Record<string, UserProfile>;
+      memNudges?: NudgeRecord[];
+    };
+    memMeals = Array.isArray(parsed.memMeals) ? parsed.memMeals : [];
+    memWorkouts = Array.isArray(parsed.memWorkouts) ? parsed.memWorkouts : [];
+    memProfiles = parsed.memProfiles ?? {};
+    memNudges = Array.isArray(parsed.memNudges) ? parsed.memNudges : [];
+  } catch {
+    // Ignore malformed local data.
+  }
+};
+
+const persistLocal = () => {
+  if (!useMemory || typeof window === "undefined") return;
+  const sanitizedMeals = memMeals.map((entry) => ({
+    ...entry,
+    meal: {
+      ...entry.meal,
+      imageBlob: undefined
+    }
+  }));
+  const sanitizedWorkouts = memWorkouts.map((entry) => ({
+    ...entry,
+    session: {
+      ...entry.session,
+      startImageBlob: undefined,
+      endImageBlob: undefined
+    }
+  }));
+  const payload = {
+    memMeals: sanitizedMeals,
+    memWorkouts: sanitizedWorkouts,
+    memProfiles,
+    memNudges
+  };
+  try {
+    localStorage.setItem(LOCAL_DATA_KEY, JSON.stringify(payload));
+  } catch {
+    // Ignore storage failures (quota or private mode).
+  }
+};
+
+function newId(prefix: string) {
+  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function computeDurationMin(startTs: number, endTs: number) {
+  const rawMinutes = (endTs - startTs) / 60000;
+  return rawMinutes < 1 ? 0 : Math.ceil(rawMinutes);
 }
 
 function handleSupabaseError(table: string, error: any) {
@@ -79,6 +154,11 @@ function mapWorkout(row: any): WorkoutSession {
 }
 
 export async function getProfile(userId: string): Promise<UserProfile | null> {
+  if (useMemory) {
+    ensureLocalLoaded();
+    return memProfiles[userId] ?? null;
+  }
+
   if (DEBUG) console.debug("[supabase] getProfile -> profiles");
   const { data, error } = await supabase
     .from("profiles")
@@ -100,11 +180,18 @@ export async function getProfile(userId: string): Promise<UserProfile | null> {
     sex: data.sex ?? "prefer_not",
     goalDirection: data.goal_direction === "recomposition" ? "balance" : (data.goal_direction ?? "maintain"),
     bodyPriority: data.body_priority ?? "",
-    units: data.units ?? "metric"
+    units: data.units ?? "imperial"
   };
 }
 
 export async function saveProfile(userId: string, profile: UserProfile) {
+  if (useMemory) {
+    ensureLocalLoaded();
+    memProfiles[userId] = profile;
+    persistLocal();
+    return;
+  }
+
   const payload = {
     user_id: userId,
     first_name: profile.firstName ?? null,
@@ -123,6 +210,20 @@ export async function saveProfile(userId: string, profile: UserProfile) {
 }
 
 export async function addMeal(userId: string, analysis: MealAnalysis, imageOptional?: string, corrections?: any) {
+  if (useMemory) {
+    ensureLocalLoaded();
+    const meal: MealLog = {
+      id: newId("meal"),
+      ts: Date.now(),
+      analysisJson: analysis,
+      userCorrection: undefined,
+      imageThumb: imageOptional ?? undefined
+    };
+    memMeals.push({ userId, meal });
+    persistLocal();
+    return meal;
+  }
+
   const ranges = analysis.estimated_ranges;
   const created_at = new Date().toISOString();
   const payload = {
@@ -144,6 +245,29 @@ export async function addMeal(userId: string, analysis: MealAnalysis, imageOptio
 }
 
 export async function updateMeal(id: string, analysis: MealAnalysis, corrections?: any) {
+  if (useMemory) {
+    ensureLocalLoaded();
+    const record = memMeals.find((entry) => entry.meal.id === id);
+    if (record) {
+      record.meal = {
+        ...record.meal,
+        analysisJson: analysis
+      };
+      persistLocal();
+      return record.meal;
+    }
+    const meal: MealLog = {
+      id,
+      ts: Date.now(),
+      analysisJson: analysis,
+      userCorrection: undefined,
+      imageThumb: undefined
+    };
+    memMeals.push({ userId: "unknown", meal });
+    persistLocal();
+    return meal;
+  }
+
   const ranges = analysis.estimated_ranges;
   const payload = {
     analysis_json: analysis,
@@ -158,6 +282,15 @@ export async function updateMeal(id: string, analysis: MealAnalysis, corrections
 }
 
 export async function listMeals(userId: string, limit = 50) {
+  if (useMemory) {
+    ensureLocalLoaded();
+    return memMeals
+      .filter((entry) => entry.userId === userId)
+      .map((entry) => entry.meal)
+      .sort((a, b) => b.ts - a.ts)
+      .slice(0, limit);
+  }
+
   if (DEBUG) console.debug("[supabase] listMeals -> meals");
   const { data, error } = await supabase
     .from("meals")
@@ -170,6 +303,17 @@ export async function listMeals(userId: string, limit = 50) {
 }
 
 export async function deleteMeal(id: string, userId?: string) {
+  if (useMemory) {
+    ensureLocalLoaded();
+    memMeals = memMeals.filter((entry) => {
+      if (entry.meal.id !== id) return true;
+      if (!userId) return false;
+      return entry.userId !== userId;
+    });
+    persistLocal();
+    return;
+  }
+
   let query = supabase.from("meals").delete().eq("id", id);
   if (userId) {
     query = query.eq("user_id", userId);
@@ -184,6 +328,19 @@ export async function addWorkout(
   workoutTypes?: string[],
   intensity?: "low" | "medium" | "high"
 ) {
+  if (useMemory) {
+    ensureLocalLoaded();
+    const session: WorkoutSession = {
+      id: newId("workout"),
+      startTs,
+      workoutTypes,
+      intensity
+    };
+    memWorkouts.push({ userId, session });
+    persistLocal();
+    return session;
+  }
+
   console.log("[workout] DB insert", { userId, startTs });
 
   const { data, error } = await supabase
@@ -213,6 +370,36 @@ export async function updateWorkout(
   workoutTypes?: string[],
   intensity?: "low" | "medium" | "high"
 ) {
+  if (useMemory) {
+    ensureLocalLoaded();
+    const record = memWorkouts.find(
+      (entry) => entry.session.id === id && (userId ? entry.userId === userId : true)
+    );
+    if (record) {
+      record.session = {
+        ...record.session,
+        endTs,
+        durationMin,
+        workoutTypes,
+        intensity
+      };
+      persistLocal();
+      return record.session;
+    }
+    const inferredStart = endTs - Math.max(0, durationMin) * 60000;
+    const session: WorkoutSession = {
+      id,
+      startTs: Number.isFinite(inferredStart) ? inferredStart : endTs,
+      endTs,
+      durationMin,
+      workoutTypes,
+      intensity
+    };
+    memWorkouts.push({ userId: userId ?? "unknown", session });
+    persistLocal();
+    return session;
+  }
+
   const payload: Record<string, unknown> = {
     ended_at: new Date(endTs).toISOString(),
     workout_types: workoutTypes && workoutTypes.length > 0 ? workoutTypes : null,
@@ -233,6 +420,27 @@ export async function endActiveWorkouts(
   workoutTypes?: string[],
   intensity?: "low" | "medium" | "high"
 ) {
+  if (useMemory) {
+    ensureLocalLoaded();
+    const updated: WorkoutSession[] = [];
+    memWorkouts = memWorkouts.map((entry) => {
+      if (entry.userId !== userId) return entry;
+      if (entry.session.endTs) return entry;
+      const durationMin = computeDurationMin(entry.session.startTs, endTs);
+      const session = {
+        ...entry.session,
+        endTs,
+        durationMin,
+        workoutTypes,
+        intensity
+      };
+      updated.push(session);
+      return { ...entry, session };
+    });
+    persistLocal();
+    return updated;
+  }
+
   const payload: Record<string, unknown> = {
     ended_at: new Date(endTs).toISOString(),
     workout_types: workoutTypes && workoutTypes.length > 0 ? workoutTypes : null,
@@ -249,6 +457,17 @@ export async function endActiveWorkouts(
 }
 
 export async function deleteWorkout(id: string, userId?: string) {
+  if (useMemory) {
+    ensureLocalLoaded();
+    memWorkouts = memWorkouts.filter((entry) => {
+      if (entry.session.id !== id) return true;
+      if (!userId) return false;
+      return entry.userId !== userId;
+    });
+    persistLocal();
+    return;
+  }
+
   let query = supabase.from("workouts").delete().eq("id", id);
   if (userId) {
     query = query.eq("user_id", userId);
@@ -258,6 +477,15 @@ export async function deleteWorkout(id: string, userId?: string) {
 }
 
 export async function listWorkouts(userId: string, limit = 50) {
+  if (useMemory) {
+    ensureLocalLoaded();
+    return memWorkouts
+      .filter((entry) => entry.userId === userId)
+      .map((entry) => entry.session)
+      .sort((a, b) => b.startTs - a.startTs)
+      .slice(0, limit);
+  }
+
   if (DEBUG) console.debug("[supabase] listWorkouts -> workouts");
   const { data, error } = await supabase
     .from("workouts")
@@ -271,6 +499,15 @@ export async function listWorkouts(userId: string, limit = 50) {
 }
 
 export async function getActiveWorkout(userId: string) {
+  if (useMemory) {
+    ensureLocalLoaded();
+    const active = memWorkouts
+      .filter((entry) => entry.userId === userId && !entry.session.endTs)
+      .map((entry) => entry.session)
+      .sort((a, b) => b.startTs - a.startTs);
+    return active[0] ?? null;
+  }
+
   const { data, error } = await supabase
     .from("workouts")
     .select("*")
@@ -283,6 +520,20 @@ export async function getActiveWorkout(userId: string) {
 }
 
 export async function addNudge(userId: string, type: string, message: string) {
+  if (useMemory) {
+    ensureLocalLoaded();
+    const nudge: NudgeRecord = {
+      id: newId("nudge"),
+      userId,
+      type,
+      message,
+      createdAt: Date.now()
+    };
+    memNudges.push(nudge);
+    persistLocal();
+    return nudge;
+  }
+
   const payload = {
     user_id: userId,
     type,
@@ -294,6 +545,14 @@ export async function addNudge(userId: string, type: string, message: string) {
 }
 
 export async function listNudges(userId: string, limit = 50) {
+  if (useMemory) {
+    ensureLocalLoaded();
+    return memNudges
+      .filter((nudge) => nudge.userId === userId)
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .slice(0, limit);
+  }
+
   if (DEBUG) console.debug("[supabase] listNudges -> nudges");
   const { data, error } = await supabase
     .from("nudges")
@@ -307,6 +566,16 @@ export async function listNudges(userId: string, limit = 50) {
 }
 
 export async function exportAllData(userId: string) {
+  if (useMemory) {
+    ensureLocalLoaded();
+    return {
+      profile: memProfiles[userId] ?? null,
+      meals: memMeals.filter((entry) => entry.userId === userId).map((entry) => entry.meal),
+      workouts: memWorkouts.filter((entry) => entry.userId === userId).map((entry) => entry.session),
+      nudges: memNudges.filter((nudge) => nudge.userId === userId)
+    };
+  }
+
   const profile = await supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle();
   const meals = await supabase.from("meals").select("*").eq("user_id", userId);
   const workouts = await supabase.from("workouts").select("*").eq("user_id", userId);
@@ -323,6 +592,16 @@ export async function exportAllData(userId: string) {
 }
 
 export async function clearAllData(userId: string) {
+  if (useMemory) {
+    ensureLocalLoaded();
+    memMeals = memMeals.filter((entry) => entry.userId !== userId);
+    memWorkouts = memWorkouts.filter((entry) => entry.userId !== userId);
+    memNudges = memNudges.filter((nudge) => nudge.userId !== userId);
+    delete memProfiles[userId];
+    persistLocal();
+    return;
+  }
+
   const meals = await supabase.from("meals").delete().eq("user_id", userId);
   const workouts = await supabase.from("workouts").delete().eq("user_id", userId);
   const profile = await supabase.from("profiles").delete().eq("user_id", userId);
@@ -330,4 +609,14 @@ export async function clearAllData(userId: string) {
   if (meals.error || workouts.error || profile.error || nudges.error) {
     throw meals.error || workouts.error || profile.error || nudges.error;
   }
+}
+
+if (typeof window !== "undefined") {
+  (window as any).debugDB = {
+    listMeals,
+    listWorkouts,
+    getProfile,
+    exportAllData,
+    clearAllData
+  };
 }

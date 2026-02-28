@@ -9,7 +9,7 @@ import { formatApprox, formatDateShort, todayKey } from "../lib/utils";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
 import { useAuth } from "./AuthProvider";
-import { addNudge, getProfile, listMeals, listNudges, listWorkouts } from "../lib/supabaseDb";
+import { addNudge, getProfile, listMeals, listNudges, listWorkouts, LOCAL_MODE } from "../lib/supabaseDb";
 import { computeNudges, computeSummaryMarkers } from "../lib/digestEngine";
 import { supabase } from "../lib/supabaseClient";
 
@@ -43,39 +43,57 @@ export default function SummaryScreen() {
   const loadData = () => {
     if (!user) return;
     setLoadingData(true);
-    supabase.auth
-      .getSession()
-      .then(({ data: sessionData }) => {
-        if (!sessionData.session) {
-          return supabase.auth.refreshSession().then((refreshed) => {
-            if (!refreshed.data.session) {
-              setLoadingData(false);
-              return null;
-            }
-            return true;
-          });
-        }
-        return true;
-      })
-      .then((ok) => {
-        if (!ok) return null;
-        return Promise.all([getProfile(user.id), listMeals(user.id, 200), listWorkouts(user.id, 200)]);
-      })
-      .then((result) => {
-        if (!result) return;
-        const [profileData, mealsData, workoutsData] = result;
-        if (!mountedRef.current) return;
-        setProfile(profileData ?? undefined);
-        setMeals(mealsData);
-        setWorkouts(workoutsData);
-      })
-      .catch(() => {
-        if (!mountedRef.current) return;
-      })
-      .finally(() => {
-        if (!mountedRef.current) return;
-        setLoadingData(false);
-      });
+    if (LOCAL_MODE) {
+      Promise.all([getProfile(user.id), listMeals(user.id, 200), listWorkouts(user.id, 200)])
+        .then((result) => {
+          const [profileData, mealsData, workoutsData] = result;
+          if (!mountedRef.current) return;
+          setProfile(profileData ?? undefined);
+          setMeals(mealsData);
+          setWorkouts(workoutsData);
+        })
+        .catch(() => {
+          if (!mountedRef.current) return;
+        })
+        .finally(() => {
+          if (!mountedRef.current) return;
+          setLoadingData(false);
+        });
+    } else {
+      supabase.auth
+        .getSession()
+        .then(({ data: sessionData }) => {
+          if (!sessionData.session) {
+            return supabase.auth.refreshSession().then((refreshed) => {
+              if (!refreshed.data.session) {
+                setLoadingData(false);
+                return null;
+              }
+              return true;
+            });
+          }
+          return true;
+        })
+        .then((ok) => {
+          if (!ok) return null;
+          return Promise.all([getProfile(user.id), listMeals(user.id, 200), listWorkouts(user.id, 200)]);
+        })
+        .then((result) => {
+          if (!result) return;
+          const [profileData, mealsData, workoutsData] = result;
+          if (!mountedRef.current) return;
+          setProfile(profileData ?? undefined);
+          setMeals(mealsData);
+          setWorkouts(workoutsData);
+        })
+        .catch(() => {
+          if (!mountedRef.current) return;
+        })
+        .finally(() => {
+          if (!mountedRef.current) return;
+          setLoadingData(false);
+        });
+    }
 
     listNudges(user.id, 100)
       .then((nudgesData) => {
@@ -97,10 +115,9 @@ export default function SummaryScreen() {
 
   useEffect(() => {
     if (!user) return;
-    const seen = localStorage.getItem(`wya_walkthrough_${user.id}`);
     const active = localStorage.getItem(`wya_walkthrough_active_${user.id}`) === "true";
     const stage = localStorage.getItem(`wya_walkthrough_stage_${user.id}`);
-    if (!seen && active && stage === "summary") {
+    if (active && stage === "summary") {
       const timer = window.setTimeout(() => setRunSummaryTour(true), 150);
       return () => window.clearTimeout(timer);
     }

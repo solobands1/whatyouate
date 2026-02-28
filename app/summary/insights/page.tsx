@@ -124,10 +124,9 @@ export default function InsightsPage() {
 
   useEffect(() => {
     if (!user) return;
-    const seen = localStorage.getItem(`wya_walkthrough_${user.id}`);
     const active = localStorage.getItem(`wya_walkthrough_active_${user.id}`) === "true";
     const stage = localStorage.getItem(`wya_walkthrough_stage_${user.id}`);
-    if (!seen && active && stage === "insights") {
+    if (active && stage === "insights") {
       const timer = window.setTimeout(() => setRunInsightsTour(true), 150);
       return () => window.clearTimeout(timer);
     }
