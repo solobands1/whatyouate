@@ -197,35 +197,32 @@ function overrideRangesFromProduct(analysis: any, product: any) {
     : (fat100g != null ? (Number(fat100g) * servingGrams!) / 100 : undefined);
 
   if ([kcal, proteins, carbs, fat].some((v) => v === undefined || v === null || Number.isNaN(Number(v)))) {
-    return analysis;
+    return { analysis, applied: false as const, values: null as null };
   }
 
-  const tighten = (value: number) => {
-    const v = Number(value);
-    const min = Math.max(0, Math.round(v * 0.9));
-    const max = Math.max(min, Math.round(v * 1.1));
-    return { min, max };
-  };
-
-  const cals = tighten(kcal);
-  const prot = tighten(proteins);
-  const carb = tighten(carbs);
-  const fats = tighten(fat);
+  const calories = Number(kcal);
+  const protein = Number(proteins);
+  const carbsVal = Number(carbs);
+  const fatVal = Number(fat);
 
   return {
-    ...analysis,
-    estimated_ranges: {
-      calories_min: cals.min,
-      calories_max: cals.max,
-      protein_g_min: prot.min,
-      protein_g_max: prot.max,
-      carbs_g_min: carb.min,
-      carbs_g_max: carb.max,
-      fat_g_min: fats.min,
-      fat_g_max: fats.max
+    analysis: {
+      ...analysis,
+      estimated_ranges: {
+        calories_min: calories,
+        calories_max: calories,
+        protein_g_min: protein,
+        protein_g_max: protein,
+        carbs_g_min: carbsVal,
+        carbs_g_max: carbsVal,
+        fat_g_min: fatVal,
+        fat_g_max: fatVal
+      },
+      confidence_overall_0_1: Math.max(analysis?.confidence_overall_0_1 ?? 0, 0.9),
+      optional_quick_confirm_options: undefined
     },
-    confidence_overall_0_1: 0.9,
-    optional_quick_confirm_options: undefined
+    applied: true as const,
+    values: { calories, protein, carbs: carbsVal, fat: fatVal }
   };
 }
 
@@ -293,8 +290,40 @@ export async function POST(req: Request) {
               ...analysis,
               database_match_confidence_0_1: matchConfidence
             };
-            if (matchConfidence >= 0.85) {
-              analysis = overrideRangesFromProduct(analysis, best);
+            function normalizeBrand(s: string) {
+              return s.toLowerCase().replace(/[^a-z0-9]/g, "");
+            }
+
+            const brandMatch =
+              detectedBrand &&
+              best?.brands &&
+              normalizeBrand(best.brands).includes(
+                normalizeBrand(detectedBrand)
+              );
+
+            if (
+              matchConfidence >= 0.65 &&
+              brandMatch
+            ) {
+              const override = overrideRangesFromProduct(analysis, best);
+              analysis = override.analysis;
+              if (best?.brands) {
+                const cleanBrand =
+                  best.brands
+                    .split(",")[0]
+                    .trim()
+                    .replace(/\s+/g, " ");
+
+                analysis = {
+                  ...analysis,
+                  name: cleanBrand
+                };
+              }
+              if (override.applied) {
+                console.log("[OFF override] calories:", override.values?.calories);
+                console.log("[OFF override] protein:", override.values?.protein);
+                console.log("[OFF override] name:", analysis.name);
+              }
             } else {
               analysis = {
                 ...analysis,

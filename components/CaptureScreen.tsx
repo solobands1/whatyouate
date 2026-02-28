@@ -164,6 +164,7 @@ export default function CaptureScreen() {
     }
     const data = await response.json();
     const parsed = coerceAnalysis(data?.analysis);
+    parsed.name = data.analysis?.name ?? parsed.name;
     const adjusted =
       parsed.estimated_ranges.calories_min === parsed.estimated_ranges.calories_max
         ? parsed
@@ -257,6 +258,7 @@ const openCamera = async () => {
     if (type === "food") return "Noted";
     return "Workout noted";
   }, [type]);
+  const displayName = analysis?.name ?? analysis?.detected_items?.[0]?.name ?? "Meal";
 
   const derivedQuickOptions = useMemo(() => {
     if (!analysis?.detected_items?.length) return [];
@@ -347,6 +349,7 @@ const openCamera = async () => {
     }
     const data = await response.json();
     const parsed = coerceAnalysis(data?.analysis);
+    parsed.name = data.analysis?.name ?? parsed.name;
     const adjusted =
       parsed.estimated_ranges.calories_min === parsed.estimated_ranges.calories_max
         ? parsed
@@ -384,6 +387,7 @@ const openCamera = async () => {
     }
     const data = await response.json();
     const parsed = coerceAnalysis(data?.analysis);
+    parsed.name = data.analysis?.name ?? parsed.name;
     const adjusted =
       parsed.estimated_ranges.calories_min === parsed.estimated_ranges.calories_max
         ? parsed
@@ -623,7 +627,7 @@ const openCamera = async () => {
           <Card className="mt-6">
             <p className="text-xs text-muted/70">{summaryTitle}</p>
             {analysis.confidence_overall_0_1 < 0.2 &&
-            (analysis.detected_items?.[0]?.name ?? "Meal") === "Meal" ? (
+            displayName === "Meal" ? (
               <div className="mt-2">
                 <p className="text-sm text-ink/80">Couldn’t analyze that photo.</p>
                 <p className="mt-1 text-xs text-muted/70">Try another angle or a clearer meal photo.</p>
@@ -631,7 +635,7 @@ const openCamera = async () => {
             ) : (
               <>
                 <p className="mt-2 text-lg font-semibold text-ink/90">
-                  {analysis.detected_items?.[0]?.name ?? "Meal"}
+                  {displayName}
                 </p>
                 <div className="mt-4 flex gap-6 text-sm text-muted">
                   <div>

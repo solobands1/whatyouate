@@ -279,7 +279,7 @@ export default function SummaryScreen() {
     return meals
       .slice()
       .sort((a, b) => b.ts - a.ts)
-      .map((meal) => meal.analysisJson.detected_items?.[0]?.name ?? "")
+      .map((meal) => meal.analysisJson?.name ?? meal.analysisJson?.detected_items?.[0]?.name ?? "")
       .filter(Boolean)
       .slice(0, 8)
       .map((name) => name.toLowerCase());
