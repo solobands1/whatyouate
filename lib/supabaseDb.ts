@@ -189,7 +189,7 @@ export async function saveProfile(userId: string, profile: UserProfile) {
     ensureLocalLoaded();
     memProfiles[userId] = profile;
     persistLocal();
-    return;
+    return { success: true };
   }
 
   const payload = {
@@ -207,6 +207,7 @@ export async function saveProfile(userId: string, profile: UserProfile) {
   };
   const { error } = await supabase.from("profiles").upsert(payload, { onConflict: "user_id" });
   if (error) throw error;
+  return { success: true };
 }
 
 export async function addMeal(userId: string, analysis: MealAnalysis, imageOptional?: string, corrections?: any) {
