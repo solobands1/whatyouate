@@ -235,7 +235,8 @@ export async function addMeal(userId: string, analysis: MealAnalysis, imageOptio
     calories: approxFromRange(ranges.calories_min, ranges.calories_max),
     protein: approxFromRange(ranges.protein_g_min, ranges.protein_g_max),
     carbs: approxFromRange(ranges.carbs_g_min, ranges.carbs_g_max),
-    fat: approxFromRange(ranges.fat_g_min, ranges.fat_g_max)
+    fat: approxFromRange(ranges.fat_g_min, ranges.fat_g_max),
+    status: "processing"
   };
   const { data, error } = await supabase.from("meals").insert(payload).select("*").single();
   if (error) {
@@ -275,7 +276,8 @@ export async function updateMeal(id: string, analysis: MealAnalysis, corrections
     calories: approxFromRange(ranges.calories_min, ranges.calories_max),
     protein: approxFromRange(ranges.protein_g_min, ranges.protein_g_max),
     carbs: approxFromRange(ranges.carbs_g_min, ranges.carbs_g_max),
-    fat: approxFromRange(ranges.fat_g_min, ranges.fat_g_max)
+    fat: approxFromRange(ranges.fat_g_min, ranges.fat_g_max),
+    status: "done"
   };
   const { data, error } = await supabase.from("meals").update(payload).eq("id", id).select("*").single();
   if (error) handleSupabaseError("meals", error);

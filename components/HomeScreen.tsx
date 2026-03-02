@@ -41,6 +41,7 @@ export default function HomeScreen() {
   );
   const mountedRef = useRef(true);
   const recentSentinelRef = useRef<HTMLDivElement | null>(null);
+  const foodInputRef = useRef<HTMLInputElement | null>(null);
   const [visibleRecentCount, setVisibleRecentCount] = useState(6);
   const [editRecents, setEditRecents] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<{
@@ -48,6 +49,30 @@ export default function HomeScreen() {
     id: string;
   } | null>(null);
   const [deletingItem, setDeletingItem] = useState(false);
+
+  const handleFoodPhotoClick = () => {
+    foodInputRef.current?.click();
+  };
+
+  const handleFoodFileSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = event.target.files?.[0] ?? null;
+    if (!selected) return;
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result ?? ""));
+      reader.onerror = () => reject(new Error("Failed to read file"));
+      reader.readAsDataURL(selected);
+    });
+    try {
+      sessionStorage.setItem(
+        "wya_pending_capture",
+        JSON.stringify({ name: selected.name, type: selected.type, dataUrl })
+      );
+    } catch {
+      // If storage fails, fall back to capture screen.
+    }
+    router.push("/capture?type=food&from=home");
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -661,13 +686,22 @@ export default function HomeScreen() {
 
         <div className="mt-4 h-px w-full bg-ink/5" />
         <div className="mt-4 space-y-4">
-          <Link
-            href="/capture?type=food"
+          <input
+            ref={foodInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="sr-only"
+            onChange={handleFoodFileSelected}
+          />
+          <button
+            type="button"
             data-tour="food-action"
             className="block w-full rounded-xl bg-primary px-5 py-4 text-center text-base font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] ring-1 ring-white/40 transition hover:bg-primary/90 active:scale-[0.98]"
+            onClick={handleFoodPhotoClick}
           >
             Take Food Photo
-          </Link>
+          </button>
           <div className="grid grid-cols-2 gap-3 text-xs" data-tour="workout-markers">
             <button
               type="button"

@@ -65,6 +65,30 @@ export default function CaptureScreen() {
   }, [file]);
 
   useEffect(() => {
+    if (file || typeof window === "undefined") return;
+    const raw = sessionStorage.getItem("wya_pending_capture");
+    if (!raw) return;
+    try {
+      const parsed = JSON.parse(raw) as { name?: string; type?: string; dataUrl?: string };
+      if (!parsed?.dataUrl) return;
+      sessionStorage.removeItem("wya_pending_capture");
+      fetch(parsed.dataUrl)
+        .then((res) => res.blob())
+        .then((blob) => {
+          const restored = new File([blob], parsed.name ?? "capture.jpg", {
+            type: parsed.type ?? blob.type ?? "image/jpeg"
+          });
+          setFile(restored);
+        })
+        .catch(() => {
+          // Ignore restore errors.
+        });
+    } catch {
+      // Ignore malformed storage.
+    }
+  }, [file]);
+
+  useEffect(() => {
     if (!file || !user) return;
     if (type === "food") {
       handleAnalyze(file).catch(() => {
@@ -86,6 +110,10 @@ export default function CaptureScreen() {
         streamRef.current = null;
       }
     };
+  }, []);
+
+  useEffect(() => {
+    openCamera();
   }, []);
 
   useEffect(() => {
@@ -150,6 +178,10 @@ export default function CaptureScreen() {
       fileToThumbnailDataUrl(selected)
     ]);
     setImageBase64(resized);
+    const placeholder = safeFallbackAnalysis();
+    const pendingMeal = await addMeal(user.id, placeholder, thumb);
+    setMeal(pendingMeal);
+    window.dispatchEvent(new Event("meals-updated"));
     const response = await fetch("http://10.0.0.107:3000/api/analyze-food", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -171,15 +203,10 @@ export default function CaptureScreen() {
         : widenRangesIfLowConfidence(parsed);
     setAnalysisError("");
     setAnalysis(adjusted);
-    let savedMeal: MealLog | null = null;
     try {
-      savedMeal = await addMeal(user.id, adjusted, thumb);
+      await updateMeal(pendingMeal.id, adjusted);
     } catch (err) {
-      console.error("Meal insert failed", err);
-    }
-    if (savedMeal) {
-      setMeal(savedMeal);
-      window.dispatchEvent(new Event("meals-updated"));
+      console.error("Meal update failed", err);
     }
     setStatus("done");
   };
@@ -201,17 +228,13 @@ const stopCamera = () => {
   setCameraMode("idle");
 };
 
-const openCamera = async () => {
-  if (!canUseInAppCamera) {
-    fileInputRef.current?.click();
-    return;
+function openCamera() {
+  setCameraMode("file");
+
+  if (fileInputRef.current) {
+    fileInputRef.current.click();
   }
-  try {
-    await startLiveCamera();
-  } catch {
-    fileInputRef.current?.click();
-  }
-};
+}
 
   const captureFrame = async () => {
     const video = videoRef.current;
@@ -509,35 +532,19 @@ const openCamera = async () => {
                 </button>
               </div>
             </div>
-          ) : canUseInAppCamera ? (
-            <button
-              type="button"
-              className="block w-full rounded-xl bg-primary px-5 py-4 text-center text-base font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] ring-1 ring-white/40 transition hover:bg-primary/90 active:scale-[0.98]"
-              onClick={openCamera}
-            >
-              Open Camera
-            </button>
           ) : (
-            <>
-              <label
-                htmlFor="camera-file"
-                className="block w-full rounded-xl bg-primary px-5 py-4 text-center text-base font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] ring-1 ring-white/40 transition hover:bg-primary/90 active:scale-[0.98]"
-              >
-                Open Camera
-              </label>
-              <input
-                id="camera-file"
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                className="sr-only"
-                onChange={(event) => {
-                  const selected = event.target.files?.[0] ?? null;
-                  setFile(selected);
-                }}
-              />
-            </>
+            <input
+              id="camera-file"
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="sr-only"
+              onChange={(event) => {
+                const selected = event.target.files?.[0] ?? null;
+                setFile(selected);
+              }}
+            />
           )}
           </div>
         )}
