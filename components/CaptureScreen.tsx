@@ -8,7 +8,8 @@ import { fileToBase64, fileToThumbnailDataUrl, minutesBetween, formatApprox } fr
 import { coerceAnalysis, LOW_CONFIDENCE_THRESHOLD, safeFallbackAnalysis } from "../lib/ai/schema";
 import Card from "./Card";
 import { useAuth } from "./AuthProvider";
-import { addMeal, addWorkout, endActiveWorkouts, getActiveWorkout, updateMeal } from "../lib/supabaseDb";
+import { addMeal, addWorkout, endActiveWorkouts, getActiveWorkout } from "../lib/supabaseDb";
+import { enqueueMeal } from "../lib/mealQueue";
 
 export default function CaptureScreen() {
   const searchParams = useSearchParams();
@@ -92,11 +93,8 @@ export default function CaptureScreen() {
     if (!file || !user) return;
     if (type === "food") {
       handleAnalyze(file).catch(() => {
-        const fallback = safeFallbackAnalysis();
-        setAnalysis(fallback);
         setStatus("done");
         setAnalysisError("Couldn’t analyze that photo. Try again.");
-        addMeal(user.id, fallback).then((saved) => setMeal(saved));
       });
     } else {
       handleWorkout(file);
@@ -182,38 +180,11 @@ export default function CaptureScreen() {
     const pendingMeal = await addMeal(user.id, placeholder, thumb);
     setMeal(pendingMeal);
     window.dispatchEvent(new Event("meals-updated"));
+    enqueueMeal(pendingMeal.id, resized);
     if (redirectRef.current) window.clearTimeout(redirectRef.current);
     redirectRef.current = window.setTimeout(() => {
       router.push("/");
     }, 1600);
-    const response = await fetch("http://10.0.0.107:3000/api/analyze-food", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        imageBase64: resized,
-        imageBase64Secondary: packagingImage ?? undefined,
-        hints: hints ?? undefined
-      })
-    });
-    if (!response.ok) {
-      throw new Error("Analyze request failed");
-    }
-    const data = await response.json();
-    const parsed = coerceAnalysis(data?.analysis);
-    parsed.name = data.analysis?.name ?? parsed.name;
-    const adjusted =
-      parsed.estimated_ranges.calories_min === parsed.estimated_ranges.calories_max
-        ? parsed
-        : widenRangesIfLowConfidence(parsed);
-    setAnalysisError("");
-    setAnalysis(adjusted);
-    try {
-      await updateMeal(pendingMeal.id, adjusted);
-      window.dispatchEvent(new Event("meals-updated"));
-    } catch (err) {
-      console.error("Meal update failed", err);
-    }
-    setStatus("done");
   };
 
 async function startLiveCamera() {
@@ -282,158 +253,6 @@ function openCamera() {
     }
   };
 
-  const summaryTitle = useMemo(() => {
-    if (type === "food") return "Noted";
-    return "Workout noted";
-  }, [type]);
-  const displayName = analysis?.name ?? analysis?.detected_items?.[0]?.name ?? "Meal";
-
-  const derivedQuickOptions = useMemo(() => {
-    if (!analysis?.detected_items?.length) return [];
-    const name = analysis.detected_items[0]?.name?.toLowerCase() ?? "";
-    if (name.includes("burger")) return ["Beef", "Chicken", "Plant-based", "Turkey"];
-    if (name.includes("pizza")) return ["Cheese", "Pepperoni", "Vegetable", "Chicken"];
-    if (name.includes("taco") || name.includes("burrito")) return ["Beef", "Chicken", "Fish", "Vegetarian"];
-    if (name.includes("salad")) return ["Chicken", "Fish", "Egg", "Vegetarian"];
-    if (name.includes("sandwich")) return ["Turkey", "Chicken", "Beef", "Vegetarian"];
-    if (name.includes("bowl")) return ["Chicken", "Beef", "Fish", "Vegetarian"];
-    if (name.includes("pasta")) return ["Meat", "Chicken", "Seafood", "Vegetarian"];
-    if (name.includes("sushi")) return ["Salmon", "Tuna", "Shrimp", "Vegetarian"];
-    if (name.includes("yogurt")) return ["Dairy", "Non-dairy", "Added granola", "Plain"];
-    if (name.includes("egg")) return ["Eggs", "Eggs + meat", "Vegetarian", "With toast"];
-    return ["Mixed plate", "Sandwich", "Bowl", "Other"];
-  }, [analysis]);
-
-  const derivedDishCandidates = useMemo(() => {
-    if (!analysis?.detected_items?.length) return [];
-    const name = analysis.detected_items[0]?.name?.toLowerCase() ?? "";
-    if (!name) return [];
-    if (name.includes("fries")) return ["Poutine", "Loaded fries", "Side fries"];
-    if (name.includes("sandwich") || name.includes("steak")) return ["Philly cheesesteak", "Steak sandwich"];
-    if (name.includes("burger")) return ["Burger with fries", "Cheeseburger", "Burger bowl"];
-    if (name.includes("pizza")) return ["Pepperoni pizza", "Cheese pizza", "Veggie pizza"];
-    if (name.includes("taco") || name.includes("burrito")) return ["Burrito bowl", "Taco plate", "Loaded tacos"];
-    if (name.includes("salad")) return ["Chicken salad", "Cobb salad", "Greek salad"];
-    if (name.includes("pasta")) return ["Pasta with chicken", "Pasta with meat", "Veggie pasta"];
-    if (name.includes("noodle") || name.includes("ramen")) return ["Ramen bowl", "Noodle bowl", "Stir-fry noodles"];
-    if (name.includes("sushi")) return ["Salmon roll", "Tuna roll", "Sushi combo"];
-    if (name.includes("bowl")) return ["Burrito bowl", "Poke bowl", "Rice bowl"];
-    return [];
-  }, [analysis]);
-
-  const quickOptions =
-    analysis?.confidence_overall_0_1 && analysis.confidence_overall_0_1 < LOW_CONFIDENCE_THRESHOLD
-      ? (analysis.optional_quick_confirm_options?.length ? analysis.optional_quick_confirm_options : derivedQuickOptions)
-      : [];
-
-  const clarifyChips = useMemo(() => {
-    if (!analysis?.confidence_overall_0_1 || analysis.confidence_overall_0_1 >= LOW_CONFIDENCE_THRESHOLD) {
-      return [];
-    }
-    const name = analysis.detected_items?.[0]?.name?.toLowerCase() ?? "";
-    if (name.includes("burger") || name.includes("sandwich") || name.includes("taco") || name.includes("burrito")) {
-      return ["Beef", "Chicken", "Vegetarian", "Takeout"];
-    }
-    if (name.includes("salad") || name.includes("bowl")) {
-      return ["Chicken", "Fish", "Vegetarian", "No dairy"];
-    }
-    if (name.includes("pizza")) {
-      return ["Cheese", "Pepperoni", "Vegetable", "Takeout"];
-    }
-    return ["Vegetarian", "No dairy", "Takeout"];
-  }, [analysis]);
-
-  const handleSaveCorrection = async () => {
-    if (!meal) return;
-    await updateMeal(meal.id, analysis ?? safeFallbackAnalysis(), {
-      note: quickOption || correction || undefined,
-      chips: selectedChip ? [selectedChip] : []
-    });
-    setEditOpen(false);
-    if (redirectRef.current) window.clearTimeout(redirectRef.current);
-    router.push("/");
-  };
-
-  const handleInteract = () => {
-    if (redirectRef.current) window.clearTimeout(redirectRef.current);
-  };
-
-  const reanalyzeMeal = async (hints?: string, packagingImage?: string) => {
-    if (!meal || !imageBase64) return;
-    setStatus("processing");
-    const response = await fetch("/api/analyze-food", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        imageBase64,
-        imageBase64Secondary: packagingImage ?? undefined,
-        hints: hints ?? undefined
-      })
-    });
-    if (!response.ok) {
-      setAnalysisError("Couldn’t refine that photo.");
-      setStatus("done");
-      return;
-    }
-    const data = await response.json();
-    const parsed = coerceAnalysis(data?.analysis);
-    parsed.name = data.analysis?.name ?? parsed.name;
-    const adjusted =
-      parsed.estimated_ranges.calories_min === parsed.estimated_ranges.calories_max
-        ? parsed
-        : widenRangesIfLowConfidence(parsed);
-    setAnalysisError("");
-    setAnalysis(adjusted);
-    await updateMeal(meal.id, adjusted, {
-      note: quickOption || correction || restaurantNote || hints || undefined,
-      chips: selectedChip ? [selectedChip] : hints ? [hints] : []
-    });
-    setStatus("done");
-  };
-
-  const handlePrecisionScan = async (selected: File, mode: "label" | "packaging") => {
-    if (!user || !imageBase64) return;
-    setStatus("refining");
-    const packagingImageBase64 = await buildResizedDataUrl(selected);
-    const hints =
-      mode === "label"
-        ? "Nutrition label provided. Prefer exact macro values and serving size."
-        : "Packaging/front provided. Infer exact product name and SKU.";
-    const response = await fetch("/api/analyze-food", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        imageBase64,
-        imageBase64Secondary: packagingImageBase64,
-        hints
-      })
-    });
-    if (!response.ok) {
-      setAnalysisError("Couldn’t refine that photo.");
-      setStatus("done");
-      return;
-    }
-    const data = await response.json();
-    const parsed = coerceAnalysis(data?.analysis);
-    parsed.name = data.analysis?.name ?? parsed.name;
-    const adjusted =
-      parsed.estimated_ranges.calories_min === parsed.estimated_ranges.calories_max
-        ? parsed
-        : widenRangesIfLowConfidence(parsed);
-    setAnalysisError("");
-    if (meal) {
-      await updateMeal(meal.id, adjusted);
-      setAnalysis(adjusted);
-    } else {
-      const savedMeal = await addMeal(user.id, adjusted);
-      setMeal(savedMeal);
-      setAnalysis(adjusted);
-    }
-    setIsImproved(true);
-    setStatus("done");
-    setShowPrecisionModal(false);
-  };
-
   const widenRangesIfLowConfidence = (input: MealAnalysis) => {
     if (input.confidence_overall_0_1 >= LOW_CONFIDENCE_THRESHOLD) return input;
     const ranges = input.estimated_ranges;
@@ -467,17 +286,6 @@ function openCamera() {
 
   return (
     <div className="min-h-screen bg-surface">
-      <input
-        ref={packagingInputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        className="sr-only"
-        onChange={(event) => {
-          const selected = event.target.files?.[0] ?? null;
-          if (selected) handlePrecisionScan(selected, precisionScanMode);
-        }}
-      />
       <div
         className={
           preview

@@ -6,6 +6,7 @@ import Joyride, { CallBackProps, STATUS, type Step } from "react-joyride";
 import { useRouter } from "next/navigation";
 import type { MealLog, UserProfile, WorkoutSession } from "../lib/types";
 import { formatApprox, formatDateShort, todayKey } from "../lib/utils";
+import "../lib/mealQueue";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
 import { useAuth } from "./AuthProvider";
