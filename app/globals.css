@@ -38,3 +38,84 @@ body {
 .react-joyride__button--skip {
   display: inline-flex !important;
 }
+
+@keyframes scaleIn {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.animate-scaleIn {
+  animation: scaleIn 0.35s ease-out forwards;
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+@keyframes circleImpact {
+  0% {
+    transform: scale(0.6) rotate(-2deg);
+    opacity: 0;
+  }
+  55% {
+    transform: scale(1.18) rotate(2deg);
+    opacity: 1;
+  }
+  75% {
+    transform: scale(0.95) rotate(-1deg);
+  }
+  90% {
+    transform: scale(1.05) rotate(1deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes glowPulse {
+  0% {
+    box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+  }
+  60% {
+    box-shadow: 0 0 25px rgba(0, 0, 0, 0.15);
+  }
+  100% {
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+}
+
+@keyframes checkmarkDraw {
+  0% {
+    stroke-dashoffset: 70;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-circleImpact {
+  animation:
+    circleImpact 0.5s cubic-bezier(0.22, 1.2, 0.36, 1) forwards,
+    glowPulse 0.6s ease-out forwards;
+}
+
+.animate-checkmark .checkmark-path {
+  stroke-dasharray: 70;
+  stroke-dashoffset: 70;
+  animation: checkmarkDraw 0.6s ease-out forwards;
+}

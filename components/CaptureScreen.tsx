@@ -182,6 +182,10 @@ export default function CaptureScreen() {
     const pendingMeal = await addMeal(user.id, placeholder, thumb);
     setMeal(pendingMeal);
     window.dispatchEvent(new Event("meals-updated"));
+    if (redirectRef.current) window.clearTimeout(redirectRef.current);
+    redirectRef.current = window.setTimeout(() => {
+      router.push("/");
+    }, 1600);
     const response = await fetch("http://10.0.0.107:3000/api/analyze-food", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -205,6 +209,7 @@ export default function CaptureScreen() {
     setAnalysis(adjusted);
     try {
       await updateMeal(pendingMeal.id, adjusted);
+      window.dispatchEvent(new Event("meals-updated"));
     } catch (err) {
       console.error("Meal update failed", err);
     }
@@ -473,17 +478,13 @@ function openCamera() {
           if (selected) handlePrecisionScan(selected, precisionScanMode);
         }}
       />
-      <div className="mx-auto flex min-h-screen max-w-md flex-col px-5 pb-20 pt-7">
-        <Link href="/" className="text-sm font-semibold text-ink underline">← Back</Link>
-
-        <div className="mt-4">
-          <h1 className="text-2xl font-semibold text-ink">
-            {type === "food" ? "Food photo" : "Workout photo"}
-          </h1>
-          <p className="mt-2 text-sm text-muted/80">
-            {type === "food" ? "Saved on capture." : "A quick moment."}
-          </p>
-        </div>
+      <div
+        className={
+          preview
+            ? "relative h-screen w-screen overflow-hidden bg-black"
+            : "mx-auto flex min-h-screen max-w-md flex-col px-5 pb-20 pt-7"
+        }
+      >
 
         {!file && (
           <div className="mt-6">
@@ -550,291 +551,40 @@ function openCamera() {
         )}
 
         {preview && (
-          <Card className="mt-5 p-3">
-            <img src={preview} alt="Preview" className="w-full rounded-xl object-cover" />
-            {status === "done" && requireDone && (
-              <>
-                <button
-                  className="mt-3 w-full rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white"
-                  onClick={() => router.push("/")}
+          <div className="relative w-full">
+            <img
+              src={preview}
+              alt="Preview"
+              className="w-full object-cover"
+            />
+            <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white/80 to-transparent pointer-events-none" />
+
+            <div className="absolute inset-0 flex items-center justify-center bg-white/30 backdrop-blur-[1.5px]">
+              <div className="flex h-32 w-32 items-center justify-center rounded-full bg-primary shadow-2xl animate-circleImpact">
+                <svg
+                  className="h-16 w-16 text-white animate-checkmark"
+                  viewBox="0 0 52 52"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="5"
                 >
-                  Done
-                </button>
-                {analysis?.precision_mode_available && (
-                  <button
-                    className="mt-3 w-full rounded-xl bg-primary/80 px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary"
-                    onClick={() => setShowPrecisionModal(true)}
-                  >
-                    Click to improve nutrition accuracy
-                  </button>
-                )}
-                {analysis?.confidence_overall_0_1 &&
-                  analysis.confidence_overall_0_1 < LOW_CONFIDENCE_THRESHOLD && (
-                  <button
-                    className="mt-3 w-full text-xs text-muted/70 underline"
-                    onClick={() => setShowRestaurantInput((open) => !open)}
-                  >
-                    Add restaurant description (optional)
-                  </button>
-                )}
-                {showRestaurantInput && (
-                  <div className="mt-2">
-                    <input
-                      type="text"
-                      value={restaurantNote}
-                      onChange={(event) => setRestaurantNote(event.target.value)}
-                      placeholder="e.g., McDonald’s"
-                      className="w-full rounded-xl border border-ink/10 px-3 py-2 text-sm"
-                    />
-                    <button
-                      className="mt-2 w-full rounded-xl bg-ink/5 px-3 py-2 text-xs font-semibold text-ink/80"
-                      onClick={() => {
-                        handleInteract();
-                        if (restaurantNote.trim()) {
-                          reanalyzeMeal(restaurantNote.trim());
-                          setShowRestaurantInput(false);
-                        }
-                      }}
-                    >
-                      Apply
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
-          </Card>
-        )}
-
-        {(status === "processing" || status === "refining") && (
-          <Card className="mt-6">
-            <p className="text-sm text-muted/80">
-              {loadingMessages[loadingMessageIndex]}
-            </p>
-          </Card>
-        )}
-
-        {status === "done" && type !== "food" && (
-          <Card className="mt-6">
-            <p className="text-xs text-muted/70">{summaryTitle}</p>
-            <p className="mt-2 text-sm text-ink/90">
-              {workoutDuration ? `Workout session: ~${workoutDuration} minutes` : "Noted."}
-            </p>
-            {!preview && requireDone && (
-              <button
-                className="mt-3 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white"
-                onClick={() => router.push("/")}
-              >
-                Done
-              </button>
-            )}
-          </Card>
-        )}
-
-        {status === "done" && type === "food" && analysis && (
-          <Card className="mt-6">
-            <p className="text-xs text-muted/70">{summaryTitle}</p>
-            {analysis.confidence_overall_0_1 < 0.2 &&
-            displayName === "Meal" ? (
-              <div className="mt-2">
-                <p className="text-sm text-ink/80">Couldn’t analyze that photo.</p>
-                <p className="mt-1 text-xs text-muted/70">Try another angle or a clearer meal photo.</p>
+                  <path
+                    d="M14 27 L22 35 L38 18"
+                    className="checkmark-path"
+                  />
+                </svg>
               </div>
-            ) : (
-              <>
-                <p className="mt-2 text-lg font-semibold text-ink/90">
-                  {displayName}
-                </p>
-                <div className="mt-4 flex gap-6 text-sm text-muted">
-                  <div>
-                    <p className="text-base font-semibold text-ink/90">
-                      {formatApprox(
-                        analysis.estimated_ranges.calories_min,
-                        analysis.estimated_ranges.calories_max
-                      )}
-                      {isImproved && (
-                        <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
-                          Improved
-                        </span>
-                      )}
-                    </p>
-                    <p className="text-[11px] text-muted/60">Calories · approx.</p>
-                  </div>
-                  <div>
-                    <p className="text-base font-semibold text-ink/90">
-                      {formatApprox(
-                        analysis.estimated_ranges.protein_g_min,
-                        analysis.estimated_ranges.protein_g_max,
-                        "g"
-                      )}
-                    </p>
-                    <p className="text-[11px] text-muted/60">Protein · approx.</p>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {quickOptions.length > 0 && (
-              <div className="mt-4">
-                <p className="text-[10px] uppercase tracking-wide text-muted/60">Quick confirm (optional)</p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {quickOptions.map((option) => (
-                    <button
-                      key={option}
-                      className={`rounded-full border px-3 py-1 text-xs font-medium ${
-                        quickOption === option ? "border-ink/20 bg-ink/10 text-ink/80" : "border-ink/10 text-ink/60"
-                      }`}
-                      onClick={() => {
-                        handleInteract();
-                        setQuickOption(option);
-                        setCorrection("");
-                        reanalyzeMeal(option);
-                      }}
-                    >
-                      {option}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {derivedDishCandidates.length > 0 &&
-              analysis?.confidence_overall_0_1 &&
-              analysis.confidence_overall_0_1 < LOW_CONFIDENCE_THRESHOLD && (
-                <div className="mt-4">
-                  <p className="text-[10px] uppercase tracking-wide text-muted/60">
-                    Possible dish (tap to refine)
-                  </p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {derivedDishCandidates.map((candidate) => (
-                      <button
-                        key={candidate}
-                        className="rounded-full border border-ink/10 px-3 py-1 text-xs font-medium text-ink/60"
-                        onClick={() => {
-                          handleInteract();
-                          setCorrection(candidate);
-                          reanalyzeMeal(candidate);
-                        }}
-                      >
-                        {candidate}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-            {clarifyChips.length > 0 && (
-              <div className="mt-4">
-                <p className="text-[10px] uppercase tracking-wide text-muted/60">Clarify (optional)</p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {clarifyChips.map((chip) => (
-                    <button
-                      key={chip}
-                      className={`rounded-full border px-3 py-1 text-xs font-medium ${
-                        selectedChip === chip ? "border-ink/20 bg-ink/10 text-ink/80" : "border-ink/10 text-ink/60"
-                      }`}
-                      onClick={() => {
-                        handleInteract();
-                        setSelectedChip(chip);
-                        reanalyzeMeal(chip);
-                      }}
-                    >
-                      {chip}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            
-
-            {analysisError && (
-              <p className="mt-3 text-xs text-muted/70">{analysisError}</p>
-            )}
-
-            {!preview && requireDone && (
-              <>
-                <button
-                  className="mt-3 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white"
-                  onClick={() => router.push("/")}
-                >
-                  Done
-                </button>
-                {analysis?.confidence_overall_0_1 &&
-                  analysis.confidence_overall_0_1 < LOW_CONFIDENCE_THRESHOLD && (
-                  <button
-                    className="mt-3 text-xs text-muted/70 underline"
-                    onClick={() => setShowRestaurantInput((open) => !open)}
-                  >
-                    Add restaurant description (optional)
-                  </button>
-                )}
-                {showRestaurantInput && (
-                  <div className="mt-2">
-                    <input
-                      type="text"
-                      value={restaurantNote}
-                      onChange={(event) => setRestaurantNote(event.target.value)}
-                      placeholder="e.g., McDonald’s"
-                      className="w-full rounded-xl border border-ink/10 px-3 py-2 text-sm"
-                    />
-                    <button
-                      className="mt-2 rounded-xl bg-ink/5 px-3 py-2 text-xs font-semibold text-ink/80"
-                      onClick={() => {
-                        handleInteract();
-                        if (restaurantNote.trim()) {
-                          reanalyzeMeal(restaurantNote.trim());
-                          setShowRestaurantInput(false);
-                        }
-                      }}
-                    >
-                      Apply
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
-          </Card>
-        )}
-        {showPrecisionModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
-            <div className="w-full max-w-sm rounded-2xl bg-white p-5 text-sm text-ink shadow-xl">
-              <p className="text-base font-semibold">Improve Accuracy</p>
-              <p className="mt-2 text-sm text-ink/80">
-                {analysis?.detected_brand
-                  ? "We detected a packaged item. You can scan the nutrition label for exact values."
-                  : "You can adjust portion size or confirm the food type to tighten estimates."}
-              </p>
-              <div className="mt-4 space-y-3">
-                <button
-                  className="w-full rounded-xl border border-ink/10 bg-ink/5 px-4 py-2 text-xs font-semibold text-ink/70"
-                  onClick={() => {
-                    setPrecisionScanMode("label");
-                    packagingInputRef.current?.click();
-                    setShowPrecisionModal(false);
-                  }}
-                  disabled={status === "refining"}
-                >
-                  Scan nutrition label
-                </button>
-                <button
-                  className="w-full rounded-xl border border-ink/10 bg-ink/5 px-4 py-2 text-xs font-semibold text-ink/70"
-                  onClick={() => {
-                    setPrecisionScanMode("packaging");
-                    packagingInputRef.current?.click();
-                    setShowPrecisionModal(false);
-                  }}
-                  disabled={status === "refining"}
-                >
-                  Scan packaging/front
-                </button>
-              </div>
-              <button
-                className="mt-4 w-full rounded-xl bg-ink/5 px-4 py-2 text-xs font-semibold text-ink/70"
-                onClick={() => setShowPrecisionModal(false)}
-              >
-                Close
-              </button>
             </div>
+          </div>
+        )}
+        {preview && (
+          <div className="mt-6 flex flex-col items-center">
+            <p className="text-lg font-semibold text-primary animate-fadeIn">
+              Image Captured
+            </p>
+            <p className="mt-1 text-sm text-muted/70">
+              Adding to your day…
+            </p>
           </div>
         )}
       </div>

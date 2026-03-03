@@ -52,6 +52,7 @@ export interface MealLog {
   imageThumb?: string;
   analysisJson: MealAnalysis;
   userCorrection?: string;
+  status?: "processing" | "done";
 }
 
 export interface WorkoutSession {

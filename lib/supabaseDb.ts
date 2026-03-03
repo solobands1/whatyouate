@@ -131,7 +131,8 @@ function mapMeal(row: any): MealLog {
     })(),
     analysisJson: analysis,
     userCorrection: undefined,
-    imageThumb: row.image_url ?? undefined
+    imageThumb: row.image_url ?? undefined,
+    status: row.status ?? "done"
   };
 }
 

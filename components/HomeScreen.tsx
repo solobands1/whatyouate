@@ -754,24 +754,30 @@ export default function HomeScreen() {
                         className="inline-flex w-full items-center justify-between rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs text-ink/80"
                       >
                         <span>
-                          {(() => {
-                            const displayName =
-                              meal.analysisJson?.name ??
-                              meal.analysisJson?.detected_items?.[0]?.name ??
-                              "Meal";
-                            return formatTitle(displayName);
-                          })()}{" "}
-                          ·{" "}
-                          {formatClean(
-                            meal.analysisJson.estimated_ranges.calories_min,
-                            meal.analysisJson.estimated_ranges.calories_max,
-                            "kcal"
-                          )}{" "}
-                          ·{" "}
-                          {formatClean(
-                            meal.analysisJson.estimated_ranges.protein_g_min,
-                            meal.analysisJson.estimated_ranges.protein_g_max,
-                            "g"
+                          {meal.status === "processing" ? (
+                            "Analyzing food…"
+                          ) : (
+                            <>
+                              {(() => {
+                                const displayName =
+                                  meal.analysisJson?.name ??
+                                  meal.analysisJson?.detected_items?.[0]?.name ??
+                                  "Meal";
+                                return formatTitle(displayName);
+                              })()}{" "}
+                              ·{" "}
+                              {formatClean(
+                                meal.analysisJson.estimated_ranges.calories_min,
+                                meal.analysisJson.estimated_ranges.calories_max,
+                                "kcal"
+                              )}{" "}
+                              ·{" "}
+                              {formatClean(
+                                meal.analysisJson.estimated_ranges.protein_g_min,
+                                meal.analysisJson.estimated_ranges.protein_g_max,
+                                "g"
+                              )}
+                            </>
                           )}
                         </span>
                         {editRecents && (
