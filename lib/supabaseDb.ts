@@ -271,13 +271,22 @@ export async function updateMeal(id: string, analysis: MealAnalysis, corrections
     return meal;
   }
 
+  function roundCalories(value: number) {
+    if (value <= 50) return Math.round(value / 5) * 5;
+    return Math.round(value / 10) * 10;
+  }
+
+  function roundGram(value: number) {
+    return Math.round(value);
+  }
+
   const ranges = analysis.estimated_ranges;
   const payload = {
     analysis_json: analysis,
-    calories: approxFromRange(ranges.calories_min, ranges.calories_max),
-    protein: approxFromRange(ranges.protein_g_min, ranges.protein_g_max),
-    carbs: approxFromRange(ranges.carbs_g_min, ranges.carbs_g_max),
-    fat: approxFromRange(ranges.fat_g_min, ranges.fat_g_max),
+    calories: roundCalories(approxFromRange(ranges.calories_min, ranges.calories_max)),
+    protein: roundGram(approxFromRange(ranges.protein_g_min, ranges.protein_g_max)),
+    carbs: roundGram(approxFromRange(ranges.carbs_g_min, ranges.carbs_g_max)),
+    fat: roundGram(approxFromRange(ranges.fat_g_min, ranges.fat_g_max)),
     status: "done"
   };
   const { data, error } = await supabase.from("meals").update(payload).eq("id", id).select("*").single();

@@ -60,7 +60,10 @@ async function processNext() {
     const response = await fetch("/api/analyze-food", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ imageBase64: job.imageBase64 })
+      body: JSON.stringify({
+        imageBase64: job.imageBase64,
+        mealId: job.mealId
+      })
     });
 
     if (!response.ok) throw new Error("Analyze failed");
