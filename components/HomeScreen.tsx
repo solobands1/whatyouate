@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Joyride, { CallBackProps, STATUS, type Step } from "react-joyride";
 import { useRouter } from "next/navigation";
 import type { MealLog, UserProfile, WorkoutSession } from "../lib/types";
 import { formatApprox, formatDateShort, todayKey } from "../lib/utils";
+import { supabase } from "../lib/supabaseClient";
 import "../lib/mealQueue";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
@@ -50,6 +51,7 @@ export default function HomeScreen() {
     id: string;
   } | null>(null);
   const [deletingItem, setDeletingItem] = useState(false);
+  const realtimeRefreshRef = useRef<number | null>(null);
 
   const handleFoodPhotoClick = () => {
     foodInputRef.current?.click();
@@ -92,7 +94,7 @@ export default function HomeScreen() {
     }
   }, [loading, user, router]);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!user) return;
     setLoadingData(true);
     setLoadError(null);
@@ -114,7 +116,7 @@ export default function HomeScreen() {
       if (!mountedRef.current) return;
       setLoadingData(false);
     }
-  };
+  }, [user]);
 
   const refreshActiveWorkout = async () => {
     if (!user) return;
@@ -149,7 +151,7 @@ export default function HomeScreen() {
   useEffect(() => {
     if (!user) return;
     loadData();
-  }, [user]);
+  }, [user, loadData]);
 
   useEffect(() => {
     setEditRecents(false);
@@ -164,13 +166,43 @@ export default function HomeScreen() {
     const handler = () => loadData();
     window.addEventListener("profile-updated", handler as EventListener);
     return () => window.removeEventListener("profile-updated", handler as EventListener);
-  }, [user]);
+  }, [user, loadData]);
 
   useEffect(() => {
     const handler = () => loadData();
     window.addEventListener("meals-updated", handler as EventListener);
     return () => window.removeEventListener("meals-updated", handler as EventListener);
-  }, [user]);
+  }, [user, loadData]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel("meals-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "meals" },
+        (payload: any) => {
+          const rowUserId = payload?.new?.user_id ?? payload?.old?.user_id;
+          if (rowUserId !== user.id) return;
+          if (realtimeRefreshRef.current) {
+            window.clearTimeout(realtimeRefreshRef.current);
+          }
+          realtimeRefreshRef.current = window.setTimeout(() => {
+            loadData();
+          }, 250);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      if (realtimeRefreshRef.current) {
+        window.clearTimeout(realtimeRefreshRef.current);
+        realtimeRefreshRef.current = null;
+      }
+      supabase.removeChannel(channel);
+    };
+  }, [user, loadData]);
 
   useEffect(() => {
     if (!user) return;
@@ -751,7 +783,7 @@ export default function HomeScreen() {
                   <div className="col-span-2 space-y-2">
                     {group.meals.map((meal) => (
                       <div
-                        key={meal.id}
+                        key={`${meal.id}-${meal.calories}-${meal.protein}`}
                         className="inline-flex w-full items-center justify-between rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs text-ink/80"
                       >
                         <span>
@@ -767,17 +799,21 @@ export default function HomeScreen() {
                                 return formatTitle(displayName);
                               })()}{" "}
                               ·{" "}
-                              {formatClean(
-                                meal.analysisJson.estimated_ranges.calories_min,
-                                meal.analysisJson.estimated_ranges.calories_max,
-                                "kcal"
-                              )}{" "}
+                              {meal.calories
+                                ? `${meal.calories} kcal`
+                                : formatClean(
+                                    meal.analysisJson.estimated_ranges.calories_min,
+                                    meal.analysisJson.estimated_ranges.calories_max,
+                                    "kcal"
+                                  )}{" "}
                               ·{" "}
-                              {formatClean(
-                                meal.analysisJson.estimated_ranges.protein_g_min,
-                                meal.analysisJson.estimated_ranges.protein_g_max,
-                                "g"
-                              )}
+                              {meal.protein
+                                ? `${meal.protein} g`
+                                : formatClean(
+                                    meal.analysisJson.estimated_ranges.protein_g_min,
+                                    meal.analysisJson.estimated_ranges.protein_g_max,
+                                    "g"
+                                  )}
                             </>
                           )}
                         </span>

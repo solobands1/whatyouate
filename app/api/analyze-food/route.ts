@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { FOOD_ANALYSIS_PROMPT } from "../../../lib/ai/prompt";
 import { coerceAnalysis, safeFallbackAnalysis } from "../../../lib/ai/schema";
-import { supabase } from "../../../lib/supabaseClient";
-import { updateMeal } from "../../../lib/supabaseDb";
+import { supabaseServer } from "../../../lib/server/supabaseServer";
 
 const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
@@ -306,15 +305,70 @@ function overrideRangesFromProduct(analysis: any, product: any) {
   };
 }
 
+async function updateMealServer(mealId: string, analysis: any) {
+  const ranges = analysis.estimated_ranges;
+  const approxFromRange = (min: number, max: number) => Math.round((min + max) / 2);
+  const roundCalories = (value: number) => {
+    if (value <= 50) return Math.round(value / 5) * 5;
+    return Math.round(value / 10) * 10;
+  };
+  const roundGram = (value: number) => Math.round(value);
+  const calories =
+    ranges.calories_min === ranges.calories_max
+      ? ranges.calories_min
+      : roundCalories(approxFromRange(ranges.calories_min, ranges.calories_max));
+  const protein =
+    ranges.protein_g_min === ranges.protein_g_max
+      ? ranges.protein_g_min
+      : roundGram(approxFromRange(ranges.protein_g_min, ranges.protein_g_max));
+  const carbs =
+    ranges.carbs_g_min === ranges.carbs_g_max
+      ? ranges.carbs_g_min
+      : roundGram(approxFromRange(ranges.carbs_g_min, ranges.carbs_g_max));
+  const fat =
+    ranges.fat_g_min === ranges.fat_g_max
+      ? ranges.fat_g_min
+      : roundGram(approxFromRange(ranges.fat_g_min, ranges.fat_g_max));
+  const payload = {
+    analysis_json: analysis,
+    calories,
+    protein,
+    carbs,
+    fat,
+    status: "done"
+  };
+  const { error } = await supabaseServer.from("meals").update(payload).eq("id", mealId);
+  if (error) throw error;
+  if (process.env.DEBUG_MEALS === "1") {
+    const { data: updatedRow, error: selectError } = await supabaseServer
+      .from("meals")
+      .select("calories, protein, carbs, fat, status")
+      .eq("id", mealId)
+      .maybeSingle();
+    if (selectError) {
+      console.error("[MEAL DB AFTER UPDATE] select error", selectError);
+      return;
+    }
+    console.log("[MEAL DB AFTER UPDATE]", {
+      mealId,
+      calories: updatedRow?.calories,
+      protein: updatedRow?.protein,
+      carbs: updatedRow?.carbs,
+      fat: updatedRow?.fat,
+      status: updatedRow?.status
+    });
+  }
+}
+
 async function enrichWithOpenFoodFacts(mealId: string | undefined, analysis: any) {
   if (!mealId) {
-    console.log("[OFF enrichment] skipped");
+    console.log("[OFF enrichment] skipped no product");
     return;
   }
 
   console.log("[OFF enrichment] started", mealId);
 
-  const { data: mealRow } = await supabase
+  const { data: mealRow } = await supabaseServer
     .from("meals")
     .select("status")
     .eq("id", mealId)
@@ -323,88 +377,111 @@ async function enrichWithOpenFoodFacts(mealId: string | undefined, analysis: any
   const detectedProduct = analysis?.detected_product;
   const analysisName = analysis?.name;
   if (!detectedBrand) {
-    console.log("[OFF enrichment] skipped");
+    console.log("[OFF enrichment] skipped no product");
     return;
   }
 
   try {
-    const primarySearch =
-      analysis?.name ||
-      `${analysis?.detected_brand ?? ""} ${analysis?.detected_product ?? ""}`.trim();
+    const cleanQuery = (value: string) => value.replace(/\s+/g, " ").trim();
+    const normalize = (value: string) => value.toLowerCase();
+    const stripGenericWords = (value: string) => {
+      const generic = ["shake", "chocolate", "meal"];
+      const words = value
+        .split(/\s+/)
+        .filter((word) => word && !generic.includes(word.toLowerCase()));
+      return cleanQuery(words.join(" "));
+    };
+    const queryCandidates = [
+      { kind: "brand_product", value: cleanQuery(`${detectedBrand ?? ""} ${detectedProduct ?? ""}`) },
+      { kind: "brand_name", value: cleanQuery(`${detectedBrand ?? ""} ${analysisName ?? ""}`) },
+      { kind: "product_only", value: detectedProduct ? cleanQuery(detectedProduct) : "" },
+      { kind: "name_only", value: analysisName ? cleanQuery(analysisName) : "" }
+    ].filter((entry) => entry.value);
 
-    if (!primarySearch) {
-      console.log("[OFF enrichment] skipped");
-      return;
-    }
-    console.log("[OFF enrichment] search", primarySearch);
-
-    const offResponse = await fetch(
-      `${OFF_SEARCH_URL}?search_terms=${encodeURIComponent(primarySearch)}&search_simple=1&json=1`
-    );
-    if (offResponse.ok) {
+    const searchOnce = async (query: string) => {
+      console.log("[OFF enrichment] search", query);
+      const offResponse = await fetch(
+        `${OFF_SEARCH_URL}?search_terms=${encodeURIComponent(query)}&search_simple=1&json=1&action=process`
+      );
+      if (!offResponse.ok) {
+        throw new Error("OFF search failed");
+      }
       const offData = await offResponse.json();
       console.log("[OFF enrichment] products", offData?.products?.length ?? 0);
-      const productForMatch = detectedProduct ?? analysisName ?? "";
-      let best = pickBestProduct(offData?.products ?? [], detectedBrand, productForMatch);
+      return offData?.products ?? [];
+    };
+
+    let products: any[] = [];
+    let best: any = null;
+    const productForMatch = detectedProduct ?? analysisName ?? "";
+    for (const entry of queryCandidates) {
+      products = await searchOnce(entry.value);
+      if (products.length === 0 && detectedProduct && entry.kind === "product_only") {
+        const stripped = stripGenericWords(detectedProduct);
+        if (stripped && stripped !== entry.value) {
+          products = await searchOnce(stripped);
+        }
+      }
+      if (products.length === 0) continue;
+      best = pickBestProduct(products, detectedBrand, productForMatch);
       console.log("[OFF enrichment] best", Boolean(best));
-      if (!best && detectedBrand && detectedProduct && analysisName) {
-        const retryResponse = await fetch(
-          `${OFF_SEARCH_URL}?search_terms=${encodeURIComponent(analysisName)}&search_simple=1&json=1`
-        );
-        if (retryResponse.ok) {
-          const retryData = await retryResponse.json();
-          best = pickBestProduct(retryData?.products ?? [], detectedBrand, productForMatch);
-        }
-      }
-      if (best) {
-        const matchConfidence = computeMatchConfidence(best, detectedBrand, productForMatch);
-        let enriched = {
-          ...analysis,
-          database_match_confidence_0_1: matchConfidence
-        };
-        function normalizeBrand(s: string) {
-          return s.toLowerCase().replace(/[^a-z0-9]/g, "");
-        }
-
-        const brandMatch =
-          detectedBrand &&
-          best?.brands &&
-          normalizeBrand(best.brands).includes(
-            normalizeBrand(detectedBrand)
-          );
-
-        if (matchConfidence >= 0.45) {
-          const override = overrideRangesFromProduct(enriched, best);
-          enriched = override.analysis;
-          if (best?.brands) {
-            const cleanBrand =
-              best.brands
-                .split(",")[0]
-                .trim()
-                .replace(/\s+/g, " ");
-
-            enriched = {
-              ...enriched,
-              name: cleanBrand
-            };
-          }
-          if (override.applied) {
-            console.log("[OFF enrichment] matched", enriched.name);
-            await updateMeal(mealId, enriched);
-          } else {
-            console.log("[OFF enrichment] skipped");
-          }
-        } else {
-          console.log("[OFF enrichment] skipped");
-        }
-      } else {
-        console.log("[OFF enrichment] skipped");
-      }
-    } else {
-      console.log("[OFF enrichment] skipped");
+      if (best) break;
     }
-  } catch {
-    console.log("[OFF enrichment] skipped");
+
+    if (!best) {
+      const normalizedName = analysisName ? normalize(analysisName) : "";
+      const normalizedBrand = detectedBrand ? normalize(detectedBrand) : "";
+      const looksGeneric =
+        normalizedName.includes("shake") ||
+        normalizedName.includes("meal") ||
+        normalizedName.includes("chocolate");
+      const missingBrand = normalizedBrand && normalizedName && !normalizedName.includes(normalizedBrand);
+      if (detectedBrand && (looksGeneric || missingBrand)) {
+        const combined = cleanQuery(`${detectedBrand} ${detectedProduct || analysisName || ""}`);
+        if (combined && combined !== analysisName) {
+          const renamed = {
+            ...analysis,
+            name: combined
+          };
+          await updateMealServer(mealId, renamed);
+        }
+      }
+      console.log("[OFF enrichment] skipped no product");
+      return;
+    }
+
+    const matchConfidence = computeMatchConfidence(best, detectedBrand, productForMatch);
+    if (matchConfidence < 0.45) {
+      console.log("[OFF enrichment] skipped low confidence");
+      return;
+    }
+
+    let enriched = {
+      ...analysis,
+      database_match_confidence_0_1: matchConfidence
+    };
+
+    const override = overrideRangesFromProduct(enriched, best);
+    if (override.applied) {
+      enriched = override.analysis;
+    }
+    if (best?.brands) {
+      const cleanBrand =
+        best.brands
+          .split(",")[0]
+          .trim()
+          .replace(/\s+/g, " ");
+
+      enriched = {
+        ...enriched,
+        name: cleanBrand
+      };
+    }
+    console.log("[OFF enrichment] matched", enriched.name);
+    await updateMealServer(mealId, enriched);
+    console.log("[OFF enrichment] updated meal", mealId);
+  } catch (err) {
+    console.error("[OFF enrichment] error", err);
   }
 }
 
@@ -441,6 +518,10 @@ export async function POST(req: Request) {
     console.log("[AI detected_brand]", rawAnalysis?.detected_brand);
     console.time("response_formatting");
     let analysis = coerceAnalysis(rawAnalysis);
+
+    if (mealId) {
+      await updateMealServer(mealId, analysis);
+    }
 
     console.timeEnd("response_formatting");
     console.timeEnd("request_total");

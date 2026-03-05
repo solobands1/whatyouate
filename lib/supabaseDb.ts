@@ -103,24 +103,6 @@ function mapMeal(row: any): MealLog {
   if (!analysis || !analysis.estimated_ranges) {
     analysis = safeFallbackAnalysis();
   }
-  if (analysis?.estimated_ranges) {
-    if (typeof row.calories === "number") {
-      analysis.estimated_ranges.calories_min = row.calories;
-      analysis.estimated_ranges.calories_max = row.calories;
-    }
-    if (typeof row.protein === "number") {
-      analysis.estimated_ranges.protein_g_min = row.protein;
-      analysis.estimated_ranges.protein_g_max = row.protein;
-    }
-    if (typeof row.carbs === "number") {
-      analysis.estimated_ranges.carbs_g_min = row.carbs;
-      analysis.estimated_ranges.carbs_g_max = row.carbs;
-    }
-    if (typeof row.fat === "number") {
-      analysis.estimated_ranges.fat_g_min = row.fat;
-      analysis.estimated_ranges.fat_g_max = row.fat;
-    }
-  }
   return {
     id: String(row.id),
     ts: (() => {
@@ -130,6 +112,10 @@ function mapMeal(row: any): MealLog {
       return Number.isFinite(parsed) ? parsed : Date.now();
     })(),
     analysisJson: analysis,
+    calories: row.calories ?? undefined,
+    protein: row.protein ?? undefined,
+    carbs: row.carbs ?? undefined,
+    fat: row.fat ?? undefined,
     userCorrection: undefined,
     imageThumb: row.image_url ?? undefined,
     status: row.status ?? "done"
@@ -281,17 +267,37 @@ export async function updateMeal(id: string, analysis: MealAnalysis, corrections
   }
 
   const ranges = analysis.estimated_ranges;
+  const calories =
+    ranges.calories_min === ranges.calories_max
+      ? ranges.calories_min
+      : roundCalories(approxFromRange(ranges.calories_min, ranges.calories_max));
+  const protein =
+    ranges.protein_g_min === ranges.protein_g_max
+      ? ranges.protein_g_min
+      : roundGram(approxFromRange(ranges.protein_g_min, ranges.protein_g_max));
+  const carbs =
+    ranges.carbs_g_min === ranges.carbs_g_max
+      ? ranges.carbs_g_min
+      : roundGram(approxFromRange(ranges.carbs_g_min, ranges.carbs_g_max));
+  const fat =
+    ranges.fat_g_min === ranges.fat_g_max
+      ? ranges.fat_g_min
+      : roundGram(approxFromRange(ranges.fat_g_min, ranges.fat_g_max));
   const payload = {
     analysis_json: analysis,
-    calories: roundCalories(approxFromRange(ranges.calories_min, ranges.calories_max)),
-    protein: roundGram(approxFromRange(ranges.protein_g_min, ranges.protein_g_max)),
-    carbs: roundGram(approxFromRange(ranges.carbs_g_min, ranges.carbs_g_max)),
-    fat: roundGram(approxFromRange(ranges.fat_g_min, ranges.fat_g_max)),
+    calories,
+    protein,
+    carbs,
+    fat,
     status: "done"
   };
-  const { data, error } = await supabase.from("meals").update(payload).eq("id", id).select("*").single();
+  const { error } = await supabase.from("meals").update(payload).eq("id", id);
   if (error) handleSupabaseError("meals", error);
-  return mapMeal(data);
+  return {
+    id,
+    ts: Date.now(),
+    analysisJson: analysis
+  };
 }
 
 export async function listMeals(userId: string, limit = 50) {

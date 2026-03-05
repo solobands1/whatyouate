@@ -51,6 +51,10 @@ export interface MealLog {
   imageBlob?: Blob;
   imageThumb?: string;
   analysisJson: MealAnalysis;
+  calories?: number;
+  protein?: number;
+  carbs?: number;
+  fat?: number;
   userCorrection?: string;
   status?: "processing" | "done";
 }
