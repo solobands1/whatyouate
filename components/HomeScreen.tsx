@@ -13,6 +13,7 @@ import Card from "./Card";
 import { useAuth } from "./AuthProvider";
 import {
   addWorkout,
+  addMeal,
   deleteMeal,
   deleteWorkout,
   getActiveWorkout,
@@ -73,6 +74,38 @@ export default function HomeScreen() {
 
   const handleFoodPhotoClick = () => {
     foodInputRef.current?.click();
+  };
+
+  const openManualMealEntry = () => {
+    setEditForm({
+      name: "",
+      calories: "",
+      protein: "",
+      carbs: "",
+      fat: ""
+    });
+
+    setEditingMeal({
+      id: "",
+      ts: Date.now(),
+      analysisJson: {
+        name: "",
+        estimated_ranges: {
+          calories_min: 0,
+          calories_max: 0,
+          protein_g_min: 0,
+          protein_g_max: 0,
+          carbs_g_min: 0,
+          carbs_g_max: 0,
+          fat_g_min: 0,
+          fat_g_max: 0
+        }
+      }
+    } as any);
+  };
+
+  const handleBarcodeScan = () => {
+    console.log("Barcode scanning coming next");
   };
 
   const openMealEditor = (meal: MealLog) => {
@@ -157,9 +190,16 @@ export default function HomeScreen() {
         estimated_ranges: ranges
       };
 
-      await updateMeal(editingMeal.id, updatedAnalysis as any, {
-        userCorrection: editForm.name
-      });
+      if (!editingMeal.id) {
+        const created = await addMeal(user.id, updatedAnalysis as any);
+        await updateMeal(created.id, updatedAnalysis as any, {
+          userCorrection: editForm.name
+        });
+      } else {
+        await updateMeal(editingMeal.id, updatedAnalysis as any, {
+          userCorrection: editForm.name
+        });
+      }
 
       setEditingMeal(null);
       setEditRecents(false);
@@ -887,17 +927,35 @@ export default function HomeScreen() {
           >
             Take Food Photo
           </button>
-          <div className="grid grid-cols-2 gap-3 text-xs" data-tour="workout-markers">
+          <div className="mt-1 flex w-[92%] mx-auto">
             <button
               type="button"
-              className="block w-full rounded-xl border border-ink/5 bg-ink/5 px-3 py-1.5 text-center font-normal text-ink/60 transition hover:bg-ink/10 active:scale-[0.98]"
+              className="flex flex-1 items-center justify-center gap-2 rounded-l-xl rounded-r-none bg-primary px-3 py-2 text-xs font-semibold text-white shadow-[0_8px_20px_rgba(15,23,42,0.14)] ring-1 ring-white/40 transition-all duration-150 hover:bg-primary/90 active:translate-y-[1px] active:shadow-[0_3px_10px_rgba(15,23,42,0.18)]"
+              onClick={openManualMealEntry}
+            >
+              <span>+</span>
+              <span>Manual</span>
+            </button>
+            <button
+              type="button"
+              className="flex flex-1 items-center justify-center gap-2 rounded-r-xl rounded-l-none border-l border-white/30 bg-primary px-3 py-2 text-xs font-semibold text-white shadow-[0_8px_20px_rgba(15,23,42,0.14)] ring-1 ring-white/40 transition-all duration-150 hover:bg-primary/90 active:translate-y-[1px] active:shadow-[0_3px_10px_rgba(15,23,42,0.18)]"
+              onClick={handleBarcodeScan}
+            >
+              <span>▦</span>
+              <span>Barcode</span>
+            </button>
+          </div>
+          <div className="mx-auto flex w-[84%] text-xs" data-tour="workout-markers">
+            <button
+              type="button"
+              className="flex flex-1 items-center justify-center rounded-l-xl rounded-r-none border border-ink/15 bg-gradient-to-r from-white via-ink/5 to-white px-3 py-1.5 text-center font-normal text-ink/60 shadow-[0_8px_18px_rgba(15,23,42,0.12)] ring-1 ring-white/70 transition-all duration-150 hover:from-white hover:via-ink/10 hover:to-white active:translate-y-[1px] active:shadow-[0_3px_10px_rgba(15,23,42,0.16)]"
               onClick={() => setShowStartWorkoutModal(true)}
             >
               Start Workout
             </button>
             <button
               type="button"
-              className="block w-full rounded-xl border border-ink/5 bg-ink/5 px-3 py-1.5 text-center font-normal text-ink/60 transition hover:bg-ink/10 active:scale-[0.98]"
+              className="flex flex-1 items-center justify-center rounded-r-xl rounded-l-none border border-ink/15 border-l-0 bg-gradient-to-r from-white via-ink/5 to-white px-3 py-1.5 text-center font-normal text-ink/60 shadow-[0_8px_18px_rgba(15,23,42,0.12)] ring-1 ring-white/70 transition-all duration-150 hover:from-white hover:via-ink/10 hover:to-white active:translate-y-[1px] active:shadow-[0_3px_10px_rgba(15,23,42,0.16)]"
               onClick={() => setShowEndWorkoutModal(true)}
             >
               End Workout
@@ -1023,15 +1081,17 @@ export default function HomeScreen() {
                 <p className="text-sm text-muted/70">
                   Are you sure you want to delete this meal?
                 </p>
-                <div className="flex justify-between pt-2">
+                <div className="mt-5 flex items-center justify-end gap-2">
                   <button
-                    className="text-sm"
+                    type="button"
+                    className="rounded-xl border border-ink/10 bg-white px-3 py-2 text-xs font-semibold text-ink/70 transition hover:bg-ink/5"
                     onClick={() => setPendingDelete(null)}
                   >
                     Cancel
                   </button>
                   <button
-                    className="rounded bg-primary px-3 py-1 text-sm text-white"
+                    type="button"
+                    className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90"
                     onClick={handleConfirmDelete}
                   >
                     {deletingItem ? "Deleting..." : "Delete"}
@@ -1040,7 +1100,9 @@ export default function HomeScreen() {
               </>
             ) : (
               <>
-                <h3 className="text-sm font-semibold">Edit Meal</h3>
+                <h3 className="text-sm font-semibold">
+                  {editingMeal.id ? "Edit Meal" : "Add Food"}
+                </h3>
 
                 <label className="text-xs text-muted/70">Name</label>
                 <input
@@ -1082,17 +1144,24 @@ export default function HomeScreen() {
                   placeholder="Fat"
                 />
 
-                <div className="flex justify-between pt-2">
-                  <button
-                    className="text-sm text-red-600"
-                    onClick={() => setPendingDelete({ type: "meal", id: editingMeal.id })}
-                  >
-                    Delete
-                  </button>
-
+                <div
+                  className={`mt-5 flex items-center ${
+                    editingMeal.id ? "justify-between" : "justify-end"
+                  }`}
+                >
+                  {editingMeal.id ? (
+                    <button
+                      type="button"
+                      className="text-sm text-red-600"
+                      onClick={() => setPendingDelete({ type: "meal", id: editingMeal.id })}
+                    >
+                      Delete
+                    </button>
+                  ) : null}
                   <div className="flex gap-2">
                     <button
-                      className="text-sm"
+                      type="button"
+                      className="rounded-xl border border-ink/10 bg-white px-3 py-2 text-xs font-semibold text-ink/70 transition hover:bg-ink/5"
                       onClick={() => {
                         setEditingMeal(null);
                         setEditRecents(false);
@@ -1101,17 +1170,24 @@ export default function HomeScreen() {
                       Cancel
                     </button>
 
-                <button
-                  className={`rounded bg-primary px-3 py-1 text-sm text-white transition ${
-                    updatingMeal ? "opacity-70" : ""
-                  }`}
-                  onClick={handleUpdateMeal}
-                  disabled={updatingMeal}
-                >
-                  {updatingMeal ? "Updating..." : "Update"}
-                </button>
-              </div>
-            </div>
+                    <button
+                      type="button"
+                      className={`rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 ${
+                        updatingMeal ? "opacity-70" : ""
+                      }`}
+                      onClick={handleUpdateMeal}
+                      disabled={updatingMeal}
+                    >
+                      {updatingMeal
+                        ? editingMeal.id
+                          ? "Updating..."
+                          : "Adding..."
+                        : editingMeal.id
+                          ? "Update"
+                          : "Add"}
+                    </button>
+                  </div>
+                </div>
               </>
             )}
           </div>
