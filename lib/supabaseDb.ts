@@ -123,12 +123,27 @@ function mapMeal(row: any): MealLog {
 }
 
 function mapWorkout(row: any): WorkoutSession {
-  const startedAt = row.start_ts ? new Date(row.start_ts).getTime() : undefined;
-  const endedAt = row.end_ts ? new Date(row.end_ts).getTime() : undefined;
+  const coerceTs = (value: any) => {
+    if (value == null) return undefined;
+    if (typeof value === "number" && Number.isFinite(value)) return value;
+    const asNumber = Number(value);
+    if (Number.isFinite(asNumber) && asNumber > 0) return asNumber;
+    const asDate = new Date(value).getTime();
+    return Number.isFinite(asDate) ? asDate : undefined;
+  };
+
+  const startedAt = coerceTs(row.start_ts);
+  let endedAt = coerceTs(row.end_ts);
   let durationMin: number | undefined;
-  if (startedAt && endedAt) {
+  const durationFromRow = Number(row.duration_min);
+  if (Number.isFinite(durationFromRow) && durationFromRow >= 0) {
+    durationMin = durationFromRow;
+  } else if (startedAt != null && endedAt != null) {
     const rawMinutes = (endedAt - startedAt) / 60000;
     durationMin = rawMinutes < 1 ? 0 : Math.ceil(rawMinutes);
+  }
+  if (endedAt == null && startedAt != null && durationMin != null) {
+    endedAt = startedAt + durationMin * 60000;
   }
   return {
     id: String(row.id),

@@ -19,6 +19,7 @@ import {
   getProfile,
   listMeals,
   listWorkouts,
+  updateMeal,
   updateWorkout
 } from "../lib/supabaseDb";
 import { computeHomeMarkers, computeRecent } from "../lib/digestEngine";
@@ -41,6 +42,23 @@ export default function HomeScreen() {
   const [selectedIntensity, setSelectedIntensity] = useState<"low" | "medium" | "high" | "">(
     ""
   );
+  const [editingMeal, setEditingMeal] = useState<MealLog | null>(null);
+  const [editForm, setEditForm] = useState({
+    name: "",
+    calories: "",
+    protein: "",
+    carbs: "",
+    fat: ""
+  });
+  const [updatingMeal, setUpdatingMeal] = useState(false);
+  const [editingWorkout, setEditingWorkout] = useState<WorkoutSession | null>(null);
+  const [workoutEditHours, setWorkoutEditHours] = useState("");
+  const [workoutEditMinutes, setWorkoutEditMinutes] = useState("");
+  const [workoutEditTypes, setWorkoutEditTypes] = useState<string[]>([]);
+  const [workoutEditIntensity, setWorkoutEditIntensity] = useState<"low" | "medium" | "high" | "">(
+    ""
+  );
+  const [updatingWorkout, setUpdatingWorkout] = useState(false);
   const mountedRef = useRef(true);
   const recentSentinelRef = useRef<HTMLDivElement | null>(null);
   const foodInputRef = useRef<HTMLInputElement | null>(null);
@@ -57,6 +75,136 @@ export default function HomeScreen() {
     foodInputRef.current?.click();
   };
 
+  const openMealEditor = (meal: MealLog) => {
+    const displayName =
+      meal.analysisJson?.name ??
+      meal.analysisJson?.detected_items?.[0]?.name ??
+      "Meal";
+
+    setEditForm({
+      name: displayName,
+      calories: meal.calories?.toString() ?? "",
+      protein: meal.protein?.toString() ?? "",
+      carbs: meal.carbs?.toString() ?? "",
+      fat: meal.fat?.toString() ?? ""
+    });
+
+    setEditingMeal(meal);
+  };
+
+  const openWorkoutEditor = (workout: WorkoutSession) => {
+    const endTs = workout.endTs ?? Date.now();
+    const inferredDuration =
+      workout.durationMin ??
+      (workout.startTs ? Math.max(0, Math.round((endTs - workout.startTs) / 60000)) : 0);
+
+    const hours = Math.floor(inferredDuration / 60);
+    const minutes = inferredDuration % 60;
+    setWorkoutEditHours(String(hours));
+    setWorkoutEditMinutes(String(minutes));
+    setWorkoutEditTypes(workout.workoutTypes ?? []);
+    setWorkoutEditIntensity(workout.intensity ?? "");
+    setEditingWorkout(workout);
+  };
+
+  const handleUpdateMeal = async () => {
+    if (!editingMeal || !user) return;
+
+    try {
+      setUpdatingMeal(true);
+      const ranges = { ...editingMeal.analysisJson.estimated_ranges };
+      const toNumber = (value: string) => {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : null;
+      };
+      const calories =
+        editForm.calories.trim() === ""
+          ? editingMeal.calories ?? null
+          : toNumber(editForm.calories);
+      const protein =
+        editForm.protein.trim() === ""
+          ? editingMeal.protein ?? null
+          : toNumber(editForm.protein);
+      const carbs =
+        editForm.carbs.trim() === ""
+          ? editingMeal.carbs ?? null
+          : toNumber(editForm.carbs);
+      const fat =
+        editForm.fat.trim() === ""
+          ? editingMeal.fat ?? null
+          : toNumber(editForm.fat);
+
+      if (calories !== null) {
+        ranges.calories_min = calories;
+        ranges.calories_max = calories;
+      }
+      if (protein !== null) {
+        ranges.protein_g_min = protein;
+        ranges.protein_g_max = protein;
+      }
+      if (carbs !== null) {
+        ranges.carbs_g_min = carbs;
+        ranges.carbs_g_max = carbs;
+      }
+      if (fat !== null) {
+        ranges.fat_g_min = fat;
+        ranges.fat_g_max = fat;
+      }
+
+      const updatedAnalysis = {
+        ...(editingMeal.analysisJson as any),
+        name: editForm.name,
+        estimated_ranges: ranges
+      };
+
+      await updateMeal(editingMeal.id, updatedAnalysis as any, {
+        userCorrection: editForm.name
+      });
+
+      setEditingMeal(null);
+      setEditRecents(false);
+
+      await loadData();
+    } catch (err) {
+      console.error("Meal update failed", err);
+    } finally {
+      setUpdatingMeal(false);
+    }
+  };
+
+  const handleUpdateWorkout = async () => {
+    if (!editingWorkout || !user) return;
+
+    try {
+      setUpdatingWorkout(true);
+      const parsedHours = Number(workoutEditHours);
+      const parsedMinutes = Number(workoutEditMinutes);
+      const safeHours = Number.isFinite(parsedHours) ? parsedHours : 0;
+      const safeMinutes = Number.isFinite(parsedMinutes) ? parsedMinutes : 0;
+      const computedDuration = safeHours * 60 + safeMinutes;
+      const durationMin =
+        computedDuration > 0 ? computedDuration : editingWorkout.durationMin ?? 0;
+      const endTs = editingWorkout.startTs + durationMin * 60000;
+
+      await updateWorkout(
+        editingWorkout.id,
+        user.id,
+        endTs,
+        durationMin,
+        workoutEditTypes.length > 0 ? workoutEditTypes : undefined,
+        workoutEditIntensity || undefined
+      );
+
+      setEditingWorkout(null);
+      setEditRecents(false);
+
+      await loadData();
+    } catch (err) {
+      console.error("Workout update failed", err);
+    } finally {
+      setUpdatingWorkout(false);
+    }
+  };
   const handleFoodFileSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const selected = event.target.files?.[0] ?? null;
     if (!selected) return;
@@ -135,8 +283,12 @@ export default function HomeScreen() {
     try {
       if (pendingDelete.type === "meal") {
         await deleteMeal(pendingDelete.id, user.id);
+        setEditingMeal(null);
+        setEditRecents(false);
       } else {
         await deleteWorkout(pendingDelete.id, user.id);
+        setEditingWorkout(null);
+        setEditRecents(false);
       }
       await loadData();
       window.dispatchEvent(new Event("meals-updated"));
@@ -622,7 +774,7 @@ export default function HomeScreen() {
           </div>
         </div>
       )}
-      {pendingDelete && (
+      {pendingDelete && !editingMeal && !editingWorkout && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
           <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
             <h2 className="text-base font-semibold text-ink">Delete {pendingDelete.type}</h2>
@@ -759,13 +911,20 @@ export default function HomeScreen() {
         <Card className="mt-7">
           <div className="flex items-start justify-between">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Today</p>
-            <button
-              type="button"
-              className="text-[11px] font-semibold text-ink/70 underline"
-              onClick={() => setEditRecents((prev) => !prev)}
-            >
-              {editRecents ? "Done" : "Edit"}
-            </button>
+            <div className="flex items-center gap-2">
+              {editRecents && (
+                <span className="inline-flex items-center rounded-full bg-yellow-200 px-2 py-0.5 text-[10px] font-semibold text-amber-900 shadow-[0_6px_14px_rgba(15,23,42,0.08)] ring-1 ring-yellow-100/60">
+                  Editing
+                </span>
+              )}
+              <button
+                type="button"
+                className="text-[11px] font-semibold text-ink/70 underline"
+                onClick={() => setEditRecents((prev) => !prev)}
+              >
+                {editRecents ? "Done" : "Edit"}
+              </button>
+            </div>
           </div>
           <div className="mt-3 grid grid-cols-3 text-[10px] font-semibold uppercase tracking-wide text-muted/60">
             <span className="col-span-2">Food</span>
@@ -784,7 +943,10 @@ export default function HomeScreen() {
                     {group.meals.map((meal) => (
                       <div
                         key={`${meal.id}-${meal.calories}-${meal.protein}`}
-                        className="inline-flex w-full items-center justify-between rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs text-ink/80"
+                        onClick={() => {
+                          if (editRecents) openMealEditor(meal);
+                        }}
+                        className={`inline-flex w-full items-center justify-between rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs text-ink/80 ${editRecents ? "cursor-pointer animate-wiggle" : ""}`}
                       >
                         <span>
                           {meal.status === "processing" ? (
@@ -817,15 +979,6 @@ export default function HomeScreen() {
                             </>
                           )}
                         </span>
-                        {editRecents && (
-                          <button
-                            type="button"
-                            className="ml-2 inline-flex h-5 w-5 items-center justify-center rounded-full border border-primary/20 text-[10px] text-ink/60"
-                            onClick={() => setPendingDelete({ type: "meal", id: meal.id })}
-                          >
-                            ×
-                          </button>
-                        )}
                       </div>
                     ))}
                   </div>
@@ -833,21 +986,15 @@ export default function HomeScreen() {
                     {group.workouts.map((workout) => (
                       <div
                         key={workout.id}
-                        className="flex w-full flex-col items-center justify-center rounded-full border border-ink/10 bg-ink/5 px-3 py-0.5 text-[11px] text-ink/70 leading-tight"
+                        onClick={() => {
+                          if (editRecents) openWorkoutEditor(workout);
+                        }}
+                        className={`flex w-full flex-col items-center justify-center rounded-full border border-ink/10 bg-ink/5 px-3 py-0.5 text-[11px] text-ink/70 leading-tight ${editRecents ? "cursor-pointer animate-wiggle-neutral" : ""}`}
                       >
                         <span className="font-semibold text-ink/70">
                           {formatWorkoutDurationLines(workout).title}
                         </span>
                         <span className="-mt-0.5">{formatWorkoutDurationLines(workout).detail}</span>
-                        {editRecents && (
-                          <button
-                            type="button"
-                            className="mt-1 inline-flex h-5 w-5 items-center justify-center rounded-full border border-ink/10 text-[10px] text-ink/60"
-                            onClick={() => setPendingDelete({ type: "workout", id: workout.id })}
-                          >
-                            ×
-                          </button>
-                        )}
                       </div>
                     ))}
                   </div>
@@ -866,6 +1013,260 @@ export default function HomeScreen() {
           </div>
         </Card>
       </div>
+
+      {editingMeal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="w-80 rounded-xl bg-white p-4 shadow-xl space-y-3">
+            {pendingDelete?.type === "meal" ? (
+              <>
+                <h3 className="text-sm font-semibold">Delete meal</h3>
+                <p className="text-sm text-muted/70">
+                  Are you sure you want to delete this meal?
+                </p>
+                <div className="flex justify-between pt-2">
+                  <button
+                    className="text-sm"
+                    onClick={() => setPendingDelete(null)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="rounded bg-primary px-3 py-1 text-sm text-white"
+                    onClick={handleConfirmDelete}
+                  >
+                    {deletingItem ? "Deleting..." : "Delete"}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h3 className="text-sm font-semibold">Edit Meal</h3>
+
+                <label className="text-xs text-muted/70">Name</label>
+                <input
+                  className="w-full border rounded p-1 text-sm"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  placeholder="Food name"
+                />
+
+                <label className="text-xs text-muted/70">Calories</label>
+                <input
+                  className="w-full border rounded p-1 text-sm"
+                  value={editForm.calories}
+                  onChange={(e) => setEditForm({ ...editForm, calories: e.target.value })}
+                  placeholder="Calories"
+                />
+
+                <label className="text-xs text-muted/70">Protein</label>
+                <input
+                  className="w-full border rounded p-1 text-sm"
+                  value={editForm.protein}
+                  onChange={(e) => setEditForm({ ...editForm, protein: e.target.value })}
+                  placeholder="Protein"
+                />
+
+                <label className="text-xs text-muted/70">Carbs</label>
+                <input
+                  className="w-full border rounded p-1 text-sm"
+                  value={editForm.carbs}
+                  onChange={(e) => setEditForm({ ...editForm, carbs: e.target.value })}
+                  placeholder="Carbs"
+                />
+
+                <label className="text-xs text-muted/70">Fat</label>
+                <input
+                  className="w-full border rounded p-1 text-sm"
+                  value={editForm.fat}
+                  onChange={(e) => setEditForm({ ...editForm, fat: e.target.value })}
+                  placeholder="Fat"
+                />
+
+                <div className="flex justify-between pt-2">
+                  <button
+                    className="text-sm text-red-600"
+                    onClick={() => setPendingDelete({ type: "meal", id: editingMeal.id })}
+                  >
+                    Delete
+                  </button>
+
+                  <div className="flex gap-2">
+                    <button
+                      className="text-sm"
+                      onClick={() => {
+                        setEditingMeal(null);
+                        setEditRecents(false);
+                      }}
+                    >
+                      Cancel
+                    </button>
+
+                <button
+                  className={`rounded bg-primary px-3 py-1 text-sm text-white transition ${
+                    updatingMeal ? "opacity-70" : ""
+                  }`}
+                  onClick={handleUpdateMeal}
+                  disabled={updatingMeal}
+                >
+                  {updatingMeal ? "Updating..." : "Update"}
+                </button>
+              </div>
+            </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {editingWorkout && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
+          <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
+            {pendingDelete?.type === "workout" ? (
+              <>
+                <h2 className="text-base font-semibold text-ink">Delete workout</h2>
+                <p className="mt-2 text-sm text-muted/70">
+                  Are you sure you want to delete this workout?
+                </p>
+                <div className="mt-5 flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    className="rounded-xl border border-ink/10 bg-white px-3 py-2 text-xs font-semibold text-ink/70 transition hover:bg-ink/5"
+                    onClick={() => setPendingDelete(null)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90"
+                    onClick={handleConfirmDelete}
+                  >
+                    {deletingItem ? "Deleting..." : "Delete"}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h2 className="text-base font-semibold text-ink">Edit workout</h2>
+                <p className="mt-2 text-sm text-muted/70">Update your workout details.</p>
+
+                <div className="mt-4 space-y-4">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">
+                      Duration
+                    </p>
+                    <div className="mt-2 flex items-center gap-2">
+                      <input
+                        className="w-16 rounded-lg border border-ink/10 bg-white px-3 py-2 text-xs text-ink/80"
+                        value={workoutEditHours}
+                        onChange={(e) => setWorkoutEditHours(e.target.value)}
+                        placeholder="0"
+                      />
+                      <span className="text-xs text-muted/70">hrs</span>
+                      <input
+                        className="w-16 rounded-lg border border-ink/10 bg-white px-3 py-2 text-xs text-ink/80"
+                        value={workoutEditMinutes}
+                        onChange={(e) => setWorkoutEditMinutes(e.target.value)}
+                        placeholder="0"
+                      />
+                      <span className="text-xs text-muted/70">mins</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">
+                      Workout type
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {workoutTypeOptions.map((type) => (
+                        <button
+                          key={type}
+                          type="button"
+                          className={`rounded-full border px-3 py-1 text-xs transition ${
+                            workoutEditTypes.includes(type)
+                              ? "border-primary/30 bg-primary/10 text-ink"
+                              : "border-ink/10 bg-white text-ink/70 hover:bg-ink/5"
+                          }`}
+                          onClick={() =>
+                            setWorkoutEditTypes((prev) =>
+                              prev.includes(type)
+                                ? prev.filter((item) => item !== type)
+                                : [...prev, type]
+                            )
+                          }
+                        >
+                          {type}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">
+                      Intensity
+                    </p>
+                    <div className="mt-2 flex gap-2">
+                      {([
+                        { value: "low", label: "Low" },
+                        { value: "medium", label: "Medium" },
+                        { value: "high", label: "High" }
+                      ] as const).map((level) => (
+                        <button
+                          key={level.value}
+                          type="button"
+                          className={`rounded-full border px-3 py-1 text-xs transition ${
+                            workoutEditIntensity === level.value
+                              ? "border-primary/30 bg-primary/10 text-ink"
+                              : "border-ink/10 bg-white text-ink/70 hover:bg-ink/5"
+                          }`}
+                          onClick={() =>
+                            setWorkoutEditIntensity(
+                              workoutEditIntensity === level.value ? "" : level.value
+                            )
+                          }
+                        >
+                          {level.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-5 flex items-center justify-between">
+                  <button
+                    type="button"
+                    className="text-sm text-red-600"
+                    onClick={() => setPendingDelete({ type: "workout", id: editingWorkout.id })}
+                  >
+                    Delete
+                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      className="rounded-xl border border-ink/10 bg-white px-3 py-2 text-xs font-semibold text-ink/70 transition hover:bg-ink/5"
+                      onClick={() => {
+                        setEditingWorkout(null);
+                        setEditRecents(false);
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      className={`rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 ${
+                        updatingWorkout ? "opacity-70" : ""
+                      }`}
+                      onClick={handleUpdateWorkout}
+                      disabled={updatingWorkout}
+                    >
+                      {updatingWorkout ? "Updating..." : "Update"}
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       <BottomNav current="home" />
     </div>

@@ -119,3 +119,23 @@ body {
   stroke-dashoffset: 70;
   animation: checkmarkDraw 0.6s ease-out forwards;
 }
+
+@keyframes pulseSoft {
+  0% { transform: scale(1); box-shadow: 0 0 0 rgba(0,0,0,0); filter: brightness(1); background-color: rgba(111,168,255,0.06); }
+  50% { transform: scale(1.01); box-shadow: 0 6px 14px rgba(15,23,42,0.08); filter: brightness(0.96); background-color: rgba(111,168,255,0.12); }
+  100% { transform: scale(1); box-shadow: 0 0 0 rgba(0,0,0,0); filter: brightness(1); background-color: rgba(111,168,255,0.06); }
+}
+
+.animate-wiggle {
+  animation: pulseSoft 2.2s ease-in-out infinite;
+}
+
+@keyframes pulseSoftNeutral {
+  0% { transform: scale(1); box-shadow: 0 0 0 rgba(0,0,0,0); filter: brightness(1); }
+  50% { transform: scale(1.01); box-shadow: 0 6px 14px rgba(15,23,42,0.08); filter: brightness(0.96); }
+  100% { transform: scale(1); box-shadow: 0 0 0 rgba(0,0,0,0); filter: brightness(1); }
+}
+
+.animate-wiggle-neutral {
+  animation: pulseSoftNeutral 2.2s ease-in-out infinite;
+}
