@@ -139,3 +139,14 @@ body {
 .animate-wiggle-neutral {
   animation: pulseSoftNeutral 2.2s ease-in-out infinite;
 }
+
+@keyframes scan {
+  0%   { top: 8%; }
+  50%  { top: 88%; }
+  100% { top: 8%; }
+}
+
+.animate-scan {
+  animation: scan 2s ease-in-out infinite;
+  position: absolute;
+}

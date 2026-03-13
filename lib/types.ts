@@ -17,6 +17,7 @@ export interface UserProfile {
 }
 
 export interface MealAnalysis {
+  name?: string;
   detected_items: Array<{
     name: string;
     confidence_0_1: number;

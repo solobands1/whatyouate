@@ -30,7 +30,7 @@ export function buildSuggestions(meals: MealLog[]) {
   const scores: Record<string, number> = {};
   meals.forEach((meal, index) => {
     const recencyBoost = Math.max(1, 8 - index) * 0.25;
-    const items = meal.analysisJson.detected_items.map((item) => item.name);
+    const items = (meal.analysisJson.detected_items ?? []).map((item) => item.name);
     if (meal.userCorrection) items.unshift(meal.userCorrection);
     items.forEach((name) => {
       scores[name] = (scores[name] ?? 0) + 1 + recencyBoost;
@@ -111,8 +111,8 @@ export function generateRecommendations(profile: UserProfile | undefined, meals:
 }
 
 export function buildNutrientNotes(meals: MealLog[]) {
-  const signals = meals.flatMap((meal) => meal.analysisJson.micronutrient_signals);
-  const low = signals.filter((signal) => signal.signal === "low_appearance");
+  const signals = meals.flatMap((meal) => meal.analysisJson.micronutrient_signals ?? []);
+  const low = signals.filter((signal) => signal?.signal === "low_appearance");
   if (!low.length) return [];
 
   const top = low.slice(0, 2).map((signal) =>

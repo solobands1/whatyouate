@@ -8,6 +8,7 @@ import type { MealLog, UserProfile, WorkoutSession } from "../lib/types";
 import { formatApprox, formatDateShort, todayKey } from "../lib/utils";
 import { supabase } from "../lib/supabaseClient";
 import "../lib/mealQueue";
+import BarcodeScannerOverlay from "./BarcodeScannerOverlay";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
 import { useAuth } from "./AuthProvider";
@@ -36,6 +37,7 @@ export default function HomeScreen() {
   const [showTourGate, setShowTourGate] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [barcodeOpen, setBarcodeOpen] = useState(false);
   const [showStartWorkoutModal, setShowStartWorkoutModal] = useState(false);
   const [showEndWorkoutModal, setShowEndWorkoutModal] = useState(false);
   const [activeWorkout, setActiveWorkout] = useState<WorkoutSession | null>(null);
@@ -104,8 +106,48 @@ export default function HomeScreen() {
     } as any);
   };
 
-  const handleBarcodeScan = () => {
-    console.log("Barcode scanning coming next");
+
+  const handleBarcodeDetected = async (barcode: string) => {
+    if (!user) return;
+    const res = await fetch("/api/barcode", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ barcode }),
+    });
+    if (!res.ok) return;
+    const product = await res.json();
+    const name = String(product?.name ?? "").trim() || String(product?.brand ?? "").trim();
+    if (!name) return;
+    const toVal = (v: any) => (typeof v === "number" && Number.isFinite(v) ? v : 0);
+    const cal = toVal(product?.calories);
+    const pro = toVal(product?.protein);
+    const carb = toVal(product?.carbs);
+    const fat = toVal(product?.fat);
+    const analysis = {
+      name,
+      detected_items: [{ name, confidence_0_1: 1 }],
+      estimated_ranges: {
+        calories_min: cal, calories_max: cal,
+        protein_g_min: pro, protein_g_max: pro,
+        carbs_g_min: carb, carbs_g_max: carb,
+        fat_g_min: fat, fat_g_max: fat,
+      },
+      micronutrient_signals: [],
+      confidence_overall_0_1: 1,
+      detected_brand: String(product?.brand ?? "").trim() || null,
+      detected_product: name,
+      database_match_confidence_0_1: 1,
+      precision_mode_available: false,
+    } as any;
+    try {
+      const created = await addMeal(user.id, analysis);
+      if (!created?.id) return;
+      await updateMeal(created.id, analysis);
+      const finishedMeal = { ...created, analysisJson: analysis, status: "done" as const };
+      setMeals((prev) => [finishedMeal, ...prev]);
+    } catch (err) {
+      console.error("[barcode] save failed:", err);
+    }
   };
 
   const openMealEditor = (meal: MealLog) => {
@@ -320,18 +362,19 @@ export default function HomeScreen() {
   const handleConfirmDelete = async () => {
     if (!pendingDelete || !user) return;
     setDeletingItem(true);
+    const { type, id } = pendingDelete;
     try {
-      if (pendingDelete.type === "meal") {
-        await deleteMeal(pendingDelete.id, user.id);
+      if (type === "meal") {
+        await deleteMeal(id, user.id);
+        setMeals((prev) => prev.filter((m) => m.id !== id));
         setEditingMeal(null);
         setEditRecents(false);
       } else {
-        await deleteWorkout(pendingDelete.id, user.id);
+        await deleteWorkout(id, user.id);
+        setWorkouts((prev) => prev.filter((w) => w.id !== id));
         setEditingWorkout(null);
         setEditRecents(false);
       }
-      await loadData();
-      window.dispatchEvent(new Event("meals-updated"));
     } catch {
       // Silent for now.
     } finally {
@@ -844,7 +887,7 @@ export default function HomeScreen() {
           </div>
         </div>
       )}
-      <div className="mx-auto flex min-h-screen max-w-md flex-col px-5 pb-24 pt-6">
+      <div className="relative mx-auto flex min-h-screen max-w-md flex-col px-5 pb-24 pt-6">
         <header className="mb-4">
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-semibold text-ink">
@@ -939,7 +982,7 @@ export default function HomeScreen() {
             <button
               type="button"
               className="flex flex-1 items-center justify-center gap-2 rounded-r-xl rounded-l-none border-l border-white/30 bg-primary px-3 py-2 text-xs font-semibold text-white shadow-[0_8px_20px_rgba(15,23,42,0.14)] ring-1 ring-white/40 transition-all duration-150 hover:bg-primary/90 active:translate-y-[1px] active:shadow-[0_3px_10px_rgba(15,23,42,0.18)]"
-              onClick={handleBarcodeScan}
+              onClick={() => setBarcodeOpen(true)}
             >
               <span>▦</span>
               <span>Barcode</span>
@@ -1344,6 +1387,11 @@ export default function HomeScreen() {
         </div>
       )}
 
+      <BarcodeScannerOverlay
+        open={barcodeOpen}
+        onClose={() => setBarcodeOpen(false)}
+        onDetected={handleBarcodeDetected}
+      />
       <BottomNav current="home" />
     </div>
   );
