@@ -142,9 +142,8 @@ function mapWorkout(row: any): WorkoutSession {
     const rawMinutes = (endedAt - startedAt) / 60000;
     durationMin = rawMinutes < 1 ? 0 : Math.ceil(rawMinutes);
   }
-  if (endedAt == null && startedAt != null && durationMin != null && durationMin > 0) {
-    endedAt = startedAt + durationMin * 60000;
-  }
+  // Do NOT infer endedAt from durationMin — if end_ts is NULL in DB, the workout
+  // is active regardless of what duration_min says.
   return {
     id: String(row.id),
     startTs: startedAt ?? Date.now(),
@@ -506,7 +505,10 @@ export async function getActiveWorkout(userId: string) {
     .order("start_ts", { ascending: false })
     .limit(1);
   if (error) handleSupabaseError("workouts", error);
-  return data?.[0] ? mapWorkout(data[0]) : null;
+  if (!data?.[0]) return null;
+  const mapped = mapWorkout(data[0]);
+  // Defensive: only treat as active if endTs is truly absent
+  return mapped.endTs == null ? mapped : null;
 }
 
 export async function addNudge(userId: string, type: string, message: string) {
