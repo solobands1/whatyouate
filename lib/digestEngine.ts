@@ -128,7 +128,14 @@ export function computeRecent(meals: MealLog[], workouts: WorkoutSession[]) {
       workout
     }))
   ];
-  return items.sort((a, b) => b.ts - a.ts);
+  return items.sort((a, b) => {
+    const diff = b.ts - a.ts;
+    if (diff !== 0) return diff;
+    // Tiebreaker: newer startTs wins (handles equal-second endTs from ms vs seconds storage)
+    const aStart = a.type === "workout" ? a.workout.startTs : 0;
+    const bStart = b.type === "workout" ? b.workout.startTs : 0;
+    return bStart - aStart;
+  });
 }
 
 export function computeHomeMarkers(meals: MealLog[], workouts: WorkoutSession[], profile?: UserProfile) {
