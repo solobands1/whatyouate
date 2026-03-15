@@ -123,7 +123,8 @@ export function computeRecent(meals: MealLog[], workouts: WorkoutSession[]) {
     ...meals.map((meal) => ({ type: "meal" as const, ts: meal.ts, meal })),
     ...workouts.map((workout) => ({
       type: "workout" as const,
-      ts: workout.endTs ?? workout.startTs,
+      // Floor to second so old ms-precision rows don't sort above newer second-precision rows
+      ts: Math.floor((workout.endTs ?? workout.startTs) / 1000) * 1000,
       workout
     }))
   ];

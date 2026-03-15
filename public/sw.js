@@ -1,4 +1,4 @@
-const CACHE_NAME = "what-you-ate-v2";
+const CACHE_NAME = "what-you-ate-v3";
 const CORE_ASSETS = [
   "/",
   "/beta",
@@ -28,6 +28,9 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   if (!event.request.url.startsWith("http")) return;
+
+  // Never cache Supabase API requests — always fetch fresh from network.
+  if (event.request.url.includes("supabase.co")) return;
 
   if (event.request.mode === "navigate") {
     event.respondWith(
