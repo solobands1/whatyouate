@@ -7,7 +7,6 @@ import { addMeal, listMeals, updateMeal } from "../lib/supabaseDb";
 
 export function useMeals(
   user: User | null,
-  onReload: () => Promise<void>,
   onError: (msg: string) => void,
   setEditRecents: (val: boolean) => void
 ) {
@@ -101,7 +100,7 @@ export function useMeals(
 
       setEditingMeal(null);
       setEditRecents(false);
-      await onReload();
+      await load(user.id);
     } catch (err) {
       console.error("Meal update failed", err);
     } finally {

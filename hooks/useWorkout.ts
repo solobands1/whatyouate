@@ -24,7 +24,6 @@ export const WORKOUT_TYPE_OPTIONS = [
 
 export function useWorkout(
   user: User | null,
-  onReload: () => Promise<void>,
   onError: (msg: string) => void,
   setEditRecents: (val: boolean) => void
 ) {
@@ -76,7 +75,7 @@ export function useWorkout(
     try {
       const session = await addWorkout(user.id, Date.now());
       setActiveWorkout(session);
-      await onReload();
+      await load(user.id);
       notifyWorkoutsUpdated();
     } catch (err) {
       onError(err instanceof Error ? err.message : "Failed to start workout");
@@ -103,7 +102,7 @@ export function useWorkout(
       setActiveWorkout(null);
       setSelectedWorkoutTypes([]);
       setSelectedIntensity("");
-      await onReload();
+      await load(user.id);
       notifyWorkoutsUpdated();
     } catch (err) {
       console.error("[endWorkout] FAILED", err);
@@ -135,7 +134,7 @@ export function useWorkout(
       );
       setEditingWorkout(null);
       setEditRecents(false);
-      await onReload();
+      await load(user.id);
       notifyWorkoutsUpdated();
     } catch (err) {
       console.error("Workout update failed", err);

@@ -57,12 +57,11 @@ export default function HomeScreen() {
   const recentSentinelRef = useRef<HTMLDivElement | null>(null);
   const foodInputRef = useRef<HTMLInputElement | null>(null);
   const realtimeRefreshRef = useRef<number | null>(null);
-  const loadDataRef = useRef<() => Promise<void>>(async () => {});
 
   const onError = useCallback((msg: string) => setLoadError(msg), []);
 
-  const workout = useWorkout(user, () => loadDataRef.current(), onError, setEditRecents);
-  const meals = useMeals(user, () => loadDataRef.current(), onError, setEditRecents);
+  const workout = useWorkout(user, onError, setEditRecents);
+  const meals = useMeals(user, onError, setEditRecents);
 
   const loadData = useCallback(async () => {
     if (!user) return;
@@ -83,10 +82,6 @@ export default function HomeScreen() {
       if (mountedRef.current) setLoadingData(false);
     }
   }, [user, workout.load, meals.load]);
-
-  useEffect(() => {
-    loadDataRef.current = loadData;
-  }, [loadData]);
 
   const handleConfirmDelete = async () => {
     if (!pendingDelete || !user) return;
