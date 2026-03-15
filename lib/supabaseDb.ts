@@ -506,9 +506,10 @@ export async function getActiveWorkout(userId: string) {
     .limit(1);
   if (error) handleSupabaseError("workouts", error);
   if (!data?.[0]) return null;
-  const mapped = mapWorkout(data[0]);
-  // Defensive: only treat as active if endTs is truly absent
-  return mapped.endTs == null ? mapped : null;
+  // Verify end_ts is null in the raw DB row before any mapping.
+  // This is definitive — coerceTs or durationMin logic cannot interfere.
+  if (data[0].end_ts !== null && data[0].end_ts !== undefined) return null;
+  return mapWorkout(data[0]);
 }
 
 export async function addNudge(userId: string, type: string, message: string) {
