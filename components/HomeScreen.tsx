@@ -304,11 +304,14 @@ export default function HomeScreen() {
   );
   const recentItems = useMemo(() => {
     const result = computeRecent(meals.meals, completedWorkouts);
-    console.log("[recentItems] full order:", result.map(i => ({
-      type: i.type,
-      sortTs: i.ts,
-      ...(i.type === "workout" ? { id: i.workout.id.slice(0,8), endTs: i.workout.endTs, startTs: i.workout.startTs } : { id: i.meal.id.slice(0,8), mealTs: i.meal.ts }),
-    })));
+    console.log(`[recentItems] ${result.length} items:`);
+    result.forEach((i, idx) => {
+      if (i.type === "workout") {
+        console.log(`  [${idx}] WORKOUT ${i.workout.id.slice(0,8)} sortTs=${i.ts} endTs=${i.workout.endTs} startTs=${i.workout.startTs}`);
+      } else {
+        console.log(`  [${idx}] MEAL    ${i.meal.id.slice(0,8)} sortTs=${i.ts}`);
+      }
+    });
     return result;
   }, [meals.meals, completedWorkouts]);
 
