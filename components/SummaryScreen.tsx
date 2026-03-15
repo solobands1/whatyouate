@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Joyride, { CallBackProps, STATUS, type Step } from "react-joyride";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -11,6 +11,7 @@ import Card from "./Card";
 import { useAuth } from "./AuthProvider";
 import { addNudge, getProfile, listMeals, listNudges, listWorkouts, LOCAL_MODE } from "../lib/supabaseDb";
 import { computeNudges, computeSummaryMarkers } from "../lib/digestEngine";
+import { MEALS_UPDATED_EVENT, PROFILE_UPDATED_EVENT, WORKOUTS_UPDATED_EVENT } from "../lib/dataEvents";
 import { supabase } from "../lib/supabaseClient";
 
 export default function SummaryScreen() {
@@ -40,7 +41,7 @@ export default function SummaryScreen() {
     }
   }, [loading, user, router]);
 
-  const loadData = () => {
+  const loadData = useCallback(() => {
     if (!user) return;
     setLoadingData(true);
     if (LOCAL_MODE) {
@@ -106,12 +107,12 @@ export default function SummaryScreen() {
         setNudges([]);
         nudgesLoadedRef.current = true;
       });
-  };
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;
     loadData();
-  }, [user]);
+  }, [user, loadData]);
 
   useEffect(() => {
     if (!user) return;
@@ -124,10 +125,17 @@ export default function SummaryScreen() {
   }, [user]);
 
   useEffect(() => {
+    if (!user) return;
     const handler = () => loadData();
-    window.addEventListener("meals-updated", handler as EventListener);
-    return () => window.removeEventListener("meals-updated", handler as EventListener);
-  }, [user]);
+    window.addEventListener(MEALS_UPDATED_EVENT, handler as EventListener);
+    window.addEventListener(WORKOUTS_UPDATED_EVENT, handler as EventListener);
+    window.addEventListener(PROFILE_UPDATED_EVENT, handler as EventListener);
+    return () => {
+      window.removeEventListener(MEALS_UPDATED_EVENT, handler as EventListener);
+      window.removeEventListener(WORKOUTS_UPDATED_EVENT, handler as EventListener);
+      window.removeEventListener(PROFILE_UPDATED_EVENT, handler as EventListener);
+    };
+  }, [user, loadData]);
 
   useEffect(() => {
     setHydrated(true);
@@ -240,20 +248,8 @@ export default function SummaryScreen() {
       disableBeacon: true
     },
     {
-      target: '[data-tour="summary-info"]',
-      content: (
-        <div className="space-y-2">
-          <p>If you see this symbol, click on it to learn more about that section.</p>
-          <div className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-ink/10 text-xs font-semibold text-ink/70">
-            i
-          </div>
-        </div>
-      ),
-      disableBeacon: true
-    },
-    {
       target: '[data-tour="dig-deeper"]',
-      content: "Dig Deeper shows longer-term nutrient patterns.",
+      content: "Patterns shows longer-term nutrient patterns.",
       disableBeacon: true
     }
   ] as Step[];
@@ -312,6 +308,26 @@ export default function SummaryScreen() {
     return tips.slice(0, 2);
   }, [profile, gentleTargetsDisplay, avgWeekProtein, avgWeekCalories]);
 
+  const isRestrictedSuggestion = useMemo(() => {
+    const r = profile?.dietaryRestrictions ?? [];
+    return (text: string) => {
+      const lower = text.toLowerCase();
+      if ((r.includes("Vegetarian") || r.includes("Vegan")) &&
+        ["chicken", "tuna", "fish", "beef", "meat", "steak", "salmon", "turkey", "pork", "bacon"].some(w => lower.includes(w))) return true;
+      if (r.includes("Vegan") &&
+        ["yogurt", "milk", "cheese", "dairy", "egg", "butter", "cream", "whey"].some(w => lower.includes(w))) return true;
+      if (r.includes("No dairy") &&
+        ["yogurt", "milk", "cheese", "dairy", "butter", "cream", "whey"].some(w => lower.includes(w))) return true;
+      if (r.includes("No nuts") &&
+        ["nut", "almond", "cashew", "walnut", "peanut", "pecan", "pistachio"].some(w => lower.includes(w))) return true;
+      if (r.includes("No shellfish") &&
+        ["shrimp", "shellfish", "crab", "lobster", "clam", "oyster", "scallop"].some(w => lower.includes(w))) return true;
+      if (r.includes("No pork") &&
+        ["pork", "bacon", "ham", "prosciutto", "sausage"].some(w => lower.includes(w))) return true;
+      return false;
+    };
+  }, [profile?.dietaryRestrictions]);
+
   const smartAddOns = useMemo(() => {
     const tips: string[] = [];
     const goal = profile?.goalDirection ?? "maintain";
@@ -334,8 +350,8 @@ export default function SummaryScreen() {
 
     if (tips.length === 0) tips.push("Keep portions steady and pair meals with protein.");
 
-    return tips.slice(0, 2);
-  }, [profile, gentleTargetsDisplay, avgWeekCalories, avgWeekProtein]);
+    return tips.filter((tip) => !isRestrictedSuggestion(tip)).slice(0, 2);
+  }, [profile, gentleTargetsDisplay, avgWeekCalories, avgWeekProtein, isRestrictedSuggestion]);
 
   const foodIdeas = useMemo(() => {
     const ideas: string[] = [];
@@ -397,8 +413,8 @@ export default function SummaryScreen() {
       pushIf("Keep portions steady and add a balanced side with your meal.");
     }
 
-    return ideas.slice(0, 3);
-  }, [recentFoods, profile, gentleTargetsDisplay, avgWeekCalories, avgWeekProtein]);
+    return ideas.filter((idea) => !isRestrictedSuggestion(idea)).slice(0, 3);
+  }, [recentFoods, profile, gentleTargetsDisplay, avgWeekCalories, avgWeekProtein, isRestrictedSuggestion]);
 
   const formatSentenceList = (items: string[]) => {
     if (items.length === 0) return "";
@@ -454,7 +470,7 @@ export default function SummaryScreen() {
       />
       <div className="mx-auto flex min-h-screen max-w-md flex-col px-5 pb-24 pt-7">
         <header className="mb-6" data-tour="summary-header">
-          <h1 className="text-2xl font-semibold text-ink">Summary</h1>
+          <h1 className="text-2xl font-semibold text-ink">Insights</h1>
         </header>
 
         <Card data-tour="summary-today">
@@ -467,11 +483,11 @@ export default function SummaryScreen() {
               data-tour="dig-deeper"
               className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-white shadow-[0_6px_14px_rgba(15,23,42,0.14)] ring-1 ring-white/40 transition hover:bg-primary/90"
             >
-              Dig Deeper
+              Patterns
               <span className="text-[10px]">→</span>
             </Link>
           </div>
-          <div className="mt-3 flex items-baseline justify-between">
+          <div className="mt-3 flex items-baseline justify-between px-6">
             <div>
               <p className="text-[11px] uppercase tracking-wide text-muted/60">
                 Calories
@@ -499,89 +515,101 @@ export default function SummaryScreen() {
             </div>
           </div>
           <p className="mt-2 text-xs text-muted/70">
-            Suggested range
-            <span className="text-muted/50">{mealCount > 0 ? "" : " (preview)"}</span>
-            : {gentleTargetsDisplay.calories} kcal · {gentleTargetsDisplay.protein} g protein
+            {summaryMarkers.gentleTargets
+              ? `Suggested range: ${gentleTargetsDisplay.calories} kcal · ${gentleTargetsDisplay.protein} g protein`
+              : "Complete your profile for a personalized range"}
           </p>
           <div className="mt-3 h-px w-full bg-ink/5" />
         </Card>
 
         <Card className="mt-6">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Last 7 days</p>
-            <button
-              type="button"
-              data-tour="summary-info"
-              className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-ink/10 text-[10px] font-semibold text-ink/60"
-              onClick={() => setShowNudgeInsights(true)}
-            >
-              i
-            </button>
-          </div>
-          <div className="mt-3 space-y-2 text-xs text-muted/70">
-            {dayCount > 0 ? (
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Last 7 days</p>
+          <div className="mt-3 space-y-2">
+            {dayCount === 0 ? (
+              <p className="text-sm text-muted/60">Log your first meal and I'll start building your picture.</p>
+            ) : dayCount < 5 || mealCount < 10 ? (
               <p className="text-sm font-semibold text-ink/80">
-                Logged: {Math.min(dayCount, 7)} of 7 days
+                {Math.min(dayCount, 7)} of 7 days logged — still learning your patterns.
               </p>
-            ) : null}
-            <p className="text-sm font-semibold text-ink/80">
-              {dayCount >= 5 && mealCount >= 10
-                ? `Average: ${avgWeekCalories} kcal · ${avgWeekProtein} g protein`
-                : "Average: 0 kcal · 0 g protein"}
-            </p>
-            <p className="text-sm font-semibold text-ink/80">
-              Workouts: {workoutSummary.count} sessions · {workoutSummary.totalMinutes} minutes
-            </p>
-            {dayCount === 0 && <p>No days logged yet.</p>}
+            ) : (
+              <>
+                <p className="text-sm font-semibold text-ink/80">
+                  {Math.min(dayCount, 7)} of 7 days logged — solid.
+                </p>
+                <p className="text-sm font-semibold text-ink/80">
+                  {(() => {
+                    const base = `Averaging ${avgWeekCalories} kcal · ${avgWeekProtein}g protein`;
+                    if (!gentleTargetsDisplay?.calories || !avgWeekCalories) return `${base}.`;
+                    if (avgWeekCalories > gentleTargetsDisplay.calories * 1.1) return `${base} — a bit high.`;
+                    if (avgWeekCalories < gentleTargetsDisplay.calories * 0.9) return `${base} — a bit light.`;
+                    return `${base} — looking steady.`;
+                  })()}
+                </p>
+              </>
+            )}
+            {workoutSummary.count > 0 && (
+              <p className="text-sm font-semibold text-ink/80">
+                {workoutSummary.count} {workoutSummary.count === 1 ? "workout" : "workouts"} this week
+                {workoutSummary.totalMinutes > 0 ? ` · ${workoutSummary.totalMinutes} min` : ""}
+              </p>
+            )}
           </div>
         </Card>
 
         <Card className="mt-6" data-tour="nudges-card">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Awareness Nudges</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Nudges</p>
             <button
               type="button"
               data-tour="insights-button"
               className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-white shadow-[0_6px_14px_rgba(15,23,42,0.14)] ring-1 ring-white/40 transition hover:bg-primary/90"
               onClick={() => setShowNudgeInsights(true)}
             >
-              Insights
+              Why these?
               <span className="text-[10px]">→</span>
             </button>
           </div>
-          <div className="mt-4 max-h-40 space-y-3 overflow-y-auto text-sm text-ink/90">
-            {groupedNudges.length ? (
-              groupedNudges.map((group) => (
-                <div key={group.label}>
-                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted/60">
-                    {group.label}
-                  </p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {group.items.map((nudge) => (
-                      <div
-                        key={nudge.id ?? nudge.message}
-                        className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs text-ink/80"
-                      >
-                        <span>{nudge.message.replace(/[.]+$/, "")}</span>
-                        {nudge.isNew && <span className="text-[10px] text-muted/60">new</span>}
-                      </div>
-                    ))}
+          {mealCount === 0 ? (
+            <div className="mt-3 space-y-1">
+              <p className="text-sm text-ink/70">Log a few meals and I'll start learning your patterns.</p>
+              <p className="text-xs text-muted/50">Nudges appear after 5 meals.</p>
+            </div>
+          ) : mealCount < 5 ? (
+            <div className="mt-3 space-y-1">
+              <p className="text-sm text-ink/70">Getting started — log {5 - mealCount} more meal{5 - mealCount !== 1 ? "s" : ""} and I'll have my first read on your patterns.</p>
+              <div className="mt-2 flex gap-1">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className={`h-1.5 flex-1 rounded-full ${i < mealCount ? "bg-primary/60" : "bg-ink/10"}`} />
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="mt-4 max-h-40 space-y-3 overflow-y-auto text-sm text-ink/90">
+              {groupedNudges.length ? (
+                groupedNudges.map((group) => (
+                  <div key={group.label}>
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-muted/60">
+                      {group.label}
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {group.items.map((nudge) => (
+                        <div
+                          key={nudge.id ?? nudge.message}
+                          className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs text-ink/80"
+                        >
+                          <span>{nudge.message.replace(/[.]+$/, "")}</span>
+                          {nudge.isNew && <span className="text-[10px] text-muted/60">new</span>}
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))
-            ) : (
-              <p className="text-muted/70">No nudges yet.</p>
-            )}
-          </div>
-          {uniqueNudges.length === 0 && mealCount === 0 && (
-            <div className="mt-2 inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs text-ink/80">
-              Example: Protein looks a bit low today.
+                ))
+              ) : (
+                <p className="text-muted/70">No nudges yet — keep logging.</p>
+              )}
             </div>
           )}
-          {uniqueNudges.length === 0 && (
-            <p className="mt-2 text-[11px] text-muted/60">Nudges appear after a few meals.</p>
-          )}
-          {fuelingState === "under" && suggestions.length === 5 && (
+          {fuelingState === "under" && suggestions.length === 5 && mealCount >= 3 && (
             <div className="mt-4">
               <p className="text-sm text-ink/90">A small add may help.</p>
               <p className="text-xs uppercase tracking-wide text-muted/60">5 familiar ideas</p>
@@ -596,14 +624,6 @@ export default function SummaryScreen() {
           
         </Card>
 
-        {dayCount >= 5 && mealCount >= 10 && nutrientTrends.length > 0 && (
-          <Card className="mt-6">
-            <p className="text-[11px] uppercase tracking-wide text-muted/60">Nutrient Trends</p>
-            <div className="mt-3 space-y-2 text-sm text-ink/80">
-              {nutrientTrends.map((trend) => <p key={trend}>{trend}</p>)}
-            </div>
-          </Card>
-        )}
 
       </div>
 
@@ -612,9 +632,18 @@ export default function SummaryScreen() {
       {showNudgeInsights && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
           <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
-            <h2 className="text-lg font-semibold text-ink">Today’s Nudge Insights</h2>
-            <p className="mt-2 text-[13px] font-medium text-ink/80">
-              We look at your recent meals, today’s intake, and your goal to surface the most consistent patterns.
+            <div className="flex items-start justify-between gap-4">
+              <h2 className="text-base font-semibold text-ink">Why these nudges?</h2>
+              <button
+                type="button"
+                className="text-sm font-semibold text-ink/60"
+                onClick={() => setShowNudgeInsights(false)}
+              >
+                Close
+              </button>
+            </div>
+            <p className="mt-2 text-sm text-muted/70">
+              Based on your recent meals, weekly patterns, and your goal — here’s what I’m noticing.
             </p>
             <div className="mt-3 max-h-72 space-y-4 overflow-y-auto text-sm text-ink/80">
               <div>
@@ -658,13 +687,6 @@ export default function SummaryScreen() {
                 </div>
               )}
             </div>
-            <button
-              type="button"
-              className="mt-4 w-full rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90"
-              onClick={() => setShowNudgeInsights(false)}
-            >
-              Close
-            </button>
           </div>
         </div>
       )}

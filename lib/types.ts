@@ -2,6 +2,8 @@ export type Units = "metric" | "imperial";
 
 export type GoalDirection = "gain" | "maintain" | "balance" | "lose";
 
+export type ActivityLevel = "sedentary" | "lightly_active" | "moderately_active" | "very_active";
+
 export interface UserProfile {
   id: string;
   firstName?: string;
@@ -13,6 +15,8 @@ export interface UserProfile {
   goalDirection: GoalDirection;
   bodyPriority?: string;
   freeformFocus?: string;
+  activityLevel?: ActivityLevel;
+  dietaryRestrictions?: string[];
   units: Units;
 }
 
@@ -76,6 +80,8 @@ export interface DailyRange {
   calories_max: number;
   protein_g_min: number;
   protein_g_max: number;
+  carbs_g_min: number;
+  carbs_g_max: number;
   fat_g_min: number;
   fat_g_max: number;
 }

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { PROFILE_UPDATED_EVENT } from "../lib/dataEvents";
 import { useAuth } from "./AuthProvider";
 
 export default function BottomNav({ current }: { current: "home" | "summary" | "profile" }) {
@@ -44,10 +45,10 @@ export default function BottomNav({ current }: { current: "home" | "summary" | "
     compute();
     const handler = () => compute();
     window.addEventListener("profile-prompt-opened", handler as EventListener);
-    window.addEventListener("profile-updated", handler as EventListener);
+    window.addEventListener(PROFILE_UPDATED_EVENT, handler as EventListener);
     return () => {
       window.removeEventListener("profile-prompt-opened", handler as EventListener);
-      window.removeEventListener("profile-updated", handler as EventListener);
+      window.removeEventListener(PROFILE_UPDATED_EVENT, handler as EventListener);
     };
   }, [user]);
 
@@ -97,7 +98,7 @@ export default function BottomNav({ current }: { current: "home" | "summary" | "
       <div className="mx-auto max-w-md px-4 py-3">
         <div className="flex gap-2 rounded-2xl bg-ink/5 p-1">
           {item("/", "Home", "home")}
-          {item("/summary", "Summary", "summary")}
+          {item("/summary", "Insights", "summary")}
           {item("/profile", "Profile", "profile")}
         </div>
       </div>

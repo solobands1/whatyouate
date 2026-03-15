@@ -27,6 +27,12 @@ body {
   animation: cardFadeIn 180ms ease-out forwards;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .animate-card-fade {
+    animation: none;
+  }
+}
+
 .safe-bottom {
   padding-bottom: calc(env(safe-area-inset-bottom) + 16px);
 }

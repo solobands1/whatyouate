@@ -1,4 +1,6 @@
 
+import { notifyMealsUpdated } from "./dataEvents";
+
 type MealJob = {
   mealId: string;
   imageBase64: string;
@@ -35,13 +37,13 @@ async function processNext() {
 
     await response.json();
 
-    window.dispatchEvent(new Event("meals-updated"));
+    notifyMealsUpdated();
     window.dispatchEvent(new CustomEvent("meal-analysis-complete", { detail: job.mealId }));
     window.setTimeout(() => {
-      window.dispatchEvent(new Event("meals-updated"));
+      notifyMealsUpdated();
     }, 5000);
   } catch {
-    window.dispatchEvent(new Event("meals-updated"));
+    notifyMealsUpdated();
   }
 
   processNext();

@@ -142,7 +142,7 @@ function mapWorkout(row: any): WorkoutSession {
     const rawMinutes = (endedAt - startedAt) / 60000;
     durationMin = rawMinutes < 1 ? 0 : Math.ceil(rawMinutes);
   }
-  if (endedAt == null && startedAt != null && durationMin != null) {
+  if (endedAt == null && startedAt != null && durationMin != null && durationMin > 0) {
     endedAt = startedAt + durationMin * 60000;
   }
   return {
@@ -182,6 +182,8 @@ export async function getProfile(userId: string): Promise<UserProfile | null> {
     sex: data.sex ?? "prefer_not",
     goalDirection: data.goal_direction === "recomposition" ? "balance" : (data.goal_direction ?? "maintain"),
     bodyPriority: data.body_priority ?? "",
+    activityLevel: data.activity_level ?? undefined,
+    dietaryRestrictions: Array.isArray(data.dietary_restrictions) ? data.dietary_restrictions : [],
     units: data.units ?? "imperial"
   };
 }
@@ -204,6 +206,8 @@ export async function saveProfile(userId: string, profile: UserProfile) {
     sex: profile.sex,
     goal_direction: profile.goalDirection,
     body_priority: profile.bodyPriority ?? "",
+    activity_level: profile.activityLevel ?? null,
+    dietary_restrictions: profile.dietaryRestrictions ?? [],
     units: profile.units,
     updated_at: new Date().toISOString()
   };
@@ -393,7 +397,7 @@ export async function addWorkout(
 
   console.log("[workout] DB inserted row", data);
 
-  return data;
+  return mapWorkout(data);
 }
 
 export async function updateWorkout(
@@ -477,18 +481,32 @@ export async function endActiveWorkouts(
   }
 
   const payload: Record<string, unknown> = {
-    end_ts: new Date(endTs).toISOString(),
+    end_ts: endTs,
     workout_types: workoutTypes && workoutTypes.length > 0 ? workoutTypes : null,
     intensity: intensity ?? null
   };
-  const { data, error } = await supabase
+  const { data: activeRows, error: fetchError } = await supabase
     .from("workouts")
-    .update(payload)
+    .select("id, start_ts")
     .eq("user_id", userId)
-    .is("end_ts", null)
-    .select("*");
-  if (error) handleSupabaseError("workouts", error);
-  return (data ?? []).map(mapWorkout);
+    .is("end_ts", null);
+  if (fetchError) handleSupabaseError("workouts", fetchError);
+  if (!activeRows?.length) return [];
+
+  const results: WorkoutSession[] = [];
+  for (const row of activeRows) {
+    const startTs = Number(row.start_ts);
+    const durationMin = computeDurationMin(startTs, endTs);
+    const { data, error } = await supabase
+      .from("workouts")
+      .update({ ...payload, duration_min: durationMin })
+      .eq("id", row.id)
+      .select("*")
+      .single();
+    if (error) handleSupabaseError("workouts", error);
+    if (data) results.push(mapWorkout(data));
+  }
+  return results;
 }
 
 export async function deleteWorkout(id: string, userId?: string) {
@@ -652,6 +670,22 @@ if (typeof window !== "undefined") {
     listWorkouts,
     getProfile,
     exportAllData,
-    clearAllData
+    clearAllData,
+    testWrite: async (userId: string) => {
+      const ins = await supabase.from("workouts").insert({ user_id: userId, start_ts: Date.now() }).select("*").single();
+      console.log("INSERT:", ins.data, ins.error);
+      if (ins.data) {
+        const upd = await supabase.from("workouts").update({ duration_min: 5 }).eq("id", ins.data.id).select("*").single();
+        console.log("UPDATE:", upd.data, upd.error);
+        const del = await supabase.from("workouts").delete().eq("id", ins.data.id);
+        console.log("DELETE error:", del.error);
+      }
+    },
+    testDeleteMeal: async (mealId: string, userId: string) => {
+      const result = await supabase.from("meals").delete().eq("id", mealId).eq("user_id", userId);
+      console.log("meal DELETE status:", result.status, "error:", result.error);
+      const check = await supabase.from("meals").select("id").eq("id", mealId);
+      console.log("still exists?", check.data);
+    }
   };
 }

@@ -42,7 +42,7 @@ async function analyzeWithOpenAI(imageBase64: string, model: string, apiKey: str
         }
       ],
       temperature: 0.2,
-      max_tokens: 260
+      max_tokens: 500
     })
   });
 
@@ -465,17 +465,13 @@ async function enrichWithOpenFoodFacts(mealId: string | undefined, analysis: any
     if (override.applied) {
       enriched = override.analysis;
     }
-    if (best?.brands) {
-      const cleanBrand =
-        best.brands
-          .split(",")[0]
-          .trim()
-          .replace(/\s+/g, " ");
-
-      enriched = {
-        ...enriched,
-        name: cleanBrand
-      };
+    const dbProductName = String(best?.product_name ?? "").trim();
+    const dbBrand = best?.brands ? String(best.brands).split(",")[0].trim().replace(/\s+/g, " ") : "";
+    if (dbProductName) {
+      enriched = { ...enriched, name: dbProductName };
+    } else if (dbBrand) {
+      const detectedSuffix = detectedProduct ?? analysisName ?? "";
+      enriched = { ...enriched, name: detectedSuffix ? `${dbBrand} ${detectedSuffix}`.trim() : dbBrand };
     }
     console.log("[OFF enrichment] matched", enriched.name);
     await updateMealServer(mealId, enriched);

@@ -31,14 +31,20 @@ export async function POST(req: Request) {
     }
 
     const n = data.product?.nutriments ?? {};
-    // prefer per-serving values, fall back to per-100g
+    const hasServing =
+      toNum(n["energy-kcal_serving"] ?? n.energy_kcal_serving) !== null &&
+      toNum(n.proteins_serving) !== null;
+    const valuePer: "serving" | "100g" = hasServing ? "serving" : "100g";
     return NextResponse.json({
       name: normalizeName(data.product),
       brand: cleanBrand(data.product),
-      calories: toNum(n["energy-kcal_serving"] ?? n.energy_kcal_serving) ?? toNum(n["energy-kcal_100g"] ?? n.energy_kcal_100g),
-      protein: toNum(n.proteins_serving) ?? toNum(n.proteins_100g),
-      carbs: toNum(n.carbohydrates_serving) ?? toNum(n.carbohydrates_100g),
-      fat: toNum(n.fat_serving) ?? toNum(n.fat_100g),
+      valuePer,
+      calories: hasServing
+        ? toNum(n["energy-kcal_serving"] ?? n.energy_kcal_serving)
+        : toNum(n["energy-kcal_100g"] ?? n.energy_kcal_100g),
+      protein: hasServing ? toNum(n.proteins_serving) : toNum(n.proteins_100g),
+      carbs: hasServing ? toNum(n.carbohydrates_serving) : toNum(n.carbohydrates_100g),
+      fat: hasServing ? toNum(n.fat_serving) : toNum(n.fat_100g),
     });
   } catch {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });

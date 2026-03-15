@@ -5,6 +5,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Joyride, { CallBackProps, STATUS, type Step } from "react-joyride";
 import { useRouter } from "next/navigation";
 import type { MealLog, UserProfile, WorkoutSession } from "../lib/types";
+import {
+  MEALS_UPDATED_EVENT,
+  PROFILE_UPDATED_EVENT,
+  notifyWorkoutsUpdated
+} from "../lib/dataEvents";
 import { formatApprox, formatDateShort, todayKey } from "../lib/utils";
 import { supabase } from "../lib/supabaseClient";
 import "../lib/mealQueue";
@@ -17,6 +22,7 @@ import {
   addMeal,
   deleteMeal,
   deleteWorkout,
+  endActiveWorkouts,
   getActiveWorkout,
   getProfile,
   listMeals,
@@ -38,8 +44,16 @@ export default function HomeScreen() {
   const [loadingData, setLoadingData] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [barcodeOpen, setBarcodeOpen] = useState(false);
+  const [barcodeNotFound, setBarcodeNotFound] = useState(false);
+  const [barcodeSuccess, setBarcodeSuccess] = useState(false);
+  const [barcodeLookingUp, setBarcodeLookingUp] = useState(false);
+  const [barcodeProduct, setBarcodeProduct] = useState<{
+    name: string; brand: string; calories: number; protein: number;
+    carbs: number; fat: number; valuePer: "serving" | "100g";
+  } | null>(null);
   const [showStartWorkoutModal, setShowStartWorkoutModal] = useState(false);
   const [showEndWorkoutModal, setShowEndWorkoutModal] = useState(false);
+  const [isEndingWorkout, setIsEndingWorkout] = useState(false);
   const [activeWorkout, setActiveWorkout] = useState<WorkoutSession | null>(null);
   const [selectedWorkoutTypes, setSelectedWorkoutTypes] = useState<string[]>([]);
   const [selectedIntensity, setSelectedIntensity] = useState<"low" | "medium" | "high" | "">(
@@ -109,42 +123,71 @@ export default function HomeScreen() {
 
   const handleBarcodeDetected = async (barcode: string) => {
     if (!user) return;
-    const res = await fetch("/api/barcode", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ barcode }),
-    });
-    if (!res.ok) return;
+    setBarcodeLookingUp(true);
+    let res: Response;
+    try {
+      res = await fetch("/api/barcode", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ barcode }),
+      });
+    } catch {
+      setBarcodeLookingUp(false);
+      setBarcodeNotFound(true);
+      return;
+    }
+    setBarcodeLookingUp(false);
+    if (!res.ok) {
+      setBarcodeNotFound(true);
+      return;
+    }
     const product = await res.json();
     const name = String(product?.name ?? "").trim() || String(product?.brand ?? "").trim();
-    if (!name) return;
+    if (!name) {
+      setBarcodeNotFound(true);
+      return;
+    }
     const toVal = (v: any) => (typeof v === "number" && Number.isFinite(v) ? v : 0);
-    const cal = toVal(product?.calories);
-    const pro = toVal(product?.protein);
-    const carb = toVal(product?.carbs);
-    const fat = toVal(product?.fat);
+    setBarcodeProduct({
+      name,
+      brand: String(product?.brand ?? "").trim(),
+      calories: toVal(product?.calories),
+      protein: toVal(product?.protein),
+      carbs: toVal(product?.carbs),
+      fat: toVal(product?.fat),
+      valuePer: product?.valuePer === "100g" ? "100g" : "serving",
+    });
+  };
+
+  const handleConfirmBarcodeProduct = async () => {
+    if (!user || !barcodeProduct) return;
+    const { name, brand, calories, protein, carbs, fat } = barcodeProduct;
     const analysis = {
       name,
       detected_items: [{ name, confidence_0_1: 1 }],
       estimated_ranges: {
-        calories_min: cal, calories_max: cal,
-        protein_g_min: pro, protein_g_max: pro,
-        carbs_g_min: carb, carbs_g_max: carb,
+        calories_min: calories, calories_max: calories,
+        protein_g_min: protein, protein_g_max: protein,
+        carbs_g_min: carbs, carbs_g_max: carbs,
         fat_g_min: fat, fat_g_max: fat,
       },
       micronutrient_signals: [],
       confidence_overall_0_1: 1,
-      detected_brand: String(product?.brand ?? "").trim() || null,
+      detected_brand: brand || null,
       detected_product: name,
       database_match_confidence_0_1: 1,
       precision_mode_available: false,
     } as any;
+    setBarcodeProduct(null);
     try {
       const created = await addMeal(user.id, analysis);
-      if (!created?.id) return;
-      await updateMeal(created.id, analysis);
-      const finishedMeal = { ...created, analysisJson: analysis, status: "done" as const };
-      setMeals((prev) => [finishedMeal, ...prev]);
+      if (created?.id) {
+        await updateMeal(created.id, analysis);
+        const finishedMeal = { ...created, analysisJson: analysis, status: "done" as const };
+        setMeals((prev) => [finishedMeal, ...prev]);
+      }
+      setBarcodeSuccess(true);
+      setTimeout(() => setBarcodeSuccess(false), 1500);
     } catch (err) {
       console.error("[barcode] save failed:", err);
     }
@@ -276,11 +319,10 @@ export default function HomeScreen() {
         workoutEditTypes.length > 0 ? workoutEditTypes : undefined,
         workoutEditIntensity || undefined
       );
-
       setEditingWorkout(null);
       setEditRecents(false);
-
       await loadData();
+      notifyWorkoutsUpdated();
     } catch (err) {
       console.error("Workout update failed", err);
     } finally {
@@ -333,7 +375,7 @@ export default function HomeScreen() {
         getProfile(user.id),
         listMeals(user.id, 50),
         listWorkouts(user.id, 50),
-        getActiveWorkout(user.id)
+        getActiveWorkout(user.id),
       ]);
       if (!mountedRef.current) return;
       setProfile(profileData ?? undefined);
@@ -341,10 +383,10 @@ export default function HomeScreen() {
       setWorkouts(workoutsData);
       setActiveWorkout(activeWorkoutData);
     } catch (err) {
+      console.error("[loadData] failed:", err);
       setLoadError(err instanceof Error ? err.message : "Failed to load data");
     } finally {
-      if (!mountedRef.current) return;
-      setLoadingData(false);
+      if (mountedRef.current) setLoadingData(false);
     }
   }, [user]);
 
@@ -353,7 +395,8 @@ export default function HomeScreen() {
     try {
       const current = await getActiveWorkout(user.id);
       if (!mountedRef.current) return;
-      setActiveWorkout(current);
+      // Only update if DB returned a workout — don't wipe optimistic state with null
+      if (current) setActiveWorkout(current);
     } catch {
       // Silent: active workout is optional.
     }
@@ -374,9 +417,11 @@ export default function HomeScreen() {
         setWorkouts((prev) => prev.filter((w) => w.id !== id));
         setEditingWorkout(null);
         setEditRecents(false);
+        notifyWorkoutsUpdated();
       }
-    } catch {
-      // Silent for now.
+    } catch (err) {
+      console.error("[delete] FAILED", err);
+      setLoadError(err instanceof Error ? err.message : "Failed to delete");
     } finally {
       setDeletingItem(false);
       setPendingDelete(null);
@@ -392,21 +437,17 @@ export default function HomeScreen() {
     setEditRecents(false);
   }, []);
 
-  useEffect(() => {
-    if (!showEndWorkoutModal) return;
-    refreshActiveWorkout();
-  }, [showEndWorkoutModal]);
 
   useEffect(() => {
     const handler = () => loadData();
-    window.addEventListener("profile-updated", handler as EventListener);
-    return () => window.removeEventListener("profile-updated", handler as EventListener);
+    window.addEventListener(PROFILE_UPDATED_EVENT, handler as EventListener);
+    return () => window.removeEventListener(PROFILE_UPDATED_EVENT, handler as EventListener);
   }, [user, loadData]);
 
   useEffect(() => {
     const handler = () => loadData();
-    window.addEventListener("meals-updated", handler as EventListener);
-    return () => window.removeEventListener("meals-updated", handler as EventListener);
+    window.addEventListener(MEALS_UPDATED_EVENT, handler as EventListener);
+    return () => window.removeEventListener(MEALS_UPDATED_EVENT, handler as EventListener);
   }, [user, loadData]);
 
   useEffect(() => {
@@ -507,11 +548,6 @@ export default function HomeScreen() {
     setVisibleRecentCount(6);
   }, [recentFiltered.length]);
 
-  const visibleRecent = useMemo(
-    () => recentFiltered.slice(0, visibleRecentCount),
-    [recentFiltered, visibleRecentCount]
-  );
-
   const groupedRecent = useMemo(() => {
     const groups: Array<{ label: string; meals: MealLog[]; workouts: WorkoutSession[] }> = [];
     recentFiltered.forEach((item) => {
@@ -575,63 +611,44 @@ export default function HomeScreen() {
 
   const handleStartWorkout = async () => {
     if (!user) return;
-
-    console.log("[workout] START clicked", user.id);
-
-    const now = Date.now();
-
     try {
-      const inserted = await addWorkout(user.id, now);
-
-      console.log("[workout] INSERT OK", inserted);
-
-      const verify = await listWorkouts(user.id, 5);
-
-      console.log("[workout] VERIFY READ", verify);
+      const session = await addWorkout(user.id, Date.now());
+      setActiveWorkout(session);
+      await loadData();
+      notifyWorkoutsUpdated();
     } catch (err) {
-      console.error("[workout] INSERT FAILED", err);
+      setLoadError(err instanceof Error ? err.message : "Failed to start workout");
+    } finally {
+      setShowStartWorkoutModal(false);
     }
-
-    await loadData();
-    setShowStartWorkoutModal(false);
   };
 
   const handleEndWorkout = async () => {
-    if (!user || !activeWorkout) return;
-
+    if (!user || !activeWorkout || isEndingWorkout) return;
+    setIsEndingWorkout(true);
     try {
-      const endTs = Date.now();
-
-      const rawMinutes = (endTs - activeWorkout.startTs) / 60000;
+      const now = Date.now();
+      const rawMinutes = (now - activeWorkout.startTs) / 60000;
       const durationMin = rawMinutes < 1 ? 0 : Math.ceil(rawMinutes);
-
       await updateWorkout(
         activeWorkout.id,
         user.id,
-        endTs,
+        now,
         durationMin,
         selectedWorkoutTypes,
         selectedIntensity || undefined
       );
-
-      // Immediately clear active workout UI
       setActiveWorkout(null);
-
-      // Reset modal selections
       setSelectedWorkoutTypes([]);
       setSelectedIntensity("");
-
-      // Refresh workouts
       await loadData();
-
-      setShowEndWorkoutModal(false);
-
+      notifyWorkoutsUpdated();
     } catch (err) {
-      setLoadError(
-        err instanceof Error
-          ? err.message
-          : "Failed to end workout"
-      );
+      console.error("[endWorkout] FAILED", err);
+      setLoadError(err instanceof Error ? err.message : "Failed to end workout");
+    } finally {
+      setIsEndingWorkout(false);
+      setShowEndWorkoutModal(false);
     }
   };
 
@@ -847,10 +864,11 @@ export default function HomeScreen() {
               {activeWorkout && (
                 <button
                   type="button"
-                  className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90"
+                  disabled={isEndingWorkout}
+                  className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
                   onClick={handleEndWorkout}
                 >
-                  End workout
+                  {isEndingWorkout ? "Ending…" : "End workout"}
                 </button>
               )}
             </div>
@@ -1116,12 +1134,12 @@ export default function HomeScreen() {
       </div>
 
       {editingMeal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="w-80 rounded-xl bg-white p-4 shadow-xl space-y-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5">
+          <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
             {pendingDelete?.type === "meal" ? (
               <>
-                <h3 className="text-sm font-semibold">Delete meal</h3>
-                <p className="text-sm text-muted/70">
+                <h3 className="text-base font-semibold text-ink">Delete meal</h3>
+                <p className="mt-2 text-sm text-muted/70">
                   Are you sure you want to delete this meal?
                 </p>
                 <div className="mt-5 flex items-center justify-end gap-2">
@@ -1143,49 +1161,61 @@ export default function HomeScreen() {
               </>
             ) : (
               <>
-                <h3 className="text-sm font-semibold">
+                <h2 className="text-base font-semibold text-ink">
                   {editingMeal.id ? "Edit Meal" : "Add Food"}
-                </h3>
+                </h2>
 
-                <label className="text-xs text-muted/70">Name</label>
-                <input
-                  className="w-full border rounded p-1 text-sm"
-                  value={editForm.name}
-                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                  placeholder="Food name"
-                />
-
-                <label className="text-xs text-muted/70">Calories</label>
-                <input
-                  className="w-full border rounded p-1 text-sm"
-                  value={editForm.calories}
-                  onChange={(e) => setEditForm({ ...editForm, calories: e.target.value })}
-                  placeholder="Calories"
-                />
-
-                <label className="text-xs text-muted/70">Protein</label>
-                <input
-                  className="w-full border rounded p-1 text-sm"
-                  value={editForm.protein}
-                  onChange={(e) => setEditForm({ ...editForm, protein: e.target.value })}
-                  placeholder="Protein"
-                />
-
-                <label className="text-xs text-muted/70">Carbs</label>
-                <input
-                  className="w-full border rounded p-1 text-sm"
-                  value={editForm.carbs}
-                  onChange={(e) => setEditForm({ ...editForm, carbs: e.target.value })}
-                  placeholder="Carbs"
-                />
-
-                <label className="text-xs text-muted/70">Fat</label>
-                <input
-                  className="w-full border rounded p-1 text-sm"
-                  value={editForm.fat}
-                  onChange={(e) => setEditForm({ ...editForm, fat: e.target.value })}
-                  placeholder="Fat"
-                />
+                <div className="mt-4 space-y-3">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Name</p>
+                    <input
+                      className="mt-1 w-full rounded-lg border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                      value={editForm.name}
+                      onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                      placeholder="Food name"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Calories</p>
+                    <input
+                      className="mt-1 w-full rounded-lg border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                      value={editForm.calories}
+                      onChange={(e) => setEditForm({ ...editForm, calories: e.target.value })}
+                      placeholder="kcal"
+                      inputMode="numeric"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Protein</p>
+                    <input
+                      className="mt-1 w-full rounded-lg border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                      value={editForm.protein}
+                      onChange={(e) => setEditForm({ ...editForm, protein: e.target.value })}
+                      placeholder="g"
+                      inputMode="numeric"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Carbs</p>
+                    <input
+                      className="mt-1 w-full rounded-lg border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                      value={editForm.carbs}
+                      onChange={(e) => setEditForm({ ...editForm, carbs: e.target.value })}
+                      placeholder="g"
+                      inputMode="numeric"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Fat</p>
+                    <input
+                      className="mt-1 w-full rounded-lg border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                      value={editForm.fat}
+                      onChange={(e) => setEditForm({ ...editForm, fat: e.target.value })}
+                      placeholder="g"
+                      inputMode="numeric"
+                    />
+                  </div>
+                </div>
 
                 <div
                   className={`mt-5 flex items-center ${
@@ -1383,6 +1413,105 @@ export default function HomeScreen() {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Barcode looking up */}
+      {barcodeLookingUp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 pointer-events-none">
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-2xl">
+            <svg className="h-8 w-8 animate-spin text-primary" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+            </svg>
+          </div>
+        </div>
+      )}
+
+      {/* Barcode product confirmation */}
+      {barcodeProduct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
+          <div className="w-full max-w-sm rounded-xl bg-white p-5 shadow-xl">
+            <p className="text-sm font-semibold text-ink">{barcodeProduct.name}</p>
+            {barcodeProduct.brand && (
+              <p className="text-xs text-muted/60">{barcodeProduct.brand}</p>
+            )}
+            <div className="mt-3 grid grid-cols-4 gap-2 text-center">
+              {[
+                { label: "Cal", value: barcodeProduct.calories },
+                { label: "Protein", value: `${barcodeProduct.protein}g` },
+                { label: "Carbs", value: `${barcodeProduct.carbs}g` },
+                { label: "Fat", value: `${barcodeProduct.fat}g` },
+              ].map(({ label, value }) => (
+                <div key={label} className="rounded-lg bg-ink/5 px-2 py-2">
+                  <p className="text-[10px] uppercase tracking-wide text-muted/60">{label}</p>
+                  <p className="mt-0.5 text-sm font-semibold text-ink">{value}</p>
+                </div>
+              ))}
+            </div>
+            <p className="mt-2 text-[10px] text-muted/50">
+              Per {barcodeProduct.valuePer === "100g" ? "100g" : "serving"}
+            </p>
+            <div className="mt-4 flex gap-2 justify-end">
+              <button
+                type="button"
+                className="rounded-xl border border-ink/10 bg-white px-4 py-2 text-xs font-semibold text-ink/70 transition hover:bg-ink/5"
+                onClick={() => setBarcodeProduct(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90"
+                onClick={handleConfirmBarcodeProduct}
+              >
+                Add to day
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Barcode not found */}
+      {barcodeNotFound && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
+          <div className="w-full max-w-sm rounded-xl bg-white p-5 shadow-xl">
+            <p className="text-sm font-semibold text-ink">Product not found</p>
+            <p className="mt-1 text-xs text-muted/70">This barcode isn&apos;t in our database. Try adding the meal manually.</p>
+            <div className="mt-4 flex gap-2 justify-end">
+              <button
+                type="button"
+                className="rounded-xl border border-ink/10 bg-white px-4 py-2 text-xs font-semibold text-ink/70 transition hover:bg-ink/5"
+                onClick={() => setBarcodeNotFound(false)}
+              >
+                Dismiss
+              </button>
+              <button
+                type="button"
+                className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90"
+                onClick={() => { setBarcodeNotFound(false); openManualMealEntry(); }}
+              >
+                Add Manually
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Barcode success */}
+      {barcodeSuccess && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 pointer-events-none">
+          <div className="flex h-28 w-28 items-center justify-center rounded-full bg-primary shadow-2xl animate-circleImpact">
+            <svg
+              className="h-14 w-14 text-white animate-checkmark"
+              viewBox="0 0 52 52"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="5"
+            >
+              <path d="M14 27 L22 35 L38 18" className="checkmark-path" />
+            </svg>
           </div>
         </div>
       )}

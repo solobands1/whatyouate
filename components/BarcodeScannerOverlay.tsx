@@ -71,7 +71,7 @@ export default function BarcodeScannerOverlay({ open, onClose, onDetected }: Pro
   if (!open) return null;
 
   return (
-    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
       <div className="w-full max-w-sm rounded-xl bg-white p-4 shadow-xl">
         <div className="relative overflow-hidden rounded-lg bg-black">
           <div
@@ -97,7 +97,8 @@ export default function BarcodeScannerOverlay({ open, onClose, onDetected }: Pro
             </div>
           </div>
         </div>
-        <div className="mt-4 flex justify-end">
+        <div className="mt-4 flex items-center justify-between">
+          <p className="text-xs text-muted/60">Point camera at barcode</p>
           <button
             type="button"
             className="rounded-xl border border-ink/10 bg-white px-4 py-2 text-xs font-semibold text-ink/70 transition hover:bg-ink/5"

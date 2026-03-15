@@ -1,34 +1,26 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Joyride, { CallBackProps, STATUS, type Step } from "react-joyride";
 import { useRouter } from "next/navigation";
 import type { MealLog, UserProfile } from "../../../lib/types";
 import { summarizeWeek } from "../../../lib/summary";
+import { estimateMaintenance } from "../../../lib/digestEngine";
 import BottomNav from "../../../components/BottomNav";
 import Card from "../../../components/Card";
 import { useAuth } from "../../../components/AuthProvider";
+import { MEALS_UPDATED_EVENT, PROFILE_UPDATED_EVENT } from "../../../lib/dataEvents";
 import { getProfile, listMeals } from "../../../lib/supabaseDb";
 
 const INSIGHT_NUTRIENTS = [
   "Iron",
-  "Magnesium",
-  "Vitamin D",
   "Fiber",
-  "B12",
+  "Vitamin D",
+  "Omega-3",
   "Calcium",
   "Potassium",
-  "Omega-3",
   "Vitamin C",
-  "Folate",
-  "Niacin",
-  "Riboflavin",
-  "Thiamin",
-  "Zinc",
-  "Selenium",
-  "Vitamin A",
-  "Vitamin K",
-  "Sodium"
+  "B12"
 ];
 
 function avgRangeMidpoint(mins: number[], maxes: number[]) {
@@ -44,8 +36,8 @@ function patternBarWidth(label: string) {
 }
 
 const NUTRIENT_INFO: Record<string, string> = {
-  "Energy, Protein & Fats":
-    "This section summarizes your recent intake pattern. It uses the last 7 days of logged meals to estimate averages and show a gentle range. The range is meant to be flexible, not a strict target.",
+  "Macros":
+    "Averages from your last 7 days of logged meals. Calories and protein have a suggested range based on your profile and goal. Carbs and fat are shown as observed patterns — no strict target.",
   Iron: "Supports steady energy and daily stamina. It tends to show up in red meat, beans, lentils, and leafy greens. A stronger pattern can mean more of those foods are in your routine.",
   Magnesium: "Supports calm energy and recovery. Often found in nuts, seeds, beans, whole grains, and dark greens. A low appearance can mean fewer of those foods lately.",
   "Vitamin D": "Supports mood, energy, and overall balance. It can be harder to get from food alone, but fatty fish, eggs, and fortified foods help.",
@@ -92,7 +84,7 @@ export default function InsightsPage() {
     }
   }, [loading, user, router]);
 
-  const loadData = () => {
+  const loadData = useCallback(() => {
     if (!user) return;
     setLoadingData(true);
     Promise.all([getProfile(user.id), listMeals(user.id, 500)])
@@ -105,22 +97,23 @@ export default function InsightsPage() {
         if (!mountedRef.current) return;
         setLoadingData(false);
       });
-  };
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;
     loadData();
-  }, [user]);
+  }, [user, loadData]);
 
   useEffect(() => {
+    if (!user) return;
     const handler = () => loadData();
-    window.addEventListener("meals-updated", handler as EventListener);
-    window.addEventListener("profile-updated", handler as EventListener);
+    window.addEventListener(MEALS_UPDATED_EVENT, handler as EventListener);
+    window.addEventListener(PROFILE_UPDATED_EVENT, handler as EventListener);
     return () => {
-      window.removeEventListener("meals-updated", handler as EventListener);
-      window.removeEventListener("profile-updated", handler as EventListener);
+      window.removeEventListener(MEALS_UPDATED_EVENT, handler as EventListener);
+      window.removeEventListener(PROFILE_UPDATED_EVENT, handler as EventListener);
     };
-  }, [user]);
+  }, [user, loadData]);
 
   useEffect(() => {
     if (!user) return;
@@ -150,6 +143,12 @@ export default function InsightsPage() {
   const avgProtein = useMemo(() => {
     const mins = weekSummary.map((d) => d.totals.protein_g_min);
     const maxes = weekSummary.map((d) => d.totals.protein_g_max);
+    return avgRangeMidpoint(mins, maxes);
+  }, [weekSummary]);
+
+  const avgCarbs = useMemo(() => {
+    const mins = weekSummary.map((d) => d.totals.carbs_g_min);
+    const maxes = weekSummary.map((d) => d.totals.carbs_g_max);
     return avgRangeMidpoint(mins, maxes);
   }, [weekSummary]);
 
@@ -184,9 +183,10 @@ export default function InsightsPage() {
   }, [avgFat]);
 
   const micronutrientPatterns = useMemo(() => {
-    const signals = meals
-      .filter((meal) => Date.now() - meal.ts <= 30 * 24 * 60 * 60 * 1000)
-      .flatMap((meal) => meal.analysisJson.micronutrient_signals ?? []);
+    const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    const recentMeals = meals.filter((meal) => meal.ts > cutoff);
+    const recentMealCount = recentMeals.length;
+    const signals = recentMeals.flatMap((meal) => meal.analysisJson.micronutrient_signals ?? []);
 
     const byNutrient = new Map<string, number>();
     for (const signal of signals) {
@@ -197,7 +197,7 @@ export default function InsightsPage() {
     return INSIGHT_NUTRIENTS.map((nutrient) => {
       const key = nutrient.toLowerCase();
       const count = byNutrient.get(key) ?? 0;
-      const ratio = mealCount ? count / mealCount : 0;
+      const ratio = recentMealCount ? count / recentMealCount : 0;
       let label = "Low appearance";
       if (ratio >= 0.3) label = "Strong pattern";
       else if (ratio >= 0.1) label = "Emerging pattern";
@@ -207,29 +207,35 @@ export default function InsightsPage() {
         width: patternBarWidth(label)
       };
     });
-  }, [meals, mealCount]);
+  }, [meals]);
 
   const hasEnoughData = dayCount >= 5 && mealCount >= 10;
 
   const gentleTargets = useMemo(() => {
-    if (!profile || !hasEnoughData) return null;
+    if (!profile) return null;
     const goal = profile.goalDirection;
-    const calNudge = goal === "gain" ? 0.05 : goal === "lose" ? -0.05 : 0;
-    const suggestedCalories = Math.max(0, Math.round(avgCalories * (1 + calNudge)));
+    const calNudge = goal === "gain" ? 0.08 : goal === "lose" ? -0.08 : 0;
+    if (hasEnoughData) {
+      const suggestedCalories = Math.max(0, Math.round(avgCalories * (1 + calNudge)));
+      const weight = profile.weight ?? 0;
+      const proteinTarget = weight ? weight * (goal === "gain" ? 2.2 : goal === "lose" ? 1.6 : 1.8) : 0;
+      const proteinNudge = proteinTarget ? avgProtein + Math.round((proteinTarget - avgProtein) * 0.1) : avgProtein;
+      if (!suggestedCalories && !proteinNudge) return null;
+      return { calories: suggestedCalories, protein: Math.round(proteinNudge) };
+    }
+    const maintenance = estimateMaintenance(profile);
+    if (!maintenance) return null;
     const weight = profile.weight ?? 0;
-    const proteinTarget = weight
-      ? weight * (goal === "gain" ? 1.6 : goal === "lose" ? 1.2 : 1.4)
-      : 0;
-    const proteinNudge = proteinTarget
-      ? avgProtein + Math.round((proteinTarget - avgProtein) * 0.1)
-      : avgProtein;
-    if (!suggestedCalories && !proteinNudge) return null;
-    return { calories: suggestedCalories, protein: Math.round(proteinNudge) };
+    return {
+      calories: Math.round(maintenance * (1 + calNudge)),
+      protein: weight ? Math.round(weight * (goal === "gain" ? 2.2 : goal === "lose" ? 1.6 : 1.8)) : 0
+    };
   }, [profile, hasEnoughData, avgCalories, avgProtein]);
 
-  const gentleTargetsDisplay = gentleTargets ?? { calories: 2300, protein: 125 };
+  const gentleTargetsDisplay = gentleTargets;
   const displayAvgCalories = hasEnoughData ? `${avgCalories}` : "2100";
   const displayAvgProtein = hasEnoughData ? `${avgProtein}g` : "120g";
+  const displayAvgCarbs = hasEnoughData ? `${avgCarbs}g` : "220g";
   const displayAvgFat = hasEnoughData ? `${avgFat}g` : "65g";
   const displayEnergyPattern = hasEnoughData ? energyPattern : "Moderate intake pattern";
   const displayProteinPattern = hasEnoughData ? proteinPattern : "Moderate protein pattern";
@@ -312,8 +318,8 @@ export default function InsightsPage() {
         <header className="mb-6" data-tour="insights-header">
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-2xl font-semibold text-ink">Nutrient Patterns</h1>
-              <p className="mt-1 text-sm text-muted/70">Based on foods logged over time.</p>
+              <h1 className="text-2xl font-semibold text-ink">Patterns</h1>
+              <p className="mt-1 text-sm text-muted/70">What I'm noticing in your food over time.</p>
               {!hasEnoughData && (
                 <div className="mt-2 inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] text-amber-700">
                   Real data appears after a few more meals
@@ -333,11 +339,11 @@ export default function InsightsPage() {
         <Card data-tour="insights-energy">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <p className="text-xs uppercase tracking-wide text-muted/70">Energy, Protein &amp; Fats</p>
+              <p className="text-xs uppercase tracking-wide text-muted/70">Macros</p>
               <button
                 type="button"
                 className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-ink/10 text-[10px] font-semibold text-ink/60"
-                onClick={() => setActiveNutrient("Energy, Protein & Fats")}
+                onClick={() => setActiveNutrient("Macros")}
                 aria-label="About energy, protein, and fats"
               >
                 i
@@ -345,32 +351,36 @@ export default function InsightsPage() {
             </div>
             <p className="text-[11px] uppercase tracking-wide text-muted/50">Last 7 days</p>
           </div>
-          <div className="mt-4 space-y-3 text-sm text-ink/80">
+          <div className="mt-4 grid grid-cols-2 gap-3 text-sm text-ink/80">
             <div>
-              <p className="text-[11px] uppercase tracking-wide text-muted/60">Average calories</p>
+              <p className="text-[11px] uppercase tracking-wide text-muted/60">Avg calories</p>
               <p className="mt-1 text-lg font-semibold">{displayAvgCalories}</p>
             </div>
             <div>
-              <p className="text-[11px] uppercase tracking-wide text-muted/60">Average protein</p>
+              <p className="text-[11px] uppercase tracking-wide text-muted/60">Avg protein</p>
               <p className="mt-1 text-lg font-semibold">{displayAvgProtein}</p>
             </div>
             <div>
-              <p className="text-[11px] uppercase tracking-wide text-muted/60">Average fats</p>
+              <p className="text-[11px] uppercase tracking-wide text-muted/60">Avg carbs</p>
+              <p className="mt-1 text-lg font-semibold">{displayAvgCarbs}</p>
+            </div>
+            <div>
+              <p className="text-[11px] uppercase tracking-wide text-muted/60">Avg fats</p>
               <p className="mt-1 text-lg font-semibold">{displayAvgFat}</p>
             </div>
           </div>
           <div className="mt-3 h-px w-full bg-ink/5" />
           <p className="mt-3 text-xs text-muted/70">
-            Suggested range
-            <span className="text-muted/50">{mealCount > 0 ? "" : " (preview)"}</span>
-            : {gentleTargetsDisplay.calories} kcal · {gentleTargetsDisplay.protein} g protein · {displayAvgFat} fats
+            {gentleTargetsDisplay
+              ? `Suggested: ${gentleTargetsDisplay.calories} kcal · ${gentleTargetsDisplay.protein} g protein · Carbs and fat shown as patterns, not targets.`
+              : "Complete your profile for a personalized range"}
           </p>
         </Card>
 
         <Card className="mt-6" data-tour="insights-micro">
           <div className="flex items-center justify-between">
             <p className="text-xs uppercase tracking-wide text-muted/70" data-tour="insights-micro-title">
-              Micronutrient Patterns
+              What I'm seeing
             </p>
             {mealCount === 0 && <p className="text-[11px] uppercase tracking-wide text-muted/50">Preview</p>}
           </div>
@@ -394,13 +404,12 @@ export default function InsightsPage() {
                     style={{ width: pattern.width }}
                   />
                 </div>
+                <p className="mt-1 text-[11px] text-muted/50">{pattern.label}</p>
               </div>
             ))}
           </div>
           <p className="mt-4 text-xs text-muted/70">
-            Based on nutrient signals detected in your logged meals. Shorter bars mean fewer appearances;
-            longer bars mean stronger patterns over time. Use this as a gentle prompt to adjust food choices
-            if you want to nudge a pattern.
+            Longer bars mean this nutrient shows up more in what you eat. Use it as a gentle prompt — not a score.
           </p>
         </Card>
       </div>
@@ -409,10 +418,10 @@ export default function InsightsPage() {
 
       {activeNutrient && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
-          <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-lg">
+          <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-sm font-semibold text-ink">{activeNutrient}</p>
+                <p className="text-base font-semibold text-ink">{activeNutrient}</p>
                 <p className="mt-2 text-sm text-muted/70">
                   {NUTRIENT_INFO[activeNutrient] ?? "Supports steady energy and overall balance."}
                 </p>

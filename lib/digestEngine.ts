@@ -1,4 +1,4 @@
-import type { MealLog, UserProfile, WorkoutSession } from "./types";
+import type { ActivityLevel, MealLog, UserProfile, WorkoutSession } from "./types";
 import { summarizeDay, summarizeWeek, summarizeWorkoutsWeek } from "./summary";
 import { dayKeyFromTs } from "./utils";
 import { buildNutrientNotes, buildSuggestions } from "./recommendations";
@@ -18,17 +18,63 @@ function avgRangeMidpoint(mins: number[], maxes: number[]) {
   return Math.round(total / (mins.length + maxes.length));
 }
 
-function proteinTargetPerKg(goal: UserProfile["goalDirection"]) {
-  if (goal === "gain") return 2.2;
-  if (goal === "lose") return 1.6;
-  return 1.8;
+const ACTIVITY_MULTIPLIERS: Record<ActivityLevel, number> = {
+  sedentary: 1.2,
+  lightly_active: 1.375,
+  moderately_active: 1.55,
+  very_active: 1.725,
+};
+
+const PROTEIN_PER_KG: Record<ActivityLevel, number> = {
+  sedentary: 1.4,
+  lightly_active: 1.6,
+  moderately_active: 1.8,
+  very_active: 2.1,
+};
+
+function proteinTargetPerKg(profile: UserProfile): number {
+  const base = profile.activityLevel ? (PROTEIN_PER_KG[profile.activityLevel] ?? 1.8) : 1.8;
+  if (profile.goalDirection === "gain") return base + 0.2;
+  if (profile.goalDirection === "lose") return Math.max(1.4, base - 0.1);
+  return base;
+}
+
+/** Mifflin-St Jeor TDEE estimate. Returns null if profile is missing required fields.
+ *  For unknown/non-binary sex, uses the midpoint of male and female BMR formulas. */
+export function estimateMaintenance(profile: UserProfile): number | null {
+  const { weight, height, age, sex, activityLevel } = profile;
+  if (!weight || !height || !age) return null;
+  let bmr: number;
+  if (sex === "male") {
+    bmr = 10 * weight + 6.25 * height - 5 * age + 5;
+  } else if (sex === "female") {
+    bmr = 10 * weight + 6.25 * height - 5 * age - 161;
+  } else {
+    // Use midpoint of male/female for "other" or "prefer_not"
+    const maleBmr = 10 * weight + 6.25 * height - 5 * age + 5;
+    const femaleBmr = 10 * weight + 6.25 * height - 5 * age - 161;
+    bmr = (maleBmr + femaleBmr) / 2;
+  }
+  const multiplier = activityLevel ? (ACTIVITY_MULTIPLIERS[activityLevel] ?? 1.375) : 1.375;
+  return Math.round(bmr * multiplier);
 }
 
 function computeGentleTargets(meals: MealLog[], profile?: UserProfile) {
   if (!profile) return null;
   const dayCount = dayCountFromMeals(meals);
   const mealCount = meals.length;
-  if (dayCount < 5 || mealCount < 10) return null;
+  const goal = profile.goalDirection;
+  const weight = profile.weight ?? 0;
+  const calNudge = goal === "gain" ? 0.08 : goal === "lose" ? -0.08 : 0;
+
+  // Early estimate: use Mifflin-St Jeor before enough meal data exists
+  if (dayCount < 5 || mealCount < 10) {
+    const maintenance = estimateMaintenance(profile);
+    if (!maintenance) return null;
+    const suggestedCalories = Math.round(maintenance * (1 + calNudge));
+    const proteinTarget = weight ? Math.round(weight * proteinTargetPerKg(profile)) : Math.round(suggestedCalories * 0.15 / 4);
+    return { calories: suggestedCalories, protein: proteinTarget, isEstimate: true };
+  }
 
   const weekSummary = summarizeWeek(meals, 7);
   const avgWeekCalories = avgRangeMidpoint(
@@ -41,16 +87,13 @@ function computeGentleTargets(meals: MealLog[], profile?: UserProfile) {
   );
   if (!avgWeekCalories && !avgWeekProtein) return null;
 
-  const goal = profile.goalDirection;
-  const calNudge = goal === "gain" ? 0.05 : goal === "lose" ? -0.05 : 0;
   const suggestedCalories = Math.max(0, Math.round(avgWeekCalories * (1 + calNudge)));
-  const weight = profile.weight ?? 0;
-  const proteinTarget = weight ? weight * proteinTargetPerKg(goal) : 0;
+  const proteinTarget = weight ? weight * proteinTargetPerKg(profile) : 0;
   const proteinNudge = proteinTarget
     ? avgWeekProtein + Math.round((proteinTarget - avgWeekProtein) * 0.1)
     : avgWeekProtein;
 
-  return { calories: suggestedCalories, protein: proteinNudge };
+  return { calories: suggestedCalories, protein: Math.round(proteinNudge) };
 }
 
 function adjustTargetsForWorkouts(
@@ -69,6 +112,7 @@ function adjustTargetsForWorkouts(
   if (intensityScore <= 0) return targets;
   const bump = intensityScore >= 4 ? 0.08 : 0.04;
   return {
+    ...targets,
     calories: Math.round(targets.calories * (1 + bump)),
     protein: Math.round(targets.protein * (1 + bump * 0.6))
   };
@@ -146,7 +190,7 @@ export function computeSummaryMarkers(meals: MealLog[], workouts: WorkoutSession
     if (lowNames.has("fiber")) trends.push("Low fiber trend.");
     if (profile?.goalDirection === "gain") {
       const weight = profile.weight ?? 0;
-      const proteinTarget = weight ? weight * proteinTargetPerKg(profile.goalDirection) : 0;
+      const proteinTarget = weight ? weight * proteinTargetPerKg(profile) : 0;
       if (proteinTarget && avgWeekProtein < proteinTarget * 0.8) {
         trends.push("Protein below weight‑gain target.");
       }
@@ -228,7 +272,7 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
   }
 
   if (profile && avgWeekProtein) {
-    const target = (profile.weight ?? 0) * proteinTargetPerKg(profile.goalDirection);
+    const target = (profile.weight ?? 0) * proteinTargetPerKg(profile);
     if (target && avgWeekProtein < target * 0.7) {
       nudges.push({
         message: "Noticed protein below your goal range. Consider a small add.",
@@ -243,6 +287,18 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
       nudges.push({
         message: "Noticed protein near the lower edge of your goal range. A small add may help.",
         priority: 1 + proteinBias
+      });
+    }
+  }
+
+  const recentWorkoutCount = workouts.filter((w) => Date.now() - (w.endTs ?? w.startTs) <= 7 * 24 * 60 * 60 * 1000).length;
+
+  // Activity-level nudges
+  if (profile?.activityLevel === "very_active" || profile?.activityLevel === "moderately_active") {
+    if (recentWorkoutCount === 0 && mealCount >= 10) {
+      nudges.push({
+        message: "No workouts logged this week — don't forget to track your sessions.",
+        priority: 1
       });
     }
   }
@@ -267,11 +323,6 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
       }
     });
   }
-
-  const recentWorkoutCount = workouts.filter((workout) => {
-    const ts = workout.endTs ?? workout.startTs;
-    return Date.now() - ts <= 7 * 24 * 60 * 60 * 1000;
-  }).length;
 
   if (
     gentleTargets?.calories &&

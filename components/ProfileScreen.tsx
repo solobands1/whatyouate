@@ -3,14 +3,19 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Joyride, { STATUS, CallBackProps, type Step } from "react-joyride";
-import type { GoalDirection, Units, UserProfile } from "../lib/types";
+import { notifyProfileUpdated } from "../lib/dataEvents";
+import type { ActivityLevel, GoalDirection, Units, UserProfile } from "../lib/types";
 import { clearAllData, getProfile, saveProfile, LOCAL_MODE } from "../lib/supabaseDb";
 import { supabase } from "../lib/supabaseClient";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
 import { useAuth } from "./AuthProvider";
 
-const goals: GoalDirection[] = ["gain", "maintain", "balance", "lose"];
+const goals: { value: GoalDirection; label: string }[] = [
+  { value: "gain", label: "Gain weight" },
+  { value: "maintain", label: "Stay steady" },
+  { value: "lose", label: "Lose weight" },
+];
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -29,6 +34,8 @@ export default function ProfileScreen() {
   const [sex, setSex] = useState<UserProfile["sex"]>("prefer_not");
   const [goalDirection, setGoalDirection] = useState<GoalDirection>("maintain");
   const [bodyPriority, setBodyPriority] = useState("");
+  const [activityLevel, setActivityLevel] = useState<ActivityLevel | "">("");
+  const [dietaryRestrictions, setDietaryRestrictions] = useState<string[]>([]);
   const [units, setUnits] = useState<Units>("imperial");
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
@@ -38,11 +45,13 @@ export default function ProfileScreen() {
   const [showBodyInfo, setShowBodyInfo] = useState(false);
   const [showProfilePrompt, setShowProfilePrompt] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
-  const [showSexPicker, setShowSexPicker] = useState(false);
   const [feedbackText, setFeedbackText] = useState("");
   const [feedbackStatus, setFeedbackStatus] = useState<"idle" | "sending" | "sent">("idle");
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
   const [showFeedbackToast, setShowFeedbackToast] = useState(false);
+  const [editingName, setEditingName] = useState(false);
+  const [editFirstName, setEditFirstName] = useState("");
+  const [editLastName, setEditLastName] = useState("");
 
   useEffect(() => {
     setMounted(true);
@@ -71,6 +80,8 @@ export default function ProfileScreen() {
           setSex(data.sex ?? "prefer_not");
           setGoalDirection(data.goalDirection ?? "maintain");
           setBodyPriority(data.bodyPriority ?? "");
+          setActivityLevel(data.activityLevel ?? "");
+          setDietaryRestrictions(data.dietaryRestrictions ?? []);
           setUnits(data.units ?? "imperial");
 
           if ((data.units ?? "imperial") === "imperial") {
@@ -195,6 +206,22 @@ export default function ProfileScreen() {
     return Number.isFinite(num) ? num : null;
   };
 
+  const saveNamesOnly = async (first: string, last: string) => {
+    if (!user) return;
+    const trimFirst = first.trim() || null;
+    const trimLast = last.trim() || null;
+    if (!LOCAL_MODE) {
+      if (profileExistsRef.current) {
+        await supabase.from("profiles").update({ first_name: trimFirst, last_name: trimLast }).eq("user_id", user.id);
+      } else {
+        await supabase.from("profiles").insert({ user_id: user.id, first_name: trimFirst, last_name: trimLast });
+        profileExistsRef.current = true;
+      }
+    }
+    setFirstName(first.trim());
+    setLastName(last.trim());
+  };
+
   const handleSave = async () => {
     if (!user) return;
     try {
@@ -227,6 +254,8 @@ export default function ProfileScreen() {
         sex,
         goal_direction: goalDirection,
         body_priority: bodyPriority || null,
+        activity_level: activityLevel || null,
+        dietary_restrictions: dietaryRestrictions,
         units
       };
 
@@ -249,6 +278,8 @@ export default function ProfileScreen() {
           sex,
           goalDirection,
           bodyPriority: payload.body_priority ?? "",
+          activityLevel: (activityLevel || undefined) as ActivityLevel | undefined,
+          dietaryRestrictions,
           units
         });
         profileExistsRef.current = true;
@@ -262,6 +293,8 @@ export default function ProfileScreen() {
         setSex(freshProfile.sex ?? "prefer_not");
         setGoalDirection(freshProfile.goalDirection ?? "maintain");
         setBodyPriority(freshProfile.bodyPriority ?? "");
+        setActivityLevel(freshProfile.activityLevel ?? "");
+        setDietaryRestrictions(freshProfile.dietaryRestrictions ?? []);
         setUnits(freshProfile.units ?? "imperial");
 
         if ((freshProfile.units ?? "imperial") === "imperial") {
@@ -302,7 +335,7 @@ export default function ProfileScreen() {
         localStorage.removeItem(`wya_profile_prompt_opened_${user.id}`);
         localStorage.removeItem(`wya_profile_prompt_last_${user.id}`);
       }
-      window.dispatchEvent(new CustomEvent("profile-updated"));
+      notifyProfileUpdated();
       setTimeout(() => {
         setStatus(null);
       }, 1500);
@@ -327,6 +360,8 @@ export default function ProfileScreen() {
     setSex("prefer_not");
     setGoalDirection("maintain");
     setBodyPriority("");
+    setActivityLevel("");
+    setDietaryRestrictions([]);
     setUnits("imperial");
     setStatus("All data cleared.");
   };
@@ -429,9 +464,26 @@ export default function ProfileScreen() {
           <div className="flex items-start justify-between">
             <div>
               <h1 className="text-2xl font-semibold text-ink">Profile</h1>
-              <p className="mt-1 text-sm text-muted/70">
-                {[firstName, lastName].filter(Boolean).join(" ") || "Profile"}
-              </p>
+              <div className="mt-1 flex items-center gap-1.5">
+                <p className="text-sm text-muted/70">
+                  {[firstName, lastName].filter(Boolean).join(" ") || "Set name"}
+                </p>
+                <button
+                  type="button"
+                  aria-label="Edit name"
+                  className="flex h-5 w-5 items-center justify-center rounded-full border border-ink/10 text-muted/50 hover:border-ink/20 hover:text-muted/80 transition"
+                  onClick={() => {
+                    setEditFirstName(firstName);
+                    setEditLastName(lastName);
+                    setEditingName(true);
+                  }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </button>
+              </div>
             </div>
             <div className="flex flex-col items-end gap-1">
               <div className="flex items-center gap-2">
@@ -465,7 +517,7 @@ export default function ProfileScreen() {
         </header>
 
         <Card className="mt-4">
-          <div>
+          <div className="mt-0 border-t-0 pt-0">
             <div className="flex items-center justify-between">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Body</p>
               <div className="inline-flex rounded-full border border-ink/10 bg-ink/5 p-0.5 text-[10px]">
@@ -516,7 +568,7 @@ export default function ProfileScreen() {
                 ))}
               </div>
             </div>
-            <div className="mt-7 grid grid-cols-2 gap-x-5 gap-y-7">
+            <div className="mt-7 grid grid-cols-2 gap-x-5 gap-y-5">
               <label className="text-[11px] text-muted/70">
                 Height {units === "metric" ? "(cm)" : "(ft + in)"}
                 {units === "metric" ? (
@@ -596,25 +648,30 @@ export default function ProfileScreen() {
                   placeholder="Age"
                 />
               </label>
-              <label className="text-[11px] text-muted/70">
-                Sex
-                <button
-                  type="button"
-                  className="mt-1 flex w-full items-center justify-between rounded-xl border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80"
-                  onClick={() => setShowSexPicker(true)}
-                >
-                  <span>
-                    {sex === "female"
-                      ? "Female"
-                      : sex === "male"
-                        ? "Male"
-                        : sex === "other"
-                          ? "Other"
-                          : "Prefer not"}
-                  </span>
-                  <span className="text-ink/40">▾</span>
-                </button>
-              </label>
+            </div>
+            <div className="mt-5">
+              <p className="text-[11px] text-muted/70 mb-1.5">Sex</p>
+              <div className="grid grid-cols-2 gap-2">
+                {([
+                  { value: "male", label: "Male" },
+                  { value: "female", label: "Female" },
+                  { value: "other", label: "Other" },
+                  { value: "prefer_not", label: "Prefer not" }
+                ] as const).map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className={`rounded-xl border px-3 py-1.5 text-xs font-medium ${
+                      sex === option.value
+                        ? "border-primary/30 bg-primary/10 text-ink/80"
+                        : "border-ink/10 text-muted/70"
+                    }`}
+                    onClick={() => setSex(option.value)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -632,26 +689,95 @@ export default function ProfileScreen() {
                 i
               </button>
             </span>
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              {goals.map((goal) => (
+            <div className="mt-2 grid grid-cols-3 gap-2">
+              {goals.map(({ value, label }) => (
                 <button
-                  key={goal}
+                  key={value}
                   className={`rounded-xl border px-3 py-1.5 text-xs font-medium ${
-                    goalDirection === goal ? "border-primary/30 bg-primary/10 text-ink/80" : "border-ink/10 text-muted/70"
+                    goalDirection === value || (goalDirection === "balance" && value === "maintain")
+                      ? "border-primary/30 bg-primary/10 text-ink/80"
+                      : "border-ink/10 text-muted/70"
                   }`}
-                  onClick={() => setGoalDirection(goal)}
+                  onClick={() => setGoalDirection(value)}
                   type="button"
                 >
-                  {goal}
+                  {label}
                 </button>
               ))}
             </div>
           </label>
 
+          <div className="mt-8 border-t border-ink/5 pt-7">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-ink/70">
+              Activity level
+            </p>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              {([
+                { value: "sedentary", label: "Not very active" },
+                { value: "lightly_active", label: "Lightly active" },
+                { value: "moderately_active", label: "Moderately active" },
+                { value: "very_active", label: "Very active" }
+              ] as const).map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  className={`rounded-xl border px-3 py-1.5 text-xs font-medium ${
+                    activityLevel === option.value
+                      ? "border-primary/30 bg-primary/10 text-ink/80"
+                      : "border-ink/10 text-muted/70"
+                  }`}
+                  onClick={() => setActivityLevel(option.value)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-8 border-t border-ink/5 pt-7">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-ink/70">
+              Foods I avoid
+            </p>
+            <p className="mt-1 text-[11px] text-muted/60">Select all that apply — nudges won't suggest these.</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {[
+                "Vegetarian",
+                "Vegan",
+                "No dairy",
+                "No gluten",
+                "No nuts",
+                "No shellfish",
+                "No pork",
+                "Halal",
+                "Kosher"
+              ].map((restriction) => {
+                const active = dietaryRestrictions.includes(restriction);
+                return (
+                  <button
+                    key={restriction}
+                    type="button"
+                    className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                      active
+                        ? "border-primary/30 bg-primary/10 text-ink/80"
+                        : "border-ink/10 text-muted/60"
+                    }`}
+                    onClick={() =>
+                      setDietaryRestrictions((prev) =>
+                        active ? prev.filter((r) => r !== restriction) : [...prev, restriction]
+                      )
+                    }
+                  >
+                    {restriction}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           <label className="mt-8 block border-t border-ink/5 pt-7 text-xs text-muted/70">
             <span className="flex items-center justify-between">
               <span className="text-[11px] font-semibold uppercase tracking-wide text-ink/70">
-                Focus area (optional)
+                Anything else I should know? (optional)
               </span>
               <button
                 type="button"
@@ -662,12 +788,12 @@ export default function ProfileScreen() {
                 i
               </button>
             </span>
-            <input
-              type="text"
-              className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm"
+            <textarea
+              rows={3}
+              className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm resize-none"
               value={bodyPriority}
               onChange={(event) => setBodyPriority(event.target.value)}
-              placeholder="e.g., lose belly fat, feel better, gain muscle"
+              placeholder="e.g., I meal prep on Sundays, I try to eat more protein, I'm lactose intolerant"
             />
           </label>
 
@@ -706,6 +832,54 @@ export default function ProfileScreen() {
 
       <BottomNav current="profile" />
 
+      {editingName && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-lg">
+            <p className="text-sm font-semibold text-ink">Edit name</p>
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <label className="text-[11px] text-muted/70">
+                First name
+                <input
+                  className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm"
+                  value={editFirstName}
+                  onChange={(e) => setEditFirstName(e.target.value)}
+                  placeholder="First"
+                  autoFocus
+                />
+              </label>
+              <label className="text-[11px] text-muted/70">
+                Last name
+                <input
+                  className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm"
+                  value={editLastName}
+                  onChange={(e) => setEditLastName(e.target.value)}
+                  placeholder="Last"
+                />
+              </label>
+            </div>
+            <div className="mt-4 flex gap-2">
+              <button
+                type="button"
+                className="flex-1 rounded-xl border border-ink/10 py-2 text-xs font-medium text-muted/70"
+                onClick={() => setEditingName(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="flex-1 rounded-xl bg-primary py-2 text-xs font-semibold text-white"
+                onClick={async () => {
+                  await saveNamesOnly(editFirstName, editLastName);
+                  setEditingName(false);
+                }}
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showGoalInfo && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
           <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-lg">
@@ -719,20 +893,13 @@ export default function ProfileScreen() {
                 </p>
                 <div className="mt-3 space-y-2 text-xs text-muted/70">
                   <p>
-                    <span className="font-semibold text-ink/70">Gain:</span> nudge upward over time,
-                    with slightly higher intake and protein.
+                    <span className="font-semibold text-ink/70">Gain weight:</span> nudge intake and protein upward over time to support steady growth.
                   </p>
                   <p>
-                    <span className="font-semibold text-ink/70">Maintain:</span> keep intake close to
-                    your current pattern with small adjustments for balance.
+                    <span className="font-semibold text-ink/70">Stay steady:</span> keep intake close to your current pattern with gentle nudges for balance.
                   </p>
                   <p>
-                    <span className="font-semibold text-ink/70">Balance:</span> aim to build strength
-                    while staying near your current weight.
-                  </p>
-                  <p>
-                    <span className="font-semibold text-ink/70">Lose:</span> nudge downward over time,
-                    with slightly lower intake.
+                    <span className="font-semibold text-ink/70">Lose weight:</span> nudge intake slightly lower over time while keeping protein steady.
                   </p>
                 </div>
               </div>
@@ -748,57 +915,14 @@ export default function ProfileScreen() {
         </div>
       )}
 
-      {showSexPicker && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
-          <div className="w-full max-w-[280px] rounded-2xl bg-white p-4 shadow-lg">
-            <div className="flex items-center justify-end">
-              <button
-                type="button"
-                className="text-xs font-semibold text-ink/60"
-                onClick={() => setShowSexPicker(false)}
-              >
-                Close
-              </button>
-            </div>
-            <div className="mt-2 space-y-2">
-              {([
-                { value: "male", label: "Male" },
-                { value: "female", label: "Female" },
-                { value: "other", label: "Other" },
-                { value: "prefer_not", label: "Prefer not to say" }
-              ] as const).map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-sm ${
-                    sex === option.value
-                      ? "border-primary/30 bg-primary/10 text-ink"
-                      : "border-ink/10 bg-white text-ink/70"
-                  }`}
-                  onClick={() => {
-                    setSex(option.value);
-                    setShowSexPicker(false);
-                  }}
-                >
-                  <span>{option.label}</span>
-                  <span className="inline-flex h-4 w-4 items-center justify-center text-[11px]">
-                    {sex === option.value ? "✓" : ""}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
       {showBodyInfo && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
           <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-lg">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-sm font-semibold text-ink">Body focus</p>
+                <p className="text-sm font-semibold text-ink">Anything else?</p>
                 <p className="mt-2 text-sm text-muted/70">
-                  This is free‑form. Use it to capture what matters to you—performance, body areas,
-                  energy, or how you want to feel. It helps keep nudges aligned with your intent.
+                  Use this to share anything that doesn't fit the other fields — like a specific focus area, a health condition, or how you typically eat. It helps keep nudges more aligned with your life.
                 </p>
               </div>
               <button
