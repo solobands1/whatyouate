@@ -302,10 +302,9 @@ export default function HomeScreen() {
     () => workout.workouts.filter((w) => w.endTs),
     [workout.workouts]
   );
-  const recentItems = useMemo(
-    () => computeRecent(meals.meals, completedWorkouts),
-    [meals.meals, completedWorkouts]
-  );
+  const recentItems = useMemo(() => {
+    return computeRecent(meals.meals, completedWorkouts);
+  }, [meals.meals, completedWorkouts]);
 
   const formatTitle = (value: string) =>
     value
