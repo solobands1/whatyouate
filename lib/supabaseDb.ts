@@ -453,62 +453,6 @@ export async function updateWorkout(
   return mapWorkout(data);
 }
 
-export async function endActiveWorkouts(
-  userId: string,
-  endTs: number,
-  workoutTypes?: string[],
-  intensity?: "low" | "medium" | "high"
-) {
-  if (useMemory) {
-    ensureLocalLoaded();
-    const updated: WorkoutSession[] = [];
-    memWorkouts = memWorkouts.map((entry) => {
-      if (entry.userId !== userId) return entry;
-      if (entry.session.endTs) return entry;
-      const durationMin = computeDurationMin(entry.session.startTs, endTs);
-      const session = {
-        ...entry.session,
-        endTs,
-        durationMin,
-        workoutTypes,
-        intensity
-      };
-      updated.push(session);
-      return { ...entry, session };
-    });
-    persistLocal();
-    return updated;
-  }
-
-  const payload: Record<string, unknown> = {
-    end_ts: endTs,
-    workout_types: workoutTypes && workoutTypes.length > 0 ? workoutTypes : null,
-    intensity: intensity ?? null
-  };
-  const { data: activeRows, error: fetchError } = await supabase
-    .from("workouts")
-    .select("id, start_ts")
-    .eq("user_id", userId)
-    .is("end_ts", null);
-  if (fetchError) handleSupabaseError("workouts", fetchError);
-  if (!activeRows?.length) return [];
-
-  const results: WorkoutSession[] = [];
-  for (const row of activeRows) {
-    const startTs = Number(row.start_ts);
-    const durationMin = computeDurationMin(startTs, endTs);
-    const { data, error } = await supabase
-      .from("workouts")
-      .update({ ...payload, duration_min: durationMin })
-      .eq("id", row.id)
-      .select("*")
-      .single();
-    if (error) handleSupabaseError("workouts", error);
-    if (data) results.push(mapWorkout(data));
-  }
-  return results;
-}
-
 export async function deleteWorkout(id: string, userId?: string) {
   if (useMemory) {
     ensureLocalLoaded();
@@ -671,21 +615,5 @@ if (typeof window !== "undefined") {
     getProfile,
     exportAllData,
     clearAllData,
-    testWrite: async (userId: string) => {
-      const ins = await supabase.from("workouts").insert({ user_id: userId, start_ts: Date.now() }).select("*").single();
-      console.log("INSERT:", ins.data, ins.error);
-      if (ins.data) {
-        const upd = await supabase.from("workouts").update({ duration_min: 5 }).eq("id", ins.data.id).select("*").single();
-        console.log("UPDATE:", upd.data, upd.error);
-        const del = await supabase.from("workouts").delete().eq("id", ins.data.id);
-        console.log("DELETE error:", del.error);
-      }
-    },
-    testDeleteMeal: async (mealId: string, userId: string) => {
-      const result = await supabase.from("meals").delete().eq("id", mealId).eq("user_id", userId);
-      console.log("meal DELETE status:", result.status, "error:", result.error);
-      const check = await supabase.from("meals").select("id").eq("id", mealId);
-      console.log("still exists?", check.data);
-    }
   };
 }

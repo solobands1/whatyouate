@@ -18,27 +18,21 @@ import BottomNav from "./BottomNav";
 import Card from "./Card";
 import { useAuth } from "./AuthProvider";
 import {
-  addWorkout,
   addMeal,
   deleteMeal,
   deleteWorkout,
-  endActiveWorkouts,
-  getActiveWorkout,
   getProfile,
-  listMeals,
-  listWorkouts,
   updateMeal,
-  updateWorkout
 } from "../lib/supabaseDb";
 import { computeHomeMarkers, computeRecent } from "../lib/digestEngine";
+import { useWorkout, WORKOUT_TYPE_OPTIONS } from "../hooks/useWorkout";
+import { useMeals } from "../hooks/useMeals";
 
 export default function HomeScreen() {
   const router = useRouter();
   const { user, loading } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [profile, setProfile] = useState<UserProfile | undefined>();
-  const [meals, setMeals] = useState<MealLog[]>([]);
-  const [workouts, setWorkouts] = useState<WorkoutSession[]>([]);
   const [runTour, setRunTour] = useState(false);
   const [showTourGate, setShowTourGate] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
@@ -51,75 +45,98 @@ export default function HomeScreen() {
     name: string; brand: string; calories: number; protein: number;
     carbs: number; fat: number; valuePer: "serving" | "100g";
   } | null>(null);
-  const [showStartWorkoutModal, setShowStartWorkoutModal] = useState(false);
-  const [showEndWorkoutModal, setShowEndWorkoutModal] = useState(false);
-  const [isEndingWorkout, setIsEndingWorkout] = useState(false);
-  const [activeWorkout, setActiveWorkout] = useState<WorkoutSession | null>(null);
-  const [selectedWorkoutTypes, setSelectedWorkoutTypes] = useState<string[]>([]);
-  const [selectedIntensity, setSelectedIntensity] = useState<"low" | "medium" | "high" | "">(
-    ""
-  );
-  const [editingMeal, setEditingMeal] = useState<MealLog | null>(null);
-  const [editForm, setEditForm] = useState({
-    name: "",
-    calories: "",
-    protein: "",
-    carbs: "",
-    fat: ""
-  });
-  const [updatingMeal, setUpdatingMeal] = useState(false);
-  const [editingWorkout, setEditingWorkout] = useState<WorkoutSession | null>(null);
-  const [workoutEditHours, setWorkoutEditHours] = useState("");
-  const [workoutEditMinutes, setWorkoutEditMinutes] = useState("");
-  const [workoutEditTypes, setWorkoutEditTypes] = useState<string[]>([]);
-  const [workoutEditIntensity, setWorkoutEditIntensity] = useState<"low" | "medium" | "high" | "">(
-    ""
-  );
-  const [updatingWorkout, setUpdatingWorkout] = useState(false);
-  const mountedRef = useRef(true);
-  const recentSentinelRef = useRef<HTMLDivElement | null>(null);
-  const foodInputRef = useRef<HTMLInputElement | null>(null);
-  const [visibleRecentCount, setVisibleRecentCount] = useState(6);
   const [editRecents, setEditRecents] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<{
     type: "meal" | "workout";
     id: string;
   } | null>(null);
   const [deletingItem, setDeletingItem] = useState(false);
+  const [visibleRecentCount, setVisibleRecentCount] = useState(6);
+
+  const mountedRef = useRef(true);
+  const recentSentinelRef = useRef<HTMLDivElement | null>(null);
+  const foodInputRef = useRef<HTMLInputElement | null>(null);
   const realtimeRefreshRef = useRef<number | null>(null);
+  const loadDataRef = useRef<() => Promise<void>>(async () => {});
+
+  const onError = useCallback((msg: string) => setLoadError(msg), []);
+
+  const workout = useWorkout(user, () => loadDataRef.current(), onError, setEditRecents);
+  const meals = useMeals(user, () => loadDataRef.current(), onError, setEditRecents);
+
+  const loadData = useCallback(async () => {
+    if (!user) return;
+    setLoadingData(true);
+    setLoadError(null);
+    try {
+      const [profileData] = await Promise.all([
+        getProfile(user.id),
+        workout.load(user.id),
+        meals.load(user.id),
+      ]);
+      if (!mountedRef.current) return;
+      setProfile(profileData ?? undefined);
+    } catch (err) {
+      console.error("[loadData] failed:", err);
+      setLoadError(err instanceof Error ? err.message : "Failed to load data");
+    } finally {
+      if (mountedRef.current) setLoadingData(false);
+    }
+  }, [user, workout.load, meals.load]);
+
+  useEffect(() => {
+    loadDataRef.current = loadData;
+  }, [loadData]);
+
+  const handleConfirmDelete = async () => {
+    if (!pendingDelete || !user) return;
+    setDeletingItem(true);
+    const { type, id } = pendingDelete;
+    try {
+      if (type === "meal") {
+        await deleteMeal(id, user.id);
+        meals.setMeals((prev) => prev.filter((m) => m.id !== id));
+        meals.setEditingMeal(null);
+        setEditRecents(false);
+      } else {
+        await deleteWorkout(id, user.id);
+        workout.setWorkouts((prev) => prev.filter((w) => w.id !== id));
+        workout.setEditingWorkout(null);
+        setEditRecents(false);
+        notifyWorkoutsUpdated();
+      }
+    } catch (err) {
+      console.error("[delete] FAILED", err);
+      setLoadError(err instanceof Error ? err.message : "Failed to delete");
+    } finally {
+      setDeletingItem(false);
+      setPendingDelete(null);
+    }
+  };
 
   const handleFoodPhotoClick = () => {
     foodInputRef.current?.click();
   };
 
-  const openManualMealEntry = () => {
-    setEditForm({
-      name: "",
-      calories: "",
-      protein: "",
-      carbs: "",
-      fat: ""
+  const handleFoodFileSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = event.target.files?.[0] ?? null;
+    if (!selected) return;
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result ?? ""));
+      reader.onerror = () => reject(new Error("Failed to read file"));
+      reader.readAsDataURL(selected);
     });
-
-    setEditingMeal({
-      id: "",
-      ts: Date.now(),
-      analysisJson: {
-        name: "",
-        estimated_ranges: {
-          calories_min: 0,
-          calories_max: 0,
-          protein_g_min: 0,
-          protein_g_max: 0,
-          carbs_g_min: 0,
-          carbs_g_max: 0,
-          fat_g_min: 0,
-          fat_g_max: 0
-        }
-      }
-    } as any);
+    try {
+      sessionStorage.setItem(
+        "wya_pending_capture",
+        JSON.stringify({ name: selected.name, type: selected.type, dataUrl })
+      );
+    } catch {
+      // If storage fails, fall back to capture screen.
+    }
+    router.push("/capture?type=food&from=home");
   };
-
 
   const handleBarcodeDetected = async (barcode: string) => {
     if (!user) return;
@@ -184,169 +201,13 @@ export default function HomeScreen() {
       if (created?.id) {
         await updateMeal(created.id, analysis);
         const finishedMeal = { ...created, analysisJson: analysis, status: "done" as const };
-        setMeals((prev) => [finishedMeal, ...prev]);
+        meals.setMeals((prev) => [finishedMeal, ...prev]);
       }
       setBarcodeSuccess(true);
       setTimeout(() => setBarcodeSuccess(false), 1500);
     } catch (err) {
       console.error("[barcode] save failed:", err);
     }
-  };
-
-  const openMealEditor = (meal: MealLog) => {
-    const displayName =
-      meal.analysisJson?.name ??
-      meal.analysisJson?.detected_items?.[0]?.name ??
-      "Meal";
-
-    setEditForm({
-      name: displayName,
-      calories: meal.calories?.toString() ?? "",
-      protein: meal.protein?.toString() ?? "",
-      carbs: meal.carbs?.toString() ?? "",
-      fat: meal.fat?.toString() ?? ""
-    });
-
-    setEditingMeal(meal);
-  };
-
-  const openWorkoutEditor = (workout: WorkoutSession) => {
-    const endTs = workout.endTs ?? Date.now();
-    const inferredDuration =
-      workout.durationMin ??
-      (workout.startTs ? Math.max(0, Math.round((endTs - workout.startTs) / 60000)) : 0);
-
-    const hours = Math.floor(inferredDuration / 60);
-    const minutes = inferredDuration % 60;
-    setWorkoutEditHours(String(hours));
-    setWorkoutEditMinutes(String(minutes));
-    setWorkoutEditTypes(workout.workoutTypes ?? []);
-    setWorkoutEditIntensity(workout.intensity ?? "");
-    setEditingWorkout(workout);
-  };
-
-  const handleUpdateMeal = async () => {
-    if (!editingMeal || !user) return;
-
-    try {
-      setUpdatingMeal(true);
-      const ranges = { ...editingMeal.analysisJson.estimated_ranges };
-      const toNumber = (value: string) => {
-        const parsed = Number(value);
-        return Number.isFinite(parsed) ? parsed : null;
-      };
-      const calories =
-        editForm.calories.trim() === ""
-          ? editingMeal.calories ?? null
-          : toNumber(editForm.calories);
-      const protein =
-        editForm.protein.trim() === ""
-          ? editingMeal.protein ?? null
-          : toNumber(editForm.protein);
-      const carbs =
-        editForm.carbs.trim() === ""
-          ? editingMeal.carbs ?? null
-          : toNumber(editForm.carbs);
-      const fat =
-        editForm.fat.trim() === ""
-          ? editingMeal.fat ?? null
-          : toNumber(editForm.fat);
-
-      if (calories !== null) {
-        ranges.calories_min = calories;
-        ranges.calories_max = calories;
-      }
-      if (protein !== null) {
-        ranges.protein_g_min = protein;
-        ranges.protein_g_max = protein;
-      }
-      if (carbs !== null) {
-        ranges.carbs_g_min = carbs;
-        ranges.carbs_g_max = carbs;
-      }
-      if (fat !== null) {
-        ranges.fat_g_min = fat;
-        ranges.fat_g_max = fat;
-      }
-
-      const updatedAnalysis = {
-        ...(editingMeal.analysisJson as any),
-        name: editForm.name,
-        estimated_ranges: ranges
-      };
-
-      if (!editingMeal.id) {
-        const created = await addMeal(user.id, updatedAnalysis as any);
-        await updateMeal(created.id, updatedAnalysis as any, {
-          userCorrection: editForm.name
-        });
-      } else {
-        await updateMeal(editingMeal.id, updatedAnalysis as any, {
-          userCorrection: editForm.name
-        });
-      }
-
-      setEditingMeal(null);
-      setEditRecents(false);
-
-      await loadData();
-    } catch (err) {
-      console.error("Meal update failed", err);
-    } finally {
-      setUpdatingMeal(false);
-    }
-  };
-
-  const handleUpdateWorkout = async () => {
-    if (!editingWorkout || !user) return;
-
-    try {
-      setUpdatingWorkout(true);
-      const parsedHours = Number(workoutEditHours);
-      const parsedMinutes = Number(workoutEditMinutes);
-      const safeHours = Number.isFinite(parsedHours) ? parsedHours : 0;
-      const safeMinutes = Number.isFinite(parsedMinutes) ? parsedMinutes : 0;
-      const computedDuration = safeHours * 60 + safeMinutes;
-      const durationMin =
-        computedDuration > 0 ? computedDuration : editingWorkout.durationMin ?? 0;
-      const endTs = editingWorkout.startTs + durationMin * 60000;
-
-      await updateWorkout(
-        editingWorkout.id,
-        user.id,
-        endTs,
-        durationMin,
-        workoutEditTypes.length > 0 ? workoutEditTypes : undefined,
-        workoutEditIntensity || undefined
-      );
-      setEditingWorkout(null);
-      setEditRecents(false);
-      await loadData();
-      notifyWorkoutsUpdated();
-    } catch (err) {
-      console.error("Workout update failed", err);
-    } finally {
-      setUpdatingWorkout(false);
-    }
-  };
-  const handleFoodFileSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const selected = event.target.files?.[0] ?? null;
-    if (!selected) return;
-    const dataUrl = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result ?? ""));
-      reader.onerror = () => reject(new Error("Failed to read file"));
-      reader.readAsDataURL(selected);
-    });
-    try {
-      sessionStorage.setItem(
-        "wya_pending_capture",
-        JSON.stringify({ name: selected.name, type: selected.type, dataUrl })
-      );
-    } catch {
-      // If storage fails, fall back to capture screen.
-    }
-    router.push("/capture?type=food&from=home");
   };
 
   useEffect(() => {
@@ -366,68 +227,6 @@ export default function HomeScreen() {
     }
   }, [loading, user, router]);
 
-  const loadData = useCallback(async () => {
-    if (!user) return;
-    setLoadingData(true);
-    setLoadError(null);
-    try {
-      const [profileData, mealsData, workoutsData, activeWorkoutData] = await Promise.all([
-        getProfile(user.id),
-        listMeals(user.id, 50),
-        listWorkouts(user.id, 50),
-        getActiveWorkout(user.id),
-      ]);
-      if (!mountedRef.current) return;
-      setProfile(profileData ?? undefined);
-      setMeals(mealsData);
-      setWorkouts(workoutsData);
-      setActiveWorkout(activeWorkoutData);
-    } catch (err) {
-      console.error("[loadData] failed:", err);
-      setLoadError(err instanceof Error ? err.message : "Failed to load data");
-    } finally {
-      if (mountedRef.current) setLoadingData(false);
-    }
-  }, [user]);
-
-  const refreshActiveWorkout = async () => {
-    if (!user) return;
-    try {
-      const current = await getActiveWorkout(user.id);
-      if (!mountedRef.current) return;
-      // Only update if DB returned a workout — don't wipe optimistic state with null
-      if (current) setActiveWorkout(current);
-    } catch {
-      // Silent: active workout is optional.
-    }
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!pendingDelete || !user) return;
-    setDeletingItem(true);
-    const { type, id } = pendingDelete;
-    try {
-      if (type === "meal") {
-        await deleteMeal(id, user.id);
-        setMeals((prev) => prev.filter((m) => m.id !== id));
-        setEditingMeal(null);
-        setEditRecents(false);
-      } else {
-        await deleteWorkout(id, user.id);
-        setWorkouts((prev) => prev.filter((w) => w.id !== id));
-        setEditingWorkout(null);
-        setEditRecents(false);
-        notifyWorkoutsUpdated();
-      }
-    } catch (err) {
-      console.error("[delete] FAILED", err);
-      setLoadError(err instanceof Error ? err.message : "Failed to delete");
-    } finally {
-      setDeletingItem(false);
-      setPendingDelete(null);
-    }
-  };
-
   useEffect(() => {
     if (!user) return;
     loadData();
@@ -436,7 +235,6 @@ export default function HomeScreen() {
   useEffect(() => {
     setEditRecents(false);
   }, []);
-
 
   useEffect(() => {
     const handler = () => loadData();
@@ -501,14 +299,18 @@ export default function HomeScreen() {
     }
   }, [user]);
 
-  // Keep walkthrough navigation to Next/Back/Skip only.
-
   const homeMarkers = useMemo(
-    () => computeHomeMarkers(meals, workouts, profile),
-    [meals, workouts, profile]
+    () => computeHomeMarkers(meals.meals, workout.workouts, profile),
+    [meals.meals, workout.workouts, profile]
   );
-  const completedWorkouts = useMemo(() => workouts.filter((workout) => workout.endTs), [workouts]);
-  const recentItems = useMemo(() => computeRecent(meals, completedWorkouts), [meals, completedWorkouts]);
+  const completedWorkouts = useMemo(
+    () => workout.workouts.filter((w) => w.endTs),
+    [workout.workouts]
+  );
+  const recentItems = useMemo(
+    () => computeRecent(meals.meals, completedWorkouts),
+    [meals.meals, completedWorkouts]
+  );
 
   const formatTitle = (value: string) =>
     value
@@ -517,9 +319,9 @@ export default function HomeScreen() {
       .join(" ");
   const formatClean = (min: number, max: number, unit = "") =>
     formatApprox(min, max, unit).replace(/^~/, "");
-  const formatWorkoutDurationLines = (workout: WorkoutSession) => {
-    const endTs = workout.endTs ?? Date.now();
-    const rawMinutes = (endTs - workout.startTs) / 60000;
+  const formatWorkoutDurationLines = (w: WorkoutSession) => {
+    const endTs = w.endTs ?? Date.now();
+    const rawMinutes = (endTs - w.startTs) / 60000;
     const minutes = rawMinutes < 1 ? 0 : Math.ceil(rawMinutes);
     if (minutes === 0) return { title: "Workout", detail: "<1 min" };
     if (minutes < 60) return { title: "Workout", detail: `${minutes} mins` };
@@ -587,75 +389,11 @@ export default function HomeScreen() {
 
   const gentleTargetsDisplay = homeMarkers.gentleTargets ?? { calories: 2300, protein: 125 };
   const mealCount = homeMarkers.mealCount;
-  const workoutTypeOptions = [
-    "Walk",
-    "Run",
-    "Cycle",
-    "Cardio",
-    "Weights",
-    "Calisthenics",
-    "HIIT",
-    "Yoga",
-    "Pilates",
-    "Swim",
-    "Sport",
-    "Stretching",
-    "Other"
-  ];
-
-  const toggleWorkoutType = (type: string) => {
-    setSelectedWorkoutTypes((prev) =>
-      prev.includes(type) ? prev.filter((item) => item !== type) : [...prev, type]
-    );
-  };
-
-  const handleStartWorkout = async () => {
-    if (!user) return;
-    try {
-      const session = await addWorkout(user.id, Date.now());
-      setActiveWorkout(session);
-      await loadData();
-      notifyWorkoutsUpdated();
-    } catch (err) {
-      setLoadError(err instanceof Error ? err.message : "Failed to start workout");
-    } finally {
-      setShowStartWorkoutModal(false);
-    }
-  };
-
-  const handleEndWorkout = async () => {
-    if (!user || !activeWorkout || isEndingWorkout) return;
-    setIsEndingWorkout(true);
-    try {
-      const now = Date.now();
-      const rawMinutes = (now - activeWorkout.startTs) / 60000;
-      const durationMin = rawMinutes < 1 ? 0 : Math.ceil(rawMinutes);
-      await updateWorkout(
-        activeWorkout.id,
-        user.id,
-        now,
-        durationMin,
-        selectedWorkoutTypes,
-        selectedIntensity || undefined
-      );
-      setActiveWorkout(null);
-      setSelectedWorkoutTypes([]);
-      setSelectedIntensity("");
-      await loadData();
-      notifyWorkoutsUpdated();
-    } catch (err) {
-      console.error("[endWorkout] FAILED", err);
-      setLoadError(err instanceof Error ? err.message : "Failed to end workout");
-    } finally {
-      setIsEndingWorkout(false);
-      setShowEndWorkoutModal(false);
-    }
-  };
 
   const steps = [
     {
       target: '[data-tour="food-action"]',
-      content: "Take photos. That’s it.",
+      content: "Take photos. That's it.",
       disableBeacon: true
     },
     {
@@ -694,6 +432,7 @@ export default function HomeScreen() {
       router.push("/summary");
     }
   };
+
   if (!mounted) {
     return null;
   }
@@ -766,12 +505,12 @@ export default function HomeScreen() {
           </div>
         </div>
       )}
-      {showStartWorkoutModal && (
+      {workout.showStartWorkoutModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
           <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
             <h2 className="text-base font-semibold text-ink">Start workout</h2>
             <p className="mt-2 text-sm text-muted/70">
-              {activeWorkout
+              {workout.activeWorkout
                 ? "A workout is already in progress."
                 : "Confirm you want to start your workout now."}
             </p>
@@ -779,15 +518,15 @@ export default function HomeScreen() {
               <button
                 type="button"
                 className="rounded-xl border border-ink/10 bg-white px-3 py-2 text-xs font-semibold text-ink/70 transition hover:bg-ink/5"
-                onClick={() => setShowStartWorkoutModal(false)}
+                onClick={() => workout.setShowStartWorkoutModal(false)}
               >
                 Close
               </button>
-              {!activeWorkout && (
+              {!workout.activeWorkout && (
                 <button
                   type="button"
                   className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90"
-                  onClick={handleStartWorkout}
+                  onClick={workout.handleStartWorkout}
                 >
                   Start workout
                 </button>
@@ -796,30 +535,30 @@ export default function HomeScreen() {
           </div>
         </div>
       )}
-      {showEndWorkoutModal && (
+      {workout.showEndWorkoutModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
           <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
             <h2 className="text-base font-semibold text-ink">End workout</h2>
             <p className="mt-2 text-sm text-muted/70">
-              {activeWorkout ? "Confirm your workout details." : "No active workout in progress."}
+              {workout.activeWorkout ? "Confirm your workout details." : "No active workout in progress."}
             </p>
-            {activeWorkout && (
+            {workout.activeWorkout && (
               <div className="mt-4 space-y-4">
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">
                     Workout type
                   </p>
                   <div className="mt-2 flex flex-wrap gap-2">
-                    {workoutTypeOptions.map((type) => (
+                    {WORKOUT_TYPE_OPTIONS.map((type) => (
                       <button
                         key={type}
                         type="button"
                         className={`rounded-full border px-3 py-1 text-xs transition ${
-                          selectedWorkoutTypes.includes(type)
+                          workout.selectedWorkoutTypes.includes(type)
                             ? "border-primary/30 bg-primary/10 text-ink"
                             : "border-ink/10 bg-white text-ink/70 hover:bg-ink/5"
                         }`}
-                        onClick={() => toggleWorkoutType(type)}
+                        onClick={() => workout.toggleWorkoutType(type)}
                       >
                         {type}
                       </button>
@@ -840,11 +579,11 @@ export default function HomeScreen() {
                         key={level.value}
                         type="button"
                         className={`rounded-full border px-3 py-1 text-xs transition ${
-                          selectedIntensity === level.value
+                          workout.selectedIntensity === level.value
                             ? "border-primary/30 bg-primary/10 text-ink"
                             : "border-ink/10 bg-white text-ink/70 hover:bg-ink/5"
                         }`}
-                        onClick={() => setSelectedIntensity(level.value)}
+                        onClick={() => workout.setSelectedIntensity(level.value)}
                       >
                         {level.label}
                       </button>
@@ -857,25 +596,25 @@ export default function HomeScreen() {
               <button
                 type="button"
                 className="rounded-xl border border-ink/10 bg-white px-3 py-2 text-xs font-semibold text-ink/70 transition hover:bg-ink/5"
-                onClick={() => setShowEndWorkoutModal(false)}
+                onClick={() => workout.setShowEndWorkoutModal(false)}
               >
                 Close
               </button>
-              {activeWorkout && (
+              {workout.activeWorkout && (
                 <button
                   type="button"
-                  disabled={isEndingWorkout}
+                  disabled={workout.isEndingWorkout}
                   className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
-                  onClick={handleEndWorkout}
+                  onClick={workout.handleEndWorkout}
                 >
-                  {isEndingWorkout ? "Ending…" : "End workout"}
+                  {workout.isEndingWorkout ? "Ending…" : "End workout"}
                 </button>
               )}
             </div>
           </div>
         </div>
       )}
-      {pendingDelete && !editingMeal && !editingWorkout && (
+      {pendingDelete && !meals.editingMeal && !workout.editingWorkout && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
           <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
             <h2 className="text-base font-semibold text-ink">Delete {pendingDelete.type}</h2>
@@ -939,8 +678,6 @@ export default function HomeScreen() {
           </Card>
         )}
 
-        
-
         <Card className="mt-4">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Today</p>
           <div className="mt-3 flex items-baseline justify-between">
@@ -992,7 +729,7 @@ export default function HomeScreen() {
             <button
               type="button"
               className="flex flex-1 items-center justify-center gap-2 rounded-l-xl rounded-r-none bg-primary px-3 py-2 text-xs font-semibold text-white shadow-[0_8px_20px_rgba(15,23,42,0.14)] ring-1 ring-white/40 transition-all duration-150 hover:bg-primary/90 active:translate-y-[1px] active:shadow-[0_3px_10px_rgba(15,23,42,0.18)]"
-              onClick={openManualMealEntry}
+              onClick={meals.openManualMealEntry}
             >
               <span>+</span>
               <span>Manual</span>
@@ -1010,19 +747,19 @@ export default function HomeScreen() {
             <button
               type="button"
               className="flex flex-1 items-center justify-center rounded-l-xl rounded-r-none border border-ink/15 bg-gradient-to-r from-white via-ink/5 to-white px-3 py-1.5 text-center font-normal text-ink/60 shadow-[0_8px_18px_rgba(15,23,42,0.12)] ring-1 ring-white/70 transition-all duration-150 hover:from-white hover:via-ink/10 hover:to-white active:translate-y-[1px] active:shadow-[0_3px_10px_rgba(15,23,42,0.16)]"
-              onClick={() => setShowStartWorkoutModal(true)}
+              onClick={() => workout.setShowStartWorkoutModal(true)}
             >
               Start Workout
             </button>
             <button
               type="button"
               className="flex flex-1 items-center justify-center rounded-r-xl rounded-l-none border border-ink/15 border-l-0 bg-gradient-to-r from-white via-ink/5 to-white px-3 py-1.5 text-center font-normal text-ink/60 shadow-[0_8px_18px_rgba(15,23,42,0.12)] ring-1 ring-white/70 transition-all duration-150 hover:from-white hover:via-ink/10 hover:to-white active:translate-y-[1px] active:shadow-[0_3px_10px_rgba(15,23,42,0.16)]"
-              onClick={() => setShowEndWorkoutModal(true)}
+              onClick={() => workout.setShowEndWorkoutModal(true)}
             >
               End Workout
             </button>
           </div>
-          {activeWorkout && (
+          {workout.activeWorkout && (
             <p className="text-center text-[11px] text-muted/60">Workout in progress</p>
           )}
         </div>
@@ -1063,7 +800,7 @@ export default function HomeScreen() {
                       <div
                         key={`${meal.id}-${meal.calories}-${meal.protein}`}
                         onClick={() => {
-                          if (editRecents) openMealEditor(meal);
+                          if (editRecents) meals.openMealEditor(meal);
                         }}
                         className={`inline-flex w-full items-center justify-between rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs text-ink/80 ${editRecents ? "cursor-pointer animate-wiggle" : ""}`}
                       >
@@ -1102,18 +839,18 @@ export default function HomeScreen() {
                     ))}
                   </div>
                   <div className="col-span-1 space-y-2 border-l border-ink/5 pl-2">
-                    {group.workouts.map((workout) => (
+                    {group.workouts.map((w) => (
                       <div
-                        key={workout.id}
+                        key={w.id}
                         onClick={() => {
-                          if (editRecents) openWorkoutEditor(workout);
+                          if (editRecents) workout.openWorkoutEditor(w);
                         }}
                         className={`flex w-full flex-col items-center justify-center rounded-full border border-ink/10 bg-ink/5 px-3 py-0.5 text-[11px] text-ink/70 leading-tight ${editRecents ? "cursor-pointer animate-wiggle-neutral" : ""}`}
                       >
                         <span className="font-semibold text-ink/70">
-                          {formatWorkoutDurationLines(workout).title}
+                          {formatWorkoutDurationLines(w).title}
                         </span>
-                        <span className="-mt-0.5">{formatWorkoutDurationLines(workout).detail}</span>
+                        <span className="-mt-0.5">{formatWorkoutDurationLines(w).detail}</span>
                       </div>
                     ))}
                   </div>
@@ -1121,7 +858,7 @@ export default function HomeScreen() {
               </div>
             ))}
             {recentItems.length === 0 ? (
-              mealCount === 0 && workouts.length === 0 ? (
+              mealCount === 0 && workout.workouts.length === 0 ? (
                 <div className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs text-ink/80">
                   Example: Chicken bowl · 600 kcal · 40 g
                 </div>
@@ -1133,7 +870,7 @@ export default function HomeScreen() {
         </Card>
       </div>
 
-      {editingMeal && (
+      {meals.editingMeal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5">
           <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
             {pendingDelete?.type === "meal" ? (
@@ -1162,7 +899,7 @@ export default function HomeScreen() {
             ) : (
               <>
                 <h2 className="text-base font-semibold text-ink">
-                  {editingMeal.id ? "Edit Meal" : "Add Food"}
+                  {meals.editingMeal.id ? "Edit Meal" : "Add Food"}
                 </h2>
 
                 <div className="mt-4 space-y-3">
@@ -1170,8 +907,8 @@ export default function HomeScreen() {
                     <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Name</p>
                     <input
                       className="mt-1 w-full rounded-lg border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                      value={editForm.name}
-                      onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                      value={meals.editForm.name}
+                      onChange={(e) => meals.setEditForm({ ...meals.editForm, name: e.target.value })}
                       placeholder="Food name"
                     />
                   </div>
@@ -1179,8 +916,8 @@ export default function HomeScreen() {
                     <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Calories</p>
                     <input
                       className="mt-1 w-full rounded-lg border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                      value={editForm.calories}
-                      onChange={(e) => setEditForm({ ...editForm, calories: e.target.value })}
+                      value={meals.editForm.calories}
+                      onChange={(e) => meals.setEditForm({ ...meals.editForm, calories: e.target.value })}
                       placeholder="kcal"
                       inputMode="numeric"
                     />
@@ -1189,8 +926,8 @@ export default function HomeScreen() {
                     <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Protein</p>
                     <input
                       className="mt-1 w-full rounded-lg border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                      value={editForm.protein}
-                      onChange={(e) => setEditForm({ ...editForm, protein: e.target.value })}
+                      value={meals.editForm.protein}
+                      onChange={(e) => meals.setEditForm({ ...meals.editForm, protein: e.target.value })}
                       placeholder="g"
                       inputMode="numeric"
                     />
@@ -1199,8 +936,8 @@ export default function HomeScreen() {
                     <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Carbs</p>
                     <input
                       className="mt-1 w-full rounded-lg border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                      value={editForm.carbs}
-                      onChange={(e) => setEditForm({ ...editForm, carbs: e.target.value })}
+                      value={meals.editForm.carbs}
+                      onChange={(e) => meals.setEditForm({ ...meals.editForm, carbs: e.target.value })}
                       placeholder="g"
                       inputMode="numeric"
                     />
@@ -1209,8 +946,8 @@ export default function HomeScreen() {
                     <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Fat</p>
                     <input
                       className="mt-1 w-full rounded-lg border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                      value={editForm.fat}
-                      onChange={(e) => setEditForm({ ...editForm, fat: e.target.value })}
+                      value={meals.editForm.fat}
+                      onChange={(e) => meals.setEditForm({ ...meals.editForm, fat: e.target.value })}
                       placeholder="g"
                       inputMode="numeric"
                     />
@@ -1219,14 +956,14 @@ export default function HomeScreen() {
 
                 <div
                   className={`mt-5 flex items-center ${
-                    editingMeal.id ? "justify-between" : "justify-end"
+                    meals.editingMeal.id ? "justify-between" : "justify-end"
                   }`}
                 >
-                  {editingMeal.id ? (
+                  {meals.editingMeal.id ? (
                     <button
                       type="button"
                       className="text-sm text-red-600"
-                      onClick={() => setPendingDelete({ type: "meal", id: editingMeal.id })}
+                      onClick={() => setPendingDelete({ type: "meal", id: meals.editingMeal!.id })}
                     >
                       Delete
                     </button>
@@ -1236,7 +973,7 @@ export default function HomeScreen() {
                       type="button"
                       className="rounded-xl border border-ink/10 bg-white px-3 py-2 text-xs font-semibold text-ink/70 transition hover:bg-ink/5"
                       onClick={() => {
-                        setEditingMeal(null);
+                        meals.setEditingMeal(null);
                         setEditRecents(false);
                       }}
                     >
@@ -1246,16 +983,16 @@ export default function HomeScreen() {
                     <button
                       type="button"
                       className={`rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 ${
-                        updatingMeal ? "opacity-70" : ""
+                        meals.updatingMeal ? "opacity-70" : ""
                       }`}
-                      onClick={handleUpdateMeal}
-                      disabled={updatingMeal}
+                      onClick={meals.handleUpdateMeal}
+                      disabled={meals.updatingMeal}
                     >
-                      {updatingMeal
-                        ? editingMeal.id
+                      {meals.updatingMeal
+                        ? meals.editingMeal.id
                           ? "Updating..."
                           : "Adding..."
-                        : editingMeal.id
+                        : meals.editingMeal.id
                           ? "Update"
                           : "Add"}
                     </button>
@@ -1267,7 +1004,7 @@ export default function HomeScreen() {
         </div>
       )}
 
-      {editingWorkout && (
+      {workout.editingWorkout && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
           <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
             {pendingDelete?.type === "workout" ? (
@@ -1306,15 +1043,15 @@ export default function HomeScreen() {
                     <div className="mt-2 flex items-center gap-2">
                       <input
                         className="w-16 rounded-lg border border-ink/10 bg-white px-3 py-2 text-xs text-ink/80"
-                        value={workoutEditHours}
-                        onChange={(e) => setWorkoutEditHours(e.target.value)}
+                        value={workout.workoutEditHours}
+                        onChange={(e) => workout.setWorkoutEditHours(e.target.value)}
                         placeholder="0"
                       />
                       <span className="text-xs text-muted/70">hrs</span>
                       <input
                         className="w-16 rounded-lg border border-ink/10 bg-white px-3 py-2 text-xs text-ink/80"
-                        value={workoutEditMinutes}
-                        onChange={(e) => setWorkoutEditMinutes(e.target.value)}
+                        value={workout.workoutEditMinutes}
+                        onChange={(e) => workout.setWorkoutEditMinutes(e.target.value)}
                         placeholder="0"
                       />
                       <span className="text-xs text-muted/70">mins</span>
@@ -1326,17 +1063,17 @@ export default function HomeScreen() {
                       Workout type
                     </p>
                     <div className="mt-2 flex flex-wrap gap-2">
-                      {workoutTypeOptions.map((type) => (
+                      {WORKOUT_TYPE_OPTIONS.map((type) => (
                         <button
                           key={type}
                           type="button"
                           className={`rounded-full border px-3 py-1 text-xs transition ${
-                            workoutEditTypes.includes(type)
+                            workout.workoutEditTypes.includes(type)
                               ? "border-primary/30 bg-primary/10 text-ink"
                               : "border-ink/10 bg-white text-ink/70 hover:bg-ink/5"
                           }`}
                           onClick={() =>
-                            setWorkoutEditTypes((prev) =>
+                            workout.setWorkoutEditTypes((prev) =>
                               prev.includes(type)
                                 ? prev.filter((item) => item !== type)
                                 : [...prev, type]
@@ -1363,13 +1100,13 @@ export default function HomeScreen() {
                           key={level.value}
                           type="button"
                           className={`rounded-full border px-3 py-1 text-xs transition ${
-                            workoutEditIntensity === level.value
+                            workout.workoutEditIntensity === level.value
                               ? "border-primary/30 bg-primary/10 text-ink"
                               : "border-ink/10 bg-white text-ink/70 hover:bg-ink/5"
                           }`}
                           onClick={() =>
-                            setWorkoutEditIntensity(
-                              workoutEditIntensity === level.value ? "" : level.value
+                            workout.setWorkoutEditIntensity(
+                              workout.workoutEditIntensity === level.value ? "" : level.value
                             )
                           }
                         >
@@ -1384,7 +1121,7 @@ export default function HomeScreen() {
                   <button
                     type="button"
                     className="text-sm text-red-600"
-                    onClick={() => setPendingDelete({ type: "workout", id: editingWorkout.id })}
+                    onClick={() => setPendingDelete({ type: "workout", id: workout.editingWorkout!.id })}
                   >
                     Delete
                   </button>
@@ -1393,7 +1130,7 @@ export default function HomeScreen() {
                       type="button"
                       className="rounded-xl border border-ink/10 bg-white px-3 py-2 text-xs font-semibold text-ink/70 transition hover:bg-ink/5"
                       onClick={() => {
-                        setEditingWorkout(null);
+                        workout.setEditingWorkout(null);
                         setEditRecents(false);
                       }}
                     >
@@ -1402,12 +1139,12 @@ export default function HomeScreen() {
                     <button
                       type="button"
                       className={`rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 ${
-                        updatingWorkout ? "opacity-70" : ""
+                        workout.updatingWorkout ? "opacity-70" : ""
                       }`}
-                      onClick={handleUpdateWorkout}
-                      disabled={updatingWorkout}
+                      onClick={workout.handleUpdateWorkout}
+                      disabled={workout.updatingWorkout}
                     >
-                      {updatingWorkout ? "Updating..." : "Update"}
+                      {workout.updatingWorkout ? "Updating..." : "Update"}
                     </button>
                   </div>
                 </div>
@@ -1490,7 +1227,7 @@ export default function HomeScreen() {
               <button
                 type="button"
                 className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90"
-                onClick={() => { setBarcodeNotFound(false); openManualMealEntry(); }}
+                onClick={() => { setBarcodeNotFound(false); meals.openManualMealEntry(); }}
               >
                 Add Manually
               </button>
