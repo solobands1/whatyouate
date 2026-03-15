@@ -123,13 +123,13 @@ function mapMeal(row: any): MealLog {
 }
 
 function mapWorkout(row: any): WorkoutSession {
-  const coerceTs = (value: any) => {
+  // Normalize any timestamp value to milliseconds.
+  // unix seconds are ~10 digits (< 10^10); unix ms are ~13 digits (>= 10^10).
+  const coerceTs = (value: any): number | undefined => {
     if (value == null) return undefined;
-    if (typeof value === "number" && Number.isFinite(value)) return value;
-    const asNumber = Number(value);
-    if (Number.isFinite(asNumber) && asNumber > 0) return asNumber;
-    const asDate = new Date(value).getTime();
-    return Number.isFinite(asDate) ? asDate : undefined;
+    const n = typeof value === "number" ? value : Number(value);
+    if (!Number.isFinite(n) || n <= 0) return undefined;
+    return n < 10_000_000_000 ? n * 1000 : n;
   };
 
   const startedAt = coerceTs(row.start_ts);
@@ -379,23 +379,16 @@ export async function addWorkout(
     return session;
   }
 
-  console.log("[workout] DB insert", { userId, startTs });
-
   const { data, error } = await supabase
     .from("workouts")
     .insert({
       user_id: userId,
-      start_ts: startTs
+      start_ts: Math.floor(startTs / 1000)
     })
     .select("*")
     .single();
 
-  if (error) {
-    console.error("[workout] DB error", error);
-    throw error;
-  }
-
-  console.log("[workout] DB inserted row", data);
+  if (error) throw error;
 
   return mapWorkout(data);
 }
@@ -439,7 +432,7 @@ export async function updateWorkout(
   }
 
   const payload: Record<string, unknown> = {
-    end_ts: endTs,
+    end_ts: Math.floor(endTs / 1000),
     duration_min: durationMin,
     workout_types: workoutTypes && workoutTypes.length > 0 ? workoutTypes : null,
     intensity: intensity ?? null
