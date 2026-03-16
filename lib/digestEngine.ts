@@ -252,6 +252,11 @@ export function computeSummaryMarkers(meals: MealLog[], workouts: WorkoutSession
   };
 }
 
+// Picks a variant by day-of-month so messages rotate daily but stay stable within a day
+function pickVariant(variants: string[]): string {
+  return variants[new Date().getDate() % variants.length];
+}
+
 export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], profile?: UserProfile) {
   if (meals.length < 5) return [];
 
@@ -285,12 +290,20 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
     const weekHigh = avgWeekCalories > gentleTargets.calories * 1.1;
     if (todayLow && weekLow) {
       nudges.push({
-        message: "Energy intake is trending lighter than your recent range.",
+        message: pickVariant([
+          "Energy intake is trending lighter than your recent range.",
+          "Intake has been running a bit lighter than usual this week.",
+          "Calorie intake has been on the lighter side recently."
+        ]),
         priority: 2 + calorieBias
       });
     } else if (todayHigh && weekHigh) {
       nudges.push({
-        message: "Energy intake is trending fuller than your recent range.",
+        message: pickVariant([
+          "Energy intake is trending fuller than your recent range.",
+          "Intake is running a bit higher than your recent pattern.",
+          "Calorie intake has been on the fuller side this week."
+        ]),
         priority: 2 + calorieBias
       });
     }
@@ -300,17 +313,29 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
     const target = (profile.weight ?? 0) * proteinTargetPerKg(profile);
     if (target && avgWeekProtein < target * 0.7) {
       nudges.push({
-        message: "Noticed protein below your goal range. Consider a small add.",
+        message: pickVariant([
+          "Noticed protein below your goal range. Consider a small add.",
+          "Protein has been running low this week. A small boost may help.",
+          "Protein intake is well below your goal range. Worth adding a source."
+        ]),
         priority: 3 + proteinBias
       });
     } else if (target && avgWeekProtein < target * 0.85) {
       nudges.push({
-        message: "Noticed protein slightly below your goal range. Consider a small add.",
+        message: pickVariant([
+          "Noticed protein slightly below your goal range. Consider a small add.",
+          "Protein is a bit short of your target this week. A small add may help.",
+          "Protein is trending slightly under your goal. Easy to close the gap."
+        ]),
         priority: 2 + proteinBias
       });
     } else if (target && avgWeekProtein < target * 0.95) {
       nudges.push({
-        message: "Noticed protein near the lower edge of your goal range. A small add may help.",
+        message: pickVariant([
+          "Noticed protein near the lower edge of your goal range. A small add may help.",
+          "Protein is just under your goal range. A small source could fill it.",
+          "Protein is close but slightly below target. A small add would do it."
+        ]),
         priority: 1 + proteinBias
       });
     }
@@ -322,7 +347,11 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
   if (profile?.activityLevel === "very_active" || profile?.activityLevel === "moderately_active") {
     if (recentWorkoutCount === 0 && mealCount >= 10) {
       nudges.push({
-        message: "No workouts logged this week — don't forget to track your sessions.",
+        message: pickVariant([
+          "No workouts logged this week — don't forget to track your sessions.",
+          "Workouts haven't been logged this week. Remember to track your sessions.",
+          "No sessions logged yet this week. Don't forget to record your workouts."
+        ]),
         priority: 1
       });
     }
@@ -342,7 +371,11 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
     counts.forEach((count, nutrient) => {
       if (count >= 3) {
         nudges.push({
-          message: `Noticed fewer ${nutrient}-rich foods. Consider a small add.`,
+          message: pickVariant([
+            `Noticed fewer ${nutrient}-rich foods. Consider a small add.`,
+            `Fewer ${nutrient} sources in the pattern lately. Worth adding one.`,
+            `${nutrient.charAt(0).toUpperCase() + nutrient.slice(1)}-rich foods have been less common lately. A small add may help.`
+          ]),
           priority: 1 + microBias
         });
       }
