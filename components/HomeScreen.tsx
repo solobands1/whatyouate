@@ -359,6 +359,9 @@ export default function HomeScreen() {
         group.workouts.push(item.workout);
       }
     });
+    groups.forEach(g => {
+      console.log(`[groupedRecent] "${g.label}" workouts:`, g.workouts.map(w => w.id.slice(0,8) + " endTs=" + w.endTs));
+    });
     return groups;
   }, [recentFiltered]);
 
