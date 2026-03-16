@@ -2,6 +2,19 @@ import { NextResponse } from "next/server";
 
 const OFF_PRODUCT_URL = "https://world.openfoodfacts.org/api/v2/product";
 
+const barcodeRateMap = new Map<string, { count: number; resetAt: number }>();
+function checkBarcodeRateLimit(key: string): boolean {
+  const now = Date.now();
+  const entry = barcodeRateMap.get(key);
+  if (!entry || now >= entry.resetAt) {
+    barcodeRateMap.set(key, { count: 1, resetAt: now + 60_000 });
+    return true;
+  }
+  if (entry.count >= 20) return false;
+  entry.count += 1;
+  return true;
+}
+
 function toNum(value: any): number | null {
   if (value == null) return null;
   const n = Number(String(value).replace(",", ".").trim());
@@ -18,6 +31,11 @@ function normalizeName(product: any): string {
 
 export async function POST(req: Request) {
   try {
+    const rateLimitKey = req.headers.get("x-forwarded-for") ?? "anon";
+    if (!checkBarcodeRateLimit(rateLimitKey)) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
     const { barcode } = await req.json();
     const code = String(barcode ?? "").trim().replace(/[^0-9A-Za-z]/g, "");
     if (!code) return NextResponse.json({ error: "Missing barcode" }, { status: 400 });

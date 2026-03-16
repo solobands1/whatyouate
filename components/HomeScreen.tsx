@@ -480,6 +480,10 @@ export default function HomeScreen() {
 
   const gentleTargetsDisplay = homeMarkers.gentleTargets ?? { calories: 2300, protein: 125 };
   const mealCount = homeMarkers.mealCount;
+  const calMid = (homeMarkers.todayTotals.calories_min + homeMarkers.todayTotals.calories_max) / 2;
+  const protMid = (homeMarkers.todayTotals.protein_g_min + homeMarkers.todayTotals.protein_g_max) / 2;
+  const calPct = Math.min(100, Math.round((calMid / gentleTargetsDisplay.calories) * 100));
+  const protPct = Math.min(100, Math.round((protMid / gentleTargetsDisplay.protein) * 100));
 
   const steps = [
     {
@@ -791,6 +795,20 @@ export default function HomeScreen() {
               <p className="text-[10px] text-muted/50">approx.</p>
             </div>
           </div>
+          {mealCount > 0 && (
+            <div className="mt-3 flex gap-3">
+              <div className="flex-1">
+                <div className="h-1.5 overflow-hidden rounded-full bg-ink/5">
+                  <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${calPct}%` }} />
+                </div>
+              </div>
+              <div className="flex-1">
+                <div className="h-1.5 overflow-hidden rounded-full bg-ink/5">
+                  <div className="h-full rounded-full bg-primary/70 transition-all duration-500" style={{ width: `${protPct}%` }} />
+                </div>
+              </div>
+            </div>
+          )}
           <p className="mt-2 text-xs text-muted/70">
             Suggested range
             <span className="text-muted/50">{mealCount > 0 ? "" : " (preview)"}</span>

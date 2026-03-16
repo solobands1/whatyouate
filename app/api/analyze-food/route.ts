@@ -7,6 +7,19 @@ const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 const OFF_SEARCH_URL = "https://world.openfoodfacts.org/cgi/search.pl";
 
+const analyzeFoodRateMap = new Map<string, { count: number; resetAt: number }>();
+function checkAnalyzeRateLimit(key: string): boolean {
+  const now = Date.now();
+  const entry = analyzeFoodRateMap.get(key);
+  if (!entry || now >= entry.resetAt) {
+    analyzeFoodRateMap.set(key, { count: 1, resetAt: now + 60_000 });
+    return true;
+  }
+  if (entry.count >= 10) return false;
+  entry.count += 1;
+  return true;
+}
+
 function extractJson(text: string) {
   const start = text.indexOf("{");
   const end = text.lastIndexOf("}");
@@ -503,7 +516,12 @@ async function analyzeTextOnly(textDescription: string, provider: string, openai
 
 export async function POST(req: Request) {
   try {
-    const { imageBase64, imageBase64Secondary, hints, mealId, textDescription } = await req.json();
+    const { imageBase64, imageBase64Secondary, hints, mealId, textDescription, userId } = await req.json();
+
+    const rateLimitKey = userId ?? req.headers.get("x-forwarded-for") ?? "anon";
+    if (!checkAnalyzeRateLimit(rateLimitKey)) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
 
     if (textDescription && !imageBase64) {
       const provider = process.env.AI_PROVIDER ?? "openai";
