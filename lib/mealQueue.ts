@@ -33,6 +33,13 @@ async function processNext() {
       })
     });
 
+    if (response.status === 429) {
+      window.dispatchEvent(new CustomEvent("meal-analysis-error", { detail: { mealId: job.mealId, rateLimited: true } }));
+      notifyMealsUpdated();
+      processNext();
+      return;
+    }
+
     if (!response.ok) throw new Error("Analyze failed");
 
     await response.json();

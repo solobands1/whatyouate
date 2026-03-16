@@ -311,6 +311,18 @@ export default function HomeScreen() {
   }, []);
 
   useEffect(() => {
+    const handler = (e: Event) => {
+      const { rateLimited } = (e as CustomEvent<{ mealId: string; rateLimited: boolean }>).detail ?? {};
+      setLoadError(rateLimited
+        ? "Too many requests — please wait a moment before adding another photo."
+        : "Photo analysis failed. Please try again."
+      );
+    };
+    window.addEventListener("meal-analysis-error", handler);
+    return () => window.removeEventListener("meal-analysis-error", handler);
+  }, []);
+
+  useEffect(() => {
     if (!pendingQuickConfirmId) return;
     const meal = meals.meals.find((m) => m.id === pendingQuickConfirmId && m.status === "done");
     if (!meal) return;
