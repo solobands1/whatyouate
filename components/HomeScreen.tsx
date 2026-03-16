@@ -303,16 +303,7 @@ export default function HomeScreen() {
     [workout.workouts]
   );
   const recentItems = useMemo(() => {
-    const result = computeRecent(meals.meals, completedWorkouts);
-    console.log(`[recentItems] ${result.length} items:`);
-    result.forEach((i, idx) => {
-      if (i.type === "workout") {
-        console.log(`  [${idx}] WORKOUT ${i.workout.id.slice(0,8)} sortTs=${i.ts} endTs=${i.workout.endTs} startTs=${i.workout.startTs}`);
-      } else {
-        console.log(`  [${idx}] MEAL    ${i.meal.id.slice(0,8)} sortTs=${i.ts}`);
-      }
-    });
-    return result;
+    return computeRecent(meals.meals, completedWorkouts);
   }, [meals.meals, completedWorkouts]);
 
   const formatTitle = (value: string) =>
