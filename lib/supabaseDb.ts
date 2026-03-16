@@ -339,6 +339,18 @@ export async function listMeals(userId: string, limit = 50) {
   return (data ?? []).map(mapMeal);
 }
 
+export async function updateMealTs(id: string, ts: number) {
+  if (useMemory) {
+    ensureLocalLoaded();
+    const record = memMeals.find((entry) => entry.meal.id === id);
+    if (record) record.meal.ts = ts;
+    persistLocal();
+    return;
+  }
+  const { error } = await supabase.from("meals").update({ ts }).eq("id", id);
+  if (error) handleSupabaseError("meals", error);
+}
+
 export async function deleteMeal(id: string, userId?: string) {
   if (useMemory) {
     ensureLocalLoaded();

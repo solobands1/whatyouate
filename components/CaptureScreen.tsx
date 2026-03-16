@@ -6,8 +6,22 @@ import { fileToThumbnailDataUrl } from "../lib/utils";
 import { safeFallbackAnalysis } from "../lib/ai/schema";
 import { notifyMealsUpdated } from "../lib/dataEvents";
 import { useAuth } from "./AuthProvider";
-import { addMeal } from "../lib/supabaseDb";
+import { addMeal, updateMealTs } from "../lib/supabaseDb";
 import { enqueueMeal } from "../lib/mealQueue";
+
+function nowTimeString() {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+function timeStringToTs(timeStr: string): number {
+  const [h, m] = timeStr.split(":").map(Number);
+  const d = new Date();
+  d.setHours(h, m, 0, 0);
+  // Don't allow future times
+  if (d.getTime() > Date.now()) d.setTime(Date.now());
+  return d.getTime();
+}
 
 export default function CaptureScreen() {
   const router = useRouter();
@@ -19,6 +33,9 @@ export default function CaptureScreen() {
   const [cameraMode, setCameraMode] = useState<"idle" | "live" | "file">("idle");
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const [pendingMealId, setPendingMealId] = useState<string | null>(null);
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [mealTime, setMealTime] = useState(nowTimeString);
 
   useEffect(() => {
     if (loading) return;
@@ -117,12 +134,34 @@ export default function CaptureScreen() {
     ]);
     const placeholder = safeFallbackAnalysis();
     const pendingMeal = await addMeal(user.id, placeholder, thumb);
+    setPendingMealId(pendingMeal.id);
+    setMealTime(nowTimeString());
     notifyMealsUpdated();
     enqueueMeal(pendingMeal.id, resized);
     if (redirectRef.current) window.clearTimeout(redirectRef.current);
     redirectRef.current = window.setTimeout(() => {
       router.push("/");
     }, 1600);
+  };
+
+  const handleChangeTime = () => {
+    if (redirectRef.current) {
+      window.clearTimeout(redirectRef.current);
+      redirectRef.current = null;
+    }
+    setShowTimePicker(true);
+  };
+
+  const handleConfirmTime = async () => {
+    if (pendingMealId) {
+      const ts = timeStringToTs(mealTime);
+      const nowTs = Date.now();
+      // Only update if the selected time is meaningfully different (> 60s)
+      if (Math.abs(nowTs - ts) > 60_000) {
+        await updateMealTs(pendingMealId, ts).catch(() => {});
+      }
+    }
+    router.push("/");
   };
 
   async function startLiveCamera() {
@@ -245,7 +284,36 @@ export default function CaptureScreen() {
         {preview && (
           <div className="mt-6 flex flex-col items-center">
             <p className="text-lg font-semibold text-primary animate-fadeIn">Image Captured</p>
-            <p className="mt-1 text-sm text-muted/70">Adding to your day…</p>
+            {showTimePicker ? (
+              <div className="mt-4 flex flex-col items-center gap-3">
+                <p className="text-xs text-muted/70">When did you eat this?</p>
+                <input
+                  type="time"
+                  className="rounded-lg border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                  value={mealTime}
+                  max={nowTimeString()}
+                  onChange={(e) => setMealTime(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-white transition hover:bg-primary/90"
+                  onClick={handleConfirmTime}
+                >
+                  Done
+                </button>
+              </div>
+            ) : (
+              <>
+                <p className="mt-1 text-sm text-muted/70">Adding to your day…</p>
+                <button
+                  type="button"
+                  className="mt-3 text-xs text-ink/40 underline"
+                  onClick={handleChangeTime}
+                >
+                  Not now? Change time
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>
