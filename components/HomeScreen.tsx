@@ -54,6 +54,11 @@ export default function HomeScreen() {
   const [deletingItem, setDeletingItem] = useState(false);
   const [visibleRecentCount, setVisibleRecentCount] = useState(6);
   const [visibleGroupCount, setVisibleGroupCount] = useState(3);
+  const [pendingQuickConfirmId, setPendingQuickConfirmId] = useState<string | null>(null);
+  const [quickConfirmMeal, setQuickConfirmMeal] = useState<MealLog | null>(null);
+  const [quickConfirmName, setQuickConfirmName] = useState("");
+  const [quickConfirmPortion, setQuickConfirmPortion] = useState<"small" | "medium" | "large">("medium");
+  const [quickConfirming, setQuickConfirming] = useState(false);
 
   const mountedRef = useRef(true);
   const recentSentinelRef = useRef<HTMLDivElement | null>(null);
@@ -108,6 +113,33 @@ export default function HomeScreen() {
     } finally {
       setDeletingItem(false);
       setPendingDelete(null);
+    }
+  };
+
+  const handleQuickConfirm = async () => {
+    if (!quickConfirmMeal || !user) return;
+    setQuickConfirming(true);
+    try {
+      const multiplier = quickConfirmPortion === "small" ? 0.7 : quickConfirmPortion === "large" ? 1.4 : 1;
+      const scale = (v: number) => Math.round(v * multiplier);
+      const r = quickConfirmMeal.analysisJson.estimated_ranges;
+      const updatedAnalysis = {
+        ...quickConfirmMeal.analysisJson,
+        name: quickConfirmName,
+        estimated_ranges: {
+          calories_min: scale(r.calories_min), calories_max: scale(r.calories_max),
+          protein_g_min: scale(r.protein_g_min), protein_g_max: scale(r.protein_g_max),
+          carbs_g_min: scale(r.carbs_g_min), carbs_g_max: scale(r.carbs_g_max),
+          fat_g_min: scale(r.fat_g_min), fat_g_max: scale(r.fat_g_max),
+        },
+      };
+      await updateMeal(quickConfirmMeal.id, updatedAnalysis as any, { userCorrection: quickConfirmName });
+      setQuickConfirmMeal(null);
+      await meals.load(user.id);
+    } catch (err) {
+      console.error("Quick confirm failed", err);
+    } finally {
+      setQuickConfirming(false);
     }
   };
 
@@ -245,6 +277,32 @@ export default function HomeScreen() {
     window.addEventListener(MEALS_UPDATED_EVENT, handler as EventListener);
     return () => window.removeEventListener(MEALS_UPDATED_EVENT, handler as EventListener);
   }, [user, loadData]);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const mealId = (e as CustomEvent<string>).detail;
+      if (mealId) setPendingQuickConfirmId(mealId);
+    };
+    window.addEventListener("meal-analysis-complete", handler);
+    return () => window.removeEventListener("meal-analysis-complete", handler);
+  }, []);
+
+  useEffect(() => {
+    if (!pendingQuickConfirmId) return;
+    const meal = meals.meals.find((m) => m.id === pendingQuickConfirmId && m.status === "done");
+    if (!meal) return;
+    setPendingQuickConfirmId(null);
+    const confidence = meal.analysisJson?.confidence_overall_0_1 ?? 1;
+    const needsConfirm = meal.analysisJson?.precision_mode_available === true || confidence < 0.7;
+    if (!needsConfirm) return;
+    const name =
+      meal.analysisJson?.name ??
+      meal.analysisJson?.detected_items?.[0]?.name ??
+      "Meal";
+    setQuickConfirmName(name);
+    setQuickConfirmPortion("medium");
+    setQuickConfirmMeal(meal);
+  }, [pendingQuickConfirmId, meals.meals]);
 
   useEffect(() => {
     if (!user) return;
@@ -1005,6 +1063,13 @@ export default function HomeScreen() {
             ) : (
               <>
                 <h2 className="text-base font-semibold text-ink">Edit Meal</h2>
+                {meals.editingMeal.imageThumb && (
+                  <img
+                    src={meals.editingMeal.imageThumb}
+                    alt="Meal photo"
+                    className="mt-3 h-32 w-full rounded-lg object-cover"
+                  />
+                )}
                 <div className="mt-4 space-y-3">
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Name</p>
@@ -1084,6 +1149,64 @@ export default function HomeScreen() {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {quickConfirmMeal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5">
+          <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
+            <h2 className="text-base font-semibold text-ink">What did you eat?</h2>
+            <p className="mt-1 text-xs text-muted/70">AI wasn't sure — confirm or correct the details.</p>
+            {quickConfirmMeal.imageThumb && (
+              <img
+                src={quickConfirmMeal.imageThumb}
+                alt="Meal photo"
+                className="mt-3 h-32 w-full rounded-lg object-cover"
+              />
+            )}
+            <div className="mt-4">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Food name</p>
+              <input
+                className="mt-1 w-full rounded-lg border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                value={quickConfirmName}
+                onChange={(e) => setQuickConfirmName(e.target.value)}
+                placeholder="e.g. chicken salad"
+                autoFocus
+              />
+            </div>
+            <div className="mt-4">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Portion size</p>
+              <div className="mt-2 flex gap-2">
+                {(["small", "medium", "large"] as const).map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    className={`flex-1 rounded-xl border px-3 py-2 text-xs font-semibold transition ${quickConfirmPortion === p ? "border-primary/30 bg-primary/10 text-ink" : "border-ink/10 bg-white text-ink/70 hover:bg-ink/5"}`}
+                    onClick={() => setQuickConfirmPortion(p)}
+                  >
+                    {p.charAt(0).toUpperCase() + p.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="mt-5 flex items-center justify-between">
+              <button
+                type="button"
+                className="text-xs text-ink/50 underline"
+                onClick={() => setQuickConfirmMeal(null)}
+              >
+                Skip
+              </button>
+              <button
+                type="button"
+                className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
+                onClick={handleQuickConfirm}
+                disabled={quickConfirming || !quickConfirmName.trim()}
+              >
+                {quickConfirming ? "Saving…" : "Looks good"}
+              </button>
+            </div>
           </div>
         </div>
       )}
