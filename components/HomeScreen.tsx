@@ -1052,7 +1052,7 @@ export default function HomeScreen() {
                             className={`flex-1 rounded-xl border px-3 py-2 text-xs font-semibold transition ${meals.manualPortion === p ? "border-primary/30 bg-primary/10 text-ink" : "border-ink/10 bg-white text-ink/70 hover:bg-ink/5"}`}
                             onClick={() => meals.setManualPortion(p)}
                           >
-                            {p.charAt(0).toUpperCase() + p.slice(1)}
+                            {p === "medium" ? "Average" : p.charAt(0).toUpperCase() + p.slice(1)}
                           </button>
                         ))}
                       </div>
@@ -1106,7 +1106,7 @@ export default function HomeScreen() {
                         className={`flex-1 rounded-xl border px-3 py-1.5 text-xs font-semibold transition ${editPortion === p ? "border-primary/30 bg-primary/10 text-ink" : "border-ink/10 bg-white text-ink/70 hover:bg-ink/5"}`}
                         onClick={() => applyEditPortion(p)}
                       >
-                        {p.charAt(0).toUpperCase() + p.slice(1)}
+                        {p === "medium" ? "Average" : p.charAt(0).toUpperCase() + p.slice(1)}
                       </button>
                     ))}
                   </div>
@@ -1226,7 +1226,7 @@ export default function HomeScreen() {
                     className={`flex-1 rounded-xl border px-3 py-2 text-xs font-semibold transition ${quickConfirmPortion === p ? "border-primary/30 bg-primary/10 text-ink" : "border-ink/10 bg-white text-ink/70 hover:bg-ink/5"}`}
                     onClick={() => setQuickConfirmPortion(p)}
                   >
-                    {p.charAt(0).toUpperCase() + p.slice(1)}
+                    {p === "medium" ? "Average" : p.charAt(0).toUpperCase() + p.slice(1)}
                   </button>
                 ))}
               </div>
