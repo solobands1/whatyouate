@@ -515,6 +515,26 @@ export default function SummaryScreen() {
               <p className="text-[10px] text-muted/50">approx.</p>
             </div>
           </div>
+          {mealCount > 0 && summaryMarkers.gentleTargets && (() => {
+            const calMid = (summaryMarkers.todayTotals.calories_min + summaryMarkers.todayTotals.calories_max) / 2;
+            const protMid = (summaryMarkers.todayTotals.protein_g_min + summaryMarkers.todayTotals.protein_g_max) / 2;
+            const calPct = Math.min(100, Math.round((calMid / gentleTargetsDisplay.calories) * 100));
+            const protPct = Math.min(100, Math.round((protMid / gentleTargetsDisplay.protein) * 100));
+            return (
+              <div className="mt-3 flex gap-3">
+                <div className="flex-1">
+                  <div className="h-1.5 overflow-hidden rounded-full bg-ink/5">
+                    <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${calPct}%` }} />
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <div className="h-1.5 overflow-hidden rounded-full bg-ink/5">
+                    <div className="h-full rounded-full bg-primary/70 transition-all duration-500" style={{ width: `${protPct}%` }} />
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
           {summaryMarkers.gentleTargets ? (
             <button
               type="button"
