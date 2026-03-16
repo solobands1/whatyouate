@@ -257,7 +257,7 @@ export default function InsightsPage() {
     {
       target: '[data-tour="insights-micro"]',
       content:
-        "Micronutrient patterns emerge over time as you log more meals to help you improve general health.",
+        "Micronutrient patterns emerge over time as you log more meals to help you improve general health. Tap the i next to any nutrient to learn more.",
       disableBeacon: true
     }
   ] as Step[];
