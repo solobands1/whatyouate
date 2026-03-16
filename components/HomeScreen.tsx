@@ -480,6 +480,7 @@ export default function HomeScreen() {
 
   const gentleTargetsDisplay = homeMarkers.gentleTargets ?? { calories: 2300, protein: 125 };
   const mealCount = homeMarkers.mealCount;
+  const streak = homeMarkers.streak ?? 0;
   const calMid = (homeMarkers.todayTotals.calories_min + homeMarkers.todayTotals.calories_max) / 2;
   const protMid = (homeMarkers.todayTotals.protein_g_min + homeMarkers.todayTotals.protein_g_max) / 2;
   const calPct = Math.min(100, Math.round((calMid / gentleTargetsDisplay.calories) * 100));
@@ -814,6 +815,9 @@ export default function HomeScreen() {
             <span className="text-muted/50">{mealCount > 0 ? "" : " (preview)"}</span>
             : {gentleTargetsDisplay.calories} kcal · {gentleTargetsDisplay.protein} g protein
           </p>
+          {streak >= 2 && (
+            <p className="mt-1.5 text-[10px] font-medium text-primary/70">{streak} days logged in a row</p>
+          )}
         </Card>
 
         <div className="mt-4 h-px w-full bg-ink/5" />

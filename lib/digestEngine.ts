@@ -12,6 +12,21 @@ function dayCountFromMeals(meals: MealLog[]) {
   return days.size;
 }
 
+function computeStreak(meals: MealLog[]): number {
+  const dayKeys = new Set(meals.map((m) => dayKeyFromTs(m.ts)));
+  let streak = 0;
+  const d = new Date();
+  // Don't break streak mid-day if no meal logged yet today
+  if (!dayKeys.has(dayKeyFromTs(d.getTime()))) {
+    d.setDate(d.getDate() - 1);
+  }
+  while (dayKeys.has(dayKeyFromTs(d.getTime()))) {
+    streak++;
+    d.setDate(d.getDate() - 1);
+  }
+  return streak;
+}
+
 function avgRangeMidpoint(mins: number[], maxes: number[]) {
   if (!mins.length || !maxes.length) return 0;
   const total = mins.reduce((sum, v) => sum + v, 0) + maxes.reduce((sum, v) => sum + v, 0);
@@ -155,6 +170,7 @@ export function computeHomeMarkers(meals: MealLog[], workouts: WorkoutSession[],
   );
 
   const gentleTargets = adjustTargetsForWorkouts(computeGentleTargets(meals, profile), workouts);
+  const streak = computeStreak(meals);
 
   return {
     todayTotals,
@@ -164,7 +180,8 @@ export function computeHomeMarkers(meals: MealLog[], workouts: WorkoutSession[],
     gentleTargets,
     avgWeekCalories,
     avgWeekProtein,
-    recent
+    recent,
+    streak
   };
 }
 
