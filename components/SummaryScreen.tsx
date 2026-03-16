@@ -244,7 +244,7 @@ export default function SummaryScreen() {
     },
     {
       target: '[data-tour="insights-button"]',
-      content: "Tap Insights for deeper guidance on today’s nudges.",
+      content: "Tap ‘Why these?’ for deeper guidance on today’s nudges.",
       disableBeacon: true
     },
     {
