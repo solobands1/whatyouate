@@ -171,6 +171,7 @@ export default function SummaryScreen() {
   const nutrientNotes = summaryMarkers.nutrientNotes;
   const fuelingState = summaryMarkers.fuelingState;
   const [nudgeViewCount, setNudgeViewCount] = useState(0);
+  const [showTargetInfo, setShowTargetInfo] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -514,11 +515,27 @@ export default function SummaryScreen() {
               <p className="text-[10px] text-muted/50">approx.</p>
             </div>
           </div>
-          <p className="mt-2 text-xs text-muted/70">
-            {summaryMarkers.gentleTargets
-              ? `Suggested range: ${gentleTargetsDisplay.calories} kcal · ${gentleTargetsDisplay.protein} g protein`
-              : "Complete your profile for a personalized range"}
-          </p>
+          {summaryMarkers.gentleTargets ? (
+            <button
+              type="button"
+              className="mt-2 flex items-center gap-1 text-left text-xs text-muted/70"
+              onClick={() => setShowTargetInfo((v) => !v)}
+            >
+              <span>Suggested range: {gentleTargetsDisplay.calories} kcal · {gentleTargetsDisplay.protein} g protein</span>
+              <span className="inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border border-muted/30 text-[8px] text-muted/50">i</span>
+            </button>
+          ) : (
+            <p className="mt-2 text-xs text-muted/70">Complete your profile for a personalized range</p>
+          )}
+          {showTargetInfo && (
+            <p className="mt-1 text-[10px] text-muted/50">
+              {mealCount >= 10 && profile?.weight
+                ? "Based on your recent intake pattern, adjusted for your goal."
+                : profile?.weight && profile?.activityLevel
+                ? "Based on your weight, activity level, and goal."
+                : "Standard estimate. Complete your profile to personalize."}
+            </p>
+          )}
           <div className="mt-3 h-px w-full bg-ink/5" />
         </Card>
 
