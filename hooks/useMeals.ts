@@ -26,6 +26,7 @@ export function useMeals(
   const [manualAnalysing, setManualAnalysing] = useState(false);
   const [manualResult, setManualResult] = useState<MealAnalysis | null>(null);
   const [manualPortion, setManualPortion] = useState<"small" | "medium" | "large">("medium");
+  const [manualError, setManualError] = useState<string | null>(null);
 
   const load = useCallback(async (userId: string) => {
     const mealsData = await listMeals(userId, 200);
@@ -36,6 +37,7 @@ export function useMeals(
     setManualText("");
     setManualResult(null);
     setManualPortion("medium");
+    setManualError(null);
     setEditForm({ name: "", calories: "", protein: "", carbs: "", fat: "" });
     setEditingMeal({
       id: "",
@@ -59,6 +61,7 @@ export function useMeals(
   const analyzeManualText = async () => {
     if (!manualText.trim()) return;
     setManualAnalysing(true);
+    setManualError(null);
     try {
       const res = await fetch("/api/analyze-food", {
         method: "POST",
@@ -69,7 +72,7 @@ export function useMeals(
       setManualResult(data.analysis ?? null);
       setManualPortion("medium");
     } catch {
-      // keep result null — user can retry
+      setManualError("Something went wrong. Please try again.");
     } finally {
       setManualAnalysing(false);
     }
@@ -178,6 +181,7 @@ export function useMeals(
     setManualResult,
     manualPortion,
     setManualPortion,
+    manualError,
     openManualMealEntry,
     analyzeManualText,
     confirmManualMeal,

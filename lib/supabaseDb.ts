@@ -7,15 +7,7 @@ import { safeFallbackAnalysis } from "./ai/schema";
 export { LOCAL_MODE };
 
 const DEBUG = false;
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const useMemory = LOCAL_MODE;
-if (DEBUG && supabaseUrl) {
-  try {
-    console.debug("[supabase] url host:", new URL(supabaseUrl).host);
-  } catch {
-    console.debug("[supabase] url host: invalid");
-  }
-}
 
 type MealRecord = { userId: string; meal: MealLog };
 type WorkoutRecord = { userId: string; session: WorkoutSession };

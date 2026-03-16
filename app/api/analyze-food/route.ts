@@ -276,14 +276,6 @@ function overrideRangesFromProduct(analysis: any, product: any) {
   const carbsVal = Number(carbs);
   const fatVal = Number(fat);
 
-  console.log("[OFF override macros]", {
-    calories,
-    protein,
-    carbs: carbsVal,
-    fat: fatVal,
-    servingGrams
-  });
-
   return {
     analysis: {
       ...analysis,
@@ -362,11 +354,8 @@ async function updateMealServer(mealId: string, analysis: any) {
 
 async function enrichWithOpenFoodFacts(mealId: string | undefined, analysis: any) {
   if (!mealId) {
-    console.log("[OFF enrichment] skipped no product");
     return;
   }
-
-  console.log("[OFF enrichment] started", mealId);
 
   const { data: mealRow } = await supabaseServer
     .from("meals")
@@ -377,7 +366,6 @@ async function enrichWithOpenFoodFacts(mealId: string | undefined, analysis: any
   const detectedProduct = analysis?.detected_product;
   const analysisName = analysis?.name;
   if (!detectedBrand) {
-    console.log("[OFF enrichment] skipped no product");
     return;
   }
 
@@ -399,7 +387,6 @@ async function enrichWithOpenFoodFacts(mealId: string | undefined, analysis: any
     ].filter((entry) => entry.value);
 
     const searchOnce = async (query: string) => {
-      console.log("[OFF enrichment] search", query);
       const offResponse = await fetch(
         `${OFF_SEARCH_URL}?search_terms=${encodeURIComponent(query)}&search_simple=1&json=1&action=process`
       );
@@ -407,7 +394,6 @@ async function enrichWithOpenFoodFacts(mealId: string | undefined, analysis: any
         throw new Error("OFF search failed");
       }
       const offData = await offResponse.json();
-      console.log("[OFF enrichment] products", offData?.products?.length ?? 0);
       return offData?.products ?? [];
     };
 
@@ -424,7 +410,6 @@ async function enrichWithOpenFoodFacts(mealId: string | undefined, analysis: any
       }
       if (products.length === 0) continue;
       best = pickBestProduct(products, detectedBrand, productForMatch);
-      console.log("[OFF enrichment] best", Boolean(best));
       if (best) break;
     }
 
@@ -446,13 +431,11 @@ async function enrichWithOpenFoodFacts(mealId: string | undefined, analysis: any
           await updateMealServer(mealId, renamed);
         }
       }
-      console.log("[OFF enrichment] skipped no product");
       return;
     }
 
     const matchConfidence = computeMatchConfidence(best, detectedBrand, productForMatch);
     if (matchConfidence < 0.45) {
-      console.log("[OFF enrichment] skipped low confidence");
       return;
     }
 
@@ -473,9 +456,7 @@ async function enrichWithOpenFoodFacts(mealId: string | undefined, analysis: any
       const detectedSuffix = detectedProduct ?? analysisName ?? "";
       enriched = { ...enriched, name: detectedSuffix ? `${dbBrand} ${detectedSuffix}`.trim() : dbBrand };
     }
-    console.log("[OFF enrichment] matched", enriched.name);
     await updateMealServer(mealId, enriched);
-    console.log("[OFF enrichment] updated meal", mealId);
   } catch (err) {
     console.error("[OFF enrichment] error", err);
   }
@@ -522,8 +503,6 @@ async function analyzeTextOnly(textDescription: string, provider: string, openai
 
 export async function POST(req: Request) {
   try {
-    console.time("request_total");
-    console.time("image_processing");
     const { imageBase64, imageBase64Secondary, hints, mealId, textDescription } = await req.json();
 
     if (textDescription && !imageBase64) {
@@ -531,16 +510,12 @@ export async function POST(req: Request) {
       const rawAnalysis = await analyzeTextOnly(textDescription, provider, process.env.OPENAI_API_KEY ?? "", process.env.ANTHROPIC_API_KEY ?? "");
       const analysis = coerceAnalysis(rawAnalysis);
       if (mealId) await updateMealServer(mealId, analysis);
-      console.timeEnd("request_total");
       return NextResponse.json({ analysis });
     }
 
     if (!imageBase64) {
-      console.timeEnd("image_processing");
-      console.timeEnd("request_total");
       return NextResponse.json({ analysis: safeFallbackAnalysis() }, { status: 200 });
     }
-    console.timeEnd("image_processing");
 
     const provider = process.env.AI_PROVIDER ?? "openai";
     const openaiKey = process.env.OPENAI_API_KEY;
@@ -548,7 +523,6 @@ export async function POST(req: Request) {
 
     let rawAnalysis: any = null;
 
-    console.time("ai_inference");
     if (provider === "anthropic" && anthropicKey) {
       const model = process.env.ANTHROPIC_MODEL ?? "claude-3-5-sonnet-20240620";
       rawAnalysis = await analyzeWithAnthropic(imageBase64, model, anthropicKey, hints, imageBase64Secondary);
@@ -558,25 +532,19 @@ export async function POST(req: Request) {
     } else {
       rawAnalysis = safeFallbackAnalysis();
     }
-    console.timeEnd("ai_inference");
 
-    console.log("[AI detected_brand]", rawAnalysis?.detected_brand);
-    console.time("response_formatting");
     let analysis = coerceAnalysis(rawAnalysis);
 
     if (mealId) {
       await updateMealServer(mealId, analysis);
     }
 
-    console.timeEnd("response_formatting");
     await Promise.race([
       enrichWithOpenFoodFacts(mealId, analysis),
       new Promise<void>((resolve) => setTimeout(resolve, 4000))
     ]);
-    console.timeEnd("request_total");
     return NextResponse.json({ analysis });
   } catch {
-    console.timeEnd("request_total");
     return NextResponse.json({ analysis: safeFallbackAnalysis() }, { status: 200 });
   }
 }

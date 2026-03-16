@@ -10,7 +10,6 @@ export default function BetaLandingPage() {
   const [installAvailable, setInstallAvailable] = useState(false);
   const [unlockedMessage, setUnlockedMessage] = useState("");
 
-  const betaPassword = process.env.NEXT_PUBLIC_BETA_PASSWORD ?? "";
   useEffect(() => {
     const handler = (event: any) => {
       event.preventDefault();
@@ -25,8 +24,13 @@ export default function BetaLandingPage() {
     return () => window.removeEventListener("beforeinstallprompt", handler);
   }, []);
 
-  const handleUnlock = () => {
-    if (!betaPassword || password.trim() !== betaPassword) {
+  const handleUnlock = async () => {
+    const res = await fetch("/api/beta-unlock", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: password.trim() })
+    });
+    if (!res.ok) {
       setError("Incorrect password.");
       setUnlockedMessage("");
       setUnlocked(false);

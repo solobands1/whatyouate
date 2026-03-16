@@ -484,7 +484,7 @@ export default function HomeScreen() {
   const steps = [
     {
       target: '[data-tour="food-action"]',
-      content: "Take photos. That's it.",
+      content: "Log meals by photo or description. That's it.",
       disableBeacon: true
     },
     {
@@ -758,12 +758,12 @@ export default function HomeScreen() {
           {loadError && <p className="mt-2 text-[11px] text-muted/60">{loadError}</p>}
         </header>
 
-        {!loadingData && !profile && (
-          <Card className="mt-4 border border-ink/5 bg-ink/5">
+        {!loadingData && meals.meals.length >= 1 && (!profile || (profile.height === null && profile.weight === null && profile.age === null)) && (
+          <Card className="mt-4 border border-primary/20 bg-primary/5">
             <div className="flex items-center justify-between gap-3">
-              <p className="text-sm text-ink/70">Add profile for better estimates.</p>
-              <Link href="/profile" className="text-xs font-semibold text-ink/70 underline">
-                Add
+              <p className="text-sm text-ink/80">Complete your profile for accurate calorie targets.</p>
+              <Link href="/profile" className="shrink-0 text-xs font-semibold text-primary underline">
+                Set up
               </Link>
             </div>
           </Card>
@@ -1014,6 +1014,9 @@ export default function HomeScreen() {
                         onKeyDown={(e) => { if (e.key === "Enter") meals.analyzeManualText(); }}
                       />
                     </div>
+                    {meals.manualError && (
+                      <p className="mt-3 text-xs text-red-500">{meals.manualError}</p>
+                    )}
                     <div className="mt-5 flex justify-end gap-2">
                       <button
                         type="button"

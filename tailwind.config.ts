@@ -29,6 +29,15 @@ const config: Config = {
       },
       fontFamily: {
         sans: ["-apple-system", "BlinkMacSystemFont", "SF Pro Text", "Segoe UI", "Helvetica", "Arial", "sans-serif"]
+      },
+      keyframes: {
+        scan: {
+          "0%, 100%": { top: "4px" },
+          "50%": { top: "calc(100% - 4px)" }
+        }
+      },
+      animation: {
+        scan: "scan 2s ease-in-out infinite"
       }
     }
   },

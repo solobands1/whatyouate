@@ -39,11 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         setSession(data.session ?? null);
         setUser(data.session?.user ?? null);
-
-        console.log("[auth] session loaded", data.session);
       } catch (err) {
-        console.log("[auth] session error", err);
-
         if (!mounted) return;
 
         setSession(null);
@@ -52,8 +48,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!mounted) return;
 
         setLoading(false);
-
-        console.log("[auth] loading=false");
       }
     };
 
@@ -62,8 +56,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription }
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log("[auth] state change", session);
-
       setSession(session);
       setUser(session?.user ?? null);
     });
