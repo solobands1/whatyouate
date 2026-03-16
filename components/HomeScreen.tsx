@@ -59,6 +59,7 @@ export default function HomeScreen() {
   const [quickConfirmName, setQuickConfirmName] = useState("");
   const [quickConfirmPortion, setQuickConfirmPortion] = useState<"small" | "medium" | "large">("medium");
   const [quickConfirming, setQuickConfirming] = useState(false);
+  const [editPortion, setEditPortion] = useState<"small" | "medium" | "large">("medium");
 
   const mountedRef = useRef(true);
   const recentSentinelRef = useRef<HTMLDivElement | null>(null);
@@ -141,6 +142,27 @@ export default function HomeScreen() {
     } finally {
       setQuickConfirming(false);
     }
+  };
+
+  const applyEditPortion = (portion: "small" | "medium" | "large") => {
+    if (!meals.editingMeal) return;
+    setEditPortion(portion);
+    const multiplier = portion === "small" ? 0.7 : portion === "large" ? 1.4 : 1;
+    const m = meals.editingMeal;
+    const r = m.analysisJson.estimated_ranges;
+    const base = {
+      calories: m.calories ?? Math.round((r.calories_min + r.calories_max) / 2),
+      protein: m.protein ?? Math.round((r.protein_g_min + r.protein_g_max) / 2),
+      carbs: m.carbs ?? Math.round((r.carbs_g_min + r.carbs_g_max) / 2),
+      fat: m.fat ?? Math.round((r.fat_g_min + r.fat_g_max) / 2),
+    };
+    meals.setEditForm({
+      ...meals.editForm,
+      calories: String(Math.round(base.calories * multiplier)),
+      protein: String(Math.round(base.protein * multiplier)),
+      carbs: String(Math.round(base.carbs * multiplier)),
+      fat: String(Math.round(base.fat * multiplier)),
+    });
   };
 
   const handleFoodPhotoClick = () => {
@@ -303,6 +325,10 @@ export default function HomeScreen() {
     setQuickConfirmPortion("medium");
     setQuickConfirmMeal(meal);
   }, [pendingQuickConfirmId, meals.meals]);
+
+  useEffect(() => {
+    if (meals.editingMeal?.id) setEditPortion("medium");
+  }, [meals.editingMeal?.id]);
 
   useEffect(() => {
     if (!user) return;
@@ -1070,6 +1096,21 @@ export default function HomeScreen() {
                     className="mt-3 h-32 w-full rounded-lg object-cover"
                   />
                 )}
+                <div className="mt-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Portion size</p>
+                  <div className="mt-2 flex gap-2">
+                    {(["small", "medium", "large"] as const).map((p) => (
+                      <button
+                        key={p}
+                        type="button"
+                        className={`flex-1 rounded-xl border px-3 py-1.5 text-xs font-semibold transition ${editPortion === p ? "border-primary/30 bg-primary/10 text-ink" : "border-ink/10 bg-white text-ink/70 hover:bg-ink/5"}`}
+                        onClick={() => applyEditPortion(p)}
+                      >
+                        {p.charAt(0).toUpperCase() + p.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <div className="mt-4 space-y-3">
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Name</p>
