@@ -60,6 +60,7 @@ export default function HomeScreen() {
   const [quickConfirmPortion, setQuickConfirmPortion] = useState<"small" | "medium" | "large">("medium");
   const [quickConfirming, setQuickConfirming] = useState(false);
   const [editPortion, setEditPortion] = useState<"small" | "medium" | "large">("medium");
+  const [showTargetInfo, setShowTargetInfo] = useState(false);
 
   const mountedRef = useRef(true);
   const recentSentinelRef = useRef<HTMLDivElement | null>(null);
@@ -810,11 +811,24 @@ export default function HomeScreen() {
               </div>
             </div>
           )}
-          <p className="mt-2 text-xs text-muted/70">
+          <button
+            type="button"
+            className="mt-2 text-left text-xs text-muted/70 underline-offset-2 hover:underline"
+            onClick={() => setShowTargetInfo((v) => !v)}
+          >
             Suggested range
             <span className="text-muted/50">{mealCount > 0 ? "" : " (preview)"}</span>
             : {gentleTargetsDisplay.calories} kcal · {gentleTargetsDisplay.protein} g protein
-          </p>
+          </button>
+          {showTargetInfo && (
+            <p className="mt-1 text-[10px] text-muted/50">
+              {mealCount >= 10 && profile?.weight
+                ? "Based on your recent intake pattern, adjusted for your goal."
+                : profile?.weight && profile?.activityLevel
+                ? "Based on your weight, activity level, and goal."
+                : "Standard estimate — complete your profile to personalize."}
+            </p>
+          )}
           {streak >= 2 && (
             <p className="mt-1.5 text-[10px] font-medium text-primary/70">{streak} days logged in a row</p>
           )}
