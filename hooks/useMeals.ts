@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import type { User } from "@supabase/supabase-js";
-import type { MealLog } from "../lib/types";
+import type { MealAnalysis, MealLog } from "../lib/types";
 import { addMeal, listMeals, updateMeal } from "../lib/supabaseDb";
 
 export function useMeals(
@@ -21,12 +21,21 @@ export function useMeals(
   });
   const [updatingMeal, setUpdatingMeal] = useState(false);
 
+  // Manual text entry state
+  const [manualText, setManualText] = useState("");
+  const [manualAnalysing, setManualAnalysing] = useState(false);
+  const [manualResult, setManualResult] = useState<MealAnalysis | null>(null);
+  const [manualPortion, setManualPortion] = useState<"small" | "medium" | "large">("medium");
+
   const load = useCallback(async (userId: string) => {
     const mealsData = await listMeals(userId, 200);
     setMeals(mealsData);
   }, []);
 
   const openManualMealEntry = () => {
+    setManualText("");
+    setManualResult(null);
+    setManualPortion("medium");
     setEditForm({ name: "", calories: "", protein: "", carbs: "", fat: "" });
     setEditingMeal({
       id: "",
@@ -45,6 +54,56 @@ export function useMeals(
         },
       },
     } as any);
+  };
+
+  const analyzeManualText = async () => {
+    if (!manualText.trim()) return;
+    setManualAnalysing(true);
+    try {
+      const res = await fetch("/api/analyze-food", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ textDescription: manualText.trim() })
+      });
+      const data = await res.json();
+      setManualResult(data.analysis ?? null);
+      setManualPortion("medium");
+    } catch {
+      // keep result null — user can retry
+    } finally {
+      setManualAnalysing(false);
+    }
+  };
+
+  const confirmManualMeal = async () => {
+    if (!user || !manualResult) return;
+    setUpdatingMeal(true);
+    try {
+      const multiplier = manualPortion === "small" ? 0.7 : manualPortion === "large" ? 1.4 : 1;
+      const scale = (v: number) => Math.round(v * multiplier);
+      const r = manualResult.estimated_ranges;
+      const scaledAnalysis = {
+        ...manualResult,
+        estimated_ranges: {
+          calories_min: scale(r.calories_min), calories_max: scale(r.calories_max),
+          protein_g_min: scale(r.protein_g_min), protein_g_max: scale(r.protein_g_max),
+          carbs_g_min: scale(r.carbs_g_min), carbs_g_max: scale(r.carbs_g_max),
+          fat_g_min: scale(r.fat_g_min), fat_g_max: scale(r.fat_g_max),
+        }
+      };
+      const created = await addMeal(user.id, scaledAnalysis as any);
+      await updateMeal(created.id, scaledAnalysis as any, { userCorrection: manualResult.name });
+      setManualText("");
+      setManualResult(null);
+      setManualPortion("medium");
+      setEditingMeal(null);
+      setEditRecents(false);
+      await load(user.id);
+    } catch (err) {
+      console.error("Manual meal save failed", err);
+    } finally {
+      setUpdatingMeal(false);
+    }
   };
 
   const openMealEditor = (meal: MealLog) => {
@@ -91,12 +150,7 @@ export function useMeals(
         estimated_ranges: ranges,
       };
 
-      if (!editingMeal.id) {
-        const created = await addMeal(user.id, updatedAnalysis as any);
-        await updateMeal(created.id, updatedAnalysis as any, { userCorrection: editForm.name });
-      } else {
-        await updateMeal(editingMeal.id, updatedAnalysis as any, { userCorrection: editForm.name });
-      }
+      await updateMeal(editingMeal.id, updatedAnalysis as any, { userCorrection: editForm.name });
 
       setEditingMeal(null);
       setEditRecents(false);
@@ -117,7 +171,16 @@ export function useMeals(
     setEditForm,
     updatingMeal,
     load,
+    manualText,
+    setManualText,
+    manualAnalysing,
+    manualResult,
+    setManualResult,
+    manualPortion,
+    setManualPortion,
     openManualMealEntry,
+    analyzeManualText,
+    confirmManualMeal,
     openMealEditor,
     handleUpdateMeal,
   };

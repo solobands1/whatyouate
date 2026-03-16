@@ -914,12 +914,97 @@ export default function HomeScreen() {
                   </button>
                 </div>
               </>
+            ) : !meals.editingMeal.id ? (
+              <>
+                <h2 className="text-base font-semibold text-ink">Add Food</h2>
+                {!meals.manualResult ? (
+                  <>
+                    <div className="mt-4">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">What did you eat?</p>
+                      <input
+                        className="mt-1 w-full rounded-lg border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                        value={meals.manualText}
+                        onChange={(e) => meals.setManualText(e.target.value)}
+                        placeholder="e.g. chicken fettuccine, large bowl"
+                        autoFocus
+                        onKeyDown={(e) => { if (e.key === "Enter") meals.analyzeManualText(); }}
+                      />
+                    </div>
+                    <div className="mt-5 flex justify-end gap-2">
+                      <button
+                        type="button"
+                        className="rounded-xl border border-ink/10 bg-white px-3 py-2 text-xs font-semibold text-ink/70 transition hover:bg-ink/5"
+                        onClick={() => { meals.setEditingMeal(null); setEditRecents(false); }}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
+                        onClick={meals.analyzeManualText}
+                        disabled={meals.manualAnalysing || !meals.manualText.trim()}
+                      >
+                        {meals.manualAnalysing ? "Analyzing…" : "Analyze"}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="mt-4">
+                      <p className="text-sm font-semibold text-ink">{meals.manualResult.name ?? "Meal"}</p>
+                      <p className="mt-1 text-xs text-muted/70">
+                        {formatClean(meals.manualResult.estimated_ranges.calories_min, meals.manualResult.estimated_ranges.calories_max, "kcal")}
+                        {" · "}
+                        {formatClean(meals.manualResult.estimated_ranges.protein_g_min, meals.manualResult.estimated_ranges.protein_g_max, "g protein")}
+                      </p>
+                    </div>
+                    <div className="mt-4">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Portion size</p>
+                      <div className="mt-2 flex gap-2">
+                        {(["small", "medium", "large"] as const).map((p) => (
+                          <button
+                            key={p}
+                            type="button"
+                            className={`flex-1 rounded-xl border px-3 py-2 text-xs font-semibold transition ${meals.manualPortion === p ? "border-primary/30 bg-primary/10 text-ink" : "border-ink/10 bg-white text-ink/70 hover:bg-ink/5"}`}
+                            onClick={() => meals.setManualPortion(p)}
+                          >
+                            {p.charAt(0).toUpperCase() + p.slice(1)}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="mt-5 flex items-center justify-between">
+                      <button
+                        type="button"
+                        className="text-xs text-ink/50 underline"
+                        onClick={() => meals.setManualResult(null)}
+                      >
+                        Try again
+                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          className="rounded-xl border border-ink/10 bg-white px-3 py-2 text-xs font-semibold text-ink/70 transition hover:bg-ink/5"
+                          onClick={() => { meals.setEditingMeal(null); setEditRecents(false); }}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
+                          onClick={meals.confirmManualMeal}
+                          disabled={meals.updatingMeal}
+                        >
+                          {meals.updatingMeal ? "Adding…" : "Add"}
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </>
             ) : (
               <>
-                <h2 className="text-base font-semibold text-ink">
-                  {meals.editingMeal.id ? "Edit Meal" : "Add Food"}
-                </h2>
-
+                <h2 className="text-base font-semibold text-ink">Edit Meal</h2>
                 <div className="mt-4 space-y-3">
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Name</p>
@@ -971,48 +1056,29 @@ export default function HomeScreen() {
                     />
                   </div>
                 </div>
-
-                <div
-                  className={`mt-5 flex items-center ${
-                    meals.editingMeal.id ? "justify-between" : "justify-end"
-                  }`}
-                >
-                  {meals.editingMeal.id ? (
-                    <button
-                      type="button"
-                      className="text-sm text-red-600"
-                      onClick={() => setPendingDelete({ type: "meal", id: meals.editingMeal!.id })}
-                    >
-                      Delete
-                    </button>
-                  ) : null}
+                <div className="mt-5 flex items-center justify-between">
+                  <button
+                    type="button"
+                    className="text-sm text-red-600"
+                    onClick={() => setPendingDelete({ type: "meal", id: meals.editingMeal!.id })}
+                  >
+                    Delete
+                  </button>
                   <div className="flex gap-2">
                     <button
                       type="button"
                       className="rounded-xl border border-ink/10 bg-white px-3 py-2 text-xs font-semibold text-ink/70 transition hover:bg-ink/5"
-                      onClick={() => {
-                        meals.setEditingMeal(null);
-                        setEditRecents(false);
-                      }}
+                      onClick={() => { meals.setEditingMeal(null); setEditRecents(false); }}
                     >
                       Cancel
                     </button>
-
                     <button
                       type="button"
-                      className={`rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 ${
-                        meals.updatingMeal ? "opacity-70" : ""
-                      }`}
+                      className={`rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 ${meals.updatingMeal ? "opacity-70" : ""}`}
                       onClick={meals.handleUpdateMeal}
                       disabled={meals.updatingMeal}
                     >
-                      {meals.updatingMeal
-                        ? meals.editingMeal.id
-                          ? "Updating..."
-                          : "Adding..."
-                        : meals.editingMeal.id
-                          ? "Update"
-                          : "Add"}
+                      {meals.updatingMeal ? "Updating..." : "Update"}
                     </button>
                   </div>
                 </div>
