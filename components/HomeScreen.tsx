@@ -359,8 +359,14 @@ export default function HomeScreen() {
         group.workouts.push(item.workout);
       }
     });
+    // Sort workouts within each group newest-first, regardless of upstream order
     groups.forEach(g => {
-      console.log(`[groupedRecent] "${g.label}" workouts:`, g.workouts.map(w => w.id.slice(0,8) + " endTs=" + w.endTs));
+      g.workouts.sort((a, b) => {
+        const aTs = a.endTs ?? a.startTs;
+        const bTs = b.endTs ?? b.startTs;
+        if (bTs !== aTs) return bTs - aTs;
+        return b.startTs - a.startTs;
+      });
     });
     return groups;
   }, [recentFiltered]);
