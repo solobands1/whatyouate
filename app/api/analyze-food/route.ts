@@ -520,10 +520,11 @@ export async function POST(req: Request) {
     }
 
     console.timeEnd("response_formatting");
+    await Promise.race([
+      enrichWithOpenFoodFacts(mealId, analysis),
+      new Promise<void>((resolve) => setTimeout(resolve, 4000))
+    ]);
     console.timeEnd("request_total");
-    setTimeout(() => {
-      enrichWithOpenFoodFacts(mealId, analysis);
-    }, 0);
     return NextResponse.json({ analysis });
   } catch {
     console.timeEnd("request_total");

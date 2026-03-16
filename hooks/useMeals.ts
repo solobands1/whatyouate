@@ -22,7 +22,7 @@ export function useMeals(
   const [updatingMeal, setUpdatingMeal] = useState(false);
 
   const load = useCallback(async (userId: string) => {
-    const mealsData = await listMeals(userId, 50);
+    const mealsData = await listMeals(userId, 200);
     setMeals(mealsData);
   }, []);
 

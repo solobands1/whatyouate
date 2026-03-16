@@ -8,6 +8,7 @@ import type { MealLog, UserProfile, WorkoutSession } from "../lib/types";
 import {
   MEALS_UPDATED_EVENT,
   PROFILE_UPDATED_EVENT,
+  notifyMealsUpdated,
   notifyWorkoutsUpdated
 } from "../lib/dataEvents";
 import { formatApprox, formatDateShort, todayKey } from "../lib/utils";
@@ -52,6 +53,7 @@ export default function HomeScreen() {
   } | null>(null);
   const [deletingItem, setDeletingItem] = useState(false);
   const [visibleRecentCount, setVisibleRecentCount] = useState(6);
+  const [visibleGroupCount, setVisibleGroupCount] = useState(3);
 
   const mountedRef = useRef(true);
   const recentSentinelRef = useRef<HTMLDivElement | null>(null);
@@ -197,6 +199,7 @@ export default function HomeScreen() {
         await updateMeal(created.id, analysis);
         const finishedMeal = { ...created, analysisJson: analysis, status: "done" as const };
         meals.setMeals((prev) => [finishedMeal, ...prev]);
+        notifyMealsUpdated();
       }
       setBarcodeSuccess(true);
       setTimeout(() => setBarcodeSuccess(false), 1500);
@@ -342,6 +345,7 @@ export default function HomeScreen() {
 
   useEffect(() => {
     setVisibleRecentCount(6);
+    setVisibleGroupCount(3);
   }, [recentFiltered.length]);
 
   const groupedRecent = useMemo(() => {
@@ -790,7 +794,7 @@ export default function HomeScreen() {
             <span className="col-span-1 text-right">Workout</span>
           </div>
           <div className="mt-3 space-y-4 text-sm text-ink/80">
-            {groupedRecent.slice(0, 3).map((group) => (
+            {groupedRecent.slice(0, visibleGroupCount).map((group) => (
               <div key={group.label}>
                 {group.label !== "Today" && (
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">
@@ -808,8 +812,10 @@ export default function HomeScreen() {
                         className={`inline-flex w-full items-center justify-between rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs text-ink/80 ${editRecents ? "cursor-pointer animate-wiggle" : ""}`}
                       >
                         <span>
-                          {meal.status === "processing" ? (
+                          {meal.status === "processing" && Date.now() - meal.ts < 90_000 ? (
                             "Analyzing food…"
+                          ) : meal.status === "processing" ? (
+                            "Analysis failed · tap Edit to remove"
                           ) : (
                             <>
                               {(() => {
@@ -860,6 +866,15 @@ export default function HomeScreen() {
                 </div>
               </div>
             ))}
+            {visibleGroupCount < groupedRecent.length && (
+              <button
+                type="button"
+                className="mt-1 text-[11px] font-semibold text-ink/50 underline"
+                onClick={() => setVisibleGroupCount((prev) => prev + 3)}
+              >
+                Show more
+              </button>
+            )}
             {recentItems.length === 0 ? (
               mealCount === 0 && workout.workouts.length === 0 ? (
                 <div className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs text-ink/80">
