@@ -26,6 +26,7 @@ import {
   updateMeal,
 } from "../lib/supabaseDb";
 import { computeHomeMarkers, computeRecent } from "../lib/digestEngine";
+import { safeFallbackAnalysis } from "../lib/ai/schema";
 import { useWorkout, WORKOUT_TYPE_OPTIONS } from "../hooks/useWorkout";
 import { useMeals } from "../hooks/useMeals";
 
@@ -135,7 +136,7 @@ export default function HomeScreen() {
           fat_g_min: scale(r.fat_g_min), fat_g_max: scale(r.fat_g_max),
         },
       };
-      await updateMeal(quickConfirmMeal.id, updatedAnalysis as any, { userCorrection: quickConfirmName });
+      await updateMeal(quickConfirmMeal.id, updatedAnalysis as any, { userCorrection: quickConfirmName }, user?.id);
       setQuickConfirmMeal(null);
       await meals.load(user.id);
     } catch (err) {
@@ -251,7 +252,7 @@ export default function HomeScreen() {
     try {
       const created = await addMeal(user.id, analysis);
       if (created?.id) {
-        await updateMeal(created.id, analysis);
+        await updateMeal(created.id, analysis, undefined, user?.id);
         const finishedMeal = { ...created, analysisJson: analysis, status: "done" as const };
         meals.setMeals((prev) => [finishedMeal, ...prev]);
         notifyMealsUpdated();
@@ -312,11 +313,14 @@ export default function HomeScreen() {
 
   useEffect(() => {
     const handler = (e: Event) => {
-      const { rateLimited } = (e as CustomEvent<{ mealId: string; rateLimited: boolean }>).detail ?? {};
+      const { mealId, rateLimited } = (e as CustomEvent<{ mealId: string; rateLimited: boolean }>).detail ?? {};
       setLoadError(rateLimited
         ? "Too many requests — please wait a moment before adding another photo."
         : "Photo analysis failed. Please try again."
       );
+      if (mealId && !rateLimited) {
+        updateMeal(mealId, safeFallbackAnalysis(), undefined, user?.id).catch(() => {}).finally(() => notifyMealsUpdated());
+      }
     };
     window.addEventListener("meal-analysis-error", handler);
     return () => window.removeEventListener("meal-analysis-error", handler);
@@ -502,7 +506,7 @@ export default function HomeScreen() {
   const steps = [
     {
       target: '[data-tour="food-action"]',
-      content: "Log meals by photo or description. That's it.",
+      content: "Log meals by photo, barcode scan, or description, and we take care of the rest!",
       disableBeacon: true
     },
     {

@@ -385,15 +385,23 @@ export function coerceAnalysis(input: any): MealAnalysis {
     }
 
     const ranges = input.estimated_ranges ?? {};
+    const calMin = clampNumber(Number(ranges.calories_min ?? 350), 0, 5000);
+    const calMax = clampNumber(Number(ranges.calories_max ?? 700), 0, 6000);
+    const protMin = clampNumber(Number(ranges.protein_g_min ?? 10), 0, 300);
+    const protMax = clampNumber(Number(ranges.protein_g_max ?? 30), 0, 350);
+    const carbMin = clampNumber(Number(ranges.carbs_g_min ?? 30), 0, 500);
+    const carbMax = clampNumber(Number(ranges.carbs_g_max ?? 80), 0, 600);
+    const fatMin = clampNumber(Number(ranges.fat_g_min ?? 10), 0, 200);
+    const fatMax = clampNumber(Number(ranges.fat_g_max ?? 30), 0, 250);
     const estimated_ranges = {
-      calories_min: clampNumber(Number(ranges.calories_min ?? 350), 0, 5000),
-      calories_max: clampNumber(Number(ranges.calories_max ?? 700), 0, 6000),
-      protein_g_min: clampNumber(Number(ranges.protein_g_min ?? 10), 0, 300),
-      protein_g_max: clampNumber(Number(ranges.protein_g_max ?? 30), 0, 350),
-      carbs_g_min: clampNumber(Number(ranges.carbs_g_min ?? 30), 0, 500),
-      carbs_g_max: clampNumber(Number(ranges.carbs_g_max ?? 80), 0, 600),
-      fat_g_min: clampNumber(Number(ranges.fat_g_min ?? 10), 0, 200),
-      fat_g_max: clampNumber(Number(ranges.fat_g_max ?? 30), 0, 250)
+      calories_min: Math.min(calMin, calMax),
+      calories_max: Math.max(calMin, calMax),
+      protein_g_min: Math.min(protMin, protMax),
+      protein_g_max: Math.max(protMin, protMax),
+      carbs_g_min: Math.min(carbMin, carbMax),
+      carbs_g_max: Math.max(carbMin, carbMax),
+      fat_g_min: Math.min(fatMin, fatMax),
+      fat_g_max: Math.max(fatMin, fatMax)
     };
 
     const micronutrient_signals = Array.isArray(input.micronutrient_signals)
@@ -422,6 +430,7 @@ export function coerceAnalysis(input: any): MealAnalysis {
       : undefined;
 
     return {
+      ...(input.name ? { name: String(input.name) } : {}),
       detected_items,
       estimated_ranges,
       micronutrient_signals,

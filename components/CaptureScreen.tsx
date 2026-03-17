@@ -14,9 +14,14 @@ function nowTimeString() {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
-function timeStringToTs(timeStr: string): number {
-  const [h, m] = timeStr.split(":").map(Number);
+function todayDateString() {
   const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function dateTimeToTs(dateStr: string, timeStr: string): number {
+  const [h, m] = timeStr.split(":").map(Number);
+  const d = new Date(dateStr);
   d.setHours(h, m, 0, 0);
   // Don't allow future times
   if (d.getTime() > Date.now()) d.setTime(Date.now());
@@ -35,6 +40,7 @@ export default function CaptureScreen() {
   const streamRef = useRef<MediaStream | null>(null);
   const [pendingMealId, setPendingMealId] = useState<string | null>(null);
   const [showTimePicker, setShowTimePicker] = useState(false);
+  const [mealDate, setMealDate] = useState(todayDateString);
   const [mealTime, setMealTime] = useState(nowTimeString);
 
   useEffect(() => {
@@ -154,7 +160,7 @@ export default function CaptureScreen() {
 
   const handleConfirmTime = async () => {
     if (pendingMealId) {
-      const ts = timeStringToTs(mealTime);
+      const ts = dateTimeToTs(mealDate, mealTime);
       const nowTs = Date.now();
       // Only update if the selected time is meaningfully different (> 60s)
       if (Math.abs(nowTs - ts) > 60_000) {
@@ -288,10 +294,17 @@ export default function CaptureScreen() {
               <div className="mt-4 flex flex-col items-center gap-3">
                 <p className="text-xs text-muted/70">When did you eat this?</p>
                 <input
+                  type="date"
+                  className="rounded-lg border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                  value={mealDate}
+                  max={todayDateString()}
+                  onChange={(e) => setMealDate(e.target.value)}
+                />
+                <input
                   type="time"
                   className="rounded-lg border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
                   value={mealTime}
-                  max={nowTimeString()}
+                  max={mealDate === todayDateString() ? nowTimeString() : undefined}
                   onChange={(e) => setMealTime(e.target.value)}
                 />
                 <button
@@ -310,7 +323,7 @@ export default function CaptureScreen() {
                   className="mt-3 text-xs text-ink/40 underline"
                   onClick={handleChangeTime}
                 >
-                  Not now? Change time
+                  Not now? Change date or time
                 </button>
               </>
             )}

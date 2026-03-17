@@ -5,7 +5,7 @@ import Joyride, { CallBackProps, STATUS, type Step } from "react-joyride";
 import { useRouter } from "next/navigation";
 import type { MealLog, UserProfile } from "../../../lib/types";
 import { summarizeWeek } from "../../../lib/summary";
-import { estimateMaintenance } from "../../../lib/digestEngine";
+import { estimateMaintenance, proteinTargetPerKg } from "../../../lib/digestEngine";
 import BottomNav from "../../../components/BottomNav";
 import Card from "../../../components/Card";
 import { useAuth } from "../../../components/AuthProvider";
@@ -218,7 +218,7 @@ export default function InsightsPage() {
     if (hasEnoughData) {
       const suggestedCalories = Math.max(0, Math.round(avgCalories * (1 + calNudge)));
       const weight = profile.weight ?? 0;
-      const proteinTarget = weight ? weight * (goal === "gain" ? 2.2 : goal === "lose" ? 1.6 : 1.8) : 0;
+      const proteinTarget = weight ? weight * proteinTargetPerKg(profile) : 0;
       const proteinNudge = proteinTarget ? avgProtein + Math.round((proteinTarget - avgProtein) * 0.1) : avgProtein;
       if (!suggestedCalories && !proteinNudge) return null;
       return { calories: suggestedCalories, protein: Math.round(proteinNudge) };
@@ -228,7 +228,7 @@ export default function InsightsPage() {
     const weight = profile.weight ?? 0;
     return {
       calories: Math.round(maintenance * (1 + calNudge)),
-      protein: weight ? Math.round(weight * (goal === "gain" ? 2.2 : goal === "lose" ? 1.6 : 1.8)) : 0
+      protein: weight ? Math.round(weight * proteinTargetPerKg(profile)) : 0
     };
   }, [profile, hasEnoughData, avgCalories, avgProtein]);
 
@@ -256,8 +256,36 @@ export default function InsightsPage() {
     },
     {
       target: '[data-tour="insights-micro"]',
-      content:
-        "Micronutrient patterns emerge over time as you log more meals to help you improve general health. Tap the i next to any nutrient to learn more.",
+      content: "Micronutrient patterns emerge over time as you log more meals to help you improve general health.",
+      disableBeacon: true
+    },
+    {
+      target: '[data-tour="insights-i-icon"]',
+      content: (
+        <div style={{ textAlign: "center", padding: "8px 4px" }}>
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 32,
+              height: 32,
+              borderRadius: "50%",
+              border: "1px solid rgba(31,41,55,0.1)",
+              color: "rgba(31,41,55,0.6)",
+              fontSize: 14,
+              fontWeight: 600,
+              marginBottom: 12,
+              lineHeight: 1
+            }}
+          >
+            i
+          </div>
+          <p style={{ margin: 0, fontSize: 15, fontWeight: 500, color: "#1F2937" }}>
+            Tap this icon anywhere in the app to learn more about that section.
+          </p>
+        </div>
+      ),
       disableBeacon: true
     }
   ] as Step[];
@@ -394,6 +422,7 @@ export default function InsightsPage() {
                     className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-ink/10 text-[10px] font-semibold text-ink/60"
                     onClick={() => setActiveNutrient(pattern.name)}
                     aria-label={`About ${pattern.name}`}
+                    data-tour={index === 0 ? "insights-i-icon" : undefined}
                   >
                     i
                   </button>

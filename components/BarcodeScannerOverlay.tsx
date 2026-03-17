@@ -12,6 +12,8 @@ export default function BarcodeScannerOverlay({ open, onClose, onDetected }: Pro
   const regionId = useRef(`barcode-region-${Math.random().toString(36).slice(2, 8)}`);
   const scannerRef = useRef<any>(null);
   const detectedRef = useRef(false);
+  const [cameraReady, setCameraReady] = useState(false);
+  const [cameraError, setCameraError] = useState(false);
 
   const teardown = () => {
     const scanner = scannerRef.current;
@@ -30,6 +32,8 @@ export default function BarcodeScannerOverlay({ open, onClose, onDetected }: Pro
   useEffect(() => {
     if (!open) {
       detectedRef.current = false;
+      setCameraReady(false);
+      setCameraError(false);
       return;
     }
 
@@ -55,8 +59,9 @@ export default function BarcodeScannerOverlay({ open, onClose, onDetected }: Pro
           },
           () => {}
         );
+        if (!cancelled) setCameraReady(true);
       } catch {
-        onClose();
+        if (!cancelled) setCameraError(true);
       }
     };
 
@@ -78,6 +83,15 @@ export default function BarcodeScannerOverlay({ open, onClose, onDetected }: Pro
             id={regionId.current}
             className="[&>video]:h-56 [&>video]:w-full [&>video]:object-cover [&>span]:hidden [&>img]:hidden [&>canvas]:hidden [&>div]:hidden"
           />
+          {!cameraReady && (
+            <div className="absolute inset-0 flex h-56 items-center justify-center bg-black">
+              {cameraError ? (
+                <p className="px-6 text-center text-sm text-white/70">Camera unavailable. Check permissions and try again.</p>
+              ) : (
+                <div className="h-7 w-7 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+              )}
+            </div>
+          )}
           {/* scanning frame overlay */}
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
             {/* dark vignette outside the target box */}

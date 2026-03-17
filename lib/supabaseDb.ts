@@ -227,6 +227,7 @@ export async function addMeal(userId: string, analysis: MealAnalysis, imageOptio
   const payload = {
     user_id: userId,
     created_at,
+    ts: Date.now(),
     analysis_json: analysis,
     image_url: imageOptional ?? null,
     calories: approxFromRange(ranges.calories_min, ranges.calories_max),
@@ -243,7 +244,7 @@ export async function addMeal(userId: string, analysis: MealAnalysis, imageOptio
   return mapMeal(data);
 }
 
-export async function updateMeal(id: string, analysis: MealAnalysis, corrections?: any) {
+export async function updateMeal(id: string, analysis: MealAnalysis, corrections?: any, userId?: string) {
   if (useMemory) {
     ensureLocalLoaded();
     const record = memMeals.find((entry) => entry.meal.id === id);
@@ -301,7 +302,9 @@ export async function updateMeal(id: string, analysis: MealAnalysis, corrections
     fat,
     status: "done"
   };
-  const { error } = await supabase.from("meals").update(payload).eq("id", id);
+  let query = supabase.from("meals").update(payload).eq("id", id);
+  if (userId) query = query.eq("user_id", userId);
+  const { error } = await query;
   if (error) handleSupabaseError("meals", error);
   return {
     id,
@@ -325,7 +328,7 @@ export async function listMeals(userId: string, limit = 50) {
     .from("meals")
     .select("*")
     .eq("user_id", userId)
-    .order("created_at", { ascending: false })
+    .order("ts", { ascending: false, nullsFirst: false })
     .limit(limit);
   if (error) handleSupabaseError("meals", error);
   return (data ?? []).map(mapMeal);
@@ -608,7 +611,7 @@ export async function clearAllData(userId: string) {
   }
 }
 
-if (typeof window !== "undefined") {
+if (typeof window !== "undefined" && process.env.NODE_ENV !== "production") {
   (window as any).debugDB = {
     listMeals,
     listWorkouts,

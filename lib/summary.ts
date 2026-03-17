@@ -3,7 +3,7 @@ import { dayKeyFromTs, todayKey } from "./utils";
 
 export function summarizeDay(meals: MealLog[], dateKey = todayKey()): DailyRange {
   const totals = meals
-    .filter((meal) => dayKeyFromTs(meal.ts) === dateKey)
+    .filter((meal) => dayKeyFromTs(meal.ts) === dateKey && meal.status !== "processing")
     .reduce(
       (acc, meal) => {
         const ranges = meal.analysisJson.estimated_ranges;

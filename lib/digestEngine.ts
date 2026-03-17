@@ -47,7 +47,7 @@ const PROTEIN_PER_KG: Record<ActivityLevel, number> = {
   very_active: 2.1,
 };
 
-function proteinTargetPerKg(profile: UserProfile): number {
+export function proteinTargetPerKg(profile: UserProfile): number {
   const base = profile.activityLevel ? (PROTEIN_PER_KG[profile.activityLevel] ?? 1.8) : 1.8;
   if (profile.goalDirection === "gain") return base + 0.2;
   if (profile.goalDirection === "lose") return Math.max(1.4, base - 0.1);

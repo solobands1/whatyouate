@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { FOOD_ANALYSIS_PROMPT } from "../../../lib/ai/prompt";
+import { FOOD_ANALYSIS_PROMPT, TEXT_ANALYSIS_PROMPT } from "../../../lib/ai/prompt";
 import { coerceAnalysis, safeFallbackAnalysis } from "../../../lib/ai/schema";
 import { supabaseServer } from "../../../lib/server/supabaseServer";
 
@@ -310,7 +310,7 @@ function overrideRangesFromProduct(analysis: any, product: any) {
   };
 }
 
-async function updateMealServer(mealId: string, analysis: any) {
+async function updateMealServer(mealId: string, analysis: any, userId?: string) {
   const ranges = analysis.estimated_ranges;
   const approxFromRange = (min: number, max: number) => Math.round((min + max) / 2);
   const roundCalories = (value: number) => {
@@ -342,7 +342,9 @@ async function updateMealServer(mealId: string, analysis: any) {
     fat,
     status: "done"
   };
-  const { error } = await supabaseServer.from("meals").update(payload).eq("id", mealId);
+  let query = supabaseServer.from("meals").update(payload).eq("id", mealId);
+  if (userId) query = query.eq("user_id", userId);
+  const { error } = await query;
   if (error) throw error;
   if (process.env.DEBUG_MEALS === "1") {
     const { data: updatedRow, error: selectError } = await supabaseServer
@@ -365,7 +367,7 @@ async function updateMealServer(mealId: string, analysis: any) {
   }
 }
 
-async function enrichWithOpenFoodFacts(mealId: string | undefined, analysis: any) {
+async function enrichWithOpenFoodFacts(mealId: string | undefined, analysis: any, userId?: string) {
   if (!mealId) {
     return;
   }
@@ -469,7 +471,7 @@ async function enrichWithOpenFoodFacts(mealId: string | undefined, analysis: any
       const detectedSuffix = detectedProduct ?? analysisName ?? "";
       enriched = { ...enriched, name: detectedSuffix ? `${dbBrand} ${detectedSuffix}`.trim() : dbBrand };
     }
-    await updateMealServer(mealId, enriched);
+    await updateMealServer(mealId, enriched, userId);
   } catch (err) {
     console.error("[OFF enrichment] error", err);
   }
@@ -485,7 +487,7 @@ async function analyzeTextOnly(textDescription: string, provider: string, openai
       body: JSON.stringify({
         model, max_tokens: 700, temperature: 0.2,
         messages: [{ role: "user", content: [
-          { type: "text", text: FOOD_ANALYSIS_PROMPT },
+          { type: "text", text: TEXT_ANALYSIS_PROMPT },
           { type: "text", text: userPrompt }
         ]}]
       })
@@ -501,7 +503,7 @@ async function analyzeTextOnly(textDescription: string, provider: string, openai
       body: JSON.stringify({
         model, response_format: { type: "json_object" },
         messages: [
-          { role: "system", content: FOOD_ANALYSIS_PROMPT },
+          { role: "system", content: TEXT_ANALYSIS_PROMPT },
           { role: "user", content: userPrompt }
         ],
         temperature: 0.2, max_tokens: 500
@@ -527,7 +529,7 @@ export async function POST(req: Request) {
       const provider = process.env.AI_PROVIDER ?? "openai";
       const rawAnalysis = await analyzeTextOnly(textDescription, provider, process.env.OPENAI_API_KEY ?? "", process.env.ANTHROPIC_API_KEY ?? "");
       const analysis = coerceAnalysis(rawAnalysis);
-      if (mealId) await updateMealServer(mealId, analysis);
+      if (mealId) await updateMealServer(mealId, analysis, userId);
       return NextResponse.json({ analysis });
     }
 
@@ -554,15 +556,15 @@ export async function POST(req: Request) {
     let analysis = coerceAnalysis(rawAnalysis);
 
     if (mealId) {
-      await updateMealServer(mealId, analysis);
+      await updateMealServer(mealId, analysis, userId);
     }
 
     await Promise.race([
-      enrichWithOpenFoodFacts(mealId, analysis),
+      enrichWithOpenFoodFacts(mealId, analysis, userId),
       new Promise<void>((resolve) => setTimeout(resolve, 4000))
     ]);
     return NextResponse.json({ analysis });
   } catch {
-    return NextResponse.json({ analysis: safeFallbackAnalysis() }, { status: 200 });
+    return NextResponse.json({ error: "Analysis failed" }, { status: 500 });
   }
 }

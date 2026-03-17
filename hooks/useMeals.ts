@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import type { MealAnalysis, MealLog } from "../lib/types";
 import { addMeal, listMeals, updateMeal } from "../lib/supabaseDb";
+import { safeFallbackAnalysis } from "../lib/ai/schema";
 
 export function useMeals(
   user: User | null,
@@ -31,6 +32,15 @@ export function useMeals(
   const load = useCallback(async (userId: string) => {
     const mealsData = await listMeals(userId, 200);
     setMeals(mealsData);
+    // Recover meals stuck in "processing" (e.g. tab closed mid-analysis)
+    const STUCK_MS = 5 * 60 * 1000;
+    const now = Date.now();
+    const stuck = mealsData.filter((m) => m.status === "processing" && now - m.ts > STUCK_MS);
+    if (stuck.length > 0) {
+      await Promise.all(stuck.map((m) => updateMeal(m.id, safeFallbackAnalysis(), undefined, userId).catch(() => {})));
+      const refreshed = await listMeals(userId, 200);
+      setMeals(refreshed);
+    }
   }, []);
 
   const openManualMealEntry = () => {
@@ -68,6 +78,7 @@ export function useMeals(
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ textDescription: manualText.trim() })
       });
+      if (!res.ok) throw new Error("Analysis failed");
       const data = await res.json();
       setManualResult(data.analysis ?? null);
       setManualPortion("medium");
@@ -95,7 +106,7 @@ export function useMeals(
         }
       };
       const created = await addMeal(user.id, scaledAnalysis as any);
-      await updateMeal(created.id, scaledAnalysis as any, { userCorrection: manualResult.name });
+      await updateMeal(created.id, scaledAnalysis as any, { userCorrection: manualResult.name }, user.id);
       setManualText("");
       setManualResult(null);
       setManualPortion("medium");
@@ -153,7 +164,7 @@ export function useMeals(
         estimated_ranges: ranges,
       };
 
-      await updateMeal(editingMeal.id, updatedAnalysis as any, { userCorrection: editForm.name });
+      await updateMeal(editingMeal.id, updatedAnalysis as any, { userCorrection: editForm.name }, user?.id);
 
       setEditingMeal(null);
       setEditRecents(false);
