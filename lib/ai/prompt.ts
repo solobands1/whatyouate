@@ -94,6 +94,7 @@ export const TEXT_ANALYSIS_PROMPT = `You are a calm, non-judgmental food nutriti
 
 Return STRICT JSON ONLY matching this schema:
 {
+  "name": "string",
   "detected_items": [{
     "name": "string",
     "confidence_0_1": number,
@@ -129,6 +130,12 @@ GENERAL
 - Keep JSON strictly valid. No commentary.
 - Keep notes and rationale_short concise and hedged.
 - Do not add extra keys.
+
+NAMING
+- Set "name" to a concise, natural label for the full meal.
+- For multi-item meals, combine the main items: e.g. "Bacon, Eggs & Hash Browns" or "Chicken, Rice & Broccoli".
+- For a single item, use that item's name.
+- Do not use generic labels like "Meal" or "Food" unless the description is too vague to name.
 
 DETECTED ITEMS
 - Interpret the user's description literally. Do not invent ingredients not mentioned.

@@ -302,7 +302,7 @@ function overrideRangesFromProduct(analysis: any, product: any) {
         fat_g_min: fatVal,
         fat_g_max: fatVal
       },
-      confidence_overall_0_1: Math.max(analysis?.confidence_overall_0_1 ?? 0, 0.9),
+      confidence_overall_0_1: Math.max(analysis?.confidence_overall_0_1 ?? 0, analysis?.database_match_confidence_0_1 ?? 0),
       optional_quick_confirm_options: undefined
     },
     applied: true as const,

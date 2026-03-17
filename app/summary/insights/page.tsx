@@ -11,6 +11,7 @@ import Card from "../../../components/Card";
 import { useAuth } from "../../../components/AuthProvider";
 import { MEALS_UPDATED_EVENT, PROFILE_UPDATED_EVENT } from "../../../lib/dataEvents";
 import { getProfile, listMeals } from "../../../lib/supabaseDb";
+import { dayKeyFromTs } from "../../../lib/utils";
 
 const INSIGHT_NUTRIENTS = [
   "Iron",
@@ -87,7 +88,7 @@ export default function InsightsPage() {
   const loadData = useCallback(() => {
     if (!user) return;
     setLoadingData(true);
-    Promise.all([getProfile(user.id), listMeals(user.id, 500)])
+    Promise.all([getProfile(user.id), listMeals(user.id, 1000)])
       .then(([profileData, mealsData]) => {
         if (!mountedRef.current) return;
         setProfile(profileData ?? undefined);
@@ -126,7 +127,7 @@ export default function InsightsPage() {
   }, [user]);
 
   const dayCount = useMemo(() => {
-    const days = new Set(meals.map((meal) => new Date(meal.ts).toISOString().slice(0, 10)));
+    const days = new Set(meals.map((meal) => dayKeyFromTs(meal.ts)));
     return days.size;
   }, [meals]);
 
@@ -160,7 +161,7 @@ export default function InsightsPage() {
 
   const proteinPattern = useMemo(() => {
     if (profile?.weight) {
-      const target = profile.weight * 1.6;
+      const target = profile.weight * proteinTargetPerKg(profile);
       if (avgProtein < target * 0.6) return "Low protein appearance";
       if (avgProtein < target * 0.9) return "Moderate protein pattern";
       return "Strong protein pattern";
@@ -190,6 +191,7 @@ export default function InsightsPage() {
 
     const byNutrient = new Map<string, number>();
     for (const signal of signals) {
+      if (signal.signal !== "adequate_appearance") continue;
       const name = String(signal.nutrient || "").toLowerCase();
       byNutrient.set(name, (byNutrient.get(name) ?? 0) + 1);
     }
@@ -209,13 +211,14 @@ export default function InsightsPage() {
     });
   }, [meals]);
 
-  const hasEnoughData = dayCount >= 5 && mealCount >= 10;
+  const hasEnoughData = dayCount >= 5 && mealCount >= 5;
 
   const gentleTargets = useMemo(() => {
     if (!profile) return null;
     const goal = profile.goalDirection;
     const calNudge = goal === "gain" ? 0.08 : goal === "lose" ? -0.08 : 0;
-    if (hasEnoughData) {
+    // Match digestEngine.ts computeGentleTargets: switch to data-driven only at >= 10 meals + 5 days
+    if (dayCount >= 5 && mealCount >= 10) {
       const suggestedCalories = Math.max(0, Math.round(avgCalories * (1 + calNudge)));
       const weight = profile.weight ?? 0;
       const proteinTarget = weight ? weight * proteinTargetPerKg(profile) : 0;
@@ -230,13 +233,13 @@ export default function InsightsPage() {
       calories: Math.round(maintenance * (1 + calNudge)),
       protein: weight ? Math.round(weight * proteinTargetPerKg(profile)) : 0
     };
-  }, [profile, hasEnoughData, avgCalories, avgProtein]);
+  }, [profile, dayCount, mealCount, avgCalories, avgProtein]);
 
   const gentleTargetsDisplay = gentleTargets;
-  const displayAvgCalories = hasEnoughData ? `${avgCalories}` : "2100";
-  const displayAvgProtein = hasEnoughData ? `${avgProtein}g` : "120g";
-  const displayAvgCarbs = hasEnoughData ? `${avgCarbs}g` : "220g";
-  const displayAvgFat = hasEnoughData ? `${avgFat}g` : "65g";
+  const displayAvgCalories = hasEnoughData ? `${avgCalories}` : "—";
+  const displayAvgProtein = hasEnoughData ? `${avgProtein}g` : "—";
+  const displayAvgCarbs = hasEnoughData ? `${avgCarbs}g` : "—";
+  const displayAvgFat = hasEnoughData ? `${avgFat}g` : "—";
   const displayEnergyPattern = hasEnoughData ? energyPattern : "Moderate intake pattern";
   const displayProteinPattern = hasEnoughData ? proteinPattern : "Moderate protein pattern";
   const displayFatPattern = hasEnoughData ? fatPattern : "Moderate fat pattern";
@@ -311,6 +314,20 @@ export default function InsightsPage() {
 
   if (!user) return null;
 
+  if (loadingData) {
+    return (
+      <div className="min-h-screen bg-surface">
+        <div className="mx-auto flex min-h-screen max-w-md flex-col px-5 pb-24 pt-7">
+          <div className="mb-6 h-8 w-24 animate-pulse rounded-lg bg-ink/10" />
+          <div className="mb-4 animate-pulse rounded-2xl bg-ink/10 p-5" style={{ height: 120 }} />
+          <div className="mb-4 animate-pulse rounded-2xl bg-ink/10 p-5" style={{ height: 120 }} />
+          <div className="animate-pulse rounded-2xl bg-ink/10 p-5" style={{ height: 120 }} />
+        </div>
+        <BottomNav current="summary" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-surface">
       <Joyride
@@ -347,7 +364,7 @@ export default function InsightsPage() {
           <div className="flex items-start justify-between">
             <div>
               <h1 className="text-2xl font-semibold text-ink">Patterns</h1>
-              <p className="mt-1 text-sm text-muted/70">What I'm noticing in your food over time.</p>
+              <p className="mt-1 text-sm text-muted/70">{hasEnoughData ? "What I'm noticing in your food over time." : "Patterns emerge after a few more days of logging."}</p>
               {!hasEnoughData && (
                 <div className="mt-2 inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] text-amber-700">
                   Real data appears after a few more meals
@@ -368,6 +385,7 @@ export default function InsightsPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <p className="text-xs uppercase tracking-wide text-muted/70">Macros</p>
+              {!hasEnoughData && <p className="text-[11px] uppercase tracking-wide text-muted/50">Preview</p>}
               <button
                 type="button"
                 className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-ink/10 text-[10px] font-semibold text-ink/60"
@@ -379,7 +397,7 @@ export default function InsightsPage() {
             </div>
             <p className="text-[11px] uppercase tracking-wide text-muted/50">Last 7 days</p>
           </div>
-          <div className="mt-4 grid grid-cols-2 gap-3 text-sm text-ink/80">
+          <div className={`mt-4 grid grid-cols-2 gap-3 text-sm text-ink/80${!hasEnoughData ? " opacity-50" : ""}`}>
             <div>
               <p className="text-[11px] uppercase tracking-wide text-muted/60">Avg calories</p>
               <p className="mt-1 text-lg font-semibold">{displayAvgCalories}</p>
@@ -410,7 +428,7 @@ export default function InsightsPage() {
             <p className="text-xs uppercase tracking-wide text-muted/70" data-tour="insights-micro-title">
               What I'm seeing
             </p>
-            {mealCount === 0 && <p className="text-[11px] uppercase tracking-wide text-muted/50">Preview</p>}
+            {!hasEnoughData && <p className="text-[11px] uppercase tracking-wide text-muted/50">Preview</p>}
           </div>
           <div className="mt-4 space-y-4">
             {displayMicronutrients.map((pattern, index) => (

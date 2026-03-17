@@ -92,7 +92,8 @@ function handleSupabaseError(table: string, error: any) {
 
 function mapMeal(row: any): MealLog {
   let analysis = row.analysis_json;
-  if (!analysis || !analysis.estimated_ranges) {
+  const usedFallback = !analysis || !analysis.estimated_ranges;
+  if (usedFallback) {
     analysis = safeFallbackAnalysis();
   }
   return {
@@ -108,9 +109,9 @@ function mapMeal(row: any): MealLog {
     protein: row.protein ?? undefined,
     carbs: row.carbs ?? undefined,
     fat: row.fat ?? undefined,
-    userCorrection: undefined,
+    userCorrection: analysis?.name ?? undefined,
     imageThumb: row.image_url ?? undefined,
-    status: row.status ?? "done"
+    status: usedFallback ? "failed" : (row.status ?? "done")
   };
 }
 
@@ -173,6 +174,7 @@ export async function getProfile(userId: string): Promise<UserProfile | null> {
     sex: data.sex ?? "prefer_not",
     goalDirection: data.goal_direction === "recomposition" ? "balance" : (data.goal_direction ?? "maintain"),
     bodyPriority: data.body_priority ?? "",
+    freeformFocus: data.freeform_focus ?? "",
     activityLevel: data.activity_level ?? undefined,
     dietaryRestrictions: Array.isArray(data.dietary_restrictions) ? data.dietary_restrictions : [],
     units: data.units ?? "imperial"
@@ -197,6 +199,7 @@ export async function saveProfile(userId: string, profile: UserProfile) {
     sex: profile.sex,
     goal_direction: profile.goalDirection,
     body_priority: profile.bodyPriority ?? "",
+    freeform_focus: profile.freeformFocus ?? null,
     activity_level: profile.activityLevel ?? null,
     dietary_restrictions: profile.dietaryRestrictions ?? [],
     units: profile.units,
@@ -244,7 +247,7 @@ export async function addMeal(userId: string, analysis: MealAnalysis, imageOptio
   return mapMeal(data);
 }
 
-export async function updateMeal(id: string, analysis: MealAnalysis, corrections?: any, userId?: string) {
+export async function updateMeal(id: string, analysis: MealAnalysis, corrections?: any, userId?: string, status: "done" | "failed" = "done") {
   if (useMemory) {
     ensureLocalLoaded();
     const record = memMeals.find((entry) => entry.meal.id === id);
@@ -300,17 +303,13 @@ export async function updateMeal(id: string, analysis: MealAnalysis, corrections
     protein,
     carbs,
     fat,
-    status: "done"
+    status
   };
   let query = supabase.from("meals").update(payload).eq("id", id);
   if (userId) query = query.eq("user_id", userId);
-  const { error } = await query;
+  const { data, error } = await query.select("*").single();
   if (error) handleSupabaseError("meals", error);
-  return {
-    id,
-    ts: Date.now(),
-    analysisJson: analysis
-  };
+  return mapMeal(data);
 }
 
 export async function listMeals(userId: string, limit = 50) {
@@ -542,6 +541,22 @@ export async function addNudge(userId: string, type: string, message: string) {
   const { data, error } = await supabase.from("nudges").insert(payload).select("*").single();
   if (error) handleSupabaseError("nudges", error);
   return data;
+}
+
+export async function pruneNudges(userId: string, retentionDays = 30) {
+  const cutoff = Date.now() - retentionDays * 24 * 60 * 60 * 1000;
+  if (useMemory) {
+    ensureLocalLoaded();
+    const before = memNudges.length;
+    memNudges = memNudges.filter((n) => n.userId !== userId || n.createdAt >= cutoff);
+    if (memNudges.length !== before) persistLocal();
+    return;
+  }
+  await supabase
+    .from("nudges")
+    .delete()
+    .eq("user_id", userId)
+    .lt("created_at", new Date(cutoff).toISOString());
 }
 
 export async function listNudges(userId: string, limit = 50) {

@@ -423,7 +423,9 @@ export function coerceAnalysis(input: any): MealAnalysis {
     const calorieSpreadPct =
       estimated_ranges.calories_max > 0 ? calorieSpread / estimated_ranges.calories_max : 0;
     const precision_mode_available =
-      Boolean(detected_brand) || confidence_overall_0_1 < 0.65 || calorieSpreadPct > 0.3;
+      (Boolean(detected_brand) && (database_match_confidence_0_1 == null || database_match_confidence_0_1 < 0.7)) ||
+      confidence_overall_0_1 < 0.65 ||
+      calorieSpreadPct > 0.3;
 
     const optional_quick_confirm_options = Array.isArray(input.optional_quick_confirm_options)
       ? input.optional_quick_confirm_options.map((option: any) => String(option)).slice(0, 4)

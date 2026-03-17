@@ -46,9 +46,6 @@ async function processNext() {
 
     notifyMealsUpdated();
     window.dispatchEvent(new CustomEvent("meal-analysis-complete", { detail: job.mealId }));
-    window.setTimeout(() => {
-      notifyMealsUpdated();
-    }, 5000);
   } catch {
     window.dispatchEvent(new CustomEvent("meal-analysis-error", { detail: { mealId: job.mealId, rateLimited: false } }));
     notifyMealsUpdated();

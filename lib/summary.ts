@@ -3,7 +3,7 @@ import { dayKeyFromTs, todayKey } from "./utils";
 
 export function summarizeDay(meals: MealLog[], dateKey = todayKey()): DailyRange {
   const totals = meals
-    .filter((meal) => dayKeyFromTs(meal.ts) === dateKey && meal.status !== "processing")
+    .filter((meal) => dayKeyFromTs(meal.ts) === dateKey && meal.status !== "processing" && meal.status !== "failed")
     .reduce(
       (acc, meal) => {
         const ranges = meal.analysisJson.estimated_ranges;
@@ -44,11 +44,8 @@ export function summarizeWeek(meals: MealLog[], days = 7) {
 }
 
 export function summarizeWorkoutsWeek(workouts: WorkoutSession[]) {
-  const startOfWeek = new Date();
-  startOfWeek.setHours(0, 0, 0, 0);
-  startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
-
-  const sessions = workouts.filter((session) => new Date(session.startTs) >= startOfWeek);
+  const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const sessions = workouts.filter((session) => session.endTs != null && session.endTs >= cutoff);
   const totalMinutes = sessions.reduce((acc, session) => acc + (session.durationMin ?? 0), 0);
   return {
     count: sessions.length,

@@ -19,9 +19,15 @@ function todayDateString() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
+function minDateString(daysBack = 14) {
+  const d = new Date();
+  d.setDate(d.getDate() - daysBack);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 function dateTimeToTs(dateStr: string, timeStr: string): number {
   const [h, m] = timeStr.split(":").map(Number);
-  const d = new Date(dateStr);
+  const d = new Date(dateStr + "T00:00:00");
   d.setHours(h, m, 0, 0);
   // Don't allow future times
   if (d.getTime() > Date.now()) d.setTime(Date.now());
@@ -35,6 +41,7 @@ export default function CaptureScreen() {
   const [preview, setPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const redirectRef = useRef<number | null>(null);
+  const showTimePickerRef = useRef(false);
   const [cameraMode, setCameraMode] = useState<"idle" | "live" | "file">("idle");
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -42,6 +49,8 @@ export default function CaptureScreen() {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [mealDate, setMealDate] = useState(todayDateString);
   const [mealTime, setMealTime] = useState(nowTimeString);
+  const [saveError, setSaveError] = useState(false);
+  const [confirmingTime, setConfirmingTime] = useState(false);
 
   useEffect(() => {
     if (loading) return;
@@ -139,18 +148,25 @@ export default function CaptureScreen() {
       fileToThumbnailDataUrl(selected)
     ]);
     const placeholder = safeFallbackAnalysis();
-    const pendingMeal = await addMeal(user.id, placeholder, thumb);
+    let pendingMeal;
+    try {
+      pendingMeal = await addMeal(user.id, placeholder, thumb);
+    } catch {
+      setSaveError(true);
+      return;
+    }
     setPendingMealId(pendingMeal.id);
     setMealTime(nowTimeString());
     notifyMealsUpdated();
     enqueueMeal(pendingMeal.id, resized);
     if (redirectRef.current) window.clearTimeout(redirectRef.current);
     redirectRef.current = window.setTimeout(() => {
-      router.push("/");
+      if (!showTimePickerRef.current) router.push("/");
     }, 1600);
   };
 
   const handleChangeTime = () => {
+    showTimePickerRef.current = true;
     if (redirectRef.current) {
       window.clearTimeout(redirectRef.current);
       redirectRef.current = null;
@@ -159,13 +175,11 @@ export default function CaptureScreen() {
   };
 
   const handleConfirmTime = async () => {
+    if (confirmingTime) return;
+    setConfirmingTime(true);
     if (pendingMealId) {
       const ts = dateTimeToTs(mealDate, mealTime);
-      const nowTs = Date.now();
-      // Only update if the selected time is meaningfully different (> 60s)
-      if (Math.abs(nowTs - ts) > 60_000) {
-        await updateMealTs(pendingMealId, ts).catch(() => {});
-      }
+      await updateMealTs(pendingMealId, ts).catch(() => {});
     }
     router.push("/");
   };
@@ -209,6 +223,7 @@ export default function CaptureScreen() {
     setFile(new File([blob], "capture.jpg", { type: "image/jpeg" }));
   };
 
+  if (loading) return <div className="min-h-screen bg-surface" />;
   if (!user) return null;
 
   return (
@@ -252,18 +267,30 @@ export default function CaptureScreen() {
                 </div>
               </div>
             ) : (
-              <input
-                id="camera-file"
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                className="sr-only"
-                onChange={(event) => {
-                  const selected = event.target.files?.[0] ?? null;
-                  setFile(selected);
-                }}
-              />
+              <>
+                <input
+                  id="camera-file"
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="sr-only"
+                  onChange={(event) => {
+                    const selected = event.target.files?.[0] ?? null;
+                    setFile(selected);
+                  }}
+                />
+                <div className="flex flex-col items-center gap-2 pt-16">
+                  <p className="text-sm text-muted/60">No photo selected.</p>
+                  <button
+                    type="button"
+                    className="text-sm font-semibold text-ink/60 underline"
+                    onClick={() => router.push("/")}
+                  >
+                    ← Back
+                  </button>
+                </div>
+              </>
             )}
           </div>
         )}
@@ -290,13 +317,25 @@ export default function CaptureScreen() {
         {preview && (
           <div className="mt-6 flex flex-col items-center">
             <p className="text-lg font-semibold text-primary animate-fadeIn">Image Captured</p>
-            {showTimePicker ? (
+            {saveError ? (
+              <div className="mt-3 flex flex-col items-center gap-2">
+                <p className="text-sm text-muted/70">Something went wrong. Please try again.</p>
+                <button
+                  type="button"
+                  className="text-sm font-semibold text-ink/60 underline"
+                  onClick={() => router.push("/")}
+                >
+                  ← Back
+                </button>
+              </div>
+            ) : showTimePicker ? (
               <div className="mt-4 flex flex-col items-center gap-3">
                 <p className="text-xs text-muted/70">When did you eat this?</p>
                 <input
                   type="date"
                   className="rounded-lg border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
                   value={mealDate}
+                  min={minDateString()}
                   max={todayDateString()}
                   onChange={(e) => setMealDate(e.target.value)}
                 />
@@ -309,10 +348,11 @@ export default function CaptureScreen() {
                 />
                 <button
                   type="button"
-                  className="rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-white transition hover:bg-primary/90"
+                  className="rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
                   onClick={handleConfirmTime}
+                  disabled={confirmingTime}
                 >
-                  Done
+                  {confirmingTime ? "Saving…" : "Done"}
                 </button>
               </div>
             ) : (

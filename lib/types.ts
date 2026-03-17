@@ -61,7 +61,7 @@ export interface MealLog {
   carbs?: number;
   fat?: number;
   userCorrection?: string;
-  status?: "processing" | "done";
+  status?: "processing" | "done" | "failed";
 }
 
 export interface WorkoutSession {

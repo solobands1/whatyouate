@@ -9,7 +9,7 @@ import { formatApprox, formatDateShort, todayKey } from "../lib/utils";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
 import { useAuth } from "./AuthProvider";
-import { addNudge, getProfile, listMeals, listNudges, listWorkouts, LOCAL_MODE } from "../lib/supabaseDb";
+import { addNudge, getProfile, listMeals, listNudges, listWorkouts, LOCAL_MODE, pruneNudges } from "../lib/supabaseDb";
 import { computeNudges, computeSummaryMarkers } from "../lib/digestEngine";
 import { MEALS_UPDATED_EVENT, PROFILE_UPDATED_EVENT, WORKOUTS_UPDATED_EVENT } from "../lib/dataEvents";
 import { supabase } from "../lib/supabaseClient";
@@ -23,6 +23,7 @@ export default function SummaryScreen() {
   const [hydrated, setHydrated] = useState(false);
   const [nudges, setNudges] = useState<Array<{ id: string; message: string; created_at: string }>>([]);
   const nudgesLoadedRef = useRef(false);
+  const savedThisSessionRef = useRef<Set<string>>(new Set());
   const [loadingData, setLoadingData] = useState(true);
   const mountedRef = useRef(true);
   const [runSummaryTour, setRunSummaryTour] = useState(false);
@@ -45,7 +46,7 @@ export default function SummaryScreen() {
     if (!user) return;
     setLoadingData(true);
     if (LOCAL_MODE) {
-      Promise.all([getProfile(user.id), listMeals(user.id, 200), listWorkouts(user.id, 200)])
+      Promise.all([getProfile(user.id), listMeals(user.id, 1000), listWorkouts(user.id, 200)])
         .then((result) => {
           const [profileData, mealsData, workoutsData] = result;
           if (!mountedRef.current) return;
@@ -77,7 +78,7 @@ export default function SummaryScreen() {
         })
         .then((ok) => {
           if (!ok) return null;
-          return Promise.all([getProfile(user.id), listMeals(user.id, 200), listWorkouts(user.id, 200)]);
+          return Promise.all([getProfile(user.id), listMeals(user.id, 1000), listWorkouts(user.id, 200)]);
         })
         .then((result) => {
           if (!result) return;
@@ -184,10 +185,14 @@ export default function SummaryScreen() {
   const uniqueNudges = useMemo(() => {
     const messages = new Set<string>();
     const items: Array<{ id?: string; message: string; created_at?: string; isNew?: boolean }> = [];
+    const todayDateKey = todayKey();
     nudges
       .slice()
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .forEach((nudge) => {
+        // Skip DB nudges from today — visibleNotes (fresh compute) covers today's state
+        const nudgeDayKey = todayKey(new Date(nudge.created_at));
+        if (nudgeDayKey === todayDateKey) return;
         if (messages.has(nudge.message)) return;
         messages.add(nudge.message);
         items.push({
@@ -250,7 +255,7 @@ export default function SummaryScreen() {
     },
     {
       target: '[data-tour="dig-deeper"]',
-      content: "Patterns shows longer-term nutrient patterns.",
+      content: "Insights shows longer-term nutrient patterns.",
       disableBeacon: true
     }
   ] as Step[];
@@ -288,9 +293,25 @@ export default function SummaryScreen() {
     const proteinTarget = gentleTargetsDisplay.protein;
     const caloriesTarget = gentleTargetsDisplay.calories;
     const proteinLow = avgWeekProtein > 0 && avgWeekProtein < proteinTarget * 0.85;
-    const proteinHigh = avgWeekProtein > 0 && avgWeekProtein > proteinTarget * 1.1;
     const caloriesLow = caloriesTarget > 0 && avgWeekCalories < caloriesTarget * 0.85;
     const caloriesHigh = caloriesTarget > 0 && avgWeekCalories > caloriesTarget * 1.1;
+
+    // Align with which signal the active nudges are actually about
+    const nudgeText = visibleNotes.join(" ").toLowerCase();
+    const nudgeIsProtein = nudgeText.includes("protein");
+    const nudgeIsCalorie = nudgeText.includes("energy") || nudgeText.includes("intake") || nudgeText.includes("calorie");
+
+    if (nudgeIsProtein && !nudgeIsCalorie) {
+      if (proteinLow) tips.push("Protein has been trending a bit low lately.");
+      if (tips.length === 0) tips.push("Your intake has been fairly steady lately.");
+      return tips.slice(0, 2);
+    }
+    if (nudgeIsCalorie && !nudgeIsProtein) {
+      if (caloriesLow) tips.push(goal === "gain" ? "Calories have been running lighter than your goal." : "Calories have been a little light lately.");
+      else if (caloriesHigh) tips.push(goal === "lose" ? "Calories have been running higher than your goal." : "Calories have been a little high lately.");
+      if (tips.length === 0) tips.push("Your intake has been fairly steady lately.");
+      return tips.slice(0, 2);
+    }
 
     if (goal === "lose") {
       if (caloriesHigh) tips.push("Calories have been running higher than your goal.");
@@ -304,10 +325,16 @@ export default function SummaryScreen() {
       if (proteinLow) tips.push("Protein has been trending a bit low lately.");
     }
 
-    if (tips.length === 0) tips.push("Your intake has been fairly steady lately.");
+    if (tips.length === 0) {
+      if (avgWeekCalories === 0 || avgWeekProtein === 0) {
+        tips.push("Log a few meals to see your weekly pattern here.");
+      } else {
+        tips.push("Your intake has been fairly steady lately.");
+      }
+    }
 
     return tips.slice(0, 2);
-  }, [profile, gentleTargetsDisplay, avgWeekProtein, avgWeekCalories]);
+  }, [profile, gentleTargetsDisplay, avgWeekProtein, avgWeekCalories, visibleNotes]);
 
   const isRestrictedSuggestion = useMemo(() => {
     const r = profile?.dietaryRestrictions ?? [];
@@ -337,6 +364,25 @@ export default function SummaryScreen() {
     const caloriesLow = caloriesTarget > 0 && avgWeekCalories < caloriesTarget * 0.85;
     const proteinLow = avgWeekProtein > 0 && avgWeekProtein < gentleTargetsDisplay.protein * 0.85;
 
+    // Align action with which signal the active nudges are actually about
+    const nudgeText = visibleNotes.join(" ").toLowerCase();
+    const nudgeIsProtein = nudgeText.includes("protein");
+    const nudgeIsCalorie = nudgeText.includes("energy") || nudgeText.includes("intake") || nudgeText.includes("calorie");
+
+    if (nudgeIsProtein && !nudgeIsCalorie) {
+      if (proteinLow) tips.push(goal === "gain" ? "Pair meals with extra protein." : "Pair meals with a little more protein.");
+      if (tips.length === 0) tips.push("Keep portions steady and pair meals with protein.");
+      return tips.filter((tip) => !isRestrictedSuggestion(tip)).slice(0, 2);
+    }
+    if (nudgeIsCalorie && !nudgeIsProtein) {
+      if (goal === "lose" && caloriesHigh) tips.push("Reduce portions slightly or skip one side.");
+      else if (goal === "gain" && caloriesLow) tips.push("Add a side or a slightly larger portion.");
+      else if (caloriesHigh) tips.push("Reduce portions slightly to stay balanced.");
+      else if (caloriesLow) tips.push("Add a small side to stay balanced.");
+      if (tips.length === 0) tips.push("Keep portions steady and pair meals with protein.");
+      return tips.filter((tip) => !isRestrictedSuggestion(tip)).slice(0, 2);
+    }
+
     if (goal === "lose") {
       if (caloriesHigh) tips.push("Reduce portions slightly or skip one side.");
       if (proteinLow) tips.push("Pair meals with a little more protein.");
@@ -349,10 +395,10 @@ export default function SummaryScreen() {
       if (proteinLow) tips.push("Pair meals with more protein.");
     }
 
-    if (tips.length === 0) tips.push("Keep portions steady and pair meals with protein.");
+    if (tips.length === 0 && avgWeekCalories > 0) tips.push("Keep portions steady and pair meals with protein.");
 
     return tips.filter((tip) => !isRestrictedSuggestion(tip)).slice(0, 2);
-  }, [profile, gentleTargetsDisplay, avgWeekCalories, avgWeekProtein, isRestrictedSuggestion]);
+  }, [profile, gentleTargetsDisplay, avgWeekCalories, avgWeekProtein, isRestrictedSuggestion, visibleNotes]);
 
   const foodIdeas = useMemo(() => {
     const ideas: string[] = [];
@@ -427,16 +473,33 @@ export default function SummaryScreen() {
   useEffect(() => {
     if (!user || !nudgesLoadedRef.current || visibleNotes.length === 0) return;
     const existing = new Set(nudges.map((n) => n.message));
-    const missing = visibleNotes.filter((note) => !existing.has(note));
+    const missing = visibleNotes.filter(
+      (note) => !existing.has(note) && !savedThisSessionRef.current.has(note)
+    );
     if (missing.length === 0) return;
     missing.forEach((note) => {
+      savedThisSessionRef.current.add(note);
       addNudge(user.id, "awareness", note).catch(() => {
         // Silent: nudges are optional.
       });
     });
+    pruneNudges(user.id).catch(() => {});
   }, [user, visibleNotes, nudges]);
 
   if (!user) return null;
+
+  if (loadingData) {
+    return (
+      <div className="min-h-screen bg-surface">
+        <div className="mx-auto flex min-h-screen max-w-md flex-col px-5 pb-24 pt-7">
+          <div className="mb-6 h-8 w-28 animate-pulse rounded-lg bg-ink/10" />
+          <div className="mb-4 animate-pulse rounded-2xl bg-ink/10 p-5" style={{ height: 180 }} />
+          <div className="animate-pulse rounded-2xl bg-ink/10 p-5" style={{ height: 140 }} />
+        </div>
+        <BottomNav current="summary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-surface">
@@ -628,6 +691,9 @@ export default function SummaryScreen() {
                     <p className="text-[10px] font-semibold uppercase tracking-wide text-muted/60">
                       {group.label}
                     </p>
+                    {group.label !== "Today" && (
+                      <p className="text-[9px] text-muted/40">Reflects that day&apos;s patterns</p>
+                    )}
                     <div className="mt-2 flex flex-wrap gap-2">
                       {group.items.map((nudge) => (
                         <div
@@ -649,7 +715,7 @@ export default function SummaryScreen() {
           {fuelingState === "under" && suggestions.length === 5 && mealCount >= 3 && (
             <div className="mt-4">
               <p className="text-sm text-ink/90">A small add may help.</p>
-              <p className="text-xs uppercase tracking-wide text-muted/60">5 familiar ideas</p>
+              <p className="text-xs uppercase tracking-wide text-muted/60">5 ideas to consider</p>
               <ul className="mt-2 space-y-1 text-sm text-ink/90">
                 {suggestions.map((item) => (
                   <li key={item} className="rounded-xl bg-ink/5 px-3 py-2">{item}</li>

@@ -30,15 +30,15 @@ export function useMeals(
   const [manualError, setManualError] = useState<string | null>(null);
 
   const load = useCallback(async (userId: string) => {
-    const mealsData = await listMeals(userId, 200);
+    const mealsData = await listMeals(userId, 1000);
     setMeals(mealsData);
     // Recover meals stuck in "processing" (e.g. tab closed mid-analysis)
     const STUCK_MS = 5 * 60 * 1000;
     const now = Date.now();
     const stuck = mealsData.filter((m) => m.status === "processing" && now - m.ts > STUCK_MS);
     if (stuck.length > 0) {
-      await Promise.all(stuck.map((m) => updateMeal(m.id, safeFallbackAnalysis(), undefined, userId).catch(() => {})));
-      const refreshed = await listMeals(userId, 200);
+      await Promise.all(stuck.map((m) => updateMeal(m.id, safeFallbackAnalysis(), undefined, userId, "failed").catch(() => {})));
+      const refreshed = await listMeals(userId, 1000);
       setMeals(refreshed);
     }
   }, []);
@@ -176,6 +176,24 @@ export function useMeals(
     }
   };
 
+  const manualScaledRanges = manualResult
+    ? (() => {
+        const m = manualPortion === "small" ? 0.7 : manualPortion === "large" ? 1.4 : 1;
+        const scale = (v: number) => Math.round(v * m);
+        const r = manualResult.estimated_ranges;
+        return {
+          calories_min: scale(r.calories_min),
+          calories_max: scale(r.calories_max),
+          protein_g_min: scale(r.protein_g_min),
+          protein_g_max: scale(r.protein_g_max),
+          carbs_g_min: scale(r.carbs_g_min),
+          carbs_g_max: scale(r.carbs_g_max),
+          fat_g_min: scale(r.fat_g_min),
+          fat_g_max: scale(r.fat_g_max),
+        };
+      })()
+    : null;
+
   return {
     meals,
     setMeals,
@@ -193,6 +211,7 @@ export function useMeals(
     manualPortion,
     setManualPortion,
     manualError,
+    manualScaledRanges,
     openManualMealEntry,
     analyzeManualText,
     confirmManualMeal,

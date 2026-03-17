@@ -1,7 +1,7 @@
 import type { ActivityLevel, MealLog, UserProfile, WorkoutSession } from "./types";
 import { summarizeDay, summarizeWeek, summarizeWorkoutsWeek } from "./summary";
 import { dayKeyFromTs } from "./utils";
-import { buildNutrientNotes, buildSuggestions } from "./recommendations";
+import { buildNutrientNotes, buildSuggestions, type SuggestionSignal } from "./recommendations";
 
 type RecentItem =
   | { type: "meal"; ts: number; meal: MealLog }
@@ -111,32 +111,49 @@ function computeGentleTargets(meals: MealLog[], profile?: UserProfile) {
   return { calories: suggestedCalories, protein: Math.round(proteinNudge) };
 }
 
+const BURN_KCAL_PER_MIN: Record<string, number> = { low: 4, medium: 7, high: 10 };
+
 function adjustTargetsForWorkouts(
   targets: { calories: number; protein: number } | null,
   workouts: WorkoutSession[]
 ) {
   if (!targets || workouts.length === 0) return targets;
+
+  // Same-day burn: add estimated kcal burned by workouts logged today
+  const todayDayKey = dayKeyFromTs(Date.now());
+  const sameDayBurn = workouts
+    .filter((w) => dayKeyFromTs(w.endTs ?? w.startTs) === todayDayKey)
+    .reduce((sum, w) => {
+      const mins = w.durationMin ?? 0;
+      const rate = BURN_KCAL_PER_MIN[w.intensity ?? "medium"] ?? 7;
+      return sum + mins * rate;
+    }, 0);
+
+  // Weekly volume adjustment: only kicks in at >= 3 workouts in 7 days
   const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
   const recent = workouts.filter((workout) => (workout.endTs ?? workout.startTs) >= cutoff);
-  if (recent.length < 3) return targets;
-  const intensityScore = recent.reduce((sum, workout) => {
-    if (workout.intensity === "high") return sum + 2;
-    if (workout.intensity === "medium") return sum + 1;
-    return sum;
-  }, 0);
-  if (intensityScore <= 0) return targets;
-  const bump = intensityScore >= 4 ? 0.08 : 0.04;
+  let weeklyFactor = 0;
+  if (recent.length >= 3) {
+    const intensityScore = recent.reduce((sum, workout) => {
+      if (workout.intensity === "high") return sum + 2;
+      if (workout.intensity === "medium" || !workout.intensity) return sum + 1;
+      return sum;
+    }, 0);
+    if (intensityScore > 0) weeklyFactor = intensityScore >= 4 ? 0.08 : 0.04;
+  }
+
+  if (!weeklyFactor && !sameDayBurn) return targets;
   return {
     ...targets,
-    calories: Math.round(targets.calories * (1 + bump)),
-    protein: Math.round(targets.protein * (1 + bump * 0.6))
+    calories: Math.round(targets.calories * (1 + weeklyFactor) + sameDayBurn),
+    protein: Math.round(targets.protein * (1 + weeklyFactor * 0.6))
   };
 }
 
 export function computeRecent(meals: MealLog[], workouts: WorkoutSession[]) {
   const items: RecentItem[] = [
     ...meals.map((meal) => ({ type: "meal" as const, ts: meal.ts, meal })),
-    ...workouts.map((workout) => ({
+    ...workouts.filter((w) => w.endTs != null).map((workout) => ({
       type: "workout" as const,
       // Floor to second so old ms-precision rows don't sort above newer second-precision rows
       ts: Math.floor((workout.endTs ?? workout.startTs) / 1000) * 1000,
@@ -226,7 +243,6 @@ export function computeSummaryMarkers(meals: MealLog[], workouts: WorkoutSession
     return Array.from(new Set(trends)).slice(0, 4);
   })();
 
-  const suggestions = buildSuggestions(meals);
   const nutrientNotes = buildNutrientNotes(meals);
 
   let fuelingState: "under" | "adequate" | "over" = "adequate";
@@ -235,6 +251,17 @@ export function computeSummaryMarkers(meals: MealLog[], workouts: WorkoutSession
     if (todayMid && todayMid < gentleTargets.calories * 0.85) fuelingState = "under";
     if (todayMid && todayMid > gentleTargets.calories * 1.15) fuelingState = "over";
   }
+
+  let suggestionSignal: SuggestionSignal = "balanced";
+  if (fuelingState === "under") {
+    const proteinTarget = gentleTargets?.protein ?? 0;
+    if (proteinTarget && avgWeekProtein < proteinTarget * 0.8) {
+      suggestionSignal = "protein";
+    } else {
+      suggestionSignal = "calorie";
+    }
+  }
+  const suggestions = buildSuggestions(meals, profile, suggestionSignal);
 
   return {
     todayTotals,
@@ -281,29 +308,34 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
   const microBias = focus.includes("longevity") ? 1 : 0;
 
   const gentleTargets = computeGentleTargets(meals, profile);
-  if (profile && dayCount >= 5 && mealCount >= 10 && avgWeekCalories && gentleTargets?.calories) {
+  if (profile && dayCount >= 5 && mealCount >= 5 && avgWeekCalories && gentleTargets?.calories) {
     const todayMid = Math.round((todayTotals.calories_min + todayTotals.calories_max) / 2);
     const hasToday = todayMid > 0;
-    const todayLow = hasToday && todayMid < gentleTargets.calories * 0.85;
-    const todayHigh = hasToday && todayMid > gentleTargets.calories * 1.15;
+    const isDayMostlyOver = new Date().getHours() >= 18;
+    const todayLow = hasToday && isDayMostlyOver && todayMid < gentleTargets.calories * 0.85;
+    const todayHigh = hasToday && isDayMostlyOver && todayMid > gentleTargets.calories * 1.15;
     const weekLow = avgWeekCalories < gentleTargets.calories * 0.9;
     const weekHigh = avgWeekCalories > gentleTargets.calories * 1.1;
     if (todayLow && weekLow) {
       nudges.push({
-        message: pickVariant([
-          "Energy intake is trending lighter than your recent range.",
-          "Intake has been running a bit lighter than usual this week.",
-          "Calorie intake has been on the lighter side recently."
-        ]),
+        message: calorieBias
+          ? "Energy intake is trending lighter this week — may affect your energy levels."
+          : pickVariant([
+            "Energy intake is trending lighter than your recent range.",
+            "Intake has been running a bit lighter than usual this week.",
+            "Calorie intake has been on the lighter side recently."
+          ]),
         priority: 2 + calorieBias
       });
     } else if (todayHigh && weekHigh) {
       nudges.push({
-        message: pickVariant([
-          "Energy intake is trending fuller than your recent range.",
-          "Intake is running a bit higher than your recent pattern.",
-          "Calorie intake has been on the fuller side this week."
-        ]),
+        message: calorieBias
+          ? "Energy intake is trending fuller this week — may be worth easing back slightly."
+          : pickVariant([
+            "Energy intake is trending fuller than your recent range.",
+            "Intake is running a bit higher than your recent pattern.",
+            "Calorie intake has been on the fuller side this week."
+          ]),
         priority: 2 + calorieBias
       });
     }
@@ -313,29 +345,35 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
     const target = (profile.weight ?? 0) * proteinTargetPerKg(profile);
     if (target && avgWeekProtein < target * 0.7) {
       nudges.push({
-        message: pickVariant([
-          "Noticed protein below your goal range. Consider a small add.",
-          "Protein has been running low this week. A small boost may help.",
-          "Protein intake is well below your goal range. Worth adding a source."
-        ]),
+        message: proteinBias
+          ? "Protein has been running low this week — worth prioritizing for your strength goals."
+          : pickVariant([
+            "Noticed protein below your goal range. Consider a small add.",
+            "Protein has been running low this week. A small boost may help.",
+            "Protein intake is well below your goal range. Worth adding a source."
+          ]),
         priority: 3 + proteinBias
       });
     } else if (target && avgWeekProtein < target * 0.85) {
       nudges.push({
-        message: pickVariant([
-          "Noticed protein slightly below your goal range. Consider a small add.",
-          "Protein is a bit short of your target this week. A small add may help.",
-          "Protein is trending slightly under your goal. Easy to close the gap."
-        ]),
+        message: proteinBias
+          ? "Protein is a bit short this week — a small add supports your strength goals."
+          : pickVariant([
+            "Noticed protein slightly below your goal range. Consider a small add.",
+            "Protein is a bit short of your target this week. A small add may help.",
+            "Protein is trending slightly under your goal. Easy to close the gap."
+          ]),
         priority: 2 + proteinBias
       });
     } else if (target && avgWeekProtein < target * 0.95) {
       nudges.push({
-        message: pickVariant([
-          "Noticed protein near the lower edge of your goal range. A small add may help.",
-          "Protein is just under your goal range. A small source could fill it.",
-          "Protein is close but slightly below target. A small add would do it."
-        ]),
+        message: proteinBias
+          ? "Protein is close to target — a small add would round it out for your strength goals."
+          : pickVariant([
+            "Noticed protein near the lower edge of your goal range. A small add may help.",
+            "Protein is just under your goal range. A small source could fill it.",
+            "Protein is close but slightly below target. A small add would do it."
+          ]),
         priority: 1 + proteinBias
       });
     }
@@ -354,6 +392,15 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
         ]),
         priority: 1
       });
+    } else if (recentWorkoutCount >= 1 && gentleTargets?.calories && avgWeekCalories < gentleTargets.calories * 0.9) {
+      nudges.push({
+        message: pickVariant([
+          "You've been active this week but intake is running a bit light — worth fueling a little more.",
+          "Active week, but energy intake has been on the lighter side. A bit more fuel may help.",
+          "Solid activity this week — intake may be a little light to match your output."
+        ]),
+        priority: 2
+      });
     }
   }
 
@@ -371,11 +418,13 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
     counts.forEach((count, nutrient) => {
       if (count >= 3) {
         nudges.push({
-          message: pickVariant([
-            `Noticed fewer ${nutrient}-rich foods. Consider a small add.`,
-            `Fewer ${nutrient} sources in the pattern lately. Worth adding one.`,
-            `${nutrient.charAt(0).toUpperCase() + nutrient.slice(1)}-rich foods have been less common lately. A small add may help.`
-          ]),
+          message: microBias
+            ? `Fewer ${nutrient}-rich foods lately — worth adding one to support long-term health.`
+            : pickVariant([
+              `Noticed fewer ${nutrient}-rich foods. Consider a small add.`,
+              `Fewer ${nutrient} sources in the pattern lately. Worth adding one.`,
+              `${nutrient.charAt(0).toUpperCase() + nutrient.slice(1)}-rich foods have been less common lately. A small add may help.`
+            ]),
           priority: 1 + microBias
         });
       }
@@ -384,7 +433,7 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
 
   if (
     gentleTargets?.calories &&
-    recentWorkoutCount >= 3 &&
+    recentWorkoutCount >= 2 &&
     avgWeekCalories < gentleTargets.calories * 0.9
   ) {
     nudges.push({
@@ -394,13 +443,19 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
   }
 
   const unique = new Set<string>();
-  return nudges
+  const sorted = nudges
     .sort((a, b) => b.priority - a.priority)
     .filter((item) => {
       if (unique.has(item.message)) return false;
       unique.add(item.message);
       return true;
-    })
-    .slice(0, 2)
-    .map((item) => item.message);
+    });
+
+  // Only show a second nudge if it's meaningfully strong (priority >= 2).
+  // Prevents a low-priority filler from padding a single strong signal.
+  const capped = sorted.length > 1 && sorted[1].priority < 2
+    ? sorted.slice(0, 1)
+    : sorted.slice(0, 2);
+
+  return capped.map((item) => item.message);
 }

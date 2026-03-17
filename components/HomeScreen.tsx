@@ -47,6 +47,8 @@ export default function HomeScreen() {
     name: string; brand: string; calories: number; protein: number;
     carbs: number; fat: number; valuePer: "serving" | "100g";
   } | null>(null);
+  const [barcodeGrams, setBarcodeGrams] = useState("100");
+  const [isAddingBarcode, setIsAddingBarcode] = useState(false);
   const [editRecents, setEditRecents] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<{
     type: "meal" | "workout";
@@ -227,11 +229,20 @@ export default function HomeScreen() {
       fat: toVal(product?.fat),
       valuePer: product?.valuePer === "100g" ? "100g" : "serving",
     });
+    setBarcodeGrams("100");
   };
 
   const handleConfirmBarcodeProduct = async () => {
-    if (!user || !barcodeProduct) return;
-    const { name, brand, calories, protein, carbs, fat } = barcodeProduct;
+    if (!user || !barcodeProduct || isAddingBarcode) return;
+    setIsAddingBarcode(true);
+    const { name, brand, valuePer } = barcodeProduct;
+    const barcodeGramsNum = Number(barcodeGrams);
+    const scale = valuePer === "100g" ? Math.max(1, Number.isFinite(barcodeGramsNum) && barcodeGrams.trim() !== "" ? barcodeGramsNum : 100) / 100 : 1;
+    const round = (v: number) => Math.round(v * scale);
+    const calories = round(barcodeProduct.calories ?? 0);
+    const protein = round(barcodeProduct.protein ?? 0);
+    const carbs = round(barcodeProduct.carbs ?? 0);
+    const fat = round(barcodeProduct.fat ?? 0);
     const analysis = {
       name,
       detected_items: [{ name, confidence_0_1: 1 }],
@@ -249,6 +260,7 @@ export default function HomeScreen() {
       precision_mode_available: false,
     } as any;
     setBarcodeProduct(null);
+    setBarcodeGrams("100");
     try {
       const created = await addMeal(user.id, analysis);
       if (created?.id) {
@@ -261,6 +273,8 @@ export default function HomeScreen() {
       setTimeout(() => setBarcodeSuccess(false), 1500);
     } catch (err) {
       console.error("[barcode] save failed:", err);
+    } finally {
+      setIsAddingBarcode(false);
     }
   };
 
@@ -319,7 +333,7 @@ export default function HomeScreen() {
         : "Photo analysis failed. Please try again."
       );
       if (mealId && !rateLimited) {
-        updateMeal(mealId, safeFallbackAnalysis(), undefined, user?.id).catch(() => {}).finally(() => notifyMealsUpdated());
+        updateMeal(mealId, safeFallbackAnalysis(), undefined, user?.id, "failed").catch(() => {}).finally(() => notifyMealsUpdated());
       }
     };
     window.addEventListener("meal-analysis-error", handler);
@@ -377,6 +391,24 @@ export default function HomeScreen() {
     };
   }, [user, loadData]);
 
+  // When a meal is still processing, the "Analyzing food…" label is time-gated
+  // at render time (< 90s shows spinner text, >= 90s shows "Analysis failed").
+  // React won't re-render from time alone, so schedule a loadData() call at the
+  // moment each young processing meal crosses the 90s threshold.
+  useEffect(() => {
+    const processingMeals = meals.meals.filter((m) => m.status === "processing");
+    if (!processingMeals.length) return;
+    const now = Date.now();
+    const THRESHOLD = 90_000;
+    const delays = processingMeals
+      .map((m) => THRESHOLD - (now - m.ts))
+      .filter((d) => d > 0);
+    if (!delays.length) return;
+    const earliest = Math.min(...delays);
+    const timer = window.setTimeout(() => loadData(), earliest + 50);
+    return () => window.clearTimeout(timer);
+  }, [meals.meals, loadData]);
+
   useEffect(() => {
     if (!user) return;
     const key = `wya_walkthrough_${user.id}`;
@@ -418,9 +450,14 @@ export default function HomeScreen() {
   const formatClean = (min: number, max: number, unit = "") =>
     formatApprox(min, max, unit).replace(/^~/, "");
   const formatWorkoutDurationLines = (w: WorkoutSession) => {
-    const endTs = w.endTs ?? Date.now();
-    const rawMinutes = (endTs - w.startTs) / 60000;
-    const minutes = rawMinutes < 1 ? 0 : Math.ceil(rawMinutes);
+    let minutes: number;
+    if (w.durationMin != null) {
+      minutes = w.durationMin;
+    } else {
+      const endTs = w.endTs ?? Date.now();
+      const rawMinutes = (endTs - w.startTs) / 60000;
+      minutes = rawMinutes < 1 ? 0 : Math.ceil(rawMinutes);
+    }
     if (minutes === 0) return { title: "Workout", detail: "<1 min" };
     if (minutes < 60) return { title: "Workout", detail: `${minutes} mins` };
     const hours = Math.floor(minutes / 60);
@@ -908,7 +945,7 @@ export default function HomeScreen() {
 
         <Card className="mt-7">
           <div className="flex items-start justify-between">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Today</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Recent</p>
             <div className="flex items-center gap-2">
               {editRecents && (
                 <span className="inline-flex items-center rounded-full bg-yellow-200 px-2 py-0.5 text-[10px] font-semibold text-amber-900 shadow-[0_6px_14px_rgba(15,23,42,0.08)] ring-1 ring-yellow-100/60">
@@ -1091,9 +1128,9 @@ export default function HomeScreen() {
                     <div className="mt-4">
                       <p className="text-sm font-semibold text-ink">{meals.manualResult.name ?? "Meal"}</p>
                       <p className="mt-1 text-xs text-muted/70">
-                        {formatClean(meals.manualResult.estimated_ranges.calories_min, meals.manualResult.estimated_ranges.calories_max, "kcal")}
-                        {" · "}
-                        {formatClean(meals.manualResult.estimated_ranges.protein_g_min, meals.manualResult.estimated_ranges.protein_g_max, "g protein")}
+                        {meals.manualScaledRanges && formatClean(meals.manualScaledRanges.calories_min, meals.manualScaledRanges.calories_max, "kcal")}
+                        {meals.manualScaledRanges && " · "}
+                        {meals.manualScaledRanges && formatClean(meals.manualScaledRanges.protein_g_min, meals.manualScaledRanges.protein_g_max, "g protein")}
                       </p>
                     </div>
                     <div className="mt-4">
@@ -1487,10 +1524,10 @@ export default function HomeScreen() {
             )}
             <div className="mt-3 grid grid-cols-4 gap-2 text-center">
               {[
-                { label: "Cal", value: barcodeProduct.calories },
-                { label: "Protein", value: `${barcodeProduct.protein}g` },
-                { label: "Carbs", value: `${barcodeProduct.carbs}g` },
-                { label: "Fat", value: `${barcodeProduct.fat}g` },
+                { label: "Cal", value: barcodeProduct.calories ?? "?" },
+                { label: "Protein", value: barcodeProduct.protein != null ? `${barcodeProduct.protein}g` : "?" },
+                { label: "Carbs", value: barcodeProduct.carbs != null ? `${barcodeProduct.carbs}g` : "?" },
+                { label: "Fat", value: barcodeProduct.fat != null ? `${barcodeProduct.fat}g` : "?" },
               ].map(({ label, value }) => (
                 <div key={label} className="rounded-lg bg-ink/5 px-2 py-2">
                   <p className="text-[10px] uppercase tracking-wide text-muted/60">{label}</p>
@@ -1501,20 +1538,35 @@ export default function HomeScreen() {
             <p className="mt-2 text-[10px] text-muted/50">
               Per {barcodeProduct.valuePer === "100g" ? "100g" : "serving"}
             </p>
+            {barcodeProduct.valuePer === "100g" && (
+              <div className="mt-3 flex items-center gap-2">
+                <label className="text-xs text-muted/60">How many grams?</label>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  className="w-20 rounded-lg border border-ink/10 bg-white px-2 py-1 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                  value={barcodeGrams}
+                  min="1"
+                  onChange={(e) => setBarcodeGrams(e.target.value)}
+                />
+                <span className="text-xs text-muted/60">g</span>
+              </div>
+            )}
             <div className="mt-4 flex gap-2 justify-end">
               <button
                 type="button"
                 className="rounded-xl border border-ink/10 bg-white px-4 py-2 text-xs font-semibold text-ink/70 transition hover:bg-ink/5"
-                onClick={() => setBarcodeProduct(null)}
+                onClick={() => { setBarcodeProduct(null); setBarcodeGrams("100"); }}
               >
                 Cancel
               </button>
               <button
                 type="button"
-                className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90"
+                className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
                 onClick={handleConfirmBarcodeProduct}
+                disabled={isAddingBarcode}
               >
-                Add to day
+                {isAddingBarcode ? "Adding…" : "Add to day"}
               </button>
             </div>
           </div>

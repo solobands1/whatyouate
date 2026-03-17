@@ -34,6 +34,7 @@ export default function ProfileScreen() {
   const [sex, setSex] = useState<UserProfile["sex"]>("prefer_not");
   const [goalDirection, setGoalDirection] = useState<GoalDirection>("maintain");
   const [bodyPriority, setBodyPriority] = useState("");
+  const [freeformFocus, setFreeformFocus] = useState("");
   const [activityLevel, setActivityLevel] = useState<ActivityLevel | "">("");
   const [dietaryRestrictions, setDietaryRestrictions] = useState<string[]>([]);
   const [units, setUnits] = useState<Units>("imperial");
@@ -80,6 +81,7 @@ export default function ProfileScreen() {
           setSex(data.sex ?? "prefer_not");
           setGoalDirection(data.goalDirection ?? "maintain");
           setBodyPriority(data.bodyPriority ?? "");
+          setFreeformFocus(data.freeformFocus ?? "");
           setActivityLevel(data.activityLevel ?? "");
           setDietaryRestrictions(data.dietaryRestrictions ?? []);
           setUnits(data.units ?? "imperial");
@@ -254,6 +256,7 @@ export default function ProfileScreen() {
         sex,
         goal_direction: goalDirection,
         body_priority: bodyPriority || null,
+        freeform_focus: freeformFocus || null,
         activity_level: activityLevel || null,
         dietary_restrictions: dietaryRestrictions,
         units
@@ -278,6 +281,7 @@ export default function ProfileScreen() {
           sex,
           goalDirection,
           bodyPriority: payload.body_priority ?? "",
+          freeformFocus: payload.freeform_focus ?? "",
           activityLevel: (activityLevel || undefined) as ActivityLevel | undefined,
           dietaryRestrictions,
           units
@@ -293,6 +297,7 @@ export default function ProfileScreen() {
         setSex(freshProfile.sex ?? "prefer_not");
         setGoalDirection(freshProfile.goalDirection ?? "maintain");
         setBodyPriority(freshProfile.bodyPriority ?? "");
+        setFreeformFocus(freshProfile.freeformFocus ?? "");
         setActivityLevel(freshProfile.activityLevel ?? "");
         setDietaryRestrictions(freshProfile.dietaryRestrictions ?? []);
         setUnits(freshProfile.units ?? "imperial");
@@ -774,10 +779,23 @@ export default function ProfileScreen() {
             </div>
           </div>
 
+          <label className="mt-6 block text-xs text-muted/70">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-ink/70">
+              Your main focus (optional)
+            </span>
+            <input
+              type="text"
+              className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm"
+              value={freeformFocus}
+              onChange={(event) => setFreeformFocus(event.target.value)}
+              placeholder="e.g., building strength, more energy, longevity"
+            />
+          </label>
+
           <label className="mt-8 block border-t border-ink/5 pt-7 text-xs text-muted/70">
             <span className="flex items-center justify-between">
               <span className="text-[11px] font-semibold uppercase tracking-wide text-ink/70">
-                Anything else I should know? (optional)
+                Habits & context (optional)
               </span>
               <button
                 type="button"
@@ -793,7 +811,7 @@ export default function ProfileScreen() {
               className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm resize-none"
               value={bodyPriority}
               onChange={(event) => setBodyPriority(event.target.value)}
-              placeholder="e.g., I meal prep on Sundays, I try to eat more protein, I'm lactose intolerant"
+              placeholder="e.g., I meal prep Sundays, I eat late at night, I skip breakfast"
             />
           </label>
 

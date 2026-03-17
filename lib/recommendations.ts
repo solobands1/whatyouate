@@ -1,21 +1,28 @@
 import type { MealLog, UserProfile } from "./types";
 import { summarizeDay } from "./summary";
-import { todayKey } from "./utils";
+import { dayKeyFromTs, todayKey } from "./utils";
+import { estimateMaintenance } from "./digestEngine";
 
 const SWEET_HINTS = ["yogurt", "fruit", "berries", "granola", "pancake", "cereal", "smoothie", "ice", "dessert"];
 const SAVORY_HINTS = ["chicken", "beef", "rice", "pasta", "salad", "bowl", "sandwich", "egg", "soup", "fish"];
 const LIQUID_HINTS = ["smoothie", "shake", "latte", "milk", "juice", "broth"];
 const SNACK_HINTS = ["nuts", "bar", "chips", "cracker", "cookie", "toast"];
 
+const PROTEIN_POOL = [
+  "Greek yogurt", "Eggs", "Chicken breast", "Cottage cheese", "Tuna",
+  "Edamame", "Turkey", "Salmon", "Tofu", "Lentils", "Hard-boiled eggs", "Sardines",
+];
+const CALORIE_POOL = [
+  "Avocado", "Nut butter", "Granola", "Mixed nuts", "Cheese",
+  "Banana", "Brown rice", "Oats", "Whole milk", "Peanut butter toast",
+];
+
+export type SuggestionSignal = "protein" | "calorie" | "balanced";
+
 function toKg(weight: number, units: UserProfile["units"]) {
   return units === "imperial" ? weight * 0.453592 : weight;
 }
 
-function estimateMaintenance(profile: UserProfile) {
-  const weightKg = toKg(profile.weight ?? 0, profile.units);
-  const base = weightKg * 22;
-  return base + 200;
-}
 
 function tagType(name: string) {
   const lower = name.toLowerCase();
@@ -26,36 +33,76 @@ function tagType(name: string) {
   return "meal";
 }
 
-export function buildSuggestions(meals: MealLog[]) {
+export function buildSuggestions(meals: MealLog[], profile?: UserProfile, signal: SuggestionSignal = "balanced") {
+  const restrictions = (profile?.dietaryRestrictions ?? []).map((r) => r.toLowerCase());
+  const isRestricted = (name: string) => {
+    if (!restrictions.length) return false;
+    const lower = name.toLowerCase();
+    return restrictions.some((r) => lower.includes(r) || r.includes(lower.split(" ")[0]));
+  };
+
+  // Frequency-ranked history — keyed by lowercase for case-insensitive dedup
   const scores: Record<string, number> = {};
+  const displayNames: Record<string, string> = {}; // lowercase key → most-recent display name
   meals.forEach((meal, index) => {
     const recencyBoost = Math.max(1, 8 - index) * 0.25;
     const items = (meal.analysisJson.detected_items ?? []).map((item) => item.name);
     if (meal.userCorrection) items.unshift(meal.userCorrection);
     items.forEach((name) => {
-      scores[name] = (scores[name] ?? 0) + 1 + recencyBoost;
+      const key = name.toLowerCase();
+      scores[key] = (scores[key] ?? 0) + 1 + recencyBoost;
+      if (!displayNames[key]) displayNames[key] = name; // first seen = most recent (meals[0] is newest)
     });
   });
 
-  const ranked = Object.entries(scores)
+  const todayNames = new Set(
+    meals
+      .filter((meal) => dayKeyFromTs(meal.ts) === todayKey())
+      .flatMap((meal) => {
+        const items = (meal.analysisJson.detected_items ?? []).map((item) => item.name.toLowerCase());
+        if (meal.userCorrection) items.unshift(meal.userCorrection.toLowerCase());
+        return items;
+      })
+  );
+
+  const historyRanked = Object.entries(scores)
     .sort((a, b) => b[1] - a[1])
-    .map(([name]) => ({ name, type: tagType(name) }));
+    .map(([key]) => displayNames[key])
+    .filter((name) => !isRestricted(name) && !todayNames.has(name.toLowerCase()));
+
+  const lowerHistory = new Set(historyRanked.map((n) => n.toLowerCase()));
+
+  // Curated pool based on signal (exclude restricted and already in history)
+  const curatedPool = signal === "protein" ? PROTEIN_POOL
+    : signal === "calorie" ? CALORIE_POOL
+    : [];
+  const curated = curatedPool.filter(
+    (name) => !isRestricted(name) && !lowerHistory.has(name.toLowerCase())
+  );
 
   const suggestions: string[] = [];
-  const typeBuckets: Record<string, string[]> = {};
-  ranked.forEach((item) => {
-    if (!typeBuckets[item.type]) typeBuckets[item.type] = [];
-    if (!typeBuckets[item.type].includes(item.name)) typeBuckets[item.type].push(item.name);
-  });
 
-  const pickOrder = ["meal", "savory", "snack", "sweet", "liquid"];
-  for (const type of pickOrder) {
-    const list = typeBuckets[type] ?? [];
-    for (const name of list) {
+  if (signal !== "balanced" && curated.length > 0) {
+    // 2–3 curated new foods, rest from history
+    suggestions.push(...curated.slice(0, 3));
+    suggestions.push(...historyRanked.slice(0, 5 - suggestions.length));
+  } else {
+    // Balanced: type-bucketed history picks (original behavior)
+    const ranked = historyRanked.map((name) => ({ name, type: tagType(name) }));
+    const typeBuckets: Record<string, string[]> = {};
+    ranked.forEach((item) => {
+      if (!typeBuckets[item.type]) typeBuckets[item.type] = [];
+      if (!typeBuckets[item.type].includes(item.name)) typeBuckets[item.type].push(item.name);
+    });
+    const pickOrder = ["meal", "savory", "snack", "sweet", "liquid"];
+    for (const type of pickOrder) {
+      const list = typeBuckets[type] ?? [];
+      for (const name of list) {
+        if (suggestions.length >= 5) break;
+        if (!suggestions.includes(name)) suggestions.push(name);
+      }
       if (suggestions.length >= 5) break;
-      if (!suggestions.includes(name)) suggestions.push(name);
     }
-    if (suggestions.length >= 5) break;
   }
 
   return suggestions.slice(0, 5);
@@ -80,6 +127,13 @@ export function generateRecommendations(profile: UserProfile | undefined, meals:
 
   const todayTotals = summarizeDay(meals, todayKey());
   const maintenance = estimateMaintenance(profile);
+  if (!maintenance) {
+    return {
+      fueling_state: "adequate" as const,
+      energy_support_state: "mixed" as const,
+      notes: ["Complete your profile for personalised estimates."]
+    };
+  }
   const goalShift = profile.goalDirection === "gain" ? 250 : profile.goalDirection === "lose" ? -250 : 0;
   const target = maintenance + goalShift;
 
@@ -111,6 +165,7 @@ export function generateRecommendations(profile: UserProfile | undefined, meals:
 }
 
 export function buildNutrientNotes(meals: MealLog[]) {
+  if (meals.length < 5) return [];
   const signals = meals.flatMap((meal) => meal.analysisJson.micronutrient_signals ?? []);
   const low = signals.filter((signal) => signal?.signal === "low_appearance");
   if (!low.length) return [];
