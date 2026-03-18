@@ -255,7 +255,7 @@ export default function SummaryScreen() {
     },
     {
       target: '[data-tour="dig-deeper"]',
-      content: "Insights shows longer-term nutrient patterns.",
+      content: "Patterns shows longer-term nutrient patterns.",
       disableBeacon: true
     }
   ] as Step[];
@@ -551,61 +551,43 @@ export default function SummaryScreen() {
               <span className="text-[10px]">→</span>
             </Link>
           </div>
-          <div className="mt-3 flex items-baseline justify-between px-6">
+          <div className="mt-5 flex items-baseline justify-between">
             <div>
-              <p className="text-[11px] uppercase tracking-wide text-muted/60">
-                Calories
-              </p>
-              <p className="mt-1 text-2xl font-semibold">
-                {formatClean(
-                  summaryMarkers.todayTotals.calories_min,
-                  summaryMarkers.todayTotals.calories_max
-                )}
+              <p className="text-[11px] uppercase tracking-wide text-muted/60">Calories</p>
+              <p className="mt-1 text-xl font-semibold">
+                {formatClean(summaryMarkers.todayTotals.calories_min, summaryMarkers.todayTotals.calories_max)}
               </p>
               <p className="text-[10px] text-muted/50">approx.</p>
             </div>
             <div>
-              <p className="text-[11px] uppercase tracking-wide text-muted/60">
-                Protein
+              <p className="text-[11px] uppercase tracking-wide text-muted/60">Carbs</p>
+              <p className="mt-1 text-xl font-semibold">
+                {formatClean(summaryMarkers.todayTotals.carbs_g_min, summaryMarkers.todayTotals.carbs_g_max, "g")}
               </p>
-              <p className="mt-1 text-2xl font-semibold">
-                {formatClean(
-                  summaryMarkers.todayTotals.protein_g_min,
-                  summaryMarkers.todayTotals.protein_g_max,
-                  "g"
-                )}
+              <p className="text-[10px] text-muted/50">approx.</p>
+            </div>
+            <div>
+              <p className="text-[11px] uppercase tracking-wide text-muted/60">Fats</p>
+              <p className="mt-1 text-xl font-semibold">
+                {formatClean(summaryMarkers.todayTotals.fat_g_min, summaryMarkers.todayTotals.fat_g_max, "g")}
+              </p>
+              <p className="text-[10px] text-muted/50">approx.</p>
+            </div>
+            <div>
+              <p className="text-[11px] uppercase tracking-wide text-muted/60">Protein</p>
+              <p className="mt-1 text-xl font-semibold">
+                {formatClean(summaryMarkers.todayTotals.protein_g_min, summaryMarkers.todayTotals.protein_g_max, "g")}
               </p>
               <p className="text-[10px] text-muted/50">approx.</p>
             </div>
           </div>
-          {mealCount > 0 && summaryMarkers.gentleTargets && (() => {
-            const calMid = (summaryMarkers.todayTotals.calories_min + summaryMarkers.todayTotals.calories_max) / 2;
-            const protMid = (summaryMarkers.todayTotals.protein_g_min + summaryMarkers.todayTotals.protein_g_max) / 2;
-            const calPct = Math.min(100, Math.round((calMid / gentleTargetsDisplay.calories) * 100));
-            const protPct = Math.min(100, Math.round((protMid / gentleTargetsDisplay.protein) * 100));
-            return (
-              <div className="mt-3 flex gap-3">
-                <div className="flex-1">
-                  <div className="h-1.5 overflow-hidden rounded-full bg-ink/5">
-                    <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${calPct}%` }} />
-                  </div>
-                </div>
-                <div className="flex-1">
-                  <div className="h-1.5 overflow-hidden rounded-full bg-ink/5">
-                    <div className="h-full rounded-full bg-primary/70 transition-all duration-500" style={{ width: `${protPct}%` }} />
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
           {summaryMarkers.gentleTargets ? (
             <button
               type="button"
-              className="mt-2 flex items-center gap-1 text-left text-xs text-muted/70"
+              className="mt-4 flex items-center gap-1 text-left text-xs text-muted/70"
               onClick={() => setShowTargetInfo((v) => !v)}
             >
-              <span>Suggested range: {gentleTargetsDisplay.calories} kcal · {gentleTargetsDisplay.protein} g protein</span>
-              <span className="inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border border-muted/30 text-[8px] text-muted/50">i</span>
+              <span>Suggested range: {gentleTargetsDisplay.calories} kcal · {Math.round(gentleTargetsDisplay.calories * 0.50 / 4)}g carbs · {Math.round(gentleTargetsDisplay.calories * 0.30 / 9)}g fat · {gentleTargetsDisplay.protein}g protein</span>
             </button>
           ) : (
             <p className="mt-2 text-xs text-muted/70">Complete your profile for a personalized range</p>

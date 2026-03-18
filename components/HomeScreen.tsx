@@ -809,7 +809,7 @@ export default function HomeScreen() {
             </span>
           </div>
           <p className="mt-1 text-[13px] text-muted/70">Take photos, get nudges, improve.</p>
-          {mealCount === 0 && (
+          {!loadingData && mealCount === 0 && (
             <p className="mt-3 text-[11px] text-muted/60">
               All preview data will be replaced by real input once logging starts.
             </p>
@@ -869,7 +869,7 @@ export default function HomeScreen() {
             className="mt-2 flex items-center gap-1 text-left text-xs text-muted/70"
             onClick={() => setShowTargetInfo((v) => !v)}
           >
-            <span>Suggested range<span className="text-muted/50">{mealCount > 0 ? "" : " (preview)"}</span>: {gentleTargetsDisplay.calories} kcal · {gentleTargetsDisplay.protein} g protein</span>
+            <span>Suggested range<span className="text-muted/50">{!loadingData && mealCount === 0 ? " (preview)" : ""}</span>: {gentleTargetsDisplay.calories} kcal · {gentleTargetsDisplay.protein} g protein</span>
             <span className="inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border border-muted/30 text-[8px] text-muted/50">i</span>
           </button>
           {showTargetInfo && (
@@ -968,11 +968,21 @@ export default function HomeScreen() {
           <div className="mt-3 space-y-4 text-sm text-ink/80">
             {groupedRecent.slice(0, visibleGroupCount).map((group) => (
               <div key={group.label}>
-                {group.label !== "Today" && (
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">
-                    {group.label}
-                  </p>
-                )}
+                {group.label !== "Today" && (() => {
+                  const calSum = group.meals.reduce((acc, m) => {
+                    const v = m.calories ?? Math.round((m.analysisJson.estimated_ranges.calories_min + m.analysisJson.estimated_ranges.calories_max) / 2);
+                    return acc + v;
+                  }, 0);
+                  const protSum = group.meals.reduce((acc, m) => {
+                    const v = m.protein ?? Math.round((m.analysisJson.estimated_ranges.protein_g_min + m.analysisJson.estimated_ranges.protein_g_max) / 2);
+                    return acc + v;
+                  }, 0);
+                  return (
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">
+                      {group.label}{group.meals.length > 0 ? ` · ${calSum} kcal · ${protSum}g protein` : ""}
+                    </p>
+                  );
+                })()}
                 <div className="mt-2 grid grid-cols-3 gap-2">
                   <div className="col-span-2 space-y-2">
                     {group.meals.map((meal) => (
@@ -981,38 +991,41 @@ export default function HomeScreen() {
                         onClick={() => {
                           if (editRecents) meals.openMealEditor(meal);
                         }}
-                        className={`inline-flex w-full items-center justify-between rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs text-ink/80 ${editRecents ? "cursor-pointer animate-wiggle" : ""}`}
+                        className={`inline-flex w-full items-start justify-between rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5 text-xs text-ink/80 ${editRecents ? "cursor-pointer animate-wiggle" : (meal.status === "processing" && Date.now() - meal.ts < 90_000 ? "animate-pulse" : "")}`}
                       >
-                        <span>
+                        <span className="flex flex-col">
                           {meal.status === "processing" && Date.now() - meal.ts < 90_000 ? (
                             "Analyzing food…"
                           ) : meal.status === "processing" ? (
                             "Analysis failed · tap Edit to remove"
                           ) : (
                             <>
-                              {(() => {
-                                const displayName =
-                                  meal.analysisJson?.name ??
-                                  meal.analysisJson?.detected_items?.[0]?.name ??
-                                  "Meal";
-                                return formatTitle(displayName);
-                              })()}{" "}
-                              ·{" "}
-                              {meal.calories
-                                ? `${meal.calories} kcal`
-                                : formatClean(
-                                    meal.analysisJson.estimated_ranges.calories_min,
-                                    meal.analysisJson.estimated_ranges.calories_max,
-                                    "kcal"
-                                  )}{" "}
-                              ·{" "}
-                              {meal.protein
-                                ? `${meal.protein} g`
-                                : formatClean(
-                                    meal.analysisJson.estimated_ranges.protein_g_min,
-                                    meal.analysisJson.estimated_ranges.protein_g_max,
-                                    "g"
-                                  )}
+                              <span>
+                                {(() => {
+                                  const displayName =
+                                    meal.analysisJson?.name ??
+                                    meal.analysisJson?.detected_items?.[0]?.name ??
+                                    "Meal";
+                                  return formatTitle(displayName);
+                                })()}
+                              </span>
+                              <span className="text-ink/50">
+                                {meal.calories
+                                  ? `${meal.calories} kcal`
+                                  : formatClean(
+                                      meal.analysisJson.estimated_ranges.calories_min,
+                                      meal.analysisJson.estimated_ranges.calories_max,
+                                      "kcal"
+                                    )}{" "}
+                                ·{" "}
+                                {meal.protein
+                                  ? `${meal.protein}g protein`
+                                  : formatClean(
+                                      meal.analysisJson.estimated_ranges.protein_g_min,
+                                      meal.analysisJson.estimated_ranges.protein_g_max,
+                                      "g"
+                                    ) + " protein"}
+                              </span>
                             </>
                           )}
                         </span>
@@ -1047,7 +1060,7 @@ export default function HomeScreen() {
                 Show more
               </button>
             )}
-            {recentItems.length === 0 ? (
+            {!loadingData && recentItems.length === 0 ? (
               mealCount === 0 && workout.workouts.length === 0 ? (
                 <div className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs text-ink/80">
                   Example: Chicken bowl · 600 kcal · 40 g
@@ -1115,7 +1128,7 @@ export default function HomeScreen() {
                       </button>
                       <button
                         type="button"
-                        className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
+                        className={`rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50 ${meals.manualAnalysing ? "animate-pulse" : ""}`}
                         onClick={meals.analyzeManualText}
                         disabled={meals.manualAnalysing || !meals.manualText.trim()}
                       >

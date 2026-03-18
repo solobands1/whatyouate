@@ -50,6 +50,7 @@ export default function ProfileScreen() {
   const [feedbackStatus, setFeedbackStatus] = useState<"idle" | "sending" | "sent">("idle");
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
   const [showFeedbackToast, setShowFeedbackToast] = useState(false);
+  const [showSavedToast, setShowSavedToast] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [editFirstName, setEditFirstName] = useState("");
   const [editLastName, setEditLastName] = useState("");
@@ -69,15 +70,15 @@ export default function ProfileScreen() {
     setLoadError(null);
     const walkthroughKey = `wya_walkthrough_profile_${user.id}`;
     if (localStorage.getItem(walkthroughKey)) {
-      const timer = window.setTimeout(() => setRunProfileTour(true), 150);
-      return () => window.clearTimeout(timer);
+      window.setTimeout(() => setRunProfileTour(true), 150);
     }
     getProfile(user.id)
       .then((data) => {
         if (data) {
           profileExistsRef.current = true;
-          setFirstName(data.firstName ?? "");
-          setLastName(data.lastName ?? "");
+          const meta = (user as { user_metadata?: Record<string, string> }).user_metadata ?? {};
+          setFirstName(data.firstName || meta.first_name || "");
+          setLastName(data.lastName || meta.last_name || "");
           setSex(data.sex ?? "prefer_not");
           setGoalDirection(data.goalDirection ?? "maintain");
           setBodyPriority(data.bodyPriority ?? "");
@@ -334,16 +335,14 @@ export default function ProfileScreen() {
         setAge(freshProfile.age != null ? String(freshProfile.age) : "");
       }
 
-      setStatus("Saved.");
       if (user) {
         localStorage.setItem(`wya_profile_updated_${user.id}`, String(Date.now()));
         localStorage.removeItem(`wya_profile_prompt_opened_${user.id}`);
         localStorage.removeItem(`wya_profile_prompt_last_${user.id}`);
       }
       notifyProfileUpdated();
-      setTimeout(() => {
-        setStatus(null);
-      }, 1500);
+      setShowSavedToast(true);
+      setTimeout(() => setShowSavedToast(false), 1800);
     } catch {
       setStatus("Couldn’t save.");
     } finally {
@@ -1062,6 +1061,14 @@ export default function ProfileScreen() {
         <div className="fixed inset-x-0 bottom-6 z-50 flex justify-center px-5">
           <div className="rounded-full bg-ink px-4 py-2 text-xs font-semibold text-white shadow-lg">
             Thanks for the feedback!
+          </div>
+        </div>
+      )}
+
+      {showSavedToast && (
+        <div className="fixed inset-x-0 bottom-6 z-50 flex justify-center px-5">
+          <div className="rounded-full bg-ink px-4 py-2 text-xs font-semibold text-white shadow-lg">
+            Saved
           </div>
         </div>
       )}

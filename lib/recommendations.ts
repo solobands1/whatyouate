@@ -164,14 +164,39 @@ export function generateRecommendations(profile: UserProfile | undefined, meals:
   return { fueling_state, energy_support_state, notes };
 }
 
+const NUTRIENT_EXAMPLES: Record<string, string> = {
+  fibre: "an apple, pear, or handful of oats",
+  fiber: "an apple, pear, or handful of oats",
+  iron: "some spinach, lentils, or a small steak",
+  calcium: "yogurt, a glass of milk, or some cheese",
+  vitamin_c: "an orange, some berries, or bell pepper",
+  "vitamin c": "an orange, some berries, or bell pepper",
+  vitamin_d: "salmon, eggs, or fortified milk",
+  "vitamin d": "salmon, eggs, or fortified milk",
+  omega_3: "salmon, walnuts, or chia seeds",
+  "omega-3": "salmon, walnuts, or chia seeds",
+  magnesium: "dark chocolate, almonds, or leafy greens",
+  zinc: "pumpkin seeds, beef, or chickpeas",
+  potassium: "a banana, sweet potato, or avocado",
+  folate: "lentils, spinach, or edamame",
+  b12: "eggs, dairy, or fortified cereal",
+  "vitamin b12": "eggs, dairy, or fortified cereal",
+};
+
 export function buildNutrientNotes(meals: MealLog[]) {
   if (meals.length < 5) return [];
   const signals = meals.flatMap((meal) => meal.analysisJson.micronutrient_signals ?? []);
   const low = signals.filter((signal) => signal?.signal === "low_appearance");
   if (!low.length) return [];
 
-  const top = low.slice(0, 2).map((signal) =>
-    `Noticed fewer ${signal.nutrient.toLowerCase()}-rich foods. Consider a small add.`
-  );
+  const top = low.slice(0, 2).map((signal) => {
+    const key = signal.nutrient.toLowerCase().replace(/\s+/g, "_");
+    const altKey = signal.nutrient.toLowerCase();
+    const examples = NUTRIENT_EXAMPLES[key] ?? NUTRIENT_EXAMPLES[altKey];
+    if (examples) {
+      return `Low on ${signal.nutrient.toLowerCase()} lately — try adding ${examples}.`;
+    }
+    return `Low on ${signal.nutrient.toLowerCase()} lately — try adding a small source today.`;
+  });
   return top;
 }
