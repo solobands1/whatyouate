@@ -36,13 +36,13 @@ const config: Config = {
           "50%": { top: "calc(100% - 4px)" }
         },
         shimmer: {
-          "0%": { backgroundPosition: "-200% center" },
-          "100%": { backgroundPosition: "200% center" }
+          "0%": { backgroundPosition: "200% center" },
+          "100%": { backgroundPosition: "-200% center" }
         }
       },
       animation: {
         scan: "scan 2s ease-in-out infinite",
-        shimmer: "shimmer 1.6s ease-in-out infinite"
+        shimmer: "shimmer 2.5s ease-in-out infinite"
       }
     }
   },

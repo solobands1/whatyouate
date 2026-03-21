@@ -891,7 +891,15 @@ export default function HomeScreen() {
         )}
 
         <Card className="mt-4">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Today</p>
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Today</p>
+            {streak >= 1 && (
+              <div className="flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1">
+                <span className="text-sm leading-none">🔥</span>
+                <span className="text-xs font-semibold text-primary">{streak}</span>
+              </div>
+            )}
+          </div>
           <div className="mt-3 flex items-baseline justify-between">
             <div>
               <p className="text-[11px] uppercase tracking-wide text-muted/60">Calories</p>
@@ -942,9 +950,6 @@ export default function HomeScreen() {
                 ? "Based on your weight, activity level, and goal."
                 : "Standard estimate · complete your profile to personalize."}
             </p>
-          )}
-          {streak >= 2 && (
-            <p className="mt-1.5 text-[10px] font-medium text-primary/70">{streak} days logged in a row</p>
           )}
         </Card>
 
@@ -1041,7 +1046,7 @@ export default function HomeScreen() {
                   }, 0);
                   return (
                     <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">
-                      {group.label}{group.meals.length > 0 ? ` · ${calSum} kcal · ${protSum}g protein` : ""}
+                      {group.label}{group.meals.length > 0 ? <span className="text-[10px] font-normal normal-case tracking-normal text-muted/60"> · {calSum} kcal · {protSum}g protein</span> : ""}
                     </p>
                   );
                 })()}

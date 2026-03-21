@@ -41,7 +41,7 @@ export function buildSuggestions(meals: MealLog[], profile?: UserProfile, signal
     return restrictions.some((r) => lower.includes(r) || r.includes(lower.split(" ")[0]));
   };
 
-  // Frequency-ranked history — keyed by lowercase for case-insensitive dedup
+  // Frequency-ranked history • keyed by lowercase for case-insensitive dedup
   const scores: Record<string, number> = {};
   const displayNames: Record<string, string> = {}; // lowercase key → most-recent display name
   meals.forEach((meal, index) => {
@@ -194,9 +194,9 @@ export function buildNutrientNotes(meals: MealLog[]) {
     const altKey = signal.nutrient.toLowerCase();
     const examples = NUTRIENT_EXAMPLES[key] ?? NUTRIENT_EXAMPLES[altKey];
     if (examples) {
-      return `Low on ${signal.nutrient.toLowerCase()} lately — try adding ${examples}.`;
+      return `Low on ${signal.nutrient.toLowerCase()} lately • try adding ${examples}.`;
     }
-    return `Low on ${signal.nutrient.toLowerCase()} lately — try adding a small source today.`;
+    return `Low on ${signal.nutrient.toLowerCase()} lately • try adding a small source today.`;
   });
   return top;
 }

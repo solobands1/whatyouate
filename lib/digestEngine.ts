@@ -3,6 +3,24 @@ import { summarizeDay, summarizeWeek, summarizeWorkoutsWeek } from "./summary";
 import { dayKeyFromTs } from "./utils";
 import { buildNutrientNotes, buildSuggestions, type SuggestionSignal } from "./recommendations";
 
+export type NudgeType =
+  | "calorie_low" | "calorie_high"
+  | "protein_low_critical" | "protein_low" | "protein_close"
+  | "workout_missing" | "workout_fuel_low" | "training_fuel_low"
+  | "micronutrient";
+
+export interface NudgeData {
+  actual?: number;
+  target?: number;
+  nutrient?: string;
+}
+
+export interface ComputedNudge {
+  message: string;
+  type: NudgeType;
+  data: NudgeData;
+}
+
 type RecentItem =
   | { type: "meal"; ts: number; meal: MealLog }
   | { type: "workout"; ts: number; workout: WorkoutSession };
@@ -300,7 +318,7 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
   );
   const todayTotals = summarizeDay(meals);
 
-  type ScoredNudge = { message: string; priority: number };
+  type ScoredNudge = { message: string; priority: number; type: NudgeType; data: NudgeData };
   const nudges: ScoredNudge[] = [];
   const focus = (profile?.freeformFocus ?? profile?.bodyPriority ?? "").toLowerCase();
   const calorieBias = focus.includes("energy") ? 1 : 0;
@@ -311,31 +329,23 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
   if (profile && dayCount >= 5 && mealCount >= 5 && avgWeekCalories && gentleTargets?.calories) {
     const todayMid = Math.round((todayTotals.calories_min + todayTotals.calories_max) / 2);
     const hasToday = todayMid > 0;
-    const isDayMostlyOver = new Date().getHours() >= 18;
-    const todayLow = hasToday && isDayMostlyOver && todayMid < gentleTargets.calories * 0.85;
-    const todayHigh = hasToday && isDayMostlyOver && todayMid > gentleTargets.calories * 1.15;
+    const todayHasMeaningfulData = todayMid > 600;
+    const todayLow = hasToday && todayHasMeaningfulData && todayMid < gentleTargets.calories * 0.85;
+    const todayHigh = hasToday && todayHasMeaningfulData && todayMid > gentleTargets.calories * 1.15;
     const weekLow = avgWeekCalories < gentleTargets.calories * 0.9;
     const weekHigh = avgWeekCalories > gentleTargets.calories * 1.1;
     if (todayLow && weekLow) {
       nudges.push({
-        message: calorieBias
-          ? "Energy intake is trending lighter this week — may affect your energy levels."
-          : pickVariant([
-            "Energy intake is trending lighter than your recent range.",
-            "Intake has been running a bit lighter than usual this week.",
-            "Calorie intake has been on the lighter side recently."
-          ]),
+        message: `You've been averaging around ${Math.round(avgWeekCalories)} kcal a day this week • your target is closer to ${gentleTargets.calories} kcal`,
+        type: "calorie_low",
+        data: { actual: Math.round(avgWeekCalories), target: gentleTargets.calories },
         priority: 2 + calorieBias
       });
     } else if (todayHigh && weekHigh) {
       nudges.push({
-        message: calorieBias
-          ? "Energy intake is trending fuller this week — may be worth easing back slightly."
-          : pickVariant([
-            "Energy intake is trending fuller than your recent range.",
-            "Intake is running a bit higher than your recent pattern.",
-            "Calorie intake has been on the fuller side this week."
-          ]),
+        message: `You've been eating around ${Math.round(avgWeekCalories)} kcal a day this week • your target is around ${gentleTargets.calories} kcal`,
+        type: "calorie_high",
+        data: { actual: Math.round(avgWeekCalories), target: gentleTargets.calories },
         priority: 2 + calorieBias
       });
     }
@@ -345,35 +355,23 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
     const target = (profile.weight ?? 0) * proteinTargetPerKg(profile);
     if (target && avgWeekProtein < target * 0.7) {
       nudges.push({
-        message: proteinBias
-          ? "Protein has been running low this week — worth prioritizing for your strength goals."
-          : pickVariant([
-            "Noticed protein below your goal range. Consider a small add.",
-            "Protein has been running low this week. A small boost may help.",
-            "Protein intake is well below your goal range. Worth adding a source."
-          ]),
+        message: `You've been averaging around ${Math.round(avgWeekProtein)}g of protein a day this week • your goal is closer to ${Math.round(target)}g`,
+        type: "protein_low_critical",
+        data: { actual: Math.round(avgWeekProtein), target: Math.round(target) },
         priority: 3 + proteinBias
       });
     } else if (target && avgWeekProtein < target * 0.85) {
       nudges.push({
-        message: proteinBias
-          ? "Protein is a bit short this week — a small add supports your strength goals."
-          : pickVariant([
-            "Noticed protein slightly below your goal range. Consider a small add.",
-            "Protein is a bit short of your target this week. A small add may help.",
-            "Protein is trending slightly under your goal. Easy to close the gap."
-          ]),
+        message: `You've been averaging around ${Math.round(avgWeekProtein)}g of protein a day this week • your goal is closer to ${Math.round(target)}g`,
+        type: "protein_low",
+        data: { actual: Math.round(avgWeekProtein), target: Math.round(target) },
         priority: 2 + proteinBias
       });
     } else if (target && avgWeekProtein < target * 0.95) {
       nudges.push({
-        message: proteinBias
-          ? "Protein is close to target — a small add would round it out for your strength goals."
-          : pickVariant([
-            "Noticed protein near the lower edge of your goal range. A small add may help.",
-            "Protein is just under your goal range. A small source could fill it.",
-            "Protein is close but slightly below target. A small add would do it."
-          ]),
+        message: `You're really close on protein • at ${Math.round(avgWeekProtein)}g, you're just ${Math.round(target - avgWeekProtein)}g away from your ${Math.round(target)}g goal`,
+        type: "protein_close",
+        data: { actual: Math.round(avgWeekProtein), target: Math.round(target) },
         priority: 1 + proteinBias
       });
     }
@@ -385,20 +383,16 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
   if (profile?.activityLevel === "very_active" || profile?.activityLevel === "moderately_active") {
     if (recentWorkoutCount === 0 && mealCount >= 10) {
       nudges.push({
-        message: pickVariant([
-          "No workouts logged this week — don't forget to track your sessions.",
-          "Workouts haven't been logged this week. Remember to track your sessions.",
-          "No sessions logged yet this week. Don't forget to record your workouts."
-        ]),
+        message: "Looks like no workouts have been logged this week • if you've been training, make sure you're tracking your sessions",
+        type: "workout_missing",
+        data: {},
         priority: 1
       });
     } else if (recentWorkoutCount >= 1 && gentleTargets?.calories && avgWeekCalories < gentleTargets.calories * 0.9) {
       nudges.push({
-        message: pickVariant([
-          "You've been active this week but intake is running a bit light — worth fueling a little more.",
-          "Active week, but energy intake has been on the lighter side. A bit more fuel may help.",
-          "Solid activity this week — intake may be a little light to match your output."
-        ]),
+        message: `You've been putting in some solid sessions this week • food intake is sitting around ${Math.round(avgWeekCalories)} kcal, which looks a bit light for what you're putting out`,
+        type: "workout_fuel_low",
+        data: { actual: Math.round(avgWeekCalories), target: gentleTargets?.calories },
         priority: 2
       });
     }
@@ -418,13 +412,9 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
     counts.forEach((count, nutrient) => {
       if (count >= 3) {
         nudges.push({
-          message: microBias
-            ? `Fewer ${nutrient}-rich foods lately — worth adding one to support long-term health.`
-            : pickVariant([
-              `Noticed fewer ${nutrient}-rich foods. Consider a small add.`,
-              `Fewer ${nutrient} sources in the pattern lately. Worth adding one.`,
-              `${nutrient.charAt(0).toUpperCase() + nutrient.slice(1)}-rich foods have been less common lately. A small add may help.`
-            ]),
+          message: `Looks like ${nutrient} has been a bit low across your recent meals • it's one of those things that's easy to miss until it adds up`,
+          type: "micronutrient",
+          data: { nutrient },
           priority: 1 + microBias
         });
       }
@@ -437,7 +427,9 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
     avgWeekCalories < gentleTargets.calories * 0.9
   ) {
     nudges.push({
-      message: "Noticed solid training volume. Fueling may be slightly lighter than usual.",
+      message: `Solid training week • you've been eating around ${Math.round(avgWeekCalories)} kcal on average, which might be a bit light for the effort you're putting in`,
+      type: "training_fuel_low",
+      data: { actual: Math.round(avgWeekCalories), target: gentleTargets?.calories },
       priority: 2
     });
   }
@@ -457,5 +449,5 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
     ? sorted.slice(0, 1)
     : sorted.slice(0, 2);
 
-  return capped.map((item) => item.message);
+  return capped.map(({ message, type, data }) => ({ message, type, data }));
 }

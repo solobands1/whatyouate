@@ -9,7 +9,7 @@ import BottomNav from "./BottomNav";
 import Card from "./Card";
 import { useAuth } from "./AuthProvider";
 import { addNudge, getProfile, listMeals, listNudges, listWorkouts, LOCAL_MODE, pruneNudges } from "../lib/supabaseDb";
-import { computeNudges, computeSummaryMarkers } from "../lib/digestEngine";
+import { computeNudges, computeSummaryMarkers, type ComputedNudge } from "../lib/digestEngine";
 import { MEALS_UPDATED_EVENT, PROFILE_UPDATED_EVENT, WORKOUTS_UPDATED_EVENT } from "../lib/dataEvents";
 import { supabase } from "../lib/supabaseClient";
 
@@ -26,7 +26,7 @@ export default function SummaryScreen() {
   const [loadingData, setLoadingData] = useState(true);
   const mountedRef = useRef(true);
   const [runSummaryTour, setRunSummaryTour] = useState(false);
-  const [showNudgeInsights, setShowNudgeInsights] = useState(false);
+  const [expandedNudgeGroups, setExpandedNudgeGroups] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     mountedRef.current = true;
@@ -141,14 +141,6 @@ export default function SummaryScreen() {
     setHydrated(true);
   }, []);
 
-  useEffect(() => {
-    if (!showNudgeInsights) return;
-    const original = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = original;
-    };
-  }, [showNudgeInsights]);
 
   const summaryMarkers = useMemo(
     () => computeSummaryMarkers(meals, workouts, profile),
@@ -167,9 +159,8 @@ export default function SummaryScreen() {
   const avgWeekCalories = summaryMarkers.avgWeekCalories;
   const avgWeekProtein = summaryMarkers.avgWeekProtein;
   const nutrientTrends = summaryMarkers.nutrientTrends;
-  const suggestions = summaryMarkers.suggestions;
   const nutrientNotes = summaryMarkers.nutrientNotes;
-  const fuelingState = summaryMarkers.fuelingState;
+  const suggestions = summaryMarkers.suggestions;
   const [nudgeViewCount, setNudgeViewCount] = useState(0);
   const [showTargetInfo, setShowTargetInfo] = useState(false);
 
@@ -189,7 +180,7 @@ export default function SummaryScreen() {
       .slice()
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .forEach((nudge) => {
-        // Skip DB nudges from today — visibleNotes (fresh compute) covers today's state
+        // Skip DB nudges from today • visibleNotes (fresh compute) covers today's state
         const nudgeDayKey = todayKey(new Date(nudge.created_at));
         if (nudgeDayKey === todayDateKey) return;
         if (messages.has(nudge.message)) return;
@@ -204,9 +195,9 @@ export default function SummaryScreen() {
         });
       });
     visibleNotes.forEach((note) => {
-      if (messages.has(note)) return;
-      messages.add(note);
-      items.push({ message: note });
+      if (messages.has(note.message)) return;
+      messages.add(note.message);
+      items.push({ message: note.message });
     });
     nutrientNotes.forEach((note) => {
       if (messages.has(note)) return;
@@ -295,44 +286,50 @@ export default function SummaryScreen() {
     const caloriesLow = caloriesTarget > 0 && avgWeekCalories < caloriesTarget * 0.85;
     const caloriesHigh = caloriesTarget > 0 && avgWeekCalories > caloriesTarget * 1.1;
 
-    // Align with which signal the active nudges are actually about
-    const nudgeText = visibleNotes.join(" ").toLowerCase();
+    const nudgeText = visibleNotes.map((n) => n.message).join(" ").toLowerCase();
     const nudgeIsProtein = nudgeText.includes("protein");
-    const nudgeIsCalorie = nudgeText.includes("energy") || nudgeText.includes("intake") || nudgeText.includes("calorie");
+    const nudgeIsCalorie = nudgeText.includes("light") || nudgeText.includes("energy") || nudgeText.includes("intake") || nudgeText.includes("calorie") || nudgeText.includes("fuel");
 
     if (nudgeIsProtein && !nudgeIsCalorie) {
-      if (proteinLow) tips.push("Protein has been trending a bit low lately.");
-      if (tips.length === 0) tips.push("Your intake has been fairly steady lately.");
-      return tips.slice(0, 2);
+      if (proteinLow && avgWeekProtein > 0)
+        tips.push(`You've been averaging around ${avgWeekProtein}g of protein • your goal is closer to ${proteinTarget}g.`);
+      else
+        tips.push("Your protein intake has been fairly steady this week.");
+      return tips.slice(0, 1);
     }
     if (nudgeIsCalorie && !nudgeIsProtein) {
-      if (caloriesLow) tips.push(goal === "gain" ? "Calories have been running lighter than your goal." : "Calories have been a little light lately.");
-      else if (caloriesHigh) tips.push(goal === "lose" ? "Calories have been running higher than your goal." : "Calories have been a little high lately.");
-      if (tips.length === 0) tips.push("Your intake has been fairly steady lately.");
-      return tips.slice(0, 2);
+      if (caloriesLow && avgWeekCalories > 0)
+        tips.push(goal === "gain"
+          ? `You've been averaging around ${avgWeekCalories} kcal • you're aiming for closer to ${caloriesTarget} kcal.`
+          : `You've been eating around ${avgWeekCalories} kcal per day • a bit under your ${caloriesTarget} kcal range.`
+        );
+      else if (caloriesHigh && avgWeekCalories > 0)
+        tips.push(`You've been averaging around ${avgWeekCalories} kcal • a bit over your ${caloriesTarget} kcal range.`);
+      else
+        tips.push("Your calorie intake has been fairly steady this week.");
+      return tips.slice(0, 1);
     }
 
     if (goal === "lose") {
-      if (caloriesHigh) tips.push("Calories have been running higher than your goal.");
-      if (proteinLow) tips.push("Protein has been trending a bit low lately.");
+      if (caloriesHigh && avgWeekCalories > 0) tips.push(`Averaging around ${avgWeekCalories} kcal • a bit over your ${caloriesTarget} kcal goal.`);
+      if (proteinLow && avgWeekProtein > 0) tips.push(`Protein is around ${avgWeekProtein}g • keeping it closer to ${proteinTarget}g helps preserve muscle while cutting.`);
     } else if (goal === "gain") {
-      if (caloriesLow) tips.push("Calories have been running lighter than your goal.");
-      if (proteinLow) tips.push("Protein has been trending a bit low lately.");
+      if (caloriesLow && avgWeekCalories > 0) tips.push(`Averaging around ${avgWeekCalories} kcal • a bit under your ${caloriesTarget} kcal goal.`);
+      if (proteinLow && avgWeekProtein > 0) tips.push(`Protein is around ${avgWeekProtein}g • closer to ${proteinTarget}g supports muscle gain.`);
     } else {
-      if (caloriesLow) tips.push("Calories have been a little light lately.");
-      if (caloriesHigh) tips.push("Calories have been a little high lately.");
-      if (proteinLow) tips.push("Protein has been trending a bit low lately.");
+      if (caloriesLow && avgWeekCalories > 0) tips.push(`Averaging around ${avgWeekCalories} kcal • a bit under your ${caloriesTarget} kcal range.`);
+      else if (caloriesHigh && avgWeekCalories > 0) tips.push(`Averaging around ${avgWeekCalories} kcal • a bit over your ${caloriesTarget} kcal range.`);
+      if (proteinLow && avgWeekProtein > 0) tips.push(`Protein is around ${avgWeekProtein}g • your goal is closer to ${proteinTarget}g.`);
     }
 
     if (tips.length === 0) {
-      if (avgWeekCalories === 0 || avgWeekProtein === 0) {
-        tips.push("Log a few meals to see your weekly pattern here.");
-      } else {
-        tips.push("Your intake has been fairly steady lately.");
-      }
+      if (avgWeekCalories === 0 || avgWeekProtein === 0)
+        tips.push("Log a few more meals to see your weekly pattern here.");
+      else
+        tips.push("Your intake has been pretty steady this week • keep it up.");
     }
 
-    return tips.slice(0, 2);
+    return tips.slice(0, 1);
   }, [profile, gentleTargetsDisplay, avgWeekProtein, avgWeekCalories, visibleNotes]);
 
   const isRestrictedSuggestion = useMemo(() => {
@@ -363,127 +360,139 @@ export default function SummaryScreen() {
     const caloriesLow = caloriesTarget > 0 && avgWeekCalories < caloriesTarget * 0.85;
     const proteinLow = avgWeekProtein > 0 && avgWeekProtein < gentleTargetsDisplay.protein * 0.85;
 
-    // Align action with which signal the active nudges are actually about
-    const nudgeText = visibleNotes.join(" ").toLowerCase();
+    const nudgeText = visibleNotes.map((n) => n.message).join(" ").toLowerCase();
     const nudgeIsProtein = nudgeText.includes("protein");
-    const nudgeIsCalorie = nudgeText.includes("energy") || nudgeText.includes("intake") || nudgeText.includes("calorie");
+    const nudgeIsCalorie = nudgeText.includes("light") || nudgeText.includes("energy") || nudgeText.includes("intake") || nudgeText.includes("calorie") || nudgeText.includes("fuel");
 
     if (nudgeIsProtein && !nudgeIsCalorie) {
-      if (proteinLow) tips.push(goal === "gain" ? "Pair meals with extra protein." : "Pair meals with a little more protein.");
-      if (tips.length === 0) tips.push("Keep portions steady and pair meals with protein.");
-      return tips.filter((tip) => !isRestrictedSuggestion(tip)).slice(0, 2);
+      if (proteinLow) tips.push(goal === "gain"
+        ? "Try adding a solid protein source to each meal • it adds up faster than you'd think."
+        : "Adding a small protein source to your next couple of meals should close the gap.");
+      else tips.push("Keep pairing your meals with a protein source and you'll stay on track.");
+      return tips.filter((tip) => !isRestrictedSuggestion(tip)).slice(0, 1);
     }
     if (nudgeIsCalorie && !nudgeIsProtein) {
-      if (goal === "lose" && caloriesHigh) tips.push("Reduce portions slightly or skip one side.");
-      else if (goal === "gain" && caloriesLow) tips.push("Add a side or a slightly larger portion.");
-      else if (caloriesHigh) tips.push("Reduce portions slightly to stay balanced.");
-      else if (caloriesLow) tips.push("Add a small side to stay balanced.");
-      if (tips.length === 0) tips.push("Keep portions steady and pair meals with protein.");
-      return tips.filter((tip) => !isRestrictedSuggestion(tip)).slice(0, 2);
+      if (goal === "lose" && caloriesHigh) tips.push("Try slightly smaller portions or skip a side • small changes add up.");
+      else if (goal === "gain" && caloriesLow) tips.push("Add a side or a slightly bigger portion • your body could use the extra fuel.");
+      else if (caloriesHigh) tips.push("A slightly smaller portion here and there should keep things balanced.");
+      else if (caloriesLow) tips.push("A small snack or extra side with one of your meals would help.");
+      if (tips.length === 0) tips.push("Keep meals balanced and pair them with a protein source.");
+      return tips.filter((tip) => !isRestrictedSuggestion(tip)).slice(0, 1);
     }
 
     if (goal === "lose") {
-      if (caloriesHigh) tips.push("Reduce portions slightly or skip one side.");
-      if (proteinLow) tips.push("Pair meals with a little more protein.");
+      if (caloriesHigh) tips.push("Try slightly smaller portions or skip one side • small changes add up.");
+      if (proteinLow) tips.push("Pair your meals with a bit more protein • it helps with fullness too.");
     } else if (goal === "gain") {
-      if (caloriesLow) tips.push("Add a side or a slightly larger portion.");
-      if (proteinLow) tips.push("Pair meals with extra protein.");
+      if (caloriesLow) tips.push("Add a side or a slightly larger portion • your body needs the fuel.");
+      if (proteinLow) tips.push("Try adding a protein source to each meal • it adds up fast.");
     } else {
-      if (caloriesHigh) tips.push("Reduce portions slightly to stay balanced.");
-      if (caloriesLow) tips.push("Add a small side to stay balanced.");
-      if (proteinLow) tips.push("Pair meals with more protein.");
+      if (caloriesHigh) tips.push("A slightly smaller portion here and there keeps things balanced.");
+      if (caloriesLow) tips.push("A small snack or extra side with one of your meals would fill the gap.");
+      if (proteinLow) tips.push("Pair your meals with a bit more protein • easy to slip in.");
     }
 
-    if (tips.length === 0 && avgWeekCalories > 0) tips.push("Keep portions steady and pair meals with protein.");
+    if (tips.length === 0 && avgWeekCalories > 0) tips.push("Keep meals balanced and pair them with a solid protein source.");
 
-    return tips.filter((tip) => !isRestrictedSuggestion(tip)).slice(0, 2);
+    return tips.filter((tip) => !isRestrictedSuggestion(tip)).slice(0, 1);
   }, [profile, gentleTargetsDisplay, avgWeekCalories, avgWeekProtein, isRestrictedSuggestion, visibleNotes]);
 
-  const foodIdeas = useMemo(() => {
-    const ideas: string[] = [];
-    const lower = recentFoods;
-    const has = (terms: string[]) => lower.some((item) => terms.some((term) => item.includes(term)));
-    const goal = profile?.goalDirection ?? "maintain";
-    const caloriesTarget = gentleTargetsDisplay.calories;
-    const caloriesHigh = caloriesTarget > 0 && avgWeekCalories > caloriesTarget * 1.1;
-    const caloriesLow = caloriesTarget > 0 && avgWeekCalories < caloriesTarget * 0.85;
-    const proteinLow = avgWeekProtein > 0 && avgWeekProtein < gentleTargetsDisplay.protein * 0.85;
 
-    const pushIf = (text: string) => {
-      if (!ideas.includes(text)) ideas.push(text);
-    };
-
-    if (has(["burger", "cheeseburger", "hamburger", "sandwich", "sub"])) {
-      if (goal === "lose" && caloriesHigh) pushIf("Swap fries for a side salad with your meal.");
-      else if (goal === "gain" && caloriesLow) pushIf("Add fries or a side with your meal.");
-      else pushIf("Add a side salad or veggies with your meal.");
-    }
-    if (has(["pizza"])) {
-      if (goal === "lose" && caloriesHigh) pushIf("Try one less slice and add a salad.");
-      else if (goal === "gain" && caloriesLow) pushIf("Add a protein side or another slice.");
-      else pushIf("Add a protein side or salad.");
-    }
-    if (has(["pasta", "noodle", "ramen", "udon", "spaghetti"])) {
-      pushIf(goal === "gain" ? "Add lean protein and a little extra portion." : "Add lean protein and veggies.");
-    }
-    if (has(["rice", "bowl", "poke", "bibimbap", "burrito", "taco"])) {
-      pushIf(goal === "gain" ? "Add extra rice or beans." : "Add extra veggies or lean protein.");
-    }
-    if (has(["salad"])) {
-      pushIf("Add a protein topper (chicken, beans, tuna).");
-    }
-    if (has(["smoothie", "shake"])) {
-      pushIf(goal === "gain" ? "Add Greek yogurt or nut butter." : "Add protein or fiber.");
-    }
-    if (has(["breakfast", "oat", "cereal", "toast", "pancake", "waffle"])) {
-      pushIf("Add eggs or Greek yogurt with your meal.");
-    }
-    if (has(["sushi", "roll", "sashimi"])) {
-      pushIf("Add edamame or miso with your meal.");
-    }
-    if (has(["steak", "chicken", "salmon", "fish"])) {
-      pushIf(goal === "gain" ? "Add a carb side with your meal." : "Add veggies with your meal.");
-    }
-    if (has(["fries", "chips"])) {
-      pushIf(goal === "lose" ? "Swap for a side salad or fruit." : "Pair with a protein side.");
-    }
-    if (has(["dessert", "cookie", "cake", "ice cream", "donut"])) {
-      pushIf(goal === "lose" ? "Keep dessert portion small." : "Pair with yogurt or milk after your meal.");
-    }
-
-    if (proteinLow) pushIf("Add Greek yogurt or a protein bar after your meal.");
-    if (goal === "lose" && caloriesHigh) pushIf("Choose a smaller portion or skip one side.");
-    if (goal === "gain" && caloriesLow) pushIf("Add a small carb side with your meal.");
-
-    if (ideas.length === 0) {
-      pushIf("Keep portions steady and add a balanced side with your meal.");
-    }
-
-    return ideas.filter((idea) => !isRestrictedSuggestion(idea)).slice(0, 3);
-  }, [recentFoods, profile, gentleTargetsDisplay, avgWeekCalories, avgWeekProtein, isRestrictedSuggestion]);
-
-  const formatSentenceList = (items: string[]) => {
-    if (items.length === 0) return "";
-    if (items.length === 1) return items[0];
-    if (items.length === 2) return `${items[0]} and ${items[1]}`;
-    return `${items.slice(0, -1).join(", ")}, and ${items[items.length - 1]}`;
-  };
 
   useEffect(() => {
     if (!user || !nudgesLoadedRef.current || visibleNotes.length === 0) return;
     const existing = new Set(nudges.map((n) => n.message));
     const missing = visibleNotes.filter(
-      (note) => !existing.has(note) && !savedThisSessionRef.current.has(note)
+      (note) => !existing.has(note.message) && !savedThisSessionRef.current.has(note.message)
     );
     if (missing.length === 0) return;
     missing.forEach((note) => {
-      savedThisSessionRef.current.add(note);
-      addNudge(user.id, "awareness", note).catch(() => {
+      savedThisSessionRef.current.add(note.message);
+      addNudge(user.id, "awareness", note.message).catch(() => {
         // Silent: nudges are optional.
       });
     });
     pruneNudges(user.id).catch(() => {});
   }, [user, visibleNotes, nudges]);
+
+  const getNudgeWhy = (type: ComputedNudge["type"], goal: string): string => {
+    switch (type) {
+      case "protein_low_critical":
+        if (goal === "gain") return "Protein is the building block for nearly everything your body does • muscle growth, immune function, hormone production, even keeping your hair and skin healthy. When it's consistently this low, your body starts rationing, and building takes a back seat to just maintaining what you have.";
+        if (goal === "lose") return "Protein is the most important thing to protect when you're in a deficit. It keeps you fuller longer, preserves muscle while you lose fat, and helps your metabolism stay active rather than slowing down to compensate.";
+        return "Protein does a lot more than build muscle • it regulates hormones, supports your immune system, and keeps energy levels stable throughout the day. Getting it consistently right is one of the highest-leverage things you can do for your overall health.";
+      case "protein_low":
+        if (goal === "gain") return "Protein is what your body uses to repair and build after every session. A consistent shortfall means slower recovery, and over time that compounds • progress feels harder even when effort stays the same.";
+        if (goal === "lose") return "Keeping protein up while you're cutting is one of the most effective levers you have. It keeps hunger more manageable, slows muscle loss, and means the weight that comes off is more likely to be fat than lean tissue.";
+        return "Protein isn't just about muscle • it supports mood stability, immune health, and steady energy. Closing this gap doesn't need to be complicated, and most people notice the difference quickly once they do.";
+      case "protein_close":
+        if (goal === "gain") return "You're tracking really well • a small, consistent top-up each day is what separates steady progress from plateaus. The gap is small enough that closing it is more about habit than any big change.";
+        return "You're nearly there, which is worth acknowledging. Finishing the job on protein means your body has everything it needs to function at its best • energy, immune support, and feeling good day to day.";
+      case "calorie_low":
+        if (goal === "gain") return "Your body needs a reliable surplus to grow • when intake runs consistently below target, it goes into maintenance mode and building stalls. It also affects your mood, focus, and hormonal balance more than most people realise.";
+        if (goal === "lose") return "Being too far under your target for too long tends to backfire. Your metabolism adapts, energy crashes, and cravings spike • which makes the deficit harder to maintain. A slightly higher intake often leads to better, more sustainable results.";
+        return "Consistently low intake affects more than just weight • it impacts energy, concentration, mood, and how well your body handles stress. Even a small consistent add can shift how you feel across the whole week.";
+      case "calorie_high":
+        if (goal === "lose") return "Small consistent surpluses compound more than people expect • 150 kcal over target each day adds up to over 1000 kcal across a week. The good news is you don't need big changes to shift the pattern, just consistent small ones.";
+        return "Overall health is best supported by intake that stays in a reasonable range consistently, rather than large swings day to day. It's not urgent, but keeping an eye on the weekly pattern is worth the habit.";
+      case "workout_fuel_low":
+      case "training_fuel_low":
+        return "When you're training regularly, your body's energy demands are higher than most people account for. Under-fuelling affects not just performance but also sleep quality, hormone balance, immune function, and how you feel between sessions • it's a health issue as much as a fitness one.";
+      case "workout_missing":
+        return "Tracking your sessions helps the app give you much more accurate intake targets. An active person who doesn't log workouts can end up with goals calibrated for a sedentary lifestyle • meaning the targets you're hitting might actually be lower than your body needs.";
+      case "micronutrient":
+        return "Micronutrients don't get the same attention as protein and calories, but they quietly shape a lot • energy levels, immune resilience, hormone regulation, and how well you sleep. When one shows up low consistently, it's usually a variety gap in your diet rather than anything serious, and it's easy to address.";
+    }
+  };
+
+  const getNudgeBehavioralChips = (type: ComputedNudge["type"], goal: string): string[] => {
+    switch (type) {
+      case "protein_low_critical":
+        return goal === "gain" ? ["+ protein at every meal", "+ protein snack"] : ["+ protein per meal", "+ protein snack"];
+      case "protein_low":
+        return ["+ protein at each meal", "+ protein snack"];
+      case "protein_close":
+        return ["+ small protein add"];
+      case "calorie_low":
+        return goal === "gain" ? ["+ larger portions", "+ side dish"] : ["+ small snack", "+ side dish"];
+      case "calorie_high":
+        return goal === "lose" ? ["smaller portions", "skip a side"] : ["watch portions"];
+      case "workout_fuel_low":
+      case "training_fuel_low":
+        return ["+ pre-workout snack", "+ post-workout meal"];
+      case "workout_missing":
+      case "micronutrient":
+        return [];
+    }
+  };
+
+  const getNudgeAction = (type: ComputedNudge["type"], goal: string): string => {
+    switch (type) {
+      case "protein_low_critical":
+        return goal === "gain"
+          ? "Aim to include a solid protein source with every meal • not just dinner. Breakfast and lunch are where most people fall short. Even a small addition to each consistently adds up to a meaningful difference by the end of the week."
+          : "Adding a protein-focused snack between two of your main meals tends to be the easiest change that actually sticks. It doesn't mean overhauling your diet • just plugging one consistent gap each day.";
+      case "protein_low":
+        return "Try making sure each meal has at least one clear protein source. It doesn't need to be a big change • pairing something with a protein hit at each sitting is usually enough to close a gap like this.";
+      case "protein_close":
+        return "You're close enough that one small addition on most days will get you there. A consistent habit is more important than a big one • even a small add at breakfast or as an afternoon snack tends to be enough.";
+      case "calorie_low":
+        return goal === "gain"
+          ? "Try increasing the size of two or three existing meals rather than adding a whole new one • it's easier to sustain. A bit more at each sitting tends to compound better than trying to squeeze in extra meals."
+          : "A small, balanced snack between two of your regular meals is usually the most sustainable fix. The goal is just to close the gap without adding stress or changing your whole routine.";
+      case "calorie_high":
+        return goal === "lose"
+          ? "Focus on small consistent adjustments rather than big cuts • slightly smaller portions at a couple of meals, skipping an optional extra here and there. Small changes held consistently beat big ones that don't stick."
+          : "No urgent action needed • just stay aware of portions over the next few days and let things even out naturally. You're likely fine across the week.";
+      case "workout_fuel_low":
+      case "training_fuel_low":
+        return "Try eating a bit more on the days you train • even 200–300 kcal extra around your session makes a real difference to how you feel and how well you recover. It's one of the higher-return adjustments you can make.";
+      case "workout_missing":
+        return "Log your next session right after it finishes • it only takes about 20 seconds and immediately makes your intake targets more accurate. Do it a few times and it becomes automatic.";
+      case "micronutrient":
+        return "Try to add a food rich in this nutrient a few times this week • it doesn't need to be every day. The goal is just to start building variety, not to change everything at once. Check the suggestions below for ideas.";
+    }
+  };
 
   if (!user) return null;
 
@@ -630,26 +639,15 @@ export default function SummaryScreen() {
         </Card>
 
         <Card className="mt-6" data-tour="nudges-card">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Nudges</p>
-            <button
-              type="button"
-              data-tour="insights-button"
-              className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-white shadow-[0_6px_14px_rgba(15,23,42,0.14)] ring-1 ring-white/40 transition hover:bg-primary/90"
-              onClick={() => setShowNudgeInsights(true)}
-            >
-              Why these?
-              <span className="text-[10px]">→</span>
-            </button>
-          </div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Nudges</p>
           {mealCount === 0 ? (
             <div className="mt-3 space-y-1">
-              <p className="text-sm text-ink/70">Log a few meals and I'll start learning your patterns.</p>
+              <p className="text-sm text-ink/70">Log a few meals and I’ll start learning your patterns.</p>
               <p className="text-xs text-muted/50">Nudges appear after 5 meals.</p>
             </div>
           ) : mealCount < 5 ? (
             <div className="mt-3 space-y-1">
-              <p className="text-sm text-ink/70">Getting started · log {5 - mealCount} more meal{5 - mealCount !== 1 ? "s" : ""} and I'll have my first read on your patterns.</p>
+              <p className="text-sm text-ink/70">Getting started · log {5 - mealCount} more meal{5 - mealCount !== 1 ? "s" : ""} and I’ll have my first read on your patterns.</p>
               <div className="mt-2 flex gap-1">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <div key={i} className={`h-1.5 flex-1 rounded-full ${i < mealCount ? "bg-primary/60" : "bg-ink/10"}`} />
@@ -657,115 +655,101 @@ export default function SummaryScreen() {
               </div>
             </div>
           ) : (
-            <div className="mt-4 max-h-40 space-y-3 overflow-y-auto text-sm text-ink/90">
-              {groupedNudges.length ? (
-                groupedNudges.map((group) => (
-                  <div key={group.label}>
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-muted/60">
-                      {group.label}
-                    </p>
-                    {group.label !== "Today" && (
-                      <p className="text-[9px] text-muted/40">Reflects that day&apos;s patterns</p>
-                    )}
-                    <div className="mt-2 flex flex-wrap gap-2">
+            <div className="mt-4 space-y-3">
+              {/* Today’s nudges • driven directly from structured visibleNotes */}
+              {visibleNotes.length > 0 ? (
+                visibleNotes.map((nudge) => {
+                  const goal = profile?.goalDirection ?? "maintain";
+                  const why = getNudgeWhy(nudge.type, goal);
+                  const action = getNudgeAction(nudge.type, goal);
+                  const behavioralChips = getNudgeBehavioralChips(nudge.type, goal);
+                  const showFoodChips = nudge.type !== "workout_missing" && nudge.type !== "calorie_high" && suggestions.length > 0;
+                  const showChips = behavioralChips.length > 0 || showFoodChips;
+                  return (
+                    <div key={nudge.type} className="rounded-xl border border-primary/60 bg-primary/5 px-4 py-3 space-y-2.5">
+                      <p className="text-sm font-medium text-ink/90">{nudge.message.replace(/[.]+$/, "")}</p>
+                      {why && (
+                        <div>
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted/50 mb-0.5">Why</p>
+                          <p className="text-xs text-ink/70">{why}</p>
+                        </div>
+                      )}
+                      {(action || showChips) && (
+                        <div>
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted/50 mb-0.5">What to do</p>
+                          {action && <p className="text-xs text-ink/70">{action}</p>}
+                          {showChips && (
+                            <div className="mt-4 flex flex-wrap gap-1.5">
+                              {behavioralChips.map((chip) => (
+                                <span
+                                  key={chip}
+                                  className="rounded-full border border-primary/25 bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary/80"
+                                >
+                                  {chip}
+                                </span>
+                              ))}
+                              {showFoodChips && suggestions.slice(0, 3).map((food) => (
+                                <span
+                                  key={food}
+                                  className="rounded-full border border-ink/10 bg-white px-2.5 py-0.5 text-[11px] text-ink/60"
+                                >
+                                  {food}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="rounded-xl border border-primary/60 bg-primary/5 px-4 py-3 space-y-1">
+                  <p className="text-sm font-medium text-ink/90">
+                    {profile?.weight ? "Intake is looking solid this week" : "Complete your profile for personalised nudges"}
+                  </p>
+                  <p className="text-xs text-ink/60">
+                    {profile?.weight ? "Keep it up • consistency is what drives results." : "Add your weight and goal in Profile to get started."}
+                  </p>
+                </div>
+              )}
+              {/* Past nudges • per-group accordion, unchanged */}
+              {groupedNudges.filter((g) => g.label !== "Today").map((group) => (
+                <div key={group.label}>
+                  <button
+                    type="button"
+                    className="flex w-full items-center justify-between rounded-lg px-1 py-1 text-left transition hover:bg-ink/5"
+                    onClick={() => setExpandedNudgeGroups((prev) => {
+                      const next = new Set(prev);
+                      next.has(group.label) ? next.delete(group.label) : next.add(group.label);
+                      return next;
+                    })}
+                  >
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/50">{group.label}</p>
+                    <span className="text-[10px] text-muted/40">{expandedNudgeGroups.has(group.label) ? "↑" : "↓"}</span>
+                  </button>
+                  {expandedNudgeGroups.has(group.label) && (
+                    <div className="mt-1.5 space-y-1.5">
                       {group.items.map((nudge) => (
                         <div
                           key={nudge.id ?? nudge.message}
-                          className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs text-ink/80"
+                          className="rounded-lg bg-ink/5 px-3 py-2 text-xs text-muted/70"
                         >
-                          <span>{nudge.message.replace(/[.]+$/, "")}</span>
-                          {nudge.isNew && <span className="text-[10px] text-muted/60">new</span>}
+                          {nudge.message.replace(/[.]+$/, "")}
                         </div>
                       ))}
                     </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-muted/70">No nudges yet · keep logging.</p>
-              )}
+                  )}
+                </div>
+              ))}
             </div>
           )}
-          {fuelingState === "under" && suggestions.length === 5 && mealCount >= 3 && (
-            <div className="mt-4">
-              <p className="text-sm text-ink/90">A small add may help.</p>
-              <p className="text-xs uppercase tracking-wide text-muted/60">5 ideas to consider</p>
-              <ul className="mt-2 space-y-1 text-sm text-ink/90">
-                {suggestions.map((item) => (
-                  <li key={item} className="rounded-xl bg-ink/5 px-3 py-2">{item}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          
         </Card>
 
 
       </div>
 
       <BottomNav current="summary" />
-
-      {showNudgeInsights && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
-          <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
-            <div className="flex items-start justify-between gap-4">
-              <h2 className="text-base font-semibold text-ink">Why these nudges?</h2>
-              <button
-                type="button"
-                className="text-sm font-semibold text-ink/60"
-                onClick={() => setShowNudgeInsights(false)}
-              >
-                Close
-              </button>
-            </div>
-            <p className="mt-2 text-sm text-muted/70">
-              Based on your recent meals, weekly patterns, and your goal · here’s what I’m noticing.
-            </p>
-            <div className="mt-3 max-h-72 space-y-4 overflow-y-auto text-sm text-ink/80">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Insight</p>
-                <ul className="mt-1 space-y-1">
-                  {adaptiveInsight.map((tip) => (
-                    <li key={tip}>• {tip.replace(/[.]+$/, "")}</li>
-                  ))}
-                </ul>
-              </div>
-              {smartAddOns.length > 0 && (
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">
-                    Easy nudge
-                  </p>
-                  <p className="mt-1">
-                    {smartAddOns[0]
-                      ? `Something you can do is ${smartAddOns[0].replace(/[.]+$/, "").toLowerCase()}.`
-                      : ""}
-                    {smartAddOns[1]
-                      ? ` You can also ${smartAddOns[1].replace(/[.]+$/, "").toLowerCase()}.`
-                      : ""}
-                  </p>
-                </div>
-              )}
-              {foodIdeas.length > 0 && (
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">
-                    Food ideas
-                  </p>
-                  <div className="mt-2 space-y-2">
-                    {foodIdeas.map((idea) => (
-                      <div
-                        key={idea}
-                        className="rounded-xl border border-ink/10 bg-ink/5 px-3 py-2 text-xs text-ink/80"
-                      >
-                        {idea.replace(/[.]+$/, "")}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
