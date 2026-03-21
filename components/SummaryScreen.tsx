@@ -26,7 +26,7 @@ export default function SummaryScreen() {
   const [loadingData, setLoadingData] = useState(true);
   const mountedRef = useRef(true);
   const [runSummaryTour, setRunSummaryTour] = useState(false);
-  const [expandedNudgeGroups, setExpandedNudgeGroups] = useState<Set<string>>(new Set());
+  const [visibleNudgeGroupCount, setVisibleNudgeGroupCount] = useState(3);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -798,6 +798,9 @@ export default function SummaryScreen() {
           ) : (
             <div className="mt-4 space-y-3">
               {/* Today’s nudges • driven directly from structured visibleNotes */}
+              {groupedNudges.some((g) => g.label !== "Today") && (
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/50">Today</p>
+              )}
               {visibleNotes.length > 0 ? (
                 visibleNotes.map((nudge) => {
                   const goal = profile?.goalDirection ?? "maintain";
@@ -854,35 +857,29 @@ export default function SummaryScreen() {
                   </p>
                 </div>
               )}
-              {/* Past nudges • per-group accordion, unchanged */}
-              {groupedNudges.filter((g) => g.label !== "Today").map((group) => (
-                <div key={group.label}>
-                  <button
-                    type="button"
-                    className="flex w-full items-center justify-between rounded-lg px-1 py-1 text-left transition hover:bg-ink/5"
-                    onClick={() => setExpandedNudgeGroups((prev) => {
-                      const next = new Set(prev);
-                      next.has(group.label) ? next.delete(group.label) : next.add(group.label);
-                      return next;
-                    })}
-                  >
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/50">{group.label}</p>
-                    <span className="text-[10px] text-muted/40">{expandedNudgeGroups.has(group.label) ? "↑" : "↓"}</span>
-                  </button>
-                  {expandedNudgeGroups.has(group.label) && (
-                    <div className="mt-1.5 space-y-1.5">
-                      {group.items.map((nudge) => (
-                        <div
-                          key={nudge.id ?? nudge.message}
-                          className="rounded-lg bg-ink/5 px-3 py-2 text-xs text-muted/70"
-                        >
-                          {nudge.message.replace(/[.]+$/, "")}
-                        </div>
-                      ))}
+              {/* Past nudges • flat date-grouped scroll, mirrors HomeScreen feed */}
+              {groupedNudges.filter((g) => g.label !== "Today").slice(0, visibleNudgeGroupCount).map((group) => (
+                <div key={group.label} className="space-y-1.5">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/50">{group.label}</p>
+                  {group.items.map((nudge) => (
+                    <div
+                      key={nudge.id ?? nudge.message}
+                      className="rounded-lg bg-ink/5 px-3 py-2 text-xs text-muted/70"
+                    >
+                      {nudge.message.replace(/[.]+$/, "")}
                     </div>
-                  )}
+                  ))}
                 </div>
               ))}
+              {visibleNudgeGroupCount < groupedNudges.filter((g) => g.label !== "Today").length && (
+                <button
+                  type="button"
+                  className="mt-1 text-[11px] font-semibold text-ink/50 underline"
+                  onClick={() => setVisibleNudgeGroupCount((prev) => prev + 3)}
+                >
+                  Show more
+                </button>
+              )}
             </div>
           )}
         </Card>
