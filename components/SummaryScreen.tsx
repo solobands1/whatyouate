@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Joyride, { CallBackProps, STATUS, type Step } from "react-joyride";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import type { MealLog, UserProfile, WorkoutSession } from "../lib/types";
 import { formatApprox, formatDateShort, todayKey } from "../lib/utils";
 import BottomNav from "./BottomNav";
@@ -542,14 +541,6 @@ export default function SummaryScreen() {
             <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">
               Today
             </p>
-            <Link
-              href="/summary/insights"
-              data-tour="dig-deeper"
-              className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-white shadow-[0_6px_14px_rgba(15,23,42,0.14)] ring-1 ring-white/40 transition hover:bg-primary/90"
-            >
-              Patterns
-              <span className="text-[10px]">→</span>
-            </Link>
           </div>
           <div className="mt-5 flex items-baseline justify-between">
             <div>

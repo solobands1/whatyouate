@@ -34,10 +34,15 @@ const config: Config = {
         scan: {
           "0%, 100%": { top: "4px" },
           "50%": { top: "calc(100% - 4px)" }
+        },
+        shimmer: {
+          "0%": { backgroundPosition: "-200% center" },
+          "100%": { backgroundPosition: "200% center" }
         }
       },
       animation: {
-        scan: "scan 2s ease-in-out infinite"
+        scan: "scan 2s ease-in-out infinite",
+        shimmer: "shimmer 1.6s ease-in-out infinite"
       }
     }
   },

@@ -61,6 +61,7 @@ export default function HomeScreen() {
   const [quickConfirmMeal, setQuickConfirmMeal] = useState<MealLog | null>(null);
   const [quickConfirmName, setQuickConfirmName] = useState("");
   const [quickConfirmPortion, setQuickConfirmPortion] = useState<"small" | "medium" | "large">("medium");
+  const [showProfileBell, setShowProfileBell] = useState(false);
   const [quickConfirming, setQuickConfirming] = useState(false);
   const [editPortion, setEditPortion] = useState<"small" | "medium" | "large">("medium");
   const [showTargetInfo, setShowTargetInfo] = useState(false);
@@ -442,6 +443,32 @@ export default function HomeScreen() {
     return computeRecent(meals.meals, completedWorkouts);
   }, [meals.meals, completedWorkouts]);
 
+  useEffect(() => {
+    if (!user) { setShowProfileBell(false); return; }
+    const compute = () => {
+      const updatedKey = `wya_profile_updated_${user.id}`;
+      const openedKey = `wya_profile_prompt_opened_${user.id}`;
+      const lastPromptKey = `wya_profile_prompt_last_${user.id}`;
+      const updatedAt = Number(localStorage.getItem(updatedKey) ?? 0);
+      if (!updatedAt) { setShowProfileBell(false); return; }
+      const now = Date.now();
+      const threeMonths = 90 * 24 * 60 * 60 * 1000;
+      if (now - updatedAt < threeMonths) { setShowProfileBell(false); return; }
+      const lastPromptAt = Number(localStorage.getItem(lastPromptKey) ?? 0);
+      if (lastPromptAt && now - lastPromptAt < threeMonths) { setShowProfileBell(false); return; }
+      const openedAt = Number(localStorage.getItem(openedKey) ?? 0);
+      setShowProfileBell(!openedAt);
+    };
+    compute();
+    const handler = () => compute();
+    window.addEventListener("profile-prompt-opened", handler as EventListener);
+    window.addEventListener(PROFILE_UPDATED_EVENT, handler as EventListener);
+    return () => {
+      window.removeEventListener("profile-prompt-opened", handler as EventListener);
+      window.removeEventListener(PROFILE_UPDATED_EVENT, handler as EventListener);
+    };
+  }, [user]);
+
   const formatTitle = (value: string) =>
     value
       .split(" ")
@@ -796,17 +823,52 @@ export default function HomeScreen() {
       )}
       <div className="relative mx-auto flex min-h-screen max-w-md flex-col px-5 pb-24 pt-6">
         <header className="mb-4">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-semibold text-ink">
-              WhatYouAt<span className="relative inline-block">e
-                <span className="absolute -top-1 right-0 translate-x-[10px] text-[9px] font-semibold text-ink/60">
-                  AI
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-semibold text-ink">
+                WhatYouAt<span className="relative inline-block">e
+                  <span className="absolute -top-1 right-0 translate-x-[10px] text-[9px] font-semibold text-ink/60">
+                    AI
+                  </span>
                 </span>
+              </h1>
+              <span className="inline-flex items-center rounded-full bg-primary/15 px-2 py-0.5 text-[9px] font-semibold text-primary">
+                BETA
               </span>
-            </h1>
-            <span className="inline-flex items-center rounded-full bg-primary/15 px-2 py-0.5 text-[9px] font-semibold text-primary">
-              BETA
-            </span>
+            </div>
+            <Link
+              href="/profile"
+              data-tour="nav-profile"
+              className="relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-ink/15 bg-ink/5 hover:bg-ink/10"
+              onClick={() => {
+                if (!user || !showProfileBell) return;
+                const openedKey = `wya_profile_prompt_opened_${user.id}`;
+                const lastPromptKey = `wya_profile_prompt_last_${user.id}`;
+                const now = Date.now();
+                localStorage.setItem(openedKey, String(now));
+                localStorage.setItem(lastPromptKey, String(now));
+                setShowProfileBell(false);
+                window.dispatchEvent(new CustomEvent("profile-prompt-opened"));
+              }}
+            >
+              {user?.user_metadata?.avatar_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={user.user_metadata.avatar_url} alt="Profile" className="h-full w-full object-cover" />
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-ink/50">
+                  <circle cx="12" cy="8" r="4" />
+                  <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+                </svg>
+              )}
+              {showProfileBell && (
+                <span className="absolute -right-0.5 -top-0.5 inline-flex h-3.5 w-3.5 items-center justify-center rounded-full border border-primary/40 bg-primary text-[8px] text-white animate-pulse shadow-[0_4px_10px_rgba(15,23,42,0.18)]">
+                  <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5" />
+                    <path d="M9 17a3 3 0 0 0 6 0" />
+                  </svg>
+                </span>
+              )}
+            </Link>
           </div>
           <p className="mt-1 text-[13px] text-muted/70">Take photos, get nudges, improve.</p>
           {!loadingData && mealCount === 0 && (
@@ -991,7 +1053,8 @@ export default function HomeScreen() {
                         onClick={() => {
                           if (editRecents) meals.openMealEditor(meal);
                         }}
-                        className={`inline-flex w-full items-start justify-between rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5 text-xs text-ink/80 ${editRecents ? "cursor-pointer animate-wiggle" : (meal.status === "processing" && Date.now() - meal.ts < 90_000 ? "animate-pulse" : "")}`}
+                        className={`inline-flex w-full items-start justify-between rounded-full border border-primary/20 px-3 py-1.5 text-xs text-ink/80 ${editRecents ? "cursor-pointer animate-wiggle bg-primary/10" : (meal.status === "processing" && Date.now() - meal.ts < 90_000 ? "animate-shimmer" : "bg-primary/10")}`}
+                        style={meal.status === "processing" && Date.now() - meal.ts < 90_000 ? { background: "linear-gradient(90deg, #dbeafe 0%, #bfdbfe 40%, #dbeafe 60%, #dbeafe 100%)", backgroundSize: "200% 100%" } : undefined}
                       >
                         <span className="flex flex-col">
                           {meal.status === "processing" && Date.now() - meal.ts < 90_000 ? (
@@ -1128,7 +1191,8 @@ export default function HomeScreen() {
                       </button>
                       <button
                         type="button"
-                        className={`rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50 ${meals.manualAnalysing ? "animate-pulse" : ""}`}
+                        className={`rounded-xl px-4 py-2 text-xs font-semibold text-white transition disabled:opacity-50 ${meals.manualAnalysing ? "animate-shimmer" : "bg-primary hover:bg-primary/90"}`}
+                        style={meals.manualAnalysing ? { background: "linear-gradient(90deg, #6FA8FF 0%, #93c5fd 40%, #6FA8FF 60%, #6FA8FF 100%)", backgroundSize: "200% 100%" } : undefined}
                         onClick={meals.analyzeManualText}
                         disabled={meals.manualAnalysing || !meals.manualText.trim()}
                       >

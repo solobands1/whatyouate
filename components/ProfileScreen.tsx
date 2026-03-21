@@ -847,7 +847,7 @@ export default function ProfileScreen() {
         </Card>
       </div>
 
-      <BottomNav current="profile" />
+      <BottomNav current="home" />
 
       {editingName && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">

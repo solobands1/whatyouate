@@ -323,7 +323,7 @@ export default function InsightsPage() {
           <div className="mb-4 animate-pulse rounded-2xl bg-ink/10 p-5" style={{ height: 120 }} />
           <div className="animate-pulse rounded-2xl bg-ink/10 p-5" style={{ height: 120 }} />
         </div>
-        <BottomNav current="summary" />
+        <BottomNav current="profile" />
       </div>
     );
   }
@@ -361,23 +361,14 @@ export default function InsightsPage() {
       />
       <div className="mx-auto flex min-h-screen max-w-md flex-col px-5 pb-24 pt-7">
         <header className="mb-6" data-tour="insights-header">
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-2xl font-semibold text-ink">Patterns</h1>
-              <p className="mt-1 text-sm text-muted/70">{hasEnoughData ? "What I'm noticing in your food over time." : "Patterns emerge after a few more days of logging."}</p>
-              {!hasEnoughData && (
-                <div className="mt-2 inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] text-amber-700">
-                  Real data appears after a few more meals
-                </div>
-              )}
-            </div>
-            <button
-              type="button"
-              className="text-xs font-semibold text-ink/70 underline"
-              onClick={() => router.push("/summary")}
-            >
-              Back
-            </button>
+          <div>
+            <h1 className="text-2xl font-semibold text-ink">Patterns</h1>
+            <p className="mt-1 text-sm text-muted/70">{hasEnoughData ? "What I'm noticing in your food over time." : "Patterns emerge after a few more days of logging."}</p>
+            {!hasEnoughData && (
+              <div className="mt-2 inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] text-amber-700">
+                Real data appears after a few more meals
+              </div>
+            )}
           </div>
         </header>
 
@@ -461,7 +452,7 @@ export default function InsightsPage() {
         </Card>
       </div>
 
-      <BottomNav current="summary" />
+      <BottomNav current="profile" />
 
       {activeNutrient && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
