@@ -38,28 +38,28 @@ function patternBarWidth(label: string) {
 
 const NUTRIENT_INFO: Record<string, string> = {
   "Macros":
-    "Averages from your last 7 days of logged meals. Calories and protein have a suggested range based on your profile and goal. Carbs and fat are shown as observed patterns — no strict target.",
-  Iron: "Supports steady energy and daily stamina. It tends to show up in red meat, beans, lentils, and leafy greens. A stronger pattern can mean more of those foods are in your routine.",
-  Magnesium: "Supports calm energy and recovery. Often found in nuts, seeds, beans, whole grains, and dark greens. A low appearance can mean fewer of those foods lately.",
-  "Vitamin D": "Supports mood, energy, and overall balance. It can be harder to get from food alone, but fatty fish, eggs, and fortified foods help.",
-  Fiber: "Supports digestion, fullness, and steady energy. It shows up with fruits, vegetables, beans, and whole grains.",
-  B12: "Supports energy and focus. Common in animal foods and fortified options. Low appearance may simply mean fewer of those sources recently.",
-  Calcium: "Supports steady strength and daily resilience. Often from dairy or fortified alternatives, plus some greens and beans.",
-  Potassium: "Supports hydration balance and steady energy. Often found in fruits, vegetables, potatoes, and beans.",
-  "Omega-3": "Supports brain and mood balance. Often from fatty fish, chia, flax, and walnuts.",
-  "Vitamin C": "Supports recovery and vitality. Common in fruits, peppers, and many vegetables.",
-  Folate: "Supports steady energy and overall balance. Often found in leafy greens, legumes, and fortified grains.",
-  Niacin: "Supports energy use from food. Often present in meats, legumes, and whole grains.",
-  Riboflavin: "Supports energy use from food. Found in dairy, eggs, almonds, and greens.",
-  Thiamin: "Supports energy metabolism. Often found in whole grains, legumes, and seeds.",
-  Zinc: "Supports recovery and everyday resilience. Found in meats, legumes, seeds, and whole grains.",
-  Selenium: "Supports overall balance. Often in seafood, eggs, and grains.",
-  "Vitamin A": "Supports vision and overall balance. Often found in colorful vegetables and some dairy foods.",
-  "Vitamin K": "Supports everyday balance. Common in leafy greens and some vegetable oils.",
-  Sodium: "Supports hydration balance. It often rises with prepared or salted foods—useful to notice patterns.",
-  "Vitamin E": "Supports cell protection and steady recovery. Often found in nuts, seeds, and plant oils.",
-  Copper: "Supports energy pathways and balance. Found in nuts, seeds, legumes, and whole grains.",
-  "Vitamin B6": "Supports energy use and mood balance. Found in poultry, fish, potatoes, and bananas."
+    "Averages from your last 7 days of logged meals. Calories and protein have a suggested range based on your profile and goal. Carbs and fat are shown as observed patterns · no strict target.",
+  Iron: "Iron carries oxygen in your blood. Low iron is one of the most common deficiencies and shows up as fatigue, brain fog, and feeling cold. Red meat and shellfish absorb best. Plant sources like lentils and spinach absorb better when eaten with vitamin C.",
+  Magnesium: "Involved in over 300 body processes including sleep quality, muscle function, and blood sugar regulation. Many people fall short without knowing it. Best sources are pumpkin seeds, dark chocolate, almonds, black beans, and leafy greens.",
+  "Vitamin D": "Critical for bone health, immune function, and mood. Food sources are limited to fatty fish, egg yolks, and fortified milk, and most people in northern climates don't get enough from food alone. Sunlight is the main source, and supplementation is often worth considering.",
+  Fiber: "Feeds beneficial gut bacteria, slows digestion to keep you full, and helps regulate blood sugar and cholesterol. Most people eat far less than the recommended 25–38g/day. Best sources are legumes, whole grains, vegetables, and fruit with the skin on.",
+  B12: "Supports energy, focus, and nervous system health. Found almost exclusively in animal products like meat, fish, eggs, and dairy, or in fortified foods like certain cereals and plant milks. Vegans and vegetarians are most at risk of low intake.",
+  Calcium: "Essential for bone density, muscle contraction, and nerve signaling. Dairy is the most concentrated source, but kale, bok choy, tofu made with calcium sulfate, and fortified plant milks are solid alternatives. Vitamin D is needed to absorb it properly.",
+  Potassium: "Regulates fluid balance, blood pressure, and muscle contractions including your heart. Most people don't get enough. Potatoes, sweet potatoes, avocados, and beans are all higher sources than the famous banana.",
+  "Omega-3": "An essential fat your body can't produce on its own. It's critical for brain function, reducing inflammation, and heart health. Fatty fish like salmon, sardines, and mackerel are far more bioavailable than plant sources like flax and chia, which require conversion.",
+  "Vitamin C": "Essential for collagen production, immune defense, and helps absorb iron from plant foods. Your body can't store it, so daily intake matters. Bell peppers, kiwi, broccoli, and strawberries are all higher sources than orange juice.",
+  Folate: "Critical for cell division and DNA synthesis, and especially important before and during pregnancy. Also supports mood and energy. Best sources are lentils, chickpeas, asparagus, and leafy greens. The synthetic form in fortified foods absorbs more readily.",
+  Niacin: "Helps convert food into energy and supports DNA repair. Deficiency is rare but can cause fatigue and skin issues. Chicken, tuna, salmon, and peanuts are among the richest sources.",
+  Riboflavin: "Helps convert food into usable energy and supports antioxidant activity. Low intake can cause fatigue, mouth sores, and light sensitivity. Best sources are dairy, eggs, beef liver, almonds, and leafy greens.",
+  Thiamin: "Helps your body turn carbohydrates into energy and is essential for nerve function. Deficiency is more likely in people who drink heavily or eat mostly refined carbs. Found in whole grains, pork, legumes, and nuts.",
+  Zinc: "Needed for immune function, wound healing, taste and smell, and hormone health. Men need more than women. Red meat and shellfish (especially oysters) are the richest sources. Plant sources like legumes and seeds are less bioavailable.",
+  Selenium: "A powerful antioxidant that supports thyroid function and immune health. Just 1–2 Brazil nuts a day covers your daily needs. Also found in seafood, eggs, and whole grains.",
+  "Vitamin A": "Essential for night vision, skin health, and immune function. Found as retinol in liver and dairy, and as beta-carotene in orange and yellow vegetables and leafy greens. Eating fat with plant sources helps your body absorb it.",
+  "Vitamin K": "Critical for blood clotting and bone mineralization. There are two forms: K1 comes from leafy greens, and K2 from fermented foods and animal products. K2 is specifically studied for bone and heart health.",
+  Sodium: "Necessary for fluid balance and nerve signaling, but most people already get more than enough. It tends to be higher with processed, packaged, and restaurant foods. Worth noticing if it's consistently elevated.",
+  "Vitamin E": "A fat-soluble antioxidant that protects cells from damage and supports immune function. Deficiency is rare but more common with very low-fat diets. Best sources are sunflower seeds, almonds, wheat germ, and avocado.",
+  Copper: "Works with iron to form red blood cells and supports bone, immune, and nerve health. Deficiency can mimic iron deficiency anemia. Shellfish, liver, dark chocolate, nuts, and seeds are the best sources.",
+  "Vitamin B6": "Involved in protein metabolism, neurotransmitter production (serotonin, dopamine), and immune function. Low levels can affect mood and energy. Found in poultry, fish, potatoes, bananas, and chickpeas. Chickpeas are one of the richest plant sources."
 };
 
 export default function InsightsPage() {
@@ -417,7 +417,7 @@ export default function InsightsPage() {
         <Card className="mt-6" data-tour="insights-micro">
           <div className="flex items-center justify-between">
             <p className="text-xs uppercase tracking-wide text-muted/70" data-tour="insights-micro-title">
-              What I'm seeing
+              Micronutrients
             </p>
             {!hasEnoughData && <p className="text-[11px] uppercase tracking-wide text-muted/50">Preview</p>}
           </div>
@@ -447,7 +447,9 @@ export default function InsightsPage() {
             ))}
           </div>
           <p className="mt-4 text-xs text-muted/70">
-            Longer bars mean this nutrient shows up more in what you eat. Use it as a gentle prompt — not a score.
+            These bars show how often each nutrient appears across your recent meals. A longer bar means it's showing up regularly in what you eat. A shorter one just means fewer of those foods lately, not that something is wrong. Tap the{" "}
+            <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-ink/10 text-[10px] font-semibold text-ink/60 align-middle">i</span>
+            {" "}next to any nutrient to learn more about it.
           </p>
         </Card>
       </div>

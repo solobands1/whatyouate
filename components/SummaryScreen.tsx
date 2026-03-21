@@ -602,20 +602,20 @@ export default function SummaryScreen() {
               <p className="text-sm text-muted/60">Log your first meal and I'll start building your picture.</p>
             ) : dayCount < 5 || mealCount < 10 ? (
               <p className="text-sm font-semibold text-ink/80">
-                {Math.min(dayCount, 7)} of 7 days logged — still learning your patterns.
+                {Math.min(dayCount, 7)} of 7 days logged · still learning your patterns.
               </p>
             ) : (
               <>
                 <p className="text-sm font-semibold text-ink/80">
-                  {Math.min(dayCount, 7)} of 7 days logged — solid.
+                  {Math.min(dayCount, 7)} of 7 days logged · solid.
                 </p>
                 <p className="text-sm font-semibold text-ink/80">
                   {(() => {
                     const base = `Averaging ${avgWeekCalories} kcal · ${avgWeekProtein}g protein`;
                     if (!gentleTargetsDisplay?.calories || !avgWeekCalories) return `${base}.`;
-                    if (avgWeekCalories > gentleTargetsDisplay.calories * 1.1) return `${base} — a bit high.`;
-                    if (avgWeekCalories < gentleTargetsDisplay.calories * 0.9) return `${base} — a bit light.`;
-                    return `${base} — looking steady.`;
+                    if (avgWeekCalories > gentleTargetsDisplay.calories * 1.1) return `${base} · a bit high.`;
+                    if (avgWeekCalories < gentleTargetsDisplay.calories * 0.9) return `${base} · a bit light.`;
+                    return `${base} · looking steady.`;
                   })()}
                 </p>
               </>
@@ -649,7 +649,7 @@ export default function SummaryScreen() {
             </div>
           ) : mealCount < 5 ? (
             <div className="mt-3 space-y-1">
-              <p className="text-sm text-ink/70">Getting started — log {5 - mealCount} more meal{5 - mealCount !== 1 ? "s" : ""} and I'll have my first read on your patterns.</p>
+              <p className="text-sm text-ink/70">Getting started · log {5 - mealCount} more meal{5 - mealCount !== 1 ? "s" : ""} and I'll have my first read on your patterns.</p>
               <div className="mt-2 flex gap-1">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <div key={i} className={`h-1.5 flex-1 rounded-full ${i < mealCount ? "bg-primary/60" : "bg-ink/10"}`} />
@@ -681,7 +681,7 @@ export default function SummaryScreen() {
                   </div>
                 ))
               ) : (
-                <p className="text-muted/70">No nudges yet — keep logging.</p>
+                <p className="text-muted/70">No nudges yet · keep logging.</p>
               )}
             </div>
           )}
@@ -719,7 +719,7 @@ export default function SummaryScreen() {
               </button>
             </div>
             <p className="mt-2 text-sm text-muted/70">
-              Based on your recent meals, weekly patterns, and your goal — here’s what I’m noticing.
+              Based on your recent meals, weekly patterns, and your goal · here’s what I’m noticing.
             </p>
             <div className="mt-3 max-h-72 space-y-4 overflow-y-auto text-sm text-ink/80">
               <div>

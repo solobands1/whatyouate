@@ -330,7 +330,7 @@ export default function HomeScreen() {
     const handler = (e: Event) => {
       const { mealId, rateLimited } = (e as CustomEvent<{ mealId: string; rateLimited: boolean }>).detail ?? {};
       setLoadError(rateLimited
-        ? "Too many requests — please wait a moment before adding another photo."
+        ? "Too many requests · please wait a moment before adding another photo."
         : "Photo analysis failed. Please try again."
       );
       if (mealId && !rateLimited) {
@@ -940,7 +940,7 @@ export default function HomeScreen() {
                 ? "Based on your recent intake pattern, adjusted for your goal."
                 : profile?.weight && profile?.activityLevel
                 ? "Based on your weight, activity level, and goal."
-                : "Standard estimate — complete your profile to personalize."}
+                : "Standard estimate · complete your profile to personalize."}
             </p>
           )}
           {streak >= 2 && (
@@ -1370,10 +1370,10 @@ export default function HomeScreen() {
               {(() => {
                 const conf = quickConfirmMeal.analysisJson?.confidence_overall_0_1 ?? 1;
                 const wide = quickConfirmMeal.analysisJson?.precision_mode_available === true;
-                if (conf < 0.55) return "The food was hard to identify clearly — confirm or correct the details.";
-                if (conf < 0.7) return "Portion size was tricky to estimate — confirm or adjust as needed.";
-                if (wide) return "This meal has a wide calorie range — confirm to improve accuracy.";
-                return "AI wasn't sure — confirm or correct the details.";
+                if (conf < 0.55) return "The food was hard to identify clearly · confirm or correct the details.";
+                if (conf < 0.7) return "Portion size was tricky to estimate · confirm or adjust as needed.";
+                if (wide) return "This meal has a wide calorie range · confirm to improve accuracy.";
+                return "AI wasn't sure · confirm or correct the details.";
               })()}
             </p>
             {quickConfirmMeal.imageThumb && (

@@ -465,6 +465,16 @@ export default function ProfileScreen() {
           />
         )}
         <header className="mb-4" data-tour="profile-header">
+          <button
+            type="button"
+            className="mb-3 flex items-center gap-1 text-xs font-medium text-muted/60 hover:text-ink transition"
+            onClick={() => router.push("/")}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+            Back
+          </button>
           <div className="flex items-start justify-between">
             <div>
               <h1 className="text-2xl font-semibold text-ink">Profile</h1>
@@ -742,7 +752,7 @@ export default function ProfileScreen() {
             <p className="text-[11px] font-semibold uppercase tracking-wide text-ink/70">
               Foods I avoid
             </p>
-            <p className="mt-1 text-[11px] text-muted/60">Select all that apply — nudges won't suggest these.</p>
+            <p className="mt-1 text-[11px] text-muted/60">Select all that apply · nudges won't suggest these.</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {[
                 "Vegetarian",
@@ -836,7 +846,7 @@ export default function ProfileScreen() {
             className="mt-3 w-full rounded-xl border border-ink/10 px-4 py-2.5 text-xs font-semibold text-muted/70"
             onClick={handleClear}
           >
-            Clear All Data - Start Fresh
+            Clear All Data · Start Fresh
           </button>
           <button
             className="mt-3 w-full rounded-xl border border-ink/10 px-4 py-2.5 text-xs font-semibold text-muted/70"
@@ -904,7 +914,7 @@ export default function ProfileScreen() {
               <div>
                 <p className="text-sm font-semibold text-ink">Goal direction</p>
                 <p className="mt-2 text-sm text-muted/70">
-                  This sets a gentle direction for your ranges and nudges. It’s not a strict plan—just
+                  This sets a gentle direction for your ranges and nudges. It’s not a strict plan · just
                   a soft bias based on what you want. Everything is tuned to help improve nutrients and
                   how you feel over time while moving toward your direction.
                 </p>
@@ -939,7 +949,7 @@ export default function ProfileScreen() {
               <div>
                 <p className="text-sm font-semibold text-ink">Anything else?</p>
                 <p className="mt-2 text-sm text-muted/70">
-                  Use this to share anything that doesn't fit the other fields — like a specific focus area, a health condition, or how you typically eat. It helps keep nudges more aligned with your life.
+                  Use this to share anything that doesn't fit the other fields · like a specific focus area, a health condition, or how you typically eat. It helps keep nudges more aligned with your life.
                 </p>
               </div>
               <button
