@@ -670,7 +670,7 @@ export default function ProfileScreen() {
                   { value: "male", label: "Male" },
                   { value: "female", label: "Female" },
                   { value: "other", label: "Other" },
-                  { value: "prefer_not", label: "Prefer not" }
+                  { value: "prefer_not", label: "Rather not say" }
                 ] as const).map((option) => (
                   <button
                     key={option.value}

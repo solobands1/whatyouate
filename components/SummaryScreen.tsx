@@ -403,7 +403,7 @@ export default function SummaryScreen() {
     if (!user || !nudgesLoadedRef.current || visibleNotes.length === 0) return;
     const existing = new Set(nudges.map((n) => n.message));
     const missing = visibleNotes.filter(
-      (note) => !existing.has(note.message) && !savedThisSessionRef.current.has(note.message)
+      (note) => note.type !== "on_track" && !existing.has(note.message) && !savedThisSessionRef.current.has(note.message)
     );
     if (missing.length === 0) return;
     missing.forEach((note) => {
@@ -415,33 +415,93 @@ export default function SummaryScreen() {
     pruneNudges(user.id).catch(() => {});
   }, [user, visibleNotes, nudges]);
 
+  const weeklyVariant = (variants: string[]): string => {
+    const week = Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000));
+    return variants[week % variants.length];
+  };
+
   const getNudgeWhy = (type: ComputedNudge["type"], goal: string): string => {
     switch (type) {
       case "protein_low_critical":
-        if (goal === "gain") return "Protein is the building block for nearly everything your body does • muscle growth, immune function, hormone production, even keeping your hair and skin healthy. When it's consistently this low, your body starts rationing, and building takes a back seat to just maintaining what you have.";
-        if (goal === "lose") return "Protein is the most important thing to protect when you're in a deficit. It keeps you fuller longer, preserves muscle while you lose fat, and helps your metabolism stay active rather than slowing down to compensate.";
-        return "Protein does a lot more than build muscle • it regulates hormones, supports your immune system, and keeps energy levels stable throughout the day. Getting it consistently right is one of the highest-leverage things you can do for your overall health.";
+        if (goal === "gain") return weeklyVariant([
+          "When protein is this low, your muscles can't fully recover and grow between sessions.",
+          "Consistently short on protein means your training effort isn't fully converting to results.",
+        ]);
+        if (goal === "lose") return weeklyVariant([
+          "Low protein in a deficit means more weight loss comes from muscle rather than fat.",
+          "Protein preserves muscle and keeps hunger manageable • both matter a lot when cutting.",
+        ]);
+        return weeklyVariant([
+          "Protein supports muscle maintenance, immune health, and steady energy throughout the day.",
+          "Consistently low protein affects energy, mood, and how your body functions day to day.",
+        ]);
       case "protein_low":
-        if (goal === "gain") return "Protein is what your body uses to repair and build after every session. A consistent shortfall means slower recovery, and over time that compounds • progress feels harder even when effort stays the same.";
-        if (goal === "lose") return "Keeping protein up while you're cutting is one of the most effective levers you have. It keeps hunger more manageable, slows muscle loss, and means the weight that comes off is more likely to be fat than lean tissue.";
-        return "Protein isn't just about muscle • it supports mood stability, immune health, and steady energy. Closing this gap doesn't need to be complicated, and most people notice the difference quickly once they do.";
+        if (goal === "gain") return weeklyVariant([
+          "A consistent protein shortfall limits recovery and slows progress more than most people realise.",
+          "Even a small regular gap in protein compounds over time • your muscles need it to repair properly.",
+        ]);
+        if (goal === "lose") return weeklyVariant([
+          "Keeping protein up while cutting helps preserve muscle and makes the deficit easier to sustain.",
+          "Protein keeps you fuller and protects muscle • both matter a lot when you're trying to lose.",
+        ]);
+        return weeklyVariant([
+          "Getting protein consistently right is one of the simplest ways to feel more energised through the week.",
+          "Protein does a lot beyond muscle • energy, mood, and immune health all benefit from getting it right.",
+        ]);
       case "protein_close":
-        if (goal === "gain") return "You're tracking really well • a small, consistent top-up each day is what separates steady progress from plateaus. The gap is small enough that closing it is more about habit than any big change.";
-        return "You're nearly there, which is worth acknowledging. Finishing the job on protein means your body has everything it needs to function at its best • energy, immune support, and feeling good day to day.";
+        if (goal === "gain") return weeklyVariant([
+          "You're doing well • a small consistent top-up is the difference between steady progress and plateaus.",
+          "The gap is small enough that closing it is more about habit than any big change.",
+        ]);
+        return weeklyVariant([
+          "You're nearly there • a small consistent add is all it takes to keep things dialled in.",
+          "One regular addition closes it • and you'll likely feel the difference in your energy.",
+        ]);
       case "calorie_low":
-        if (goal === "gain") return "Your body needs a reliable surplus to grow • when intake runs consistently below target, it goes into maintenance mode and building stalls. It also affects your mood, focus, and hormonal balance more than most people realise.";
-        if (goal === "lose") return "Being too far under your target for too long tends to backfire. Your metabolism adapts, energy crashes, and cravings spike • which makes the deficit harder to maintain. A slightly higher intake often leads to better, more sustainable results.";
-        return "Consistently low intake affects more than just weight • it impacts energy, concentration, mood, and how well your body handles stress. Even a small consistent add can shift how you feel across the whole week.";
+        if (goal === "gain") return weeklyVariant([
+          "Your body needs a consistent surplus to build • running light on calories works directly against that.",
+          "When intake stays below target, your body goes into maintenance mode and building slows or stalls.",
+        ]);
+        if (goal === "lose") return weeklyVariant([
+          "Too far under your target for too long tends to backfire • metabolism adapts and energy crashes.",
+          "A slightly higher intake often leads to better results than going too deep • your body responds better.",
+        ]);
+        return weeklyVariant([
+          "Running consistently light affects energy, concentration, and how well you handle your week.",
+          "Low intake has a bigger impact on mood and energy than most people expect.",
+        ]);
       case "calorie_high":
-        if (goal === "lose") return "Small consistent surpluses compound more than people expect • 150 kcal over target each day adds up to over 1000 kcal across a week. The good news is you don't need big changes to shift the pattern, just consistent small ones.";
-        return "Overall health is best supported by intake that stays in a reasonable range consistently, rather than large swings day to day. It's not urgent, but keeping an eye on the weekly pattern is worth the habit.";
+        if (goal === "lose") return weeklyVariant([
+          "Small consistent surpluses add up fast • even 150 kcal over target daily is over 1000 kcal across a week.",
+          "The pattern across the week matters more than any single day • small adjustments make the difference.",
+        ]);
+        return weeklyVariant([
+          "It's the consistent weekly pattern that shapes results • day to day variation is normal.",
+          "Keeping an eye on the weekly trend is worth the habit • no single day matters that much.",
+        ]);
       case "workout_fuel_low":
       case "training_fuel_low":
-        return "When you're training regularly, your body's energy demands are higher than most people account for. Under-fuelling affects not just performance but also sleep quality, hormone balance, immune function, and how you feel between sessions • it's a health issue as much as a fitness one.";
+        return weeklyVariant([
+          "Your body's energy demands go up more than most people account for on active days • under-fuelling slows recovery.",
+          "Training on low fuel affects sleep, mood, and how you feel for days after • not just the session itself.",
+        ]);
       case "workout_missing":
-        return "Tracking your sessions helps the app give you much more accurate intake targets. An active person who doesn't log workouts can end up with goals calibrated for a sedentary lifestyle • meaning the targets you're hitting might actually be lower than your body needs.";
+        return weeklyVariant([
+          "Without logged sessions, your intake targets may be calibrated too low for what your body is actually doing.",
+          "An active person who doesn't log workouts can end up with goals set for a sedentary lifestyle.",
+        ]);
       case "micronutrient":
-        return "Micronutrients don't get the same attention as protein and calories, but they quietly shape a lot • energy levels, immune resilience, hormone regulation, and how well you sleep. When one shows up low consistently, it's usually a variety gap in your diet rather than anything serious, and it's easy to address.";
+        return weeklyVariant([
+          "Micronutrients quietly shape energy, mood, and recovery • easy to overlook but worth addressing.",
+          "When a nutrient shows up low consistently, it's usually a variety gap • easy to fix with a few regular additions.",
+        ]);
+      case "fat_low":
+        return weeklyVariant([
+          "Dietary fat supports hormone production, brain health, and vitamin absorption • it's not just about calories.",
+          "Healthy fats are essential for absorbing fat-soluble vitamins and keeping hormones balanced.",
+        ]);
+      case "on_track":
+        return "";
     }
   };
 
@@ -463,34 +523,75 @@ export default function SummaryScreen() {
       case "workout_missing":
       case "micronutrient":
         return [];
+      case "fat_low":
+        return ["+ healthy fats"];
+      case "on_track":
+        return [];
     }
   };
 
   const getNudgeAction = (type: ComputedNudge["type"], goal: string): string => {
     switch (type) {
       case "protein_low_critical":
-        return goal === "gain"
-          ? "Aim to include a solid protein source with every meal • not just dinner. Breakfast and lunch are where most people fall short. Even a small addition to each consistently adds up to a meaningful difference by the end of the week."
-          : "Adding a protein-focused snack between two of your main meals tends to be the easiest change that actually sticks. It doesn't mean overhauling your diet • just plugging one consistent gap each day.";
+        if (goal === "gain") return weeklyVariant([
+          "Add a protein source to every meal • breakfast and lunch are where most people fall short.",
+          "Spreading protein across all three meals beats saving it for dinner • try adding it earlier in the day.",
+        ]);
+        return weeklyVariant([
+          "Adding a protein-focused snack between two main meals is usually the change that sticks best.",
+          "Focus on a protein hit at each meal rather than one big serving • more effective and keeps hunger down.",
+        ]);
       case "protein_low":
-        return "Try making sure each meal has at least one clear protein source. It doesn't need to be a big change • pairing something with a protein hit at each sitting is usually enough to close a gap like this.";
+        return weeklyVariant([
+          "Pairing each meal with a solid protein source is usually enough to close a gap like this.",
+          "A small protein add at each meal tends to compound quickly • it doesn't need to be a big change.",
+        ]);
       case "protein_close":
-        return "You're close enough that one small addition on most days will get you there. A consistent habit is more important than a big one • even a small add at breakfast or as an afternoon snack tends to be enough.";
+        return weeklyVariant([
+          "One consistent protein add on most days closes it • a small habit is all it takes.",
+          "You're close enough that a single daily addition gets you there • keep it simple and repeatable.",
+        ]);
       case "calorie_low":
-        return goal === "gain"
-          ? "Try increasing the size of two or three existing meals rather than adding a whole new one • it's easier to sustain. A bit more at each sitting tends to compound better than trying to squeeze in extra meals."
-          : "A small, balanced snack between two of your regular meals is usually the most sustainable fix. The goal is just to close the gap without adding stress or changing your whole routine.";
+        if (goal === "gain") return weeklyVariant([
+          "Try bumping up two or three existing meals slightly rather than adding a whole new one.",
+          "A bit more at each sitting tends to be easier to sustain than trying to squeeze in extra meals.",
+        ]);
+        return weeklyVariant([
+          "A small balanced snack between two of your regular meals usually closes the gap without disrupting your routine.",
+          "Adding something small and filling between meals tends to be the most sustainable fix.",
+        ]);
       case "calorie_high":
-        return goal === "lose"
-          ? "Focus on small consistent adjustments rather than big cuts • slightly smaller portions at a couple of meals, skipping an optional extra here and there. Small changes held consistently beat big ones that don't stick."
-          : "No urgent action needed • just stay aware of portions over the next few days and let things even out naturally. You're likely fine across the week.";
+        if (goal === "lose") return weeklyVariant([
+          "Shaving slightly off portions across a couple of meals tends to be more sustainable than cutting foods out.",
+          "Small consistent adjustments beat big restrictions • slightly less at two or three meals a day adds up.",
+        ]);
+        return weeklyVariant([
+          "Keep an eye on portions over the next few days and see if things balance out naturally.",
+          "Nothing urgent • just stay aware of portions and let the weekly pattern even out.",
+        ]);
       case "workout_fuel_low":
       case "training_fuel_low":
-        return "Try eating a bit more on the days you train • even 200–300 kcal extra around your session makes a real difference to how you feel and how well you recover. It's one of the higher-return adjustments you can make.";
+        return weeklyVariant([
+          "Try eating a bit more on the days you train • even a moderate add around your session makes a real difference.",
+          "Adding a small calorie-dense snack around your workout tends to be the highest-return adjustment you can make.",
+        ]);
       case "workout_missing":
-        return "Log your next session right after it finishes • it only takes about 20 seconds and immediately makes your intake targets more accurate. Do it a few times and it becomes automatic.";
+        return weeklyVariant([
+          "Log your next session right after it finishes • it takes 20 seconds and immediately improves your targets.",
+          "Try logging sessions as you go • it shifts your intake targets to match what your body is actually doing.",
+        ]);
       case "micronutrient":
-        return "Try to add a food rich in this nutrient a few times this week • it doesn't need to be every day. The goal is just to start building variety, not to change everything at once. Check the suggestions below for ideas.";
+        return weeklyVariant([
+          "Try adding a food rich in this nutrient a few times this week • small consistent additions tend to stick best.",
+          "Work it in a couple of times this week • gradual variety builds more naturally than big diet changes.",
+        ]);
+      case "fat_low":
+        return weeklyVariant([
+          "Try adding a source of healthy fat to a couple of meals • it doesn't need to be much to make a difference.",
+          "Adding a small amount of healthy fat to meals helps absorb nutrients and keeps energy more stable.",
+        ]);
+      case "on_track":
+        return "";
     }
   };
 
@@ -663,7 +764,7 @@ export default function SummaryScreen() {
                   const why = getNudgeWhy(nudge.type, goal);
                   const action = getNudgeAction(nudge.type, goal);
                   const behavioralChips = getNudgeBehavioralChips(nudge.type, goal);
-                  const showFoodChips = nudge.type !== "workout_missing" && nudge.type !== "calorie_high" && suggestions.length > 0;
+                  const showFoodChips = nudge.type !== "workout_missing" && nudge.type !== "calorie_high" && nudge.type !== "on_track" && suggestions.length > 0;
                   const showChips = behavioralChips.length > 0 || showFoodChips;
                   return (
                     <div key={nudge.type} className="rounded-xl border border-primary/60 bg-primary/5 px-4 py-3 space-y-2.5">

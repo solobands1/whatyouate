@@ -7,7 +7,7 @@ export type NudgeType =
   | "calorie_low" | "calorie_high"
   | "protein_low_critical" | "protein_low" | "protein_close"
   | "workout_missing" | "workout_fuel_low" | "training_fuel_low"
-  | "micronutrient";
+  | "micronutrient" | "fat_low" | "on_track";
 
 export interface NudgeData {
   actual?: number;
@@ -302,6 +302,12 @@ function pickVariant(variants: string[]): string {
   return variants[new Date().getDate() % variants.length];
 }
 
+// Picks a variant by ISO week number so messages rotate weekly
+function pickWeekly(variants: string[]): string {
+  const week = Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000));
+  return variants[week % variants.length];
+}
+
 export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], profile?: UserProfile) {
   if (meals.length < 5) return [];
 
@@ -316,6 +322,10 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
     weekSummary.map((d) => d.totals.protein_g_min),
     weekSummary.map((d) => d.totals.protein_g_max)
   );
+  const avgWeekFat = avgRangeMidpoint(
+    weekSummary.map((d) => d.totals.fat_g_min),
+    weekSummary.map((d) => d.totals.fat_g_max)
+  );
   const todayTotals = summarizeDay(meals);
 
   type ScoredNudge = { message: string; priority: number; type: NudgeType; data: NudgeData };
@@ -327,21 +337,16 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
 
   const gentleTargets = computeGentleTargets(meals, profile);
   if (profile && dayCount >= 5 && mealCount >= 5 && avgWeekCalories && gentleTargets?.calories) {
-    const todayMid = Math.round((todayTotals.calories_min + todayTotals.calories_max) / 2);
-    const hasToday = todayMid > 0;
-    const todayHasMeaningfulData = todayMid > 600;
-    const todayLow = hasToday && todayHasMeaningfulData && todayMid < gentleTargets.calories * 0.85;
-    const todayHigh = hasToday && todayHasMeaningfulData && todayMid > gentleTargets.calories * 1.15;
     const weekLow = avgWeekCalories < gentleTargets.calories * 0.9;
     const weekHigh = avgWeekCalories > gentleTargets.calories * 1.1;
-    if (todayLow && weekLow) {
+    if (weekLow) {
       nudges.push({
         message: `You've been averaging around ${Math.round(avgWeekCalories)} kcal a day this week • your target is closer to ${gentleTargets.calories} kcal`,
         type: "calorie_low",
         data: { actual: Math.round(avgWeekCalories), target: gentleTargets.calories },
         priority: 2 + calorieBias
       });
-    } else if (todayHigh && weekHigh) {
+    } else if (weekHigh) {
       nudges.push({
         message: `You've been eating around ${Math.round(avgWeekCalories)} kcal a day this week • your target is around ${gentleTargets.calories} kcal`,
         type: "calorie_high",
@@ -380,6 +385,7 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
   const recentWorkoutCount = workouts.filter((w) => Date.now() - (w.endTs ?? w.startTs) <= 7 * 24 * 60 * 60 * 1000).length;
 
   // Activity-level nudges
+  let workoutFuelNudgePushed = false;
   if (profile?.activityLevel === "very_active" || profile?.activityLevel === "moderately_active") {
     if (recentWorkoutCount === 0 && mealCount >= 10) {
       nudges.push({
@@ -395,22 +401,25 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
         data: { actual: Math.round(avgWeekCalories), target: gentleTargets?.calories },
         priority: 2
       });
+      workoutFuelNudgePushed = true;
     }
   }
 
-  const signals = meals
+  // Micronutrient nudges — require low signal across 3+ distinct days (not just 3 meals)
+  const signalsWithTs = meals
     .filter((meal) => Date.now() - meal.ts <= 30 * 24 * 60 * 60 * 1000)
-    .flatMap((meal) => meal.analysisJson.micronutrient_signals ?? []);
-  const lowSignals = signals.filter((signal) => signal.signal === "low_appearance");
+    .flatMap((meal) => (meal.analysisJson.micronutrient_signals ?? []).map((s) => ({ ...s, ts: meal.ts })));
+  const lowSignals = signalsWithTs.filter((s) => s.signal === "low_appearance");
   if (lowSignals.length) {
-    const counts = new Map<string, number>();
+    const dayCounts = new Map<string, Set<string>>();
     lowSignals.forEach((signal) => {
       const key = String(signal.nutrient || "").toLowerCase();
       if (!key) return;
-      counts.set(key, (counts.get(key) ?? 0) + 1);
+      if (!dayCounts.has(key)) dayCounts.set(key, new Set());
+      dayCounts.get(key)!.add(dayKeyFromTs(signal.ts));
     });
-    counts.forEach((count, nutrient) => {
-      if (count >= 3) {
+    dayCounts.forEach((days, nutrient) => {
+      if (days.size >= 3) {
         nudges.push({
           message: `Looks like ${nutrient} has been a bit low across your recent meals • it's one of those things that's easy to miss until it adds up`,
           type: "micronutrient",
@@ -421,7 +430,9 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
     });
   }
 
+  // Training fuel — only fires if workout_fuel_low hasn't already (prevents duplicate)
   if (
+    !workoutFuelNudgePushed &&
     gentleTargets?.calories &&
     recentWorkoutCount >= 2 &&
     avgWeekCalories < gentleTargets.calories * 0.9
@@ -431,6 +442,34 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
       type: "training_fuel_low",
       data: { actual: Math.round(avgWeekCalories), target: gentleTargets?.calories },
       priority: 2
+    });
+  }
+
+  // Fat nudge — only if calories aren't already flagged low (low fat is expected with low calories)
+  const calorieLowFired = nudges.some((n) => n.type === "calorie_low");
+  if (profile && avgWeekCalories > 800 && avgWeekFat > 0 && !calorieLowFired) {
+    const fatTarget = (avgWeekCalories * 0.3) / 9;
+    if (avgWeekFat < fatTarget * 0.7) {
+      nudges.push({
+        message: `Fat intake has been around ${Math.round(avgWeekFat)}g a day this week • healthy fats support hormones, brain function, and vitamin absorption`,
+        type: "fat_low",
+        data: { actual: Math.round(avgWeekFat), target: Math.round(fatTarget) },
+        priority: 1
+      });
+    }
+  }
+
+  // On-track — fires only when no other nudges found and there's enough meaningful data
+  if (nudges.length === 0 && profile?.weight && dayCount >= 5 && avgWeekCalories > 0) {
+    nudges.push({
+      message: pickWeekly([
+        "Intake is looking solid this week",
+        "Your numbers are in a good place this week",
+        "Things are tracking well this week",
+      ]),
+      type: "on_track",
+      data: {},
+      priority: 0
     });
   }
 
