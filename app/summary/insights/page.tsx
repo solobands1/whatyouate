@@ -5,7 +5,7 @@ import Joyride, { CallBackProps, STATUS, type Step } from "react-joyride";
 import { useRouter } from "next/navigation";
 import type { MealLog, UserProfile } from "../../../lib/types";
 import { summarizeWeek } from "../../../lib/summary";
-import { estimateMaintenance, proteinTargetPerKg } from "../../../lib/digestEngine";
+import { computeGentleTargets, normalizeWeightToKg, proteinTargetPerKg } from "../../../lib/digestEngine";
 import BottomNav from "../../../components/BottomNav";
 import Card from "../../../components/Card";
 import { useAuth } from "../../../components/AuthProvider";
@@ -161,7 +161,8 @@ export default function InsightsPage() {
 
   const proteinPattern = useMemo(() => {
     if (profile?.weight) {
-      const target = profile.weight * proteinTargetPerKg(profile);
+      const weightKg = normalizeWeightToKg(profile.weight, profile.units);
+      const target = weightKg * proteinTargetPerKg(profile);
       if (avgProtein < target * 0.6) return "Low protein appearance";
       if (avgProtein < target * 0.9) return "Moderate protein pattern";
       return "Strong protein pattern";
@@ -169,7 +170,7 @@ export default function InsightsPage() {
     if (avgProtein < 60) return "Low protein appearance";
     if (avgProtein < 100) return "Moderate protein pattern";
     return "Strong protein pattern";
-  }, [avgProtein, profile?.weight]);
+  }, [avgProtein, profile]);
 
   const energyPattern = useMemo(() => {
     if (avgCalories < 1600) return "Light intake pattern";
@@ -213,27 +214,8 @@ export default function InsightsPage() {
 
   const hasEnoughData = dayCount >= 5 && mealCount >= 5;
 
-  const gentleTargets = useMemo(() => {
-    if (!profile) return null;
-    const goal = profile.goalDirection;
-    const calNudge = goal === "gain" ? 0.08 : goal === "lose" ? -0.08 : 0;
-    // Match digestEngine.ts computeGentleTargets: switch to data-driven only at >= 10 meals + 5 days
-    if (dayCount >= 5 && mealCount >= 10) {
-      const suggestedCalories = Math.max(0, Math.round(avgCalories * (1 + calNudge)));
-      const weight = profile.weight ?? 0;
-      const proteinTarget = weight ? weight * proteinTargetPerKg(profile) : 0;
-      const proteinNudge = proteinTarget ? avgProtein + Math.round((proteinTarget - avgProtein) * 0.1) : avgProtein;
-      if (!suggestedCalories && !proteinNudge) return null;
-      return { calories: suggestedCalories, protein: Math.round(proteinNudge) };
-    }
-    const maintenance = estimateMaintenance(profile);
-    if (!maintenance) return null;
-    const weight = profile.weight ?? 0;
-    return {
-      calories: Math.round(maintenance * (1 + calNudge)),
-      protein: weight ? Math.round(weight * proteinTargetPerKg(profile)) : 0
-    };
-  }, [profile, dayCount, mealCount, avgCalories, avgProtein]);
+  // Delegate to the single source of truth in digestEngine
+  const gentleTargets = useMemo(() => computeGentleTargets(meals, profile), [meals, profile]);
 
   const gentleTargetsDisplay = gentleTargets;
   const displayAvgCalories = hasEnoughData ? `${avgCalories}` : "—";

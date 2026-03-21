@@ -286,9 +286,13 @@ export default function SummaryScreen() {
     const caloriesLow = caloriesTarget > 0 && avgWeekCalories < caloriesTarget * 0.85;
     const caloriesHigh = caloriesTarget > 0 && avgWeekCalories > caloriesTarget * 1.1;
 
-    const nudgeText = visibleNotes.map((n) => n.message).join(" ").toLowerCase();
-    const nudgeIsProtein = nudgeText.includes("protein");
-    const nudgeIsCalorie = nudgeText.includes("light") || nudgeText.includes("energy") || nudgeText.includes("intake") || nudgeText.includes("calorie") || nudgeText.includes("fuel");
+    const nudgeIsProtein = visibleNotes.some((n) =>
+      n.type === "protein_low_critical" || n.type === "protein_low" || n.type === "protein_close"
+    );
+    const nudgeIsCalorie = visibleNotes.some((n) =>
+      n.type === "calorie_low" || n.type === "calorie_high" ||
+      n.type === "workout_fuel_low" || n.type === "training_fuel_low"
+    );
 
     if (nudgeIsProtein && !nudgeIsCalorie) {
       if (proteinLow && avgWeekProtein > 0)
@@ -360,9 +364,13 @@ export default function SummaryScreen() {
     const caloriesLow = caloriesTarget > 0 && avgWeekCalories < caloriesTarget * 0.85;
     const proteinLow = avgWeekProtein > 0 && avgWeekProtein < gentleTargetsDisplay.protein * 0.85;
 
-    const nudgeText = visibleNotes.map((n) => n.message).join(" ").toLowerCase();
-    const nudgeIsProtein = nudgeText.includes("protein");
-    const nudgeIsCalorie = nudgeText.includes("light") || nudgeText.includes("energy") || nudgeText.includes("intake") || nudgeText.includes("calorie") || nudgeText.includes("fuel");
+    const nudgeIsProtein = visibleNotes.some((n) =>
+      n.type === "protein_low_critical" || n.type === "protein_low" || n.type === "protein_close"
+    );
+    const nudgeIsCalorie = visibleNotes.some((n) =>
+      n.type === "calorie_low" || n.type === "calorie_high" ||
+      n.type === "workout_fuel_low" || n.type === "training_fuel_low"
+    );
 
     if (nudgeIsProtein && !nudgeIsCalorie) {
       if (proteinLow) tips.push(goal === "gain"
@@ -420,9 +428,21 @@ export default function SummaryScreen() {
     return variants[week % variants.length];
   };
 
+  const isVegan = profile?.dietaryRestrictions?.includes("Vegan") ?? false;
+  const isVegetarian = isVegan || (profile?.dietaryRestrictions?.includes("Vegetarian") ?? false);
+  const focusLongevity = (profile?.freeformFocus ?? "").toLowerCase().includes("longevity");
+
   const getNudgeWhy = (type: ComputedNudge["type"], goal: string): string => {
     switch (type) {
       case "protein_low_critical":
+        if (isVegan) return weeklyVariant([
+          "Plant-based protein needs a bit more planning to hit higher targets • combining sources matters more than each food individually.",
+          "Getting enough protein on a vegan diet is doable but takes consistency • variety across legumes, tofu, tempeh, and seeds helps a lot.",
+        ]);
+        if (isVegetarian) return weeklyVariant([
+          "Vegetarian protein sources are solid but often need a bit more volume to hit higher targets.",
+          "Eggs, dairy, and legumes are your strongest protein levers • getting all three working consistently makes a big difference.",
+        ]);
         if (goal === "gain") return weeklyVariant([
           "When protein is this low, your muscles can't fully recover and grow between sessions.",
           "Consistently short on protein means your training effort isn't fully converting to results.",
@@ -436,6 +456,10 @@ export default function SummaryScreen() {
           "Consistently low protein affects energy, mood, and how your body functions day to day.",
         ]);
       case "protein_low":
+        if (isVegan) return weeklyVariant([
+          "A small consistent protein gap on a plant-based diet is common • it usually comes down to volume and variety.",
+          "Most vegan protein sources are lower per serving • stacking two or three sources at each meal closes the gap quickly.",
+        ]);
         if (goal === "gain") return weeklyVariant([
           "A consistent protein shortfall limits recovery and slows progress more than most people realise.",
           "Even a small regular gap in protein compounds over time • your muscles need it to repair properly.",
@@ -491,6 +515,10 @@ export default function SummaryScreen() {
           "An active person who doesn't log workouts can end up with goals set for a sedentary lifestyle.",
         ]);
       case "micronutrient":
+        if (focusLongevity) return weeklyVariant([
+          "Micronutrients are especially relevant for long-term health outcomes • consistently low levels compound over years, not just days.",
+          "For longevity goals, micronutrient adequacy matters as much as macros • the research on consistent variety is strong.",
+        ]);
         return weeklyVariant([
           "Micronutrients quietly shape energy, mood, and recovery • easy to overlook but worth addressing.",
           "When a nutrient shows up low consistently, it's usually a variety gap • easy to fix with a few regular additions.",
@@ -533,6 +561,14 @@ export default function SummaryScreen() {
   const getNudgeAction = (type: ComputedNudge["type"], goal: string): string => {
     switch (type) {
       case "protein_low_critical":
+        if (isVegan) return weeklyVariant([
+          "Try stacking two plant-based protein sources at each meal • legumes + tofu, or edamame + tempeh.",
+          "Adding a high-protein snack like edamame, roasted chickpeas, or a protein-fortified food between meals makes a real difference.",
+        ]);
+        if (isVegetarian) return weeklyVariant([
+          "Focus on eggs, Greek yogurt, or cottage cheese at breakfast and lunch • those two meals are usually where vegetarian protein slips.",
+          "Try adding a dairy or egg-based protein hit to at least two meals a day • it's the most reliable way to close the gap.",
+        ]);
         if (goal === "gain") return weeklyVariant([
           "Add a protein source to every meal • breakfast and lunch are where most people fall short.",
           "Spreading protein across all three meals beats saving it for dinner • try adding it earlier in the day.",
@@ -542,6 +578,10 @@ export default function SummaryScreen() {
           "Focus on a protein hit at each meal rather than one big serving • more effective and keeps hunger down.",
         ]);
       case "protein_low":
+        if (isVegan) return weeklyVariant([
+          "A consistent plant-based protein add at each meal tends to compound quickly • tofu, tempeh, and lentils all work well.",
+          "Try pairing a grain with a legume or soy source at your main meals • that combination reliably closes small gaps.",
+        ]);
         return weeklyVariant([
           "Pairing each meal with a solid protein source is usually enough to close a gap like this.",
           "A small protein add at each meal tends to compound quickly • it doesn't need to be a big change.",

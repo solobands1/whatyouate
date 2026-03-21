@@ -43,6 +43,14 @@ export function summarizeWeek(meals: MealLog[], days = 7) {
   return result;
 }
 
+/** Like summarizeWeek but only includes days that have at least one logged meal.
+ *  Use this for averages so empty (un-logged) days don't deflate the numbers. */
+export function summarizeLoggedDays(meals: MealLog[], days = 7) {
+  return summarizeWeek(meals, days).filter(
+    (d) => d.totals.calories_max > 0 || d.totals.protein_g_max > 0
+  );
+}
+
 export function summarizeWorkoutsWeek(workouts: WorkoutSession[]) {
   const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
   const sessions = workouts.filter((session) => session.endTs != null && session.endTs >= cutoff);

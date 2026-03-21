@@ -1,5 +1,5 @@
-import type { ActivityLevel, MealLog, UserProfile, WorkoutSession } from "./types";
-import { summarizeDay, summarizeWeek, summarizeWorkoutsWeek } from "./summary";
+import type { ActivityLevel, MealLog, Units, UserProfile, WorkoutSession } from "./types";
+import { summarizeDay, summarizeLoggedDays, summarizeWeek, summarizeWorkoutsWeek } from "./summary";
 import { dayKeyFromTs } from "./utils";
 import { buildNutrientNotes, buildSuggestions, type SuggestionSignal } from "./recommendations";
 
@@ -72,11 +72,17 @@ export function proteinTargetPerKg(profile: UserProfile): number {
   return base;
 }
 
+/** Convert a stored body-weight value to kilograms. Imperial users store lbs; metric users store kg. */
+export function normalizeWeightToKg(weight: number, units: Units): number {
+  return units === "imperial" ? weight * 0.453592 : weight;
+}
+
 /** Mifflin-St Jeor TDEE estimate. Returns null if profile is missing required fields.
  *  For unknown/non-binary sex, uses the midpoint of male and female BMR formulas. */
 export function estimateMaintenance(profile: UserProfile): number | null {
-  const { weight, height, age, sex, activityLevel } = profile;
-  if (!weight || !height || !age) return null;
+  const { height, age, sex, activityLevel } = profile;
+  if (!profile.weight || !height || !age) return null;
+  const weight = normalizeWeightToKg(profile.weight, profile.units);
   let bmr: number;
   if (sex === "male") {
     bmr = 10 * weight + 6.25 * height - 5 * age + 5;
@@ -92,12 +98,13 @@ export function estimateMaintenance(profile: UserProfile): number | null {
   return Math.round(bmr * multiplier);
 }
 
-function computeGentleTargets(meals: MealLog[], profile?: UserProfile) {
+export function computeGentleTargets(meals: MealLog[], profile?: UserProfile) {
   if (!profile) return null;
   const dayCount = dayCountFromMeals(meals);
   const mealCount = meals.length;
   const goal = profile.goalDirection;
-  const weight = profile.weight ?? 0;
+  const rawWeight = profile.weight ?? 0;
+  const weight = rawWeight ? normalizeWeightToKg(rawWeight, profile.units) : 0;
   const calNudge = goal === "gain" ? 0.08 : goal === "lose" ? -0.08 : 0;
 
   // Early estimate: use Mifflin-St Jeor before enough meal data exists
@@ -109,30 +116,35 @@ function computeGentleTargets(meals: MealLog[], profile?: UserProfile) {
     return { calories: suggestedCalories, protein: proteinTarget, isEstimate: true };
   }
 
-  const weekSummary = summarizeWeek(meals, 7);
-  const avgWeekCalories = avgRangeMidpoint(
-    weekSummary.map((d) => d.totals.calories_min),
-    weekSummary.map((d) => d.totals.calories_max)
+  // Established path: anchor calories to TDEE to prevent targets from drifting down
+  // toward current intake. Fall back to logged-data average only if TDEE unavailable.
+  const loggedDays = summarizeLoggedDays(meals, 7);
+  const avgLoggedCalories = avgRangeMidpoint(
+    loggedDays.map((d) => d.totals.calories_min),
+    loggedDays.map((d) => d.totals.calories_max)
   );
-  const avgWeekProtein = avgRangeMidpoint(
-    weekSummary.map((d) => d.totals.protein_g_min),
-    weekSummary.map((d) => d.totals.protein_g_max)
+  const avgLoggedProtein = avgRangeMidpoint(
+    loggedDays.map((d) => d.totals.protein_g_min),
+    loggedDays.map((d) => d.totals.protein_g_max)
   );
-  if (!avgWeekCalories && !avgWeekProtein) return null;
+  if (!avgLoggedCalories && !avgLoggedProtein) return null;
 
-  const suggestedCalories = Math.max(0, Math.round(avgWeekCalories * (1 + calNudge)));
+  const maintenance = estimateMaintenance(profile);
+  const suggestedCalories = maintenance
+    ? Math.round(maintenance * (1 + calNudge))
+    : Math.max(0, Math.round(avgLoggedCalories * (1 + calNudge)));
   const proteinTarget = weight ? weight * proteinTargetPerKg(profile) : 0;
   const proteinNudge = proteinTarget
-    ? avgWeekProtein + Math.round((proteinTarget - avgWeekProtein) * 0.1)
-    : avgWeekProtein;
+    ? avgLoggedProtein + Math.round((proteinTarget - avgLoggedProtein) * 0.1)
+    : avgLoggedProtein;
 
-  return { calories: suggestedCalories, protein: Math.round(proteinNudge) };
+  return { calories: suggestedCalories, protein: Math.round(proteinNudge), isEstimate: false };
 }
 
 const BURN_KCAL_PER_MIN: Record<string, number> = { low: 4, medium: 7, high: 10 };
 
 function adjustTargetsForWorkouts(
-  targets: { calories: number; protein: number } | null,
+  targets: { calories: number; protein: number; isEstimate?: boolean } | null,
   workouts: WorkoutSession[]
 ) {
   if (!targets || workouts.length === 0) return targets;
@@ -195,13 +207,15 @@ export function computeHomeMarkers(meals: MealLog[], workouts: WorkoutSession[],
   const mealCount = meals.length;
   const recent = computeRecent(meals, workouts);
 
+  // Use logged-days-only averages so empty days don't deflate the numbers
+  const loggedDays = summarizeLoggedDays(meals, 7);
   const avgWeekCalories = avgRangeMidpoint(
-    weekSummary.map((d) => d.totals.calories_min),
-    weekSummary.map((d) => d.totals.calories_max)
+    loggedDays.map((d) => d.totals.calories_min),
+    loggedDays.map((d) => d.totals.calories_max)
   );
   const avgWeekProtein = avgRangeMidpoint(
-    weekSummary.map((d) => d.totals.protein_g_min),
-    weekSummary.map((d) => d.totals.protein_g_max)
+    loggedDays.map((d) => d.totals.protein_g_min),
+    loggedDays.map((d) => d.totals.protein_g_max)
   );
 
   const gentleTargets = adjustTargetsForWorkouts(computeGentleTargets(meals, profile), workouts);
@@ -227,13 +241,19 @@ export function computeSummaryMarkers(meals: MealLog[], workouts: WorkoutSession
   const dayCount = dayCountFromMeals(meals);
   const mealCount = meals.length;
 
+  // Use logged-days-only averages so empty days don't deflate the numbers
+  const loggedDays = summarizeLoggedDays(meals, 7);
   const avgWeekCalories = avgRangeMidpoint(
-    weekSummary.map((d) => d.totals.calories_min),
-    weekSummary.map((d) => d.totals.calories_max)
+    loggedDays.map((d) => d.totals.calories_min),
+    loggedDays.map((d) => d.totals.calories_max)
   );
   const avgWeekProtein = avgRangeMidpoint(
-    weekSummary.map((d) => d.totals.protein_g_min),
-    weekSummary.map((d) => d.totals.protein_g_max)
+    loggedDays.map((d) => d.totals.protein_g_min),
+    loggedDays.map((d) => d.totals.protein_g_max)
+  );
+  const avgWeekFat = avgRangeMidpoint(
+    loggedDays.map((d) => d.totals.fat_g_min),
+    loggedDays.map((d) => d.totals.fat_g_max)
   );
 
   const gentleTargets = adjustTargetsForWorkouts(computeGentleTargets(meals, profile), workouts);
@@ -249,7 +269,8 @@ export function computeSummaryMarkers(meals: MealLog[], workouts: WorkoutSession
     if (lowNames.has("iron")) trends.push("Likely low iron.");
     if (lowNames.has("fiber")) trends.push("Low fiber trend.");
     if (profile?.goalDirection === "gain") {
-      const weight = profile.weight ?? 0;
+      const rawW = profile.weight ?? 0;
+      const weight = rawW ? normalizeWeightToKg(rawW, profile.units) : 0;
       const proteinTarget = weight ? weight * proteinTargetPerKg(profile) : 0;
       if (proteinTarget && avgWeekProtein < proteinTarget * 0.8) {
         trends.push("Protein below weight‑gain target.");
@@ -278,6 +299,9 @@ export function computeSummaryMarkers(meals: MealLog[], workouts: WorkoutSession
     } else {
       suggestionSignal = "calorie";
     }
+  } else if (avgWeekCalories > 800 && avgWeekFat > 0) {
+    const fatTarget = (avgWeekCalories * 0.3) / 9;
+    if (avgWeekFat < fatTarget * 0.7) suggestionSignal = "fat";
   }
   const suggestions = buildSuggestions(meals, profile, suggestionSignal);
 
@@ -313,18 +337,19 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
 
   const dayCount = dayCountFromMeals(meals);
   const mealCount = meals.length;
-  const weekSummary = summarizeWeek(meals, 7);
+  // Use logged-days-only averages so un-logged days don't deflate numbers
+  const loggedDays = summarizeLoggedDays(meals, 7);
   const avgWeekCalories = avgRangeMidpoint(
-    weekSummary.map((d) => d.totals.calories_min),
-    weekSummary.map((d) => d.totals.calories_max)
+    loggedDays.map((d) => d.totals.calories_min),
+    loggedDays.map((d) => d.totals.calories_max)
   );
   const avgWeekProtein = avgRangeMidpoint(
-    weekSummary.map((d) => d.totals.protein_g_min),
-    weekSummary.map((d) => d.totals.protein_g_max)
+    loggedDays.map((d) => d.totals.protein_g_min),
+    loggedDays.map((d) => d.totals.protein_g_max)
   );
   const avgWeekFat = avgRangeMidpoint(
-    weekSummary.map((d) => d.totals.fat_g_min),
-    weekSummary.map((d) => d.totals.fat_g_max)
+    loggedDays.map((d) => d.totals.fat_g_min),
+    loggedDays.map((d) => d.totals.fat_g_max)
   );
   const todayTotals = summarizeDay(meals);
 
@@ -335,20 +360,26 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
   const proteinBias = focus.includes("strength") || focus.includes("performance") ? 1 : 0;
   const microBias = focus.includes("longevity") ? 1 : 0;
 
-  const gentleTargets = computeGentleTargets(meals, profile);
+  // Adjust targets for workouts — mirrors what computeSummaryMarkers and computeHomeMarkers do
+  const gentleTargets = adjustTargetsForWorkouts(computeGentleTargets(meals, profile), workouts);
+  const isEstimateTargets = gentleTargets?.isEstimate ?? false;
   if (profile && dayCount >= 5 && mealCount >= 5 && avgWeekCalories && gentleTargets?.calories) {
     const weekLow = avgWeekCalories < gentleTargets.calories * 0.9;
     const weekHigh = avgWeekCalories > gentleTargets.calories * 1.1;
     if (weekLow) {
       nudges.push({
-        message: `You've been averaging around ${Math.round(avgWeekCalories)} kcal a day this week • your target is closer to ${gentleTargets.calories} kcal`,
+        message: isEstimateTargets
+          ? `You've been averaging around ${Math.round(avgWeekCalories)} kcal a day this week • based on your profile, we'd estimate closer to ${gentleTargets.calories} kcal`
+          : `You've been averaging around ${Math.round(avgWeekCalories)} kcal a day this week • your target is closer to ${gentleTargets.calories} kcal`,
         type: "calorie_low",
         data: { actual: Math.round(avgWeekCalories), target: gentleTargets.calories },
         priority: 2 + calorieBias
       });
     } else if (weekHigh) {
       nudges.push({
-        message: `You've been eating around ${Math.round(avgWeekCalories)} kcal a day this week • your target is around ${gentleTargets.calories} kcal`,
+        message: isEstimateTargets
+          ? `You've been eating around ${Math.round(avgWeekCalories)} kcal a day this week • based on your profile, we'd estimate around ${gentleTargets.calories} kcal`
+          : `You've been eating around ${Math.round(avgWeekCalories)} kcal a day this week • your target is around ${gentleTargets.calories} kcal`,
         type: "calorie_high",
         data: { actual: Math.round(avgWeekCalories), target: gentleTargets.calories },
         priority: 2 + calorieBias
@@ -357,17 +388,23 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
   }
 
   if (profile && avgWeekProtein) {
-    const target = (profile.weight ?? 0) * proteinTargetPerKg(profile);
+    const rawW = profile.weight ?? 0;
+    const weightKg = rawW ? normalizeWeightToKg(rawW, profile.units) : 0;
+    const target = weightKg ? weightKg * proteinTargetPerKg(profile) : 0;
     if (target && avgWeekProtein < target * 0.7) {
       nudges.push({
-        message: `You've been averaging around ${Math.round(avgWeekProtein)}g of protein a day this week • your goal is closer to ${Math.round(target)}g`,
+        message: isEstimateTargets
+          ? `You've been averaging around ${Math.round(avgWeekProtein)}g of protein a day this week • based on your weight, your goal would be around ${Math.round(target)}g`
+          : `You've been averaging around ${Math.round(avgWeekProtein)}g of protein a day this week • your goal is closer to ${Math.round(target)}g`,
         type: "protein_low_critical",
         data: { actual: Math.round(avgWeekProtein), target: Math.round(target) },
         priority: 3 + proteinBias
       });
     } else if (target && avgWeekProtein < target * 0.85) {
       nudges.push({
-        message: `You've been averaging around ${Math.round(avgWeekProtein)}g of protein a day this week • your goal is closer to ${Math.round(target)}g`,
+        message: isEstimateTargets
+          ? `You've been averaging around ${Math.round(avgWeekProtein)}g of protein a day this week • based on your weight, your goal would be around ${Math.round(target)}g`
+          : `You've been averaging around ${Math.round(avgWeekProtein)}g of protein a day this week • your goal is closer to ${Math.round(target)}g`,
         type: "protein_low",
         data: { actual: Math.round(avgWeekProtein), target: Math.round(target) },
         priority: 2 + proteinBias
@@ -431,8 +468,10 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
   }
 
   // Training fuel — only fires if workout_fuel_low hasn't already (prevents duplicate)
+  // Also requires an active activity level, matching the workout_fuel_low guard
   if (
     !workoutFuelNudgePushed &&
+    (profile?.activityLevel === "very_active" || profile?.activityLevel === "moderately_active") &&
     gentleTargets?.calories &&
     recentWorkoutCount >= 2 &&
     avgWeekCalories < gentleTargets.calories * 0.9
@@ -474,11 +513,15 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
   }
 
   const unique = new Set<string>();
+  const seenTypes = new Set<NudgeType>();
   const sorted = nudges
     .sort((a, b) => b.priority - a.priority)
     .filter((item) => {
       if (unique.has(item.message)) return false;
+      // Only one nudge per type — prevents duplicate cards with identical why/action copy
+      if (seenTypes.has(item.type)) return false;
       unique.add(item.message);
+      seenTypes.add(item.type);
       return true;
     });
 

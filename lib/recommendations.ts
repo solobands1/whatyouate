@@ -16,8 +16,12 @@ const CALORIE_POOL = [
   "Avocado", "Nut butter", "Granola", "Mixed nuts", "Cheese",
   "Banana", "Brown rice", "Oats", "Whole milk", "Peanut butter toast",
 ];
+const FAT_POOL = [
+  "Avocado", "Olive oil drizzle", "Mixed nuts", "Nut butter", "Salmon",
+  "Eggs", "Cheese", "Chia seeds", "Walnuts", "Sardines",
+];
 
-export type SuggestionSignal = "protein" | "calorie" | "balanced";
+export type SuggestionSignal = "protein" | "calorie" | "fat" | "balanced";
 
 function toKg(weight: number, units: UserProfile["units"]) {
   return units === "imperial" ? weight * 0.453592 : weight;
@@ -75,6 +79,7 @@ export function buildSuggestions(meals: MealLog[], profile?: UserProfile, signal
   // Curated pool based on signal (exclude restricted and already in history)
   const curatedPool = signal === "protein" ? PROTEIN_POOL
     : signal === "calorie" ? CALORIE_POOL
+    : signal === "fat" ? FAT_POOL
     : [];
   const curated = curatedPool.filter(
     (name) => !isRestricted(name) && !lowerHistory.has(name.toLowerCase())
@@ -185,18 +190,31 @@ const NUTRIENT_EXAMPLES: Record<string, string> = {
 
 export function buildNutrientNotes(meals: MealLog[]) {
   if (meals.length < 5) return [];
-  const signals = meals.flatMap((meal) => meal.analysisJson.micronutrient_signals ?? []);
+  // Only look at the last 30 days — older signals are no longer relevant
+  const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+  const signals = meals
+    .filter((meal) => meal.ts >= cutoff)
+    .flatMap((meal) => meal.analysisJson.micronutrient_signals ?? []);
   const low = signals.filter((signal) => signal?.signal === "low_appearance");
   if (!low.length) return [];
 
-  const top = low.slice(0, 2).map((signal) => {
-    const key = signal.nutrient.toLowerCase().replace(/\s+/g, "_");
-    const altKey = signal.nutrient.toLowerCase();
-    const examples = NUTRIENT_EXAMPLES[key] ?? NUTRIENT_EXAMPLES[altKey];
-    if (examples) {
-      return `Low on ${signal.nutrient.toLowerCase()} lately • try adding ${examples}.`;
-    }
-    return `Low on ${signal.nutrient.toLowerCase()} lately • try adding a small source today.`;
+  // Rank by frequency so the most persistently low nutrient surfaces first
+  const counts = new Map<string, number>();
+  low.forEach((signal) => {
+    const key = signal.nutrient.toLowerCase();
+    counts.set(key, (counts.get(key) ?? 0) + 1);
   });
-  return top;
+  const ranked = Array.from(counts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 2)
+    .map(([nutrient]) => nutrient);
+
+  return ranked.map((nutrient) => {
+    const key = nutrient.replace(/\s+/g, "_");
+    const examples = NUTRIENT_EXAMPLES[key] ?? NUTRIENT_EXAMPLES[nutrient];
+    if (examples) {
+      return `Low on ${nutrient} lately • try adding ${examples}.`;
+    }
+    return `Low on ${nutrient} lately • try adding a small source today.`;
+  });
 }
