@@ -221,7 +221,7 @@ export default function InsightsPage() {
   const gentleTargets = useMemo(() => computeGentleTargets(meals, profile), [meals, profile]);
 
   const sparklineData = useMemo(() => {
-    return summarizeWeek(meals, 14).map((d) => ({
+    return summarizeWeek(meals, 7).map((d) => ({
       dateKey: d.dateKey,
       calories: Math.round((d.totals.calories_min + d.totals.calories_max) / 2),
       hasData: d.totals.calories_max > 0,
@@ -234,19 +234,20 @@ export default function InsightsPage() {
   );
 
   const sparklineChart = useMemo(() => {
+    const DAYS = 7;
     const W = 320, H = 72;
-    const padL = 0, padR = 0, padT = 8, padB = 4;
+    const padL = 6, padR = 6, padT = 8, padB = 4;
     const cW = W - padL - padR;
     const cH = H - padT - padB;
     const target = gentleTargets?.calories;
     const vals = sparklineData.map((d) => (d.hasData ? d.calories : null));
     const maxVal = Math.max(...(vals.filter((v) => v !== null) as number[]), target ? target * 1.25 : 0, 1500);
-    const xPos = (i: number) => padL + (i / 13) * cW;
+    const xPos = (i: number) => padL + (i / (DAYS - 1)) * cW;
     const yPos = (v: number) => padT + cH - (v / maxVal) * cH;
-    // Solid segments for all completed days (indices 0–12, excluding today)
+    // Solid segments for completed days (indices 0–5, excluding today at index 6)
     const segments: string[] = [];
     let cur = "";
-    for (let i = 0; i < 13; i++) {
+    for (let i = 0; i < DAYS - 1; i++) {
       const v = vals[i];
       if (v === null) {
         if (cur) { segments.push(cur); cur = ""; }
@@ -255,24 +256,33 @@ export default function InsightsPage() {
       }
     }
     if (cur) segments.push(cur);
-    // Dashed segment bridging yesterday → today (index 13) if today has data
-    const todayVal = vals[13];
+    // Dashed segment bridging yesterday → today (index 6) if today has data
+    const todayVal = vals[DAYS - 1];
     let todaySegment: string | null = null;
     if (todayVal !== null) {
       let lastIdx = -1;
-      for (let i = 12; i >= 0; i--) { if (vals[i] !== null) { lastIdx = i; break; } }
+      for (let i = DAYS - 2; i >= 0; i--) { if (vals[i] !== null) { lastIdx = i; break; } }
       if (lastIdx >= 0) {
-        todaySegment = `M${xPos(lastIdx).toFixed(1)} ${yPos(vals[lastIdx]!).toFixed(1)} L${xPos(13).toFixed(1)} ${yPos(todayVal).toFixed(1)}`;
+        todaySegment = `M${xPos(lastIdx).toFixed(1)} ${yPos(vals[lastIdx]!).toFixed(1)} L${xPos(DAYS - 1).toFixed(1)} ${yPos(todayVal).toFixed(1)}`;
       }
     }
     return {
-      W, H, padL, cW,
+      W, H,
       segments,
       todaySegment,
-      dots: vals.map((v, i) => ({ x: xPos(i), y: v !== null ? yPos(v) : padT + cH, logged: v !== null, isToday: i === 13 })),
+      // labelLeftPct mirrors the SVG xPos so labels always align with dots
+      dots: vals.map((v, i) => ({
+        x: xPos(i),
+        y: v !== null ? yPos(v) : padT + cH,
+        logged: v !== null,
+        isToday: i === DAYS - 1,
+        labelLeftPct: (xPos(i) / W) * 100,
+      })),
       targetY1: target ? yPos(target * 1.15) : null,
       targetY2: target ? yPos(target * 0.85) : null,
       hasTarget: !!target,
+      targetRectX: padL,
+      targetRectW: cW,
     };
   }, [sparklineData, gentleTargets]);
 
@@ -463,15 +473,15 @@ export default function InsightsPage() {
         <Card className="mt-6">
           <div className="flex items-center justify-between">
             <p className="text-xs uppercase tracking-wide text-muted/70">Daily Intake</p>
-            <p className="text-[11px] text-muted/40">{sparklineLoggedCount} / 14 days</p>
+            <p className="text-[11px] text-muted/40">{sparklineLoggedCount} / 7 days</p>
           </div>
           <div className="mt-3">
             <svg viewBox={`0 0 ${sparklineChart.W} ${sparklineChart.H}`} preserveAspectRatio="none" className="w-full" style={{ height: sparklineChart.H, display: "block" }}>
               {sparklineChart.hasTarget && sparklineChart.targetY1 !== null && sparklineChart.targetY2 !== null && (
                 <rect
-                  x={sparklineChart.padL}
+                  x={sparklineChart.targetRectX}
                   y={sparklineChart.targetY1}
-                  width={sparklineChart.cW}
+                  width={sparklineChart.targetRectW}
                   height={Math.max(0, sparklineChart.targetY2 - sparklineChart.targetY1)}
                   fill="rgba(111,168,255,0.12)"
                   rx={2}
@@ -500,7 +510,7 @@ export default function InsightsPage() {
                   <span
                     key={d.dateKey}
                     className={`absolute -translate-x-1/2 text-[9px] ${d.hasData ? "text-ink/50" : "text-ink/20"}`}
-                    style={{ left: `${(i / 13) * 100}%` }}
+                    style={{ left: `${sparklineChart.dots[i].labelLeftPct}%` }}
                   >
                     {["S","M","T","W","T","F","S"][date.getDay()]}
                   </span>
