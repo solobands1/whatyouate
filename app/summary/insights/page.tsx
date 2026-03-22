@@ -370,30 +370,35 @@ export default function InsightsPage() {
             </div>
             <p className="text-[11px] uppercase tracking-wide text-muted/50">Last 7 days</p>
           </div>
-          <div className={`mt-4 grid grid-cols-2 gap-3 text-sm text-ink/80${!hasEnoughData ? " opacity-50" : ""}`}>
+          <div className={`mt-5 flex items-baseline justify-between${!hasEnoughData ? " opacity-50" : ""}`}>
             <div>
-              <p className="text-[11px] uppercase tracking-wide text-muted/60">Avg calories</p>
-              <p className="mt-1 text-lg font-semibold">{displayAvgCalories}</p>
+              <p className="text-[11px] uppercase tracking-wide text-muted/60">Calories</p>
+              <p className="mt-1 text-xl font-semibold">{displayAvgCalories}</p>
+              <p className="text-[10px] text-muted/50">7-day avg</p>
             </div>
             <div>
-              <p className="text-[11px] uppercase tracking-wide text-muted/60">Avg protein</p>
-              <p className="mt-1 text-lg font-semibold">{displayAvgProtein}</p>
+              <p className="text-[11px] uppercase tracking-wide text-muted/60">Carbs</p>
+              <p className="mt-1 text-xl font-semibold">{displayAvgCarbs}</p>
+              <p className="text-[10px] text-muted/50">7-day avg</p>
             </div>
             <div>
-              <p className="text-[11px] uppercase tracking-wide text-muted/60">Avg carbs</p>
-              <p className="mt-1 text-lg font-semibold">{displayAvgCarbs}</p>
+              <p className="text-[11px] uppercase tracking-wide text-muted/60">Fats</p>
+              <p className="mt-1 text-xl font-semibold">{displayAvgFat}</p>
+              <p className="text-[10px] text-muted/50">7-day avg</p>
             </div>
             <div>
-              <p className="text-[11px] uppercase tracking-wide text-muted/60">Avg fats</p>
-              <p className="mt-1 text-lg font-semibold">{displayAvgFat}</p>
+              <p className="text-[11px] uppercase tracking-wide text-muted/60">Protein</p>
+              <p className="mt-1 text-xl font-semibold">{displayAvgProtein}</p>
+              <p className="text-[10px] text-muted/50">7-day avg</p>
             </div>
           </div>
-          <div className="mt-3 h-px w-full bg-ink/5" />
-          <p className="mt-3 text-xs text-muted/70">
-            {gentleTargetsDisplay
-              ? `Suggested: ${gentleTargetsDisplay.calories} kcal · ${gentleTargetsDisplay.protein} g protein · Carbs and fat shown as patterns, not targets.`
-              : "Complete your profile for a personalized range"}
-          </p>
+          {gentleTargetsDisplay ? (
+            <p className="mt-4 text-xs text-muted/70">
+              Suggested range: {gentleTargetsDisplay.calories} kcal · {Math.round(gentleTargetsDisplay.calories * 0.50 / 4)}g carbs · {Math.round(gentleTargetsDisplay.calories * 0.30 / 9)}g fat · {gentleTargetsDisplay.protein}g protein
+            </p>
+          ) : (
+            <p className="mt-2 text-xs text-muted/70">Complete your profile for a personalized range</p>
+          )}
         </Card>
 
         <Card className="mt-6" data-tour="insights-micro">
