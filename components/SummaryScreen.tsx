@@ -162,15 +162,6 @@ export default function SummaryScreen() {
   const nutrientNotes = summaryMarkers.nutrientNotes;
   const suggestions = summaryMarkers.suggestions;
 
-  const streak = useMemo(() => {
-    const dayKeys = new Set(meals.map((m) => dayKeyFromTs(m.ts)));
-    let s = 0;
-    const d = new Date();
-    if (!dayKeys.has(dayKeyFromTs(d.getTime()))) d.setDate(d.getDate() - 1);
-    while (dayKeys.has(dayKeyFromTs(d.getTime()))) { s++; d.setDate(d.getDate() - 1); }
-    return s;
-  }, [meals]);
-
   const last7Days = useMemo(() => {
     const loggedKeys = new Set(meals.map((m) => dayKeyFromTs(m.ts)));
     const dayLabels = ["S", "M", "T", "W", "T", "F", "S"];
@@ -181,6 +172,47 @@ export default function SummaryScreen() {
       return { key, label: dayLabels[d.getDay()], logged: loggedKeys.has(key), isToday: i === 6 };
     });
   }, [meals]);
+
+  const weekHeadline = useMemo(() => {
+    if (mealCount === 0) return null;
+    const loggedThisWeek = last7Days.filter((d) => d.logged).length;
+    const calTarget = summaryMarkers.gentleTargets?.calories;
+    const proTarget = summaryMarkers.gentleTargets?.protein;
+    const calOk = !calTarget || !avgWeekCalories || (avgWeekCalories >= calTarget * 0.9 && avgWeekCalories <= calTarget * 1.1);
+    const proOk = !proTarget || !avgWeekProtein || avgWeekProtein >= proTarget * 0.85;
+    if (loggedThisWeek >= 6 && calOk && proOk) return "Strong week across the board";
+    if (loggedThisWeek >= 5 && (calOk || proOk)) return "Solid week overall";
+    if (loggedThisWeek >= 5) return "Good effort this week";
+    if (loggedThisWeek >= 3) return "Building habits";
+    return "Getting started";
+  }, [last7Days, mealCount, avgWeekCalories, avgWeekProtein, summaryMarkers.gentleTargets]);
+
+  const weekObservations = useMemo(() => {
+    const lines: string[] = [];
+    const loggedThisWeek = last7Days.filter((d) => d.logged).length;
+    if (loggedThisWeek > 0) {
+      lines.push(loggedThisWeek === 7 ? "Logged every day this week" : `${loggedThisWeek} of 7 days logged`);
+    }
+    if (mealCount >= 5 && avgWeekCalories > 0) {
+      const calTarget = summaryMarkers.gentleTargets?.calories;
+      if (calTarget) {
+        const ratio = avgWeekCalories / calTarget;
+        const status = ratio >= 0.9 && ratio <= 1.1 ? "on track" : ratio < 0.9 ? "a bit light" : "a bit high";
+        lines.push(`Avg ${avgWeekCalories} kcal · ${status}`);
+      } else {
+        lines.push(`Avg ${avgWeekCalories} kcal`);
+      }
+      const proTarget = summaryMarkers.gentleTargets?.protein;
+      if (avgWeekProtein > 0) {
+        lines.push(proTarget ? `Avg ${avgWeekProtein}g protein · goal ${proTarget}g` : `Avg ${avgWeekProtein}g protein`);
+      }
+    }
+    if (workoutSummary.count > 0) {
+      const mins = workoutSummary.totalMinutes > 0 ? ` · ${workoutSummary.totalMinutes} min` : "";
+      lines.push(`${workoutSummary.count} workout${workoutSummary.count !== 1 ? "s" : ""}${mins}`);
+    }
+    return lines;
+  }, [last7Days, mealCount, avgWeekCalories, avgWeekProtein, summaryMarkers.gentleTargets, workoutSummary]);
 
   const [nudgeViewCount, setNudgeViewCount] = useState(0);
   const [showTargetInfo, setShowTargetInfo] = useState(false);
@@ -756,18 +788,13 @@ export default function SummaryScreen() {
         </Card>
 
         <Card className="mt-6">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">This week</p>
-            {streak > 1 && (
-              <p className="text-[11px] font-medium text-primary/80">{streak}-day streak</p>
-            )}
-          </div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">This week</p>
 
           {/* 7-day dot strip */}
           <div className="mt-3 flex justify-between">
             {last7Days.map((day) => (
               <div key={day.key} className="flex flex-col items-center gap-1.5">
-                <div className={`h-2.5 w-2.5 rounded-full ${day.logged ? "bg-primary/70" : "bg-ink/10"} ${day.isToday && !day.logged ? "ring-1 ring-ink/20 ring-offset-1" : ""}`} />
+                <div className={`h-2.5 w-2.5 rounded-full ${day.logged ? "bg-primary/70" : "bg-ink/10"}`} />
                 <p className={`text-[10px] ${day.isToday ? "font-semibold text-ink/60" : "text-muted/40"}`}>{day.label}</p>
               </div>
             ))}
@@ -777,37 +804,14 @@ export default function SummaryScreen() {
             <p className="mt-3 text-sm text-muted/60">Log your first meal and I'll start building your picture.</p>
           ) : (
             <>
-              {/* Status pills */}
-              {mealCount >= 5 && avgWeekCalories > 0 && (
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  {(() => {
-                    const calTarget = summaryMarkers.gentleTargets?.calories;
-                    const proTarget = summaryMarkers.gentleTargets?.protein;
-                    const pills: { label: string; color: string }[] = [];
-                    if (calTarget && avgWeekCalories) {
-                      if (avgWeekCalories < calTarget * 0.9) pills.push({ label: "calories light", color: "bg-amber-50 text-amber-700" });
-                      else if (avgWeekCalories > calTarget * 1.1) pills.push({ label: "calories high", color: "bg-orange-50 text-orange-700" });
-                      else pills.push({ label: "calories on track", color: "bg-green-50 text-green-700" });
-                    }
-                    if (proTarget && avgWeekProtein) {
-                      if (avgWeekProtein < proTarget * 0.7) pills.push({ label: "protein low", color: "bg-red-50 text-red-700" });
-                      else if (avgWeekProtein < proTarget * 0.85) pills.push({ label: "protein building", color: "bg-amber-50 text-amber-700" });
-                      else pills.push({ label: "protein solid", color: "bg-green-50 text-green-700" });
-                    }
-                    return pills.map((p) => (
-                      <span key={p.label} className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium ${p.color}`}>{p.label}</span>
-                    ));
-                  })()}
-                </div>
+              {weekHeadline && (
+                <p className="mt-3 text-sm font-semibold text-ink/80">{weekHeadline}</p>
               )}
-
-              {/* Averaging line */}
-              {avgWeekCalories > 0 && (
-                <p className="mt-2 text-xs text-muted/60">
-                  Avg {avgWeekCalories} kcal · {avgWeekProtein}g protein
-                  {workoutSummary.count > 0 ? ` · ${workoutSummary.count} workout${workoutSummary.count !== 1 ? "s" : ""}${workoutSummary.totalMinutes > 0 ? ` · ${workoutSummary.totalMinutes} min` : ""}` : ""}
-                </p>
-              )}
+              <div className="mt-1.5 space-y-1">
+                {weekObservations.map((line) => (
+                  <p key={line} className="text-sm text-muted/60">{line}</p>
+                ))}
+              </div>
             </>
           )}
         </Card>
