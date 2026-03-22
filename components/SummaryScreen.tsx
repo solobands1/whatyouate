@@ -823,23 +823,31 @@ export default function SummaryScreen() {
                           <p className="text-[10px] font-semibold uppercase tracking-wide text-muted/50 mb-0.5">What to do</p>
                           {action && <p className="text-xs text-ink/70">{action}</p>}
                           {showChips && (
-                            <div className="mt-4 flex flex-wrap gap-1.5">
-                              {behavioralChips.map((chip) => (
-                                <span
-                                  key={chip}
-                                  className="rounded-full border border-primary/25 bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary/80"
-                                >
-                                  {chip}
-                                </span>
-                              ))}
-                              {showFoodChips && suggestions.slice(0, 3).map((food) => (
-                                <span
-                                  key={food}
-                                  className="rounded-full border border-ink/10 bg-white px-2.5 py-0.5 text-[11px] text-ink/60"
-                                >
-                                  {food}
-                                </span>
-                              ))}
+                            <div className="mt-4 space-y-1.5">
+                              {behavioralChips.length > 0 && (
+                                <div className="flex flex-wrap gap-1.5">
+                                  {behavioralChips.map((chip) => (
+                                    <span
+                                      key={chip}
+                                      className="rounded-full border border-primary/25 bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary/80"
+                                    >
+                                      {chip}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                              {showFoodChips && (
+                                <div className="flex flex-wrap gap-1.5">
+                                  {suggestions.slice(0, 3).map((food) => (
+                                    <span
+                                      key={food}
+                                      className="rounded-full border border-ink/10 bg-white px-2.5 py-0.5 text-[11px] text-ink/60"
+                                    >
+                                      {food}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
