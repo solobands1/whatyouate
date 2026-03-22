@@ -40,6 +40,12 @@ export function useWorkout(
   const [workoutEditTypes, setWorkoutEditTypes] = useState<string[]>([]);
   const [workoutEditIntensity, setWorkoutEditIntensity] = useState<"low" | "medium" | "high" | "">("");
   const [updatingWorkout, setUpdatingWorkout] = useState(false);
+  const [showManualWorkoutModal, setShowManualWorkoutModal] = useState(false);
+  const [manualHours, setManualHours] = useState("");
+  const [manualMinutes, setManualMinutes] = useState("");
+  const [manualTypes, setManualTypes] = useState<string[]>([]);
+  const [manualIntensity, setManualIntensity] = useState<"low" | "medium" | "high" | "">("");
+  const [addingManual, setAddingManual] = useState(false);
 
   const load = useCallback(async (userId: string) => {
     const [workoutsData, activeWorkoutData] = await Promise.all([
@@ -113,6 +119,38 @@ export function useWorkout(
     }
   };
 
+  const handleAddManualWorkout = async () => {
+    if (!user) return;
+    try {
+      setAddingManual(true);
+      const hours = Number(manualHours) || 0;
+      const minutes = Number(manualMinutes) || 0;
+      const durationMin = hours * 60 + minutes;
+      const now = Date.now();
+      const startTs = durationMin > 0 ? now - durationMin * 60000 : now;
+      const session = await addWorkout(user.id, startTs);
+      await updateWorkout(
+        session.id,
+        user.id,
+        now,
+        durationMin > 0 ? durationMin : 0,
+        manualTypes.length > 0 ? manualTypes : undefined,
+        manualIntensity || undefined
+      );
+      setShowManualWorkoutModal(false);
+      setManualHours("");
+      setManualMinutes("");
+      setManualTypes([]);
+      setManualIntensity("");
+      await load(user.id);
+      notifyWorkoutsUpdated();
+    } catch (err) {
+      onError(err instanceof Error ? err.message : "Failed to add workout");
+    } finally {
+      setAddingManual(false);
+    }
+  };
+
   const handleUpdateWorkout = async () => {
     if (!editingWorkout || !user) return;
     try {
@@ -174,5 +212,17 @@ export function useWorkout(
     handleStartWorkout,
     handleEndWorkout,
     handleUpdateWorkout,
+    showManualWorkoutModal,
+    setShowManualWorkoutModal,
+    manualHours,
+    setManualHours,
+    manualMinutes,
+    setManualMinutes,
+    manualTypes,
+    setManualTypes,
+    manualIntensity,
+    setManualIntensity,
+    addingManual,
+    handleAddManualWorkout,
   };
 }

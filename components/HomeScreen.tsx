@@ -999,7 +999,14 @@ export default function HomeScreen() {
             </button>
             <button
               type="button"
-              className="flex flex-1 items-center justify-center rounded-r-xl rounded-l-none border border-ink/15 border-l-0 bg-gradient-to-r from-white via-ink/5 to-white px-3 py-1.5 text-center font-normal text-ink/60 shadow-[0_8px_18px_rgba(15,23,42,0.12)] ring-1 ring-white/70 transition-all duration-150 hover:from-white hover:via-ink/10 hover:to-white active:translate-y-[1px] active:shadow-[0_3px_10px_rgba(15,23,42,0.16)]"
+              className="flex items-center justify-center rounded-none border border-l-0 border-ink/15 bg-gradient-to-r from-white via-ink/5 to-white px-3 py-1.5 text-center font-normal text-ink/60 shadow-[0_8px_18px_rgba(15,23,42,0.12)] ring-1 ring-white/70 transition-all duration-150 hover:from-white hover:via-ink/10 hover:to-white active:translate-y-[1px] active:shadow-[0_3px_10px_rgba(15,23,42,0.16)] whitespace-nowrap"
+              onClick={() => workout.setShowManualWorkoutModal(true)}
+            >
+              + Manual
+            </button>
+            <button
+              type="button"
+              className="flex flex-1 items-center justify-center rounded-r-xl rounded-l-none border border-l-0 border-ink/15 bg-gradient-to-r from-white via-ink/5 to-white px-3 py-1.5 text-center font-normal text-ink/60 shadow-[0_8px_18px_rgba(15,23,42,0.12)] ring-1 ring-white/70 transition-all duration-150 hover:from-white hover:via-ink/10 hover:to-white active:translate-y-[1px] active:shadow-[0_3px_10px_rgba(15,23,42,0.16)]"
               onClick={() => workout.setShowEndWorkoutModal(true)}
             >
               End Workout
@@ -1580,6 +1587,126 @@ export default function HomeScreen() {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Manual workout modal */}
+      {workout.showManualWorkoutModal && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/30 px-0 pb-0 sm:items-center sm:px-5 sm:pb-5">
+          <div className="w-full max-w-sm rounded-t-2xl bg-white p-5 shadow-xl sm:rounded-2xl">
+            <h2 className="text-base font-semibold text-ink">Add workout</h2>
+            <p className="mt-1 text-sm text-muted/70">Log a workout you already completed.</p>
+
+            <div className="mt-4 space-y-4">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">
+                  Duration
+                </p>
+                <div className="mt-2 flex items-center gap-2">
+                  <input
+                    className="w-16 rounded-lg border border-ink/10 bg-white px-3 py-2 text-xs text-ink/80"
+                    value={workout.manualHours}
+                    onChange={(e) => workout.setManualHours(e.target.value)}
+                    placeholder="0"
+                    inputMode="numeric"
+                  />
+                  <span className="text-xs text-muted/70">hrs</span>
+                  <input
+                    className="w-16 rounded-lg border border-ink/10 bg-white px-3 py-2 text-xs text-ink/80"
+                    value={workout.manualMinutes}
+                    onChange={(e) => workout.setManualMinutes(e.target.value)}
+                    placeholder="0"
+                    inputMode="numeric"
+                  />
+                  <span className="text-xs text-muted/70">mins</span>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">
+                  Workout type
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {WORKOUT_TYPE_OPTIONS.map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      className={`rounded-full border px-3 py-1 text-xs transition ${
+                        workout.manualTypes.includes(type)
+                          ? "border-primary/30 bg-primary/10 text-ink"
+                          : "border-ink/10 bg-white text-ink/70 hover:bg-ink/5"
+                      }`}
+                      onClick={() =>
+                        workout.setManualTypes((prev) =>
+                          prev.includes(type)
+                            ? prev.filter((item) => item !== type)
+                            : [...prev, type]
+                        )
+                      }
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">
+                  Intensity
+                </p>
+                <div className="mt-2 flex gap-2">
+                  {([
+                    { value: "low", label: "Low" },
+                    { value: "medium", label: "Medium" },
+                    { value: "high", label: "High" }
+                  ] as const).map((level) => (
+                    <button
+                      key={level.value}
+                      type="button"
+                      className={`rounded-full border px-3 py-1 text-xs transition ${
+                        workout.manualIntensity === level.value
+                          ? "border-primary/30 bg-primary/10 text-ink"
+                          : "border-ink/10 bg-white text-ink/70 hover:bg-ink/5"
+                      }`}
+                      onClick={() =>
+                        workout.setManualIntensity(
+                          workout.manualIntensity === level.value ? "" : level.value
+                        )
+                      }
+                    >
+                      {level.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-5 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                className="rounded-xl border border-ink/10 bg-white px-3 py-2 text-xs font-semibold text-ink/70 transition hover:bg-ink/5"
+                onClick={() => {
+                  workout.setShowManualWorkoutModal(false);
+                  workout.setManualHours("");
+                  workout.setManualMinutes("");
+                  workout.setManualTypes([]);
+                  workout.setManualIntensity("");
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className={`rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 ${
+                  workout.addingManual ? "opacity-70" : ""
+                }`}
+                onClick={workout.handleAddManualWorkout}
+                disabled={workout.addingManual}
+              >
+                {workout.addingManual ? "Saving..." : "Save workout"}
+              </button>
+            </div>
           </div>
         </div>
       )}
