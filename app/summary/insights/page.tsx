@@ -243,9 +243,10 @@ export default function InsightsPage() {
     const maxVal = Math.max(...(vals.filter((v) => v !== null) as number[]), target ? target * 1.25 : 0, 1500);
     const xPos = (i: number) => padL + (i / 13) * cW;
     const yPos = (v: number) => padT + cH - (v / maxVal) * cH;
+    // Solid segments for all completed days (indices 0–12, excluding today)
     const segments: string[] = [];
     let cur = "";
-    for (let i = 0; i < vals.length; i++) {
+    for (let i = 0; i < 13; i++) {
       const v = vals[i];
       if (v === null) {
         if (cur) { segments.push(cur); cur = ""; }
@@ -254,10 +255,21 @@ export default function InsightsPage() {
       }
     }
     if (cur) segments.push(cur);
+    // Dashed segment bridging yesterday → today (index 13) if today has data
+    const todayVal = vals[13];
+    let todaySegment: string | null = null;
+    if (todayVal !== null) {
+      let lastIdx = -1;
+      for (let i = 12; i >= 0; i--) { if (vals[i] !== null) { lastIdx = i; break; } }
+      if (lastIdx >= 0) {
+        todaySegment = `M${xPos(lastIdx).toFixed(1)} ${yPos(vals[lastIdx]!).toFixed(1)} L${xPos(13).toFixed(1)} ${yPos(todayVal).toFixed(1)}`;
+      }
+    }
     return {
       W, H, padL, cW,
       segments,
-      dots: vals.map((v, i) => ({ x: xPos(i), y: v !== null ? yPos(v) : padT + cH, logged: v !== null })),
+      todaySegment,
+      dots: vals.map((v, i) => ({ x: xPos(i), y: v !== null ? yPos(v) : padT + cH, logged: v !== null, isToday: i === 13 })),
       targetY1: target ? yPos(target * 1.15) : null,
       targetY2: target ? yPos(target * 0.85) : null,
       hasTarget: !!target,
@@ -450,7 +462,7 @@ export default function InsightsPage() {
 
         <Card className="mt-6">
           <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-wide text-muted/70">14-Day Calorie Trend</p>
+            <p className="text-xs uppercase tracking-wide text-muted/70">Daily Intake</p>
             <p className="text-[11px] text-muted/40">{sparklineLoggedCount} / 14 days</p>
           </div>
           <div className="mt-3">
@@ -468,8 +480,13 @@ export default function InsightsPage() {
               {sparklineChart.segments.map((d, i) => (
                 <path key={i} d={d} fill="none" stroke="rgba(111,168,255,0.75)" strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" />
               ))}
+              {sparklineChart.todaySegment && (
+                <path d={sparklineChart.todaySegment} fill="none" stroke="rgba(111,168,255,0.4)" strokeWidth={1.5} strokeDasharray="3 3" strokeLinecap="round" />
+              )}
               {sparklineChart.dots.map((dot, i) =>
-                dot.logged ? (
+                dot.isToday && dot.logged ? (
+                  <circle key={i} cx={dot.x} cy={dot.y} r={3} fill="white" stroke="rgba(111,168,255,0.8)" strokeWidth={1.5} />
+                ) : dot.logged ? (
                   <circle key={i} cx={dot.x} cy={dot.y} r={2.5} fill="rgba(111,168,255,1)" />
                 ) : (
                   <circle key={i} cx={dot.x} cy={dot.y} r={1.5} fill="rgba(0,0,0,0.08)" />
