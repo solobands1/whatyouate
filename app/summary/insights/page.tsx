@@ -234,7 +234,7 @@ export default function InsightsPage() {
   );
 
   const sparklineChart = useMemo(() => {
-    const W = 320, H = 72;
+    const W = 320, H = 86;
     const padL = 4, padR = 4, padT = 10, padB = 4;
     const cW = W - padL - padR;
     const cH = H - padT - padB;
@@ -273,6 +273,7 @@ export default function InsightsPage() {
       targetY1: target ? yPos(target * 1.15) : null,
       targetY2: target ? yPos(target * 0.85) : null,
       hasTarget: !!target,
+      labelY: padT + cH + 16,
     };
   }, [sparklineData, gentleTargets]);
 
@@ -492,17 +493,17 @@ export default function InsightsPage() {
                   <circle key={i} cx={dot.x} cy={dot.y} r={1.5} fill="rgba(0,0,0,0.08)" />
                 )
               )}
-            </svg>
-            <div className="mt-1 flex justify-between px-0.5">
-              {sparklineData.map((d) => {
+              {sparklineData.map((d, i) => {
                 const date = new Date(`${d.dateKey}T12:00:00`);
+                const initial = ["S","M","T","W","T","F","S"][date.getDay()];
+                const dot = sparklineChart.dots[i];
                 return (
-                  <span key={d.dateKey} className={`text-[9px] ${d.hasData ? "text-ink/50" : "text-ink/20"}`}>
-                    {["S","M","T","W","T","F","S"][date.getDay()]}
-                  </span>
+                  <text key={d.dateKey} x={dot.x} y={sparklineChart.labelY} textAnchor="middle" fontSize="9" fill={d.hasData ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0.2)"}>
+                    {initial}
+                  </text>
                 );
               })}
-            </div>
+            </svg>
           </div>
           {sparklineChart.hasTarget && (
             <div className="mt-2 flex items-center gap-1.5">
