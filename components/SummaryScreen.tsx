@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Joyride, { CallBackProps, STATUS, type Step } from "react-joyride";
 import { useRouter } from "next/navigation";
 import type { MealLog, UserProfile, WorkoutSession } from "../lib/types";
-import { formatApprox, formatDateShort, todayKey } from "../lib/utils";
+import { dayKeyFromTs, formatApprox, formatDateShort, todayKey } from "../lib/utils";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
 import { useAuth } from "./AuthProvider";
@@ -161,6 +161,27 @@ export default function SummaryScreen() {
   const nutrientTrends = summaryMarkers.nutrientTrends;
   const nutrientNotes = summaryMarkers.nutrientNotes;
   const suggestions = summaryMarkers.suggestions;
+
+  const streak = useMemo(() => {
+    const dayKeys = new Set(meals.map((m) => dayKeyFromTs(m.ts)));
+    let s = 0;
+    const d = new Date();
+    if (!dayKeys.has(dayKeyFromTs(d.getTime()))) d.setDate(d.getDate() - 1);
+    while (dayKeys.has(dayKeyFromTs(d.getTime()))) { s++; d.setDate(d.getDate() - 1); }
+    return s;
+  }, [meals]);
+
+  const last7Days = useMemo(() => {
+    const loggedKeys = new Set(meals.map((m) => dayKeyFromTs(m.ts)));
+    const dayLabels = ["S", "M", "T", "W", "T", "F", "S"];
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (6 - i));
+      const key = dayKeyFromTs(d.getTime());
+      return { key, label: dayLabels[d.getDay()], logged: loggedKeys.has(key), isToday: i === 6 };
+    });
+  }, [meals]);
+
   const [nudgeViewCount, setNudgeViewCount] = useState(0);
   const [showTargetInfo, setShowTargetInfo] = useState(false);
 
@@ -735,37 +756,60 @@ export default function SummaryScreen() {
         </Card>
 
         <Card className="mt-6">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Last 7 days</p>
-          <div className="mt-3 space-y-2">
-            {dayCount === 0 ? (
-              <p className="text-sm text-muted/60">Log your first meal and I'll start building your picture.</p>
-            ) : dayCount < 5 || mealCount < 10 ? (
-              <p className="text-sm font-semibold text-ink/80">
-                {Math.min(dayCount, 7)} of 7 days logged · still learning your patterns.
-              </p>
-            ) : (
-              <>
-                <p className="text-sm font-semibold text-ink/80">
-                  {Math.min(dayCount, 7)} of 7 days logged · solid.
-                </p>
-                <p className="text-sm font-semibold text-ink/80">
-                  {(() => {
-                    const base = `Averaging ${avgWeekCalories} kcal · ${avgWeekProtein}g protein`;
-                    if (!gentleTargetsDisplay?.calories || !avgWeekCalories) return `${base}.`;
-                    if (avgWeekCalories > gentleTargetsDisplay.calories * 1.1) return `${base} · a bit high.`;
-                    if (avgWeekCalories < gentleTargetsDisplay.calories * 0.9) return `${base} · a bit light.`;
-                    return `${base} · looking steady.`;
-                  })()}
-                </p>
-              </>
-            )}
-            {workoutSummary.count > 0 && (
-              <p className="text-sm font-semibold text-ink/80">
-                {workoutSummary.count} {workoutSummary.count === 1 ? "workout" : "workouts"} this week
-                {workoutSummary.totalMinutes > 0 ? ` · ${workoutSummary.totalMinutes} min` : ""}
-              </p>
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">This week</p>
+            {streak > 1 && (
+              <p className="text-[11px] font-medium text-primary/80">{streak}-day streak</p>
             )}
           </div>
+
+          {/* 7-day dot strip */}
+          <div className="mt-3 flex justify-between">
+            {last7Days.map((day) => (
+              <div key={day.key} className="flex flex-col items-center gap-1.5">
+                <div className={`h-2.5 w-2.5 rounded-full ${day.logged ? "bg-primary/70" : "bg-ink/10"} ${day.isToday && !day.logged ? "ring-1 ring-ink/20 ring-offset-1" : ""}`} />
+                <p className={`text-[10px] ${day.isToday ? "font-semibold text-ink/60" : "text-muted/40"}`}>{day.label}</p>
+              </div>
+            ))}
+          </div>
+
+          {dayCount === 0 ? (
+            <p className="mt-3 text-sm text-muted/60">Log your first meal and I'll start building your picture.</p>
+          ) : (
+            <>
+              {/* Status pills */}
+              {mealCount >= 5 && avgWeekCalories > 0 && (
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {(() => {
+                    const calTarget = summaryMarkers.gentleTargets?.calories;
+                    const proTarget = summaryMarkers.gentleTargets?.protein;
+                    const pills: { label: string; color: string }[] = [];
+                    if (calTarget && avgWeekCalories) {
+                      if (avgWeekCalories < calTarget * 0.9) pills.push({ label: "calories light", color: "bg-amber-50 text-amber-700" });
+                      else if (avgWeekCalories > calTarget * 1.1) pills.push({ label: "calories high", color: "bg-orange-50 text-orange-700" });
+                      else pills.push({ label: "calories on track", color: "bg-green-50 text-green-700" });
+                    }
+                    if (proTarget && avgWeekProtein) {
+                      if (avgWeekProtein < proTarget * 0.7) pills.push({ label: "protein low", color: "bg-red-50 text-red-700" });
+                      else if (avgWeekProtein < proTarget * 0.85) pills.push({ label: "protein building", color: "bg-amber-50 text-amber-700" });
+                      else pills.push({ label: "protein solid", color: "bg-green-50 text-green-700" });
+                    }
+                    return pills.map((p) => (
+                      <span key={p.label} className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium ${p.color}`}>{p.label}</span>
+                    ));
+                  })()}
+                </div>
+              )}
+
+              {/* Averaging line */}
+              {avgWeekCalories > 0 && (
+                <p className="mt-2 text-xs text-muted/60">
+                  Avg {avgWeekCalories} kcal · {avgWeekProtein}g protein
+                  {workoutSummary.count > 0 ? ` · ${workoutSummary.count} workout${workoutSummary.count !== 1 ? "s" : ""}${workoutSummary.totalMinutes > 0 ? ` · ${workoutSummary.totalMinutes} min` : ""}` : ""}
+                </p>
+              )}
+            </>
+          )}
         </Card>
 
         <Card className="mt-6" data-tour="nudges-card">
