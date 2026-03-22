@@ -498,9 +498,9 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
   if (nudges.length === 0 && profile?.weight && dayCount >= 5 && avgWeekCalories > 0) {
     nudges.push({
       message: pickWeekly([
-        "Intake is looking solid this week",
-        "Your numbers are in a good place this week",
-        "Things are tracking well this week",
+        "Intake is looking solid this week!",
+        "Your numbers are in a good place this week!",
+        "Things are tracking well this week!",
       ]),
       type: "on_track",
       data: {},

@@ -180,10 +180,10 @@ export default function SummaryScreen() {
     const proTarget = summaryMarkers.gentleTargets?.protein;
     const calOk = !calTarget || !avgWeekCalories || (avgWeekCalories >= calTarget * 0.9 && avgWeekCalories <= calTarget * 1.1);
     const proOk = !proTarget || !avgWeekProtein || avgWeekProtein >= proTarget * 0.85;
-    if (loggedThisWeek >= 6 && calOk && proOk) return "Strong week across the board";
-    if (loggedThisWeek >= 5 && (calOk || proOk)) return "Solid week overall";
-    if (loggedThisWeek >= 5) return "Good effort this week";
-    if (loggedThisWeek >= 3) return "Building habits";
+    if (loggedThisWeek >= 6 && calOk && proOk) return "Strong week across the board!";
+    if (loggedThisWeek >= 5 && (calOk || proOk)) return "Solid week overall!";
+    if (loggedThisWeek >= 5) return "Good effort this week!";
+    if (loggedThisWeek >= 3) return "Building habits!";
     return "Getting started";
   }, [last7Days, mealCount, avgWeekCalories, avgWeekProtein, summaryMarkers.gentleTargets]);
 
@@ -191,7 +191,7 @@ export default function SummaryScreen() {
     const lines: string[] = [];
     const loggedThisWeek = last7Days.filter((d) => d.logged).length;
     if (loggedThisWeek > 0) {
-      lines.push(loggedThisWeek === 7 ? "Logged every day this week" : `${loggedThisWeek} of 7 days logged`);
+      lines.push(loggedThisWeek === 7 ? "Logged every day this week!" : `${loggedThisWeek} of 7 days logged`);
     }
     if (mealCount >= 5 && avgWeekCalories > 0) {
       const calTarget = summaryMarkers.gentleTargets?.calories;
@@ -209,7 +209,7 @@ export default function SummaryScreen() {
     }
     if (workoutSummary.count > 0) {
       const mins = workoutSummary.totalMinutes > 0 ? ` · ${workoutSummary.totalMinutes} min` : "";
-      lines.push(`${workoutSummary.count} workout${workoutSummary.count !== 1 ? "s" : ""}${mins}`);
+      lines.push(`${workoutSummary.count} workout${workoutSummary.count !== 1 ? "s" : ""}${mins}${workoutSummary.count >= 3 ? "!" : ""}`);
     }
     return lines;
   }, [last7Days, mealCount, avgWeekCalories, avgWeekProtein, summaryMarkers.gentleTargets, workoutSummary]);
