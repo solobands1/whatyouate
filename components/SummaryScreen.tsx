@@ -185,6 +185,8 @@ export default function SummaryScreen() {
         // Skip DB nudges from today • visibleNotes (fresh compute) covers today's state
         const nudgeDayKey = todayKey(new Date(nudge.created_at));
         if (nudgeDayKey === todayDateKey) return;
+        // Filter out retired nudge types that may still exist in DB history
+        if (nudge.message.includes("you're just") && nudge.message.includes("away from your")) return;
         const key = `${nudgeDayKey}:${nudge.message}`;
         if (seenKeys.has(key)) return;
         seenKeys.add(key);

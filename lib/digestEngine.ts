@@ -294,14 +294,14 @@ export function computeSummaryMarkers(meals: MealLog[], workouts: WorkoutSession
     if (todayMid && todayMid > gentleTargets.calories * 1.15) fuelingState = "over";
   }
 
+  // Protein signal takes priority regardless of calorie state — so protein nudges
+  // get protein-rich food suggestions even when overall calories are adequate.
   let suggestionSignal: SuggestionSignal = "balanced";
-  if (fuelingState === "under") {
-    const proteinTarget = gentleTargets?.protein ?? 0;
-    if (proteinTarget && avgWeekProtein < proteinTarget * 0.8) {
-      suggestionSignal = "protein";
-    } else {
-      suggestionSignal = "calorie";
-    }
+  const weekProteinTarget = gentleTargets?.protein ?? 0;
+  if (weekProteinTarget && avgWeekProtein < weekProteinTarget * 0.85) {
+    suggestionSignal = "protein";
+  } else if (fuelingState === "under") {
+    suggestionSignal = "calorie";
   } else if (avgWeekCalories > 800 && avgWeekFat > 0) {
     const fatTarget = (avgWeekCalories * 0.3) / 9;
     if (avgWeekFat < fatTarget * 0.7) suggestionSignal = "fat";
@@ -371,18 +371,14 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
     const weekHigh = avgWeekCalories > gentleTargets.calories * 1.1;
     if (weekLow) {
       nudges.push({
-        message: isEstimateTargets
-          ? `You've been averaging around ${Math.round(avgWeekCalories)} kcal a day this week • based on your profile, we'd estimate closer to ${gentleTargets.calories} kcal`
-          : `You've been averaging around ${Math.round(avgWeekCalories)} kcal a day this week • your target is closer to ${gentleTargets.calories} kcal`,
+        message: `Intake has been running a bit light this week • looks like food has been on the lower side overall`,
         type: "calorie_low",
         data: { actual: Math.round(avgWeekCalories), target: gentleTargets.calories },
         priority: 2 + calorieBias
       });
     } else if (weekHigh) {
       nudges.push({
-        message: isEstimateTargets
-          ? `You've been eating around ${Math.round(avgWeekCalories)} kcal a day this week • based on your profile, we'd estimate around ${gentleTargets.calories} kcal`
-          : `You've been eating around ${Math.round(avgWeekCalories)} kcal a day this week • your target is around ${gentleTargets.calories} kcal`,
+        message: `Intake has been on the fuller side this week • worth noticing if you're working toward a specific goal`,
         type: "calorie_high",
         data: { actual: Math.round(avgWeekCalories), target: gentleTargets.calories },
         priority: 2 + calorieBias
@@ -396,18 +392,14 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
     const target = weightKg ? weightKg * proteinTargetPerKg(profile) : 0;
     if (target && avgWeekProtein < target * 0.7) {
       nudges.push({
-        message: isEstimateTargets
-          ? `You've been averaging around ${Math.round(avgWeekProtein)}g of protein a day this week • based on your weight, your goal would be around ${Math.round(target)}g`
-          : `You've been averaging around ${Math.round(avgWeekProtein)}g of protein a day this week • your goal is closer to ${Math.round(target)}g`,
+        message: `Protein has been running low this week • looks like it's been sitting well below what your body needs for your goal`,
         type: "protein_low_critical",
         data: { actual: Math.round(avgWeekProtein), target: Math.round(target) },
         priority: 3 + proteinBias
       });
     } else if (target && avgWeekProtein < target * 0.85) {
       nudges.push({
-        message: isEstimateTargets
-          ? `You've been averaging around ${Math.round(avgWeekProtein)}g of protein a day this week • based on your weight, your goal would be around ${Math.round(target)}g`
-          : `You've been averaging around ${Math.round(avgWeekProtein)}g of protein a day this week • your goal is closer to ${Math.round(target)}g`,
+        message: `Protein has been a bit light this week • not far off, but worth keeping an eye on`,
         type: "protein_low",
         data: { actual: Math.round(avgWeekProtein), target: Math.round(target) },
         priority: 2 + proteinBias
