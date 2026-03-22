@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Joyride, { CallBackProps, STATUS, type Step } from "react-joyride";
 import { useRouter } from "next/navigation";
 import type { MealLog, UserProfile } from "../../../lib/types";
-import { summarizeWeek } from "../../../lib/summary";
+import { summarizeLoggedDays } from "../../../lib/summary";
 import { computeGentleTargets, normalizeWeightToKg, proteinTargetPerKg } from "../../../lib/digestEngine";
 import BottomNav from "../../../components/BottomNav";
 import Card from "../../../components/Card";
@@ -38,7 +38,7 @@ function patternBarWidth(label: string) {
 
 const NUTRIENT_INFO: Record<string, string> = {
   "Macros":
-    "Averages from your last 7 days of logged meals. Calories and protein have a suggested range based on your profile and goal. Carbs and fat are shown as observed patterns · no strict target.",
+    "Averages from your logged meals over the last 14 days, skipping any days you didn't log — so gaps don't drag the numbers down. Calories and protein have a suggested range based on your profile and goal. Carbs and fat are shown as observed patterns · no strict target.",
   Iron: "Iron carries oxygen in your blood. Low iron is one of the most common deficiencies and shows up as fatigue, brain fog, and feeling cold. Red meat and shellfish absorb best. Plant sources like lentils and spinach absorb better when eaten with vitamin C.",
   Magnesium: "Involved in over 300 body processes including sleep quality, muscle function, and blood sugar regulation. Many people fall short without knowing it. Best sources are pumpkin seeds, dark chocolate, almonds, black beans, and leafy greens.",
   "Vitamin D": "Critical for bone health, immune function, and mood. Food sources are limited to fatty fish, egg yolks, and fortified milk, and most people in northern climates don't get enough from food alone. Sunlight is the main source, and supplementation is often worth considering.",
@@ -133,7 +133,8 @@ export default function InsightsPage() {
 
   const mealCount = meals.length;
 
-  const weekSummary = useMemo(() => summarizeWeek(meals, 7), [meals]);
+  // Only average over days that were actually logged — gaps and missed days don't deflate the numbers
+  const weekSummary = useMemo(() => summarizeLoggedDays(meals, 14), [meals]);
 
   const avgCalories = useMemo(() => {
     const mins = weekSummary.map((d) => d.totals.calories_min);
@@ -368,28 +369,28 @@ export default function InsightsPage() {
                 i
               </button>
             </div>
-            <p className="text-[11px] uppercase tracking-wide text-muted/50">Last 7 days</p>
+            <p className="text-[11px] uppercase tracking-wide text-muted/50">Avg trend</p>
           </div>
           <div className={`mt-5 flex items-baseline justify-between${!hasEnoughData ? " opacity-50" : ""}`}>
             <div>
               <p className="text-[11px] uppercase tracking-wide text-muted/60">Calories</p>
               <p className="mt-1 text-xl font-semibold">{displayAvgCalories}</p>
-              <p className="text-[10px] text-muted/50">7-day avg</p>
+              <p className="text-[10px] text-muted/50">Avg trend</p>
             </div>
             <div>
               <p className="text-[11px] uppercase tracking-wide text-muted/60">Carbs</p>
               <p className="mt-1 text-xl font-semibold">{displayAvgCarbs}</p>
-              <p className="text-[10px] text-muted/50">7-day avg</p>
+              <p className="text-[10px] text-muted/50">Avg trend</p>
             </div>
             <div>
               <p className="text-[11px] uppercase tracking-wide text-muted/60">Fats</p>
               <p className="mt-1 text-xl font-semibold">{displayAvgFat}</p>
-              <p className="text-[10px] text-muted/50">7-day avg</p>
+              <p className="text-[10px] text-muted/50">Avg trend</p>
             </div>
             <div>
               <p className="text-[11px] uppercase tracking-wide text-muted/60">Protein</p>
               <p className="mt-1 text-xl font-semibold">{displayAvgProtein}</p>
-              <p className="text-[10px] text-muted/50">7-day avg</p>
+              <p className="text-[10px] text-muted/50">Avg trend</p>
             </div>
           </div>
           {gentleTargetsDisplay ? (
