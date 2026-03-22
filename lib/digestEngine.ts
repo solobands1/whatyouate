@@ -67,7 +67,7 @@ const PROTEIN_PER_KG: Record<ActivityLevel, number> = {
 
 export function proteinTargetPerKg(profile: UserProfile): number {
   const base = profile.activityLevel ? (PROTEIN_PER_KG[profile.activityLevel] ?? 1.8) : 1.8;
-  if (profile.goalDirection === "gain") return base + 0.2;
+  if (profile.goalDirection === "gain") return base + 0.4;
   if (profile.goalDirection === "lose") return Math.max(1.4, base - 0.1);
   return base;
 }
@@ -137,11 +137,8 @@ export function computeGentleTargets(meals: MealLog[], profile?: UserProfile) {
     ? Math.round(maintenance * (1 + calNudge))
     : Math.max(0, Math.round(avgLoggedCalories * (1 + calNudge)));
   const proteinTarget = weight ? weight * proteinTargetPerKg(profile) : 0;
-  const proteinNudge = proteinTarget
-    ? avgLoggedProtein + Math.round((proteinTarget - avgLoggedProtein) * 0.1)
-    : avgLoggedProtein;
 
-  return { calories: suggestedCalories, protein: Math.round(proteinNudge), isEstimate: false };
+  return { calories: suggestedCalories, protein: proteinTarget ? Math.round(proteinTarget) : Math.round(avgLoggedProtein), isEstimate: false };
 }
 
 const BURN_KCAL_PER_MIN: Record<string, number> = { low: 4, medium: 7, high: 10 };

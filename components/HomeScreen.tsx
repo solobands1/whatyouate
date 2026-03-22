@@ -20,12 +20,15 @@ import Card from "./Card";
 import { useAuth } from "./AuthProvider";
 import {
   addMeal,
+  addNudge,
   deleteMeal,
   deleteWorkout,
   getProfile,
+  listNudges,
+  pruneNudges,
   updateMeal,
 } from "../lib/supabaseDb";
-import { computeHomeMarkers, computeRecent } from "../lib/digestEngine";
+import { computeHomeMarkers, computeNudges, computeRecent } from "../lib/digestEngine";
 import { safeFallbackAnalysis } from "../lib/ai/schema";
 import { useWorkout, WORKOUT_TYPE_OPTIONS } from "../hooks/useWorkout";
 import { useMeals } from "../hooks/useMeals";
@@ -66,10 +69,13 @@ export default function HomeScreen() {
   const [editPortion, setEditPortion] = useState<"small" | "medium" | "large">("medium");
   const [showTargetInfo, setShowTargetInfo] = useState(false);
 
+  const [nudges, setNudges] = useState<Array<{ id: string; message: string; created_at: string }>>([]);
   const mountedRef = useRef(true);
   const recentSentinelRef = useRef<HTMLDivElement | null>(null);
   const foodInputRef = useRef<HTMLInputElement | null>(null);
   const realtimeRefreshRef = useRef<number | null>(null);
+  const nudgesLoadedRef = useRef(false);
+  const savedThisSessionRef = useRef<Set<string>>(new Set());
 
   const onError = useCallback((msg: string) => setLoadError(msg), []);
 
@@ -95,6 +101,44 @@ export default function HomeScreen() {
       if (mountedRef.current) setLoadingData(false);
     }
   }, [user, workout.load, meals.load]);
+
+  // Load nudges once per user so we can dedup before saving
+  useEffect(() => {
+    if (!user) return;
+    listNudges(user.id, 100)
+      .then((data) => {
+        if (!mountedRef.current) return;
+        setNudges(data as any);
+        nudgesLoadedRef.current = true;
+      })
+      .catch(() => {
+        if (!mountedRef.current) return;
+        nudgesLoadedRef.current = true;
+      });
+  }, [user]);
+
+  const homeVisibleNotes = useMemo(
+    () => computeNudges(meals.meals, workout.workouts, profile),
+    [meals.meals, workout.workouts, profile]
+  );
+
+  // Save nudges from HomeScreen so history fills in even if Summary tab is never opened
+  useEffect(() => {
+    if (!user || !nudgesLoadedRef.current || homeVisibleNotes.length === 0) return;
+    const todayStr = todayKey();
+    const existingToday = new Set(
+      nudges.filter((n) => todayKey(new Date(n.created_at)) === todayStr).map((n) => n.message)
+    );
+    const missing = homeVisibleNotes.filter(
+      (note) => !existingToday.has(note.message) && !savedThisSessionRef.current.has(note.message)
+    );
+    if (missing.length === 0) return;
+    missing.forEach((note) => {
+      savedThisSessionRef.current.add(note.message);
+      addNudge(user.id, "awareness", note.message).catch(() => {});
+    });
+    pruneNudges(user.id).catch(() => {});
+  }, [user, homeVisibleNotes, nudges]);
 
   const handleConfirmDelete = async () => {
     if (!pendingDelete || !user) return;
