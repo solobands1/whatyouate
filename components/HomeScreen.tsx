@@ -201,17 +201,20 @@ export default function HomeScreen() {
   useEffect(() => {
     if (!user || !nudgesLoadedRef.current || homeVisibleNotes.length === 0) return;
     const todayStr = todayKey();
+    const savedTodayKey = `wya_saved_nudges_${todayStr}`;
+    const savedToday = new Set<string>(JSON.parse(localStorage.getItem(savedTodayKey) ?? "[]"));
     const existingToday = new Set(
       nudges.filter((n) => todayKey(new Date(n.created_at)) === todayStr).map((n) => n.message)
     );
     const missing = homeVisibleNotes.filter(
-      (note) => !existingToday.has(note.message) && !savedThisSessionRef.current.has(note.message)
+      (note) => !existingToday.has(note.message) && !savedToday.has(note.message)
     );
     if (missing.length === 0) return;
     missing.forEach((note) => {
-      savedThisSessionRef.current.add(note.message);
+      savedToday.add(note.message);
       addNudge(user.id, "awareness", note.message).catch(() => {});
     });
+    localStorage.setItem(savedTodayKey, JSON.stringify([...savedToday]));
     localStorage.setItem("wya_nudge_ts", Date.now().toString());
     window.dispatchEvent(new Event("wya_nudge_update"));
     pruneNudges(user.id).catch(() => {});
