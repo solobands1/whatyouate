@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Joyride, { CallBackProps, STATUS, type Step } from "react-joyride";
 import { useRouter } from "next/navigation";
 import type { MealLog, UserProfile } from "../../../lib/types";
-import { summarizeLoggedDays } from "../../../lib/summary";
+import { summarizeLoggedDays, summarizeWeek } from "../../../lib/summary";
 import { computeGentleTargets, normalizeWeightToKg, proteinTargetPerKg } from "../../../lib/digestEngine";
 import BottomNav from "../../../components/BottomNav";
 import Card from "../../../components/Card";
@@ -220,6 +220,50 @@ export default function InsightsPage() {
   // Delegate to the single source of truth in digestEngine
   const gentleTargets = useMemo(() => computeGentleTargets(meals, profile), [meals, profile]);
 
+  const sparklineData = useMemo(() => {
+    return summarizeWeek(meals, 14).map((d) => ({
+      dateKey: d.dateKey,
+      calories: Math.round((d.totals.calories_min + d.totals.calories_max) / 2),
+      hasData: d.totals.calories_max > 0,
+    }));
+  }, [meals]);
+
+  const sparklineLoggedCount = useMemo(
+    () => sparklineData.filter((d) => d.hasData).length,
+    [sparklineData]
+  );
+
+  const sparklineChart = useMemo(() => {
+    const W = 320, H = 72;
+    const padL = 4, padR = 4, padT = 10, padB = 4;
+    const cW = W - padL - padR;
+    const cH = H - padT - padB;
+    const target = gentleTargets?.calories;
+    const vals = sparklineData.map((d) => (d.hasData ? d.calories : null));
+    const maxVal = Math.max(...(vals.filter((v) => v !== null) as number[]), target ? target * 1.25 : 0, 1500);
+    const xPos = (i: number) => padL + (i / 13) * cW;
+    const yPos = (v: number) => padT + cH - (v / maxVal) * cH;
+    const segments: string[] = [];
+    let cur = "";
+    for (let i = 0; i < vals.length; i++) {
+      const v = vals[i];
+      if (v === null) {
+        if (cur) { segments.push(cur); cur = ""; }
+      } else {
+        cur += cur ? ` L${xPos(i).toFixed(1)} ${yPos(v).toFixed(1)}` : `M${xPos(i).toFixed(1)} ${yPos(v).toFixed(1)}`;
+      }
+    }
+    if (cur) segments.push(cur);
+    return {
+      W, H, padL, cW,
+      segments,
+      dots: vals.map((v, i) => ({ x: xPos(i), y: v !== null ? yPos(v) : padT + cH, logged: v !== null })),
+      targetY1: target ? yPos(target * 1.15) : null,
+      targetY2: target ? yPos(target * 0.85) : null,
+      hasTarget: !!target,
+    };
+  }, [sparklineData, gentleTargets]);
+
   const gentleTargetsDisplay = gentleTargets;
   const displayAvgCalories = hasEnoughData ? `${avgCalories}` : "—";
   const displayAvgProtein = hasEnoughData ? `${avgProtein}g` : "—";
@@ -401,6 +445,53 @@ export default function InsightsPage() {
             </p>
           ) : (
             <p className="mt-2 text-xs text-muted/70">Complete your profile for a personalized range</p>
+          )}
+        </Card>
+
+        <Card className="mt-6">
+          <div className="flex items-center justify-between">
+            <p className="text-xs uppercase tracking-wide text-muted/70">14-Day Calorie Trend</p>
+            <p className="text-[11px] text-muted/40">{sparklineLoggedCount} / 14 days</p>
+          </div>
+          <div className="mt-3">
+            <svg viewBox={`0 0 ${sparklineChart.W} ${sparklineChart.H}`} className="w-full" style={{ height: sparklineChart.H }}>
+              {sparklineChart.hasTarget && sparklineChart.targetY1 !== null && sparklineChart.targetY2 !== null && (
+                <rect
+                  x={sparklineChart.padL}
+                  y={sparklineChart.targetY1}
+                  width={sparklineChart.cW}
+                  height={Math.max(0, sparklineChart.targetY2 - sparklineChart.targetY1)}
+                  fill="rgba(111,168,255,0.12)"
+                  rx={2}
+                />
+              )}
+              {sparklineChart.segments.map((d, i) => (
+                <path key={i} d={d} fill="none" stroke="rgba(111,168,255,0.75)" strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" />
+              ))}
+              {sparklineChart.dots.map((dot, i) =>
+                dot.logged ? (
+                  <circle key={i} cx={dot.x} cy={dot.y} r={2.5} fill="rgba(111,168,255,1)" />
+                ) : (
+                  <circle key={i} cx={dot.x} cy={dot.y} r={1.5} fill="rgba(0,0,0,0.08)" />
+                )
+              )}
+            </svg>
+            <div className="mt-1 flex justify-between px-0.5">
+              {sparklineData.map((d) => {
+                const date = new Date(`${d.dateKey}T12:00:00`);
+                return (
+                  <span key={d.dateKey} className={`text-[9px] ${d.hasData ? "text-ink/50" : "text-ink/20"}`}>
+                    {["S","M","T","W","T","F","S"][date.getDay()]}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+          {sparklineChart.hasTarget && (
+            <div className="mt-2 flex items-center gap-1.5">
+              <div className="h-2 w-3 rounded-sm bg-primary/15" />
+              <p className="text-[10px] text-muted/50">Target range</p>
+            </div>
           )}
         </Card>
 
