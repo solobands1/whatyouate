@@ -992,21 +992,21 @@ export default function HomeScreen() {
           <div className="mx-auto flex w-[84%] text-xs" data-tour="workout-markers">
             <button
               type="button"
-              className="flex flex-1 items-center justify-center rounded-l-xl rounded-r-none border border-ink/15 bg-gradient-to-r from-white via-ink/5 to-white px-3 py-1.5 text-center font-normal text-ink/60 shadow-[0_8px_18px_rgba(15,23,42,0.12)] ring-1 ring-white/70 transition-all duration-150 hover:from-white hover:via-ink/10 hover:to-white active:translate-y-[1px] active:shadow-[0_3px_10px_rgba(15,23,42,0.16)]"
+              className="flex flex-1 items-center justify-center rounded-l-xl rounded-r-none border border-ink/10 bg-white px-3 py-1.5 text-center font-normal text-ink/60 shadow-[0_4px_12px_rgba(15,23,42,0.08)] transition-all duration-150 hover:bg-ink/5 active:translate-y-[1px]"
               onClick={() => workout.setShowStartWorkoutModal(true)}
             >
               Start Workout
             </button>
             <button
               type="button"
-              className="flex items-center justify-center rounded-none border border-l-0 border-ink/15 bg-gradient-to-r from-white via-ink/5 to-white px-3 py-1.5 text-center font-normal text-ink/60 shadow-[0_8px_18px_rgba(15,23,42,0.12)] ring-1 ring-white/70 transition-all duration-150 hover:from-white hover:via-ink/10 hover:to-white active:translate-y-[1px] active:shadow-[0_3px_10px_rgba(15,23,42,0.16)] whitespace-nowrap"
+              className="flex items-center justify-center rounded-none border border-l-0 border-ink/10 bg-white px-3 py-1.5 text-center font-normal text-ink/60 shadow-[0_4px_12px_rgba(15,23,42,0.08)] transition-all duration-150 hover:bg-ink/5 active:translate-y-[1px] whitespace-nowrap"
               onClick={() => workout.setShowManualWorkoutModal(true)}
             >
               + Manual
             </button>
             <button
               type="button"
-              className="flex flex-1 items-center justify-center rounded-r-xl rounded-l-none border border-l-0 border-ink/15 bg-gradient-to-r from-white via-ink/5 to-white px-3 py-1.5 text-center font-normal text-ink/60 shadow-[0_8px_18px_rgba(15,23,42,0.12)] ring-1 ring-white/70 transition-all duration-150 hover:from-white hover:via-ink/10 hover:to-white active:translate-y-[1px] active:shadow-[0_3px_10px_rgba(15,23,42,0.16)]"
+              className="flex flex-1 items-center justify-center rounded-r-xl rounded-l-none border border-l-0 border-ink/10 bg-white px-3 py-1.5 text-center font-normal text-ink/60 shadow-[0_4px_12px_rgba(15,23,42,0.08)] transition-all duration-150 hover:bg-ink/5 active:translate-y-[1px]"
               onClick={() => workout.setShowEndWorkoutModal(true)}
             >
               End Workout
@@ -1593,8 +1593,8 @@ export default function HomeScreen() {
 
       {/* Manual workout modal */}
       {workout.showManualWorkoutModal && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/30 px-0 pb-0 sm:items-center sm:px-5 sm:pb-5">
-          <div className="w-full max-w-sm rounded-t-2xl bg-white p-5 shadow-xl sm:rounded-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
+          <div className="w-full max-w-sm rounded-xl bg-white p-5 shadow-xl">
             <h2 className="text-base font-semibold text-ink">Add workout</h2>
             <p className="mt-1 text-sm text-muted/70">Log a workout you already completed.</p>
 
