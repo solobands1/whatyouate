@@ -234,8 +234,8 @@ export default function InsightsPage() {
   );
 
   const sparklineChart = useMemo(() => {
-    const W = 320, H = 86;
-    const padL = 4, padR = 4, padT = 10, padB = 4;
+    const W = 320, H = 72;
+    const padL = 0, padR = 0, padT = 8, padB = 4;
     const cW = W - padL - padR;
     const cH = H - padT - padB;
     const target = gentleTargets?.calories;
@@ -273,7 +273,6 @@ export default function InsightsPage() {
       targetY1: target ? yPos(target * 1.15) : null,
       targetY2: target ? yPos(target * 0.85) : null,
       hasTarget: !!target,
-      labelY: padT + cH + 16,
     };
   }, [sparklineData, gentleTargets]);
 
@@ -467,7 +466,7 @@ export default function InsightsPage() {
             <p className="text-[11px] text-muted/40">{sparklineLoggedCount} / 14 days</p>
           </div>
           <div className="mt-3">
-            <svg viewBox={`0 0 ${sparklineChart.W} ${sparklineChart.H}`} preserveAspectRatio="none" className="w-full" style={{ height: sparklineChart.H }}>
+            <svg viewBox={`0 0 ${sparklineChart.W} ${sparklineChart.H}`} className="w-full" style={{ height: sparklineChart.H }}>
               {sparklineChart.hasTarget && sparklineChart.targetY1 !== null && sparklineChart.targetY2 !== null && (
                 <rect
                   x={sparklineChart.padL}
@@ -493,17 +492,21 @@ export default function InsightsPage() {
                   <circle key={i} cx={dot.x} cy={dot.y} r={1.5} fill="rgba(0,0,0,0.08)" />
                 )
               )}
+            </svg>
+            <div className="relative mt-1" style={{ height: 14 }}>
               {sparklineData.map((d, i) => {
                 const date = new Date(`${d.dateKey}T12:00:00`);
-                const initial = ["S","M","T","W","T","F","S"][date.getDay()];
-                const dot = sparklineChart.dots[i];
                 return (
-                  <text key={d.dateKey} x={dot.x} y={sparklineChart.labelY} textAnchor="middle" fontSize="9" fill={d.hasData ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0.2)"}>
-                    {initial}
-                  </text>
+                  <span
+                    key={d.dateKey}
+                    className={`absolute -translate-x-1/2 text-[9px] ${d.hasData ? "text-ink/50" : "text-ink/20"}`}
+                    style={{ left: `${(i / 13) * 100}%` }}
+                  >
+                    {["S","M","T","W","T","F","S"][date.getDay()]}
+                  </span>
                 );
               })}
-            </svg>
+            </div>
           </div>
           {sparklineChart.hasTarget && (
             <div className="mt-2 flex items-center gap-1.5">
