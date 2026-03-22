@@ -578,7 +578,12 @@ export default function SummaryScreen() {
           "Healthy fats are essential for absorbing fat-soluble vitamins and keeping hormones balanced.",
         ]);
       case "on_track":
-        return "";
+        return weeklyVariant([
+          "Consistent logging is how patterns become clear — you're building real data here.",
+          "Staying in range consistently is how real progress happens.",
+          "Your numbers are looking balanced — that's genuinely good work.",
+          "This kind of consistency is what makes the nudges and patterns more accurate over time.",
+        ]);
     }
   };
 
@@ -882,7 +887,7 @@ export default function SummaryScreen() {
                       <p className="text-sm font-medium text-ink/90">{nudge.message.replace(/[.]+$/, "")}</p>
                       {why && (
                         <div>
-                          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted/50 mb-0.5">Why</p>
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted/50 mb-0.5">{nudge.type === "on_track" ? "Keep it up" : "Why"}</p>
                           <p className="text-xs text-ink/70">{why}</p>
                         </div>
                       )}
