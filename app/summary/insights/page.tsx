@@ -38,9 +38,8 @@ function patternBarWidth(label: string) {
   return "85%";
 }
 
-const NUTRIENT_INFO: Record<string, string> = {
-  "Macros":
-    "Averages from your logged meals over the last 14 days, skipping any days you didn't log — so gaps don't drag the numbers down. Calories and protein have a suggested range based on your profile and goal. Carbs and fat are shown as observed patterns · no strict target.",
+const NUTRIENT_INFO: Record<string, string | string[]> = {
+  "Macros": "Averages from your logged meals over the last 14 days, skipping any days you didn't log, so gaps don't drag the numbers down. Calories and protein have a suggested range based on your profile and goal. Carbs and fat are shown as observed patterns · no strict target.",
   Iron: "Iron carries oxygen in your blood. Low iron is one of the most common deficiencies and shows up as fatigue, brain fog, and feeling cold. Red meat and shellfish absorb best. Plant sources like lentils and spinach absorb better when eaten with vitamin C.",
   Magnesium: "Involved in over 300 body processes including sleep quality, muscle function, and blood sugar regulation. Many people fall short without knowing it. Best sources are pumpkin seeds, dark chocolate, almonds, black beans, and leafy greens.",
   "Vitamin D": "Critical for bone health, immune function, and mood. Food sources are limited to fatty fish, egg yolks, and fortified milk, and most people in northern climates don't get enough from food alone. Sunlight is the main source, and supplementation is often worth considering.",
@@ -574,9 +573,21 @@ export default function InsightsPage() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-base font-semibold text-ink">{activeNutrient}</p>
-                <p className="mt-2 text-sm text-muted/70">
-                  {NUTRIENT_INFO[activeNutrient] ?? "Supports steady energy and overall balance."}
-                </p>
+                {(() => {
+                  const info = NUTRIENT_INFO[activeNutrient] ?? "Supports steady energy and overall balance.";
+                  return Array.isArray(info) ? (
+                    <ul className="mt-2 space-y-1.5 text-sm text-muted/70">
+                      {info.map((item, i) => (
+                        <li key={i} className="flex gap-2">
+                          <span className="mt-[3px] h-1.5 w-1.5 shrink-0 rounded-full bg-primary/40" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-2 text-sm text-muted/70">{info}</p>
+                  );
+                })()}
               </div>
               <button
                 type="button"

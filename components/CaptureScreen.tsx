@@ -316,7 +316,7 @@ export default function CaptureScreen() {
         )}
         {preview && (
           <div className="mt-6 flex flex-col items-center">
-            <p className="text-lg font-semibold text-primary animate-fadeIn">Image Captured</p>
+            <p className="text-lg font-semibold text-ink animate-fadeIn">Image Captured</p>
             {saveError ? (
               <div className="mt-3 flex flex-col items-center gap-2">
                 <p className="text-sm text-muted/70">Something went wrong. Please try again.</p>
@@ -360,7 +360,7 @@ export default function CaptureScreen() {
                 <p className="mt-1 text-sm text-muted/70">Adding to your day…</p>
                 <button
                   type="button"
-                  className="mt-3 text-xs text-ink/40 underline"
+                  className="mt-3 text-xs text-ink/60 underline"
                   onClick={handleChangeTime}
                 >
                   Not now? Change date or time

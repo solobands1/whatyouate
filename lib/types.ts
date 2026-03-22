@@ -48,6 +48,7 @@ export interface MealAnalysis {
   database_match_confidence_0_1?: number | null;
   precision_mode_available: boolean;
   optional_quick_confirm_options?: string[];
+  source?: "supplement";
 }
 
 export interface MealLog {

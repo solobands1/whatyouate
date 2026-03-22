@@ -33,6 +33,33 @@ import { safeFallbackAnalysis } from "../lib/ai/schema";
 import { useWorkout, WORKOUT_TYPE_OPTIONS } from "../hooks/useWorkout";
 import { useMeals } from "../hooks/useMeals";
 
+// Keyword → micronutrient signals mapping for free-text supplement entry
+const SUPPLEMENT_KEYWORD_MAP: Array<{ keywords: string[]; nutrients: string[] }> = [
+  { keywords: ["vitamin c", "vit c", "ascorbic", "emergen"],                          nutrients: ["Vitamin C"] },
+  { keywords: ["vitamin d", "vit d", "cholecalciferol"],                               nutrients: ["Vitamin D"] },
+  { keywords: ["b12", "vitamin b12", "cobalamin", "methylcobalamin", "cyanocobalamin"], nutrients: ["B12"] },
+  { keywords: ["magnesium", "mag glycinate", "mag citrate", "mag oxide"],              nutrients: ["Magnesium"] },
+  { keywords: ["zinc"],                                                                 nutrients: ["Zinc"] },
+  { keywords: ["iron", "ferrous", "ferric"],                                           nutrients: ["Iron"] },
+  { keywords: ["calcium", "cal citrate", "cal carbonate"],                             nutrients: ["Calcium"] },
+  { keywords: ["fish oil", "omega-3", "omega 3", "omega3", "dha", "epa", "krill"],    nutrients: ["Omega-3"] },
+  {
+    keywords: ["multivitamin", "multi vitamin", "multi-vitamin"],
+    nutrients: ["Vitamin C", "Vitamin D", "B12", "Iron", "Zinc", "Magnesium", "Calcium"],
+  },
+];
+
+function matchSupplementNutrients(text: string): string[] {
+  const lower = text.toLowerCase();
+  const matched = new Set<string>();
+  for (const { keywords, nutrients } of SUPPLEMENT_KEYWORD_MAP) {
+    if (keywords.some((k) => lower.includes(k))) {
+      nutrients.forEach((n) => matched.add(n));
+    }
+  }
+  return Array.from(matched);
+}
+
 export default function HomeScreen() {
   const router = useRouter();
   const { user, loading } = useAuth();
@@ -68,6 +95,9 @@ export default function HomeScreen() {
   const [quickConfirming, setQuickConfirming] = useState(false);
   const [editPortion, setEditPortion] = useState<"small" | "medium" | "large">("medium");
   const [showTargetInfo, setShowTargetInfo] = useState(false);
+  const [showSupplementModal, setShowSupplementModal] = useState(false);
+  const [supplementText, setSupplementText] = useState("");
+  const [savingSupplements, setSavingSupplements] = useState(false);
 
   const [nudges, setNudges] = useState<Array<{ id: string; message: string; created_at: string }>>([]);
   const mountedRef = useRef(true);
@@ -81,6 +111,44 @@ export default function HomeScreen() {
 
   const workout = useWorkout(user, onError, setEditRecents);
   const meals = useMeals(user, onError, setEditRecents);
+
+  const handleLogSupplements = useCallback(async () => {
+    const trimmed = supplementText.trim();
+    if (!user || !trimmed) return;
+    setSavingSupplements(true);
+    try {
+      const matchedNutrients = matchSupplementNutrients(trimmed);
+      const analysis = {
+        name: trimmed,
+        source: "supplement" as const,
+        detected_items: [{ name: trimmed, confidence_0_1: 1 as number }],
+        estimated_ranges: {
+          calories_min: 0, calories_max: 0,
+          protein_g_min: 0, protein_g_max: 0,
+          carbs_g_min: 0, carbs_g_max: 0,
+          fat_g_min: 0, fat_g_max: 0,
+        },
+        micronutrient_signals: matchedNutrients.map((n) => ({
+          nutrient: n,
+          signal: "adequate_appearance" as const,
+          rationale_short: "Supplement logged",
+        })),
+        confidence_overall_0_1: 1,
+        precision_mode_available: false,
+      };
+      const created = await addMeal(user.id, analysis);
+      if (created?.id) {
+        await updateMeal(created.id, analysis, undefined, user.id);
+        notifyMealsUpdated();
+      }
+      setShowSupplementModal(false);
+      setSupplementText("");
+    } catch {
+      // silently fail — not critical
+    } finally {
+      setSavingSupplements(false);
+    }
+  }, [user, supplementText]);
 
   const loadData = useCallback(async () => {
     if (!user) return;
@@ -862,12 +930,19 @@ export default function HomeScreen() {
       {pendingDelete && !meals.editingMeal && !workout.editingWorkout && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
           <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
-            <h2 className="text-base font-semibold text-ink">Delete {pendingDelete.type}</h2>
-            <p className="mt-2 text-sm text-muted/70">
-              {pendingDelete.type === "meal"
-                ? "Are you sure you want to delete this meal?"
-                : "Are you sure you want to delete this workout?"}
-            </p>
+            {(() => {
+              const isSupp = pendingDelete.type === "meal" &&
+                meals.meals.find((m) => m.id === pendingDelete.id)?.analysisJson?.source === "supplement";
+              const label = isSupp ? "Supplement" : pendingDelete.type === "meal" ? "Meal" : "Workout";
+              return (
+                <>
+                  <h2 className="text-base font-semibold text-ink">Delete {label}</h2>
+                  <p className="mt-2 text-sm text-muted/70">
+                    Are you sure you want to delete this {label.toLowerCase()}?
+                  </p>
+                </>
+              );
+            })()}
             <div className="mt-5 flex items-center justify-end gap-2">
               <button
                 type="button"
@@ -963,7 +1038,10 @@ export default function HomeScreen() {
             <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Today</p>
             {streak >= 1 && (
               <div className="flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1">
-                <span className="text-sm leading-none">🔥</span>
+                <svg width="13" height="15" viewBox="0 0 13 15" fill="none" aria-hidden="true">
+                  <path d="M6.5 0C6.5 0 4 3.5 4 6C4 6.5 4.1 7 4.3 7.4C3.5 6.6 3.2 5.5 3.2 5.5C1.8 7 1 8.8 1 11C1 13.2 3.5 15 6.5 15C9.5 15 12 13.2 12 11C12 8.2 9.5 5.5 9.5 5.5C9.5 7 8.8 8 8 8.5C8.2 8 8.3 7.4 8.3 6.8C8.3 4.2 6.5 0 6.5 0Z" fill="#f97316"/>
+                  <path d="M6.5 7.5C6.2 8.5 6 9.2 6 10C6 11.1 6.2 11.8 6.5 12C6.8 11.8 7 11.1 7 10C7 9.2 6.8 8.5 6.5 7.5Z" fill="#fbbf24"/>
+                </svg>
                 <span className="text-xs font-semibold text-primary">{streak}</span>
               </div>
             )}
@@ -1050,11 +1128,22 @@ export default function HomeScreen() {
             </button>
             <button
               type="button"
-              className="flex flex-1 items-center justify-center gap-2 rounded-r-xl rounded-l-none border-l border-white/30 bg-primary px-3 py-2 text-xs font-semibold text-white shadow-[0_8px_20px_rgba(15,23,42,0.14)] ring-1 ring-white/40 transition-all duration-150 hover:bg-primary/90 active:translate-y-[1px] active:shadow-[0_3px_10px_rgba(15,23,42,0.18)]"
+              className="flex flex-1 items-center justify-center gap-2 rounded-none border-l border-white/30 bg-primary px-3 py-2 text-xs font-semibold text-white shadow-[0_8px_20px_rgba(15,23,42,0.14)] ring-1 ring-white/40 transition-all duration-150 hover:bg-primary/90 active:translate-y-[1px] active:shadow-[0_3px_10px_rgba(15,23,42,0.18)]"
               onClick={() => setBarcodeOpen(true)}
             >
               <span>▦</span>
               <span>Barcode</span>
+            </button>
+            <button
+              type="button"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-r-xl rounded-l-none border-l border-white/30 bg-primary px-3 py-2 text-xs font-semibold text-white shadow-[0_8px_20px_rgba(15,23,42,0.14)] ring-1 ring-white/40 transition-all duration-150 hover:bg-primary/90 active:translate-y-[1px] active:shadow-[0_3px_10px_rgba(15,23,42,0.18)]"
+              onClick={() => setShowSupplementModal(true)}
+            >
+              <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
+                <ellipse cx="5.5" cy="5.5" rx="4.5" ry="2.5" transform="rotate(-45 5.5 5.5)" stroke="currentColor" strokeWidth="1.4" fill="none"/>
+                <line x1="2.3" y1="8.7" x2="8.7" y2="2.3" stroke="currentColor" strokeWidth="1.2"/>
+              </svg>
+              <span>Supps</span>
             </button>
           </div>
           <div className="mx-auto flex w-[84%] text-xs" data-tour="workout-markers">
@@ -1105,10 +1194,12 @@ export default function HomeScreen() {
               <div key={group.label}>
                 {group.label !== "Today" && (() => {
                   const calSum = group.meals.reduce((acc, m) => {
+                    if (m.analysisJson?.source === "supplement") return acc;
                     const v = m.calories ?? Math.round((m.analysisJson.estimated_ranges.calories_min + m.analysisJson.estimated_ranges.calories_max) / 2);
                     return acc + v;
                   }, 0);
                   const protSum = group.meals.reduce((acc, m) => {
+                    if (m.analysisJson?.source === "supplement") return acc;
                     const v = m.protein ?? Math.round((m.analysisJson.estimated_ranges.protein_g_min + m.analysisJson.estimated_ranges.protein_g_max) / 2);
                     return acc + v;
                   }, 0);
@@ -1124,7 +1215,12 @@ export default function HomeScreen() {
                       <div
                         key={`${meal.id}-${meal.calories}-${meal.protein}`}
                         onClick={() => {
-                          if (editRecents) meals.openMealEditor(meal);
+                          if (!editRecents) return;
+                          if (meal.analysisJson?.source === "supplement") {
+                            setPendingDelete({ type: "meal", id: meal.id });
+                          } else {
+                            meals.openMealEditor(meal);
+                          }
                         }}
                         className={`inline-flex w-full items-start justify-between rounded-full border border-primary/20 px-3 py-1.5 text-xs text-ink/80 ${editRecents ? "cursor-pointer animate-wiggle bg-primary/10" : (meal.status === "processing" && Date.now() - meal.ts < 90_000 ? "animate-shimmer" : "bg-primary/10")}`}
                         style={meal.status === "processing" && Date.now() - meal.ts < 90_000 ? { background: "linear-gradient(90deg, #dbeafe 0%, #bfdbfe 40%, #dbeafe 60%, #dbeafe 100%)", backgroundSize: "200% 100%" } : undefined}
@@ -1145,23 +1241,27 @@ export default function HomeScreen() {
                                   return formatTitle(displayName);
                                 })()}
                               </span>
-                              <span className="text-ink/50">
-                                {meal.calories
-                                  ? `${meal.calories} kcal`
-                                  : formatClean(
-                                      meal.analysisJson.estimated_ranges.calories_min,
-                                      meal.analysisJson.estimated_ranges.calories_max,
-                                      "kcal"
-                                    )}{" "}
-                                ·{" "}
-                                {meal.protein
-                                  ? `${meal.protein}g protein`
-                                  : formatClean(
-                                      meal.analysisJson.estimated_ranges.protein_g_min,
-                                      meal.analysisJson.estimated_ranges.protein_g_max,
-                                      "g"
-                                    ) + " protein"}
-                              </span>
+                              {meal.analysisJson?.source === "supplement" ? (
+                                <span className="text-ink/40">supplement</span>
+                              ) : (
+                                <span className="text-ink/50">
+                                  {meal.calories
+                                    ? `${meal.calories} kcal`
+                                    : formatClean(
+                                        meal.analysisJson.estimated_ranges.calories_min,
+                                        meal.analysisJson.estimated_ranges.calories_max,
+                                        "kcal"
+                                      )}{" "}
+                                  ·{" "}
+                                  {meal.protein
+                                    ? `${meal.protein}g protein`
+                                    : formatClean(
+                                        meal.analysisJson.estimated_ranges.protein_g_min,
+                                        meal.analysisJson.estimated_ranges.protein_g_max,
+                                        "g"
+                                      ) + " protein"}
+                                </span>
+                              )}
                             </>
                           )}
                         </span>
@@ -1666,7 +1766,7 @@ export default function HomeScreen() {
                 </p>
                 <input
                   type="date"
-                  className="mt-2 w-full rounded-lg border border-ink/10 bg-white px-3 py-2 text-xs text-ink/80"
+                  className="mt-2 w-full rounded-lg border border-ink/10 bg-white px-3 py-1.5 text-xs text-ink/80"
                   value={workout.manualDate}
                   max={(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; })()}
                   onChange={(e) => workout.setManualDate(e.target.value)}
@@ -1905,6 +2005,57 @@ export default function HomeScreen() {
         onClose={() => setBarcodeOpen(false)}
         onDetected={handleBarcodeDetected}
       />
+
+      {/* Supplement logging modal */}
+      {showSupplementModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
+          <div className="w-full max-w-sm rounded-xl bg-white p-5 shadow-xl">
+            <h2 className="text-base font-semibold text-ink">Log Supplement</h2>
+            <p className="mt-1 text-sm text-muted/70">Type what you took · name and dose are both fine.</p>
+            <input
+              type="text"
+              autoFocus
+              className="mt-4 w-full rounded-lg border border-ink/10 bg-ink/[0.03] px-3 py-2.5 text-sm text-ink placeholder:text-ink/30 focus:outline-none focus:ring-1 focus:ring-primary/30"
+              placeholder="e.g. vitamin D 5000 IU, fish oil 500mg"
+              value={supplementText}
+              onChange={(e) => setSupplementText(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter" && supplementText.trim()) handleLogSupplements(); }}
+            />
+            {(() => {
+              const matched = supplementText.trim() ? matchSupplementNutrients(supplementText) : [];
+              return matched.length > 0 ? (
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {matched.map((n) => (
+                    <span key={n} className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary">
+                      {n}
+                    </span>
+                  ))}
+                </div>
+              ) : supplementText.trim() ? (
+                <p className="mt-3 text-[11px] text-muted/50">No nutrients detected — will be logged by name only.</p>
+              ) : null;
+            })()}
+            <div className="mt-5 flex gap-2 justify-end">
+              <button
+                type="button"
+                className="rounded-xl border border-ink/10 bg-white px-4 py-2 text-xs font-semibold text-ink/70 transition hover:bg-ink/5"
+                onClick={() => { setShowSupplementModal(false); setSupplementText(""); }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={!supplementText.trim() || savingSupplements}
+                className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
+                onClick={handleLogSupplements}
+              >
+                {savingSupplements ? "Saving…" : "Log"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <BottomNav current="home" />
     </div>
   );
