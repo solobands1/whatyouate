@@ -729,6 +729,37 @@ export default function SummaryScreen() {
           <p className="mt-1 text-sm text-muted/70">Daily snapshot and weekly insights at a glance</p>
         </header>
 
+        {/* Unlock progress timeline — only shown until all milestones are reached (14 logged days) */}
+        {dayCount < 14 && (() => {
+          const nudgesUnlocked = mealCount >= 5;
+          const patternsUnlocked = dayCount >= 5 && mealCount >= 5;
+          const fullTrendsUnlocked = dayCount >= 14;
+          const milestones = [
+            { label: "First meal", sub: "", unlocked: mealCount >= 1 },
+            { label: "Nudges", sub: nudgesUnlocked ? "" : `${5 - mealCount} meal${5 - mealCount !== 1 ? "s" : ""}`, unlocked: nudgesUnlocked },
+            { label: "Patterns", sub: patternsUnlocked ? "" : `${Math.max(0, 5 - dayCount)} day${Math.max(0, 5 - dayCount) !== 1 ? "s" : ""}`, unlocked: patternsUnlocked },
+            { label: "Full trends", sub: fullTrendsUnlocked ? "" : `${14 - dayCount} day${14 - dayCount !== 1 ? "s" : ""}`, unlocked: fullTrendsUnlocked },
+          ];
+          return (
+            <div className="mb-5">
+              <div className="flex items-center">
+                {milestones.map((m, i) => (
+                  <div key={m.label} className="flex flex-1 items-center">
+                    <div className="flex flex-col items-center">
+                      <div className={`h-2.5 w-2.5 rounded-full ${m.unlocked ? "bg-primary/70" : "bg-ink/10"}`} />
+                      <p className={`mt-1 text-center text-[10px] leading-tight ${m.unlocked ? "text-ink/60" : "text-muted/40"}`}>{m.label}</p>
+                      {m.sub && <p className="text-center text-[10px] text-primary/60">{m.sub}</p>}
+                    </div>
+                    {i < milestones.length - 1 && (
+                      <div className={`mb-3 h-px flex-1 ${milestones[i + 1].unlocked ? "bg-primary/30" : "bg-ink/10"}`} />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+
         <Card data-tour="summary-today">
           <div className="flex items-center justify-between">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">
