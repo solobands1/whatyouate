@@ -45,6 +45,10 @@ export function useWorkout(
   const [manualMinutes, setManualMinutes] = useState("");
   const [manualTypes, setManualTypes] = useState<string[]>([]);
   const [manualIntensity, setManualIntensity] = useState<"low" | "medium" | "high" | "">("");
+  const [manualDate, setManualDate] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  });
   const [addingManual, setAddingManual] = useState(false);
 
   const load = useCallback(async (userId: string) => {
@@ -119,6 +123,20 @@ export function useWorkout(
     }
   };
 
+  const todayDateStr = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  };
+
+  const openManualWorkoutModal = () => {
+    setManualHours("");
+    setManualMinutes("");
+    setManualTypes([]);
+    setManualIntensity("");
+    setManualDate(todayDateStr());
+    setShowManualWorkoutModal(true);
+  };
+
   const handleAddManualWorkout = async () => {
     if (!user) return;
     try {
@@ -126,13 +144,14 @@ export function useWorkout(
       const hours = Number(manualHours) || 0;
       const minutes = Number(manualMinutes) || 0;
       const durationMin = hours * 60 + minutes;
-      const now = Date.now();
-      const startTs = durationMin > 0 ? now - durationMin * 60000 : now;
+      // Use noon of the selected date as the end anchor
+      const endTs = new Date(`${manualDate}T12:00:00`).getTime();
+      const startTs = durationMin > 0 ? endTs - durationMin * 60000 : endTs;
       const session = await addWorkout(user.id, startTs);
       await updateWorkout(
         session.id,
         user.id,
-        now,
+        endTs,
         durationMin > 0 ? durationMin : 0,
         manualTypes.length > 0 ? manualTypes : undefined,
         manualIntensity || undefined
@@ -214,6 +233,7 @@ export function useWorkout(
     handleUpdateWorkout,
     showManualWorkoutModal,
     setShowManualWorkoutModal,
+    openManualWorkoutModal,
     manualHours,
     setManualHours,
     manualMinutes,
@@ -222,6 +242,8 @@ export function useWorkout(
     setManualTypes,
     manualIntensity,
     setManualIntensity,
+    manualDate,
+    setManualDate,
     addingManual,
     handleAddManualWorkout,
   };

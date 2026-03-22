@@ -685,30 +685,54 @@ export default function HomeScreen() {
       {workout.showStartWorkoutModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
           <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
-            <h2 className="text-base font-semibold text-ink">Start workout</h2>
-            <p className="mt-2 text-sm text-muted/70">
-              {workout.activeWorkout
-                ? "A workout is already in progress."
-                : "Confirm you want to start your workout now."}
-            </p>
-            <div className="mt-5 flex items-center justify-end gap-2">
-              <button
-                type="button"
-                className="rounded-xl border border-ink/10 bg-white px-3 py-2 text-xs font-semibold text-ink/70 transition hover:bg-ink/5"
-                onClick={() => workout.setShowStartWorkoutModal(false)}
-              >
-                Close
-              </button>
-              {!workout.activeWorkout && (
-                <button
-                  type="button"
-                  className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90"
-                  onClick={workout.handleStartWorkout}
-                >
-                  Start workout
-                </button>
-              )}
-            </div>
+            <h2 className="text-base font-semibold text-ink">Log a workout</h2>
+            {workout.activeWorkout ? (
+              <>
+                <p className="mt-2 text-sm text-muted/70">A workout is already in progress.</p>
+                <div className="mt-5 flex justify-end">
+                  <button
+                    type="button"
+                    className="rounded-xl border border-ink/10 bg-white px-3 py-2 text-xs font-semibold text-ink/70 transition hover:bg-ink/5"
+                    onClick={() => workout.setShowStartWorkoutModal(false)}
+                  >
+                    Close
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="mt-4 space-y-2">
+                  <button
+                    type="button"
+                    className="flex w-full flex-col items-start rounded-xl border border-ink/10 bg-white px-4 py-3 text-left transition hover:bg-ink/5"
+                    onClick={workout.handleStartWorkout}
+                  >
+                    <span className="text-sm font-semibold text-ink">Start Workout</span>
+                    <span className="mt-0.5 text-xs text-muted/60">Begin tracking time now</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="flex w-full flex-col items-start rounded-xl border border-ink/10 bg-white px-4 py-3 text-left transition hover:bg-ink/5"
+                    onClick={() => {
+                      workout.setShowStartWorkoutModal(false);
+                      workout.openManualWorkoutModal();
+                    }}
+                  >
+                    <span className="text-sm font-semibold text-ink">Manually Add Workout</span>
+                    <span className="mt-0.5 text-xs text-muted/60">Log a workout you already completed</span>
+                  </button>
+                </div>
+                <div className="mt-4 flex justify-end">
+                  <button
+                    type="button"
+                    className="text-xs font-semibold text-ink/50"
+                    onClick={() => workout.setShowStartWorkoutModal(false)}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -996,13 +1020,6 @@ export default function HomeScreen() {
               onClick={() => workout.setShowStartWorkoutModal(true)}
             >
               Start Workout
-            </button>
-            <button
-              type="button"
-              className="flex items-center justify-center rounded-none border border-l-0 border-ink/10 bg-white px-3 py-1.5 text-center font-normal text-ink/60 shadow-[0_4px_12px_rgba(15,23,42,0.08)] transition-all duration-150 hover:bg-ink/5 active:translate-y-[1px] whitespace-nowrap"
-              onClick={() => workout.setShowManualWorkoutModal(true)}
-            >
-              + Manual
             </button>
             <button
               type="button"
@@ -1601,6 +1618,18 @@ export default function HomeScreen() {
             <div className="mt-4 space-y-4">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">
+                  Date
+                </p>
+                <input
+                  type="date"
+                  className="mt-2 w-full rounded-lg border border-ink/10 bg-white px-3 py-2 text-xs text-ink/80"
+                  value={workout.manualDate}
+                  max={(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; })()}
+                  onChange={(e) => workout.setManualDate(e.target.value)}
+                />
+              </div>
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">
                   Duration
                 </p>
                 <div className="mt-2 flex items-center gap-2">
@@ -1692,6 +1721,8 @@ export default function HomeScreen() {
                   workout.setManualMinutes("");
                   workout.setManualTypes([]);
                   workout.setManualIntensity("");
+                  const d = new Date();
+                  workout.setManualDate(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`);
                 }}
               >
                 Cancel
