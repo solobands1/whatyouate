@@ -746,12 +746,12 @@ export default function SummaryScreen() {
             <div className="mb-5">
               {/* Dot row — background line runs full width, dots sit on top */}
               <div className="relative flex items-center justify-between">
-                <div className="absolute inset-x-0 top-[3px] h-px bg-ink/10" />
-                {milestones.map((m, i) => (
+                <div className="absolute inset-x-0 top-[5px] h-px bg-ink/10" />
+                {milestones.map((m) => (
                   <div key={m.label} className="relative z-10 flex flex-col items-center" style={{ width: "20%" }}>
-                    <div className={`h-[7px] w-[7px] rounded-full ${m.unlocked ? "bg-primary/70" : "bg-ink/15"}`} />
-                    <p className={`mt-1.5 text-center text-[9px] leading-tight ${m.unlocked ? "text-ink/60" : "text-muted/35"}`}>{m.label}</p>
-                    {m.sub && <p className="mt-0.5 text-center text-[9px] leading-tight text-primary/55">{m.sub}</p>}
+                    <div className={`h-3 w-3 rounded-full ${m.unlocked ? "bg-primary/80" : "bg-ink/20"}`} />
+                    <p className={`mt-1.5 text-center text-[10px] leading-tight ${m.unlocked ? "text-ink/70" : "text-muted/45"}`}>{m.label}</p>
+                    {m.sub && <p className="mt-0.5 text-center text-[10px] leading-tight text-primary/60">{m.sub}</p>}
                   </div>
                 ))}
               </div>
