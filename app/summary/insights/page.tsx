@@ -236,7 +236,7 @@ export default function InsightsPage() {
   const sparklineChart = useMemo(() => {
     const DAYS = 7;
     const W = 320, H = 72;
-    const padL = 6, padR = 6, padT = 8, padB = 4;
+    const padL = 20, padR = 20, padT = 8, padB = 4;
     const cW = W - padL - padR;
     const cH = H - padT - padB;
     const target = gentleTargets?.calories;
