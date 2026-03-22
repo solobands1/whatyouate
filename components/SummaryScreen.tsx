@@ -30,8 +30,8 @@ export default function SummaryScreen() {
 
   useEffect(() => {
     mountedRef.current = true;
-    localStorage.removeItem("wya_nudge_unseen");
-    window.dispatchEvent(new Event("wya_nudge_unseen"));
+    localStorage.setItem("wya_nudge_seen_ts", Date.now().toString());
+    window.dispatchEvent(new Event("wya_nudge_update"));
     return () => {
       mountedRef.current = false;
     };

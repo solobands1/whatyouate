@@ -212,7 +212,8 @@ export default function HomeScreen() {
       savedThisSessionRef.current.add(note.message);
       addNudge(user.id, "awareness", note.message).catch(() => {});
     });
-    localStorage.setItem("wya_nudge_unseen", "true");
+    localStorage.setItem("wya_nudge_ts", Date.now().toString());
+    window.dispatchEvent(new Event("wya_nudge_update"));
     pruneNudges(user.id).catch(() => {});
   }, [user, homeVisibleNotes, nudges]);
 
@@ -1046,11 +1047,11 @@ export default function HomeScreen() {
             <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Today</p>
             {streak >= 1 && (
               <div className="flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1">
-                <svg width="13" height="15" viewBox="0 0 13 15" fill="none" aria-hidden="true" className="animate-flame">
+                <svg width="16" height="18" viewBox="0 0 13 15" fill="none" aria-hidden="true" className="animate-flame">
                   <path d="M6.5 0C6.5 0 4 3.5 4 6C4 6.5 4.1 7 4.3 7.4C3.5 6.6 3.2 5.5 3.2 5.5C1.8 7 1 8.8 1 11C1 13.2 3.5 15 6.5 15C9.5 15 12 13.2 12 11C12 8.2 9.5 5.5 9.5 5.5C9.5 7 8.8 8 8 8.5C8.2 8 8.3 7.4 8.3 6.8C8.3 4.2 6.5 0 6.5 0Z" fill="#f97316"/>
                   <path d="M6.5 7.5C6.2 8.5 6 9.2 6 10C6 11.1 6.2 11.8 6.5 12C6.8 11.8 7 11.1 7 10C7 9.2 6.8 8.5 6.5 7.5Z" fill="#fbbf24"/>
                 </svg>
-                <span className="text-xs font-semibold text-primary">{streak}</span>
+                <span className="text-[13px] font-semibold text-primary">{streak}</span>
               </div>
             )}
           </div>

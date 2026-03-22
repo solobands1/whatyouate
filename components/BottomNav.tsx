@@ -3,14 +3,20 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+function checkUnseen() {
+  const nudgeTs = parseInt(localStorage.getItem("wya_nudge_ts") ?? "0");
+  const seenTs = parseInt(localStorage.getItem("wya_nudge_seen_ts") ?? "0");
+  return nudgeTs > seenTs;
+}
+
 export default function BottomNav({ current }: { current: "home" | "summary" | "profile" }) {
   const [hasUnseenNudge, setHasUnseenNudge] = useState(false);
 
   useEffect(() => {
-    setHasUnseenNudge(localStorage.getItem("wya_nudge_unseen") === "true");
-    const handler = () => setHasUnseenNudge(localStorage.getItem("wya_nudge_unseen") === "true");
-    window.addEventListener("wya_nudge_unseen", handler);
-    return () => window.removeEventListener("wya_nudge_unseen", handler);
+    setHasUnseenNudge(checkUnseen());
+    const handler = () => setHasUnseenNudge(checkUnseen());
+    window.addEventListener("wya_nudge_update", handler);
+    return () => window.removeEventListener("wya_nudge_update", handler);
   }, []);
 
   const item = (href: string, label: string, key: string) => {
