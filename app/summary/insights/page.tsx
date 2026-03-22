@@ -70,6 +70,7 @@ export default function InsightsPage() {
   const [meals, setMeals] = useState<MealLog[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [activeNutrient, setActiveNutrient] = useState<string | null>(null);
+  const [barsReady, setBarsReady] = useState(false);
   const mountedRef = useRef(true);
   const [runInsightsTour, setRunInsightsTour] = useState(false);
 
@@ -79,6 +80,12 @@ export default function InsightsPage() {
       mountedRef.current = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (loadingData) { setBarsReady(false); return; }
+    const t = setTimeout(() => setBarsReady(true), 60);
+    return () => clearTimeout(t);
+  }, [loadingData]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -551,7 +558,7 @@ export default function InsightsPage() {
                 <div className="mt-2 h-2 rounded-full border border-ink/5 bg-ink/5">
                   <div
                     className="h-2 rounded-full bg-primary/35"
-                    style={{ width: pattern.width }}
+                    style={{ width: barsReady ? pattern.width : "0%", transition: `width 600ms cubic-bezier(0.22,1,0.36,1) ${index * 55}ms` }}
                   />
                 </div>
                 <p className="mt-1 text-[11px] text-muted/50">{pattern.label}</p>

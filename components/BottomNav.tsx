@@ -1,21 +1,37 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 export default function BottomNav({ current }: { current: "home" | "summary" | "profile" }) {
-  const item = (href: string, label: string, key: string) => (
-    <Link
-      href={href}
-      data-tour={key === "summary" ? "nav-summary" : undefined}
-      className={`relative flex-1 rounded-xl px-3 py-2 text-center text-sm font-medium transition-colors ${
-        current === key
-          ? "bg-white text-ink shadow-[0_10px_20px_rgba(15,23,42,0.08)]"
-          : "text-muted/70 hover:text-ink"
-      }`}
-    >
-      {label}
-    </Link>
-  );
+  const [hasUnseenNudge, setHasUnseenNudge] = useState(false);
+
+  useEffect(() => {
+    setHasUnseenNudge(localStorage.getItem("wya_nudge_unseen") === "true");
+    const handler = () => setHasUnseenNudge(localStorage.getItem("wya_nudge_unseen") === "true");
+    window.addEventListener("wya_nudge_unseen", handler);
+    return () => window.removeEventListener("wya_nudge_unseen", handler);
+  }, []);
+
+  const item = (href: string, label: string, key: string) => {
+    const showBell = key === "summary" && hasUnseenNudge;
+    return (
+      <Link
+        href={href}
+        data-tour={key === "summary" ? "nav-summary" : undefined}
+        className={`relative flex-1 rounded-xl px-3 py-2 text-center text-sm font-medium transition-colors ${
+          current === key
+            ? "bg-white text-ink shadow-[0_10px_20px_rgba(15,23,42,0.08)]"
+            : "text-muted/70 hover:text-ink"
+        }`}
+      >
+        {label}
+        {showBell && (
+          <span className="absolute right-2 top-1.5 flex h-2 w-2 items-center justify-center rounded-full bg-primary" />
+        )}
+      </Link>
+    );
+  };
 
   return (
     <nav className="sticky bottom-0 left-0 right-0 border-t border-ink/5 bg-surface/95 backdrop-blur safe-bottom">

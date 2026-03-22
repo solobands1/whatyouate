@@ -30,6 +30,8 @@ export default function SummaryScreen() {
 
   useEffect(() => {
     mountedRef.current = true;
+    localStorage.removeItem("wya_nudge_unseen");
+    window.dispatchEvent(new Event("wya_nudge_unseen"));
     return () => {
       mountedRef.current = false;
     };
@@ -288,7 +290,7 @@ export default function SummaryScreen() {
   const summaryTourSteps = [
     {
       target: '[data-tour="summary-today"]',
-      content: "View your calorie and protein intake throughout the day.",
+      content: "View your calories, protein, fats, and carbs throughout the day.",
       disableBeacon: true
     },
     {

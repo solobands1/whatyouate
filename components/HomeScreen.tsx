@@ -87,6 +87,7 @@ export default function HomeScreen() {
   const [deletingItem, setDeletingItem] = useState(false);
   const [visibleRecentCount, setVisibleRecentCount] = useState(6);
   const [visibleGroupCount, setVisibleGroupCount] = useState(3);
+  const [barsReady, setBarsReady] = useState(false);
   const [pendingQuickConfirmId, setPendingQuickConfirmId] = useState<string | null>(null);
   const [quickConfirmMeal, setQuickConfirmMeal] = useState<MealLog | null>(null);
   const [quickConfirmName, setQuickConfirmName] = useState("");
@@ -170,6 +171,12 @@ export default function HomeScreen() {
     }
   }, [user, workout.load, meals.load]);
 
+  useEffect(() => {
+    if (loadingData) { setBarsReady(false); return; }
+    const t = setTimeout(() => setBarsReady(true), 60);
+    return () => clearTimeout(t);
+  }, [loadingData]);
+
   // Load nudges once per user so we can dedup before saving
   useEffect(() => {
     if (!user) return;
@@ -205,6 +212,7 @@ export default function HomeScreen() {
       savedThisSessionRef.current.add(note.message);
       addNudge(user.id, "awareness", note.message).catch(() => {});
     });
+    localStorage.setItem("wya_nudge_unseen", "true");
     pruneNudges(user.id).catch(() => {});
   }, [user, homeVisibleNotes, nudges]);
 
@@ -1038,7 +1046,7 @@ export default function HomeScreen() {
             <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Today</p>
             {streak >= 1 && (
               <div className="flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1">
-                <svg width="13" height="15" viewBox="0 0 13 15" fill="none" aria-hidden="true">
+                <svg width="13" height="15" viewBox="0 0 13 15" fill="none" aria-hidden="true" className="animate-flame">
                   <path d="M6.5 0C6.5 0 4 3.5 4 6C4 6.5 4.1 7 4.3 7.4C3.5 6.6 3.2 5.5 3.2 5.5C1.8 7 1 8.8 1 11C1 13.2 3.5 15 6.5 15C9.5 15 12 13.2 12 11C12 8.2 9.5 5.5 9.5 5.5C9.5 7 8.8 8 8 8.5C8.2 8 8.3 7.4 8.3 6.8C8.3 4.2 6.5 0 6.5 0Z" fill="#f97316"/>
                   <path d="M6.5 7.5C6.2 8.5 6 9.2 6 10C6 11.1 6.2 11.8 6.5 12C6.8 11.8 7 11.1 7 10C7 9.2 6.8 8.5 6.5 7.5Z" fill="#fbbf24"/>
                 </svg>
@@ -1070,12 +1078,12 @@ export default function HomeScreen() {
             <div className="mt-3 flex gap-3">
               <div className="flex-1">
                 <div className="h-1.5 overflow-hidden rounded-full bg-ink/5">
-                  <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${calPct}%` }} />
+                  <div className="h-full rounded-full bg-primary" style={{ width: `${barsReady ? calPct : 0}%`, transition: "width 700ms cubic-bezier(0.22,1,0.36,1)" }} />
                 </div>
               </div>
               <div className="flex-1">
                 <div className="h-1.5 overflow-hidden rounded-full bg-ink/5">
-                  <div className="h-full rounded-full bg-primary/70 transition-all duration-500" style={{ width: `${protPct}%` }} />
+                  <div className="h-full rounded-full bg-primary/70" style={{ width: `${barsReady ? protPct : 0}%`, transition: "width 700ms cubic-bezier(0.22,1,0.36,1) 80ms" }} />
                 </div>
               </div>
             </div>
@@ -1190,7 +1198,9 @@ export default function HomeScreen() {
             <span className="col-span-1 text-right">Workout</span>
           </div>
           <div className="mt-3 space-y-4 text-sm text-ink/80">
-            {groupedRecent.slice(0, visibleGroupCount).map((group) => (
+            {(() => {
+              let pillIdx = 0;
+              return groupedRecent.slice(0, visibleGroupCount).map((group) => (
               <div key={group.label}>
                 {group.label !== "Today" && (() => {
                   const calSum = group.meals.reduce((acc, m) => {
@@ -1211,7 +1221,10 @@ export default function HomeScreen() {
                 })()}
                 <div className="mt-2 grid grid-cols-3 gap-2">
                   <div className="col-span-2 space-y-2">
-                    {group.meals.map((meal) => (
+                    {group.meals.map((meal) => {
+                      const idx = pillIdx++;
+                      const isShimmer = meal.status === "processing" && Date.now() - meal.ts < 90_000;
+                      return (
                       <div
                         key={`${meal.id}-${meal.calories}-${meal.protein}`}
                         onClick={() => {
@@ -1222,8 +1235,11 @@ export default function HomeScreen() {
                             meals.openMealEditor(meal);
                           }
                         }}
-                        className={`inline-flex w-full items-start justify-between rounded-full border border-primary/20 px-3 py-1.5 text-xs text-ink/80 ${editRecents ? "cursor-pointer animate-wiggle bg-primary/10" : (meal.status === "processing" && Date.now() - meal.ts < 90_000 ? "animate-shimmer" : "bg-primary/10")}`}
-                        style={meal.status === "processing" && Date.now() - meal.ts < 90_000 ? { background: "linear-gradient(90deg, #dbeafe 0%, #bfdbfe 40%, #dbeafe 60%, #dbeafe 100%)", backgroundSize: "200% 100%" } : undefined}
+                        className={`inline-flex w-full items-start justify-between rounded-full border border-primary/20 px-3 py-1.5 text-xs text-ink/80 ${editRecents ? "cursor-pointer animate-wiggle bg-primary/10" : (isShimmer ? "animate-shimmer" : "animate-pill-in bg-primary/10")}`}
+                        style={{
+                          ...(isShimmer ? { background: "linear-gradient(90deg, #dbeafe 0%, #bfdbfe 40%, #dbeafe 60%, #dbeafe 100%)", backgroundSize: "200% 100%" } : {}),
+                          ...(!editRecents && !isShimmer ? { animationDelay: `${idx * 35}ms` } : {})
+                        }}
                       >
                         <span className="flex flex-col">
                           {meal.status === "processing" && Date.now() - meal.ts < 90_000 ? (
@@ -1266,7 +1282,7 @@ export default function HomeScreen() {
                           )}
                         </span>
                       </div>
-                    ))}
+                    ); })}
                   </div>
                   <div className="col-span-1 space-y-2 border-l border-ink/5 pl-2">
                     {group.workouts.map((w) => (
@@ -1286,7 +1302,8 @@ export default function HomeScreen() {
                   </div>
                 </div>
               </div>
-            ))}
+            ));
+            })()}
             {visibleGroupCount < groupedRecent.length && (
               <button
                 type="button"

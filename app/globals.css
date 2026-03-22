@@ -7,7 +7,8 @@
 }
 
 body {
-  @apply bg-surface text-ink antialiased;
+  background-color: #F1F6FF;
+  @apply text-ink antialiased;
 }
 
 * {
@@ -155,4 +156,25 @@ body {
 .animate-scan {
   animation: scan 2s ease-in-out infinite;
   position: absolute;
+}
+
+@keyframes flamePulse {
+  0%, 100% { opacity: 1; transform: scaleY(1) scaleX(1); }
+  35% { opacity: 0.78; transform: scaleY(1.07) scaleX(0.95); }
+  65% { opacity: 0.92; transform: scaleY(0.95) scaleX(1.03); }
+}
+
+.animate-flame {
+  animation: flamePulse 2.8s ease-in-out infinite;
+  transform-origin: bottom center;
+  display: block;
+}
+
+@keyframes pillFadeUp {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-pill-in {
+  animation: pillFadeUp 220ms ease-out both;
 }
