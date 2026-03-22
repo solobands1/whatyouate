@@ -23,8 +23,9 @@ const FAT_POOL = [
 
 export type SuggestionSignal = "protein" | "calorie" | "fat" | "balanced";
 
-function toKg(weight: number, units: UserProfile["units"]) {
-  return units === "imperial" ? weight * 0.453592 : weight;
+function toKg(weight: number, _units: UserProfile["units"]) {
+  // DB stores kg for all users; ProfileScreen converts before saving
+  return weight;
 }
 
 

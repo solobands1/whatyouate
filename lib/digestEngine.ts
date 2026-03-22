@@ -72,9 +72,12 @@ export function proteinTargetPerKg(profile: UserProfile): number {
   return base;
 }
 
-/** Convert a stored body-weight value to kilograms. Imperial users store lbs; metric users store kg. */
-export function normalizeWeightToKg(weight: number, units: Units): number {
-  return units === "imperial" ? weight * 0.453592 : weight;
+/** Return the stored weight value in kilograms.
+ *  ProfileScreen always converts lbs → kg before persisting, so the database
+ *  stores kg for ALL users regardless of their display-unit preference.
+ *  No runtime conversion is needed here. */
+export function normalizeWeightToKg(weight: number, _units: Units): number {
+  return weight;
 }
 
 /** Mifflin-St Jeor TDEE estimate. Returns null if profile is missing required fields.
