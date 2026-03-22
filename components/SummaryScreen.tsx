@@ -744,17 +744,14 @@ export default function SummaryScreen() {
           ];
           return (
             <div className="mb-5">
-              <div className="flex items-center">
+              {/* Dot row — background line runs full width, dots sit on top */}
+              <div className="relative flex items-center justify-between">
+                <div className="absolute inset-x-0 top-[3px] h-px bg-ink/10" />
                 {milestones.map((m, i) => (
-                  <div key={m.label} className="flex flex-1 items-center">
-                    <div className="flex flex-col items-center">
-                      <div className={`h-2.5 w-2.5 rounded-full ${m.unlocked ? "bg-primary/70" : "bg-ink/10"}`} />
-                      <p className={`mt-1 text-center text-[10px] leading-tight ${m.unlocked ? "text-ink/60" : "text-muted/40"}`}>{m.label}</p>
-                      {m.sub && <p className="text-center text-[10px] text-primary/60">{m.sub}</p>}
-                    </div>
-                    {i < milestones.length - 1 && (
-                      <div className={`mb-3 h-px flex-1 ${milestones[i + 1].unlocked ? "bg-primary/30" : "bg-ink/10"}`} />
-                    )}
+                  <div key={m.label} className="relative z-10 flex flex-col items-center" style={{ width: "20%" }}>
+                    <div className={`h-[7px] w-[7px] rounded-full ${m.unlocked ? "bg-primary/70" : "bg-ink/15"}`} />
+                    <p className={`mt-1.5 text-center text-[9px] leading-tight ${m.unlocked ? "text-ink/60" : "text-muted/35"}`}>{m.label}</p>
+                    {m.sub && <p className="mt-0.5 text-center text-[9px] leading-tight text-primary/55">{m.sub}</p>}
                   </div>
                 ))}
               </div>
