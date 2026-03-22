@@ -834,7 +834,7 @@ export default function SummaryScreen() {
           <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">This week</p>
 
           {/* 7-day dot strip */}
-          <div className="mt-3 flex justify-between">
+          <div className="mt-3 flex items-start justify-between">
             {last7Days.map((day) => (
               <div key={day.key} className="flex flex-col items-center gap-1.5">
                 <div className={`h-2.5 w-2.5 rounded-full ${day.logged ? "bg-primary/70" : "bg-ink/10"}`} />

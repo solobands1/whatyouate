@@ -516,7 +516,7 @@ export default function InsightsPage() {
                 return (
                   <span
                     key={d.dateKey}
-                    className={`absolute top-0 -translate-x-1/2 text-[9px] ${d.hasData ? "text-ink/50" : "text-ink/20"}`}
+                    className={`absolute -translate-x-1/2 text-[9px] ${d.hasData ? "text-ink/50" : "text-ink/20"}`}
                     style={{ left: `${sparklineChart.dots[i].labelLeftPct}%` }}
                   >
                     {["S","M","T","W","T","F","S"][date.getDay()]}
