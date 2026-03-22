@@ -216,6 +216,31 @@ export default function InsightsPage() {
 
   const hasEnoughData = dayCount >= 5 && mealCount >= 5;
 
+  const nutrientSources = useMemo(() => {
+    const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    const recentMeals = meals.filter((m) => m.ts > cutoff && m.analysisJson?.source !== "supplement");
+    const byNutrient = new Map<string, Set<string>>();
+    for (const meal of recentMeals) {
+      const rawName = meal.analysisJson?.name ?? meal.analysisJson?.detected_items?.[0]?.name ?? null;
+      if (!rawName) continue;
+      const mealName = rawName.replace(/\b\w/g, (c) => c.toUpperCase());
+      for (const signal of meal.analysisJson.micronutrient_signals ?? []) {
+        if (signal.signal !== "adequate_appearance") continue;
+        const nutrient = String(signal.nutrient || "");
+        const matched = INSIGHT_NUTRIENTS.find((n) => n.toLowerCase() === nutrient.toLowerCase());
+        if (!matched) continue;
+        if (!byNutrient.has(matched)) byNutrient.set(matched, new Set());
+        byNutrient.get(matched)!.add(mealName);
+      }
+    }
+    return INSIGHT_NUTRIENTS
+      .map((nutrient) => ({
+        nutrient,
+        foods: Array.from(byNutrient.get(nutrient) ?? []).slice(0, 4)
+      }))
+      .filter((entry) => entry.foods.length > 0);
+  }, [meals]);
+
   // Delegate to the single source of truth in digestEngine
   const gentleTargets = useMemo(() => computeGentleTargets(meals, profile), [meals, profile]);
 
@@ -293,6 +318,7 @@ export default function InsightsPage() {
   const displayEnergyPattern = hasEnoughData ? energyPattern : "Moderate intake pattern";
   const displayProteinPattern = hasEnoughData ? proteinPattern : "Moderate protein pattern";
   const displayFatPattern = hasEnoughData ? fatPattern : "Moderate fat pattern";
+
   const displayMicronutrients = hasEnoughData
     ? micronutrientPatterns
     : INSIGHT_NUTRIENTS.map((name) => ({
@@ -524,6 +550,32 @@ export default function InsightsPage() {
             </div>
           )}
         </Card>
+
+        {nutrientSources.length > 0 && (
+          <Card className="mt-6">
+            <div className="flex items-center justify-between">
+              <p className="text-xs uppercase tracking-wide text-muted/70">What's Working</p>
+            </div>
+            <p className="mt-1 text-xs text-muted/50">Foods keeping your nutrients on track · keep eating them</p>
+            <div className="mt-4 space-y-3">
+              {nutrientSources.map(({ nutrient, foods }) => (
+                <div key={nutrient}>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">{nutrient}</p>
+                  <div className="mt-1.5 flex flex-wrap gap-1.5">
+                    {foods.map((food) => (
+                      <span
+                        key={food}
+                        className="rounded-full border border-primary/20 bg-primary/10 px-2.5 py-0.5 text-xs text-ink/70"
+                      >
+                        {food}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
 
         <Card className="mt-6" data-tour="insights-micro">
           <div className="flex items-center justify-between">
