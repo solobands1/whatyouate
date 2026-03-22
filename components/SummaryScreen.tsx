@@ -173,7 +173,9 @@ export default function SummaryScreen() {
   }, [user]);
 
   const uniqueNudges = useMemo(() => {
-    const messages = new Set<string>();
+    // Dedup by day+message so the same observation can appear on different days in history,
+    // but duplicates within the same day are collapsed.
+    const seenKeys = new Set<string>();
     const items: Array<{ id?: string; message: string; created_at?: string; isNew?: boolean }> = [];
     const todayDateKey = todayKey();
     nudges
@@ -183,8 +185,9 @@ export default function SummaryScreen() {
         // Skip DB nudges from today • visibleNotes (fresh compute) covers today's state
         const nudgeDayKey = todayKey(new Date(nudge.created_at));
         if (nudgeDayKey === todayDateKey) return;
-        if (messages.has(nudge.message)) return;
-        messages.add(nudge.message);
+        const key = `${nudgeDayKey}:${nudge.message}`;
+        if (seenKeys.has(key)) return;
+        seenKeys.add(key);
         items.push({
           id: nudge.id,
           message: nudge.message,
@@ -287,7 +290,7 @@ export default function SummaryScreen() {
     const caloriesHigh = caloriesTarget > 0 && avgWeekCalories > caloriesTarget * 1.1;
 
     const nudgeIsProtein = visibleNotes.some((n) =>
-      n.type === "protein_low_critical" || n.type === "protein_low" || n.type === "protein_close"
+      n.type === "protein_low_critical" || n.type === "protein_low"
     );
     const nudgeIsCalorie = visibleNotes.some((n) =>
       n.type === "calorie_low" || n.type === "calorie_high" ||
@@ -365,7 +368,7 @@ export default function SummaryScreen() {
     const proteinLow = avgWeekProtein > 0 && avgWeekProtein < gentleTargetsDisplay.protein * 0.85;
 
     const nudgeIsProtein = visibleNotes.some((n) =>
-      n.type === "protein_low_critical" || n.type === "protein_low" || n.type === "protein_close"
+      n.type === "protein_low_critical" || n.type === "protein_low"
     );
     const nudgeIsCalorie = visibleNotes.some((n) =>
       n.type === "calorie_low" || n.type === "calorie_high" ||
@@ -472,15 +475,6 @@ export default function SummaryScreen() {
           "Getting protein consistently right is one of the simplest ways to feel more energised through the week.",
           "Protein does a lot beyond muscle • energy, mood, and immune health all benefit from getting it right.",
         ]);
-      case "protein_close":
-        if (goal === "gain") return weeklyVariant([
-          "You're doing well • a small consistent top-up is the difference between steady progress and plateaus.",
-          "The gap is small enough that closing it is more about habit than any big change.",
-        ]);
-        return weeklyVariant([
-          "You're nearly there • a small consistent add is all it takes to keep things dialled in.",
-          "One regular addition closes it • and you'll likely feel the difference in your energy.",
-        ]);
       case "calorie_low":
         if (goal === "gain") return weeklyVariant([
           "Your body needs a consistent surplus to build • running light on calories works directly against that.",
@@ -539,8 +533,6 @@ export default function SummaryScreen() {
         return goal === "gain" ? ["+ protein at every meal", "+ protein snack"] : ["+ protein per meal", "+ protein snack"];
       case "protein_low":
         return ["+ protein at each meal", "+ protein snack"];
-      case "protein_close":
-        return ["+ small protein add"];
       case "calorie_low":
         return goal === "gain" ? ["+ larger portions", "+ side dish"] : ["+ small snack", "+ side dish"];
       case "calorie_high":
@@ -585,11 +577,6 @@ export default function SummaryScreen() {
         return weeklyVariant([
           "Pairing each meal with a solid protein source is usually enough to close a gap like this.",
           "A small protein add at each meal tends to compound quickly • it doesn't need to be a big change.",
-        ]);
-      case "protein_close":
-        return weeklyVariant([
-          "One consistent protein add on most days closes it • a small habit is all it takes.",
-          "You're close enough that a single daily addition gets you there • keep it simple and repeatable.",
         ]);
       case "calorie_low":
         if (goal === "gain") return weeklyVariant([

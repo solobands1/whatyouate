@@ -5,7 +5,7 @@ import { buildNutrientNotes, buildSuggestions, type SuggestionSignal } from "./r
 
 export type NudgeType =
   | "calorie_low" | "calorie_high"
-  | "protein_low_critical" | "protein_low" | "protein_close"
+  | "protein_low_critical" | "protein_low"
   | "workout_missing" | "workout_fuel_low" | "training_fuel_low"
   | "micronutrient" | "fat_low" | "on_track";
 
@@ -411,13 +411,6 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
         type: "protein_low",
         data: { actual: Math.round(avgWeekProtein), target: Math.round(target) },
         priority: 2 + proteinBias
-      });
-    } else if (target && avgWeekProtein < target * 0.95) {
-      nudges.push({
-        message: `You're really close on protein • at ${Math.round(avgWeekProtein)}g, you're just ${Math.round(target - avgWeekProtein)}g away from your ${Math.round(target)}g goal`,
-        type: "protein_close",
-        data: { actual: Math.round(avgWeekProtein), target: Math.round(target) },
-        priority: 1 + proteinBias
       });
     }
   }
