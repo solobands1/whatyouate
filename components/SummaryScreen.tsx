@@ -198,13 +198,13 @@ export default function SummaryScreen() {
         });
       });
     visibleNotes.forEach((note) => {
-      if (messages.has(note.message)) return;
-      messages.add(note.message);
+      if (seenKeys.has(note.message)) return;
+      seenKeys.add(note.message);
       items.push({ message: note.message });
     });
     nutrientNotes.forEach((note) => {
-      if (messages.has(note)) return;
-      messages.add(note);
+      if (seenKeys.has(note)) return;
+      seenKeys.add(note);
       items.push({ message: note });
     });
     return items;
