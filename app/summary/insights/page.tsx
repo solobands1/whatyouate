@@ -346,7 +346,7 @@ export default function InsightsPage() {
         <header className="mb-6" data-tour="insights-header">
           <div>
             <h1 className="text-2xl font-semibold text-ink">Patterns</h1>
-            <p className="mt-1 text-sm text-muted/70">Longer-term trends from your logged meals.</p>
+            <p className="mt-1 text-sm text-muted/70">Longer-term trends from your logged meals</p>
             {!hasEnoughData && (
               <div className="mt-2 inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] text-amber-700">
                 Real data appears after a few more meals
