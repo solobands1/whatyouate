@@ -15,13 +15,15 @@ import { dayKeyFromTs } from "../../../lib/utils";
 
 const INSIGHT_NUTRIENTS = [
   "Iron",
-  "Fiber",
+  "B12",
+  "Magnesium",
+  "Zinc",
   "Vitamin D",
-  "Omega-3",
   "Calcium",
-  "Potassium",
+  "Omega-3",
   "Vitamin C",
-  "B12"
+  "Potassium",
+  "Fiber"
 ];
 
 function avgRangeMidpoint(mins: number[], maxes: number[]) {
