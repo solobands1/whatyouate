@@ -467,9 +467,14 @@ export default function SummaryScreen() {
 
   useEffect(() => {
     if (!user || !nudgesLoadedRef.current || visibleNotes.length === 0) return;
-    const existing = new Set(nudges.map((n) => n.message));
+    // Dedup only against today's saved nudges so the same message can recur in history on different days.
+    // on_track nudges are also saved so positive days show up in the history feed.
+    const todayStr = todayKey();
+    const existingToday = new Set(
+      nudges.filter((n) => todayKey(new Date(n.created_at)) === todayStr).map((n) => n.message)
+    );
     const missing = visibleNotes.filter(
-      (note) => note.type !== "on_track" && !existing.has(note.message) && !savedThisSessionRef.current.has(note.message)
+      (note) => !existingToday.has(note.message) && !savedThisSessionRef.current.has(note.message)
     );
     if (missing.length === 0) return;
     missing.forEach((note) => {
