@@ -281,8 +281,8 @@ export default function InsightsPage() {
       targetY1: target ? yPos(target * 1.15) : null,
       targetY2: target ? yPos(target * 0.85) : null,
       hasTarget: !!target,
-      targetRectX: padL,
-      targetRectW: cW,
+      targetRectX: 0,
+      targetRectW: W,
     };
   }, [sparklineData, gentleTargets]);
 
