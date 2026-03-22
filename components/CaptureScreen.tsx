@@ -358,13 +358,6 @@ export default function CaptureScreen() {
             ) : (
               <>
                 <p className="mt-1 text-sm text-muted/70">Adding to your day…</p>
-                <button
-                  type="button"
-                  className="mt-3 text-xs text-ink/60 underline"
-                  onClick={handleChangeTime}
-                >
-                  Not now? Change date or time
-                </button>
               </>
             )}
           </div>
