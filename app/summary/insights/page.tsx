@@ -466,7 +466,7 @@ export default function InsightsPage() {
             <p className="text-[11px] text-muted/40">{sparklineLoggedCount} / 14 days</p>
           </div>
           <div className="mt-3">
-            <svg viewBox={`0 0 ${sparklineChart.W} ${sparklineChart.H}`} className="w-full" style={{ height: sparklineChart.H }}>
+            <svg viewBox={`0 0 ${sparklineChart.W} ${sparklineChart.H}`} preserveAspectRatio="none" className="w-full" style={{ height: sparklineChart.H, display: "block" }}>
               {sparklineChart.hasTarget && sparklineChart.targetY1 !== null && sparklineChart.targetY2 !== null && (
                 <rect
                   x={sparklineChart.padL}
