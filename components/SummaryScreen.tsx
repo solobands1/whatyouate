@@ -733,11 +733,13 @@ export default function SummaryScreen() {
         {dayCount < 14 && (() => {
           const nudgesUnlocked = mealCount >= 5;
           const patternsUnlocked = dayCount >= 5 && mealCount >= 5;
+          const yourTargetsUnlocked = mealCount >= 10 && dayCount >= 5;
           const fullTrendsUnlocked = dayCount >= 14;
           const milestones = [
             { label: "First meal", sub: "", unlocked: mealCount >= 1 },
             { label: "Nudges", sub: nudgesUnlocked ? "" : `${5 - mealCount} more meal${5 - mealCount !== 1 ? "s" : ""}`, unlocked: nudgesUnlocked },
             { label: "Patterns", sub: patternsUnlocked ? "" : `${Math.max(0, 5 - dayCount)} more day${Math.max(0, 5 - dayCount) !== 1 ? "s" : ""}`, unlocked: patternsUnlocked },
+            { label: "Your targets", sub: yourTargetsUnlocked ? "" : `${Math.max(0, 10 - mealCount)} more meal${Math.max(0, 10 - mealCount) !== 1 ? "s" : ""}`, unlocked: yourTargetsUnlocked },
             { label: "Full trends", sub: fullTrendsUnlocked ? "" : `${14 - dayCount} more day${14 - dayCount !== 1 ? "s" : ""}`, unlocked: fullTrendsUnlocked },
           ];
           return (
