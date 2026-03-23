@@ -455,17 +455,49 @@ export default function HomeScreen() {
     }
   };
 
-  const handleApplyBarcodeCorrection = () => {
-    if (!barcodeProduct || !scannedBarcode) return;
+  const handleSaveAndAddBarcode = async () => {
+    if (!barcodeProduct || !user || isAddingBarcode) return;
     const cal = Math.round(Number(barcodeEdit.calories) || 0);
     const prot = Math.round(Number(barcodeEdit.protein) || 0);
     const carb = Math.round(Number(barcodeEdit.carbs) || 0);
     const fat = Math.round(Number(barcodeEdit.fat) || 0);
     const name = barcodeEdit.name.trim() || barcodeProduct.name;
-    const corrected = { name, brand: barcodeProduct.brand, calories: cal, protein: prot, carbs: carb, fat, valuePer: "serving" as const, source: "user_corrected" as const, savedAt: Date.now() };
-    setFoodCacheEntry(scannedBarcode, corrected);
-    setBarcodeProduct((prev) => prev ? { ...prev, name, calories: cal, protein: prot, carbs: carb, fat, valuePer: "serving" } : null);
+    // Save correction to cache
+    if (scannedBarcode) {
+      setFoodCacheEntry(scannedBarcode, { name, brand: barcodeProduct.brand, calories: cal, protein: prot, carbs: carb, fat, valuePer: "serving", source: "user_corrected", savedAt: Date.now() });
+    }
+    // Log the meal using corrected values directly
+    setIsAddingBarcode(true);
+    const analysis = {
+      name,
+      detected_items: [{ name, confidence_0_1: 1 }],
+      estimated_ranges: { calories_min: cal, calories_max: cal, protein_g_min: prot, protein_g_max: prot, carbs_g_min: carb, carbs_g_max: carb, fat_g_min: fat, fat_g_max: fat },
+      micronutrient_signals: [],
+      confidence_overall_0_1: 1,
+      detected_brand: barcodeProduct.brand || null,
+      detected_product: name,
+      database_match_confidence_0_1: 1,
+      precision_mode_available: false,
+    } as any;
+    setBarcodeProduct(null);
+    setBarcodeGrams("100");
     setBarcodeEditMode(false);
+    setBarcodeFromCache(false);
+    try {
+      const created = await addMeal(user.id, analysis);
+      if (created?.id) {
+        await updateMeal(created.id, analysis, undefined, user?.id);
+        const finishedMeal = { ...created, analysisJson: analysis, status: "done" as const };
+        meals.setMeals((prev) => [finishedMeal, ...prev]);
+        notifyMealsUpdated();
+      }
+      setBarcodeSuccess(true);
+      setTimeout(() => setBarcodeSuccess(false), 1500);
+    } catch (err) {
+      console.error("[barcode] save failed:", err);
+    } finally {
+      setIsAddingBarcode(false);
+    }
   };
 
   useEffect(() => {
@@ -2032,7 +2064,7 @@ export default function HomeScreen() {
             {!barcodeEditMode && (
               <button
                 type="button"
-                className="mt-3 text-[11px] text-muted/50 underline underline-offset-2"
+                className="mt-3 rounded-lg border border-ink/15 px-3 py-1.5 text-xs font-medium text-ink/50 transition hover:border-ink/25 hover:text-ink/70"
                 onClick={() => {
                   setBarcodeEdit({
                     name: barcodeProduct.name,
@@ -2069,40 +2101,38 @@ export default function HomeScreen() {
                     </div>
                   ))}
                 </div>
-                <div className="flex gap-2 justify-end pt-1">
-                  <button
-                    type="button"
-                    className="rounded-xl border border-ink/10 bg-white px-3 py-1.5 text-xs font-semibold text-ink/70"
-                    onClick={() => setBarcodeEditMode(false)}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    className="rounded-xl bg-primary px-3 py-1.5 text-xs font-semibold text-white"
-                    onClick={handleApplyBarcodeCorrection}
-                  >
-                    Save &amp; use
-                  </button>
-                </div>
               </div>
             )}
             <div className="mt-4 flex gap-2 justify-end">
               <button
                 type="button"
                 className="rounded-xl border border-ink/10 bg-white px-4 py-2 text-xs font-semibold text-ink/70 transition hover:bg-ink/5"
-                onClick={() => { setBarcodeProduct(null); setBarcodeGrams("100"); setBarcodeEditMode(false); setBarcodeFromCache(false); }}
+                onClick={() => {
+                  if (barcodeEditMode) { setBarcodeEditMode(false); return; }
+                  setBarcodeProduct(null); setBarcodeGrams("100"); setBarcodeFromCache(false);
+                }}
               >
                 Cancel
               </button>
-              <button
-                type="button"
-                className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
-                onClick={handleConfirmBarcodeProduct}
-                disabled={isAddingBarcode || barcodeEditMode}
-              >
-                {isAddingBarcode ? "Adding…" : "Add to day"}
-              </button>
+              {barcodeEditMode ? (
+                <button
+                  type="button"
+                  className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
+                  onClick={handleSaveAndAddBarcode}
+                  disabled={isAddingBarcode}
+                >
+                  {isAddingBarcode ? "Adding…" : "Save & add"}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
+                  onClick={handleConfirmBarcodeProduct}
+                  disabled={isAddingBarcode}
+                >
+                  {isAddingBarcode ? "Adding…" : "Add to day"}
+                </button>
+              )}
             </div>
           </div>
         </div>
