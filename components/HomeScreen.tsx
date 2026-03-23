@@ -1155,7 +1155,7 @@ export default function HomeScreen() {
                 <ellipse cx="5.5" cy="5.5" rx="4.5" ry="2.5" transform="rotate(-45 5.5 5.5)" stroke="currentColor" strokeWidth="1.4" fill="none"/>
                 <line x1="2.3" y1="8.7" x2="8.7" y2="2.3" stroke="currentColor" strokeWidth="1.2"/>
               </svg>
-              <span>Supps</span>
+              <span>Supplements</span>
             </button>
           </div>
           <div className="mx-auto flex w-[84%] text-xs" data-tour="workout-markers">
