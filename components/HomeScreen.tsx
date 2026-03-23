@@ -1136,7 +1136,7 @@ export default function HomeScreen() {
               onClick={meals.openManualMealEntry}
             >
               <span>+</span>
-              <span>Manual</span>
+              <span>Manual add</span>
             </button>
             <button
               type="button"
