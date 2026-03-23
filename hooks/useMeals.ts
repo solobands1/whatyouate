@@ -5,6 +5,7 @@ import type { User } from "@supabase/supabase-js";
 import type { MealAnalysis, MealLog } from "../lib/types";
 import { addMeal, listMeals, updateMeal } from "../lib/supabaseDb";
 import { safeFallbackAnalysis } from "../lib/ai/schema";
+import { getFoodTextEntry, setFoodTextEntry } from "../lib/foodCache";
 
 export function useMeals(
   user: User | null,
@@ -70,6 +71,26 @@ export function useMeals(
 
   const analyzeManualText = async () => {
     if (!manualText.trim()) return;
+
+    // Check text cache first — same food text always gives same result
+    const normalizedInput = manualText.trim().toLowerCase();
+    const cached = getFoodTextEntry(normalizedInput);
+    if (cached) {
+      setManualResult({
+        name: cached.name,
+        detected_items: [{ name: cached.name, confidence_0_1: 1 }],
+        estimated_ranges: cached.ranges,
+        micronutrient_signals: cached.micronutrient_signals ?? [],
+        confidence_overall_0_1: 1,
+        detected_brand: null,
+        detected_product: null,
+        database_match_confidence_0_1: 0,
+        precision_mode_available: false,
+      } as any);
+      setManualPortion("medium");
+      return;
+    }
+
     setManualAnalysing(true);
     setManualError(null);
     try {
@@ -80,8 +101,26 @@ export function useMeals(
       });
       if (!res.ok) throw new Error("Analysis failed");
       const data = await res.json();
-      setManualResult(data.analysis ?? null);
+      const analysis: MealAnalysis | null = data.analysis ?? null;
+      setManualResult(analysis);
       setManualPortion("medium");
+
+      // Cache the result so the same food text returns consistent macros
+      if (analysis?.estimated_ranges) {
+        const entry = {
+          name: analysis.name ?? normalizedInput,
+          ranges: analysis.estimated_ranges,
+          micronutrient_signals: analysis.micronutrient_signals ?? [],
+          source: "ai" as const,
+          savedAt: Date.now(),
+        };
+        setFoodTextEntry(normalizedInput, entry);
+        // Also index by the AI's identified food name so e.g. "an apple" and "apple" converge
+        const normalizedAiName = (analysis.name ?? "").toLowerCase().trim();
+        if (normalizedAiName && normalizedAiName !== normalizedInput) {
+          setFoodTextEntry(normalizedAiName, entry);
+        }
+      }
     } catch {
       setManualError("Something went wrong. Please try again.");
     } finally {
