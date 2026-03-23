@@ -5,7 +5,7 @@ import type { User } from "@supabase/supabase-js";
 import type { MealAnalysis, MealLog } from "../lib/types";
 import { addMeal, listMeals, updateMeal } from "../lib/supabaseDb";
 import { safeFallbackAnalysis } from "../lib/ai/schema";
-import { getFoodTextEntry, setFoodTextEntry } from "../lib/foodCache";
+import { getFoodTextEntry, setFoodTextEntry, deleteFoodTextEntry } from "../lib/foodCache";
 
 export function useMeals(
   user: User | null,
@@ -126,6 +126,11 @@ export function useMeals(
     } finally {
       setManualAnalysing(false);
     }
+  };
+
+  const clearManualTextCache = () => {
+    const normalizedInput = manualText.trim().toLowerCase();
+    if (normalizedInput) deleteFoodTextEntry(normalizedInput);
   };
 
   const confirmManualMeal = async () => {
@@ -253,6 +258,7 @@ export function useMeals(
     manualScaledRanges,
     openManualMealEntry,
     analyzeManualText,
+    clearManualTextCache,
     confirmManualMeal,
     openMealEditor,
     handleUpdateMeal,

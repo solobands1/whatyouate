@@ -22,6 +22,7 @@ import { useAuth } from "./AuthProvider";
 import {
   addMeal,
   addNudge,
+  clearMealsCache,
   deleteMeal,
   deleteWorkout,
   getProfile,
@@ -609,7 +610,7 @@ export default function HomeScreen() {
   }, [user, loadData]);
 
   useEffect(() => {
-    const handler = () => loadData();
+    const handler = () => { clearMealsCache(user?.id); loadData(); };
     window.addEventListener(MEALS_UPDATED_EVENT, handler as EventListener);
     return () => window.removeEventListener(MEALS_UPDATED_EVENT, handler as EventListener);
   }, [user, loadData]);
@@ -617,11 +618,12 @@ export default function HomeScreen() {
   useEffect(() => {
     const handler = (e: Event) => {
       const mealId = (e as CustomEvent<string>).detail;
+      clearMealsCache(user?.id);
       if (mealId) setPendingQuickConfirmId(mealId);
     };
     window.addEventListener("meal-analysis-complete", handler);
     return () => window.removeEventListener("meal-analysis-complete", handler);
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -1593,7 +1595,7 @@ export default function HomeScreen() {
                       <button
                         type="button"
                         className="text-xs text-ink/50 underline"
-                        onClick={() => meals.setManualResult(null)}
+                        onClick={() => { meals.clearManualTextCache(); meals.setManualResult(null); }}
                       >
                         Try again
                       </button>
