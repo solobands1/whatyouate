@@ -15,6 +15,11 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Prevent iOS Safari from zooming in on focused inputs */
+input, textarea, select {
+  font-size: 16px !important;
+}
+
 @keyframes cardFadeIn {
   from {
     opacity: 0;
