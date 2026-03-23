@@ -27,6 +27,14 @@ export default function SummaryScreen() {
   const mountedRef = useRef(true);
   const [runSummaryTour, setRunSummaryTour] = useState(false);
   const [visibleNudgeGroupCount, setVisibleNudgeGroupCount] = useState(3);
+  // Capture unseen state before the mount effect clears it, so the bell stays on the card while reading
+  const [nudgeCardIsNew] = useState(() => {
+    try {
+      const nudgeTs = parseInt(localStorage.getItem("wya_nudge_ts") ?? "0");
+      const seenTs = parseInt(localStorage.getItem("wya_nudge_seen_ts") ?? "0");
+      return nudgeTs > seenTs;
+    } catch { return false; }
+  });
 
   useEffect(() => {
     mountedRef.current = true;
@@ -860,7 +868,12 @@ export default function SummaryScreen() {
         </Card>
 
         <Card className="mt-6" data-tour="nudges-card">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Nudges</p>
+          <div className="flex items-center gap-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Nudges</p>
+            {nudgeCardIsNew && (
+              <span className="flex h-2 w-2 rounded-full bg-primary" />
+            )}
+          </div>
           {mealCount === 0 ? (
             <div className="mt-3 space-y-1">
               <p className="text-sm text-ink/70">Log a few meals and I’ll start learning your patterns.</p>

@@ -201,6 +201,7 @@ export default function HomeScreen() {
   useEffect(() => {
     if (!user || !nudgesLoadedRef.current || homeVisibleNotes.length === 0) return;
     const todayStr = todayKey();
+    // DB dedup: by message, so we don't write duplicate rows
     const savedTodayKey = `wya_saved_nudges_${todayStr}`;
     const savedToday = new Set<string>(JSON.parse(localStorage.getItem(savedTodayKey) ?? "[]"));
     const existingToday = new Set(
@@ -209,15 +210,23 @@ export default function HomeScreen() {
     const missing = homeVisibleNotes.filter(
       (note) => !existingToday.has(note.message) && !savedToday.has(note.message)
     );
-    if (missing.length === 0) return;
-    missing.forEach((note) => {
-      savedToday.add(note.message);
-      addNudge(user.id, "awareness", note.message).catch(() => {});
-    });
-    localStorage.setItem(savedTodayKey, JSON.stringify([...savedToday]));
+    if (missing.length > 0) {
+      missing.forEach((note) => {
+        savedToday.add(note.message);
+        addNudge(user.id, "awareness", note.message).catch(() => {});
+      });
+      localStorage.setItem(savedTodayKey, JSON.stringify([...savedToday]));
+      pruneNudges(user.id).catch(() => {});
+    }
+    // Bell dedup: by nudge type — only notify once per type per day regardless of changing numbers
+    const notifiedTypesKey = `wya_notified_types_${todayStr}`;
+    const notifiedTypes = new Set<string>(JSON.parse(localStorage.getItem(notifiedTypesKey) ?? "[]"));
+    const newTypes = homeVisibleNotes.filter((note) => !notifiedTypes.has(note.type));
+    if (newTypes.length === 0) return;
+    newTypes.forEach((note) => notifiedTypes.add(note.type));
+    localStorage.setItem(notifiedTypesKey, JSON.stringify([...notifiedTypes]));
     localStorage.setItem("wya_nudge_ts", Date.now().toString());
     window.dispatchEvent(new Event("wya_nudge_update"));
-    pruneNudges(user.id).catch(() => {});
   }, [user, homeVisibleNotes, nudges]);
 
   const handleConfirmDelete = async () => {
