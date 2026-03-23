@@ -2121,7 +2121,7 @@ export default function HomeScreen() {
                   onClick={handleSaveAndAddBarcode}
                   disabled={isAddingBarcode}
                 >
-                  {isAddingBarcode ? "Adding…" : "Save & add"}
+                  {isAddingBarcode ? "Adding…" : "Save & Add"}
                 </button>
               ) : (
                 <button
