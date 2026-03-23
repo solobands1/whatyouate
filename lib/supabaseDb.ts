@@ -9,6 +9,17 @@ export { LOCAL_MODE };
 const DEBUG = false;
 const useMemory = LOCAL_MODE;
 
+// ── In-memory TTL cache ────────────────────────────────────────────────────
+// Tabs reuse cached data if it's < 30 s old, so switching tabs feels instant.
+// Any mutation clears the relevant cache entries so data is never stale.
+const CACHE_TTL = 30_000;
+type CacheEntry<T> = { data: T; ts: number };
+const mealsCache = new Map<string, CacheEntry<MealLog[]>>();
+const workoutsCache = new Map<string, CacheEntry<WorkoutSession[]>>();
+const profileCache = new Map<string, CacheEntry<UserProfile | null>>();
+
+// ──────────────────────────────────────────────────────────────────────────
+
 type MealRecord = { userId: string; meal: MealLog };
 type WorkoutRecord = { userId: string; session: WorkoutSession };
 type NudgeRecord = { id: string; userId: string; type: string; message: string; createdAt: number };
@@ -153,6 +164,9 @@ export async function getProfile(userId: string): Promise<UserProfile | null> {
     return memProfiles[userId] ?? null;
   }
 
+  const cached = profileCache.get(userId);
+  if (cached && Date.now() - cached.ts < CACHE_TTL) return cached.data;
+
   if (DEBUG) console.debug("[supabase] getProfile -> profiles");
   const { data, error } = await supabase
     .from("profiles")
@@ -161,10 +175,13 @@ export async function getProfile(userId: string): Promise<UserProfile | null> {
     .maybeSingle();
 
   if (error) handleSupabaseError("profiles", error);
-  if (!data) return null;
+  if (!data) {
+    profileCache.set(userId, { data: null, ts: Date.now() });
+    return null;
+  }
   if (DEBUG) console.debug("[supabase] profiles rows:", 1);
 
-  return {
+  const profile: UserProfile = {
     id: data.user_id,
     firstName: data.first_name ?? "",
     lastName: data.last_name ?? "",
@@ -179,6 +196,8 @@ export async function getProfile(userId: string): Promise<UserProfile | null> {
     dietaryRestrictions: Array.isArray(data.dietary_restrictions) ? data.dietary_restrictions : [],
     units: data.units ?? "imperial"
   };
+  profileCache.set(userId, { data: profile, ts: Date.now() });
+  return profile;
 }
 
 export async function saveProfile(userId: string, profile: UserProfile) {
@@ -207,6 +226,7 @@ export async function saveProfile(userId: string, profile: UserProfile) {
   };
   const { error } = await supabase.from("profiles").upsert(payload, { onConflict: "user_id" });
   if (error) throw error;
+  profileCache.delete(userId);
   return { success: true };
 }
 
@@ -244,6 +264,7 @@ export async function addMeal(userId: string, analysis: MealAnalysis, imageOptio
     console.error("[addMeal] error:", error);
     handleSupabaseError("meals", error);
   }
+  for (const key of mealsCache.keys()) if (key.startsWith(userId + ":")) mealsCache.delete(key);
   return mapMeal(data);
 }
 
@@ -309,6 +330,7 @@ export async function updateMeal(id: string, analysis: MealAnalysis, corrections
   if (userId) query = query.eq("user_id", userId);
   const { data, error } = await query.select("*").single();
   if (error) handleSupabaseError("meals", error);
+  if (userId) for (const key of mealsCache.keys()) if (key.startsWith(userId + ":")) mealsCache.delete(key);
   return mapMeal(data);
 }
 
@@ -322,6 +344,10 @@ export async function listMeals(userId: string, limit = 50) {
       .slice(0, limit);
   }
 
+  const cacheKey = `${userId}:${limit}`;
+  const cached = mealsCache.get(cacheKey);
+  if (cached && Date.now() - cached.ts < CACHE_TTL) return cached.data;
+
   if (DEBUG) console.debug("[supabase] listMeals -> meals");
   const { data, error } = await supabase
     .from("meals")
@@ -330,7 +356,9 @@ export async function listMeals(userId: string, limit = 50) {
     .order("ts", { ascending: false, nullsFirst: false })
     .limit(limit);
   if (error) handleSupabaseError("meals", error);
-  return (data ?? []).map(mapMeal);
+  const result = (data ?? []).map(mapMeal);
+  mealsCache.set(cacheKey, { data: result, ts: Date.now() });
+  return result;
 }
 
 export async function updateMealTs(id: string, ts: number) {
@@ -343,6 +371,7 @@ export async function updateMealTs(id: string, ts: number) {
   }
   const { error } = await supabase.from("meals").update({ ts }).eq("id", id);
   if (error) handleSupabaseError("meals", error);
+  mealsCache.clear();
 }
 
 export async function deleteMeal(id: string, userId?: string) {
@@ -363,6 +392,8 @@ export async function deleteMeal(id: string, userId?: string) {
   }
   const { error } = await query;
   if (error) handleSupabaseError("meals", error);
+  if (userId) for (const key of mealsCache.keys()) if (key.startsWith(userId + ":")) mealsCache.delete(key);
+  else mealsCache.clear();
 }
 
 export async function addWorkout(
@@ -395,6 +426,7 @@ export async function addWorkout(
 
   if (error) throw error;
 
+  for (const key of workoutsCache.keys()) if (key.startsWith(userId + ":")) workoutsCache.delete(key);
   return mapWorkout(data);
 }
 
@@ -448,6 +480,8 @@ export async function updateWorkout(
   }
   const { data, error } = await query.select("*").single();
   if (error) handleSupabaseError("workouts", error);
+  if (userId) for (const key of workoutsCache.keys()) if (key.startsWith(userId + ":")) workoutsCache.delete(key);
+  else workoutsCache.clear();
   return mapWorkout(data);
 }
 
@@ -469,6 +503,8 @@ export async function deleteWorkout(id: string, userId?: string) {
   }
   const { error } = await query;
   if (error) handleSupabaseError("workouts", error);
+  if (userId) for (const key of workoutsCache.keys()) if (key.startsWith(userId + ":")) workoutsCache.delete(key);
+  else workoutsCache.clear();
 }
 
 export async function listWorkouts(userId: string, limit = 50) {
@@ -481,6 +517,10 @@ export async function listWorkouts(userId: string, limit = 50) {
       .slice(0, limit);
   }
 
+  const cacheKey = `${userId}:${limit}`;
+  const cached = workoutsCache.get(cacheKey);
+  if (cached && Date.now() - cached.ts < CACHE_TTL) return cached.data;
+
   if (DEBUG) console.debug("[supabase] listWorkouts -> workouts");
   const { data, error } = await supabase
     .from("workouts")
@@ -490,7 +530,9 @@ export async function listWorkouts(userId: string, limit = 50) {
     .limit(limit);
   if (error) handleSupabaseError("workouts", error);
   if (DEBUG) console.debug("[supabase] workouts rows:", data?.length ?? 0);
-  return (data ?? []).map(mapWorkout);
+  const result = (data ?? []).map(mapWorkout);
+  workoutsCache.set(cacheKey, { data: result, ts: Date.now() });
+  return result;
 }
 
 export async function getActiveWorkout(userId: string) {
