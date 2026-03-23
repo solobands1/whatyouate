@@ -6,6 +6,7 @@ import Joyride, { STATUS, CallBackProps, type Step } from "react-joyride";
 import { notifyProfileUpdated } from "../lib/dataEvents";
 import type { ActivityLevel, GoalDirection, Units, UserProfile } from "../lib/types";
 import { clearAllData, getProfile, saveProfile, LOCAL_MODE } from "../lib/supabaseDb";
+import { getDailySupplements, setDailySupplements } from "../lib/foodCache";
 import { supabase } from "../lib/supabaseClient";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
@@ -52,6 +53,8 @@ export default function ProfileScreen() {
   const [showFeedbackToast, setShowFeedbackToast] = useState(false);
   const [showSavedToast, setShowSavedToast] = useState(false);
   const [editingName, setEditingName] = useState(false);
+  const [dailySupplements, setDailySupplementsState] = useState<string[]>([]);
+  const [newSuppInput, setNewSuppInput] = useState("");
   const [editFirstName, setEditFirstName] = useState("");
   const [editLastName, setEditLastName] = useState("");
 
@@ -127,6 +130,7 @@ export default function ProfileScreen() {
       .catch(() => {
         setLoadError("Couldn’t load profile.");
       });
+    setDailySupplementsState(getDailySupplements(user.id));
   }, [user]);
 
   useEffect(() => {
@@ -823,6 +827,65 @@ export default function ProfileScreen() {
               placeholder="e.g., I meal prep Sundays, I eat late at night, I skip breakfast"
             />
           </label>
+
+          <div className="mt-8 border-t border-ink/5 pt-7">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-ink/70">Daily supplements</p>
+            <p className="mt-1 text-[11px] text-muted/60">Added automatically every day in the background.</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {dailySupplements.map((name) => (
+                <span
+                  key={name}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-ink/10 bg-ink/5 px-3 py-1 text-xs text-ink/80"
+                >
+                  {name}
+                  <button
+                    type="button"
+                    className="text-ink/40 transition hover:text-ink/70"
+                    onClick={() => {
+                      const updated = dailySupplements.filter((s) => s !== name);
+                      setDailySupplementsState(updated);
+                      if (user) setDailySupplements(user.id, updated);
+                    }}
+                    aria-label={`Remove ${name}`}
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+            <div className="mt-3 flex gap-2">
+              <input
+                type="text"
+                className="flex-1 rounded-xl border border-ink/10 px-3 py-2 text-sm"
+                placeholder="e.g. Vitamin D, Fish Oil, Magnesium"
+                value={newSuppInput}
+                onChange={(e) => setNewSuppInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key !== "Enter") return;
+                  const name = newSuppInput.trim();
+                  if (!name || dailySupplements.includes(name)) { setNewSuppInput(""); return; }
+                  const updated = [...dailySupplements, name];
+                  setDailySupplementsState(updated);
+                  if (user) setDailySupplements(user.id, updated);
+                  setNewSuppInput("");
+                }}
+              />
+              <button
+                type="button"
+                className="rounded-xl bg-ink/5 px-4 py-2 text-xs font-semibold text-ink/70 transition hover:bg-ink/10"
+                onClick={() => {
+                  const name = newSuppInput.trim();
+                  if (!name || dailySupplements.includes(name)) { setNewSuppInput(""); return; }
+                  const updated = [...dailySupplements, name];
+                  setDailySupplementsState(updated);
+                  if (user) setDailySupplements(user.id, updated);
+                  setNewSuppInput("");
+                }}
+              >
+                Add
+              </button>
+            </div>
+          </div>
 
           <button
             className="mt-7 w-full rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] ring-1 ring-white/40 transition-colors hover:bg-primary/90"

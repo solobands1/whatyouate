@@ -80,3 +80,110 @@ export function setFoodTextEntry(normalizedText: string, entry: FoodTextCacheEnt
     // Ignore storage failures
   }
 }
+
+// ── Daily supplements ────────────────────────────────────────────────────────
+// Stores the user's fixed daily supplement list. Auto-logged once per day on
+// first app load — silently, without any user action required.
+
+function dailySuppKey(userId: string) {
+  return `wya_daily_supps_${userId}`;
+}
+
+function dailySuppLoggedKey(userId: string) {
+  const today = new Date().toISOString().split("T")[0];
+  return `wya_daily_supps_logged_${userId}_${today}`;
+}
+
+export function getDailySupplements(userId: string): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    return JSON.parse(localStorage.getItem(dailySuppKey(userId)) ?? "[]");
+  } catch {
+    return [];
+  }
+}
+
+export function setDailySupplements(userId: string, names: string[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(dailySuppKey(userId), JSON.stringify(names));
+  } catch {}
+}
+
+export function hasDailySuppsLoggedToday(userId: string): boolean {
+  if (typeof window === "undefined") return true;
+  return !!localStorage.getItem(dailySuppLoggedKey(userId));
+}
+
+export function markDailySuppsLoggedToday(userId: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(dailySuppLoggedKey(userId), "1");
+  } catch {}
+}
+
+// ── Quick Add ────────────────────────────────────────────────────────────────
+// Merges both caches into a deduplicated, sorted list for the Quick Add modal.
+
+export type QuickAddItem = {
+  key: string; // name.toLowerCase()
+  name: string;
+  type: "text" | "barcode";
+  // text items
+  ranges?: FoodTextCacheEntry["ranges"];
+  micronutrient_signals?: FoodTextCacheEntry["micronutrient_signals"];
+  // barcode items
+  calories?: number;
+  protein?: number;
+  carbs?: number;
+  fat?: number;
+  brand?: string;
+  valuePer?: "serving" | "100g";
+  savedAt: number;
+};
+
+export function getQuickAddItems(): QuickAddItem[] {
+  const seen = new Map<string, QuickAddItem>();
+
+  // Text cache entries
+  const textCache = loadTextCache();
+  for (const entry of Object.values(textCache)) {
+    const key = entry.name.toLowerCase().trim();
+    if (!key) continue;
+    const existing = seen.get(key);
+    if (!existing || entry.savedAt > existing.savedAt) {
+      seen.set(key, {
+        key,
+        name: entry.name,
+        type: "text",
+        ranges: entry.ranges,
+        micronutrient_signals: entry.micronutrient_signals,
+        savedAt: entry.savedAt,
+      });
+    }
+  }
+
+  // Barcode cache entries
+  const barcodeCache = loadCache();
+  for (const entry of Object.values(barcodeCache)) {
+    const key = entry.name.toLowerCase().trim();
+    if (!key) continue;
+    const existing = seen.get(key);
+    if (!existing || entry.savedAt > existing.savedAt) {
+      seen.set(key, {
+        key,
+        name: entry.name,
+        type: "barcode",
+        calories: entry.calories,
+        protein: entry.protein,
+        carbs: entry.carbs,
+        fat: entry.fat,
+        brand: entry.brand,
+        valuePer: entry.valuePer,
+        savedAt: entry.savedAt,
+      });
+    }
+  }
+
+  return Array.from(seen.values()).sort((a, b) => b.savedAt - a.savedAt);
+}

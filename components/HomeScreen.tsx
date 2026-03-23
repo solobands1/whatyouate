@@ -15,7 +15,7 @@ import { formatApprox, formatDateShort, todayKey } from "../lib/utils";
 import { supabase } from "../lib/supabaseClient";
 import "../lib/mealQueue";
 import BarcodeScannerOverlay from "./BarcodeScannerOverlay";
-import { getFoodCacheEntry, setFoodCacheEntry } from "../lib/foodCache";
+import { getFoodCacheEntry, setFoodCacheEntry, getQuickAddItems, getDailySupplements, hasDailySuppsLoggedToday, markDailySuppsLoggedToday, type QuickAddItem } from "../lib/foodCache";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
 import { useAuth } from "./AuthProvider";
@@ -101,9 +101,10 @@ export default function HomeScreen() {
   const [quickConfirming, setQuickConfirming] = useState(false);
   const [editPortion, setEditPortion] = useState<"small" | "medium" | "large">("medium");
   const [showTargetInfo, setShowTargetInfo] = useState(false);
-  const [showSupplementModal, setShowSupplementModal] = useState(false);
-  const [supplementText, setSupplementText] = useState("");
-  const [savingSupplements, setSavingSupplements] = useState(false);
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
+  const [quickAddItems, setQuickAddItems] = useState<QuickAddItem[]>([]);
+  const [quickAddSelected, setQuickAddSelected] = useState<Record<string, "small" | "medium" | "large">>({});
+  const [quickAddAdding, setQuickAddAdding] = useState(false);
 
   const [nudges, setNudges] = useState<Array<{ id: string; message: string; created_at: string }>>([]);
   const mountedRef = useRef(true);
@@ -112,49 +113,83 @@ export default function HomeScreen() {
   const realtimeRefreshRef = useRef<number | null>(null);
   const nudgesLoadedRef = useRef(false);
   const savedThisSessionRef = useRef<Set<string>>(new Set());
+  const dailySuppsAttemptedRef = useRef(false);
 
   const onError = useCallback((msg: string) => setLoadError(msg), []);
 
   const workout = useWorkout(user, onError, setEditRecents);
   const meals = useMeals(user, onError, setEditRecents);
 
-  const handleLogSupplements = useCallback(async () => {
-    const trimmed = supplementText.trim();
-    if (!user || !trimmed) return;
-    setSavingSupplements(true);
+  const handleOpenQuickAdd = () => {
+    setQuickAddItems(getQuickAddItems());
+    setQuickAddSelected({});
+    setShowQuickAdd(true);
+  };
+
+  const handleQuickAddConfirm = async () => {
+    if (!user) return;
+    const selected = Object.entries(quickAddSelected);
+    if (!selected.length) return;
+    setQuickAddAdding(true);
     try {
-      const matchedNutrients = matchSupplementNutrients(trimmed);
-      const analysis = {
-        name: trimmed,
-        source: "supplement" as const,
-        detected_items: [{ name: trimmed, confidence_0_1: 1 as number }],
-        estimated_ranges: {
-          calories_min: 0, calories_max: 0,
-          protein_g_min: 0, protein_g_max: 0,
-          carbs_g_min: 0, carbs_g_max: 0,
-          fat_g_min: 0, fat_g_max: 0,
-        },
-        micronutrient_signals: matchedNutrients.map((n) => ({
-          nutrient: n,
-          signal: "adequate_appearance" as const,
-          rationale_short: "Supplement logged",
-        })),
-        confidence_overall_0_1: 1,
-        precision_mode_available: false,
-      };
-      const created = await addMeal(user.id, analysis);
-      if (created?.id) {
-        await updateMeal(created.id, analysis, undefined, user.id);
+      const newMeals: typeof meals.meals = [];
+      for (const [key, portion] of selected) {
+        const item = quickAddItems.find((i) => i.key === key);
+        if (!item) continue;
+        const multiplier = portion === "small" ? 0.7 : portion === "large" ? 1.4 : 1;
+        const scale = (v: number) => Math.round(v * multiplier);
+        let ranges: {
+          calories_min: number; calories_max: number;
+          protein_g_min: number; protein_g_max: number;
+          carbs_g_min: number; carbs_g_max: number;
+          fat_g_min: number; fat_g_max: number;
+        };
+        if (item.type === "text" && item.ranges) {
+          const r = item.ranges;
+          ranges = {
+            calories_min: scale(r.calories_min), calories_max: scale(r.calories_max),
+            protein_g_min: scale(r.protein_g_min), protein_g_max: scale(r.protein_g_max),
+            carbs_g_min: scale(r.carbs_g_min), carbs_g_max: scale(r.carbs_g_max),
+            fat_g_min: scale(r.fat_g_min), fat_g_max: scale(r.fat_g_max),
+          };
+        } else {
+          const cal = scale(item.calories ?? 0);
+          const prot = scale(item.protein ?? 0);
+          const carbs = scale(item.carbs ?? 0);
+          const fat = scale(item.fat ?? 0);
+          ranges = {
+            calories_min: cal, calories_max: cal,
+            protein_g_min: prot, protein_g_max: prot,
+            carbs_g_min: carbs, carbs_g_max: carbs,
+            fat_g_min: fat, fat_g_max: fat,
+          };
+        }
+        const analysis = {
+          name: item.name,
+          detected_items: [{ name: item.name, confidence_0_1: 1 }],
+          estimated_ranges: ranges,
+          micronutrient_signals: item.micronutrient_signals ?? [],
+          confidence_overall_0_1: 1,
+          precision_mode_available: false,
+        } as any;
+        const created = await addMeal(user.id, analysis);
+        if (created?.id) {
+          await updateMeal(created.id, analysis, { userCorrection: item.name }, user.id);
+          newMeals.push({ ...created, analysisJson: analysis, status: "done" as const });
+        }
+      }
+      if (newMeals.length > 0) {
+        meals.setMeals((prev) => [...newMeals, ...prev]);
         notifyMealsUpdated();
       }
-      setShowSupplementModal(false);
-      setSupplementText("");
-    } catch {
-      // silently fail — not critical
+      setShowQuickAdd(false);
+      setQuickAddSelected({});
+    } catch (err) {
+      console.error("[quick add] failed:", err);
     } finally {
-      setSavingSupplements(false);
+      setQuickAddAdding(false);
     }
-  }, [user, supplementText]);
+  };
 
   const loadData = useCallback(async () => {
     if (!user) return;
@@ -521,6 +556,47 @@ export default function HomeScreen() {
     if (!user) return;
     loadData();
   }, [user, loadData]);
+
+  // Auto-log daily supplements once per calendar day, silently
+  useEffect(() => {
+    if (!user || loadingData) return;
+    if (dailySuppsAttemptedRef.current) return;
+    dailySuppsAttemptedRef.current = true;
+    if (hasDailySuppsLoggedToday(user.id)) return;
+    const supplements = getDailySupplements(user.id);
+    if (!supplements.length) return;
+    markDailySuppsLoggedToday(user.id);
+    (async () => {
+      for (const name of supplements) {
+        const matchedNutrients = matchSupplementNutrients(name);
+        const analysis = {
+          name,
+          source: "supplement" as const,
+          detected_items: [{ name, confidence_0_1: 1 as number }],
+          estimated_ranges: {
+            calories_min: 0, calories_max: 0,
+            protein_g_min: 0, protein_g_max: 0,
+            carbs_g_min: 0, carbs_g_max: 0,
+            fat_g_min: 0, fat_g_max: 0,
+          },
+          micronutrient_signals: matchedNutrients.map((n) => ({
+            nutrient: n,
+            signal: "adequate_appearance" as const,
+            rationale_short: "Supplement logged",
+          })),
+          confidence_overall_0_1: 1,
+          precision_mode_available: false,
+        };
+        try {
+          const created = await addMeal(user.id, analysis);
+          if (created?.id) await updateMeal(created.id, analysis, undefined, user.id);
+        } catch {
+          // silently fail — supplements are non-critical
+        }
+      }
+      notifyMealsUpdated();
+    })();
+  }, [user, loadingData]);
 
   useEffect(() => {
     setEditRecents(false);
@@ -1245,14 +1321,11 @@ export default function HomeScreen() {
             </button>
             <button
               type="button"
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-r-xl rounded-l-none border-l border-white/30 bg-primary px-3 py-2 text-xs font-semibold text-white shadow-[0_8px_20px_rgba(15,23,42,0.14)] ring-1 ring-white/40 transition-all duration-150 hover:bg-primary/90 active:translate-y-[1px] active:shadow-[0_3px_10px_rgba(15,23,42,0.18)]"
-              onClick={() => setShowSupplementModal(true)}
+              className="flex flex-1 items-center justify-center gap-2 rounded-r-xl rounded-l-none border-l border-white/30 bg-primary px-3 py-2 text-xs font-semibold text-white shadow-[0_8px_20px_rgba(15,23,42,0.14)] ring-1 ring-white/40 transition-all duration-150 hover:bg-primary/90 active:translate-y-[1px] active:shadow-[0_3px_10px_rgba(15,23,42,0.18)]"
+              onClick={handleOpenQuickAdd}
             >
-              <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
-                <ellipse cx="5.5" cy="5.5" rx="4.5" ry="2.5" transform="rotate(-45 5.5 5.5)" stroke="currentColor" strokeWidth="1.4" fill="none"/>
-                <line x1="2.3" y1="8.7" x2="8.7" y2="2.3" stroke="currentColor" strokeWidth="1.2"/>
-              </svg>
-              <span>Supplements</span>
+              <span>+</span>
+              <span>Quick Add</span>
             </button>
           </div>
           <div className="mx-auto flex w-[84%] text-xs" data-tour="workout-markers">
@@ -2187,52 +2260,104 @@ export default function HomeScreen() {
         onDetected={handleBarcodeDetected}
       />
 
-      {/* Supplement logging modal */}
-      {showSupplementModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
-          <div className="w-full max-w-sm rounded-xl bg-white p-5 shadow-xl">
-            <h2 className="text-base font-semibold text-ink">Log Supplement</h2>
-            <p className="mt-1 text-sm text-muted/70">Type what you took · name and dose are both fine.</p>
-            <input
-              type="text"
-              autoFocus
-              className="mt-4 w-full rounded-lg border border-ink/10 bg-ink/[0.03] px-3 py-2.5 text-sm text-ink placeholder:text-ink/30 focus:outline-none focus:ring-1 focus:ring-primary/30"
-              placeholder="e.g. vitamin D 5000 IU, fish oil 500mg"
-              value={supplementText}
-              onChange={(e) => setSupplementText(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter" && supplementText.trim()) handleLogSupplements(); }}
-            />
-            {(() => {
-              const matched = supplementText.trim() ? matchSupplementNutrients(supplementText) : [];
-              return matched.length > 0 ? (
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  {matched.map((n) => (
-                    <span key={n} className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary">
-                      {n}
-                    </span>
-                  ))}
-                </div>
-              ) : supplementText.trim() ? (
-                <p className="mt-3 text-[11px] text-muted/50">No nutrients detected — will be logged by name only.</p>
-              ) : null;
-            })()}
-            <div className="mt-5 flex gap-2 justify-end">
+      {/* Quick Add modal */}
+      {showQuickAdd && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-0 pb-0 sm:items-center sm:px-5 sm:pb-0">
+          <div className="w-full max-w-sm rounded-t-2xl bg-white px-5 pb-6 pt-5 shadow-xl sm:rounded-xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-base font-semibold text-ink">Quick Add</h2>
               <button
                 type="button"
-                className="rounded-xl border border-ink/10 bg-white px-4 py-2 text-xs font-semibold text-ink/70 transition hover:bg-ink/5"
-                onClick={() => { setShowSupplementModal(false); setSupplementText(""); }}
+                className="text-xs text-ink/50 underline"
+                onClick={() => setShowQuickAdd(false)}
               >
                 Cancel
               </button>
+            </div>
+            {quickAddItems.length === 0 ? (
+              <p className="py-6 text-center text-sm text-muted/60">
+                No saved foods yet · log some meals first to use Quick Add.
+              </p>
+            ) : (
+              <div className="max-h-[55vh] overflow-y-auto space-y-2 pr-1">
+                {quickAddItems.map((item) => {
+                  const isSelected = !!quickAddSelected[item.key];
+                  const portion = quickAddSelected[item.key] ?? "medium";
+                  const midCal = item.type === "text" && item.ranges
+                    ? Math.round((item.ranges.calories_min + item.ranges.calories_max) / 2)
+                    : (item.calories ?? 0);
+                  const midProt = item.type === "text" && item.ranges
+                    ? Math.round((item.ranges.protein_g_min + item.ranges.protein_g_max) / 2)
+                    : (item.protein ?? 0);
+                  return (
+                    <div
+                      key={item.key}
+                      className={`rounded-xl border px-3 py-2.5 transition ${isSelected ? "border-primary/30 bg-primary/8" : "border-ink/8 bg-ink/[0.02]"}`}
+                    >
+                      <div className="flex items-start gap-2">
+                        <button
+                          type="button"
+                          className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border transition ${isSelected ? "border-primary bg-primary" : "border-ink/20 bg-white"}`}
+                          onClick={() => {
+                            setQuickAddSelected((prev) => {
+                              if (prev[item.key]) {
+                                const next = { ...prev };
+                                delete next[item.key];
+                                return next;
+                              }
+                              return { ...prev, [item.key]: "medium" };
+                            });
+                          }}
+                        >
+                          {isSelected && (
+                            <svg viewBox="0 0 10 8" fill="none" stroke="white" strokeWidth="1.5" className="h-2.5 w-2.5">
+                              <path d="M1 4 L3.5 6.5 L9 1" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          )}
+                        </button>
+                        <div className="flex-1 min-w-0">
+                          <p className="truncate text-xs font-semibold text-ink">
+                            {formatTitle(item.name)}
+                          </p>
+                          <p className="text-[10px] text-muted/60">
+                            {midCal} kcal · {midProt}g protein
+                            {item.type === "barcode" && item.brand ? ` · ${item.brand}` : ""}
+                          </p>
+                        </div>
+                      </div>
+                      {isSelected && (
+                        <div className="mt-2 flex gap-1.5">
+                          {(["small", "medium", "large"] as const).map((p) => (
+                            <button
+                              key={p}
+                              type="button"
+                              className={`flex-1 rounded-lg border py-1 text-[10px] font-semibold transition ${portion === p ? "border-primary/30 bg-primary/15 text-ink" : "border-ink/10 bg-white text-ink/60 hover:bg-ink/5"}`}
+                              onClick={() => setQuickAddSelected((prev) => ({ ...prev, [item.key]: p }))}
+                            >
+                              {p === "medium" ? "Avg" : p === "small" ? "Small" : "Large"}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            {quickAddItems.length > 0 && (
               <button
                 type="button"
-                disabled={!supplementText.trim() || savingSupplements}
-                className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
-                onClick={handleLogSupplements}
+                className="mt-4 w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
+                disabled={Object.keys(quickAddSelected).length === 0 || quickAddAdding}
+                onClick={handleQuickAddConfirm}
               >
-                {savingSupplements ? "Saving…" : "Log"}
+                {quickAddAdding
+                  ? "Adding…"
+                  : Object.keys(quickAddSelected).length === 0
+                  ? "Select items to add"
+                  : `Add ${Object.keys(quickAddSelected).length} item${Object.keys(quickAddSelected).length > 1 ? "s" : ""}`}
               </button>
-            </div>
+            )}
           </div>
         </div>
       )}

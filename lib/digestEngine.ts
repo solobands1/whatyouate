@@ -31,7 +31,9 @@ function dayCountFromMeals(meals: MealLog[]) {
 }
 
 function computeStreak(meals: MealLog[]): number {
-  const dayKeys = new Set(meals.map((m) => dayKeyFromTs(m.ts)));
+  const dayKeys = new Set(
+    meals.filter((m) => m.analysisJson?.source !== "supplement").map((m) => dayKeyFromTs(m.ts))
+  );
   let streak = 0;
   const d = new Date();
   // Don't break streak mid-day if no meal logged yet today
