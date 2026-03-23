@@ -1781,7 +1781,7 @@ export default function HomeScreen() {
             <p className="mt-1 text-sm text-muted/70">Log a workout you already completed.</p>
 
             <div className="mt-4 space-y-4">
-              <div>
+              <div className="overflow-hidden">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">
                   Date
                 </p>
