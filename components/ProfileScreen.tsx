@@ -828,8 +828,8 @@ export default function ProfileScreen() {
             />
           </label>
 
-          <div className="mt-8 border-t border-ink/5 pt-7">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-ink/70">Daily supplements</p>
+          <label className="mt-8 block border-t border-ink/5 pt-7 text-xs text-muted/70">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-ink/70">Daily supplements</span>
             <p className="mt-1 text-[11px] text-muted/60">Added automatically every day in the background.</p>
             <div className="mt-3 flex flex-wrap gap-2">
               {dailySupplements.map((name) => (
@@ -853,11 +853,11 @@ export default function ProfileScreen() {
                 </span>
               ))}
             </div>
-            <div className="mt-3 flex gap-2">
+            <div className="mt-2 flex gap-2">
               <input
                 type="text"
-                className="flex-1 rounded-xl border border-ink/10 px-3 py-2 text-sm"
-                placeholder="e.g. Vitamin D, Fish Oil, Magnesium"
+                className="mt-1 flex-1 rounded-xl border border-ink/10 px-3 py-2 text-sm"
+                placeholder="e.g., Vitamin D, Fish Oil, Magnesium"
                 value={newSuppInput}
                 onChange={(e) => setNewSuppInput(e.target.value)}
                 onKeyDown={(e) => {
@@ -872,7 +872,7 @@ export default function ProfileScreen() {
               />
               <button
                 type="button"
-                className="rounded-xl bg-ink/5 px-4 py-2 text-xs font-semibold text-ink/70 transition hover:bg-ink/10"
+                className="mt-1 self-end rounded-xl bg-ink/5 px-4 py-2 text-sm font-semibold text-ink/70 transition hover:bg-ink/10"
                 onClick={() => {
                   const name = newSuppInput.trim();
                   if (!name || dailySupplements.includes(name)) { setNewSuppInput(""); return; }
@@ -885,10 +885,10 @@ export default function ProfileScreen() {
                 Add
               </button>
             </div>
-          </div>
+          </label>
 
           <button
-            className="mt-7 w-full rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] ring-1 ring-white/40 transition-colors hover:bg-primary/90"
+            className="mt-10 w-full rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] ring-1 ring-white/40 transition-colors hover:bg-primary/90"
             onClick={handleSave}
             disabled={saving}
           >
