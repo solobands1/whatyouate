@@ -15,6 +15,7 @@ import { formatApprox, formatDateShort, todayKey } from "../lib/utils";
 import { supabase } from "../lib/supabaseClient";
 import "../lib/mealQueue";
 import BarcodeScannerOverlay from "./BarcodeScannerOverlay";
+import { getFoodCacheEntry, setFoodCacheEntry } from "../lib/foodCache";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
 import { useAuth } from "./AuthProvider";
@@ -79,6 +80,10 @@ export default function HomeScreen() {
   } | null>(null);
   const [barcodeGrams, setBarcodeGrams] = useState("100");
   const [isAddingBarcode, setIsAddingBarcode] = useState(false);
+  const [scannedBarcode, setScannedBarcode] = useState<string | null>(null);
+  const [barcodeFromCache, setBarcodeFromCache] = useState(false);
+  const [barcodeEditMode, setBarcodeEditMode] = useState(false);
+  const [barcodeEdit, setBarcodeEdit] = useState({ name: "", calories: "", protein: "", carbs: "", fat: "" });
   const [editRecents, setEditRecents] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<{
     type: "meal" | "workout";
@@ -329,6 +334,27 @@ export default function HomeScreen() {
 
   const handleBarcodeDetected = async (barcode: string) => {
     if (!user) return;
+    setScannedBarcode(barcode);
+
+    // Check local cache first — skips API call entirely
+    const cached = getFoodCacheEntry(barcode);
+    if (cached) {
+      setBarcodeProduct({
+        name: cached.name,
+        brand: cached.brand,
+        calories: cached.calories,
+        protein: cached.protein,
+        carbs: cached.carbs,
+        fat: cached.fat,
+        valuePer: cached.valuePer,
+      });
+      setBarcodeGrams("100");
+      setBarcodeFromCache(true);
+      setBarcodeEditMode(false);
+      return;
+    }
+
+    setBarcodeFromCache(false);
     setBarcodeLookingUp(true);
     let res: Response;
     try {
@@ -364,6 +390,7 @@ export default function HomeScreen() {
       valuePer: product?.valuePer === "100g" ? "100g" : "serving",
     });
     setBarcodeGrams("100");
+    setBarcodeEditMode(false);
   };
 
   const handleConfirmBarcodeProduct = async () => {
@@ -393,8 +420,24 @@ export default function HomeScreen() {
       database_match_confidence_0_1: 1,
       precision_mode_available: false,
     } as any;
+    // Save to food cache before clearing state
+    if (scannedBarcode) {
+      setFoodCacheEntry(scannedBarcode, {
+        name: barcodeProduct.name,
+        brand: barcodeProduct.brand,
+        calories: barcodeProduct.calories,
+        protein: barcodeProduct.protein,
+        carbs: barcodeProduct.carbs,
+        fat: barcodeProduct.fat,
+        valuePer: barcodeProduct.valuePer,
+        source: "openfoodfacts",
+        savedAt: Date.now(),
+      });
+    }
     setBarcodeProduct(null);
     setBarcodeGrams("100");
+    setBarcodeEditMode(false);
+    setBarcodeFromCache(false);
     try {
       const created = await addMeal(user.id, analysis);
       if (created?.id) {
@@ -410,6 +453,19 @@ export default function HomeScreen() {
     } finally {
       setIsAddingBarcode(false);
     }
+  };
+
+  const handleApplyBarcodeCorrection = () => {
+    if (!barcodeProduct || !scannedBarcode) return;
+    const cal = Math.round(Number(barcodeEdit.calories) || 0);
+    const prot = Math.round(Number(barcodeEdit.protein) || 0);
+    const carb = Math.round(Number(barcodeEdit.carbs) || 0);
+    const fat = Math.round(Number(barcodeEdit.fat) || 0);
+    const name = barcodeEdit.name.trim() || barcodeProduct.name;
+    const corrected = { name, brand: barcodeProduct.brand, calories: cal, protein: prot, carbs: carb, fat, valuePer: "serving" as const, source: "user_corrected" as const, savedAt: Date.now() };
+    setFoodCacheEntry(scannedBarcode, corrected);
+    setBarcodeProduct((prev) => prev ? { ...prev, name, calories: cal, protein: prot, carbs: carb, fat, valuePer: "serving" } : null);
+    setBarcodeEditMode(false);
   };
 
   useEffect(() => {
@@ -1796,7 +1852,7 @@ export default function HomeScreen() {
                 </p>
                 <input
                   type="date"
-                  className="mt-2 w-full rounded-lg border border-ink/10 bg-white px-3 py-1.5 text-xs text-ink/80"
+                  className="mt-2 w-auto rounded-lg border border-ink/10 bg-white px-3 py-1.5 text-xs text-ink/80"
                   value={workout.manualDate}
                   max={(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; })()}
                   onChange={(e) => workout.setManualDate(e.target.value)}
@@ -1808,7 +1864,7 @@ export default function HomeScreen() {
                 </p>
                 <div className="mt-2 flex items-center gap-2">
                   <input
-                    className="w-16 rounded-lg border border-ink/10 bg-white px-3 py-2 text-xs text-ink/80"
+                    className="w-12 rounded-lg border border-ink/10 bg-white px-2 py-1.5 text-xs text-ink/80"
                     value={workout.manualHours}
                     onChange={(e) => workout.setManualHours(e.target.value)}
                     placeholder="0"
@@ -1816,7 +1872,7 @@ export default function HomeScreen() {
                   />
                   <span className="text-xs text-muted/70">hrs</span>
                   <input
-                    className="w-16 rounded-lg border border-ink/10 bg-white px-3 py-2 text-xs text-ink/80"
+                    className="w-12 rounded-lg border border-ink/10 bg-white px-2 py-1.5 text-xs text-ink/80"
                     value={workout.manualMinutes}
                     onChange={(e) => workout.setManualMinutes(e.target.value)}
                     placeholder="0"
@@ -1932,10 +1988,17 @@ export default function HomeScreen() {
       {barcodeProduct && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
           <div className="w-full max-w-sm rounded-xl bg-white p-5 shadow-xl">
-            <p className="text-sm font-semibold text-ink">{barcodeProduct.name}</p>
-            {barcodeProduct.brand && (
-              <p className="text-xs text-muted/60">{barcodeProduct.brand}</p>
-            )}
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <p className="text-sm font-semibold text-ink">{barcodeProduct.name}</p>
+                {barcodeProduct.brand && (
+                  <p className="text-xs text-muted/60">{barcodeProduct.brand}</p>
+                )}
+              </div>
+              {barcodeFromCache && (
+                <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">Saved</span>
+              )}
+            </div>
             <div className="mt-3 grid grid-cols-4 gap-2 text-center">
               {[
                 { label: "Cal", value: barcodeProduct.calories ?? "?" },
@@ -1952,7 +2015,7 @@ export default function HomeScreen() {
             <p className="mt-2 text-[10px] text-muted/50">
               Per {barcodeProduct.valuePer === "100g" ? "100g" : "serving"}
             </p>
-            {barcodeProduct.valuePer === "100g" && (
+            {barcodeProduct.valuePer === "100g" && !barcodeEditMode && (
               <div className="mt-3 flex items-center gap-2">
                 <label className="text-xs text-muted/60">How many grams?</label>
                 <input
@@ -1966,11 +2029,69 @@ export default function HomeScreen() {
                 <span className="text-xs text-muted/60">g</span>
               </div>
             )}
+            {!barcodeEditMode && (
+              <button
+                type="button"
+                className="mt-3 text-[11px] text-muted/50 underline underline-offset-2"
+                onClick={() => {
+                  setBarcodeEdit({
+                    name: barcodeProduct.name,
+                    calories: String(barcodeProduct.calories ?? ""),
+                    protein: String(barcodeProduct.protein ?? ""),
+                    carbs: String(barcodeProduct.carbs ?? ""),
+                    fat: String(barcodeProduct.fat ?? ""),
+                  });
+                  setBarcodeEditMode(true);
+                }}
+              >
+                Incorrect?
+              </button>
+            )}
+            {barcodeEditMode && (
+              <div className="mt-3 space-y-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Correct the values</p>
+                <input
+                  className="w-full rounded-lg border border-ink/10 bg-white px-3 py-1.5 text-xs text-ink/80"
+                  placeholder="Food name"
+                  value={barcodeEdit.name}
+                  onChange={(e) => setBarcodeEdit((p) => ({ ...p, name: e.target.value }))}
+                />
+                <div className="grid grid-cols-4 gap-2">
+                  {(["calories", "protein", "carbs", "fat"] as const).map((field) => (
+                    <div key={field}>
+                      <p className="mb-1 text-[9px] uppercase tracking-wide text-muted/50">{field === "calories" ? "Cal" : field}</p>
+                      <input
+                        inputMode="numeric"
+                        className="w-full rounded-lg border border-ink/10 bg-white px-2 py-1.5 text-xs text-ink/80"
+                        value={barcodeEdit[field]}
+                        onChange={(e) => setBarcodeEdit((p) => ({ ...p, [field]: e.target.value }))}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2 justify-end pt-1">
+                  <button
+                    type="button"
+                    className="rounded-xl border border-ink/10 bg-white px-3 py-1.5 text-xs font-semibold text-ink/70"
+                    onClick={() => setBarcodeEditMode(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-xl bg-primary px-3 py-1.5 text-xs font-semibold text-white"
+                    onClick={handleApplyBarcodeCorrection}
+                  >
+                    Save &amp; use
+                  </button>
+                </div>
+              </div>
+            )}
             <div className="mt-4 flex gap-2 justify-end">
               <button
                 type="button"
                 className="rounded-xl border border-ink/10 bg-white px-4 py-2 text-xs font-semibold text-ink/70 transition hover:bg-ink/5"
-                onClick={() => { setBarcodeProduct(null); setBarcodeGrams("100"); }}
+                onClick={() => { setBarcodeProduct(null); setBarcodeGrams("100"); setBarcodeEditMode(false); setBarcodeFromCache(false); }}
               >
                 Cancel
               </button>
@@ -1978,7 +2099,7 @@ export default function HomeScreen() {
                 type="button"
                 className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
                 onClick={handleConfirmBarcodeProduct}
-                disabled={isAddingBarcode}
+                disabled={isAddingBarcode || barcodeEditMode}
               >
                 {isAddingBarcode ? "Adding…" : "Add to day"}
               </button>
