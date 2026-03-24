@@ -853,11 +853,11 @@ export default function ProfileScreen() {
                 </span>
               ))}
             </div>
-            <div className="mt-2 flex gap-2">
+            <div className="mt-2">
               <input
                 type="text"
-                className="mt-1 flex-1 rounded-xl border border-ink/10 px-3 py-2 text-sm"
-                placeholder="e.g., Vitamin D, Fish Oil, Magnesium"
+                className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm"
+                placeholder="e.g., Vitamin D, Fish Oil"
                 value={newSuppInput}
                 onChange={(e) => setNewSuppInput(e.target.value)}
                 onKeyDown={(e) => {
@@ -872,7 +872,7 @@ export default function ProfileScreen() {
               />
               <button
                 type="button"
-                className="mt-1 self-end rounded-xl bg-ink/5 px-4 py-2 text-sm font-semibold text-ink/70 transition hover:bg-ink/10"
+                className="mt-2 rounded-xl bg-ink/5 px-4 py-2 text-sm font-semibold text-ink/70 transition hover:bg-ink/10"
                 onClick={() => {
                   const name = newSuppInput.trim();
                   if (!name || dailySupplements.includes(name)) { setNewSuppInput(""); return; }
