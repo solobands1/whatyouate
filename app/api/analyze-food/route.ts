@@ -77,7 +77,6 @@ async function analyzeWithOpenAI(imageBase64: string, model: string, apiKey: str
 
 async function analyzeWithAnthropic(imageBase64: string, model: string, apiKey: string, hints?: string, packaging?: string) {
   const content: any[] = [
-    { type: "text", text: FOOD_ANALYSIS_PROMPT },
     { type: "text", text: "Analyze this food photo and respond with JSON only." }
   ];
   if (hints) {
@@ -102,6 +101,7 @@ async function analyzeWithAnthropic(imageBase64: string, model: string, apiKey: 
         model,
         max_tokens: 1024,
         temperature: 0.2,
+        system: FOOD_ANALYSIS_PROMPT,
         messages: [{ role: "user", content }]
       })
     });
@@ -492,17 +492,15 @@ async function analyzeTextOnly(textDescription: string, provider: string, openai
   const timeoutId = setTimeout(() => controller.abort(), 25_000);
   try {
     if (provider === "anthropic" && anthropicKey) {
-      const model = process.env.ANTHROPIC_MODEL ?? "claude-3-5-sonnet-20240620";
+      const model = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-4-6";
       const response = await fetch(ANTHROPIC_URL, {
         method: "POST",
         signal: controller.signal,
         headers: { "Content-Type": "application/json", "x-api-key": anthropicKey, "anthropic-version": "2023-06-01" },
         body: JSON.stringify({
           model, max_tokens: 1024, temperature: 0.2,
-          messages: [{ role: "user", content: [
-            { type: "text", text: TEXT_ANALYSIS_PROMPT },
-            { type: "text", text: userPrompt }
-          ]}]
+          system: TEXT_ANALYSIS_PROMPT,
+          messages: [{ role: "user", content: userPrompt }]
         })
       });
       if (!response.ok) throw new Error("Anthropic text analysis failed");
@@ -561,7 +559,7 @@ export async function POST(req: Request) {
     let rawAnalysis: any = null;
 
     if (provider === "anthropic" && anthropicKey) {
-      const model = process.env.ANTHROPIC_MODEL ?? "claude-3-5-sonnet-20240620";
+      const model = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-4-6";
       rawAnalysis = await analyzeWithAnthropic(imageBase64, model, anthropicKey, hints, imageBase64Secondary);
     } else if (openaiKey) {
       const model = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
