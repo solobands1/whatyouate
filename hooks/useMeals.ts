@@ -151,6 +151,12 @@ export function useMeals(
       };
       const created = await addMeal(user.id, scaledAnalysis as any);
       await updateMeal(created.id, scaledAnalysis as any, { userCorrection: manualResult.name }, user.id);
+      // Fire OFF enrichment in background — no Claude call, just database lookup
+      fetch("/api/analyze-food", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mealId: created.id, existingAnalysis: manualResult, userId: user.id })
+      }).catch(() => {});
       // Increment frequency so this food rises in Quick Add
       const normalizedInput = manualText.trim().toLowerCase();
       incrementFoodTextLogCount(normalizedInput);

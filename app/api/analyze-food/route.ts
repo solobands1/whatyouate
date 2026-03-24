@@ -533,11 +533,21 @@ async function analyzeTextOnly(textDescription: string, provider: string, openai
 
 export async function POST(req: Request) {
   try {
-    const { imageBase64, imageBase64Secondary, hints, mealId, textDescription, userId } = await req.json();
+    const { imageBase64, imageBase64Secondary, hints, mealId, textDescription, userId, existingAnalysis } = await req.json();
 
     const rateLimitKey = userId ?? req.headers.get("x-forwarded-for") ?? "anon";
     if (!checkAnalyzeRateLimit(rateLimitKey)) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
+    // Enrichment-only path: skip Claude, just run OFF enrichment on an already-analyzed meal
+    if (existingAnalysis && mealId && !imageBase64 && !textDescription) {
+      const analysis = coerceAnalysis(existingAnalysis);
+      await Promise.race([
+        enrichWithOpenFoodFacts(mealId, analysis, userId),
+        new Promise<void>((resolve) => setTimeout(resolve, 4000))
+      ]);
+      return NextResponse.json({ analysis });
     }
 
     if (textDescription && !imageBase64) {
@@ -545,6 +555,10 @@ export async function POST(req: Request) {
       const rawAnalysis = await analyzeTextOnly(textDescription, provider, process.env.OPENAI_API_KEY ?? "", process.env.ANTHROPIC_API_KEY ?? "");
       const analysis = coerceAnalysis(rawAnalysis);
       if (mealId) await updateMealServer(mealId, analysis, userId);
+      await Promise.race([
+        enrichWithOpenFoodFacts(mealId, analysis, userId),
+        new Promise<void>((resolve) => setTimeout(resolve, 4000))
+      ]);
       return NextResponse.json({ analysis });
     }
 
