@@ -82,8 +82,8 @@ export function useMeals(
         estimated_ranges: cached.ranges,
         micronutrient_signals: cached.micronutrient_signals ?? [],
         confidence_overall_0_1: 1,
-        detected_brand: null,
-        detected_product: null,
+        detected_brand: cached.detected_brand ?? null,
+        detected_product: cached.detected_product ?? null,
         database_match_confidence_0_1: 0,
         precision_mode_available: false,
       } as any);
@@ -113,6 +113,8 @@ export function useMeals(
           micronutrient_signals: analysis.micronutrient_signals ?? [],
           source: "ai" as const,
           savedAt: Date.now(),
+          detected_brand: analysis.detected_brand ?? null,
+          detected_product: analysis.detected_product ?? null,
         };
         setFoodTextEntry(normalizedInput, entry);
         // Also index by the AI's identified food name so e.g. "an apple" and "apple" converge

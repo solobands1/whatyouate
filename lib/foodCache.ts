@@ -75,6 +75,8 @@ export type FoodTextCacheEntry = {
   source: "ai" | "user_corrected";
   savedAt: number;
   logCount?: number;
+  detected_brand?: string | null;
+  detected_product?: string | null;
 };
 
 const FOOD_TEXT_CACHE_KEY = "wya_food_text_cache_v1";

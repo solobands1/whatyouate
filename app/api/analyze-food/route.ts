@@ -381,11 +381,6 @@ async function enrichWithOpenFoodFacts(mealId: string | undefined, analysis: any
     return;
   }
 
-  const { data: mealRow } = await supabaseServer
-    .from("meals")
-    .select("status")
-    .eq("id", mealId)
-    .maybeSingle();
   const detectedBrand = analysis?.detected_brand;
   const detectedProduct = analysis?.detected_product;
   const analysisName = analysis?.name;
@@ -411,14 +406,19 @@ async function enrichWithOpenFoodFacts(mealId: string | undefined, analysis: any
     ].filter((entry) => entry.value);
 
     const searchOnce = async (query: string) => {
-      const offResponse = await fetch(
-        `${OFF_SEARCH_URL}?search_terms=${encodeURIComponent(query)}&search_simple=1&json=1&action=process`
-      );
-      if (!offResponse.ok) {
-        throw new Error("OFF search failed");
+      const searchController = new AbortController();
+      const searchTimeoutId = setTimeout(() => searchController.abort(), 3_000);
+      try {
+        const offResponse = await fetch(
+          `${OFF_SEARCH_URL}?search_terms=${encodeURIComponent(query)}&search_simple=1&json=1&action=process`,
+          { signal: searchController.signal }
+        );
+        if (!offResponse.ok) throw new Error("OFF search failed");
+        const offData = await offResponse.json();
+        return offData?.products ?? [];
+      } finally {
+        clearTimeout(searchTimeoutId);
       }
-      const offData = await offResponse.json();
-      return offData?.products ?? [];
     };
 
     let products: any[] = [];
