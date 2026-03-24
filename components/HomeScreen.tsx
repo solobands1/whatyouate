@@ -548,11 +548,11 @@ export default function HomeScreen() {
       setFoodCacheEntry(scannedBarcode, {
         name: barcodeProduct.name,
         brand: barcodeProduct.brand,
-        calories: barcodeProduct.calories,
-        protein: barcodeProduct.protein,
-        carbs: barcodeProduct.carbs,
-        fat: barcodeProduct.fat,
-        valuePer: barcodeProduct.valuePer,
+        calories,
+        protein,
+        carbs,
+        fat,
+        valuePer: "serving",
         source: "openfoodfacts",
         savedAt: Date.now(),
       });
