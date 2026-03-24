@@ -81,6 +81,15 @@ export function setFoodTextEntry(normalizedText: string, entry: FoodTextCacheEnt
   }
 }
 
+export function deleteFoodTextEntry(normalizedText: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    const cache = loadTextCache();
+    delete cache[normalizedText];
+    localStorage.setItem(FOOD_TEXT_CACHE_KEY, JSON.stringify(cache));
+  } catch {}
+}
+
 // ── Daily supplements ────────────────────────────────────────────────────────
 // Stores the user's fixed daily supplement list. Auto-logged once per day on
 // first app load — silently, without any user action required.
