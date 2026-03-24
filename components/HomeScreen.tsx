@@ -705,6 +705,11 @@ export default function HomeScreen() {
     };
   }, [user, loadData]);
 
+  useEffect(() => {
+    document.body.style.overflow = showQuickAdd ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [showQuickAdd]);
+
   // When a meal is still processing, the "Analyzing food…" label is time-gated
   // at render time (< 90s shows spinner text, >= 90s shows "Analysis failed").
   // React won't re-render from time alone, so schedule a loadData() call at the
