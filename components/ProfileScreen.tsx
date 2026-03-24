@@ -853,10 +853,10 @@ export default function ProfileScreen() {
                 </span>
               ))}
             </div>
-            <div className="mt-2">
+            <div className="mt-2 flex gap-2">
               <input
                 type="text"
-                className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm"
+                className="mt-1 flex-1 rounded-xl border border-ink/10 px-3 py-2 text-sm"
                 placeholder="e.g., Vitamin D, Fish Oil"
                 value={newSuppInput}
                 onChange={(e) => setNewSuppInput(e.target.value)}
@@ -872,7 +872,7 @@ export default function ProfileScreen() {
               />
               <button
                 type="button"
-                className="mt-2 rounded-xl bg-ink/5 px-4 py-2 text-sm font-semibold text-ink/70 transition hover:bg-ink/10"
+                className="mt-1 self-end rounded-xl bg-ink/5 px-4 py-2 text-sm font-semibold text-ink/70 transition hover:bg-ink/10"
                 onClick={() => {
                   const name = newSuppInput.trim();
                   if (!name || dailySupplements.includes(name)) { setNewSuppInput(""); return; }
@@ -887,14 +887,16 @@ export default function ProfileScreen() {
             </div>
           </label>
 
+          <div className="mt-8 border-t border-ink/5 pt-7">
           <button
-            className="mt-10 w-full rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] ring-1 ring-white/40 transition-colors hover:bg-primary/90"
+            className="w-full rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] ring-1 ring-white/40 transition-colors hover:bg-primary/90"
             onClick={handleSave}
             disabled={saving}
           >
             {saving ? "Saving…" : "Save"}
           </button>
           {status && <p className="mt-2 text-xs text-muted">{status}</p>}
+          </div>
         </Card>
 
         <Card className="mt-6">
