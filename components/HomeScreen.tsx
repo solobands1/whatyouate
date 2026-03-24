@@ -1530,9 +1530,9 @@ export default function HomeScreen() {
                         }}
                       >
                         <span className="flex flex-col">
-                          {meal.status === "processing" && Date.now() - meal.ts < 90_000 ? (
+                          {meal.status === "processing" ? (
                             "Analyzing food…"
-                          ) : meal.status === "processing" ? (
+                          ) : meal.status === "failed" ? (
                             "Analysis failed · tap Edit to remove"
                           ) : (
                             <>

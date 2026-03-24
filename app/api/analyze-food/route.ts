@@ -33,39 +33,46 @@ function extractJson(text: string) {
 }
 
 async function analyzeWithOpenAI(imageBase64: string, model: string, apiKey: string, hints?: string, packaging?: string) {
-  const response = await fetch(OPENAI_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`
-    },
-    body: JSON.stringify({
-      model,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: FOOD_ANALYSIS_PROMPT },
-        {
-          role: "user",
-          content: [
-            { type: "text", text: "Analyze this food photo and respond with JSON only." },
-            ...(hints ? [{ type: "text", text: `Clarification: ${hints}.` }] : []),
-            { type: "image_url", image_url: { url: imageBase64 } },
-            ...(packaging ? [{ type: "image_url", image_url: { url: packaging } }] : [])
-          ]
-        }
-      ],
-      temperature: 0.2,
-      max_tokens: 500
-    })
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 25_000);
+  try {
+    const response = await fetch(OPENAI_URL, {
+      method: "POST",
+      signal: controller.signal,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model,
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: FOOD_ANALYSIS_PROMPT },
+          {
+            role: "user",
+            content: [
+              { type: "text", text: "Analyze this food photo and respond with JSON only." },
+              ...(hints ? [{ type: "text", text: `Clarification: ${hints}.` }] : []),
+              { type: "image_url", image_url: { url: imageBase64 } },
+              ...(packaging ? [{ type: "image_url", image_url: { url: packaging } }] : [])
+            ]
+          }
+        ],
+        temperature: 0.2,
+        max_tokens: 1024
+      })
+    });
 
-  if (!response.ok) {
-    throw new Error("OpenAI request failed");
+    if (!response.ok) {
+      throw new Error("OpenAI request failed");
+    }
+
+    const data = await response.json();
+    const content = data?.choices?.[0]?.message?.content ?? "";
+    return extractJson(content) ?? safeFallbackAnalysis();
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  const data = await response.json();
-  const content = data?.choices?.[0]?.message?.content ?? "";
-  return extractJson(content) ?? safeFallbackAnalysis();
 }
 
 async function analyzeWithAnthropic(imageBase64: string, model: string, apiKey: string, hints?: string, packaging?: string) {
@@ -80,33 +87,35 @@ async function analyzeWithAnthropic(imageBase64: string, model: string, apiKey: 
   if (packaging) {
     content.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: packaging.split(",")[1] ?? "" } });
   }
-  const response = await fetch(ANTHROPIC_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01"
-    },
-    body: JSON.stringify({
-      model,
-      max_tokens: 700,
-      temperature: 0.2,
-      messages: [
-        {
-          role: "user",
-          content
-        }
-      ]
-    })
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 25_000);
+  try {
+    const response = await fetch(ANTHROPIC_URL, {
+      method: "POST",
+      signal: controller.signal,
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01"
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: 1024,
+        temperature: 0.2,
+        messages: [{ role: "user", content }]
+      })
+    });
 
-  if (!response.ok) {
-    throw new Error("Anthropic request failed");
+    if (!response.ok) {
+      throw new Error("Anthropic request failed");
+    }
+
+    const data = await response.json();
+    const responseText = data?.content?.[0]?.text ?? "";
+    return extractJson(responseText) ?? safeFallbackAnalysis();
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  const data = await response.json();
-  const responseText = data?.content?.[0]?.text ?? "";
-  return extractJson(responseText) ?? safeFallbackAnalysis();
 }
 
 function pickBestProduct(products: any[], brand: string, product: string) {
@@ -485,7 +494,7 @@ async function analyzeTextOnly(textDescription: string, provider: string, openai
       method: "POST",
       headers: { "Content-Type": "application/json", "x-api-key": anthropicKey, "anthropic-version": "2023-06-01" },
       body: JSON.stringify({
-        model, max_tokens: 700, temperature: 0.2,
+        model, max_tokens: 1024, temperature: 0.2,
         messages: [{ role: "user", content: [
           { type: "text", text: TEXT_ANALYSIS_PROMPT },
           { type: "text", text: userPrompt }
@@ -506,7 +515,7 @@ async function analyzeTextOnly(textDescription: string, provider: string, openai
           { role: "system", content: TEXT_ANALYSIS_PROMPT },
           { role: "user", content: userPrompt }
         ],
-        temperature: 0.2, max_tokens: 500
+        temperature: 0.2, max_tokens: 1024
       })
     });
     if (!response.ok) throw new Error("OpenAI text analysis failed");
