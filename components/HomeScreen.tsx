@@ -29,6 +29,7 @@ import {
   listNudges,
   pruneNudges,
   updateMeal,
+  updateMealTs,
 } from "../lib/supabaseDb";
 import { computeHomeMarkers, computeNudges, computeRecent } from "../lib/digestEngine";
 import { safeFallbackAnalysis } from "../lib/ai/schema";
@@ -589,32 +590,37 @@ export default function HomeScreen() {
     if (!supplements.length) return;
     markDailySuppsLoggedToday(user.id);
     (async () => {
-      for (const name of supplements) {
-        const matchedNutrients = matchSupplementNutrients(name);
-        const analysis = {
-          name,
-          source: "supplement" as const,
-          detected_items: [{ name, confidence_0_1: 1 as number }],
-          estimated_ranges: {
-            calories_min: 0, calories_max: 0,
-            protein_g_min: 0, protein_g_max: 0,
-            carbs_g_min: 0, carbs_g_max: 0,
-            fat_g_min: 0, fat_g_max: 0,
-          },
-          micronutrient_signals: matchedNutrients.map((n) => ({
-            nutrient: n,
-            signal: "adequate_appearance" as const,
-            rationale_short: "Supplement logged",
-          })),
-          confidence_overall_0_1: 1,
-          precision_mode_available: false,
-        };
-        try {
-          const created = await addMeal(user.id, analysis);
-          if (created?.id) await updateMeal(created.id, analysis, undefined, user.id);
-        } catch {
-          // silently fail — supplements are non-critical
+      const allNutrients = supplements.flatMap((name) => matchSupplementNutrients(name));
+      const uniqueNutrients = [...new Set(allNutrients)];
+      const analysis = {
+        name: "Supplements",
+        source: "supplement" as const,
+        detected_items: supplements.map((name) => ({ name, confidence_0_1: 1 as number })),
+        estimated_ranges: {
+          calories_min: 0, calories_max: 0,
+          protein_g_min: 0, protein_g_max: 0,
+          carbs_g_min: 0, carbs_g_max: 0,
+          fat_g_min: 0, fat_g_max: 0,
+        },
+        micronutrient_signals: uniqueNutrients.map((n) => ({
+          nutrient: n,
+          signal: "adequate_appearance" as const,
+          rationale_short: "Supplement logged",
+        })),
+        confidence_overall_0_1: 1,
+        precision_mode_available: false,
+      };
+      try {
+        const created = await addMeal(user.id, analysis);
+        if (created?.id) {
+          await updateMeal(created.id, analysis, undefined, user.id);
+          // Stamp to 12:01am today so it anchors to the start of the day
+          const midnight = new Date();
+          midnight.setHours(0, 1, 0, 0);
+          await updateMealTs(created.id, midnight.getTime());
         }
+      } catch {
+        // silently fail — supplements are non-critical
       }
       notifyMealsUpdated();
     })();
