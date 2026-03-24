@@ -2,6 +2,7 @@ export const FOOD_ANALYSIS_PROMPT = `You are a calm, non-judgmental food photo a
 
 Return STRICT JSON ONLY matching this schema:
 {
+  "name": "string",
   "detected_items": [{
     "name": "string",
     "confidence_0_1": number,
@@ -31,6 +32,15 @@ Return STRICT JSON ONLY matching this schema:
 }
 
 Rules:
+
+NAMING
+- Set "name" to a concise, natural label for the overall meal or food item.
+- Single identifiable dish: use its specific name (e.g., "Pepperoni Pizza", "Caesar Salad", "Banana").
+  - For pizza: name the most prominent topping(s) visible, not just "Cheese Pizza" unless it is genuinely a plain cheese pizza with no other toppings.
+- Multiple distinct items on the same plate or tray: combine the main ones naturally (e.g., "Eggs, Bacon & Toast", "Chicken, Rice & Broccoli", "Steak, Fries & Salad").
+  - Never name a multi-item meal after a single component — if you see eggs, bacon, toast, and hash browns, the name is "Eggs, Bacon, Toast & Hash Browns", not "Fried Eggs".
+- If a single named dish is clearly identifiable (e.g., poutine, ramen, burrito bowl, pad thai), use that dish name.
+- Avoid generic names like "Meal", "Food", or "Plate" unless the content is truly unclear.
 
 GENERAL
 - Always output numeric ranges, never single values.

@@ -224,6 +224,14 @@ function applyNameOverrides(items: Array<{ name: string; confidence_0_1: number;
   if (combined.includes("scrambled") && combined.includes("egg")) {
     overrideName = "Scrambled eggs";
   }
+  const hasEgg = combined.includes("egg");
+  const hasBaconOrSausage = combined.includes("bacon") || combined.includes("sausage");
+  const hasSide = combined.includes("toast") || combined.includes("hash brown") || combined.includes("hashbrown") || combined.includes("home fries") || combined.includes("pancake");
+  if (hasEgg && hasBaconOrSausage && hasSide) {
+    overrideName = "Breakfast plate";
+  } else if (hasEgg && hasBaconOrSausage) {
+    overrideName = hasBaconOrSausage && combined.includes("bacon") ? "Eggs & Bacon" : "Eggs & Sausage";
+  }
   if (combined.includes("breakfast") && combined.includes("burrito")) {
     overrideName = "Breakfast burrito";
   }
