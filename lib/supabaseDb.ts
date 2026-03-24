@@ -12,11 +12,21 @@ const useMemory = LOCAL_MODE;
 // ── In-memory TTL cache ────────────────────────────────────────────────────
 // Tabs reuse cached data if it's < 30 s old, so switching tabs feels instant.
 // Any mutation clears the relevant cache entries so data is never stale.
-const CACHE_TTL = 30_000;
+const CACHE_TTL = 10_000;
 type CacheEntry<T> = { data: T; ts: number };
 const mealsCache = new Map<string, CacheEntry<MealLog[]>>();
 const workoutsCache = new Map<string, CacheEntry<WorkoutSession[]>>();
 const profileCache = new Map<string, CacheEntry<UserProfile | null>>();
+
+export function clearMealsCache(userId?: string): void {
+  if (userId) {
+    for (const key of mealsCache.keys()) {
+      if (key.startsWith(userId + ":")) mealsCache.delete(key);
+    }
+  } else {
+    mealsCache.clear();
+  }
+}
 
 // ──────────────────────────────────────────────────────────────────────────
 

@@ -561,7 +561,7 @@ export async function POST(req: Request) {
 
     await Promise.race([
       enrichWithOpenFoodFacts(mealId, analysis, userId),
-      new Promise<void>((resolve) => setTimeout(resolve, 4000))
+      new Promise<void>((resolve) => setTimeout(resolve, 2000))
     ]);
     return NextResponse.json({ analysis });
   } catch {
