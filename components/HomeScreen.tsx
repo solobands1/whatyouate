@@ -63,6 +63,71 @@ function matchSupplementNutrients(text: string): string[] {
   return Array.from(matched);
 }
 
+function makeDemoMeals(): MealLog[] {
+  const at = (h: number, m: number) => {
+    const d = new Date(); d.setHours(h, m, 0, 0); return d.getTime();
+  };
+  return [
+    {
+      id: "demo-supp", ts: at(0, 1), status: "done",
+      analysisJson: {
+        name: "Supplements", source: "supplement",
+        detected_items: [{ name: "Vitamin D", confidence_0_1: 1 }, { name: "Fish Oil", confidence_0_1: 1 }],
+        estimated_ranges: { calories_min: 0, calories_max: 0, protein_g_min: 0, protein_g_max: 0, carbs_g_min: 0, carbs_g_max: 0, fat_g_min: 0, fat_g_max: 0 },
+        micronutrient_signals: [{ nutrient: "Vitamin D", signal: "adequate_appearance", rationale_short: "Supplement logged" }, { nutrient: "Omega-3", signal: "adequate_appearance", rationale_short: "Supplement logged" }],
+        confidence_overall_0_1: 1, precision_mode_available: false,
+      },
+    },
+    {
+      id: "demo-1", ts: at(7, 30), status: "done",
+      analysisJson: {
+        name: "Scrambled Eggs & Avocado Toast",
+        detected_items: [{ name: "Scrambled eggs", confidence_0_1: 0.95 }, { name: "Avocado toast", confidence_0_1: 0.92 }],
+        estimated_ranges: { calories_min: 380, calories_max: 440, protein_g_min: 18, protein_g_max: 22, carbs_g_min: 32, carbs_g_max: 40, fat_g_min: 18, fat_g_max: 24 },
+        micronutrient_signals: [{ nutrient: "Vitamin E", signal: "adequate_appearance", rationale_short: "From avocado" }, { nutrient: "Choline", signal: "adequate_appearance", rationale_short: "From eggs" }],
+        confidence_overall_0_1: 0.88, precision_mode_available: false,
+      },
+    },
+    {
+      id: "demo-2", ts: at(12, 15), status: "done",
+      analysisJson: {
+        name: "Grilled Chicken & Rice Bowl",
+        detected_items: [{ name: "Grilled chicken breast", confidence_0_1: 0.95 }, { name: "White rice", confidence_0_1: 0.90 }, { name: "Roasted vegetables", confidence_0_1: 0.85 }],
+        estimated_ranges: { calories_min: 520, calories_max: 580, protein_g_min: 38, protein_g_max: 44, carbs_g_min: 55, carbs_g_max: 68, fat_g_min: 8, fat_g_max: 14 },
+        micronutrient_signals: [{ nutrient: "Iron", signal: "adequate_appearance", rationale_short: "From chicken" }, { nutrient: "Fiber", signal: "adequate_appearance", rationale_short: "From vegetables" }],
+        confidence_overall_0_1: 0.85, precision_mode_available: false,
+      },
+    },
+    {
+      id: "demo-3", ts: at(15, 30), status: "done",
+      analysisJson: {
+        name: "Protein Shake",
+        detected_items: [{ name: "Protein shake", confidence_0_1: 0.97 }],
+        estimated_ranges: { calories_min: 160, calories_max: 180, protein_g_min: 20, protein_g_max: 24, carbs_g_min: 8, carbs_g_max: 12, fat_g_min: 2, fat_g_max: 4 },
+        micronutrient_signals: [],
+        confidence_overall_0_1: 0.95, precision_mode_available: false,
+      },
+    },
+    {
+      id: "demo-4", ts: at(19, 0), status: "done",
+      analysisJson: {
+        name: "Salmon, Sweet Potato & Broccoli",
+        detected_items: [{ name: "Baked salmon", confidence_0_1: 0.92 }, { name: "Sweet potato", confidence_0_1: 0.88 }, { name: "Steamed broccoli", confidence_0_1: 0.90 }],
+        estimated_ranges: { calories_min: 520, calories_max: 580, protein_g_min: 35, protein_g_max: 42, carbs_g_min: 42, carbs_g_max: 55, fat_g_min: 14, fat_g_max: 20 },
+        micronutrient_signals: [{ nutrient: "Omega-3", signal: "adequate_appearance", rationale_short: "From salmon" }, { nutrient: "Vitamin C", signal: "adequate_appearance", rationale_short: "From broccoli" }, { nutrient: "Potassium", signal: "adequate_appearance", rationale_short: "From sweet potato" }],
+        confidence_overall_0_1: 0.87, precision_mode_available: false,
+      },
+    },
+  ];
+}
+
+function makeDemoWorkouts(): WorkoutSession[] {
+  const at = (h: number, m: number) => {
+    const d = new Date(); d.setHours(h, m, 0, 0); return d.getTime();
+  };
+  return [{ id: "demo-w1", startTs: at(6, 0), endTs: at(6, 45), durationMin: 45, workoutTypes: ["Strength"], intensity: "medium" }];
+}
+
 export default function HomeScreen() {
   const router = useRouter();
   const { user, loading } = useAuth();
@@ -70,6 +135,8 @@ export default function HomeScreen() {
   const [profile, setProfile] = useState<UserProfile | undefined>();
   const [runTour, setRunTour] = useState(false);
   const [showTourGate, setShowTourGate] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(false);
+  const [demoData] = useState(() => ({ meals: makeDemoMeals(), workouts: makeDemoWorkouts() }));
   const [loadingData, setLoadingData] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [barcodeOpen, setBarcodeOpen] = useState(false);
@@ -254,8 +321,8 @@ export default function HomeScreen() {
   }, [user]);
 
   const homeVisibleNotes = useMemo(
-    () => computeNudges(meals.meals, workout.workouts, profile),
-    [meals.meals, workout.workouts, profile]
+    () => computeNudges(displayMeals, displayWorkouts, profile),
+    [displayMeals, displayWorkouts, profile]
   );
 
   // Save nudges from HomeScreen so history fills in even if Summary tab is never opened
@@ -752,6 +819,7 @@ export default function HomeScreen() {
     const active = localStorage.getItem(activeKey) === "true";
     const stage = localStorage.getItem(stageKey) ?? "home";
     if (active && stage === "home") {
+      if (localStorage.getItem(`wya_demo_mode_${user.id}`) === "true") setIsDemoMode(true);
       setRunTour(true);
       setShowTourGate(false);
       return;
@@ -762,17 +830,20 @@ export default function HomeScreen() {
     }
   }, [user]);
 
+  const displayMeals = isDemoMode ? demoData.meals : meals.meals;
+  const displayWorkouts = isDemoMode ? demoData.workouts : workout.workouts;
+
   const homeMarkers = useMemo(
-    () => computeHomeMarkers(meals.meals, workout.workouts, profile),
-    [meals.meals, workout.workouts, profile]
+    () => computeHomeMarkers(displayMeals, displayWorkouts, profile),
+    [displayMeals, displayWorkouts, profile]
   );
   const completedWorkouts = useMemo(
-    () => workout.workouts.filter((w) => w.endTs),
-    [workout.workouts]
+    () => displayWorkouts.filter((w) => w.endTs),
+    [displayWorkouts]
   );
   const recentItems = useMemo(() => {
-    return computeRecent(meals.meals, completedWorkouts);
-  }, [meals.meals, completedWorkouts]);
+    return computeRecent(displayMeals, completedWorkouts);
+  }, [displayMeals, completedWorkouts]);
 
   useEffect(() => {
     if (!user) { setShowProfileBell(false); return; }
@@ -901,23 +972,23 @@ export default function HomeScreen() {
   const steps = [
     {
       target: '[data-tour="food-action"]',
-      content: "Log meals by photo, barcode scan, or description, and we take care of the rest!",
+      content: "Tap here to log a meal — snap a photo, scan a barcode, or just type what you ate. The chicken bowl and everything else you see here were logged that way.",
       disableBeacon: true
     },
     {
       target: '[data-tour="workout-markers"]',
-      content: "We look at food and workout patterns over time.",
+      content: "Workouts count too. The strength session this morning nudged today's calorie target up automatically.",
       disableBeacon: true
     },
     {
       target: '[data-tour="nav-summary"]',
-      content: "No strict macros.",
+      content: "The Summary tab shows your week at a glance — trends, patterns, gentle nudges. No strict macros.",
       placement: "top" as const,
       disableBeacon: true
     },
     {
       target: "body",
-      content: "Everything is approximate to keep things light.",
+      content: "That's the tour! The demo data disappears now and your real journey starts. Log your first meal whenever you're ready.",
       disableBeacon: true
     }
   ] as Step[];
@@ -926,7 +997,12 @@ export default function HomeScreen() {
     if (!user) return;
     const activeKey = `wya_walkthrough_active_${user.id}`;
     const stageKey = `wya_walkthrough_stage_${user.id}`;
+    const clearDemo = () => {
+      localStorage.removeItem(`wya_demo_mode_${user.id}`);
+      setIsDemoMode(false);
+    };
     if (data.status === STATUS.SKIPPED) {
+      clearDemo();
       localStorage.setItem(`wya_walkthrough_${user.id}`, "true");
       localStorage.removeItem(activeKey);
       localStorage.removeItem(stageKey);
@@ -934,8 +1010,10 @@ export default function HomeScreen() {
       return;
     }
     if (data.type === "step:after" && data.index === steps.length - 1) {
-      localStorage.setItem(activeKey, "true");
-      localStorage.setItem(stageKey, "summary");
+      clearDemo();
+      localStorage.setItem(`wya_walkthrough_${user.id}`, "true");
+      localStorage.removeItem(activeKey);
+      localStorage.removeItem(stageKey);
       setRunTour(false);
       router.push("/summary");
     }
@@ -1002,8 +1080,10 @@ export default function HomeScreen() {
               className="rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] ring-1 ring-white/40 transition hover:bg-primary/90"
               onClick={() => {
                 if (!user) return;
+                localStorage.setItem(`wya_demo_mode_${user.id}`, "true");
                 localStorage.setItem(`wya_walkthrough_active_${user.id}`, "true");
                 localStorage.setItem(`wya_walkthrough_stage_${user.id}`, "home");
+                setIsDemoMode(true);
                 setShowTourGate(false);
                 setRunTour(true);
               }}
@@ -1233,7 +1313,7 @@ export default function HomeScreen() {
             </Link>
           </div>
           <p className="mt-1 text-[13px] text-muted/70">Take photos, get nudges, improve.</p>
-          {!loadingData && mealCount === 0 && (
+          {!loadingData && mealCount === 0 && !isDemoMode && (
             <p className="mt-3 text-[11px] text-muted/60">
               All preview data will be replaced by real input once logging starts.
             </p>
@@ -1241,7 +1321,7 @@ export default function HomeScreen() {
           {loadError && <p className="mt-2 text-[11px] text-muted/60">{loadError}</p>}
         </header>
 
-        {!loadingData && meals.meals.length >= 1 && (!profile || (profile.height === null && profile.weight === null && profile.age === null)) && (
+        {!loadingData && !isDemoMode && displayMeals.length >= 1 && (!profile || (profile.height === null && profile.weight === null && profile.age === null)) && (
           <Card className="mt-4 border border-primary/20 bg-primary/5">
             <div className="flex items-center justify-between gap-3">
               <p className="text-sm text-ink/80">Complete your profile for accurate calorie targets.</p>
@@ -1522,7 +1602,7 @@ export default function HomeScreen() {
               </button>
             )}
             {!loadingData && recentItems.length === 0 ? (
-              mealCount === 0 && workout.workouts.length === 0 ? (
+              mealCount === 0 && displayWorkouts.length === 0 ? (
                 <div className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs text-ink/80">
                   Example: Chicken bowl · 600 kcal · 40 g
                 </div>
