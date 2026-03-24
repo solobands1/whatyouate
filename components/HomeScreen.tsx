@@ -15,7 +15,7 @@ import { formatApprox, formatDateShort, todayKey } from "../lib/utils";
 import { supabase } from "../lib/supabaseClient";
 import "../lib/mealQueue";
 import BarcodeScannerOverlay from "./BarcodeScannerOverlay";
-import { getFoodCacheEntry, setFoodCacheEntry, getQuickAddItems, getDailySupplements, hasDailySuppsLoggedToday, markDailySuppsLoggedToday, type QuickAddItem } from "../lib/foodCache";
+import { getFoodCacheEntry, setFoodCacheEntry, deleteFoodCacheEntry, deleteFoodTextEntry, getQuickAddItems, getDailySupplements, hasDailySuppsLoggedToday, markDailySuppsLoggedToday, type QuickAddItem } from "../lib/foodCache";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
 import { useAuth } from "./AuthProvider";
@@ -190,6 +190,20 @@ export default function HomeScreen() {
     } finally {
       setQuickAddAdding(false);
     }
+  };
+
+  const handleRemoveQuickAddItem = (item: QuickAddItem) => {
+    if (item.type === "text") {
+      deleteFoodTextEntry(item.key);
+    } else if (item.barcode) {
+      deleteFoodCacheEntry(item.barcode);
+    }
+    setQuickAddItems((prev) => prev.filter((i) => i.key !== item.key));
+    setQuickAddSelected((prev) => {
+      const next = { ...prev };
+      delete next[item.key];
+      return next;
+    });
   };
 
   const loadData = useCallback(async () => {
@@ -2285,12 +2299,13 @@ export default function HomeScreen() {
                 {quickAddItems.map((item) => {
                   const isSelected = !!quickAddSelected[item.key];
                   const portion = quickAddSelected[item.key] ?? "medium";
+                  const portionMultiplier = isSelected ? (portion === "small" ? 0.7 : portion === "large" ? 1.4 : 1) : 1;
                   const midCal = item.type === "text" && item.ranges
-                    ? Math.round((item.ranges.calories_min + item.ranges.calories_max) / 2)
-                    : (item.calories ?? 0);
+                    ? Math.round(((item.ranges.calories_min + item.ranges.calories_max) / 2) * portionMultiplier)
+                    : Math.round((item.calories ?? 0) * portionMultiplier);
                   const midProt = item.type === "text" && item.ranges
-                    ? Math.round((item.ranges.protein_g_min + item.ranges.protein_g_max) / 2)
-                    : (item.protein ?? 0);
+                    ? Math.round(((item.ranges.protein_g_min + item.ranges.protein_g_max) / 2) * portionMultiplier)
+                    : Math.round((item.protein ?? 0) * portionMultiplier);
                   return (
                     <div
                       key={item.key}
@@ -2326,6 +2341,13 @@ export default function HomeScreen() {
                             {item.type === "barcode" && item.brand ? ` · ${item.brand}` : ""}
                           </p>
                         </div>
+                        <button
+                          type="button"
+                          className="ml-1 shrink-0 text-ink/30 hover:text-ink/60 transition text-base leading-none"
+                          onClick={() => handleRemoveQuickAddItem(item)}
+                        >
+                          ×
+                        </button>
                       </div>
                       {isSelected && (
                         <div className="mt-2 flex gap-1.5">

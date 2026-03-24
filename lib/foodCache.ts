@@ -26,6 +26,15 @@ export function getFoodCacheEntry(barcode: string): FoodCacheEntry | null {
   return cache[barcode] ?? null;
 }
 
+export function deleteFoodCacheEntry(barcode: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    const cache = loadCache();
+    delete cache[barcode];
+    localStorage.setItem(FOOD_CACHE_KEY, JSON.stringify(cache));
+  } catch {}
+}
+
 export function setFoodCacheEntry(barcode: string, entry: FoodCacheEntry): void {
   if (typeof window === "undefined") return;
   try {
@@ -142,6 +151,7 @@ export type QuickAddItem = {
   ranges?: FoodTextCacheEntry["ranges"];
   micronutrient_signals?: FoodTextCacheEntry["micronutrient_signals"];
   // barcode items
+  barcode?: string;
   calories?: number;
   protein?: number;
   carbs?: number;
@@ -174,7 +184,7 @@ export function getQuickAddItems(): QuickAddItem[] {
 
   // Barcode cache entries
   const barcodeCache = loadCache();
-  for (const entry of Object.values(barcodeCache)) {
+  for (const [barcode, entry] of Object.entries(barcodeCache)) {
     const key = entry.name.toLowerCase().trim();
     if (!key) continue;
     const existing = seen.get(key);
@@ -183,6 +193,7 @@ export function getQuickAddItems(): QuickAddItem[] {
         key,
         name: entry.name,
         type: "barcode",
+        barcode,
         calories: entry.calories,
         protein: entry.protein,
         carbs: entry.carbs,
