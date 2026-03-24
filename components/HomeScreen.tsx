@@ -1119,11 +1119,11 @@ export default function HomeScreen() {
                 <div className="mt-4 space-y-2">
                   <button
                     type="button"
-                    className="flex w-full flex-col items-start rounded-xl border border-ink/10 bg-white px-4 py-3 text-left transition hover:bg-ink/5"
+                    className="flex w-full flex-col items-start rounded-xl bg-primary px-4 py-3 text-left transition hover:bg-primary/90"
                     onClick={workout.handleStartWorkout}
                   >
-                    <span className="text-sm font-semibold text-ink">Start Workout</span>
-                    <span className="mt-0.5 text-xs text-muted/60">Begin tracking time now</span>
+                    <span className="text-sm font-semibold text-white">Start Workout</span>
+                    <span className="mt-0.5 text-xs text-white/70">Begin tracking time now</span>
                   </button>
                   <button
                     type="button"
@@ -1378,7 +1378,7 @@ export default function HomeScreen() {
               </div>
               <div className="flex-1">
                 <div className="h-1.5 overflow-hidden rounded-full bg-ink/5">
-                  <div className="h-full rounded-full bg-primary/70" style={{ width: `${barsReady ? protPct : 0}%`, transition: "width 700ms cubic-bezier(0.22,1,0.36,1) 80ms" }} />
+                  <div className="h-full rounded-full bg-primary" style={{ width: `${barsReady ? protPct : 0}%`, transition: "width 700ms cubic-bezier(0.22,1,0.36,1) 80ms" }} />
                 </div>
               </div>
             </div>
