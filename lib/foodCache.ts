@@ -234,10 +234,10 @@ export function getQuickAddItems(): QuickAddItem[] {
     }
   }
 
-  // Sort by log frequency first, then by most recently saved as tiebreaker
+  // Sort by log frequency first, then by most recently saved as tiebreaker; cap at 20
   return Array.from(seen.values()).sort((a, b) => {
     const countDiff = b.logCount - a.logCount;
     if (countDiff !== 0) return countDiff;
     return b.savedAt - a.savedAt;
-  });
+  }).slice(0, 20);
 }
