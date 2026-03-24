@@ -51,7 +51,14 @@ export async function POST(req: Request) {
     const code = String(barcode ?? "").trim().replace(/[^0-9A-Za-z]/g, "");
     if (!code) return NextResponse.json({ error: "Missing barcode" }, { status: 400 });
 
-    const res = await fetch(`${OFF_PRODUCT_URL}/${encodeURIComponent(code)}.json`);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8_000);
+    let res: Response;
+    try {
+      res = await fetch(`${OFF_PRODUCT_URL}/${encodeURIComponent(code)}.json`, { signal: controller.signal });
+    } finally {
+      clearTimeout(timeoutId);
+    }
     if (!res.ok) return NextResponse.json({ error: "Lookup failed" }, { status: 502 });
 
     const data = await res.json();

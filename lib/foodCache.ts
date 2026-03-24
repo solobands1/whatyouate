@@ -88,9 +88,14 @@ function loadTextCache(): Record<string, FoodTextCacheEntry> {
   }
 }
 
+const TEXT_CACHE_TTL_MS = 90 * 24 * 60 * 60 * 1000; // 90 days
+
 export function getFoodTextEntry(normalizedText: string): FoodTextCacheEntry | null {
   const cache = loadTextCache();
-  return cache[normalizedText] ?? null;
+  const entry = cache[normalizedText];
+  if (!entry) return null;
+  if (Date.now() - entry.savedAt > TEXT_CACHE_TTL_MS) return null;
+  return entry;
 }
 
 export function setFoodTextEntry(normalizedText: string, entry: FoodTextCacheEntry): void {
