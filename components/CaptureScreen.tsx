@@ -121,7 +121,7 @@ export default function CaptureScreen() {
       img.onload = () => resolve(true);
       img.onerror = reject;
     });
-    const maxSize = 512;
+    const maxSize = 800;
     const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
     const canvas = document.createElement("canvas");
     canvas.width = Math.round(img.width * scale);

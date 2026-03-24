@@ -39,7 +39,7 @@ export function useMeals(
     const stuck = mealsData.filter((m) => m.status === "processing" && now - m.ts > STUCK_MS);
     if (stuck.length > 0) {
       await Promise.all(stuck.map((m) => updateMeal(m.id, safeFallbackAnalysis(), undefined, userId, "failed").catch(() => {})));
-      const refreshed = await listMeals(userId, 1000);
+      const refreshed = await listMeals(userId, 100);
       setMeals(refreshed);
     }
   }, []);

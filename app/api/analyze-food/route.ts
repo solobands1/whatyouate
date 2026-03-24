@@ -99,7 +99,7 @@ async function analyzeWithAnthropic(imageBase64: string, model: string, apiKey: 
       },
       body: JSON.stringify({
         model,
-        max_tokens: 1024,
+        max_tokens: 2048,
         temperature: 0.2,
         system: FOOD_ANALYSIS_PROMPT,
         messages: [{ role: "user", content }]
@@ -498,7 +498,7 @@ async function analyzeTextOnly(textDescription: string, provider: string, openai
         signal: controller.signal,
         headers: { "Content-Type": "application/json", "x-api-key": anthropicKey, "anthropic-version": "2023-06-01" },
         body: JSON.stringify({
-          model, max_tokens: 1024, temperature: 0.2,
+          model, max_tokens: 2048, temperature: 0.2,
           system: TEXT_ANALYSIS_PROMPT,
           messages: [{ role: "user", content: userPrompt }]
         })
@@ -576,7 +576,7 @@ export async function POST(req: Request) {
 
     await Promise.race([
       enrichWithOpenFoodFacts(mealId, analysis, userId),
-      new Promise<void>((resolve) => setTimeout(resolve, 2000))
+      new Promise<void>((resolve) => setTimeout(resolve, 4000))
     ]);
     return NextResponse.json({ analysis });
   } catch {
