@@ -31,7 +31,7 @@ export function useMeals(
   const [manualError, setManualError] = useState<string | null>(null);
 
   const load = useCallback(async (userId: string) => {
-    const mealsData = await listMeals(userId, 1000);
+    const mealsData = await listMeals(userId, 100);
     setMeals(mealsData);
     // Recover meals stuck in "processing" (e.g. tab closed mid-analysis)
     const STUCK_MS = 5 * 60 * 1000;

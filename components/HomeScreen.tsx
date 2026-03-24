@@ -704,10 +704,14 @@ export default function HomeScreen() {
   }, [user, loadData]);
 
   useEffect(() => {
-    const handler = () => { clearMealsCache(user?.id); loadData(); };
+    const handler = () => {
+      if (!user) return;
+      clearMealsCache(user.id);
+      meals.load(user.id);
+    };
     window.addEventListener(MEALS_UPDATED_EVENT, handler as EventListener);
     return () => window.removeEventListener(MEALS_UPDATED_EVENT, handler as EventListener);
-  }, [user, loadData]);
+  }, [user, meals.load]);
 
   useEffect(() => {
     const handler = (e: Event) => {
