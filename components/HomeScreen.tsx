@@ -2309,34 +2309,33 @@ export default function HomeScreen() {
                   return (
                     <div
                       key={item.key}
-                      className={`rounded-xl border px-3 py-2.5 transition ${isSelected ? "border-primary/30 bg-primary/8" : "border-ink/8 bg-ink/[0.02]"}`}
+                      className={`cursor-pointer rounded-xl border px-3 py-2.5 transition ${isSelected ? "border-primary/30 bg-primary/8" : "border-ink/8 bg-ink/[0.02]"}`}
+                      onClick={() => {
+                        setQuickAddSelected((prev) => {
+                          if (prev[item.key]) {
+                            const next = { ...prev };
+                            delete next[item.key];
+                            return next;
+                          }
+                          return { ...prev, [item.key]: "medium" };
+                        });
+                      }}
                     >
                       <div className="flex items-start gap-2">
-                        <button
-                          type="button"
+                        <div
                           className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border transition ${isSelected ? "border-primary bg-primary" : "border-ink/20 bg-white"}`}
-                          onClick={() => {
-                            setQuickAddSelected((prev) => {
-                              if (prev[item.key]) {
-                                const next = { ...prev };
-                                delete next[item.key];
-                                return next;
-                              }
-                              return { ...prev, [item.key]: "medium" };
-                            });
-                          }}
                         >
                           {isSelected && (
                             <svg viewBox="0 0 10 8" fill="none" stroke="white" strokeWidth="1.5" className="h-2.5 w-2.5">
                               <path d="M1 4 L3.5 6.5 L9 1" strokeLinecap="round" strokeLinejoin="round" />
                             </svg>
                           )}
-                        </button>
+                        </div>
                         <div className="flex-1 min-w-0">
                           <p className="truncate text-xs font-semibold text-ink">
                             {formatTitle(item.name)}
                           </p>
-                          <p className="text-[10px] text-muted/60">
+                          <p className="text-[10px] text-muted/80">
                             {midCal} kcal · {midProt}g protein
                             {item.type === "barcode" && item.brand ? ` · ${item.brand}` : ""}
                           </p>
@@ -2344,7 +2343,7 @@ export default function HomeScreen() {
                         <button
                           type="button"
                           className="ml-1 shrink-0 text-ink/30 hover:text-ink/60 transition text-base leading-none"
-                          onClick={() => handleRemoveQuickAddItem(item)}
+                          onClick={(e) => { e.stopPropagation(); handleRemoveQuickAddItem(item); }}
                         >
                           ×
                         </button>
@@ -2356,7 +2355,7 @@ export default function HomeScreen() {
                               key={p}
                               type="button"
                               className={`flex-1 rounded-lg border py-1 text-[10px] font-semibold transition ${portion === p ? "border-primary/30 bg-primary/15 text-ink" : "border-ink/10 bg-white text-ink/60 hover:bg-ink/5"}`}
-                              onClick={() => setQuickAddSelected((prev) => ({ ...prev, [item.key]: p }))}
+                              onClick={(e) => { e.stopPropagation(); setQuickAddSelected((prev) => ({ ...prev, [item.key]: p })); }}
                             >
                               {p === "medium" ? "Avg" : p === "small" ? "Small" : "Large"}
                             </button>
