@@ -5,7 +5,7 @@ import type { User } from "@supabase/supabase-js";
 import type { MealAnalysis, MealLog } from "../lib/types";
 import { addMeal, listMeals, updateMeal } from "../lib/supabaseDb";
 import { safeFallbackAnalysis } from "../lib/ai/schema";
-import { getFoodTextEntry, setFoodTextEntry, deleteFoodTextEntry } from "../lib/foodCache";
+import { getFoodTextEntry, setFoodTextEntry, deleteFoodTextEntry, incrementFoodTextLogCount } from "../lib/foodCache";
 
 export function useMeals(
   user: User | null,
@@ -151,6 +151,13 @@ export function useMeals(
       };
       const created = await addMeal(user.id, scaledAnalysis as any);
       await updateMeal(created.id, scaledAnalysis as any, { userCorrection: manualResult.name }, user.id);
+      // Increment frequency so this food rises in Quick Add
+      const normalizedInput = manualText.trim().toLowerCase();
+      incrementFoodTextLogCount(normalizedInput);
+      const normalizedAiName = (manualResult.name ?? "").toLowerCase().trim();
+      if (normalizedAiName && normalizedAiName !== normalizedInput) {
+        incrementFoodTextLogCount(normalizedAiName);
+      }
       setManualText("");
       setManualResult(null);
       setManualPortion("medium");

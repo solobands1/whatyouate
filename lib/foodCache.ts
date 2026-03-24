@@ -8,6 +8,7 @@ export type FoodCacheEntry = {
   valuePer: "serving" | "100g";
   source: "openfoodfacts" | "user_corrected";
   savedAt: number;
+  logCount?: number;
 };
 
 const FOOD_CACHE_KEY = "wya_food_cache_v1";
@@ -39,11 +40,23 @@ export function setFoodCacheEntry(barcode: string, entry: FoodCacheEntry): void 
   if (typeof window === "undefined") return;
   try {
     const cache = loadCache();
-    cache[barcode] = entry;
+    // Preserve existing logCount so re-scanning doesn't reset frequency data
+    const existingLogCount = cache[barcode]?.logCount;
+    cache[barcode] = existingLogCount != null ? { ...entry, logCount: existingLogCount } : entry;
     localStorage.setItem(FOOD_CACHE_KEY, JSON.stringify(cache));
   } catch {
     // Ignore storage failures (quota, private mode)
   }
+}
+
+export function incrementFoodCacheLogCount(barcode: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    const cache = loadCache();
+    if (!cache[barcode]) return;
+    cache[barcode] = { ...cache[barcode], logCount: (cache[barcode].logCount ?? 0) + 1 };
+    localStorage.setItem(FOOD_CACHE_KEY, JSON.stringify(cache));
+  } catch {}
 }
 
 // ── Text / manual-entry food cache ─────────────────────────────────────────
@@ -61,6 +74,7 @@ export type FoodTextCacheEntry = {
   micronutrient_signals: Array<{ nutrient: string; signal: string; notes?: string }>;
   source: "ai" | "user_corrected";
   savedAt: number;
+  logCount?: number;
 };
 
 const FOOD_TEXT_CACHE_KEY = "wya_food_text_cache_v1";
@@ -83,11 +97,23 @@ export function setFoodTextEntry(normalizedText: string, entry: FoodTextCacheEnt
   if (typeof window === "undefined") return;
   try {
     const cache = loadTextCache();
-    cache[normalizedText] = entry;
+    // Preserve existing logCount so re-analyzing doesn't reset frequency data
+    const existingLogCount = cache[normalizedText]?.logCount;
+    cache[normalizedText] = existingLogCount != null ? { ...entry, logCount: existingLogCount } : entry;
     localStorage.setItem(FOOD_TEXT_CACHE_KEY, JSON.stringify(cache));
   } catch {
     // Ignore storage failures
   }
+}
+
+export function incrementFoodTextLogCount(normalizedText: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    const cache = loadTextCache();
+    if (!cache[normalizedText]) return;
+    cache[normalizedText] = { ...cache[normalizedText], logCount: (cache[normalizedText].logCount ?? 0) + 1 };
+    localStorage.setItem(FOOD_TEXT_CACHE_KEY, JSON.stringify(cache));
+  } catch {}
 }
 
 export function deleteFoodTextEntry(normalizedText: string): void {
@@ -159,6 +185,7 @@ export type QuickAddItem = {
   brand?: string;
   valuePer?: "serving" | "100g";
   savedAt: number;
+  logCount: number;
 };
 
 export function getQuickAddItems(): QuickAddItem[] {
@@ -178,6 +205,7 @@ export function getQuickAddItems(): QuickAddItem[] {
         ranges: entry.ranges,
         micronutrient_signals: entry.micronutrient_signals,
         savedAt: entry.savedAt,
+        logCount: entry.logCount ?? 0,
       });
     }
   }
@@ -201,9 +229,15 @@ export function getQuickAddItems(): QuickAddItem[] {
         brand: entry.brand,
         valuePer: entry.valuePer,
         savedAt: entry.savedAt,
+        logCount: entry.logCount ?? 0,
       });
     }
   }
 
-  return Array.from(seen.values()).sort((a, b) => b.savedAt - a.savedAt);
+  // Sort by log frequency first, then by most recently saved as tiebreaker
+  return Array.from(seen.values()).sort((a, b) => {
+    const countDiff = b.logCount - a.logCount;
+    if (countDiff !== 0) return countDiff;
+    return b.savedAt - a.savedAt;
+  });
 }

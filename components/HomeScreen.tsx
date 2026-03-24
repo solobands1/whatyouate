@@ -15,7 +15,7 @@ import { formatApprox, formatDateShort, todayKey } from "../lib/utils";
 import { supabase } from "../lib/supabaseClient";
 import "../lib/mealQueue";
 import BarcodeScannerOverlay from "./BarcodeScannerOverlay";
-import { getFoodCacheEntry, setFoodCacheEntry, deleteFoodCacheEntry, deleteFoodTextEntry, getQuickAddItems, getDailySupplements, hasDailySuppsLoggedToday, markDailySuppsLoggedToday, type QuickAddItem } from "../lib/foodCache";
+import { getFoodCacheEntry, setFoodCacheEntry, deleteFoodCacheEntry, deleteFoodTextEntry, incrementFoodCacheLogCount, incrementFoodTextLogCount, getQuickAddItems, getDailySupplements, hasDailySuppsLoggedToday, markDailySuppsLoggedToday, type QuickAddItem } from "../lib/foodCache";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
 import { useAuth } from "./AuthProvider";
@@ -177,6 +177,11 @@ export default function HomeScreen() {
         if (created?.id) {
           await updateMeal(created.id, analysis, { userCorrection: item.name }, user.id);
           newMeals.push({ ...created, analysisJson: analysis, status: "done" as const });
+          if (item.type === "text") {
+            incrementFoodTextLogCount(item.key);
+          } else if (item.barcode) {
+            incrementFoodCacheLogCount(item.barcode);
+          }
         }
       }
       if (newMeals.length > 0) {
@@ -483,6 +488,7 @@ export default function HomeScreen() {
         source: "openfoodfacts",
         savedAt: Date.now(),
       });
+      incrementFoodCacheLogCount(scannedBarcode);
     }
     setBarcodeProduct(null);
     setBarcodeGrams("100");
@@ -515,6 +521,7 @@ export default function HomeScreen() {
     // Save correction to cache
     if (scannedBarcode) {
       setFoodCacheEntry(scannedBarcode, { name, brand: barcodeProduct.brand, calories: cal, protein: prot, carbs: carb, fat, valuePer: "serving", source: "user_corrected", savedAt: Date.now() });
+      incrementFoodCacheLogCount(scannedBarcode);
     }
     // Log the meal using corrected values directly
     setIsAddingBarcode(true);
