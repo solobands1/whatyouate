@@ -6,7 +6,6 @@ Return STRICT JSON ONLY matching this schema:
   "detected_items": [{
     "name": "string",
     "confidence_0_1": number,
-    "estimated_weight_grams": number,
     "notes": "string"
   }],
   "detected_brand": "string | null",
@@ -49,9 +48,7 @@ GENERAL
 - Do not add extra keys.
 
 DETECTED ITEMS
-- Each detected item MUST include realistic estimated_weight_grams.
 - Use typical real-world portion sizes.
-- Avoid extreme or unrealistic gram estimates.
 - Confidence should reflect visual clarity.
 - Only include detected_brand, detected_product, and database_match_confidence_0_1 when packaging is clearly visible.
 - If the photo clearly resembles a named dish (e.g., poutine, philly cheesesteak, sushi roll, burrito bowl),
@@ -61,8 +58,7 @@ DETECTED ITEMS
   and do not classify it as soups/stews (e.g., pho) unless clearly visible.
 
 MACRONUTRIENT CALCULATION
-- Derive calorie and macro ranges from:
-  (estimated_weight_grams × typical nutrition density per 100g).
+- Derive calorie and macro ranges from typical portion weights × nutrition density per 100g.
 - Do not guess calories directly without weight reasoning.
 - For simple whole foods (fruit, eggs, plain yogurt, rice, bread, common meats):
   - Keep ranges tight (typically within ±15–20%).
@@ -108,7 +104,6 @@ Return STRICT JSON ONLY matching this schema:
   "detected_items": [{
     "name": "string",
     "confidence_0_1": number,
-    "estimated_weight_grams": number,
     "notes": "string"
   }],
   "detected_brand": "string | null",
@@ -149,15 +144,13 @@ NAMING
 
 DETECTED ITEMS
 - Interpret the user's description literally. Do not invent ingredients not mentioned.
-- Estimate weight_grams from the described portion (e.g. "a bowl", "two slices", "a large plate").
 - Use typical real-world portion sizes when no size is specified.
 - If the description names a specific dish, use that name directly.
 - detected_brand and detected_product: only populate if a brand or product name is explicitly stated.
 - database_match_confidence_0_1: null unless a specific packaged product is named.
 
 MACRONUTRIENT CALCULATION
-- Derive calorie and macro ranges from:
-  (estimated_weight_grams × typical nutrition density per 100g).
+- Derive calorie and macro ranges from typical portion weights × nutrition density per 100g.
 - For simple whole foods (fruit, eggs, plain yogurt, rice, bread, common meats):
   - Keep ranges tight (typically within ±15–20%).
 - For mixed or complex meals, or vague descriptions:
