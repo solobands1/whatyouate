@@ -4,6 +4,7 @@ import { notifyMealsUpdated } from "./dataEvents";
 type MealJob = {
   mealId: string;
   imageBase64: string;
+  userId?: string;
 };
 
 const queue: MealJob[] = [];
@@ -29,7 +30,8 @@ async function processNext() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         imageBase64: job.imageBase64,
-        mealId: job.mealId
+        mealId: job.mealId,
+        userId: job.userId
       })
     });
 
@@ -54,8 +56,8 @@ async function processNext() {
   processNext();
 }
 
-export function enqueueMeal(mealId: string, imageBase64: string) {
-  queue.push({ mealId, imageBase64 });
+export function enqueueMeal(mealId: string, imageBase64: string, userId?: string) {
+  queue.push({ mealId, imageBase64, userId });
 
   if (!isProcessing) {
     processNext();

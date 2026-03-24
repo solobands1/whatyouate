@@ -158,7 +158,7 @@ export default function CaptureScreen() {
     setPendingMealId(pendingMeal.id);
     setMealTime(nowTimeString());
     notifyMealsUpdated();
-    enqueueMeal(pendingMeal.id, resized);
+    enqueueMeal(pendingMeal.id, resized, user.id);
     if (redirectRef.current) window.clearTimeout(redirectRef.current);
     redirectRef.current = window.setTimeout(() => {
       if (!showTimePickerRef.current) router.push("/");

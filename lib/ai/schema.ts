@@ -33,8 +33,8 @@ function scoreDetectedItem(name: string, confidence: number) {
   return score;
 }
 
-function applyNameOverrides(items: Array<{ name: string; confidence_0_1: number; notes?: string }>) {
-  if (!items.length) return items;
+function applyNameOverrides(items: Array<{ name: string; confidence_0_1: number; notes?: string }>): { items: typeof items; overrideName: string | null } {
+  if (!items.length) return { items, overrideName: null };
   const combined = items
     .map((item) => `${item.name} ${item.notes ?? ""}`.trim())
     .join(" ")
@@ -326,15 +326,15 @@ function applyNameOverrides(items: Array<{ name: string; confidence_0_1: number;
   if (overrideName) {
     const next = [...items];
     next[0] = { ...next[0], name: overrideName };
-    return next;
+    return { items: next, overrideName };
   }
-  return items;
+  return { items, overrideName: null };
 }
 
 function normalizeDetectedItems(
   items: Array<{ name: string; confidence_0_1: number; notes?: string }>
-) {
-  if (!items.length) return items;
+): { items: Array<{ name: string; confidence_0_1: number; notes?: string }>; overrideName: string | null } {
+  if (!items.length) return { items, overrideName: null };
   const cleaned = items.map((item) => ({
     ...item,
     name: normalizeItemName(item.name)
@@ -379,18 +379,15 @@ export function safeFallbackAnalysis(): MealAnalysis {
 export function coerceAnalysis(input: any): MealAnalysis {
   if (!input || typeof input !== "object") return safeFallbackAnalysis();
   try {
-    let detected_items = Array.isArray(input.detected_items)
-      ? normalizeDetectedItems(
-          input.detected_items.map((item: any) => ({
-            name: String(item?.name ?? "Meal"),
-            confidence_0_1: clampNumber(Number(item?.confidence_0_1 ?? 0.3), 0, 1),
-            notes: item?.notes ? String(item.notes) : undefined
-          }))
-        )
-      : [{ name: "Meal", confidence_0_1: 0.3 }];
-    if (!detected_items.length) {
-      detected_items = [{ name: "Meal", confidence_0_1: 0.3 }];
-    }
+    const rawItems = Array.isArray(input.detected_items)
+      ? input.detected_items.map((item: any) => ({
+          name: String(item?.name ?? "Meal"),
+          confidence_0_1: clampNumber(Number(item?.confidence_0_1 ?? 0.3), 0, 1),
+          notes: item?.notes ? String(item.notes) : undefined
+        }))
+      : [];
+    const { items: normalizedItems, overrideName } = normalizeDetectedItems(rawItems);
+    let detected_items = normalizedItems.length ? normalizedItems : [{ name: "Meal", confidence_0_1: 0.3 }];
 
     const ranges = input.estimated_ranges ?? {};
     const calMin = clampNumber(Number(ranges.calories_min ?? 350), 0, 5000);
@@ -439,8 +436,9 @@ export function coerceAnalysis(input: any): MealAnalysis {
       ? input.optional_quick_confirm_options.map((option: any) => String(option)).slice(0, 4)
       : undefined;
 
+    const displayName = overrideName ?? (input.name ? String(input.name) : undefined);
     return {
-      ...(input.name ? { name: String(input.name) } : {}),
+      ...(displayName ? { name: displayName } : {}),
       detected_items,
       estimated_ranges,
       micronutrient_signals,

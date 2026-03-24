@@ -488,41 +488,49 @@ async function enrichWithOpenFoodFacts(mealId: string | undefined, analysis: any
 
 async function analyzeTextOnly(textDescription: string, provider: string, openaiKey: string, anthropicKey: string) {
   const userPrompt = `Analyze this food description and provide nutritional estimates. Respond with JSON only: "${textDescription}"`;
-  if (provider === "anthropic" && anthropicKey) {
-    const model = process.env.ANTHROPIC_MODEL ?? "claude-3-5-sonnet-20240620";
-    const response = await fetch(ANTHROPIC_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-api-key": anthropicKey, "anthropic-version": "2023-06-01" },
-      body: JSON.stringify({
-        model, max_tokens: 1024, temperature: 0.2,
-        messages: [{ role: "user", content: [
-          { type: "text", text: TEXT_ANALYSIS_PROMPT },
-          { type: "text", text: userPrompt }
-        ]}]
-      })
-    });
-    if (!response.ok) throw new Error("Anthropic text analysis failed");
-    const data = await response.json();
-    return extractJson(data?.content?.[0]?.text ?? "") ?? safeFallbackAnalysis();
-  } else if (openaiKey) {
-    const model = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
-    const response = await fetch(OPENAI_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${openaiKey}` },
-      body: JSON.stringify({
-        model, response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: TEXT_ANALYSIS_PROMPT },
-          { role: "user", content: userPrompt }
-        ],
-        temperature: 0.2, max_tokens: 1024
-      })
-    });
-    if (!response.ok) throw new Error("OpenAI text analysis failed");
-    const data = await response.json();
-    return extractJson(data?.choices?.[0]?.message?.content ?? "") ?? safeFallbackAnalysis();
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 25_000);
+  try {
+    if (provider === "anthropic" && anthropicKey) {
+      const model = process.env.ANTHROPIC_MODEL ?? "claude-3-5-sonnet-20240620";
+      const response = await fetch(ANTHROPIC_URL, {
+        method: "POST",
+        signal: controller.signal,
+        headers: { "Content-Type": "application/json", "x-api-key": anthropicKey, "anthropic-version": "2023-06-01" },
+        body: JSON.stringify({
+          model, max_tokens: 1024, temperature: 0.2,
+          messages: [{ role: "user", content: [
+            { type: "text", text: TEXT_ANALYSIS_PROMPT },
+            { type: "text", text: userPrompt }
+          ]}]
+        })
+      });
+      if (!response.ok) throw new Error("Anthropic text analysis failed");
+      const data = await response.json();
+      return extractJson(data?.content?.[0]?.text ?? "") ?? safeFallbackAnalysis();
+    } else if (openaiKey) {
+      const model = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
+      const response = await fetch(OPENAI_URL, {
+        method: "POST",
+        signal: controller.signal,
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${openaiKey}` },
+        body: JSON.stringify({
+          model, response_format: { type: "json_object" },
+          messages: [
+            { role: "system", content: TEXT_ANALYSIS_PROMPT },
+            { role: "user", content: userPrompt }
+          ],
+          temperature: 0.2, max_tokens: 1024
+        })
+      });
+      if (!response.ok) throw new Error("OpenAI text analysis failed");
+      const data = await response.json();
+      return extractJson(data?.choices?.[0]?.message?.content ?? "") ?? safeFallbackAnalysis();
+    }
+    return safeFallbackAnalysis();
+  } finally {
+    clearTimeout(timeoutId);
   }
-  return safeFallbackAnalysis();
 }
 
 export async function POST(req: Request) {
