@@ -31,6 +31,7 @@ export default function SummaryScreen() {
   const [hydrated, setHydrated] = useState(false);
   const [nudges, setNudges] = useState<Array<{ id: string; message: string; created_at: string }>>(() => _summaryCache.nudges ?? []);
   const nudgesLoadedRef = useRef(!!_summaryCache.nudges);
+  const [nudgesLoaded, setNudgesLoaded] = useState(!!_summaryCache.nudges);
   const savedThisSessionRef = useRef<Set<string>>(new Set());
   const [loadingData, setLoadingData] = useState(() => !_summaryCache.mealsLoaded);
   const mountedRef = useRef(true);
@@ -110,11 +111,13 @@ export default function SummaryScreen() {
         _summaryCache.nudges = nudgesData as any;
         setNudges(nudgesData as any);
         nudgesLoadedRef.current = true;
+        setNudgesLoaded(true);
       })
       .catch(() => {
         if (!mountedRef.current) return;
         setNudges([]);
         nudgesLoadedRef.current = true;
+        setNudgesLoaded(true);
       });
   }, [user]);
 
@@ -520,7 +523,7 @@ export default function SummaryScreen() {
 
   // Save nudges to DB once per day
   useEffect(() => {
-    if (!user || !nudgesLoadedRef.current || visibleNotes.length === 0) return;
+    if (!user || !nudgesLoaded || visibleNotes.length === 0) return;
     const todayStr = todayKey();
     const existingToday = new Set(
       nudges.filter((n) => todayKey(new Date(n.created_at)) === todayStr).map((n) => n.message)
@@ -534,7 +537,7 @@ export default function SummaryScreen() {
       addNudge(user.id, "awareness", note.message).catch(() => {});
     });
     pruneNudges(user.id).catch(() => {});
-  }, [user, visibleNotes, nudges]);
+  }, [user, visibleNotes, nudges, nudgesLoaded]);
 
   const weeklyVariant = (variants: string[]): string => {
     const week = Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000));
