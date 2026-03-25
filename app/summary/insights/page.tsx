@@ -13,7 +13,7 @@ import { MEALS_UPDATED_EVENT, PROFILE_UPDATED_EVENT } from "../../../lib/dataEve
 import { getProfile, listMeals } from "../../../lib/supabaseDb";
 import { dayKeyFromTs } from "../../../lib/utils";
 
-const _insightsCache: { profile?: UserProfile; meals?: MealLog[] } = {};
+const _insightsCache: { profile?: UserProfile; meals?: MealLog[]; mealsLoaded: boolean } = { mealsLoaded: false };
 
 const INSIGHT_NUTRIENTS = [
   "Iron",
@@ -70,7 +70,7 @@ export default function InsightsPage() {
   const { user, loading } = useAuth();
   const [profile, setProfile] = useState<UserProfile | undefined>(() => _insightsCache.profile);
   const [meals, setMeals] = useState<MealLog[]>(() => _insightsCache.meals ?? []);
-  const [loadingData, setLoadingData] = useState(() => !_insightsCache.meals);
+  const [loadingData, setLoadingData] = useState(() => !_insightsCache.mealsLoaded);
   const [activeNutrient, setActiveNutrient] = useState<string | null>(null);
   const [barsReady, setBarsReady] = useState(false);
   const mountedRef = useRef(true);
@@ -97,12 +97,15 @@ export default function InsightsPage() {
 
   const loadData = useCallback(() => {
     if (!user) return;
-    if (!_insightsCache.meals) setLoadingData(true);
+    if (!_insightsCache.mealsLoaded) {
+      _insightsCache.mealsLoaded = true;
+      setLoadingData(true);
+    }
     Promise.all([getProfile(user.id), listMeals(user.id, 200)])
       .then(([profileData, mealsData]) => {
-        if (!mountedRef.current) return;
         _insightsCache.profile = profileData ?? undefined;
         _insightsCache.meals = mealsData;
+        if (!mountedRef.current) return;
         setProfile(profileData ?? undefined);
         setMeals(mealsData);
       })

@@ -19,7 +19,8 @@ const _summaryCache: {
   meals?: MealLog[];
   workouts?: WorkoutSession[];
   nudges?: Array<{ id: string; message: string; created_at: string }>;
-} = {};
+  mealsLoaded: boolean;
+} = { mealsLoaded: false };
 
 export default function SummaryScreen() {
   const router = useRouter();
@@ -31,7 +32,7 @@ export default function SummaryScreen() {
   const [nudges, setNudges] = useState<Array<{ id: string; message: string; created_at: string }>>(() => _summaryCache.nudges ?? []);
   const nudgesLoadedRef = useRef(!!_summaryCache.nudges);
   const savedThisSessionRef = useRef<Set<string>>(new Set());
-  const [loadingData, setLoadingData] = useState(() => !_summaryCache.meals);
+  const [loadingData, setLoadingData] = useState(() => !_summaryCache.mealsLoaded);
   const mountedRef = useRef(true);
   const [runSummaryTour, setRunSummaryTour] = useState(false);
   const [visibleNudgeGroupCount, setVisibleNudgeGroupCount] = useState(3);
@@ -67,13 +68,16 @@ export default function SummaryScreen() {
 
   const loadData = useCallback(() => {
     if (!user) return;
-    if (!_summaryCache.meals) setLoadingData(true);
+    if (!_summaryCache.mealsLoaded) {
+      _summaryCache.mealsLoaded = true;
+      setLoadingData(true);
+    }
 
     const applyData = (profileData: UserProfile | null, mealsData: MealLog[], workoutsData: WorkoutSession[]) => {
-      if (!mountedRef.current) return;
       _summaryCache.profile = profileData ?? undefined;
       _summaryCache.meals = mealsData;
       _summaryCache.workouts = workoutsData;
+      if (!mountedRef.current) return;
       setProfile(profileData ?? undefined);
       setMeals(mealsData);
       setWorkouts(workoutsData);
