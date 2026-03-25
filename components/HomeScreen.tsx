@@ -141,12 +141,6 @@ export default function HomeScreen() {
   const router = useRouter();
   const { user, loading } = useAuth();
 
-  // Restore session flags from sessionStorage on page reload (e.g. minimize/restore on mobile)
-  if (!_homeCache.profileLoaded && typeof window !== "undefined") {
-    _homeCache.profileLoaded = sessionStorage.getItem("_homeProfileLoaded") === "1";
-    _homeHasLoadedOnce = sessionStorage.getItem("_homeHasLoadedOnce") === "1";
-  }
-
   const [profile, setProfile] = useState<UserProfile | undefined>(() =>
     _homeCache.profile ?? undefined
   );
@@ -155,6 +149,7 @@ export default function HomeScreen() {
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [demoData] = useState(() => ({ meals: makeDemoMeals(), workouts: makeDemoWorkouts() }));
   const [loadingData, setLoadingData] = useState(() => !_homeCache.profileLoaded);
+  const [, setSessionTick] = useState(0);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [barcodeOpen, setBarcodeOpen] = useState(false);
   const [barcodeNotFound, setBarcodeNotFound] = useState(false);
@@ -344,6 +339,15 @@ export default function HomeScreen() {
     const t = setTimeout(() => setBarsReady(true), 60);
     return () => clearTimeout(t);
   }, [loadingData]);
+
+  // Restore session flags from sessionStorage after mount — avoids SSR/hydration mismatch
+  useEffect(() => {
+    if (!_homeCache.profileLoaded && sessionStorage.getItem("_homeProfileLoaded") === "1") {
+      _homeCache.profileLoaded = true;
+      _homeHasLoadedOnce = sessionStorage.getItem("_homeHasLoadedOnce") === "1";
+      setSessionTick((t) => t + 1);
+    }
+  }, []);
 
   // Keep module-level cache warm so navigation back is instant
   useEffect(() => {
