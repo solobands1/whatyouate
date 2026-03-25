@@ -1548,7 +1548,7 @@ export default function HomeScreen() {
                                 })()}
                               </span>
                               {meal.analysisJson?.source === "supplement" ? (
-                                <span className="text-ink/40">supplement</span>
+                                <span className="text-ink/40">added to your day</span>
                               ) : (
                                 <span className="text-ink/50">
                                   {meal.calories
