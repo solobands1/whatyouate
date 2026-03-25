@@ -123,7 +123,7 @@ export function computeGentleTargets(meals: MealLog[], profile?: UserProfile) {
 
   // Established path: anchor calories to TDEE to prevent targets from drifting down
   // toward current intake. Fall back to logged-data average only if TDEE unavailable.
-  const loggedDays = summarizeLoggedDays(meals, 7);
+  const loggedDays = summarizeLoggedDays(meals, 7, true);
   const avgLoggedCalories = avgRangeMidpoint(
     loggedDays.map((d) => d.totals.calories_min),
     loggedDays.map((d) => d.totals.calories_max)
@@ -210,7 +210,7 @@ export function computeHomeMarkers(meals: MealLog[], workouts: WorkoutSession[],
   const recent = computeRecent(meals, workouts);
 
   // Use logged-days-only averages so empty days don't deflate the numbers
-  const loggedDays = summarizeLoggedDays(meals, 7);
+  const loggedDays = summarizeLoggedDays(meals, 7, true);
   const avgWeekCalories = avgRangeMidpoint(
     loggedDays.map((d) => d.totals.calories_min),
     loggedDays.map((d) => d.totals.calories_max)
@@ -244,7 +244,7 @@ export function computeSummaryMarkers(meals: MealLog[], workouts: WorkoutSession
   const mealCount = meals.length;
 
   // Use logged-days-only averages so empty days don't deflate the numbers
-  const loggedDays = summarizeLoggedDays(meals, 7);
+  const loggedDays = summarizeLoggedDays(meals, 7, true);
   const avgWeekCalories = avgRangeMidpoint(
     loggedDays.map((d) => d.totals.calories_min),
     loggedDays.map((d) => d.totals.calories_max)
@@ -340,7 +340,7 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
   const dayCount = dayCountFromMeals(meals);
   const mealCount = meals.length;
   // Use logged-days-only averages so un-logged days don't deflate numbers
-  const loggedDays = summarizeLoggedDays(meals, 7);
+  const loggedDays = summarizeLoggedDays(meals, 7, true);
   const avgWeekCalories = avgRangeMidpoint(
     loggedDays.map((d) => d.totals.calories_min),
     loggedDays.map((d) => d.totals.calories_max)

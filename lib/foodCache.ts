@@ -132,6 +132,47 @@ export function deleteFoodTextEntry(normalizedText: string): void {
   } catch {}
 }
 
+/** Rebuild the text cache from Supabase meal history when localStorage was cleared.
+ *  Only runs if the cache is currently empty — never overwrites existing data. */
+export function seedTextCacheFromMeals(meals: Array<{
+  ts: number;
+  status?: string;
+  analysisJson: {
+    name?: string;
+    source?: string;
+    estimated_ranges: FoodTextCacheEntry["ranges"];
+    micronutrient_signals?: FoodTextCacheEntry["micronutrient_signals"];
+  };
+}>): void {
+  if (typeof window === "undefined") return;
+  const existing = loadTextCache();
+  if (Object.keys(existing).length > 0) return; // cache already populated
+
+  const foodMap = new Map<string, { name: string; ranges: FoodTextCacheEntry["ranges"]; signals: FoodTextCacheEntry["micronutrient_signals"]; count: number; latestTs: number }>();
+  for (const meal of meals) {
+    if (meal.status === "processing" || meal.status === "failed") continue;
+    if (meal.analysisJson?.source === "supplement") continue;
+    const name = meal.analysisJson?.name;
+    if (!name) continue;
+    const key = name.toLowerCase().trim();
+    if (!key) continue;
+    const entry = foodMap.get(key);
+    if (entry) {
+      entry.count++;
+      if (meal.ts > entry.latestTs) { entry.latestTs = meal.ts; entry.ranges = meal.analysisJson.estimated_ranges; }
+    } else {
+      foodMap.set(key, { name, ranges: meal.analysisJson.estimated_ranges, signals: meal.analysisJson.micronutrient_signals ?? [], count: 1, latestTs: meal.ts });
+    }
+  }
+
+  if (foodMap.size === 0) return;
+  const rebuilt: Record<string, FoodTextCacheEntry> = {};
+  for (const [key, data] of foodMap.entries()) {
+    rebuilt[key] = { name: data.name, ranges: data.ranges, micronutrient_signals: data.signals, source: "ai", savedAt: data.latestTs, logCount: data.count };
+  }
+  try { localStorage.setItem(FOOD_TEXT_CACHE_KEY, JSON.stringify(rebuilt)); } catch {}
+}
+
 // ── Daily supplements ────────────────────────────────────────────────────────
 // Stores the user's fixed daily supplement list. Auto-logged once per day on
 // first app load — silently, without any user action required.

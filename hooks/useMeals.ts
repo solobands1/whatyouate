@@ -5,7 +5,7 @@ import type { User } from "@supabase/supabase-js";
 import type { MealAnalysis, MealLog } from "../lib/types";
 import { addMeal, listMeals, updateMeal } from "../lib/supabaseDb";
 import { safeFallbackAnalysis } from "../lib/ai/schema";
-import { getFoodTextEntry, setFoodTextEntry, deleteFoodTextEntry, incrementFoodTextLogCount } from "../lib/foodCache";
+import { getFoodTextEntry, setFoodTextEntry, deleteFoodTextEntry, incrementFoodTextLogCount, seedTextCacheFromMeals } from "../lib/foodCache";
 
 export function useMeals(
   user: User | null,
@@ -34,6 +34,8 @@ export function useMeals(
   const load = useCallback(async (userId: string) => {
     const mealsData = await listMeals(userId, 100);
     setMeals(mealsData);
+    // Rebuild quick-add cache from Supabase history if localStorage was cleared
+    seedTextCacheFromMeals(mealsData);
     // Recover meals stuck in "processing" (e.g. tab closed mid-analysis)
     const STUCK_MS = 5 * 60 * 1000;
     const now = Date.now();

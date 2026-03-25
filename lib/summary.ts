@@ -44,10 +44,13 @@ export function summarizeWeek(meals: MealLog[], days = 7) {
 }
 
 /** Like summarizeWeek but only includes days that have at least one logged meal.
- *  Use this for averages so empty (un-logged) days don't deflate the numbers. */
-export function summarizeLoggedDays(meals: MealLog[], days = 7) {
+ *  Use this for averages so empty (un-logged) days don't deflate the numbers.
+ *  Pass excludeToday=true when computing historical averages (e.g. nudges) so
+ *  a partially-logged day doesn't skew the result. */
+export function summarizeLoggedDays(meals: MealLog[], days = 7, excludeToday = false) {
+  const today = excludeToday ? todayKey() : null;
   return summarizeWeek(meals, days).filter(
-    (d) => d.totals.calories_max > 0 || d.totals.protein_g_max > 0
+    (d) => (!today || d.dateKey !== today) && (d.totals.calories_max > 0 || d.totals.protein_g_max > 0)
   );
 }
 
