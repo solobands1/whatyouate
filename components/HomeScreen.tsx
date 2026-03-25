@@ -140,6 +140,13 @@ let _homeHasLoadedOnce = false;
 export default function HomeScreen() {
   const router = useRouter();
   const { user, loading } = useAuth();
+
+  // Restore session flags from sessionStorage on page reload (e.g. minimize/restore on mobile)
+  if (!_homeCache.profileLoaded && typeof window !== "undefined") {
+    _homeCache.profileLoaded = sessionStorage.getItem("_homeProfileLoaded") === "1";
+    _homeHasLoadedOnce = sessionStorage.getItem("_homeHasLoadedOnce") === "1";
+  }
+
   const [profile, setProfile] = useState<UserProfile | undefined>(() =>
     _homeCache.profile ?? undefined
   );
@@ -294,6 +301,7 @@ export default function HomeScreen() {
       // Mark loaded before any await so future mounts never show splash,
       // even if this fetch errors or the component unmounts mid-load.
       _homeCache.profileLoaded = true;
+      try { sessionStorage.setItem("_homeProfileLoaded", "1"); } catch {}
       setLoadingData(true);
     }
     setLoadError(null);
@@ -325,6 +333,7 @@ export default function HomeScreen() {
     } finally {
       if (mountedRef.current) {
         _homeHasLoadedOnce = true;
+        try { sessionStorage.setItem("_homeHasLoadedOnce", "1"); } catch {}
         setLoadingData(false);
       }
     }
