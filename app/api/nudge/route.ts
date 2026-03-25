@@ -18,32 +18,23 @@ function checkRateLimit(key: string): boolean {
 const NUDGE_SYSTEM_PROMPT = `You are a gentle, non-judgmental nutrition coach. Write short, specific, conversational nudges for a user tracking their food and fitness.
 
 Rules:
-- 1-2 sentences, max 35 words
+- 1-2 sentences, max 35 words each
 - Use the exact numbers provided
 - Vary the opening — don't always start with "You've" or "Your"
 - No em dashes, no exclamation marks (except on_track nudges)
-- Sound like a knowledgeable friend, not a fitness app
-- Return ONLY the nudge text, nothing else`;
+- Sound like a knowledgeable friend, not a fitness app`;
 
-function buildNudgePrompt(
-  nudgeType: string,
-  data: Record<string, unknown>,
-  profileSummary: string,
-  recentFoods: string[]
-): string {
-  const dataStr = Object.entries(data)
-    .filter(([, v]) => v != null)
-    .map(([k, v]) => `${k}: ${v}`)
-    .join(", ");
-
-  const foodsStr = recentFoods.slice(0, 5).join(", ") || "not provided";
-
-  return `Nudge type: ${nudgeType}
-Data: ${dataStr || "none"}
-User context: ${profileSummary}
-Recent foods logged: ${foodsStr}
-
-Write the nudge now.`;
+function buildProfileSummary(profile: Record<string, unknown> | null): string {
+  if (!profile) return "no profile";
+  return [
+    profile.goalDirection && `goal: ${profile.goalDirection}`,
+    profile.freeformFocus && `focus: ${profile.freeformFocus}`,
+    profile.activityLevel && `activity: ${profile.activityLevel}`,
+    (profile.dietaryRestrictions as string[] | undefined)?.length &&
+      `restrictions: ${(profile.dietaryRestrictions as string[]).join(", ")}`,
+  ]
+    .filter(Boolean)
+    .join(", ") || "no profile";
 }
 
 export async function POST(req: Request) {
@@ -57,26 +48,71 @@ export async function POST(req: Request) {
     if (!apiKey) return NextResponse.json({ error: "No API key" }, { status: 500 });
 
     const body = await req.json();
-    const { nudgeType, data = {}, profile, recentFoods = [] } = body;
+    const { profile, recentFoods = [] } = body;
+    const profileSummary = buildProfileSummary(profile);
+    const foodsStr = (recentFoods as string[]).slice(0, 5).join(", ") || "not provided";
 
+    // Batch mode: accepts nudges:[{nudgeType, data}] — one Claude call for all
+    const nudges = body.nudges as Array<{ nudgeType: string; data?: Record<string, unknown> }> | undefined;
+    if (nudges?.length) {
+      const nudgeBlocks = nudges.map((n) => {
+        const dataStr = Object.entries(n.data ?? {})
+          .filter(([, v]) => v != null)
+          .map(([k, v]) => `${k}: ${v}`)
+          .join(", ");
+        return `${n.nudgeType}: ${dataStr || "no data"}`;
+      }).join("\n");
+
+      const prompt = `Write one nudge for each type below. Return ONLY a JSON object like {"nudgeType":"message",...} with no other text.
+
+Nudge types and data:
+${nudgeBlocks}
+
+User context: ${profileSummary}
+Recent foods: ${foodsStr}`;
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10_000);
+      try {
+        const response = await fetch(ANTHROPIC_URL, {
+          method: "POST",
+          signal: controller.signal,
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": apiKey,
+            "anthropic-version": "2023-06-01",
+          },
+          body: JSON.stringify({
+            model: "claude-haiku-4-5-20251001",
+            max_tokens: 400,
+            temperature: 0.7,
+            system: NUDGE_SYSTEM_PROMPT,
+            messages: [{ role: "user", content: prompt }],
+          }),
+        });
+        if (!response.ok) throw new Error("Anthropic request failed");
+        const result = await response.json();
+        const raw = (result.content?.[0]?.text ?? "").trim();
+        // Extract JSON from response (may have markdown fences)
+        const jsonMatch = raw.match(/\{[\s\S]*\}/);
+        const messages = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
+        return NextResponse.json({ messages });
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    }
+
+    // Single mode (legacy)
+    const { nudgeType, data = {} } = body;
     if (!nudgeType) return NextResponse.json({ error: "Missing nudgeType" }, { status: 400 });
-
-    const profileSummary = profile
-      ? [
-          profile.goalDirection && `goal: ${profile.goalDirection}`,
-          profile.freeformFocus && `focus: ${profile.freeformFocus}`,
-          profile.activityLevel && `activity: ${profile.activityLevel}`,
-          profile.dietaryRestrictions?.length && `restrictions: ${profile.dietaryRestrictions.join(", ")}`,
-        ]
-          .filter(Boolean)
-          .join(", ")
-      : "no profile";
-
-    const prompt = buildNudgePrompt(nudgeType, data, profileSummary, recentFoods);
+    const dataStr = Object.entries(data as Record<string, unknown>)
+      .filter(([, v]) => v != null)
+      .map(([k, v]) => `${k}: ${v}`)
+      .join(", ");
+    const prompt = `Nudge type: ${nudgeType}\nData: ${dataStr || "none"}\nUser context: ${profileSummary}\nRecent foods logged: ${foodsStr}\n\nWrite the nudge now.`;
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 6_000);
-
     try {
       const response = await fetch(ANTHROPIC_URL, {
         method: "POST",
@@ -94,13 +130,10 @@ export async function POST(req: Request) {
           messages: [{ role: "user", content: prompt }],
         }),
       });
-
       if (!response.ok) throw new Error("Anthropic request failed");
-
       const result = await response.json();
       const message = (result.content?.[0]?.text ?? "").trim();
       if (!message) throw new Error("Empty response");
-
       return NextResponse.json({ message });
     } finally {
       clearTimeout(timeoutId);

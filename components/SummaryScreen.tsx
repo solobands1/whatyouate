@@ -13,17 +13,25 @@ import { computeNudges, computeSummaryMarkers, type ComputedNudge } from "../lib
 import { MEALS_UPDATED_EVENT, PROFILE_UPDATED_EVENT, WORKOUTS_UPDATED_EVENT } from "../lib/dataEvents";
 import { supabase } from "../lib/supabaseClient";
 
+// Module-level cache — survives navigation, resets on full page reload
+const _summaryCache: {
+  profile?: UserProfile;
+  meals?: MealLog[];
+  workouts?: WorkoutSession[];
+  nudges?: Array<{ id: string; message: string; created_at: string }>;
+} = {};
+
 export default function SummaryScreen() {
   const router = useRouter();
   const { user, loading } = useAuth();
-  const [profile, setProfile] = useState<UserProfile | undefined>();
-  const [meals, setMeals] = useState<MealLog[]>([]);
-  const [workouts, setWorkouts] = useState<WorkoutSession[]>([]);
+  const [profile, setProfile] = useState<UserProfile | undefined>(() => _summaryCache.profile);
+  const [meals, setMeals] = useState<MealLog[]>(() => _summaryCache.meals ?? []);
+  const [workouts, setWorkouts] = useState<WorkoutSession[]>(() => _summaryCache.workouts ?? []);
   const [hydrated, setHydrated] = useState(false);
-  const [nudges, setNudges] = useState<Array<{ id: string; message: string; created_at: string }>>([]);
-  const nudgesLoadedRef = useRef(false);
+  const [nudges, setNudges] = useState<Array<{ id: string; message: string; created_at: string }>>(() => _summaryCache.nudges ?? []);
+  const nudgesLoadedRef = useRef(!!_summaryCache.nudges);
   const savedThisSessionRef = useRef<Set<string>>(new Set());
-  const [loadingData, setLoadingData] = useState(true);
+  const [loadingData, setLoadingData] = useState(() => !_summaryCache.meals);
   const mountedRef = useRef(true);
   const [runSummaryTour, setRunSummaryTour] = useState(false);
   const [visibleNudgeGroupCount, setVisibleNudgeGroupCount] = useState(3);
@@ -59,62 +67,43 @@ export default function SummaryScreen() {
 
   const loadData = useCallback(() => {
     if (!user) return;
-    setLoadingData(true);
+    if (!_summaryCache.meals) setLoadingData(true);
+
+    const applyData = (profileData: UserProfile | null, mealsData: MealLog[], workoutsData: WorkoutSession[]) => {
+      if (!mountedRef.current) return;
+      _summaryCache.profile = profileData ?? undefined;
+      _summaryCache.meals = mealsData;
+      _summaryCache.workouts = workoutsData;
+      setProfile(profileData ?? undefined);
+      setMeals(mealsData);
+      setWorkouts(workoutsData);
+      setLoadingData(false);
+    };
+
     if (LOCAL_MODE) {
       Promise.all([getProfile(user.id), listMeals(user.id, 200), listWorkouts(user.id, 50)])
-        .then((result) => {
-          const [profileData, mealsData, workoutsData] = result;
-          if (!mountedRef.current) return;
-          setProfile(profileData ?? undefined);
-          setMeals(mealsData);
-          setWorkouts(workoutsData);
-        })
-        .catch(() => {
-          if (!mountedRef.current) return;
-        })
-        .finally(() => {
-          if (!mountedRef.current) return;
-          setLoadingData(false);
-        });
+        .then(([p, m, w]) => applyData(p, m, w))
+        .catch(() => { if (mountedRef.current) setLoadingData(false); });
     } else {
       supabase.auth
         .getSession()
         .then(({ data: sessionData }) => {
           if (!sessionData.session) {
-            return supabase.auth.refreshSession().then((refreshed) => {
-              if (!refreshed.data.session) {
-                setLoadingData(false);
-                return null;
-              }
-              return true;
-            });
+            return supabase.auth.refreshSession().then((refreshed) =>
+              refreshed.data.session ? true : null
+            );
           }
           return true;
         })
-        .then((ok) => {
-          if (!ok) return null;
-          return Promise.all([getProfile(user.id), listMeals(user.id, 200), listWorkouts(user.id, 50)]);
-        })
-        .then((result) => {
-          if (!result) return;
-          const [profileData, mealsData, workoutsData] = result;
-          if (!mountedRef.current) return;
-          setProfile(profileData ?? undefined);
-          setMeals(mealsData);
-          setWorkouts(workoutsData);
-        })
-        .catch(() => {
-          if (!mountedRef.current) return;
-        })
-        .finally(() => {
-          if (!mountedRef.current) return;
-          setLoadingData(false);
-        });
+        .then((ok) => ok ? Promise.all([getProfile(user.id), listMeals(user.id, 200), listWorkouts(user.id, 50)]) : null)
+        .then((result) => { if (result) applyData(result[0], result[1], result[2]); })
+        .catch(() => { if (mountedRef.current) setLoadingData(false); });
     }
 
     listNudges(user.id, 100)
       .then((nudgesData) => {
         if (!mountedRef.current) return;
+        _summaryCache.nudges = nudgesData as any;
         setNudges(nudgesData as any);
         nudgesLoadedRef.current = true;
       })
@@ -481,7 +470,7 @@ export default function SummaryScreen() {
 
 
 
-  // Fetch AI nudge messages once per session; delay so page settles first
+  // Fetch AI nudge messages — one batched request for all missing types
   useEffect(() => {
     if (visibleNotes.length === 0 || !profile || aiNudgeFetchedRef.current) return;
     aiNudgeFetchedRef.current = true;
@@ -492,28 +481,34 @@ export default function SummaryScreen() {
     );
     if (missing.length === 0) return;
 
-    const delayId = setTimeout(() => {
-      missing.forEach(async (note) => {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 6000);
-        try {
-          const res = await fetch("/api/nudge", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ nudgeType: note.type, data: note.data, profile, recentFoods }),
-            signal: controller.signal,
-          });
-          if (!res.ok) return;
-          const { message } = await res.json();
-          if (!message?.trim()) return;
-          localStorage.setItem(`wya_ai_nudge_${todayStr}_${note.type}`, message.trim());
-          setAiMessageVersion((v) => v + 1);
-        } catch {
-          // Fall back to hardcoded message
-        } finally {
-          clearTimeout(timeoutId);
-        }
-      });
+    const delayId = setTimeout(async () => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      try {
+        const res = await fetch("/api/nudge", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            nudges: missing.map((n) => ({ nudgeType: n.type, data: n.data })),
+            profile,
+            recentFoods,
+          }),
+          signal: controller.signal,
+        });
+        if (!res.ok) return;
+        const { messages } = await res.json();
+        if (!messages || typeof messages !== "object") return;
+        Object.entries(messages).forEach(([type, msg]) => {
+          if (typeof msg === "string" && msg.trim()) {
+            localStorage.setItem(`wya_ai_nudge_${todayStr}_${type}`, msg.trim());
+          }
+        });
+        setAiMessageVersion((v) => v + 1);
+      } catch {
+        // Fall back to hardcoded messages
+      } finally {
+        clearTimeout(timeoutId);
+      }
     }, 1500);
 
     return () => clearTimeout(delayId);
