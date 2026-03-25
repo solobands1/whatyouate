@@ -27,6 +27,7 @@ export default function SummaryScreen() {
   const mountedRef = useRef(true);
   const [runSummaryTour, setRunSummaryTour] = useState(false);
   const [visibleNudgeGroupCount, setVisibleNudgeGroupCount] = useState(3);
+  const [aiMessages, setAiMessages] = useState<Record<string, string>>({});
   // Capture unseen state before the mount effect clears it, so the bell stays on the card while reading
   const [nudgeCardIsNew] = useState(() => {
     try {
@@ -475,26 +476,67 @@ export default function SummaryScreen() {
 
 
 
+  // Fetch AI-written nudge messages; cache per day per type so we only call once
+  useEffect(() => {
+    if (visibleNotes.length === 0 || !profile) return;
+    const todayStr = todayKey();
+
+    // Load any already-cached messages for today
+    const cached: Record<string, string> = {};
+    visibleNotes.forEach((note) => {
+      const val = localStorage.getItem(`wya_ai_nudge_${todayStr}_${note.type}`);
+      if (val) cached[note.type] = val;
+    });
+    if (Object.keys(cached).length > 0) setAiMessages((prev) => ({ ...prev, ...cached }));
+
+    // Fetch missing ones in background
+    const missing = visibleNotes.filter((note) => !cached[note.type]);
+    if (missing.length === 0) return;
+
+    missing.forEach(async (note) => {
+      try {
+        const res = await fetch("/api/nudge", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            nudgeType: note.type,
+            data: note.data,
+            profile,
+            recentFoods,
+          }),
+          signal: AbortSignal.timeout(6000),
+        });
+        if (!res.ok) return;
+        const { message } = await res.json();
+        if (!message?.trim()) return;
+        localStorage.setItem(`wya_ai_nudge_${todayStr}_${note.type}`, message.trim());
+        setAiMessages((prev) => ({ ...prev, [note.type]: message.trim() }));
+      } catch {
+        // Silently fall back to hardcoded message
+      }
+    });
+  }, [visibleNotes, profile]);
+
+  // Save nudges to DB once per day; uses AI message if ready, otherwise hardcoded fallback
   useEffect(() => {
     if (!user || !nudgesLoadedRef.current || visibleNotes.length === 0) return;
-    // Dedup only against today's saved nudges so the same message can recur in history on different days.
-    // on_track nudges are also saved so positive days show up in the history feed.
     const todayStr = todayKey();
     const existingToday = new Set(
       nudges.filter((n) => todayKey(new Date(n.created_at)) === todayStr).map((n) => n.message)
     );
-    const missing = visibleNotes.filter(
-      (note) => !existingToday.has(note.message) && !savedThisSessionRef.current.has(note.message)
+    const toSave = visibleNotes.filter(
+      (note) => !savedThisSessionRef.current.has(note.type)
     );
-    if (missing.length === 0) return;
-    missing.forEach((note) => {
-      savedThisSessionRef.current.add(note.message);
-      addNudge(user.id, "awareness", note.message).catch(() => {
-        // Silent: nudges are optional.
-      });
+    if (toSave.length === 0) return;
+
+    toSave.forEach((note) => {
+      const message = aiMessages[note.type] ?? note.message;
+      if (existingToday.has(message)) return;
+      savedThisSessionRef.current.add(note.type);
+      addNudge(user.id, "awareness", message).catch(() => {});
     });
     pruneNudges(user.id).catch(() => {});
-  }, [user, visibleNotes, nudges]);
+  }, [user, visibleNotes, nudges, aiMessages]);
 
   const weeklyVariant = (variants: string[]): string => {
     const week = Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000));
@@ -904,7 +946,7 @@ export default function SummaryScreen() {
                   const showChips = behavioralChips.length > 0 || showFoodChips;
                   return (
                     <div key={nudge.type} className="rounded-xl border border-primary/60 bg-primary/5 px-4 py-3 space-y-2.5">
-                      <p className="text-sm font-medium text-ink/90">{nudge.message.replace(/[.]+$/, "")}</p>
+                      <p className="text-sm font-medium text-ink/90">{(aiMessages[nudge.type] ?? nudge.message).replace(/[.]+$/, "")}</p>
                       {why && (
                         <div>
                           <p className="text-[10px] font-semibold uppercase tracking-wide text-muted/50 mb-0.5">{nudge.type === "on_track" ? "Keep it up" : "Why"}</p>

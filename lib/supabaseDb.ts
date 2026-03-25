@@ -595,13 +595,17 @@ export async function addNudge(userId: string, type: string, message: string) {
   return data;
 }
 
-export async function pruneNudges(userId: string, retentionDays = 30) {
+export async function pruneNudges(userId: string, retentionDays = 30, maxCount = 50) {
   const cutoff = Date.now() - retentionDays * 24 * 60 * 60 * 1000;
   if (useMemory) {
     ensureLocalLoaded();
-    const before = memNudges.length;
     memNudges = memNudges.filter((n) => n.userId !== userId || n.createdAt >= cutoff);
-    if (memNudges.length !== before) persistLocal();
+    const userNudges = memNudges.filter((n) => n.userId === userId).sort((a, b) => b.createdAt - a.createdAt);
+    if (userNudges.length > maxCount) {
+      const toDelete = new Set(userNudges.slice(maxCount).map((n) => n.id));
+      memNudges = memNudges.filter((n) => !toDelete.has(n.id));
+    }
+    persistLocal();
     return;
   }
   await supabase
@@ -609,6 +613,16 @@ export async function pruneNudges(userId: string, retentionDays = 30) {
     .delete()
     .eq("user_id", userId)
     .lt("created_at", new Date(cutoff).toISOString());
+  // Count-based cap: keep only the 50 most recent
+  const { data: allNudges } = await supabase
+    .from("nudges")
+    .select("id")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+  if (allNudges && allNudges.length > maxCount) {
+    const toDelete = allNudges.slice(maxCount).map((n) => n.id);
+    await supabase.from("nudges").delete().in("id", toDelete);
+  }
 }
 
 export async function listNudges(userId: string, limit = 50) {
