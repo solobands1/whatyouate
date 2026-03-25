@@ -985,7 +985,7 @@ export default function HomeScreen() {
   const steps = [
     {
       target: '[data-tour="food-action"]',
-      content: "Tap here to log a meal — snap a photo, scan a barcode, or just type what you ate. The chicken bowl and everything else you see here were logged that way.",
+      content: "Tap here to log a meal: snap a photo, scan a barcode, or just type what you ate. The chicken bowl and everything else you see here were logged that way.",
       disableBeacon: true
     },
     {
@@ -995,15 +995,10 @@ export default function HomeScreen() {
     },
     {
       target: '[data-tour="nav-summary"]',
-      content: "The Summary tab shows your week at a glance — trends, patterns, gentle nudges. No strict macros.",
+      content: "The Summary tab shows your week at a glance: trends, patterns, gentle nudges. No strict macros.",
       placement: "top" as const,
       disableBeacon: true
     },
-    {
-      target: "body",
-      content: "That's the tour! The demo data disappears now and your real journey starts. Log your first meal whenever you're ready.",
-      disableBeacon: true
-    }
   ] as Step[];
 
   const handleTourCallback = (data: CallBackProps) => {
@@ -1024,9 +1019,8 @@ export default function HomeScreen() {
     }
     if (data.type === "step:after" && data.index === steps.length - 1) {
       clearDemo();
-      localStorage.setItem(`wya_walkthrough_${user.id}`, "true");
-      localStorage.removeItem(activeKey);
-      localStorage.removeItem(stageKey);
+      localStorage.setItem(activeKey, "true");
+      localStorage.setItem(stageKey, "summary");
       setRunTour(false);
       router.push("/summary");
     }

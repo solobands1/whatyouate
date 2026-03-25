@@ -594,9 +594,9 @@ export default function SummaryScreen() {
         ]);
       case "on_track":
         return weeklyVariant([
-          "Consistent logging is how patterns become clear — you're building real data here.",
+          "Consistent logging is how patterns become clear. You're building real data here.",
           "Staying in range consistently is how real progress happens.",
-          "Your numbers are looking balanced — that's genuinely good work.",
+          "Your numbers are looking balanced, and that's genuinely good work.",
           "This kind of consistency is what makes the nudges and patterns more accurate over time.",
         ]);
     }
