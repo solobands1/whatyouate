@@ -1004,7 +1004,7 @@ export default function HomeScreen() {
     }
   };
 
-  if (!mounted || (loadingData && !hasLoadedOnceRef.current)) {
+  if (loadingData && !hasLoadedOnceRef.current) {
     return <SplashScreen />;
   }
 

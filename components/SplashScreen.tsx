@@ -2,7 +2,7 @@
 
 export default function SplashScreen() {
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-[#F1F6FF]">
+    <div className="fixed inset-0 flex items-center justify-center bg-[#F1F6FF] pb-32">
       <h1 className="animate-splash-breathe text-3xl font-semibold text-ink">
         WhatYouAt
         <span className="relative inline-block">
