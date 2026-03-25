@@ -135,7 +135,6 @@ const _homeCache: {
 export default function HomeScreen() {
   const router = useRouter();
   const { user, loading } = useAuth();
-  const [mounted, setMounted] = useState(false);
   const [profile, setProfile] = useState<UserProfile | undefined>(() =>
     _homeCache.profile
   );
@@ -295,9 +294,10 @@ export default function HomeScreen() {
         workout.load(user.id),
         meals.load(user.id),
       ]);
+      // Set cache before mountedRef check so it persists even if component unmounted mid-fetch
+      _homeCache.profile = profileData ?? undefined;
       if (!mountedRef.current) return;
       setProfile(profileData ?? undefined);
-      _homeCache.profile = profileData ?? undefined;
       // Backfill the daily-supp localStorage guard from DB so PWA updates don't double-log
       if (!hasDailySuppsLoggedToday(user.id)) {
         const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
@@ -592,10 +592,6 @@ export default function HomeScreen() {
       setIsAddingBarcode(false);
     }
   };
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     mountedRef.current = true;
