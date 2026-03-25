@@ -27,8 +27,12 @@ export default function SummaryScreen() {
   const mountedRef = useRef(true);
   const [runSummaryTour, setRunSummaryTour] = useState(false);
   const [visibleNudgeGroupCount, setVisibleNudgeGroupCount] = useState(3);
-  const [aiMessages, setAiMessages] = useState<Record<string, string>>({});
+  const [aiMessageVersion, setAiMessageVersion] = useState(0);
   const aiNudgeFetchedRef = useRef(false);
+  const getAiMessage = (nudgeType: string): string | null => {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem(`wya_ai_nudge_${todayKey()}_${nudgeType}`);
+  };
   // Capture unseen state before the mount effect clears it, so the bell stays on the card while reading
   const [nudgeCardIsNew] = useState(() => {
     try {
@@ -477,50 +481,42 @@ export default function SummaryScreen() {
 
 
 
-  // Fetch AI-written nudge messages; cache per day per type so we only call once per session
+  // Fetch AI nudge messages once per session; delay so page settles first
   useEffect(() => {
     if (visibleNotes.length === 0 || !profile || aiNudgeFetchedRef.current) return;
     aiNudgeFetchedRef.current = true;
     const todayStr = todayKey();
 
-    // Load any already-cached messages for today
-    const cached: Record<string, string> = {};
-    visibleNotes.forEach((note) => {
-      const val = localStorage.getItem(`wya_ai_nudge_${todayStr}_${note.type}`);
-      if (val) cached[note.type] = val;
-    });
-    if (Object.keys(cached).length > 0) setAiMessages((prev) => ({ ...prev, ...cached }));
-
-    // Fetch missing ones in background
-    const missing = visibleNotes.filter((note) => !cached[note.type]);
+    const missing = visibleNotes.filter(
+      (note) => !localStorage.getItem(`wya_ai_nudge_${todayStr}_${note.type}`)
+    );
     if (missing.length === 0) return;
 
-    missing.forEach(async (note) => {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 6000);
-      try {
-        const res = await fetch("/api/nudge", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            nudgeType: note.type,
-            data: note.data,
-            profile,
-            recentFoods,
-          }),
-          signal: controller.signal,
-        });
-        if (!res.ok) return;
-        const { message } = await res.json();
-        if (!message?.trim()) return;
-        localStorage.setItem(`wya_ai_nudge_${todayStr}_${note.type}`, message.trim());
-        setAiMessages((prev) => ({ ...prev, [note.type]: message.trim() }));
-      } catch {
-        // Silently fall back to hardcoded message
-      } finally {
-        clearTimeout(timeoutId);
-      }
-    });
+    const delayId = setTimeout(() => {
+      missing.forEach(async (note) => {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 6000);
+        try {
+          const res = await fetch("/api/nudge", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ nudgeType: note.type, data: note.data, profile, recentFoods }),
+            signal: controller.signal,
+          });
+          if (!res.ok) return;
+          const { message } = await res.json();
+          if (!message?.trim()) return;
+          localStorage.setItem(`wya_ai_nudge_${todayStr}_${note.type}`, message.trim());
+          setAiMessageVersion((v) => v + 1);
+        } catch {
+          // Fall back to hardcoded message
+        } finally {
+          clearTimeout(timeoutId);
+        }
+      });
+    }, 1500);
+
+    return () => clearTimeout(delayId);
   }, [visibleNotes, profile]);
 
   // Save nudges to DB once per day
@@ -949,7 +945,7 @@ export default function SummaryScreen() {
                   const showChips = behavioralChips.length > 0 || showFoodChips;
                   return (
                     <div key={nudge.type} className="rounded-xl border border-primary/60 bg-primary/5 px-4 py-3 space-y-2.5">
-                      <p className="text-sm font-medium text-ink/90">{(aiMessages[nudge.type] ?? nudge.message).replace(/[.]+$/, "")}</p>
+                      <p className="text-sm font-medium text-ink/90">{(getAiMessage(nudge.type) ?? nudge.message).replace(/[.]+$/, "")}</p>
                       {why && (
                         <div>
                           <p className="text-[10px] font-semibold uppercase tracking-wide text-muted/50 mb-0.5">{nudge.type === "on_track" ? "Keep it up" : "Why"}</p>
