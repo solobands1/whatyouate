@@ -174,6 +174,7 @@ export default function HomeScreen() {
   const [quickAddAdding, setQuickAddAdding] = useState(false);
 
   const mountedRef = useRef(true);
+  const hasLoadedOnceRef = useRef(false);
   const recentSentinelRef = useRef<HTMLDivElement | null>(null);
   const foodInputRef = useRef<HTMLInputElement | null>(null);
   const realtimeRefreshRef = useRef<number | null>(null);
@@ -300,7 +301,10 @@ export default function HomeScreen() {
       console.error("[loadData] failed:", err);
       setLoadError(err instanceof Error ? err.message : "Failed to load data");
     } finally {
-      if (mountedRef.current) setLoadingData(false);
+      if (mountedRef.current) {
+        hasLoadedOnceRef.current = true;
+        setLoadingData(false);
+      }
     }
   }, [user, workout.load, meals.load]);
 
@@ -991,7 +995,7 @@ export default function HomeScreen() {
     }
   };
 
-  if (!mounted || loadingData) {
+  if (!mounted || (loadingData && !hasLoadedOnceRef.current)) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-[#F1F6FF]">
         <Image
