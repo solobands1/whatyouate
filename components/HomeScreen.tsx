@@ -21,13 +21,10 @@ import Card from "./Card";
 import { useAuth } from "./AuthProvider";
 import {
   addMeal,
-  addNudge,
   clearMealsCache,
   deleteMeal,
   deleteWorkout,
   getProfile,
-  listNudges,
-  pruneNudges,
   updateMeal,
   updateMealTs,
 } from "../lib/supabaseDb";
@@ -175,7 +172,6 @@ export default function HomeScreen() {
   const [quickAddSelected, setQuickAddSelected] = useState<Record<string, "small" | "medium" | "large">>({});
   const [quickAddAdding, setQuickAddAdding] = useState(false);
 
-  const [nudges, setNudges] = useState<Array<{ id: string; message: string; created_at: string }>>([]);
   const mountedRef = useRef(true);
   const recentSentinelRef = useRef<HTMLDivElement | null>(null);
   const foodInputRef = useRef<HTMLInputElement | null>(null);
@@ -313,20 +309,6 @@ export default function HomeScreen() {
     return () => clearTimeout(t);
   }, [loadingData]);
 
-  // Load nudges once per user so we can dedup before saving
-  useEffect(() => {
-    if (!user) return;
-    listNudges(user.id, 100)
-      .then((data) => {
-        if (!mountedRef.current) return;
-        setNudges(data as any);
-        nudgesLoadedRef.current = true;
-      })
-      .catch(() => {
-        if (!mountedRef.current) return;
-        nudgesLoadedRef.current = true;
-      });
-  }, [user]);
 
 
   const handleConfirmDelete = async () => {
@@ -814,28 +796,10 @@ export default function HomeScreen() {
     [displayMeals, displayWorkouts, profile]
   );
 
-  // Save nudges from HomeScreen so history fills in even if Summary tab is never opened
+  // Bell notification: mark unseen nudge when new types appear today
   useEffect(() => {
-    if (!user || !nudgesLoadedRef.current || homeVisibleNotes.length === 0) return;
+    if (!user || homeVisibleNotes.length === 0) return;
     const todayStr = todayKey();
-    // DB dedup: by message, so we don't write duplicate rows
-    const savedTodayKey = `wya_saved_nudges_${todayStr}`;
-    const savedToday = new Set<string>(JSON.parse(localStorage.getItem(savedTodayKey) ?? "[]"));
-    const existingToday = new Set(
-      nudges.filter((n) => todayKey(new Date(n.created_at)) === todayStr).map((n) => n.message)
-    );
-    const missing = homeVisibleNotes.filter(
-      (note) => !existingToday.has(note.message) && !savedToday.has(note.message)
-    );
-    if (missing.length > 0) {
-      missing.forEach((note) => {
-        savedToday.add(note.message);
-        addNudge(user.id, "awareness", note.message).catch(() => {});
-      });
-      localStorage.setItem(savedTodayKey, JSON.stringify([...savedToday]));
-      pruneNudges(user.id).catch(() => {});
-    }
-    // Bell dedup: by nudge type — only notify once per type per day regardless of changing numbers
     const notifiedTypesKey = `wya_notified_types_${todayStr}`;
     const notifiedTypes = new Set<string>(JSON.parse(localStorage.getItem(notifiedTypesKey) ?? "[]"));
     const newTypes = homeVisibleNotes.filter((note) => !notifiedTypes.has(note.type));
@@ -844,7 +808,7 @@ export default function HomeScreen() {
     localStorage.setItem(notifiedTypesKey, JSON.stringify([...notifiedTypes]));
     localStorage.setItem("wya_nudge_ts", Date.now().toString());
     window.dispatchEvent(new Event("wya_nudge_update"));
-  }, [user, homeVisibleNotes, nudges]);
+  }, [user, homeVisibleNotes]);
 
   const homeMarkers = useMemo(
     () => computeHomeMarkers(displayMeals, displayWorkouts, profile),

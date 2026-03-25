@@ -183,3 +183,12 @@ input, textarea, select {
 .animate-pill-in {
   animation: pillFadeUp 220ms ease-out both;
 }
+
+@keyframes splashBreathe {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.04); }
+}
+
+.animate-splash-breathe {
+  animation: splashBreathe 1.8s ease-in-out infinite;
+}
