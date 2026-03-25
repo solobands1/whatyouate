@@ -120,17 +120,23 @@ export default function ProfileScreen() {
           }
 
           setAge(data.age != null ? String(data.age) : "");
+
+          // Seed localStorage from Supabase so supplements survive cache clears
+          const supps = data.dailySupplements ?? [];
+          setDailySupplements(user.id, supps);
+          setDailySupplementsState(supps);
         } else {
           profileExistsRef.current = false;
           const meta = (user as { user_metadata?: Record<string, string> }).user_metadata ?? {};
           setFirstName(meta.first_name ?? "");
           setLastName(meta.last_name ?? "");
+          setDailySupplementsState(getDailySupplements(user.id));
         }
       })
       .catch(() => {
         setLoadError("Couldn’t load profile.");
+        setDailySupplementsState(getDailySupplements(user.id));
       });
-    setDailySupplementsState(getDailySupplements(user.id));
   }, [user]);
 
   useEffect(() => {

@@ -43,6 +43,12 @@ export default function SummaryScreen() {
     if (typeof window === "undefined") return null;
     return localStorage.getItem(`wya_ai_nudge_${todayKey()}_${nudgeType}`);
   };
+  const getAiSuggestions = (nudgeType: string): string[] | null => {
+    if (typeof window === "undefined") return null;
+    const raw = localStorage.getItem(`wya_ai_nudge_${todayKey()}_${nudgeType}_suggestions`);
+    if (!raw) return null;
+    try { return JSON.parse(raw); } catch { return null; }
+  };
   // Capture unseen state before the mount effect clears it, so the bell stays on the card while reading
   const [nudgeCardIsNew] = useState(() => {
     try {
@@ -338,13 +344,26 @@ export default function SummaryScreen() {
   };
 
   const recentFoods = useMemo(() => {
-    return meals
+    const seen = new Set<string>();
+    const foods: string[] = [];
+    meals
       .slice()
       .sort((a, b) => b.ts - a.ts)
-      .map((meal) => meal.analysisJson?.name ?? meal.analysisJson?.detected_items?.[0]?.name ?? "")
-      .filter(Boolean)
-      .slice(0, 8)
-      .map((name) => name.toLowerCase());
+      .slice(0, 20)
+      .forEach((meal) => {
+        const items = [
+          meal.analysisJson?.name,
+          ...(meal.analysisJson?.detected_items ?? []).map((i) => i.name),
+        ].filter(Boolean) as string[];
+        items.forEach((name) => {
+          const key = name.toLowerCase();
+          if (!seen.has(key)) {
+            seen.add(key);
+            foods.push(name);
+          }
+        });
+      });
+    return foods.slice(0, 15);
   }, [meals]);
 
   const adaptiveInsight = useMemo(() => {
@@ -505,9 +524,17 @@ export default function SummaryScreen() {
         if (!res.ok) return;
         const { messages } = await res.json();
         if (!messages || typeof messages !== "object") return;
-        Object.entries(messages).forEach(([type, msg]) => {
-          if (typeof msg === "string" && msg.trim()) {
-            localStorage.setItem(`wya_ai_nudge_${todayStr}_${type}`, msg.trim());
+        Object.entries(messages).forEach(([type, val]) => {
+          if (typeof val === "string" && val.trim()) {
+            localStorage.setItem(`wya_ai_nudge_${todayStr}_${type}`, val.trim());
+          } else if (val && typeof val === "object") {
+            const { message, suggestions } = val as { message?: string; suggestions?: string[] };
+            if (typeof message === "string" && message.trim()) {
+              localStorage.setItem(`wya_ai_nudge_${todayStr}_${type}`, message.trim());
+            }
+            if (Array.isArray(suggestions) && suggestions.length > 0) {
+              localStorage.setItem(`wya_ai_nudge_${todayStr}_${type}_suggestions`, JSON.stringify(suggestions.slice(0, 3)));
+            }
           }
         });
         setAiMessageVersion((v) => v + 1);
@@ -974,7 +1001,7 @@ export default function SummaryScreen() {
                               )}
                               {showFoodChips && (
                                 <div className="flex flex-wrap gap-1.5">
-                                  {suggestions.slice(0, 3).map((food) => (
+                                  {(getAiSuggestions(nudge.type) ?? suggestions.slice(0, 3)).map((food) => (
                                     <span
                                       key={food}
                                       className="rounded-full border border-ink/10 bg-white px-2.5 py-0.5 text-[11px] text-ink/60"

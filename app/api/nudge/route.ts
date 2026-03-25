@@ -15,14 +15,22 @@ function checkRateLimit(key: string): boolean {
   return true;
 }
 
-const NUDGE_SYSTEM_PROMPT = `You are a gentle, non-judgmental nutrition coach. Write short, specific, conversational nudges for a user tracking their food and fitness.
+const NUDGE_SYSTEM_PROMPT = `You are a gentle, non-judgmental nutrition coach. For each nudge, write a short message and suggest 3 relevant foods.
 
-Rules:
-- 1-2 sentences, max 35 words each
+Message rules:
+- 1-2 sentences, max 35 words
 - Use the exact numbers provided
 - Vary the opening — don't always start with "You've" or "Your"
 - No em dashes, no exclamation marks (except on_track nudges)
-- Sound like a knowledgeable friend, not a fitness app`;
+- Sound like a knowledgeable friend, not a fitness app
+- Reference the user's actual logged foods by name where it feels natural
+
+Suggestion rules:
+- Return exactly 3 simple food names (e.g. "Greek yogurt", "Chicken breast", "Mixed nuts")
+- Prioritise foods from the user's recent history — suggest things they already eat
+- Match the nudge signal: protein nudges → protein-rich foods, calorie nudges → energy-dense foods
+- Never add serving instructions or modifications to a food name (no "extra scoop of X", no "more X")
+- For workout_missing, calorie_high, and on_track nudges return an empty suggestions array []`;
 
 function buildProfileSummary(profile: Record<string, unknown> | null): string {
   if (!profile) return "no profile";
@@ -50,7 +58,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { profile, recentFoods = [] } = body;
     const profileSummary = buildProfileSummary(profile);
-    const foodsStr = (recentFoods as string[]).slice(0, 5).join(", ") || "not provided";
+    const foodsStr = (recentFoods as string[]).slice(0, 10).join(", ") || "not provided";
 
     // Batch mode: accepts nudges:[{nudgeType, data}] — one Claude call for all
     const nudges = body.nudges as Array<{ nudgeType: string; data?: Record<string, unknown> }> | undefined;
@@ -63,13 +71,13 @@ export async function POST(req: Request) {
         return `${n.nudgeType}: ${dataStr || "no data"}`;
       }).join("\n");
 
-      const prompt = `Write one nudge for each type below. Return ONLY a JSON object like {"nudgeType":"message",...} with no other text.
+      const prompt = `Write one nudge for each type below. Return ONLY a JSON object like {"nudgeType":{"message":"...","suggestions":["food1","food2","food3"]},...} with no other text.
 
 Nudge types and data:
 ${nudgeBlocks}
 
 User context: ${profileSummary}
-Recent foods: ${foodsStr}`;
+Recent foods the user has logged: ${foodsStr}`;
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10_000);
@@ -84,7 +92,7 @@ Recent foods: ${foodsStr}`;
           },
           body: JSON.stringify({
             model: "claude-haiku-4-5-20251001",
-            max_tokens: 400,
+            max_tokens: 600,
             temperature: 0.7,
             system: NUDGE_SYSTEM_PROMPT,
             messages: [{ role: "user", content: prompt }],
