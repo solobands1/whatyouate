@@ -1004,7 +1004,6 @@ export default function HomeScreen() {
           showSkipButton
           hideCloseButton
           disableOverlayClose
-          scrollToFirstStep
           callback={handleTourCallback}
           locale={{
             skip: "Skip",

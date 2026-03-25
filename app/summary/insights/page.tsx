@@ -129,7 +129,7 @@ export default function InsightsPage() {
     const active = localStorage.getItem(`wya_walkthrough_active_${user.id}`) === "true";
     const stage = localStorage.getItem(`wya_walkthrough_stage_${user.id}`);
     if (active && stage === "insights") {
-      const timer = window.setTimeout(() => setRunInsightsTour(true), 150);
+      const timer = window.setTimeout(() => setRunInsightsTour(true), 400);
       return () => window.clearTimeout(timer);
     }
   }, [user]);
@@ -390,11 +390,11 @@ export default function InsightsPage() {
     <div className="min-h-screen bg-surface">
       <Joyride
         steps={insightsTourSteps}
-        run={runInsightsTour}
+        run={runInsightsTour && !loadingData}
         continuous
         showSkipButton
         hideCloseButton
-        scrollToFirstStep
+        disableOverlayClose
         callback={handleInsightsTour}
         locale={{
           skip: "Skip",

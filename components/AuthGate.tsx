@@ -13,8 +13,8 @@ export default function AuthGate({ children }: { children: ReactNode }) {
         <Image
           src="/icon-192.png"
           alt="WhatYouAte"
-          width={80}
-          height={80}
+          width={96}
+          height={96}
           className="rounded-2xl animate-splash-breathe"
           priority
         />

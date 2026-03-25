@@ -135,7 +135,7 @@ export default function SummaryScreen() {
     const active = localStorage.getItem(`wya_walkthrough_active_${user.id}`) === "true";
     const stage = localStorage.getItem(`wya_walkthrough_stage_${user.id}`);
     if (active && stage === "summary") {
-      const timer = window.setTimeout(() => setRunSummaryTour(true), 150);
+      const timer = window.setTimeout(() => setRunSummaryTour(true), 400);
       return () => window.clearTimeout(timer);
     }
   }, [user]);
@@ -757,11 +757,11 @@ export default function SummaryScreen() {
     <div className="min-h-screen bg-surface">
       <Joyride
         steps={summaryTourSteps}
-        run={runSummaryTour}
+        run={runSummaryTour && !loadingData}
         continuous
         showSkipButton
         hideCloseButton
-        scrollToFirstStep
+        disableOverlayClose
         callback={handleSummaryTour}
         locale={{
           skip: "Skip",
