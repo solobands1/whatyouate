@@ -189,14 +189,10 @@ export default function ProfileScreen() {
 
   const profileTourSteps = [
     {
-      target: '[data-tour="feedback-button"]',
-      content: "Send feedback any time. It helps us improve.",
-      disableBeacon: true
-    },
-    {
       target: '[data-tour="profile-header"]',
-      content: "Fill out your profile then take your first food photo or log your first workout to get started!",
-      disableBeacon: true
+      content: "Fill out your profile, then head back to Home to log your first meal or workout to get started.",
+      disableBeacon: true,
+      placement: "bottom" as const,
     }
   ] as Step[];
 
@@ -444,7 +440,6 @@ export default function ProfileScreen() {
             showSkipButton
             hideCloseButton
             disableOverlayClose
-            scrollToFirstStep
             callback={handleProfileTour}
             locale={{
               skip: "Skip",

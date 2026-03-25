@@ -995,7 +995,7 @@ export default function HomeScreen() {
     },
     {
       target: '[data-tour="nav-summary"]',
-      content: "The Summary tab shows your week at a glance: trends, patterns, gentle nudges. No strict macros.",
+      content: "The Insights tab shows your week at a glance: trends, patterns, gentle nudges. No strict macros.",
       placement: "top" as const,
       disableBeacon: true
     },

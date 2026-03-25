@@ -28,6 +28,7 @@ export default function SummaryScreen() {
   const [runSummaryTour, setRunSummaryTour] = useState(false);
   const [visibleNudgeGroupCount, setVisibleNudgeGroupCount] = useState(3);
   const [aiMessages, setAiMessages] = useState<Record<string, string>>({});
+  const aiNudgeFetchedRef = useRef(false);
   // Capture unseen state before the mount effect clears it, so the bell stays on the card while reading
   const [nudgeCardIsNew] = useState(() => {
     try {
@@ -476,9 +477,10 @@ export default function SummaryScreen() {
 
 
 
-  // Fetch AI-written nudge messages; cache per day per type so we only call once
+  // Fetch AI-written nudge messages; cache per day per type so we only call once per session
   useEffect(() => {
-    if (visibleNotes.length === 0 || !profile) return;
+    if (visibleNotes.length === 0 || !profile || aiNudgeFetchedRef.current) return;
+    aiNudgeFetchedRef.current = true;
     const todayStr = todayKey();
 
     // Load any already-cached messages for today
@@ -521,26 +523,23 @@ export default function SummaryScreen() {
     });
   }, [visibleNotes, profile]);
 
-  // Save nudges to DB once per day; uses AI message if ready, otherwise hardcoded fallback
+  // Save nudges to DB once per day
   useEffect(() => {
     if (!user || !nudgesLoadedRef.current || visibleNotes.length === 0) return;
     const todayStr = todayKey();
     const existingToday = new Set(
       nudges.filter((n) => todayKey(new Date(n.created_at)) === todayStr).map((n) => n.message)
     );
-    const toSave = visibleNotes.filter(
-      (note) => !savedThisSessionRef.current.has(note.type)
+    const missing = visibleNotes.filter(
+      (note) => !existingToday.has(note.message) && !savedThisSessionRef.current.has(note.message)
     );
-    if (toSave.length === 0) return;
-
-    toSave.forEach((note) => {
-      const message = aiMessages[note.type] ?? note.message;
-      if (existingToday.has(message)) return;
-      savedThisSessionRef.current.add(note.type);
-      addNudge(user.id, "awareness", message).catch(() => {});
+    if (missing.length === 0) return;
+    missing.forEach((note) => {
+      savedThisSessionRef.current.add(note.message);
+      addNudge(user.id, "awareness", note.message).catch(() => {});
     });
     pruneNudges(user.id).catch(() => {});
-  }, [user, visibleNotes, nudges, aiMessages]);
+  }, [user, visibleNotes, nudges]);
 
   const weeklyVariant = (variants: string[]): string => {
     const week = Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000));
