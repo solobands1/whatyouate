@@ -291,6 +291,14 @@ export default function HomeScreen() {
       ]);
       if (!mountedRef.current) return;
       setProfile(profileData ?? undefined);
+      // Backfill the daily-supp localStorage guard from DB so PWA updates don't double-log
+      if (!hasDailySuppsLoggedToday(user.id)) {
+        const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+        const suppAlreadyToday = meals.meals.some(
+          (m) => m.analysisJson?.source === "supplement" && m.ts >= todayStart.getTime()
+        );
+        if (suppAlreadyToday) markDailySuppsLoggedToday(user.id);
+      }
     } catch (err) {
       console.error("[loadData] failed:", err);
       setLoadError(err instanceof Error ? err.message : "Failed to load data");
