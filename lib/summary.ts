@@ -7,14 +7,18 @@ export function summarizeDay(meals: MealLog[], dateKey = todayKey()): DailyRange
     .reduce(
       (acc, meal) => {
         const ranges = meal.analysisJson.estimated_ranges;
-        acc.calories_min += ranges.calories_min;
-        acc.calories_max += ranges.calories_max;
-        acc.protein_g_min += ranges.protein_g_min;
-        acc.protein_g_max += ranges.protein_g_max;
-        acc.carbs_g_min += ranges.carbs_g_min;
-        acc.carbs_g_max += ranges.carbs_g_max;
-        acc.fat_g_min += ranges.fat_g_min;
-        acc.fat_g_max += ranges.fat_g_max;
+        const cal = meal.calories ?? null;
+        const pro = meal.protein ?? null;
+        const carb = meal.carbs ?? null;
+        const fat = meal.fat ?? null;
+        acc.calories_min += cal !== null ? cal : ranges.calories_min;
+        acc.calories_max += cal !== null ? cal : ranges.calories_max;
+        acc.protein_g_min += pro !== null ? pro : ranges.protein_g_min;
+        acc.protein_g_max += pro !== null ? pro : ranges.protein_g_max;
+        acc.carbs_g_min += carb !== null ? carb : ranges.carbs_g_min;
+        acc.carbs_g_max += carb !== null ? carb : ranges.carbs_g_max;
+        acc.fat_g_min += fat !== null ? fat : ranges.fat_g_min;
+        acc.fat_g_max += fat !== null ? fat : ranges.fat_g_max;
         return acc;
       },
       {
