@@ -494,6 +494,8 @@ export default function SummaryScreen() {
     if (missing.length === 0) return;
 
     missing.forEach(async (note) => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
       try {
         const res = await fetch("/api/nudge", {
           method: "POST",
@@ -504,7 +506,7 @@ export default function SummaryScreen() {
             profile,
             recentFoods,
           }),
-          signal: AbortSignal.timeout(6000),
+          signal: controller.signal,
         });
         if (!res.ok) return;
         const { message } = await res.json();
@@ -513,6 +515,8 @@ export default function SummaryScreen() {
         setAiMessages((prev) => ({ ...prev, [note.type]: message.trim() }));
       } catch {
         // Silently fall back to hardcoded message
+      } finally {
+        clearTimeout(timeoutId);
       }
     });
   }, [visibleNotes, profile]);
