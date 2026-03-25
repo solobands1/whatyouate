@@ -134,6 +134,8 @@ const _homeCache: {
   meals: MealLog[];
   workouts: WorkoutSession[];
 } = { profileLoaded: false, meals: [], workouts: [] };
+// Module-level guard — once home has loaded once, never show the splash again
+let _homeHasLoadedOnce = false;
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -184,7 +186,6 @@ export default function HomeScreen() {
   const [quickAddAdding, setQuickAddAdding] = useState(false);
 
   const mountedRef = useRef(true);
-  const hasLoadedOnceRef = useRef(false);
   const recentSentinelRef = useRef<HTMLDivElement | null>(null);
   const foodInputRef = useRef<HTMLInputElement | null>(null);
   const realtimeRefreshRef = useRef<number | null>(null);
@@ -319,7 +320,7 @@ export default function HomeScreen() {
       setLoadError(err instanceof Error ? err.message : "Failed to load data");
     } finally {
       if (mountedRef.current) {
-        hasLoadedOnceRef.current = true;
+        _homeHasLoadedOnce = true;
         setLoadingData(false);
       }
     }
@@ -1016,7 +1017,7 @@ export default function HomeScreen() {
     }
   };
 
-  if (loadingData && !hasLoadedOnceRef.current) {
+  if (loadingData && !_homeHasLoadedOnce) {
     return <SplashScreen />;
   }
 
