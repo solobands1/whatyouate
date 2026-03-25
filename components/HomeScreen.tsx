@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Joyride, { CallBackProps, STATUS, type Step } from "react-joyride";
@@ -990,8 +991,19 @@ export default function HomeScreen() {
     }
   };
 
-  if (!mounted) {
-    return null;
+  if (!mounted || loadingData) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-[#F1F6FF]">
+        <Image
+          src="/icon-192.png"
+          alt="WhatYouAte"
+          width={96}
+          height={96}
+          className="rounded-2xl animate-splash-breathe"
+          priority
+        />
+      </div>
+    );
   }
 
   return (
