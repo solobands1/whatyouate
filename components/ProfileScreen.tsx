@@ -836,7 +836,8 @@ export default function ProfileScreen() {
                   <button
                     type="button"
                     className="text-ink/40 transition hover:text-ink/70"
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       const updated = dailySupplements.filter((s) => s !== name);
                       setDailySupplementsState(updated);
                       if (user) { setDailySupplements(user.id, updated); saveDailySupplements(user.id, updated).catch(() => {}); }
@@ -861,7 +862,7 @@ export default function ProfileScreen() {
                   if (!name || dailySupplements.includes(name)) { setNewSuppInput(""); return; }
                   const updated = [...dailySupplements, name];
                   setDailySupplementsState(updated);
-                  if (user) setDailySupplements(user.id, updated);
+                  if (user) { setDailySupplements(user.id, updated); saveDailySupplements(user.id, updated).catch(() => {}); }
                   setNewSuppInput("");
                 }}
               />
@@ -873,7 +874,7 @@ export default function ProfileScreen() {
                   if (!name || dailySupplements.includes(name)) { setNewSuppInput(""); return; }
                   const updated = [...dailySupplements, name];
                   setDailySupplementsState(updated);
-                  if (user) setDailySupplements(user.id, updated);
+                  if (user) { setDailySupplements(user.id, updated); saveDailySupplements(user.id, updated).catch(() => {}); }
                   setNewSuppInput("");
                 }}
               >
