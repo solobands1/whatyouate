@@ -287,7 +287,7 @@ export default function HomeScreen() {
 
   const loadData = useCallback(async () => {
     if (!user) return;
-    setLoadingData(true);
+    if (!_homeCache.profile) setLoadingData(true);
     setLoadError(null);
     try {
       const [profileData] = await Promise.all([
