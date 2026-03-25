@@ -1,4 +1,4 @@
-const CACHE_NAME = "what-you-ate-v3";
+const CACHE_NAME = "what-you-ate-v4";
 const CORE_ASSETS = [
   "/",
   "/beta",

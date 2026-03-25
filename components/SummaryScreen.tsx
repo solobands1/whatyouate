@@ -61,7 +61,7 @@ export default function SummaryScreen() {
     if (!user) return;
     setLoadingData(true);
     if (LOCAL_MODE) {
-      Promise.all([getProfile(user.id), listMeals(user.id, 1000), listWorkouts(user.id, 200)])
+      Promise.all([getProfile(user.id), listMeals(user.id, 200), listWorkouts(user.id, 50)])
         .then((result) => {
           const [profileData, mealsData, workoutsData] = result;
           if (!mountedRef.current) return;
@@ -93,7 +93,7 @@ export default function SummaryScreen() {
         })
         .then((ok) => {
           if (!ok) return null;
-          return Promise.all([getProfile(user.id), listMeals(user.id, 1000), listWorkouts(user.id, 200)]);
+          return Promise.all([getProfile(user.id), listMeals(user.id, 200), listWorkouts(user.id, 50)]);
         })
         .then((result) => {
           if (!result) return;

@@ -96,7 +96,7 @@ export default function InsightsPage() {
   const loadData = useCallback(() => {
     if (!user) return;
     setLoadingData(true);
-    Promise.all([getProfile(user.id), listMeals(user.id, 1000)])
+    Promise.all([getProfile(user.id), listMeals(user.id, 200)])
       .then(([profileData, mealsData]) => {
         if (!mountedRef.current) return;
         setProfile(profileData ?? undefined);
