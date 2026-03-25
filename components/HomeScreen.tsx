@@ -985,7 +985,7 @@ export default function HomeScreen() {
   const steps = [
     {
       target: '[data-tour="food-action"]',
-      content: "Tap here to log a meal: snap a photo, scan a barcode, or just type what you ate. The chicken bowl and everything else you see here were logged that way.",
+      content: "Tap any of these to log a meal: snap a photo, scan a barcode, type what you ate, or quickly re-add something recent.",
       disableBeacon: true
     },
     {
@@ -1415,9 +1415,9 @@ export default function HomeScreen() {
             className="sr-only"
             onChange={handleFoodFileSelected}
           />
+          <div data-tour="food-action">
           <button
             type="button"
-            data-tour="food-action"
             className="block w-full rounded-xl bg-primary px-5 py-4 text-center text-base font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] ring-1 ring-white/40 transition hover:bg-primary/90 active:scale-[0.98]"
             onClick={handleFoodPhotoClick}
           >
@@ -1448,6 +1448,7 @@ export default function HomeScreen() {
               <span>+</span>
               <span>Quick Add</span>
             </button>
+          </div>
           </div>
           <div className="mx-auto flex w-[84%] text-xs" data-tour="workout-markers">
             <button
