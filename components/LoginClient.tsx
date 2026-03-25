@@ -26,6 +26,7 @@ export default function LoginClient() {
   const [otpCode, setOtpCode] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [status, setStatus] = useState<string>("");
+  const [submitting, setSubmitting] = useState(false);
   const togglePassword = () => setShowPassword((prev) => !prev);
 
   const EyeIcon = ({ hidden }: { hidden: boolean }) => (
@@ -64,15 +65,18 @@ export default function LoginClient() {
   const handleSignIn = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!email || !password) return;
+    setSubmitting(true);
     const result = await signInWithEmailPassword(email.trim(), password);
     if (result.error) {
       setStatus("Couldn’t sign in. Check your details.");
+      setSubmitting(false);
       return;
     }
     setStatus("");
     if (LOCAL_MODE) {
       router.replace("/");
     }
+    // Keep submitting=true — navigation will unmount this component
   };
 
   const handleSignUp = async () => {
@@ -191,9 +195,10 @@ export default function LoginClient() {
                 </label>
                 <button
                   type="submit"
-                  className="mt-4 w-full rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white"
+                  disabled={submitting}
+                  className="mt-4 w-full rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
                 >
-                  Sign in
+                  {submitting ? "Signing in…" : "Sign in"}
                 </button>
                 <button
                   type="button"
