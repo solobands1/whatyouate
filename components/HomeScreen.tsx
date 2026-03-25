@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Joyride, { CallBackProps, STATUS, type Step } from "react-joyride";
@@ -18,6 +17,7 @@ import "../lib/mealQueue";
 import BarcodeScannerOverlay from "./BarcodeScannerOverlay";
 import { getFoodCacheEntry, setFoodCacheEntry, deleteFoodCacheEntry, deleteFoodTextEntry, incrementFoodCacheLogCount, incrementFoodTextLogCount, getQuickAddItems, getDailySupplements, hasDailySuppsLoggedToday, markDailySuppsLoggedToday, type QuickAddItem } from "../lib/foodCache";
 import BottomNav from "./BottomNav";
+import SplashScreen from "./SplashScreen";
 import Card from "./Card";
 import { useAuth } from "./AuthProvider";
 import {
@@ -126,16 +126,24 @@ function makeDemoWorkouts(): WorkoutSession[] {
   return [{ id: "demo-w1", startTs: at(6, 0), endTs: at(6, 45), durationMin: 45, workoutTypes: ["Strength"], intensity: "medium" }];
 }
 
+// Module-level cache — survives navigation, resets on full page reload
+const _homeCache: {
+  userId?: string;
+  profile?: UserProfile;
+} = {};
+
 export default function HomeScreen() {
   const router = useRouter();
   const { user, loading } = useAuth();
   const [mounted, setMounted] = useState(false);
-  const [profile, setProfile] = useState<UserProfile | undefined>();
+  const [profile, setProfile] = useState<UserProfile | undefined>(() =>
+    _homeCache.profile
+  );
   const [runTour, setRunTour] = useState(false);
   const [showTourGate, setShowTourGate] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [demoData] = useState(() => ({ meals: makeDemoMeals(), workouts: makeDemoWorkouts() }));
-  const [loadingData, setLoadingData] = useState(true);
+  const [loadingData, setLoadingData] = useState(() => !_homeCache.profile);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [barcodeOpen, setBarcodeOpen] = useState(false);
   const [barcodeNotFound, setBarcodeNotFound] = useState(false);
@@ -289,6 +297,7 @@ export default function HomeScreen() {
       ]);
       if (!mountedRef.current) return;
       setProfile(profileData ?? undefined);
+      _homeCache.profile = profileData ?? undefined;
       // Backfill the daily-supp localStorage guard from DB so PWA updates don't double-log
       if (!hasDailySuppsLoggedToday(user.id)) {
         const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
@@ -996,18 +1005,7 @@ export default function HomeScreen() {
   };
 
   if (!mounted || (loadingData && !hasLoadedOnceRef.current)) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center bg-[#F1F6FF]">
-        <Image
-          src="/icon-192.png"
-          alt="WhatYouAte"
-          width={96}
-          height={96}
-          className="rounded-2xl animate-splash-breathe"
-          priority
-        />
-      </div>
-    );
+    return <SplashScreen />;
   }
 
   return (
