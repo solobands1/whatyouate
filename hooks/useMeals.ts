@@ -10,9 +10,10 @@ import { getFoodTextEntry, setFoodTextEntry, deleteFoodTextEntry, incrementFoodT
 export function useMeals(
   user: User | null,
   onError: (msg: string) => void,
-  setEditRecents: (val: boolean) => void
+  setEditRecents: (val: boolean) => void,
+  initialMeals: MealLog[] = []
 ) {
-  const [meals, setMeals] = useState<MealLog[]>([]);
+  const [meals, setMeals] = useState<MealLog[]>(() => initialMeals);
   const [editingMeal, setEditingMeal] = useState<MealLog | null>(null);
   const [editForm, setEditForm] = useState({
     name: "",

@@ -129,20 +129,23 @@ function makeDemoWorkouts(): WorkoutSession[] {
 // Module-level cache — survives navigation, resets on full page reload
 const _homeCache: {
   userId?: string;
-  profile?: UserProfile;
-} = {};
+  profile?: UserProfile | null;
+  profileLoaded: boolean;
+  meals: MealLog[];
+  workouts: WorkoutSession[];
+} = { profileLoaded: false, meals: [], workouts: [] };
 
 export default function HomeScreen() {
   const router = useRouter();
   const { user, loading } = useAuth();
   const [profile, setProfile] = useState<UserProfile | undefined>(() =>
-    _homeCache.profile
+    _homeCache.profile ?? undefined
   );
   const [runTour, setRunTour] = useState(false);
   const [showTourGate, setShowTourGate] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [demoData] = useState(() => ({ meals: makeDemoMeals(), workouts: makeDemoWorkouts() }));
-  const [loadingData, setLoadingData] = useState(() => !_homeCache.profile);
+  const [loadingData, setLoadingData] = useState(() => !_homeCache.profileLoaded);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [barcodeOpen, setBarcodeOpen] = useState(false);
   const [barcodeNotFound, setBarcodeNotFound] = useState(false);
@@ -191,8 +194,8 @@ export default function HomeScreen() {
 
   const onError = useCallback((msg: string) => setLoadError(msg), []);
 
-  const workout = useWorkout(user, onError, setEditRecents);
-  const meals = useMeals(user, onError, setEditRecents);
+  const workout = useWorkout(user, onError, setEditRecents, _homeCache.workouts);
+  const meals = useMeals(user, onError, setEditRecents, _homeCache.meals);
 
   const handleOpenQuickAdd = () => {
     setQuickAddItems(getQuickAddItems());
@@ -286,7 +289,7 @@ export default function HomeScreen() {
 
   const loadData = useCallback(async () => {
     if (!user) return;
-    if (!_homeCache.profile) setLoadingData(true);
+    if (!_homeCache.profileLoaded) setLoadingData(true);
     setLoadError(null);
     try {
       const [profileData] = await Promise.all([
@@ -295,7 +298,8 @@ export default function HomeScreen() {
         meals.load(user.id),
       ]);
       // Set cache before mountedRef check so it persists even if component unmounted mid-fetch
-      _homeCache.profile = profileData ?? undefined;
+      _homeCache.profile = profileData ?? null;
+      _homeCache.profileLoaded = true;
       if (!mountedRef.current) return;
       setProfile(profileData ?? undefined);
       // Backfill the daily-supp localStorage guard from DB so PWA updates don't double-log
@@ -322,6 +326,14 @@ export default function HomeScreen() {
     const t = setTimeout(() => setBarsReady(true), 60);
     return () => clearTimeout(t);
   }, [loadingData]);
+
+  // Keep module-level cache warm so navigation back is instant
+  useEffect(() => {
+    if (!loadingData && meals.meals.length > 0) _homeCache.meals = meals.meals;
+  }, [meals.meals, loadingData]);
+  useEffect(() => {
+    if (!loadingData) _homeCache.workouts = workout.workouts;
+  }, [workout.workouts, loadingData]);
 
 
 

@@ -25,9 +25,10 @@ export const WORKOUT_TYPE_OPTIONS = [
 export function useWorkout(
   user: User | null,
   onError: (msg: string) => void,
-  setEditRecents: (val: boolean) => void
+  setEditRecents: (val: boolean) => void,
+  initialWorkouts: WorkoutSession[] = []
 ) {
-  const [workouts, setWorkouts] = useState<WorkoutSession[]>([]);
+  const [workouts, setWorkouts] = useState<WorkoutSession[]>(() => initialWorkouts);
   const [activeWorkout, setActiveWorkout] = useState<WorkoutSession | null>(null);
   const [showStartWorkoutModal, setShowStartWorkoutModal] = useState(false);
   const [showEndWorkoutModal, setShowEndWorkoutModal] = useState(false);
