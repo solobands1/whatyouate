@@ -289,7 +289,12 @@ export default function HomeScreen() {
 
   const loadData = useCallback(async () => {
     if (!user) return;
-    if (!_homeCache.profileLoaded) setLoadingData(true);
+    if (!_homeCache.profileLoaded) {
+      // Mark loaded before any await so future mounts never show splash,
+      // even if this fetch errors or the component unmounts mid-load.
+      _homeCache.profileLoaded = true;
+      setLoadingData(true);
+    }
     setLoadError(null);
     try {
       const [profileData] = await Promise.all([
@@ -297,9 +302,8 @@ export default function HomeScreen() {
         workout.load(user.id),
         meals.load(user.id),
       ]);
-      // Set cache before mountedRef check so it persists even if component unmounted mid-fetch
+      // Set profile cache before mountedRef check so it persists even if component unmounted mid-fetch
       _homeCache.profile = profileData ?? null;
-      _homeCache.profileLoaded = true;
       if (!mountedRef.current) return;
       setProfile(profileData ?? undefined);
       // Backfill the daily-supp localStorage guard from DB so PWA updates don't double-log
