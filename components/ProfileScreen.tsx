@@ -796,7 +796,7 @@ export default function ProfileScreen() {
               className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm"
               value={freeformFocus}
               onChange={(event) => setFreeformFocus(event.target.value)}
-              placeholder="e.g., building strength, more energy, longevity"
+              placeholder="e.g. building strength, more energy, longevity"
             />
           </label>
 
@@ -819,7 +819,7 @@ export default function ProfileScreen() {
               className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm resize-none"
               value={bodyPriority}
               onChange={(event) => setBodyPriority(event.target.value)}
-              placeholder="e.g., I meal prep Sundays, I eat late at night, I skip breakfast"
+              placeholder="e.g. I meal prep Sundays, I eat late at night, I skip breakfast"
             />
           </label>
 
@@ -851,8 +851,8 @@ export default function ProfileScreen() {
             <div className="mt-2 flex gap-2">
               <input
                 type="text"
-                className="mt-1 w-36 rounded-xl border border-ink/10 px-3 py-2 text-sm"
-                placeholder="e.g., Vitamin D"
+                className="mt-1 flex-1 rounded-xl border border-ink/10 px-3 py-2 text-sm"
+                placeholder="e.g. Vitamin D"
                 value={newSuppInput}
                 onChange={(e) => setNewSuppInput(e.target.value)}
                 onKeyDown={(e) => {
