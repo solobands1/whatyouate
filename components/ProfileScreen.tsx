@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Joyride, { STATUS, CallBackProps, type Step } from "react-joyride";
 import { notifyProfileUpdated } from "../lib/dataEvents";
 import type { ActivityLevel, GoalDirection, Units, UserProfile } from "../lib/types";
-import { clearAllData, getProfile, saveProfile, LOCAL_MODE } from "../lib/supabaseDb";
+import { clearAllData, getProfile, saveProfile, saveDailySupplements, LOCAL_MODE } from "../lib/supabaseDb";
 import { getDailySupplements, setDailySupplements } from "../lib/foodCache";
 import { supabase } from "../lib/supabaseClient";
 import BottomNav from "./BottomNav";
@@ -839,7 +839,7 @@ export default function ProfileScreen() {
                     onClick={() => {
                       const updated = dailySupplements.filter((s) => s !== name);
                       setDailySupplementsState(updated);
-                      if (user) setDailySupplements(user.id, updated);
+                      if (user) { setDailySupplements(user.id, updated); saveDailySupplements(user.id, updated).catch(() => {}); }
                     }}
                     aria-label={`Remove ${name}`}
                   >

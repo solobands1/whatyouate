@@ -18,6 +18,7 @@ export interface UserProfile {
   activityLevel?: ActivityLevel;
   dietaryRestrictions?: string[];
   units: Units;
+  dailySupplements?: string[];
 }
 
 export interface MealAnalysis {

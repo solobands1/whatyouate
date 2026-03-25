@@ -15,7 +15,7 @@ import { formatApprox, formatDateShort, todayKey } from "../lib/utils";
 import { supabase } from "../lib/supabaseClient";
 import "../lib/mealQueue";
 import BarcodeScannerOverlay from "./BarcodeScannerOverlay";
-import { getFoodCacheEntry, setFoodCacheEntry, deleteFoodCacheEntry, deleteFoodTextEntry, incrementFoodCacheLogCount, incrementFoodTextLogCount, getQuickAddItems, getDailySupplements, hasDailySuppsLoggedToday, markDailySuppsLoggedToday, type QuickAddItem } from "../lib/foodCache";
+import { getFoodCacheEntry, setFoodCacheEntry, deleteFoodCacheEntry, deleteFoodTextEntry, incrementFoodCacheLogCount, incrementFoodTextLogCount, getQuickAddItems, getDailySupplements, setDailySupplements, hasDailySuppsLoggedToday, markDailySuppsLoggedToday, type QuickAddItem } from "../lib/foodCache";
 import BottomNav from "./BottomNav";
 import SplashScreen from "./SplashScreen";
 import Card from "./Card";
@@ -305,6 +305,10 @@ export default function HomeScreen() {
       ]);
       // Set profile cache before mountedRef check so it persists even if component unmounted mid-fetch
       _homeCache.profile = profileData ?? null;
+      // Restore daily supplements from Supabase if localStorage was cleared
+      if (profileData?.dailySupplements?.length && !getDailySupplements(user.id).length) {
+        setDailySupplements(user.id, profileData.dailySupplements);
+      }
       if (!mountedRef.current) return;
       setProfile(profileData ?? undefined);
       // Backfill the daily-supp localStorage guard from DB so PWA updates don't double-log

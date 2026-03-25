@@ -204,7 +204,8 @@ export async function getProfile(userId: string): Promise<UserProfile | null> {
     freeformFocus: data.freeform_focus ?? "",
     activityLevel: data.activity_level ?? undefined,
     dietaryRestrictions: Array.isArray(data.dietary_restrictions) ? data.dietary_restrictions : [],
-    units: data.units ?? "imperial"
+    units: data.units ?? "imperial",
+    dailySupplements: Array.isArray(data.daily_supplements) ? data.daily_supplements : [],
   };
   profileCache.set(userId, { data: profile, ts: Date.now() });
   return profile;
@@ -232,12 +233,21 @@ export async function saveProfile(userId: string, profile: UserProfile) {
     activity_level: profile.activityLevel ?? null,
     dietary_restrictions: profile.dietaryRestrictions ?? [],
     units: profile.units,
+    daily_supplements: profile.dailySupplements ?? [],
     updated_at: new Date().toISOString()
   };
   const { error } = await supabase.from("profiles").upsert(payload, { onConflict: "user_id" });
   if (error) throw error;
   profileCache.delete(userId);
   return { success: true };
+}
+
+export async function saveDailySupplements(userId: string, names: string[]): Promise<void> {
+  const { error } = await supabase
+    .from("profiles")
+    .upsert({ user_id: userId, daily_supplements: names, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+  if (error) throw error;
+  profileCache.delete(userId);
 }
 
 export async function addMeal(userId: string, analysis: MealAnalysis, imageOptional?: string, corrections?: any) {
