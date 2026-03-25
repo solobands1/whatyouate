@@ -320,42 +320,6 @@ export default function HomeScreen() {
       });
   }, [user]);
 
-  const homeVisibleNotes = useMemo(
-    () => computeNudges(displayMeals, displayWorkouts, profile),
-    [displayMeals, displayWorkouts, profile]
-  );
-
-  // Save nudges from HomeScreen so history fills in even if Summary tab is never opened
-  useEffect(() => {
-    if (!user || !nudgesLoadedRef.current || homeVisibleNotes.length === 0) return;
-    const todayStr = todayKey();
-    // DB dedup: by message, so we don't write duplicate rows
-    const savedTodayKey = `wya_saved_nudges_${todayStr}`;
-    const savedToday = new Set<string>(JSON.parse(localStorage.getItem(savedTodayKey) ?? "[]"));
-    const existingToday = new Set(
-      nudges.filter((n) => todayKey(new Date(n.created_at)) === todayStr).map((n) => n.message)
-    );
-    const missing = homeVisibleNotes.filter(
-      (note) => !existingToday.has(note.message) && !savedToday.has(note.message)
-    );
-    if (missing.length > 0) {
-      missing.forEach((note) => {
-        savedToday.add(note.message);
-        addNudge(user.id, "awareness", note.message).catch(() => {});
-      });
-      localStorage.setItem(savedTodayKey, JSON.stringify([...savedToday]));
-      pruneNudges(user.id).catch(() => {});
-    }
-    // Bell dedup: by nudge type — only notify once per type per day regardless of changing numbers
-    const notifiedTypesKey = `wya_notified_types_${todayStr}`;
-    const notifiedTypes = new Set<string>(JSON.parse(localStorage.getItem(notifiedTypesKey) ?? "[]"));
-    const newTypes = homeVisibleNotes.filter((note) => !notifiedTypes.has(note.type));
-    if (newTypes.length === 0) return;
-    newTypes.forEach((note) => notifiedTypes.add(note.type));
-    localStorage.setItem(notifiedTypesKey, JSON.stringify([...notifiedTypes]));
-    localStorage.setItem("wya_nudge_ts", Date.now().toString());
-    window.dispatchEvent(new Event("wya_nudge_update"));
-  }, [user, homeVisibleNotes, nudges]);
 
   const handleConfirmDelete = async () => {
     if (!pendingDelete || !user) return;
@@ -836,6 +800,43 @@ export default function HomeScreen() {
 
   const displayMeals = isDemoMode ? demoData.meals : meals.meals;
   const displayWorkouts = isDemoMode ? demoData.workouts : workout.workouts;
+
+  const homeVisibleNotes = useMemo(
+    () => computeNudges(displayMeals, displayWorkouts, profile),
+    [displayMeals, displayWorkouts, profile]
+  );
+
+  // Save nudges from HomeScreen so history fills in even if Summary tab is never opened
+  useEffect(() => {
+    if (!user || !nudgesLoadedRef.current || homeVisibleNotes.length === 0) return;
+    const todayStr = todayKey();
+    // DB dedup: by message, so we don't write duplicate rows
+    const savedTodayKey = `wya_saved_nudges_${todayStr}`;
+    const savedToday = new Set<string>(JSON.parse(localStorage.getItem(savedTodayKey) ?? "[]"));
+    const existingToday = new Set(
+      nudges.filter((n) => todayKey(new Date(n.created_at)) === todayStr).map((n) => n.message)
+    );
+    const missing = homeVisibleNotes.filter(
+      (note) => !existingToday.has(note.message) && !savedToday.has(note.message)
+    );
+    if (missing.length > 0) {
+      missing.forEach((note) => {
+        savedToday.add(note.message);
+        addNudge(user.id, "awareness", note.message).catch(() => {});
+      });
+      localStorage.setItem(savedTodayKey, JSON.stringify([...savedToday]));
+      pruneNudges(user.id).catch(() => {});
+    }
+    // Bell dedup: by nudge type — only notify once per type per day regardless of changing numbers
+    const notifiedTypesKey = `wya_notified_types_${todayStr}`;
+    const notifiedTypes = new Set<string>(JSON.parse(localStorage.getItem(notifiedTypesKey) ?? "[]"));
+    const newTypes = homeVisibleNotes.filter((note) => !notifiedTypes.has(note.type));
+    if (newTypes.length === 0) return;
+    newTypes.forEach((note) => notifiedTypes.add(note.type));
+    localStorage.setItem(notifiedTypesKey, JSON.stringify([...notifiedTypes]));
+    localStorage.setItem("wya_nudge_ts", Date.now().toString());
+    window.dispatchEvent(new Event("wya_nudge_update"));
+  }, [user, homeVisibleNotes, nudges]);
 
   const homeMarkers = useMemo(
     () => computeHomeMarkers(displayMeals, displayWorkouts, profile),
