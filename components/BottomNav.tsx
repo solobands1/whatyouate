@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 function checkUnseen() {
   const nudgeTs = parseInt(localStorage.getItem("wya_nudge_ts") ?? "0");
@@ -11,6 +11,7 @@ function checkUnseen() {
 
 export default function BottomNav({ current }: { current: "home" | "summary" | "profile" }) {
   const [hasUnseenNudge, setHasUnseenNudge] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     setHasUnseenNudge(checkUnseen());
@@ -21,21 +22,22 @@ export default function BottomNav({ current }: { current: "home" | "summary" | "
 
   const item = (href: string, label: string, key: string) => {
     const showBell = key === "summary" && hasUnseenNudge;
+    const isActive = current === key;
     return (
-      <Link
-        href={href}
+      <button
         data-tour={key === "summary" ? "nav-summary" : undefined}
         className={`relative flex-1 rounded-xl px-3 py-2 text-center text-sm font-medium transition-colors ${
-          current === key
+          isActive
             ? "bg-white text-ink shadow-[0_10px_20px_rgba(15,23,42,0.08)]"
-            : "text-muted/70 hover:text-ink"
+            : "text-muted/70"
         }`}
+        onPointerDown={() => { if (!isActive) router.push(href); }}
       >
         {label}
         {showBell && (
           <span className="absolute right-2 top-1.5 flex h-2 w-2 items-center justify-center rounded-full bg-primary" />
         )}
-      </Link>
+      </button>
     );
   };
 
