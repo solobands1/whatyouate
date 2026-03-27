@@ -76,12 +76,10 @@ export default function SummaryScreen() {
   const [runSummaryTour, setRunSummaryTour] = useState(false);
   const [visibleNudgeGroupCount, setVisibleNudgeGroupCount] = useState(3);
   const [nudgeExpanded, setNudgeExpanded] = useState<Record<string, "why" | "what" | null>>({});
-  const [aiMessageVersion, setAiMessageVersion] = useState(0);
   const aiNudgeFetchedRef = useRef<Set<string>>(new Set());
-  const getAiMessage = (nudgeType: string): string | null => {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem(`wya_ai_nudge_${todayKey()}_${nudgeType}`);
-  };
+  // Snapshot AI messages once when nudges first render — prevents mid-session swaps.
+  // AI fetch still runs in background and caches for next visit.
+  const aiSnapshotRef = useRef<Record<string, string> | "pending">("pending");
   const getAiSuggestions = (nudgeType: string): string[] | null => {
     if (typeof window === "undefined") return null;
     const raw = localStorage.getItem(`wya_ai_nudge_${todayKey()}_${nudgeType}_suggestions`);
@@ -350,133 +348,6 @@ export default function SummaryScreen() {
     return foods.slice(0, 15);
   }, [meals]);
 
-  const adaptiveInsight = useMemo(() => {
-    const tips: string[] = [];
-    const goal = profile?.goalDirection ?? "maintain";
-    const proteinTarget = gentleTargetsDisplay.protein;
-    const caloriesTarget = gentleTargetsDisplay.calories;
-    const proteinLow = avgWeekProtein > 0 && avgWeekProtein < proteinTarget * 0.85;
-    const caloriesLow = caloriesTarget > 0 && avgWeekCalories < caloriesTarget * 0.85;
-    const caloriesHigh = caloriesTarget > 0 && avgWeekCalories > caloriesTarget * 1.1;
-
-    const nudgeIsProtein = visibleNotes.some((n) =>
-      n.type === "protein_low_critical" || n.type === "protein_low"
-    );
-    const nudgeIsCalorie = visibleNotes.some((n) =>
-      n.type === "calorie_low" || n.type === "calorie_high" ||
-      n.type === "workout_fuel_low" || n.type === "training_fuel_low"
-    );
-
-    if (nudgeIsProtein && !nudgeIsCalorie) {
-      if (proteinLow && avgWeekProtein > 0)
-        tips.push(`You've been averaging around ${avgWeekProtein}g of protein • your goal is closer to ${proteinTarget}g.`);
-      else
-        tips.push("Your protein intake has been fairly steady this week.");
-      return tips.slice(0, 1);
-    }
-    if (nudgeIsCalorie && !nudgeIsProtein) {
-      if (caloriesLow && avgWeekCalories > 0)
-        tips.push(goal === "gain"
-          ? `You've been averaging around ${avgWeekCalories} kcal • you're aiming for closer to ${caloriesTarget} kcal.`
-          : `You've been eating around ${avgWeekCalories} kcal per day • a bit under your ${caloriesTarget} kcal range.`
-        );
-      else if (caloriesHigh && avgWeekCalories > 0)
-        tips.push(`You've been averaging around ${avgWeekCalories} kcal • a bit over your ${caloriesTarget} kcal range.`);
-      else
-        tips.push("Your calorie intake has been fairly steady this week.");
-      return tips.slice(0, 1);
-    }
-
-    if (goal === "lose") {
-      if (caloriesHigh && avgWeekCalories > 0) tips.push(`Averaging around ${avgWeekCalories} kcal • a bit over your ${caloriesTarget} kcal goal.`);
-      if (proteinLow && avgWeekProtein > 0) tips.push(`Protein is around ${avgWeekProtein}g • keeping it closer to ${proteinTarget}g helps preserve muscle while cutting.`);
-    } else if (goal === "gain") {
-      if (caloriesLow && avgWeekCalories > 0) tips.push(`Averaging around ${avgWeekCalories} kcal • a bit under your ${caloriesTarget} kcal goal.`);
-      if (proteinLow && avgWeekProtein > 0) tips.push(`Protein is around ${avgWeekProtein}g • closer to ${proteinTarget}g supports muscle gain.`);
-    } else {
-      if (caloriesLow && avgWeekCalories > 0) tips.push(`Averaging around ${avgWeekCalories} kcal • a bit under your ${caloriesTarget} kcal range.`);
-      else if (caloriesHigh && avgWeekCalories > 0) tips.push(`Averaging around ${avgWeekCalories} kcal • a bit over your ${caloriesTarget} kcal range.`);
-      if (proteinLow && avgWeekProtein > 0) tips.push(`Protein is around ${avgWeekProtein}g • your goal is closer to ${proteinTarget}g.`);
-    }
-
-    if (tips.length === 0) {
-      if (avgWeekCalories === 0 || avgWeekProtein === 0)
-        tips.push("Log a few more meals to see your weekly pattern here.");
-      else
-        tips.push("Your intake has been pretty steady this week • keep it up.");
-    }
-
-    return tips.slice(0, 1);
-  }, [profile, gentleTargetsDisplay, avgWeekProtein, avgWeekCalories, visibleNotes]);
-
-  const isRestrictedSuggestion = useMemo(() => {
-    const r = profile?.dietaryRestrictions ?? [];
-    return (text: string) => {
-      const lower = text.toLowerCase();
-      if ((r.includes("Vegetarian") || r.includes("Vegan")) &&
-        ["chicken", "tuna", "fish", "beef", "meat", "steak", "salmon", "turkey", "pork", "bacon"].some(w => lower.includes(w))) return true;
-      if (r.includes("Vegan") &&
-        ["yogurt", "milk", "cheese", "dairy", "egg", "butter", "cream", "whey"].some(w => lower.includes(w))) return true;
-      if (r.includes("No dairy") &&
-        ["yogurt", "milk", "cheese", "dairy", "butter", "cream", "whey"].some(w => lower.includes(w))) return true;
-      if (r.includes("No nuts") &&
-        ["nut", "almond", "cashew", "walnut", "peanut", "pecan", "pistachio"].some(w => lower.includes(w))) return true;
-      if (r.includes("No shellfish") &&
-        ["shrimp", "shellfish", "crab", "lobster", "clam", "oyster", "scallop"].some(w => lower.includes(w))) return true;
-      if (r.includes("No pork") &&
-        ["pork", "bacon", "ham", "prosciutto", "sausage"].some(w => lower.includes(w))) return true;
-      return false;
-    };
-  }, [profile?.dietaryRestrictions]);
-
-  const smartAddOns = useMemo(() => {
-    const tips: string[] = [];
-    const goal = profile?.goalDirection ?? "maintain";
-    const caloriesTarget = gentleTargetsDisplay.calories;
-    const caloriesHigh = caloriesTarget > 0 && avgWeekCalories > caloriesTarget * 1.1;
-    const caloriesLow = caloriesTarget > 0 && avgWeekCalories < caloriesTarget * 0.85;
-    const proteinLow = avgWeekProtein > 0 && avgWeekProtein < gentleTargetsDisplay.protein * 0.85;
-
-    const nudgeIsProtein = visibleNotes.some((n) =>
-      n.type === "protein_low_critical" || n.type === "protein_low"
-    );
-    const nudgeIsCalorie = visibleNotes.some((n) =>
-      n.type === "calorie_low" || n.type === "calorie_high" ||
-      n.type === "workout_fuel_low" || n.type === "training_fuel_low"
-    );
-
-    if (nudgeIsProtein && !nudgeIsCalorie) {
-      if (proteinLow) tips.push(goal === "gain"
-        ? "Try adding a solid protein source to each meal • it adds up faster than you'd think."
-        : "Adding a small protein source to your next couple of meals should close the gap.");
-      else tips.push("Keep pairing your meals with a protein source and you'll stay on track.");
-      return tips.filter((tip) => !isRestrictedSuggestion(tip)).slice(0, 1);
-    }
-    if (nudgeIsCalorie && !nudgeIsProtein) {
-      if (goal === "lose" && caloriesHigh) tips.push("Try slightly smaller portions or skip a side • small changes add up.");
-      else if (goal === "gain" && caloriesLow) tips.push("Add a side or a slightly bigger portion • your body could use the extra fuel.");
-      else if (caloriesHigh) tips.push("A slightly smaller portion here and there should keep things balanced.");
-      else if (caloriesLow) tips.push("A small snack or extra side with one of your meals would help.");
-      if (tips.length === 0) tips.push("Keep meals balanced and pair them with a protein source.");
-      return tips.filter((tip) => !isRestrictedSuggestion(tip)).slice(0, 1);
-    }
-
-    if (goal === "lose") {
-      if (caloriesHigh) tips.push("Try slightly smaller portions or skip one side • small changes add up.");
-      if (proteinLow) tips.push("Pair your meals with a bit more protein • it helps with fullness too.");
-    } else if (goal === "gain") {
-      if (caloriesLow) tips.push("Add a side or a slightly larger portion • your body needs the fuel.");
-      if (proteinLow) tips.push("Try adding a protein source to each meal • it adds up fast.");
-    } else {
-      if (caloriesHigh) tips.push("A slightly smaller portion here and there keeps things balanced.");
-      if (caloriesLow) tips.push("A small snack or extra side with one of your meals would fill the gap.");
-      if (proteinLow) tips.push("Pair your meals with a bit more protein • easy to slip in.");
-    }
-
-    if (tips.length === 0 && avgWeekCalories > 0) tips.push("Keep meals balanced and pair them with a solid protein source.");
-
-    return tips.filter((tip) => !isRestrictedSuggestion(tip)).slice(0, 1);
-  }, [profile, gentleTargetsDisplay, avgWeekCalories, avgWeekProtein, isRestrictedSuggestion, visibleNotes]);
 
 
 
@@ -523,7 +394,7 @@ export default function SummaryScreen() {
             }
           }
         });
-        setAiMessageVersion((v) => v + 1);
+        // Message cached — will display on next visit (no mid-session swap)
       } catch {
         // Fall back to hardcoded messages
       } finally {
@@ -551,6 +422,17 @@ export default function SummaryScreen() {
     });
     pruneNudges(user.id).catch(() => {});
   }, [user, visibleNotes, nudges, nudgesLoaded]);
+
+  // Snapshot cached AI messages on first render so the card text never swaps mid-session
+  if (aiSnapshotRef.current === "pending" && visibleNotes.length > 0 && typeof window !== "undefined") {
+    const todayStr = todayKey();
+    const snapshot: Record<string, string> = {};
+    visibleNotes.forEach((note) => {
+      const cached = localStorage.getItem(`wya_ai_nudge_${todayStr}_${note.type}`);
+      if (cached) snapshot[note.type] = cached;
+    });
+    aiSnapshotRef.current = snapshot;
+  }
 
   const weeklyVariant = (variants: string[]): string => {
     const week = Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000));
@@ -616,12 +498,16 @@ export default function SummaryScreen() {
         ]);
       case "calorie_high":
         if (goal === "lose") return weeklyVariant([
-          "Small consistent surpluses add up fast • even 150 kcal over target daily is over 1000 kcal across a week.",
-          "The pattern across the week matters more than any single day • small adjustments make the difference.",
+          "Small consistent surpluses add up fast. Even 150 kcal over target daily is over 1000 kcal across a week.",
+          "The pattern across the week matters more than any single day. Small adjustments make the difference.",
+        ]);
+        if (goal === "gain") return weeklyVariant([
+          "Being above target is fine for a gain goal, but too large a surplus can mean more fat gain than intended.",
+          "A moderate surplus is more effective than a big one when building. It's worth keeping an eye on the weekly trend.",
         ]);
         return weeklyVariant([
-          "It's the consistent weekly pattern that shapes results • day to day variation is normal.",
-          "Keeping an eye on the weekly trend is worth the habit • no single day matters that much.",
+          "It's the consistent weekly pattern that shapes results. Day to day variation is normal.",
+          "Keeping an eye on the weekly trend is worth the habit. No single day matters that much.",
         ]);
       case "workout_fuel_low":
       case "training_fuel_low":
@@ -640,23 +526,39 @@ export default function SummaryScreen() {
           "For longevity goals, micronutrient adequacy matters as much as macros • the research on consistent variety is strong.",
         ]);
         if (goal === "gain") return weeklyVariant([
-          "Micronutrients directly affect digestion, absorption, and recovery — all of which matter when you're trying to build.",
+          "Micronutrients affect digestion, absorption, and recovery. All three matter when you're trying to build.",
           "Consistent gaps here can limit how well your body uses the protein and calories you're already eating.",
         ]);
         if (goal === "lose") return weeklyVariant([
-          "Micronutrients help regulate energy and appetite — gaps make a deficit harder to sustain than it needs to be.",
-          "Getting variety while cutting is harder but worth it — micronutrient gaps often show up as low energy and cravings.",
+          "Micronutrients help regulate energy and appetite. Gaps make a deficit harder to sustain than it needs to be.",
+          "Getting variety while cutting is harder but worth it. Micronutrient gaps often show up as low energy and cravings.",
         ]);
         return weeklyVariant([
           "Micronutrients quietly shape energy, mood, and recovery • easy to overlook but worth addressing.",
           "When a nutrient shows up low consistently, it's usually a variety gap • easy to fix with a few regular additions.",
         ]);
       case "fat_low":
+        if (goal === "gain") return weeklyVariant([
+          "Fat supports hormone production and vitamin absorption, both of which matter when you're trying to build.",
+          "Healthy fats help your body use the protein and calories you're eating more effectively.",
+        ]);
+        if (goal === "lose") return weeklyVariant([
+          "Fat keeps you fuller and helps absorb fat-soluble vitamins. Even a small amount at each meal makes a difference.",
+          "Low fat isn't always better for a deficit. It can affect hormones, mood, and energy over time.",
+        ]);
         return weeklyVariant([
-          "Dietary fat supports hormone production, brain health, and vitamin absorption • it's not just about calories.",
+          "Dietary fat supports hormone production, brain health, and vitamin absorption. It's not just about calories.",
           "Healthy fats are essential for absorbing fat-soluble vitamins and keeping hormones balanced.",
         ]);
       case "on_track":
+        if (goal === "gain") return weeklyVariant([
+          "Consistent fueling is one of the less obvious parts of building. You're doing it right.",
+          "Staying in range week over week is what compounds into real progress when you're building.",
+        ]);
+        if (goal === "lose") return weeklyVariant([
+          "A sustainable deficit held consistently is more effective than aggressive cuts. You're doing that.",
+          "This kind of steady intake is what makes a deficit work over time without burnout.",
+        ]);
         return weeklyVariant([
           "Consistent logging is how patterns become clear. You're building real data here.",
           "Staying in range consistently is how real progress happens.",
@@ -727,6 +629,10 @@ export default function SummaryScreen() {
           "Adding something small and filling between meals tends to be the most sustainable fix.",
         ]);
       case "calorie_high":
+        if (goal === "gain") return weeklyVariant([
+          "Being above target occasionally is fine when building. Consider whether it's consistent enough to affect your goal.",
+          "A surplus is good for building, but a large or inconsistent one can make it harder to track progress. Keeping it steady matters.",
+        ]);
         if (goal === "lose") return weeklyVariant([
           "Shaving slightly off portions across a couple of meals tends to be more sustainable than cutting foods out.",
           "Small consistent adjustments beat big restrictions • slightly less at two or three meals a day adds up.",
@@ -748,11 +654,11 @@ export default function SummaryScreen() {
         ]);
       case "micronutrient":
         if (goal === "gain") return weeklyVariant([
-          "Try adding a food rich in this nutrient to a couple of your main meals — it fits naturally alongside higher-protein eating.",
-          "Work it into meals you're already eating rather than adding something new — easier to sustain when building.",
+          "Try adding a food rich in this nutrient to a couple of your main meals. It fits naturally alongside higher-protein eating.",
+          "Work it into meals you're already eating rather than adding something new. Easier to sustain when building.",
         ]);
         if (goal === "lose") return weeklyVariant([
-          "Look for low-calorie foods that are dense in this nutrient — leafy greens, legumes, and seeds tend to do a lot here.",
+          "Look for low-calorie foods that are dense in this nutrient. Leafy greens, legumes, and seeds tend to do a lot here.",
           "A few targeted additions a couple of times this week is usually enough to close the gap without disrupting your deficit.",
         ]);
         return weeklyVariant([
@@ -760,8 +666,16 @@ export default function SummaryScreen() {
           "Work it in a couple of times this week • gradual variety builds more naturally than big diet changes.",
         ]);
       case "fat_low":
+        if (goal === "gain") return weeklyVariant([
+          "Avocado, nuts, or olive oil added to a couple of meals each day is usually enough to close the gap.",
+          "Pairing fat with your protein meals makes both more effective. Easy to add without changing much.",
+        ]);
+        if (goal === "lose") return weeklyVariant([
+          "Small amounts of fat at meals help with satiety. A drizzle of olive oil or a handful of nuts goes a long way.",
+          "Try adding a modest fat source to one or two meals this week. It doesn't take much to make a difference.",
+        ]);
         return weeklyVariant([
-          "Try adding a source of healthy fat to a couple of meals • it doesn't need to be much to make a difference.",
+          "Try adding a source of healthy fat to a couple of meals. It doesn't need to be much to make a difference.",
           "Adding a small amount of healthy fat to meals helps absorb nutrients and keeps energy more stable.",
         ]);
       case "on_track":
@@ -966,7 +880,7 @@ export default function SummaryScreen() {
                   const showChips = behavioralChips.length > 0 || showFoodChips;
                   return (
                     <div key={nudge.type} className="rounded-xl border border-primary/60 bg-primary/5 px-4 py-3 space-y-2.5">
-                      <p className="text-sm font-medium text-ink/90">{(getAiMessage(nudge.type) ?? nudge.message).replace(/[.]+$/, "")}</p>
+                      <p className="text-sm font-medium text-ink/90">{((aiSnapshotRef.current !== "pending" ? aiSnapshotRef.current[nudge.type] : null) ?? nudge.message).replace(/[.]+$/, "")}</p>
                       {(why || action || showChips) && (
                         <div className="flex flex-wrap gap-1.5">
                           {why && (
