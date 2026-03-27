@@ -33,7 +33,7 @@ function UnlockTimeline({ milestones }: { milestones: MilestoneItem[] }) {
   return (
     <div className="mb-5">
       {/* Header row with "i" button */}
-      <div className="mb-3 flex items-center justify-end">
+      <div className="mb-1 flex items-center justify-end">
         <button
           className="flex h-4 w-4 items-center justify-center rounded-full border border-ink/20 focus:outline-none"
           onClick={() => setActiveTip(activeTip === "__info" ? null : "__info")}
