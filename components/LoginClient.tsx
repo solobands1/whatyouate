@@ -88,6 +88,7 @@ export default function LoginClient() {
       setStatus("Passwords do not match.");
       return;
     }
+    setSubmitting(true);
     const result = await signUpWithEmailPassword(email.trim(), password, {
       firstName: firstName.trim(),
       lastName: lastName.trim()
@@ -95,6 +96,7 @@ export default function LoginClient() {
     if (result.error) {
       console.error("SIGNUP ERROR:", result.error);
       setStatus(result.error);
+      setSubmitting(false);
       return;
     }
     setStatus("");
@@ -106,12 +108,15 @@ export default function LoginClient() {
       setStatus("Enter your email first.");
       return;
     }
+    setSubmitting(true);
     const result = await sendPasswordOtp(email.trim());
     if (result.error) {
       setStatus("Couldn’t send code. Try again.");
+      setSubmitting(false);
       return;
     }
     setStatus("Code sent. Check your email.");
+    setSubmitting(false);
     setMode("reset");
   };
 
@@ -121,14 +126,17 @@ export default function LoginClient() {
       setStatus("Passwords do not match.");
       return;
     }
+    setSubmitting(true);
     const verify = await verifyPasswordOtp(email.trim(), otpCode.trim());
     if (verify.error) {
       setStatus("Invalid code. Try again.");
+      setSubmitting(false);
       return;
     }
     const updated = await updatePassword(password);
     if (updated.error) {
       setStatus("Couldn’t update password.");
+      setSubmitting(false);
       return;
     }
     setStatus("");
@@ -319,10 +327,11 @@ export default function LoginClient() {
                 </button>
                 <button
                   type="button"
-                  className="w-full rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white"
+                  className="w-full rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
                   onClick={handleSignUp}
+                  disabled={submitting}
                 >
-                  Create account
+                  {submitting ? "Creating account…" : "Create account"}
                 </button>
               </div>
             </>
@@ -346,10 +355,11 @@ export default function LoginClient() {
               </div>
               <button
                 type="button"
-                className="mt-4 w-full rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white"
+                className="mt-4 w-full rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
                 onClick={handleSendCode}
+                disabled={submitting}
               >
-                Send code
+                {submitting ? "Sending…" : "Send code"}
               </button>
               <button
                 type="button"
@@ -423,10 +433,11 @@ export default function LoginClient() {
               </div>
               <button
                 type="button"
-                className="mt-4 w-full rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white"
+                className="mt-4 w-full rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
                 onClick={handleResetPassword}
+                disabled={submitting}
               >
-                Create new password
+                {submitting ? "Saving…" : "Create new password"}
               </button>
             </>
           )}

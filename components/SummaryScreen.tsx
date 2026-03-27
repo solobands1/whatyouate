@@ -35,7 +35,7 @@ function UnlockTimeline({ milestones }: { milestones: MilestoneItem[] }) {
       {/* Header row with "i" button */}
       <div className="mb-1 flex items-center justify-end">
         <button
-          className="flex h-4 w-4 items-center justify-center rounded-full border border-ink/20 focus:outline-none"
+          className="flex h-4 w-4 items-center justify-center rounded-full border border-ink/20 transition hover:border-ink/40 active:opacity-60 focus:outline-none"
           onClick={() => setActiveTip(activeTip === "__info" ? null : "__info")}
         >
           <span className="text-[9px] leading-none text-muted/50">i</span>
@@ -53,7 +53,7 @@ function UnlockTimeline({ milestones }: { milestones: MilestoneItem[] }) {
         {milestones.map((m) => (
           <button
             key={m.label}
-            className="relative z-10 flex flex-col items-center focus:outline-none"
+            className="relative z-10 flex flex-col items-center transition active:opacity-60 focus:outline-none"
             style={{ width: colWidth }}
             onClick={() => setActiveTip(activeTip === m.label ? null : m.label)}
           >
@@ -1086,7 +1086,7 @@ export default function SummaryScreen() {
               {visibleNudgeGroupCount < groupedNudges.filter((g) => g.label !== "Today").length && (
                 <button
                   type="button"
-                  className="mt-1 text-[11px] font-semibold text-ink/50 underline"
+                  className="mt-1 text-[11px] font-semibold text-ink/50 underline transition active:opacity-50"
                   onClick={() => setVisibleNudgeGroupCount((prev) => prev + 3)}
                 >
                   Show more

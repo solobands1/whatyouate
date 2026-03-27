@@ -1325,7 +1325,7 @@ export default function HomeScreen() {
               </button>
               <button
                 type="button"
-                className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90"
+                className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
                 onClick={handleConfirmDelete}
                 disabled={deletingItem}
               >
@@ -1453,7 +1453,7 @@ export default function HomeScreen() {
           )}
           <button
             type="button"
-            className="mt-2 flex items-center gap-1 text-left text-xs text-muted/70"
+            className="mt-2 flex items-center gap-1 text-left text-xs text-muted/70 transition active:opacity-60"
             onClick={() => setShowTargetInfo((v) => !v)}
           >
             <span>Suggested range<span className="text-muted/50">{!loadingData && mealCount === 0 ? " (preview)" : ""}</span>: {gentleTargetsDisplay.calories} kcal · {gentleTargetsDisplay.protein} g protein</span>
@@ -1668,7 +1668,7 @@ export default function HomeScreen() {
             {visibleGroupCount < groupedRecent.length && (
               <button
                 type="button"
-                className="mt-1 text-[11px] font-semibold text-ink/50 underline"
+                className="mt-1 text-[11px] font-semibold text-ink/50 underline transition active:opacity-50"
                 onClick={() => setVisibleGroupCount((prev) => prev + 3)}
               >
                 Show more
@@ -1706,8 +1706,9 @@ export default function HomeScreen() {
                   </button>
                   <button
                     type="button"
-                    className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90"
+                    className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
                     onClick={handleConfirmDelete}
+                    disabled={deletingItem}
                   >
                     {deletingItem ? "Deleting..." : "Delete"}
                   </button>
@@ -1781,7 +1782,7 @@ export default function HomeScreen() {
                     <div className="mt-5 flex items-center justify-between">
                       <button
                         type="button"
-                        className="text-xs text-ink/50 underline"
+                        className="text-xs text-ink/50 underline transition active:opacity-50"
                         onClick={() => { meals.clearManualTextCache(); meals.setManualResult(null); }}
                       >
                         Try again
@@ -1901,7 +1902,7 @@ export default function HomeScreen() {
                     </button>
                     <button
                       type="button"
-                      className={`rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 ${meals.updatingMeal ? "opacity-70" : ""}`}
+                      className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
                       onClick={meals.handleUpdateMeal}
                       disabled={meals.updatingMeal}
                     >
@@ -2001,8 +2002,9 @@ export default function HomeScreen() {
                   </button>
                   <button
                     type="button"
-                    className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90"
+                    className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
                     onClick={handleConfirmDelete}
+                    disabled={deletingItem}
                   >
                     {deletingItem ? "Deleting..." : "Delete"}
                   </button>
@@ -2515,7 +2517,7 @@ export default function HomeScreen() {
                         </div>
                         <button
                           type="button"
-                          className="ml-1 shrink-0 text-ink/30 hover:text-ink/60 transition text-base leading-none"
+                          className="ml-1 shrink-0 text-ink/30 hover:text-ink/60 active:scale-90 transition text-base leading-none"
                           onClick={(e) => { e.stopPropagation(); handleRemoveQuickAddItem(item); }}
                         >
                           ×
