@@ -1040,11 +1040,21 @@ export default function SummaryScreen() {
                         </div>
                       )}
                       {nudgeExpanded[nudge.type] === "why" && why && (
-                        <p className="text-xs text-ink/70">{why}</p>
+                        <div className="space-y-1">
+                          {why.split(" • ").map((part, i) => (
+                            <p key={i} className="text-xs text-ink/70">{part.trim()}</p>
+                          ))}
+                        </div>
                       )}
                       {nudgeExpanded[nudge.type] === "what" && (action || showChips) && (
                         <div className="space-y-2">
-                          {action && <p className="text-xs text-ink/70">{action}</p>}
+                          {action && (
+                            <div className="space-y-1">
+                              {action.split(" • ").map((part, i) => (
+                                <p key={i} className="text-xs text-ink/70">{part.trim()}</p>
+                              ))}
+                            </div>
+                          )}
                           {showChips && (
                             <div className="space-y-1.5">
                               {behavioralChips.length > 0 && (
