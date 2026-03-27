@@ -137,6 +137,43 @@ const _homeCache: {
 // Module-level guard — once home has loaded once, never show the splash again
 let _homeHasLoadedOnce = false;
 
+function todayDateStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+function minDateStr() {
+  const d = new Date();
+  d.setDate(d.getDate() - 14);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+function formatManualDate(dateStr: string) {
+  const d = new Date(dateStr + "T00:00:00");
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+function ManualDateRow({ manualDate, setManualDate }: { manualDate: string; setManualDate: (d: string) => void }) {
+  const isToday = manualDate === todayDateStr();
+  return (
+    <div className="relative mt-2.5 inline-flex items-center gap-1">
+      <svg className="h-3 w-3 shrink-0 text-ink/25" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <rect x="3" y="4" width="18" height="18" rx="2" />
+        <path d="M16 2v4M8 2v4M3 10h18" />
+      </svg>
+      <span className={`text-[11px] select-none ${isToday ? "text-ink/30" : "font-medium text-primary/80"}`}>
+        {isToday ? "Today" : formatManualDate(manualDate)}
+      </span>
+      <input
+        type="date"
+        className="absolute inset-0 cursor-pointer opacity-0"
+        value={manualDate}
+        max={todayDateStr()}
+        min={minDateStr()}
+        onChange={(e) => { if (e.target.value) setManualDate(e.target.value); }}
+      />
+    </div>
+  );
+}
+
 export default function HomeScreen() {
   const router = useRouter();
   const { user, loading } = useAuth();
@@ -1671,6 +1708,7 @@ export default function HomeScreen() {
                         onKeyDown={(e) => { if (e.key === "Enter") meals.analyzeManualText(); }}
                       />
                     </div>
+                    <ManualDateRow manualDate={meals.manualDate} setManualDate={meals.setManualDate} />
                     {meals.manualError && (
                       <p className="mt-3 text-xs text-red-500">{meals.manualError}</p>
                     )}
@@ -1718,6 +1756,7 @@ export default function HomeScreen() {
                         ))}
                       </div>
                     </div>
+                    <ManualDateRow manualDate={meals.manualDate} setManualDate={meals.setManualDate} />
                     <div className="mt-5 flex items-center justify-between">
                       <button
                         type="button"

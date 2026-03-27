@@ -3,7 +3,7 @@
 import { useCallback, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import type { MealAnalysis, MealLog } from "../lib/types";
-import { addMeal, listMeals, updateMeal } from "../lib/supabaseDb";
+import { addMeal, listMeals, updateMeal, updateMealTs } from "../lib/supabaseDb";
 import { safeFallbackAnalysis } from "../lib/ai/schema";
 import { getFoodTextEntry, setFoodTextEntry, deleteFoodTextEntry, incrementFoodTextLogCount, seedTextCacheFromMeals } from "../lib/foodCache";
 
@@ -30,6 +30,10 @@ export function useMeals(
   const [manualResult, setManualResult] = useState<MealAnalysis | null>(null);
   const [manualPortion, setManualPortion] = useState<"small" | "medium" | "large">("medium");
   const [manualError, setManualError] = useState<string | null>(null);
+  const [manualDate, setManualDate] = useState<string>(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  });
 
   const load = useCallback(async (userId: string) => {
     const mealsData = await listMeals(userId, 100);
@@ -52,6 +56,8 @@ export function useMeals(
     setManualResult(null);
     setManualPortion("medium");
     setManualError(null);
+    const d = new Date();
+    setManualDate(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`);
     setEditForm({ name: "", calories: "", protein: "", carbs: "", fat: "" });
     setEditingMeal({
       id: "",
@@ -155,6 +161,14 @@ export function useMeals(
         }
       };
       const created = await addMeal(user.id, scaledAnalysis as any);
+      const today = new Date();
+      const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+      if (manualDate !== todayStr) {
+        const d = new Date(manualDate + "T12:00:00");
+        if (d.getTime() < Date.now()) {
+          await updateMealTs(created.id, d.getTime()).catch(() => {});
+        }
+      }
       await updateMeal(created.id, scaledAnalysis as any, { userCorrection: manualResult.name }, user.id);
       // Fire OFF enrichment in background — no Claude call, just database lookup
       fetch("/api/analyze-food", {
@@ -278,6 +292,8 @@ export function useMeals(
     analyzeManualText,
     clearManualTextCache,
     confirmManualMeal,
+    manualDate,
+    setManualDate,
     openMealEditor,
     handleUpdateMeal,
   };
