@@ -183,12 +183,13 @@ export function useMeals(
       if (normalizedAiName && normalizedAiName !== normalizedInput) {
         incrementFoodTextLogCount(normalizedAiName);
       }
+      // Optimistic local update — add the new meal to state immediately
+      setMeals((prev) => [{ ...created, analysisJson: scaledAnalysis as any, userCorrection: manualResult.name, status: "done" as const }, ...prev]);
       setManualText("");
       setManualResult(null);
       setManualPortion("medium");
       setEditingMeal(null);
       setEditRecents(false);
-      await load(user.id);
     } catch (err) {
       console.error("Manual meal save failed", err);
     } finally {
@@ -242,9 +243,16 @@ export function useMeals(
 
       await updateMeal(editingMeal.id, updatedAnalysis as any, { userCorrection: editForm.name }, user?.id);
 
+      // Optimistic local update — no need to refetch all meals
+      setMeals((prev) =>
+        prev.map((m) =>
+          m.id === editingMeal.id
+            ? { ...m, analysisJson: updatedAnalysis, calories: calories ?? undefined, protein: protein ?? undefined, carbs: carbs ?? undefined, fat: fat ?? undefined, userCorrection: editForm.name }
+            : m
+        )
+      );
       setEditingMeal(null);
       setEditRecents(false);
-      await load(user.id);
     } catch (err) {
       console.error("Meal update failed", err);
     } finally {
