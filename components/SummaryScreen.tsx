@@ -707,6 +707,14 @@ export default function SummaryScreen() {
           "Micronutrients are especially relevant for long-term health outcomes • consistently low levels compound over years, not just days.",
           "For longevity goals, micronutrient adequacy matters as much as macros • the research on consistent variety is strong.",
         ]);
+        if (goal === "gain") return weeklyVariant([
+          "Micronutrients directly affect digestion, absorption, and recovery — all of which matter when you're trying to build.",
+          "Consistent gaps here can limit how well your body uses the protein and calories you're already eating.",
+        ]);
+        if (goal === "lose") return weeklyVariant([
+          "Micronutrients help regulate energy and appetite — gaps make a deficit harder to sustain than it needs to be.",
+          "Getting variety while cutting is harder but worth it — micronutrient gaps often show up as low energy and cravings.",
+        ]);
         return weeklyVariant([
           "Micronutrients quietly shape energy, mood, and recovery • easy to overlook but worth addressing.",
           "When a nutrient shows up low consistently, it's usually a variety gap • easy to fix with a few regular additions.",
@@ -807,6 +815,14 @@ export default function SummaryScreen() {
           "Try logging sessions as you go • it shifts your intake targets to match what your body is actually doing.",
         ]);
       case "micronutrient":
+        if (goal === "gain") return weeklyVariant([
+          "Try adding a food rich in this nutrient to a couple of your main meals — it fits naturally alongside higher-protein eating.",
+          "Work it into meals you're already eating rather than adding something new — easier to sustain when building.",
+        ]);
+        if (goal === "lose") return weeklyVariant([
+          "Look for low-calorie foods that are dense in this nutrient — leafy greens, legumes, and seeds tend to do a lot here.",
+          "A few targeted additions a couple of times this week is usually enough to close the gap without disrupting your deficit.",
+        ]);
         return weeklyVariant([
           "Try adding a food rich in this nutrient a few times this week • small consistent additions tend to stick best.",
           "Work it in a couple of times this week • gradual variety builds more naturally than big diet changes.",
