@@ -90,7 +90,7 @@ export default function SummaryScreen() {
   const [visibleNudgeGroupCount, setVisibleNudgeGroupCount] = useState(3);
   const [nudgeExpanded, setNudgeExpanded] = useState<Record<string, "why" | "what" | null>>({});
   const [aiMessageVersion, setAiMessageVersion] = useState(0);
-  const aiNudgeFetchedRef = useRef(false);
+  const aiNudgeFetchedRef = useRef<Set<string>>(new Set());
   const getAiMessage = (nudgeType: string): string | null => {
     if (typeof window === "undefined") return null;
     return localStorage.getItem(`wya_ai_nudge_${todayKey()}_${nudgeType}`);
@@ -550,14 +550,16 @@ export default function SummaryScreen() {
 
   // Fetch AI nudge messages — one batched request for all missing types
   useEffect(() => {
-    if (visibleNotes.length === 0 || !profile || aiNudgeFetchedRef.current) return;
-    aiNudgeFetchedRef.current = true;
+    if (visibleNotes.length === 0 || !profile) return;
     const todayStr = todayKey();
 
     const missing = visibleNotes.filter(
-      (note) => !localStorage.getItem(`wya_ai_nudge_${todayStr}_${note.type}`)
+      (note) =>
+        !localStorage.getItem(`wya_ai_nudge_${todayStr}_${note.type}`) &&
+        !aiNudgeFetchedRef.current.has(note.type)
     );
     if (missing.length === 0) return;
+    missing.forEach((n) => aiNudgeFetchedRef.current.add(n.type));
 
     const delayId = setTimeout(async () => {
       const controller = new AbortController();
@@ -1107,7 +1109,7 @@ export default function SummaryScreen() {
                       key={nudge.id ?? nudge.message}
                       className="rounded-lg bg-ink/5 px-3 py-2 text-xs text-muted/70"
                     >
-                      {nudge.message.replace(/[.]+$/, "")}
+                      {nudge.message.replace(/ • /g, ". ").replace(/[.]+$/, "")}
                     </div>
                   ))}
                 </div>

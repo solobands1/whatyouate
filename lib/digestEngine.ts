@@ -354,8 +354,6 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
     loggedDays.map((d) => d.totals.fat_g_min),
     loggedDays.map((d) => d.totals.fat_g_max)
   );
-  const todayTotals = summarizeDay(meals);
-
   type ScoredNudge = { message: string; priority: number; type: NudgeType; data: NudgeData };
   const nudges: ScoredNudge[] = [];
   const focus = (profile?.freeformFocus ?? profile?.bodyPriority ?? "").toLowerCase();
