@@ -1,0 +1,124 @@
+"use client";
+
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import type { MealLog, UserProfile, WorkoutSession } from "../lib/types";
+import { useAuth } from "./AuthProvider";
+import { getProfile, listMeals, listWorkouts, updateMeal } from "../lib/supabaseDb";
+import { MEALS_UPDATED_EVENT, PROFILE_UPDATED_EVENT, WORKOUTS_UPDATED_EVENT } from "../lib/dataEvents";
+import { safeFallbackAnalysis } from "../lib/ai/schema";
+import { seedTextCacheFromMeals } from "../lib/foodCache";
+
+// Module-level flag so AuthGate can check data has loaded at least once
+// (survives client-side navigation, resets on full page reload)
+export let _dataEverLoaded = false;
+
+type AppDataContextValue = {
+  profile: UserProfile | null;
+  meals: MealLog[];
+  workouts: WorkoutSession[];
+  loading: boolean;
+  setMeals: React.Dispatch<React.SetStateAction<MealLog[]>>;
+  setWorkouts: React.Dispatch<React.SetStateAction<WorkoutSession[]>>;
+  setProfile: React.Dispatch<React.SetStateAction<UserProfile | null>>;
+  reload: () => void;
+};
+
+const AppDataContext = createContext<AppDataContextValue | undefined>(undefined);
+
+export function AppDataProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [meals, setMeals] = useState<MealLog[]>([]);
+  const [workouts, setWorkouts] = useState<WorkoutSession[]>([]);
+  const [loading, setLoading] = useState(true);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
+
+  const load = useCallback(async (userId: string, isInitial = false) => {
+    try {
+      const [profileData, mealsData, workoutsData] = await Promise.all([
+        getProfile(userId),
+        listMeals(userId, 200),
+        listWorkouts(userId, 50),
+      ]);
+      if (!mountedRef.current) return;
+
+      // Seed quick-add text cache from history in case localStorage was cleared
+      seedTextCacheFromMeals(mealsData);
+
+      // Recover meals stuck in "processing" (e.g. tab closed mid-analysis)
+      const STUCK_MS = 5 * 60 * 1000;
+      const now = Date.now();
+      const stuck = mealsData.filter(
+        (m) => m.status === "processing" && now - m.ts > STUCK_MS
+      );
+      let finalMeals = mealsData;
+      if (stuck.length > 0) {
+        await Promise.all(
+          stuck.map((m) =>
+            updateMeal(m.id, safeFallbackAnalysis(), undefined, userId, "failed").catch(() => {})
+          )
+        );
+        const refreshed = await listMeals(userId, 200);
+        if (mountedRef.current) finalMeals = refreshed;
+      }
+
+      if (!mountedRef.current) return;
+      setProfile(profileData ?? null);
+      setMeals(finalMeals);
+      setWorkouts(workoutsData);
+    } catch {
+      // silently fail — screens handle empty state gracefully
+    } finally {
+      if (mountedRef.current && isInitial) {
+        _dataEverLoaded = true;
+        setLoading(false);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    load(user.id, true);
+  }, [user, load]);
+
+  useEffect(() => {
+    if (!user) return;
+    // Background refresh — no loading spinner, just update state silently
+    const handler = () => load(user.id, false);
+    window.addEventListener(MEALS_UPDATED_EVENT, handler);
+    window.addEventListener(WORKOUTS_UPDATED_EVENT, handler);
+    window.addEventListener(PROFILE_UPDATED_EVENT, handler);
+    return () => {
+      window.removeEventListener(MEALS_UPDATED_EVENT, handler);
+      window.removeEventListener(WORKOUTS_UPDATED_EVENT, handler);
+      window.removeEventListener(PROFILE_UPDATED_EVENT, handler);
+    };
+  }, [user, load]);
+
+  const reload = useCallback(() => {
+    if (user) load(user.id, false);
+  }, [user, load]);
+
+  return (
+    <AppDataContext.Provider
+      value={{ profile, meals, workouts, loading, setMeals, setWorkouts, setProfile, reload }}
+    >
+      {children}
+    </AppDataContext.Provider>
+  );
+}
+
+export function useAppData() {
+  const ctx = useContext(AppDataContext);
+  if (!ctx) throw new Error("useAppData must be used within AppDataProvider");
+  return ctx;
+}

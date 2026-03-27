@@ -6,7 +6,6 @@ import Joyride, { CallBackProps, STATUS, type Step } from "react-joyride";
 import { useRouter } from "next/navigation";
 import type { MealLog, UserProfile, WorkoutSession } from "../lib/types";
 import {
-  MEALS_UPDATED_EVENT,
   PROFILE_UPDATED_EVENT,
   notifyMealsUpdated,
   notifyWorkoutsUpdated
@@ -17,15 +16,13 @@ import "../lib/mealQueue";
 import BarcodeScannerOverlay from "./BarcodeScannerOverlay";
 import { getFoodCacheEntry, setFoodCacheEntry, deleteFoodCacheEntry, deleteFoodTextEntry, incrementFoodCacheLogCount, incrementFoodTextLogCount, getQuickAddItems, getDailySupplements, setDailySupplements, hasDailySuppsLoggedToday, markDailySuppsLoggedToday, type QuickAddItem } from "../lib/foodCache";
 import BottomNav from "./BottomNav";
-import SplashScreen from "./SplashScreen";
 import Card from "./Card";
 import { useAuth } from "./AuthProvider";
+import { useAppData } from "./AppDataProvider";
 import {
   addMeal,
-  clearMealsCache,
   deleteMeal,
   deleteWorkout,
-  getProfile,
   updateMeal,
   updateMealTs,
 } from "../lib/supabaseDb";
@@ -127,15 +124,6 @@ function makeDemoWorkouts(): WorkoutSession[] {
 }
 
 // Module-level cache — survives navigation, resets on full page reload
-const _homeCache: {
-  userId?: string;
-  profile?: UserProfile | null;
-  profileLoaded: boolean;
-  meals: MealLog[];
-  workouts: WorkoutSession[];
-} = { profileLoaded: false, meals: [], workouts: [] };
-// Module-level guard — once home has loaded once, never show the splash again
-let _homeHasLoadedOnce = false;
 
 function todayDateStr() {
   const d = new Date();
@@ -182,16 +170,14 @@ function ManualDateRow({ manualDate, setManualDate }: { manualDate: string; setM
 export default function HomeScreen() {
   const router = useRouter();
   const { user, loading } = useAuth();
+  const { profile: ctxProfile, meals: ctxMeals, workouts: ctxWorkouts, loading: dataLoading, reload } = useAppData();
 
-  const [profile, setProfile] = useState<UserProfile | undefined>(() =>
-    _homeCache.profile ?? undefined
-  );
+  const [profile, setProfile] = useState<UserProfile | undefined>(undefined);
   const [runTour, setRunTour] = useState(false);
   const [showTourGate, setShowTourGate] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [demoData] = useState(() => ({ meals: makeDemoMeals(), workouts: makeDemoWorkouts() }));
-  const [loadingData, setLoadingData] = useState(() => !_homeCache.profileLoaded);
-  const [, setSessionTick] = useState(0);
+  const loadingData = dataLoading;
   const [loadError, setLoadError] = useState<string | null>(null);
   const [barcodeOpen, setBarcodeOpen] = useState(false);
   const [barcodeNotFound, setBarcodeNotFound] = useState(false);
@@ -240,8 +226,8 @@ export default function HomeScreen() {
 
   const onError = useCallback((msg: string) => setLoadError(msg), []);
 
-  const workout = useWorkout(user, onError, setEditRecents, _homeCache.workouts);
-  const meals = useMeals(user, onError, setEditRecents, _homeCache.meals);
+  const workout = useWorkout(user, onError, setEditRecents, []);
+  const meals = useMeals(user, onError, setEditRecents, []);
 
   const handleOpenQuickAdd = () => {
     setQuickAddItems(getQuickAddItems());
@@ -338,72 +324,35 @@ export default function HomeScreen() {
     });
   };
 
-  const loadData = useCallback(async () => {
-    if (!user) return;
-    if (!_homeCache.profileLoaded) {
-      // Mark loaded before any await so future mounts never show splash,
-      // even if this fetch errors or the component unmounts mid-load.
-      _homeCache.profileLoaded = true;
-      try { sessionStorage.setItem("_homeProfileLoaded", "1"); } catch {}
-      setLoadingData(true);
+  // Sync from shared context → local hook states
+  useEffect(() => {
+    setProfile(ctxProfile ?? undefined);
+    // Restore daily supplements from profile if localStorage was cleared
+    if (ctxProfile?.dailySupplements?.length && user && !getDailySupplements(user.id).length) {
+      setDailySupplements(user.id, ctxProfile.dailySupplements);
     }
-    setLoadError(null);
-    try {
-      const [profileData] = await Promise.all([
-        getProfile(user.id),
-        workout.load(user.id),
-        meals.load(user.id),
-      ]);
-      // Set profile cache before mountedRef check so it persists even if component unmounted mid-fetch
-      _homeCache.profile = profileData ?? null;
-      // Restore daily supplements from Supabase if localStorage was cleared
-      if (profileData?.dailySupplements?.length && !getDailySupplements(user.id).length) {
-        setDailySupplements(user.id, profileData.dailySupplements);
-      }
-      if (!mountedRef.current) return;
-      setProfile(profileData ?? undefined);
-      // Backfill the daily-supp localStorage guard from DB so PWA updates don't double-log
-      if (!hasDailySuppsLoggedToday(user.id)) {
-        const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
-        const suppAlreadyToday = meals.meals.some(
-          (m) => m.analysisJson?.source === "supplement" && m.ts >= todayStart.getTime()
-        );
-        if (suppAlreadyToday) markDailySuppsLoggedToday(user.id);
-      }
-    } catch (err) {
-      console.error("[loadData] failed:", err);
-      setLoadError(err instanceof Error ? err.message : "Failed to load data");
-    } finally {
-      if (mountedRef.current) {
-        _homeHasLoadedOnce = true;
-        try { sessionStorage.setItem("_homeHasLoadedOnce", "1"); } catch {}
-        setLoadingData(false);
+    // Backfill daily-supp guard from DB so PWA restores don't double-log
+    if (user && ctxMeals.length > 0 && !hasDailySuppsLoggedToday(user.id)) {
+      const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+      if (ctxMeals.some((m) => m.analysisJson?.source === "supplement" && m.ts >= todayStart.getTime())) {
+        markDailySuppsLoggedToday(user.id);
       }
     }
-  }, [user, workout.load, meals.load]);
+  }, [ctxProfile, ctxMeals, user]);
+
+  useEffect(() => {
+    meals.setMeals(ctxMeals);
+  }, [ctxMeals]);
+
+  useEffect(() => {
+    workout.setWorkouts(ctxWorkouts);
+  }, [ctxWorkouts]);
 
   useEffect(() => {
     if (loadingData) { setBarsReady(false); return; }
     const t = setTimeout(() => setBarsReady(true), 60);
     return () => clearTimeout(t);
   }, [loadingData]);
-
-  // Restore session flags from sessionStorage after mount — avoids SSR/hydration mismatch
-  useEffect(() => {
-    if (!_homeCache.profileLoaded && sessionStorage.getItem("_homeProfileLoaded") === "1") {
-      _homeCache.profileLoaded = true;
-      _homeHasLoadedOnce = sessionStorage.getItem("_homeHasLoadedOnce") === "1";
-      setSessionTick((t) => t + 1);
-    }
-  }, []);
-
-  // Keep module-level cache warm so navigation back is instant
-  useEffect(() => {
-    if (!loadingData && meals.meals.length > 0) _homeCache.meals = meals.meals;
-  }, [meals.meals, loadingData]);
-  useEffect(() => {
-    if (!loadingData) _homeCache.workouts = workout.workouts;
-  }, [workout.workouts, loadingData]);
 
 
 
@@ -688,11 +637,6 @@ export default function HomeScreen() {
     }
   }, [loading, user, router]);
 
-  useEffect(() => {
-    if (!user) return;
-    loadData();
-  }, [user, loadData]);
-
   // Auto-log daily supplements once per calendar day, silently
   useEffect(() => {
     if (!user || loadingData) return;
@@ -744,30 +688,13 @@ export default function HomeScreen() {
   }, []);
 
   useEffect(() => {
-    const handler = () => loadData();
-    window.addEventListener(PROFILE_UPDATED_EVENT, handler as EventListener);
-    return () => window.removeEventListener(PROFILE_UPDATED_EVENT, handler as EventListener);
-  }, [user, loadData]);
-
-  useEffect(() => {
-    const handler = () => {
-      if (!user) return;
-      clearMealsCache(user.id);
-      meals.load(user.id);
-    };
-    window.addEventListener(MEALS_UPDATED_EVENT, handler as EventListener);
-    return () => window.removeEventListener(MEALS_UPDATED_EVENT, handler as EventListener);
-  }, [user, meals.load]);
-
-  useEffect(() => {
     const handler = (e: Event) => {
       const mealId = (e as CustomEvent<string>).detail;
-      clearMealsCache(user?.id);
       if (mealId) setPendingQuickConfirmId(mealId);
     };
     window.addEventListener("meal-analysis-complete", handler);
     return () => window.removeEventListener("meal-analysis-complete", handler);
-  }, [user]);
+  }, []);
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -820,7 +747,7 @@ export default function HomeScreen() {
             window.clearTimeout(realtimeRefreshRef.current);
           }
           realtimeRefreshRef.current = window.setTimeout(() => {
-            loadData();
+            reload();
           }, 250);
         }
       )
@@ -833,7 +760,7 @@ export default function HomeScreen() {
       }
       supabase.removeChannel(channel);
     };
-  }, [user, loadData]);
+  }, [user, reload]);
 
   useEffect(() => {
     document.body.style.overflow = showQuickAdd ? "hidden" : "";
@@ -842,8 +769,8 @@ export default function HomeScreen() {
 
   // When a meal is still processing, the "Analyzing food…" label is time-gated
   // at render time (< 90s shows spinner text, >= 90s shows "Analysis failed").
-  // React won't re-render from time alone, so schedule a loadData() call at the
-  // moment each young processing meal crosses the 90s threshold.
+  // React won't re-render from time alone, so schedule a reload at the moment
+  // each young processing meal crosses the 90s threshold.
   useEffect(() => {
     const processingMeals = meals.meals.filter((m) => m.status === "processing");
     if (!processingMeals.length) return;
@@ -854,9 +781,9 @@ export default function HomeScreen() {
       .filter((d) => d > 0);
     if (!delays.length) return;
     const earliest = Math.min(...delays);
-    const timer = window.setTimeout(() => loadData(), earliest + 50);
+    const timer = window.setTimeout(() => reload(), earliest + 50);
     return () => window.clearTimeout(timer);
-  }, [meals.meals, loadData]);
+  }, [meals.meals, reload]);
 
   useEffect(() => {
     if (!user) return;
@@ -1091,10 +1018,6 @@ export default function HomeScreen() {
       router.push("/summary");
     }
   };
-
-  if (loadingData && !_homeHasLoadedOnce) {
-    return <SplashScreen />;
-  }
 
   return (
     <div className="min-h-screen bg-surface">

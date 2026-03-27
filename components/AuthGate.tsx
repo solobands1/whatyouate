@@ -3,33 +3,35 @@
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { useAuth } from "./AuthProvider";
+import { useAppData } from "./AppDataProvider";
 import SplashScreen from "./SplashScreen";
 
-// Once auth resolves once, never show the splash again for this session —
-// prevents any brief loading=true flicker (token refresh, auth events, etc.)
-// from showing the full-screen splash during navigation.
-// Backed by sessionStorage so page reloads (e.g. minimize/restore on mobile) don't reset it.
-// NOTE: sessionStorage is read in useEffect (not render) to avoid SSR/hydration mismatches.
-let _authResolved = false;
+// Once the app is fully ready (auth + data), never show the splash again this
+// session — prevents any auth event flicker from re-showing the full-screen splash.
+// Backed by sessionStorage so PWA wake-ups (minimize/restore) also skip it.
+let _appReady = false;
 
 export default function AuthGate({ children }: { children: ReactNode }) {
-  const { loading } = useAuth();
+  const { loading: authLoading, user } = useAuth();
+  const { loading: dataLoading } = useAppData();
   const [, setTick] = useState(0);
 
   // Restore from sessionStorage after mount — avoids SSR/client hydration mismatch
   useEffect(() => {
-    if (!_authResolved && sessionStorage.getItem("_authResolved") === "1") {
-      _authResolved = true;
+    if (!_appReady && sessionStorage.getItem("_appReady") === "1") {
+      _appReady = true;
       setTick((t) => t + 1);
     }
   }, []);
 
-  if (!loading) {
-    _authResolved = true;
-    try { sessionStorage.setItem("_authResolved", "1"); } catch {}
+  // Mark ready when both auth and data have resolved
+  const fullyLoaded = !authLoading && (!user || !dataLoading);
+  if (fullyLoaded && !_appReady) {
+    _appReady = true;
+    try { sessionStorage.setItem("_appReady", "1"); } catch {}
   }
 
-  if (!_authResolved) {
+  if (!_appReady) {
     return <SplashScreen />;
   }
 

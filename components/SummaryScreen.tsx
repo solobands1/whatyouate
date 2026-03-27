@@ -1,26 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Joyride, { CallBackProps, STATUS, type Step } from "react-joyride";
 import { useRouter } from "next/navigation";
-import type { MealLog, UserProfile, WorkoutSession } from "../lib/types";
 import { dayKeyFromTs, formatApprox, formatDateShort, todayKey } from "../lib/utils";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
 import { useAuth } from "./AuthProvider";
-import { addNudge, getProfile, listMeals, listNudges, listWorkouts, LOCAL_MODE, pruneNudges } from "../lib/supabaseDb";
+import { useAppData } from "./AppDataProvider";
+import { addNudge, listNudges, pruneNudges } from "../lib/supabaseDb";
 import { computeNudges, computeSummaryMarkers, type ComputedNudge } from "../lib/digestEngine";
-import { MEALS_UPDATED_EVENT, PROFILE_UPDATED_EVENT, WORKOUTS_UPDATED_EVENT } from "../lib/dataEvents";
-import { supabase } from "../lib/supabaseClient";
 
-// Module-level cache — survives navigation, resets on full page reload
-const _summaryCache: {
-  profile?: UserProfile;
-  meals?: MealLog[];
-  workouts?: WorkoutSession[];
-  nudges?: Array<{ id: string; message: string; created_at: string }>;
-  mealsLoaded: boolean;
-} = { mealsLoaded: false };
 
 type MilestoneItem = { label: string; sub: string; desc: string; unlocked: boolean };
 
@@ -76,15 +66,12 @@ function UnlockTimeline({ milestones }: { milestones: MilestoneItem[] }) {
 export default function SummaryScreen() {
   const router = useRouter();
   const { user, loading } = useAuth();
-  const [profile, setProfile] = useState<UserProfile | undefined>(() => _summaryCache.profile);
-  const [meals, setMeals] = useState<MealLog[]>(() => _summaryCache.meals ?? []);
-  const [workouts, setWorkouts] = useState<WorkoutSession[]>(() => _summaryCache.workouts ?? []);
+  const { profile, meals, workouts, loading: loadingData } = useAppData();
   const [hydrated, setHydrated] = useState(false);
-  const [nudges, setNudges] = useState<Array<{ id: string; message: string; created_at: string }>>(() => _summaryCache.nudges ?? []);
-  const nudgesLoadedRef = useRef(!!_summaryCache.nudges);
-  const [nudgesLoaded, setNudgesLoaded] = useState(!!_summaryCache.nudges);
+  const [nudges, setNudges] = useState<Array<{ id: string; message: string; created_at: string }>>([]);
+  const nudgesLoadedRef = useRef(false);
+  const [nudgesLoaded, setNudgesLoaded] = useState(false);
   const savedThisSessionRef = useRef<Set<string>>(new Set());
-  const [loadingData, setLoadingData] = useState(() => !_summaryCache.mealsLoaded);
   const mountedRef = useRef(true);
   const [runSummaryTour, setRunSummaryTour] = useState(false);
   const [visibleNudgeGroupCount, setVisibleNudgeGroupCount] = useState(3);
@@ -125,64 +112,22 @@ export default function SummaryScreen() {
     }
   }, [loading, user, router]);
 
-  const loadData = useCallback(() => {
-    if (!user) return;
-    if (!_summaryCache.mealsLoaded) {
-      _summaryCache.mealsLoaded = true;
-      setLoadingData(true);
-    }
-
-    const applyData = (profileData: UserProfile | null, mealsData: MealLog[], workoutsData: WorkoutSession[]) => {
-      _summaryCache.profile = profileData ?? undefined;
-      _summaryCache.meals = mealsData;
-      _summaryCache.workouts = workoutsData;
-      if (!mountedRef.current) return;
-      setProfile(profileData ?? undefined);
-      setMeals(mealsData);
-      setWorkouts(workoutsData);
-      setLoadingData(false);
-    };
-
-    if (LOCAL_MODE) {
-      Promise.all([getProfile(user.id), listMeals(user.id, 200), listWorkouts(user.id, 50)])
-        .then(([p, m, w]) => applyData(p, m, w))
-        .catch(() => { if (mountedRef.current) setLoadingData(false); });
-    } else {
-      supabase.auth
-        .getSession()
-        .then(({ data: sessionData }) => {
-          if (!sessionData.session) {
-            return supabase.auth.refreshSession().then((refreshed) =>
-              refreshed.data.session ? true : null
-            );
-          }
-          return true;
-        })
-        .then((ok) => ok ? Promise.all([getProfile(user.id), listMeals(user.id, 200), listWorkouts(user.id, 50)]) : null)
-        .then((result) => { if (result) applyData(result[0], result[1], result[2]); })
-        .catch(() => { if (mountedRef.current) setLoadingData(false); });
-    }
-
+  // Load nudges on mount (summary-specific, not in shared context)
+  useEffect(() => {
+    if (!user || nudgesLoadedRef.current) return;
+    nudgesLoadedRef.current = true;
     listNudges(user.id, 100)
       .then((nudgesData) => {
         if (!mountedRef.current) return;
-        _summaryCache.nudges = nudgesData as any;
         setNudges(nudgesData as any);
-        nudgesLoadedRef.current = true;
         setNudgesLoaded(true);
       })
       .catch(() => {
         if (!mountedRef.current) return;
         setNudges([]);
-        nudgesLoadedRef.current = true;
         setNudgesLoaded(true);
       });
   }, [user]);
-
-  useEffect(() => {
-    if (!user) return;
-    loadData();
-  }, [user, loadData]);
 
   useEffect(() => {
     if (!user) return;
@@ -195,31 +140,18 @@ export default function SummaryScreen() {
   }, [user]);
 
   useEffect(() => {
-    if (!user) return;
-    const handler = () => loadData();
-    window.addEventListener(MEALS_UPDATED_EVENT, handler as EventListener);
-    window.addEventListener(WORKOUTS_UPDATED_EVENT, handler as EventListener);
-    window.addEventListener(PROFILE_UPDATED_EVENT, handler as EventListener);
-    return () => {
-      window.removeEventListener(MEALS_UPDATED_EVENT, handler as EventListener);
-      window.removeEventListener(WORKOUTS_UPDATED_EVENT, handler as EventListener);
-      window.removeEventListener(PROFILE_UPDATED_EVENT, handler as EventListener);
-    };
-  }, [user, loadData]);
-
-  useEffect(() => {
     setHydrated(true);
   }, []);
 
 
   const summaryMarkers = useMemo(
-    () => computeSummaryMarkers(meals, workouts, profile),
+    () => computeSummaryMarkers(meals, workouts, profile ?? undefined),
     [meals, workouts, profile]
   );
   const formatClean = (min: number, max: number, unit = "") =>
     formatApprox(min, max, unit).replace(/^~/, "");
   const visibleNotes = useMemo(
-    () => computeNudges(meals, workouts, profile),
+    () => computeNudges(meals, workouts, profile ?? undefined),
     [meals, workouts, profile]
   );
   const dayCount = summaryMarkers.dayCount;
