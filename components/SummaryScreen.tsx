@@ -88,6 +88,7 @@ export default function SummaryScreen() {
   const mountedRef = useRef(true);
   const [runSummaryTour, setRunSummaryTour] = useState(false);
   const [visibleNudgeGroupCount, setVisibleNudgeGroupCount] = useState(3);
+  const [nudgeExpanded, setNudgeExpanded] = useState<Record<string, "why" | "what" | null>>({});
   const [aiMessageVersion, setAiMessageVersion] = useState(0);
   const aiNudgeFetchedRef = useRef(false);
   const getAiMessage = (nudgeType: string): string | null => {
@@ -1016,18 +1017,36 @@ export default function SummaryScreen() {
                   return (
                     <div key={nudge.type} className="rounded-xl border border-primary/60 bg-primary/5 px-4 py-3 space-y-2.5">
                       <p className="text-sm font-medium text-ink/90">{(getAiMessage(nudge.type) ?? nudge.message).replace(/[.]+$/, "")}</p>
-                      {why && (
-                        <div>
-                          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted/50 mb-0.5">{nudge.type === "on_track" ? "Keep it up" : "Why"}</p>
-                          <p className="text-xs text-ink/70">{why}</p>
+                      {(why || action || showChips) && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {why && (
+                            <button
+                              type="button"
+                              className={`rounded-full border px-2.5 py-0.5 text-[11px] font-medium transition active:opacity-60 ${nudgeExpanded[nudge.type] === "why" ? "border-primary/40 bg-primary/10 text-primary/80" : "border-ink/15 text-ink/55"}`}
+                              onClick={() => setNudgeExpanded((prev) => ({ ...prev, [nudge.type]: prev[nudge.type] === "why" ? null : "why" }))}
+                            >
+                              {nudge.type === "on_track" ? "Keep it up" : "Why?"}
+                            </button>
+                          )}
+                          {(action || showChips) && (
+                            <button
+                              type="button"
+                              className={`rounded-full border px-2.5 py-0.5 text-[11px] font-medium transition active:opacity-60 ${nudgeExpanded[nudge.type] === "what" ? "border-primary/40 bg-primary/10 text-primary/80" : "border-ink/15 text-ink/55"}`}
+                              onClick={() => setNudgeExpanded((prev) => ({ ...prev, [nudge.type]: prev[nudge.type] === "what" ? null : "what" }))}
+                            >
+                              What to do?
+                            </button>
+                          )}
                         </div>
                       )}
-                      {(action || showChips) && (
-                        <div>
-                          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted/50 mb-0.5">What to do</p>
+                      {nudgeExpanded[nudge.type] === "why" && why && (
+                        <p className="text-xs text-ink/70">{why}</p>
+                      )}
+                      {nudgeExpanded[nudge.type] === "what" && (action || showChips) && (
+                        <div className="space-y-2">
                           {action && <p className="text-xs text-ink/70">{action}</p>}
                           {showChips && (
-                            <div className="mt-4 space-y-1.5">
+                            <div className="space-y-1.5">
                               {behavioralChips.length > 0 && (
                                 <div className="flex flex-wrap gap-1.5">
                                   {behavioralChips.map((chip) => (

@@ -13,6 +13,7 @@ export interface NudgeData {
   actual?: number;
   target?: number;
   nutrient?: string;
+  daysLow?: number;
 }
 
 export interface ComputedNudge {
@@ -368,13 +369,17 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
   if (profile && dayCount >= 5 && mealCount >= 5 && avgWeekCalories && gentleTargets?.calories) {
     const weekLow = avgWeekCalories < gentleTargets.calories * 0.9;
     const weekHigh = avgWeekCalories > gentleTargets.calories * 1.1;
+    const daysCalorieLow = loggedDays.filter((d) => {
+      const dayAvg = avgRangeMidpoint([d.totals.calories_min], [d.totals.calories_max]);
+      return dayAvg > 0 && dayAvg < gentleTargets!.calories * 0.9;
+    }).length;
     if (weekLow) {
       nudges.push({
         message: isEstimateTargets
           ? `You've been averaging around ${Math.round(avgWeekCalories)} kcal a day this week • based on your profile, we'd estimate closer to ${gentleTargets.calories} kcal`
           : `You've been averaging around ${Math.round(avgWeekCalories)} kcal a day this week • your target is closer to ${gentleTargets.calories} kcal`,
         type: "calorie_low",
-        data: { actual: Math.round(avgWeekCalories), target: gentleTargets.calories },
+        data: { actual: Math.round(avgWeekCalories), target: gentleTargets.calories, daysLow: daysCalorieLow },
         priority: 2 + calorieBias
       });
     } else if (weekHigh) {
@@ -393,13 +398,17 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
     const rawW = profile.weight ?? 0;
     const weightKg = rawW ? normalizeWeightToKg(rawW, profile.units) : 0;
     const target = weightKg ? weightKg * proteinTargetPerKg(profile) : 0;
+    const daysProteinLow = target ? loggedDays.filter((d) => {
+      const dayAvg = avgRangeMidpoint([d.totals.protein_g_min], [d.totals.protein_g_max]);
+      return dayAvg > 0 && dayAvg < target * 0.85;
+    }).length : 0;
     if (target && avgWeekProtein < target * 0.7) {
       nudges.push({
         message: isEstimateTargets
           ? `You've been averaging around ${Math.round(avgWeekProtein)}g of protein a day this week • based on your weight, your goal would be around ${Math.round(target)}g`
           : `You've been averaging around ${Math.round(avgWeekProtein)}g of protein a day this week • your goal is closer to ${Math.round(target)}g`,
         type: "protein_low_critical",
-        data: { actual: Math.round(avgWeekProtein), target: Math.round(target) },
+        data: { actual: Math.round(avgWeekProtein), target: Math.round(target), daysLow: daysProteinLow },
         priority: 3 + proteinBias
       });
     } else if (target && avgWeekProtein < target * 0.85) {
@@ -408,7 +417,7 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
           ? `You've been averaging around ${Math.round(avgWeekProtein)}g of protein a day this week • based on your weight, your goal would be around ${Math.round(target)}g`
           : `You've been averaging around ${Math.round(avgWeekProtein)}g of protein a day this week • your goal is closer to ${Math.round(target)}g`,
         type: "protein_low",
-        data: { actual: Math.round(avgWeekProtein), target: Math.round(target) },
+        data: { actual: Math.round(avgWeekProtein), target: Math.round(target), daysLow: daysProteinLow },
         priority: 2 + proteinBias
       });
     }

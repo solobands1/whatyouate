@@ -27,8 +27,9 @@ Message rules:
 
 Suggestion rules:
 - Return exactly 3 simple food names (e.g. "Greek yogurt", "Chicken breast", "Mixed nuts")
-- Prioritise foods from the user's recent history — suggest things they already eat
-- Match the nudge signal: protein nudges → protein-rich foods, calorie nudges → energy-dense foods
+- Use the user's recent foods as context only — for deficit nudges (protein_low, calorie_low, fat_low, etc.), suggest foods they are NOT already logging regularly, so they can add something new to close the gap
+- Match the nudge signal: protein nudges → protein-rich foods, calorie nudges → energy-dense foods, fat nudges → healthy-fat foods
+- Respect dietary restrictions when provided
 - Never add serving instructions or modifications to a food name (no "extra scoop of X", no "more X")
 - For workout_missing, calorie_high, and on_track nudges return an empty suggestions array []`;
 
