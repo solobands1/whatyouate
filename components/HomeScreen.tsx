@@ -154,12 +154,17 @@ function formatManualDate(dateStr: string) {
 function ManualDateRow({ manualDate, setManualDate }: { manualDate: string; setManualDate: (d: string) => void }) {
   const isToday = manualDate === todayDateStr();
   return (
-    <div className="relative mt-2.5 inline-flex items-center gap-1">
-      <svg className="h-3 w-3 shrink-0 text-ink/25" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <div className="relative mt-3 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 transition"
+      style={isToday
+        ? { borderColor: "rgba(15,23,42,0.10)", background: "transparent" }
+        : { borderColor: "rgba(99,133,255,0.35)", background: "rgba(99,133,255,0.06)" }
+      }
+    >
+      <svg className={`h-3 w-3 shrink-0 ${isToday ? "text-ink/35" : "text-primary/70"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <rect x="3" y="4" width="18" height="18" rx="2" />
         <path d="M16 2v4M8 2v4M3 10h18" />
       </svg>
-      <span className={`text-[11px] select-none ${isToday ? "text-ink/30" : "font-medium text-primary/80"}`}>
+      <span className={`text-[11px] select-none ${isToday ? "text-ink/45" : "font-medium text-primary/80"}`}>
         {isToday ? "Today" : formatManualDate(manualDate)}
       </span>
       <input
@@ -223,6 +228,7 @@ export default function HomeScreen() {
   const [quickAddItems, setQuickAddItems] = useState<QuickAddItem[]>([]);
   const [quickAddSelected, setQuickAddSelected] = useState<Record<string, "small" | "medium" | "large">>({});
   const [quickAddAdding, setQuickAddAdding] = useState(false);
+  const [quickAddDate, setQuickAddDate] = useState(todayDateStr);
 
   const mountedRef = useRef(true);
   const recentSentinelRef = useRef<HTMLDivElement | null>(null);
@@ -240,6 +246,7 @@ export default function HomeScreen() {
   const handleOpenQuickAdd = () => {
     setQuickAddItems(getQuickAddItems());
     setQuickAddSelected({});
+    setQuickAddDate(todayDateStr());
     setShowQuickAdd(true);
   };
 
@@ -292,6 +299,10 @@ export default function HomeScreen() {
         const created = await addMeal(user.id, analysis);
         if (created?.id) {
           await updateMeal(created.id, analysis, { userCorrection: item.name }, user.id);
+          if (quickAddDate !== todayDateStr()) {
+            const d = new Date(quickAddDate + "T12:00:00");
+            if (d.getTime() < Date.now()) await updateMealTs(created.id, d.getTime()).catch(() => {});
+          }
           newMeals.push({ ...created, analysisJson: analysis, status: "done" as const });
           if (item.type === "text") {
             incrementFoodTextLogCount(item.key);
@@ -2520,9 +2531,14 @@ export default function HomeScreen() {
               </div>
             )}
             {quickAddItems.length > 0 && (
+              <>
+                <ManualDateRow manualDate={quickAddDate} setManualDate={setQuickAddDate} />
+              </>
+            )}
+            {quickAddItems.length > 0 && (
               <button
                 type="button"
-                className="mt-4 w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
+                className="mt-3 w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
                 disabled={Object.keys(quickAddSelected).length === 0 || quickAddAdding}
                 onClick={handleQuickAddConfirm}
               >
