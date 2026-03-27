@@ -173,7 +173,7 @@ function ManualDateRow({ manualDate, setManualDate }: { manualDate: string; setM
         value={manualDate}
         max={todayDateStr()}
         min={minDateStr()}
-        onChange={(e) => { if (e.target.value) setManualDate(e.target.value); }}
+        onChange={(e) => { if (e.target.value && e.target.value <= todayDateStr()) setManualDate(e.target.value); }}
       />
     </div>
   );
@@ -889,18 +889,28 @@ export default function HomeScreen() {
   );
 
   // Bell notification: mark unseen nudge when new types appear today
+  // Exclude auto-supplement meals so adding vitamins doesn't trigger the dot
+  const homeNotifyNotes = useMemo(
+    () => computeNudges(
+      displayMeals.filter((m) => (m as any).analysisJson?.source !== "supplement"),
+      displayWorkouts,
+      profile
+    ),
+    [displayMeals, displayWorkouts, profile]
+  );
+
   useEffect(() => {
-    if (!user || homeVisibleNotes.length === 0) return;
+    if (!user || homeNotifyNotes.length === 0) return;
     const todayStr = todayKey();
     const notifiedTypesKey = `wya_notified_types_${todayStr}`;
     const notifiedTypes = new Set<string>(JSON.parse(localStorage.getItem(notifiedTypesKey) ?? "[]"));
-    const newTypes = homeVisibleNotes.filter((note) => !notifiedTypes.has(note.type));
+    const newTypes = homeNotifyNotes.filter((note) => !notifiedTypes.has(note.type));
     if (newTypes.length === 0) return;
     newTypes.forEach((note) => notifiedTypes.add(note.type));
     localStorage.setItem(notifiedTypesKey, JSON.stringify([...notifiedTypes]));
     localStorage.setItem("wya_nudge_ts", Date.now().toString());
     window.dispatchEvent(new Event("wya_nudge_update"));
-  }, [user, homeVisibleNotes]);
+  }, [user, homeNotifyNotes]);
 
   const homeMarkers = useMemo(
     () => computeHomeMarkers(displayMeals, displayWorkouts, profile),

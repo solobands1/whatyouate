@@ -22,6 +22,43 @@ const _summaryCache: {
   mealsLoaded: boolean;
 } = { mealsLoaded: false };
 
+type MilestoneItem = { label: string; sub: string; desc: string; unlocked: boolean };
+
+function UnlockTimeline({ milestones }: { milestones: MilestoneItem[] }) {
+  const [activeTip, setActiveTip] = useState<string | null>(null);
+  const colWidth = `${(100 / milestones.length).toFixed(4)}%`;
+
+  const activeMilestone = milestones.find((m) => m.label === activeTip);
+
+  return (
+    <div className="mb-5">
+      <p className="mb-3 text-[11px] text-muted/50">Unlocking as you log</p>
+      {/* Dot row */}
+      <div className="relative flex items-center justify-between">
+        <div className="absolute inset-x-0 top-[5px] h-px bg-ink/10" />
+        {milestones.map((m) => (
+          <button
+            key={m.label}
+            className="relative z-10 flex flex-col items-center focus:outline-none"
+            style={{ width: colWidth }}
+            onClick={() => setActiveTip(activeTip === m.label ? null : m.label)}
+          >
+            <div className={`h-3 w-3 rounded-full transition-colors ${m.unlocked ? "bg-primary/80" : activeTip === m.label ? "bg-ink/35" : "bg-ink/20"}`} />
+            <p className={`mt-1.5 text-center text-[10px] leading-tight ${m.unlocked ? "text-ink/70" : "text-muted/45"}`}>{m.label}</p>
+            {m.sub && <p className="mt-0.5 text-center text-[10px] leading-tight text-primary/60">{m.sub}</p>}
+          </button>
+        ))}
+      </div>
+      {/* Tooltip */}
+      {activeMilestone && (
+        <p className="mt-3 text-center text-[11px] leading-snug text-muted/60">
+          {activeMilestone.unlocked ? "✓ " : ""}{activeMilestone.desc}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export default function SummaryScreen() {
   const router = useRouter();
   const { user, loading } = useAuth();
@@ -824,28 +861,18 @@ export default function SummaryScreen() {
           const nudgesUnlocked = mealCount >= 5;
           const patternsUnlocked = dayCount >= 5 && mealCount >= 5;
           const smartTargetsUnlocked = dayCount >= 7;
+          const weeklyComparisonUnlocked = dayCount >= 10;
           const fullTrendsUnlocked = dayCount >= 14;
           const milestones = [
-            { label: "First meal", sub: "", unlocked: mealCount >= 1 },
-            { label: "Nudges", sub: nudgesUnlocked ? "" : `${5 - mealCount} more meal${5 - mealCount !== 1 ? "s" : ""}`, unlocked: nudgesUnlocked },
-            { label: "Patterns", sub: patternsUnlocked ? "" : `${Math.max(0, 5 - dayCount)} more day${Math.max(0, 5 - dayCount) !== 1 ? "s" : ""}`, unlocked: patternsUnlocked },
-            { label: "Smart targets", sub: smartTargetsUnlocked ? "" : `${7 - dayCount} more day${7 - dayCount !== 1 ? "s" : ""}`, unlocked: smartTargetsUnlocked },
-            { label: "Full trends", sub: fullTrendsUnlocked ? "" : `${14 - dayCount} more day${14 - dayCount !== 1 ? "s" : ""}`, unlocked: fullTrendsUnlocked },
+            { label: "First meal", sub: "", desc: "Log your first meal to get started.", unlocked: mealCount >= 1 },
+            { label: "Nudges", sub: nudgesUnlocked ? "" : `${5 - mealCount} more meal${5 - mealCount !== 1 ? "s" : ""}`, desc: "Personalised suggestions based on what you've been eating.", unlocked: nudgesUnlocked },
+            { label: "Patterns", sub: patternsUnlocked ? "" : `${Math.max(0, 5 - dayCount)} more day${Math.max(0, 5 - dayCount) !== 1 ? "s" : ""}`, desc: "See recurring habits and timing patterns across your week.", unlocked: patternsUnlocked },
+            { label: "Smart targets", sub: smartTargetsUnlocked ? "" : `${7 - dayCount} more day${7 - dayCount !== 1 ? "s" : ""}`, desc: "Personalised calorie and protein goals based on your profile and history.", unlocked: smartTargetsUnlocked },
+            { label: "Weekly compare", sub: weeklyComparisonUnlocked ? "" : `${10 - dayCount} more day${10 - dayCount !== 1 ? "s" : ""}`, desc: "Compare this week to last week to see how you're trending.", unlocked: weeklyComparisonUnlocked },
+            { label: "Full trends", sub: fullTrendsUnlocked ? "" : `${14 - dayCount} more day${14 - dayCount !== 1 ? "s" : ""}`, desc: "Two weeks of data unlocks full macro and habit trend charts.", unlocked: fullTrendsUnlocked },
           ];
           return (
-            <div className="mb-5">
-              {/* Dot row — background line runs full width, dots sit on top */}
-              <div className="relative flex items-center justify-between">
-                <div className="absolute inset-x-0 top-[5px] h-px bg-ink/10" />
-                {milestones.map((m) => (
-                  <div key={m.label} className="relative z-10 flex flex-col items-center" style={{ width: "20%" }}>
-                    <div className={`h-3 w-3 rounded-full ${m.unlocked ? "bg-primary/80" : "bg-ink/20"}`} />
-                    <p className={`mt-1.5 text-center text-[10px] leading-tight ${m.unlocked ? "text-ink/70" : "text-muted/45"}`}>{m.label}</p>
-                    {m.sub && <p className="mt-0.5 text-center text-[10px] leading-tight text-primary/60">{m.sub}</p>}
-                  </div>
-                ))}
-              </div>
-            </div>
+            <UnlockTimeline milestones={milestones} />
           );
         })()}
 

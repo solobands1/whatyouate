@@ -1,5 +1,6 @@
 
 import { notifyMealsUpdated } from "./dataEvents";
+import { setFoodTextEntry, incrementFoodTextLogCount } from "./foodCache";
 
 type MealJob = {
   mealId: string;
@@ -44,7 +45,24 @@ async function processNext() {
 
     if (!response.ok) throw new Error("Analyze failed");
 
-    await response.json();
+    const data = await response.json();
+
+    // Write photo analysis result to text cache so manual entry and quick add
+    // for the same food name return the same macros as the photo analysis did.
+    const analysis = data?.analysis;
+    if (analysis?.name && analysis?.estimated_ranges) {
+      const normalizedName = (analysis.name as string).toLowerCase().trim();
+      setFoodTextEntry(normalizedName, {
+        name: analysis.name,
+        ranges: analysis.estimated_ranges,
+        micronutrient_signals: analysis.micronutrient_signals ?? [],
+        source: "ai",
+        savedAt: Date.now(),
+        detected_brand: analysis.detected_brand ?? null,
+        detected_product: analysis.detected_product ?? null,
+      });
+      incrementFoodTextLogCount(normalizedName);
+    }
 
     notifyMealsUpdated();
     window.dispatchEvent(new CustomEvent("meal-analysis-complete", { detail: job.mealId }));
