@@ -32,7 +32,21 @@ function UnlockTimeline({ milestones }: { milestones: MilestoneItem[] }) {
 
   return (
     <div className="mb-5">
-      <p className="mb-3 text-[11px] text-muted/50">Unlocking as you log</p>
+      {/* Header row with "i" button */}
+      <div className="mb-3 flex items-center justify-end">
+        <button
+          className="flex h-4 w-4 items-center justify-center rounded-full border border-ink/20 focus:outline-none"
+          onClick={() => setActiveTip(activeTip === "__info" ? null : "__info")}
+        >
+          <span className="text-[9px] leading-none text-muted/50">i</span>
+        </button>
+      </div>
+      {/* Info tooltip */}
+      {activeTip === "__info" && (
+        <p className="mb-3 text-center text-[11px] leading-snug text-muted/55">
+          The more you log, the better WhatYouAte understands your habits. Tap any dot to see what each step means.
+        </p>
+      )}
       {/* Dot row */}
       <div className="relative flex items-center justify-between">
         <div className="absolute inset-x-0 top-[5px] h-px bg-ink/10" />
@@ -49,7 +63,7 @@ function UnlockTimeline({ milestones }: { milestones: MilestoneItem[] }) {
           </button>
         ))}
       </div>
-      {/* Tooltip */}
+      {/* Dot tooltip */}
       {activeMilestone && (
         <p className="mt-3 text-center text-[11px] leading-snug text-muted/60">
           {activeMilestone.unlocked ? "✓ " : ""}{activeMilestone.desc}
