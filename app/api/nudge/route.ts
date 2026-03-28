@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+export const maxDuration = 30;
+
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 
 const nudgeRateMap = new Map<string, { count: number; resetAt: number }>();

@@ -1,5 +1,6 @@
 
 import { notifyMealsUpdated } from "./dataEvents";
+import { clearMealsCache } from "./supabaseDb";
 import { setFoodTextEntry, incrementFoodTextLogCount } from "./foodCache";
 
 type MealJob = {
@@ -64,10 +65,12 @@ async function processNext() {
       incrementFoodTextLogCount(normalizedName);
     }
 
+    clearMealsCache(job.userId);
     notifyMealsUpdated();
     window.dispatchEvent(new CustomEvent("meal-analysis-complete", { detail: job.mealId }));
   } catch {
     window.dispatchEvent(new CustomEvent("meal-analysis-error", { detail: { mealId: job.mealId, rateLimited: false } }));
+    clearMealsCache(job.userId);
     notifyMealsUpdated();
   }
 

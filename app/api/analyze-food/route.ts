@@ -3,6 +3,8 @@ import { FOOD_ANALYSIS_PROMPT, TEXT_ANALYSIS_PROMPT } from "../../../lib/ai/prom
 import { coerceAnalysis, safeFallbackAnalysis } from "../../../lib/ai/schema";
 import { supabaseServer } from "../../../lib/server/supabaseServer";
 
+export const maxDuration = 30;
+
 const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 const OFF_SEARCH_URL = "https://world.openfoodfacts.org/cgi/search.pl";
