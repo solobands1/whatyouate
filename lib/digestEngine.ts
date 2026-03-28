@@ -31,7 +31,7 @@ function dayCountFromMeals(meals: MealLog[]) {
   return days.size;
 }
 
-function computeStreak(meals: MealLog[]): number {
+export function computeStreakFromMeals(meals: MealLog[]): number {
   const dayKeys = new Set(
     meals.filter((m) => m.analysisJson?.source !== "supplement").map((m) => dayKeyFromTs(m.ts))
   );
@@ -224,7 +224,7 @@ export function computeHomeMarkers(meals: MealLog[], workouts: WorkoutSession[],
   const gentleTargets = adjustTargetsForWorkouts(computeGentleTargets(meals, profile), workouts);
   // Use persisted streak from profile if available — it's accurate beyond the fetch window.
   // Fall back to in-memory computation for users who don't have it stored yet.
-  const streak = profile?.streak ?? computeStreak(meals);
+  const streak = profile?.streak ?? computeStreakFromMeals(meals);
 
   return {
     todayTotals,
