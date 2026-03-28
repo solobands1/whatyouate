@@ -405,23 +405,31 @@ export default function SummaryScreen() {
     return () => clearTimeout(delayId);
   }, [visibleNotes, profile]);
 
-  // Save nudges to DB once per day
+  // Save nudges to DB once per type per day.
+  // Dedup by nudge type (not message) because messages include dynamic numbers
+  // that change as new meals are logged, causing false "new nudge" writes.
   useEffect(() => {
     if (!user || !nudgesLoaded || visibleNotes.length === 0) return;
     const todayStr = todayKey();
-    const existingToday = new Set(
-      nudges.filter((n) => todayKey(new Date(n.created_at)) === todayStr).map((n) => n.message)
-    );
+    const savedTypesKey = `wya_nudge_saved_types_${user.id}_${todayStr}`;
+    let savedTypesToday: Set<string>;
+    try {
+      savedTypesToday = new Set(JSON.parse(localStorage.getItem(savedTypesKey) ?? "[]"));
+    } catch {
+      savedTypesToday = new Set();
+    }
     const missing = visibleNotes.filter(
-      (note) => !existingToday.has(note.message) && !savedThisSessionRef.current.has(note.message)
+      (note) => !savedTypesToday.has(note.type) && !savedThisSessionRef.current.has(note.type)
     );
     if (missing.length === 0) return;
     missing.forEach((note) => {
-      savedThisSessionRef.current.add(note.message);
+      savedThisSessionRef.current.add(note.type);
+      savedTypesToday.add(note.type);
       addNudge(user.id, "awareness", note.message).catch(() => {});
     });
+    try { localStorage.setItem(savedTypesKey, JSON.stringify([...savedTypesToday])); } catch {}
     pruneNudges(user.id).catch(() => {});
-  }, [user, visibleNotes, nudges, nudgesLoaded]);
+  }, [user, visibleNotes, nudgesLoaded]);
 
   // Snapshot cached AI messages on first render so the card text never swaps mid-session
   if (aiSnapshotRef.current === "pending" && visibleNotes.length > 0 && typeof window !== "undefined") {
