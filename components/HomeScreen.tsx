@@ -21,6 +21,7 @@ import { useAuth } from "./AuthProvider";
 import { useAppData } from "./AppDataProvider";
 import {
   addMeal,
+  clearMealsCache,
   deleteMeal,
   deleteWorkout,
   updateMeal,
@@ -206,6 +207,9 @@ export default function HomeScreen() {
   const [quickConfirmMeal, setQuickConfirmMeal] = useState<MealLog | null>(null);
   const [quickConfirmName, setQuickConfirmName] = useState("");
   const [quickConfirmPortion, setQuickConfirmPortion] = useState<"small" | "medium" | "large">("medium");
+  const [failedMealPrompt, setFailedMealPrompt] = useState<{ mealId: string; thumb?: string } | null>(null);
+  const [failedMealText, setFailedMealText] = useState("");
+  const [failedMealAnalyzing, setFailedMealAnalyzing] = useState(false);
   const [showProfileBell, setShowProfileBell] = useState(false);
   const [quickConfirming, setQuickConfirming] = useState(false);
   const [editPortion, setEditPortion] = useState<"small" | "medium" | "large">("medium");
@@ -407,6 +411,40 @@ export default function HomeScreen() {
     } finally {
       setQuickConfirming(false);
     }
+  };
+
+  const handleFailedMealSubmit = async () => {
+    if (!failedMealPrompt || !failedMealText.trim() || !user) return;
+    setFailedMealAnalyzing(true);
+    try {
+      const res = await fetch("/api/analyze-food", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ textDescription: failedMealText.trim(), mealId: failedMealPrompt.mealId, userId: user.id })
+      });
+      if (!res.ok) throw new Error("Analysis failed");
+      clearMealsCache(user.id);
+      notifyMealsUpdated();
+      setFailedMealPrompt(null);
+    } catch {
+      // Fall back to marking as failed
+      updateMeal(failedMealPrompt.mealId, safeFallbackAnalysis(), undefined, user.id, "failed").catch(() => {});
+      clearMealsCache(user.id);
+      notifyMealsUpdated();
+      setLoadError("Something went wrong. You can edit the meal manually.");
+      setFailedMealPrompt(null);
+    } finally {
+      setFailedMealAnalyzing(false);
+    }
+  };
+
+  const handleFailedMealDismiss = () => {
+    if (!failedMealPrompt || !user) { setFailedMealPrompt(null); return; }
+    updateMeal(failedMealPrompt.mealId, safeFallbackAnalysis(), undefined, user.id, "failed").catch(() => {}).finally(() => {
+      clearMealsCache(user.id);
+      notifyMealsUpdated();
+    });
+    setFailedMealPrompt(null);
   };
 
   const applyEditPortion = (portion: "small" | "medium" | "large") => {
@@ -699,17 +737,20 @@ export default function HomeScreen() {
   useEffect(() => {
     const handler = (e: Event) => {
       const { mealId, rateLimited } = (e as CustomEvent<{ mealId: string; rateLimited: boolean }>).detail ?? {};
-      setLoadError(rateLimited
-        ? "Too many requests · please wait a moment before adding another photo."
-        : "Photo analysis failed. Please try again."
-      );
-      if (mealId && !rateLimited) {
-        updateMeal(mealId, safeFallbackAnalysis(), undefined, user?.id, "failed").catch(() => {}).finally(() => notifyMealsUpdated());
+      if (rateLimited) {
+        setLoadError("Too many requests · please wait a moment before adding another photo.");
+        return;
+      }
+      if (mealId) {
+        // Find thumbnail for the failed meal if it's in local state
+        const thumb = meals.meals.find((m) => m.id === mealId)?.imageThumb ?? undefined;
+        setFailedMealText("");
+        setFailedMealPrompt({ mealId, thumb });
       }
     };
     window.addEventListener("meal-analysis-error", handler);
     return () => window.removeEventListener("meal-analysis-error", handler);
-  }, []);
+  }, [meals.meals]);
 
   useEffect(() => {
     if (!pendingQuickConfirmId) return;
@@ -1835,6 +1876,45 @@ export default function HomeScreen() {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {failedMealPrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5">
+          <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
+            <h2 className="text-base font-semibold text-ink">What did you eat?</h2>
+            <p className="mt-1 text-xs text-muted/70">The photo was unclear. Type what you had and we'll estimate the nutrition.</p>
+            {failedMealPrompt.thumb && (
+              <img src={failedMealPrompt.thumb} alt="Meal photo" className="mt-3 h-28 w-full rounded-lg object-cover opacity-60" />
+            )}
+            <div className="mt-4">
+              <input
+                className="w-full rounded-lg border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                value={failedMealText}
+                onChange={(e) => setFailedMealText(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter" && failedMealText.trim()) handleFailedMealSubmit(); }}
+                placeholder="e.g. grilled chicken and rice"
+                autoFocus
+              />
+            </div>
+            <div className="mt-5 flex items-center justify-between">
+              <button
+                type="button"
+                className="text-xs text-ink/50 underline"
+                onClick={handleFailedMealDismiss}
+              >
+                Remove
+              </button>
+              <button
+                type="button"
+                className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
+                onClick={handleFailedMealSubmit}
+                disabled={failedMealAnalyzing || !failedMealText.trim()}
+              >
+                {failedMealAnalyzing ? "Analyzing…" : "Submit"}
+              </button>
+            </div>
           </div>
         </div>
       )}
