@@ -19,6 +19,8 @@ export interface UserProfile {
   dietaryRestrictions?: string[];
   units: Units;
   dailySupplements?: string[];
+  streak?: number;
+  streakLastDate?: string; // YYYY-MM-DD
 }
 
 export interface MealAnalysis {

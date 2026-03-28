@@ -222,7 +222,9 @@ export function computeHomeMarkers(meals: MealLog[], workouts: WorkoutSession[],
   );
 
   const gentleTargets = adjustTargetsForWorkouts(computeGentleTargets(meals, profile), workouts);
-  const streak = computeStreak(meals);
+  // Use persisted streak from profile if available — it's accurate beyond the fetch window.
+  // Fall back to in-memory computation for users who don't have it stored yet.
+  const streak = profile?.streak ?? computeStreak(meals);
 
   return {
     todayTotals,

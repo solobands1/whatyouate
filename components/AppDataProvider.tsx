@@ -3,7 +3,8 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import type { MealLog, UserProfile, WorkoutSession } from "../lib/types";
 import { useAuth } from "./AuthProvider";
-import { getProfile, listMeals, listWorkouts, updateMeal } from "../lib/supabaseDb";
+import { getProfile, listMeals, listWorkouts, updateMeal, saveStreak } from "../lib/supabaseDb";
+import { dayKeyFromTs, todayKey } from "../lib/utils";
 import { MEALS_UPDATED_EVENT, PROFILE_UPDATED_EVENT, WORKOUTS_UPDATED_EVENT } from "../lib/dataEvents";
 import { safeFallbackAnalysis } from "../lib/ai/schema";
 import { seedTextCacheFromMeals } from "../lib/foodCache";
@@ -68,7 +69,31 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (!mountedRef.current) return;
-      setProfile(profileData ?? null);
+
+      // Sync streak — update persisted value if user has logged today
+      let resolvedProfile = profileData ?? null;
+      if (profileData && userId) {
+        const todayStr = todayKey();
+        const yesterdayDate = new Date();
+        yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+        const yesterdayStr = todayKey(yesterdayDate);
+        const storedStreak = profileData.streak ?? 0;
+        const storedLastDate = profileData.streakLastDate ?? "";
+        const hasLoggedToday = finalMeals.some(
+          (m) => m.analysisJson?.source !== "supplement" && m.status !== "failed" && dayKeyFromTs(m.ts) === todayStr
+        );
+        if (hasLoggedToday && storedLastDate !== todayStr) {
+          const newStreak = storedLastDate === yesterdayStr ? storedStreak + 1 : 1;
+          resolvedProfile = { ...profileData, streak: newStreak, streakLastDate: todayStr };
+          saveStreak(userId, newStreak, todayStr).catch(() => {});
+        } else if (!hasLoggedToday && storedLastDate < yesterdayStr && storedLastDate !== "" && storedStreak > 0) {
+          // Streak broken — reset stored value so it doesn't show stale count
+          resolvedProfile = { ...profileData, streak: 0 };
+          saveStreak(userId, 0, storedLastDate).catch(() => {});
+        }
+      }
+
+      setProfile(resolvedProfile);
       setMeals(finalMeals);
       setWorkouts(workoutsData);
     } catch {

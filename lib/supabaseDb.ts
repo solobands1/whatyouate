@@ -206,6 +206,8 @@ export async function getProfile(userId: string): Promise<UserProfile | null> {
     dietaryRestrictions: Array.isArray(data.dietary_restrictions) ? data.dietary_restrictions : [],
     units: data.units ?? "imperial",
     dailySupplements: Array.isArray(data.daily_supplements) ? data.daily_supplements : [],
+    streak: data.streak ?? 0,
+    streakLastDate: data.streak_last_date ?? "",
   };
   profileCache.set(userId, { data: profile, ts: Date.now() });
   return profile;
@@ -240,6 +242,25 @@ export async function saveProfile(userId: string, profile: UserProfile) {
   if (error) throw error;
   profileCache.delete(userId);
   return { success: true };
+}
+
+export async function saveStreak(userId: string, streak: number, lastDate: string): Promise<void> {
+  if (useMemory) {
+    if (memProfiles[userId]) {
+      memProfiles[userId] = { ...memProfiles[userId], streak, streakLastDate: lastDate };
+      persistLocal();
+    }
+    return;
+  }
+  const { error } = await supabase
+    .from("profiles")
+    .upsert({ user_id: userId, streak, streak_last_date: lastDate, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+  if (error) throw error;
+  // Update cache so reads within the TTL window see the new value
+  const cached = profileCache.get(userId);
+  if (cached?.data) {
+    profileCache.set(userId, { data: { ...cached.data, streak, streakLastDate: lastDate }, ts: cached.ts });
+  }
 }
 
 export async function saveDailySupplements(userId: string, names: string[]): Promise<void> {
