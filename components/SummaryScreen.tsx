@@ -418,9 +418,9 @@ export default function SummaryScreen() {
     if (missing.length === 0) return;
     missing.forEach((note) => {
       savedThisSessionRef.current.add(note.message);
-      addNudge(user.id, "awareness", note.message).catch(() => {});
+      addNudge(user.id, "awareness", note.message).catch((err) => console.error("[nudge save]", err));
     });
-    pruneNudges(user.id).catch(() => {});
+    pruneNudges(user.id).catch((err) => console.error("[nudge prune]", err));
   }, [user, visibleNotes, nudges, nudgesLoaded]);
 
   // Snapshot cached AI messages on first render so the card text never swaps mid-session
