@@ -42,7 +42,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     try {
       const [profileData, mealsData, workoutsData] = await Promise.all([
         getProfile(userId),
-        listMeals(userId, 60),
+        listMeals(userId, 120),
         listWorkouts(userId, 50),
       ]);
       if (!mountedRef.current) return;
