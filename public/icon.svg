@@ -1,7 +1,27 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-  <rect width="512" height="512" fill="#F1F6FF" rx="100"/>
-  <text x="256" y="170" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-weight="600" font-size="185" fill="#1F2937" text-anchor="middle">What</text>
-  <text x="256" y="315"  font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-weight="600" font-size="185" fill="#1F2937" text-anchor="middle">You</text>
-  <text x="256" y="455"  font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-weight="600" font-size="185" fill="#1F2937" text-anchor="middle">Ate</text>
-  <text x="394" y="358" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-weight="600" font-size="48" fill="rgba(31,41,55,0.6)" text-anchor="start">ai</text>
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#82B8FF"/>
+      <stop offset="100%" stop-color="#4F88E8"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" fill="url(#bg)" rx="100"/>
+
+  <!-- Plate outer rim -->
+  <circle cx="256" cy="310" r="162" fill="rgba(255,255,255,0.18)"/>
+  <!-- Plate surface -->
+  <circle cx="256" cy="310" r="135" fill="rgba(255,255,255,0.28)"/>
+  <!-- Plate inner well -->
+  <circle cx="256" cy="310" r="92" fill="rgba(255,255,255,0.40)"/>
+
+  <!-- Camera outer dark ring -->
+  <circle cx="256" cy="148" r="60" fill="#1A2535"/>
+  <!-- Camera white ring -->
+  <circle cx="256" cy="148" r="44" fill="rgba(255,255,255,0.92)"/>
+  <!-- Camera dark core -->
+  <circle cx="256" cy="148" r="26" fill="#1A2535"/>
+  <!-- Highlight dot -->
+  <circle cx="272" cy="135" r="9" fill="rgba(255,255,255,0.85)"/>
 </svg>
