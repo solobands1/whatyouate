@@ -9,6 +9,30 @@ export type NudgeType =
   | "workout_missing" | "workout_fuel_low" | "training_fuel_low"
   | "micronutrient" | "fat_low" | "on_track";
 
+export interface DailyNudgeSnapshot {
+  dateKey: string;
+  calories: number;
+  protein: number;
+  fat: number;
+  hasWorkout: boolean;
+  workoutMinutes?: number;
+  workoutIntensity?: string;
+}
+
+export interface SmartNudgeContext {
+  profile: UserProfile;
+  todayCalories: number;
+  todayProtein: number;
+  todayFat: number;
+  todayCarbs: number;
+  targetCalories: number | null;
+  targetProtein: number | null;
+  last7Days: DailyNudgeSnapshot[];
+  timeOfDay: "morning" | "afternoon" | "evening";
+  recentFoods: string[];
+  recentNudges: string[];
+}
+
 export interface NudgeData {
   actual?: number;
   target?: number;
@@ -734,4 +758,66 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
   }
 
   return result.map(({ message, type, data }) => ({ message, type, data }));
+}
+
+export function buildSmartNudgeContext(
+  meals: MealLog[],
+  workouts: WorkoutSession[],
+  profile: UserProfile,
+  recentFoods: string[],
+  recentNudges: string[]
+): SmartNudgeContext {
+  const todayTotals = summarizeDay(meals);
+  const todayCalories = Math.round((todayTotals.calories_min + todayTotals.calories_max) / 2);
+  const todayProtein = Math.round((todayTotals.protein_g_min + todayTotals.protein_g_max) / 2);
+  const todayFat = Math.round((todayTotals.fat_g_min + todayTotals.fat_g_max) / 2);
+  const todayCarbs = Math.round((todayTotals.carbs_g_min + todayTotals.carbs_g_max) / 2);
+
+  const targets = adjustTargetsForWorkouts(computeGentleTargets(meals, profile), workouts);
+
+  // Index workouts by day (last 7 days)
+  const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const workoutsByDay = new Map<string, { minutes: number; intensity: string }>();
+  workouts
+    .filter((w) => w.endTs != null && (w.endTs ?? w.startTs) >= cutoff)
+    .forEach((w) => {
+      const key = dayKeyFromTs(w.endTs ?? w.startTs);
+      const mins = w.durationMin ?? 0;
+      const intensity = w.intensity ?? "medium";
+      const existing = workoutsByDay.get(key);
+      if (!existing || mins > existing.minutes) {
+        workoutsByDay.set(key, { minutes: mins, intensity });
+      }
+    });
+
+  const loggedDays = summarizeLoggedDays(meals, 7, false);
+  const last7Days: DailyNudgeSnapshot[] = loggedDays.map((d) => {
+    const wk = workoutsByDay.get(d.dateKey);
+    return {
+      dateKey: d.dateKey,
+      calories: Math.round((d.totals.calories_min + d.totals.calories_max) / 2),
+      protein: Math.round((d.totals.protein_g_min + d.totals.protein_g_max) / 2),
+      fat: Math.round((d.totals.fat_g_min + d.totals.fat_g_max) / 2),
+      hasWorkout: !!wk,
+      workoutMinutes: wk?.minutes,
+      workoutIntensity: wk?.intensity,
+    };
+  });
+
+  const hour = new Date().getHours();
+  const timeOfDay = hour < 12 ? "morning" : hour < 20 ? "afternoon" : "evening";
+
+  return {
+    profile,
+    todayCalories,
+    todayProtein,
+    todayFat,
+    todayCarbs,
+    targetCalories: targets?.calories ?? null,
+    targetProtein: targets?.protein ?? null,
+    last7Days,
+    timeOfDay,
+    recentFoods,
+    recentNudges,
+  };
 }

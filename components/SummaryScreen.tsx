@@ -9,7 +9,7 @@ import Card from "./Card";
 import { useAuth } from "./AuthProvider";
 import { useAppData } from "./AppDataProvider";
 import { addNudge, listNudges, pruneNudges } from "../lib/supabaseDb";
-import { computeNudges, computeSummaryMarkers, type ComputedNudge, type NudgeType } from "../lib/digestEngine";
+import { buildSmartNudgeContext, computeNudges, computeSummaryMarkers, type ComputedNudge, type NudgeType } from "../lib/digestEngine";
 
 
 type MilestoneItem = { label: string; sub: string; desc: string; unlocked: boolean };
@@ -76,14 +76,10 @@ export default function SummaryScreen() {
   const [runSummaryTour, setRunSummaryTour] = useState(false);
   const [visibleNudgeGroupCount, setVisibleNudgeGroupCount] = useState(3);
   const [nudgeExpanded, setNudgeExpanded] = useState<Record<string, "why" | "what" | null>>({});
-  const aiNudgeFetchedRef = useRef<Set<string>>(new Set());
-  // Trigger re-render when AI messages arrive so they show immediately in this session
-  const [, setAiLoaded] = useState(0);
+  const smartNudgeFetchedRef = useRef(false);
+  // { message, type, suggestions } from smart AI call, or null if AI said nothing, or undefined while loading
+  const [smartNudge, setSmartNudge] = useState<{ message: string; type: NudgeType; suggestions?: string[] } | null | undefined>(undefined);
   const [expandedHistoryNudge, setExpandedHistoryNudge] = useState<string | null>(null);
-  const getAiMessage = (nudgeType: string): string | null => {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem(`wya_ai_nudge_${todayKey()}_${nudgeType}`);
-  };
   const getAiSuggestions = (nudgeType: string): string[] | null => {
     if (typeof window === "undefined") return null;
     const raw = localStorage.getItem(`wya_ai_nudge_${todayKey()}_${nudgeType}_suggestions`);
@@ -256,18 +252,13 @@ export default function SummaryScreen() {
             Date.now() - new Date(nudge.created_at).getTime() < 24 * 60 * 60 * 1000
         });
       });
-    visibleNotes.forEach((note) => {
-      if (seenKeys.has(note.message)) return;
-      seenKeys.add(note.message);
-      items.push({ message: note.message });
-    });
     nutrientNotes.forEach((note) => {
       if (seenKeys.has(note)) return;
       seenKeys.add(note);
       items.push({ message: note });
     });
     return items;
-  }, [nudges, visibleNotes, nutrientNotes, nudgeViewCount]);
+  }, [nudges, nutrientNotes, nudgeViewCount]);
 
   const groupedNudges = useMemo(() => {
     const groups: Array<{ label: string; items: typeof uniqueNudges }> = [];
@@ -355,92 +346,88 @@ export default function SummaryScreen() {
 
 
 
-  // Fetch AI nudge messages — one batched request for all missing types
+  // Fetch smart AI nudge — one call with full context, AI decides what to say
   useEffect(() => {
-    if (visibleNotes.length === 0 || !profile) return;
+    if (!profile || !nudgesLoaded || smartNudgeFetchedRef.current) return;
+    // Need at least some meal data
+    if (meals.length < 5) { setSmartNudge(null); return; }
+
     const todayStr = todayKey();
-
-    const missing = visibleNotes.filter(
-      (note) =>
-        !localStorage.getItem(`wya_ai_nudge_${todayStr}_${note.type}`) &&
-        !aiNudgeFetchedRef.current.has(note.type)
-    );
-    if (missing.length === 0) return;
-    missing.forEach((n) => aiNudgeFetchedRef.current.add(n.type));
-
-    const delayId = setTimeout(async () => {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
+    const cacheKey = `wya_smart_nudge_${todayStr}`;
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
       try {
-        const res = await fetch("/api/nudge", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            nudges: missing.map((n) => ({ nudgeType: n.type, data: n.data })),
-            profile,
-            recentFoods,
-            timeOfDay: (() => { const h = new Date().getHours(); return h < 12 ? "morning" : h < 20 ? "afternoon" : "evening"; })(),
-          }),
-          signal: controller.signal,
-        });
-        if (!res.ok) return;
-        const { messages } = await res.json();
-        if (!messages || typeof messages !== "object") return;
-        Object.entries(messages).forEach(([type, val]) => {
-          if (typeof val === "string" && val.trim()) {
-            localStorage.setItem(`wya_ai_nudge_${todayStr}_${type}`, val.trim());
-          } else if (val && typeof val === "object") {
-            const { message, suggestions } = val as { message?: string; suggestions?: string[] };
-            if (typeof message === "string" && message.trim()) {
-              localStorage.setItem(`wya_ai_nudge_${todayStr}_${type}`, message.trim());
-            }
-            if (Array.isArray(suggestions) && suggestions.length > 0) {
-              localStorage.setItem(`wya_ai_nudge_${todayStr}_${type}_suggestions`, JSON.stringify(suggestions.slice(0, 3)));
-            }
-          }
-        });
-        setAiLoaded((v) => v + 1);
-      } catch {
-        // Fall back to hardcoded messages
-      } finally {
-        clearTimeout(timeoutId);
-      }
-    }, 1500);
-
-    return () => clearTimeout(delayId);
-  }, [visibleNotes, profile]);
-
-  // Save nudges to DB once per type per day.
-  // Dedup by nudge type (not message) because messages include dynamic numbers
-  // that change as new meals are logged, causing false "new nudge" writes.
-  useEffect(() => {
-    if (!user || !nudgesLoaded || visibleNotes.length === 0) return;
-    const todayStr = todayKey();
-    const savedTypesKey = `wya_nudge_saved_types_${user.id}_${todayStr}`;
-    let savedTypesToday: Set<string>;
-    try {
-      savedTypesToday = new Set(JSON.parse(localStorage.getItem(savedTypesKey) ?? "[]"));
-    } catch {
-      savedTypesToday = new Set();
+        const parsed = JSON.parse(cached);
+        setSmartNudge(parsed);
+        return;
+      } catch {}
     }
-    const missing = visibleNotes.filter(
-      (note) => !savedTypesToday.has(note.type) && !savedThisSessionRef.current.has(note.type)
-    );
-    if (missing.length === 0) return;
-    // Build up a local message→type map so historical nudges can show "Why?" context
+
+    smartNudgeFetchedRef.current = true;
+    // Use last 3 nudge messages from DB as anti-repetition context
+    const recentNudgeMessages = nudges.slice(0, 3).map((n) => n.message);
+    const ctx = buildSmartNudgeContext(meals, workouts, profile, recentFoods, recentNudgeMessages);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+      // On timeout fall back to static
+      if (visibleNotes.length > 0) {
+        setSmartNudge({ message: visibleNotes[0].message, type: visibleNotes[0].type });
+      } else {
+        setSmartNudge(null);
+      }
+    }, 12000);
+
+    fetch("/api/nudge", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mode: "smart", ...ctx }),
+      signal: controller.signal,
+    })
+      .then(async (res) => {
+        clearTimeout(timeoutId);
+        if (!res.ok) throw new Error("nudge failed");
+        const { nudge } = await res.json();
+        if (nudge?.message) {
+          localStorage.setItem(cacheKey, JSON.stringify(nudge));
+          if (nudge.suggestions?.length) {
+            localStorage.setItem(`wya_ai_nudge_${todayStr}_${nudge.type}_suggestions`, JSON.stringify(nudge.suggestions.slice(0, 3)));
+          }
+          setSmartNudge(nudge);
+        } else {
+          localStorage.setItem(cacheKey, "null");
+          setSmartNudge(null);
+        }
+      })
+      .catch(() => {
+        clearTimeout(timeoutId);
+        // Fall back to static on error
+        if (visibleNotes.length > 0) {
+          setSmartNudge({ message: visibleNotes[0].message, type: visibleNotes[0].type });
+        } else {
+          setSmartNudge(null);
+        }
+      });
+  }, [profile, nudgesLoaded, meals, workouts, recentFoods, nudges]);
+
+  // Save smart nudge to DB once per day — only after AI responds
+  useEffect(() => {
+    if (!user || !nudgesLoaded || smartNudge === undefined || !smartNudge) return;
+    const todayStr = todayKey();
+    const savedKey = `wya_smart_nudge_saved_${user.id}_${todayStr}`;
+    if (localStorage.getItem(savedKey) || savedThisSessionRef.current.has(todayStr)) return;
+    savedThisSessionRef.current.add(todayStr);
+    localStorage.setItem(savedKey, "1");
+    addNudge(user.id, smartNudge.type, smartNudge.message).catch(() => {});
+    // Store message→type for history "Why?" expansion
     const metaKey = `wya_nudge_type_meta_${user.id}`;
     let typeMeta: Record<string, string> = {};
     try { typeMeta = JSON.parse(localStorage.getItem(metaKey) ?? "{}"); } catch {}
-    missing.forEach((note) => {
-      savedThisSessionRef.current.add(note.type);
-      savedTypesToday.add(note.type);
-      addNudge(user.id, note.type, note.message).catch(() => {});
-      typeMeta[note.message] = note.type;
-    });
+    typeMeta[smartNudge.message] = smartNudge.type;
     try { localStorage.setItem(metaKey, JSON.stringify(typeMeta)); } catch {}
-    try { localStorage.setItem(savedTypesKey, JSON.stringify([...savedTypesToday])); } catch {}
     pruneNudges(user.id).catch(() => {});
-  }, [user, visibleNotes, nudgesLoaded]);
+  }, [user, nudgesLoaded, smartNudge]);
 
   const getHistoryNudgeType = (message: string): NudgeType | null => {
     if (typeof window === "undefined" || !user) return null;
@@ -882,12 +869,19 @@ export default function SummaryScreen() {
             </div>
           ) : (
             <div className="mt-4 space-y-3">
-              {/* Today’s nudges • driven directly from structured visibleNotes */}
+              {/* Today’s nudge */}
               {groupedNudges.some((g) => g.label !== "Today") && (
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/50">Today</p>
               )}
-              {visibleNotes.length > 0 ? (
-                visibleNotes.map((nudge) => {
+              {smartNudge === undefined ? (
+                /* Loading state — subtle pulse while AI thinks */
+                <div className="rounded-xl border border-ink/10 bg-ink/5 px-4 py-3 space-y-2">
+                  <div className="h-3.5 w-3/4 animate-pulse rounded bg-ink/10" />
+                  <div className="h-3 w-1/2 animate-pulse rounded bg-ink/8" />
+                </div>
+              ) : smartNudge ? (
+                (() => {
+                  const nudge = smartNudge;
                   const goal = profile?.goalDirection ?? "maintain";
                   const why = getNudgeWhy(nudge.type, goal);
                   const action = getNudgeAction(nudge.type, goal);
@@ -895,8 +889,8 @@ export default function SummaryScreen() {
                   const showFoodChips = nudge.type !== "workout_missing" && nudge.type !== "calorie_high" && nudge.type !== "on_track" && suggestions.length > 0;
                   const showChips = behavioralChips.length > 0 || showFoodChips;
                   return (
-                    <div key={nudge.type} className="rounded-xl border border-primary/60 bg-primary/5 px-4 py-3 space-y-2.5">
-                      <p className="text-sm font-medium text-ink/90">{getAiMessage(nudge.type) ?? nudge.message}</p>
+                    <div className="rounded-xl border border-primary/60 bg-primary/5 px-4 py-3 space-y-2.5">
+                      <p className="text-sm font-medium text-ink/90">{nudge.message}</p>
                       {(why || action || showChips) && (
                         <div className="flex flex-wrap gap-1.5">
                           {why && (
@@ -967,16 +961,10 @@ export default function SummaryScreen() {
                       )}
                     </div>
                   );
-                })
+                })()
               ) : (
-                <div className="rounded-xl border border-primary/60 bg-primary/5 px-4 py-3 space-y-1">
-                  <p className="text-sm font-medium text-ink/90">
-                    {profile?.weight ? "Intake is looking solid this week" : "Complete your profile for personalised nudges"}
-                  </p>
-                  <p className="text-xs text-ink/60">
-                    {profile?.weight ? "Keep it up • consistency is what drives results." : "Add your weight and goal in Profile to get started."}
-                  </p>
-                </div>
+                /* AI said nothing worth saying — show nothing */
+                null
               )}
               {/* Past nudges • flat date-grouped scroll, mirrors HomeScreen feed */}
               {groupedNudges.filter((g) => g.label !== "Today").slice(0, visibleNudgeGroupCount).map((group) => (

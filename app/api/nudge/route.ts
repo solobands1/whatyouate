@@ -37,6 +37,82 @@ Suggestion rules:
 - No serving instructions or modifications in food names
 - For workout_missing, calorie_high, and on_track nudges return an empty suggestions array []`;
 
+const SMART_NUDGE_SYSTEM_PROMPT = `You are a sharp, warm nutrition coach. You have full access to a user's recent data. Your job is to find the ONE most useful, specific thing to tell them right now — or say nothing if nothing genuinely stands out.
+
+Rules:
+- 1-2 sentences, max 40 words
+- Only reference numbers and patterns you can actually see in the data
+- Be honest, direct, and specific — not generic
+- No em dashes (—). End with a period or exclamation mark.
+- No clichés: forbidden words/phrases: "crush it", "you've got this", "fresh start", "stay on track", "hit your goal", "keep it up", "build muscle"
+- Don't repeat the same angle as recent nudges — if you can see they've already been told about protein, find a different angle or say nothing
+- If timeOfDay is "morning": frame as intention. If "afternoon": note there's still time. If "evening": brief and reflective.
+- If nothing meaningful stands out, return null for message
+
+Return ONLY valid JSON with no other text:
+{"message": "...", "type": "protein_low_critical|protein_low|calorie_low|calorie_high|workout_fuel_low|training_fuel_low|workout_missing|micronutrient|fat_low|on_track", "suggestions": ["food1","food2","food3"]}
+Or if nothing to say: {"message": null}
+
+Suggestion rules: 3 simple food names matching the nudge type. Empty array [] for workout_missing, calorie_high, on_track.`;
+
+function buildSmartPrompt(ctx: Record<string, unknown>): string {
+  const profile = ctx.profile as Record<string, unknown> | null;
+  const lines: string[] = [];
+
+  if (profile) {
+    const parts = [
+      profile.goalDirection && `goal: ${profile.goalDirection}`,
+      profile.age && `age: ${profile.age}`,
+      profile.weight && `weight: ${profile.weight}kg`,
+      profile.activityLevel && `activity: ${profile.activityLevel}`,
+      profile.freeformFocus && `focus: ${profile.freeformFocus}`,
+      (profile.dietaryRestrictions as string[] | undefined)?.length &&
+        `restrictions: ${(profile.dietaryRestrictions as string[]).join(", ")}`,
+    ].filter(Boolean);
+    lines.push(`Profile: ${parts.join(", ")}`);
+  }
+
+  const targetCal = ctx.targetCalories as number | null;
+  const targetPro = ctx.targetProtein as number | null;
+  if (targetCal || targetPro) {
+    lines.push(`Targets: ${targetCal ? `${targetCal} kcal` : ""}${targetCal && targetPro ? " | " : ""}${targetPro ? `${targetPro}g protein` : ""}`);
+  }
+
+  const last7 = ctx.last7Days as Array<Record<string, unknown>> | undefined;
+  if (last7?.length) {
+    lines.push(`Last ${last7.length} logged days (date | kcal | protein | fat | workout):`);
+    last7.forEach((d) => {
+      const wk = d.hasWorkout ? ` | workout ${d.workoutMinutes ?? "?"}min ${d.workoutIntensity ?? ""}` : "";
+      lines.push(`  ${d.dateKey}: ${d.calories} kcal / ${d.protein}g protein / ${d.fat}g fat${wk}`);
+    });
+  }
+
+  const todayCal = ctx.todayCalories as number;
+  const todayPro = ctx.todayProtein as number;
+  const todayFat = ctx.todayFat as number;
+  const todayCarbs = ctx.todayCarbs as number;
+  if (todayCal > 0 || todayPro > 0) {
+    lines.push(`Today so far (${ctx.timeOfDay}): ${todayCal} kcal / ${todayPro}g protein / ${todayFat}g fat / ${todayCarbs}g carbs`);
+  } else {
+    lines.push(`Today so far (${ctx.timeOfDay}): nothing logged yet`);
+  }
+
+  const foods = ctx.recentFoods as string[] | undefined;
+  if (foods?.length) {
+    lines.push(`Recently logged foods: ${foods.slice(0, 12).join(", ")}`);
+  }
+
+  const recent = ctx.recentNudges as string[] | undefined;
+  if (recent?.length) {
+    lines.push(`Recent nudges shown (don't repeat these angles):\n${recent.map((n) => `  - "${n}"`).join("\n")}`);
+  }
+
+  lines.push(`\nTime of day: ${ctx.timeOfDay}`);
+  lines.push(`\nAnalyze the data above. What is the single most useful, specific thing to tell this person right now? If nothing meaningful stands out, return null.`);
+
+  return lines.join("\n");
+}
+
 function buildProfileSummary(profile: Record<string, unknown> | null): string {
   if (!profile) return "no profile";
   return [
@@ -64,6 +140,41 @@ export async function POST(req: Request) {
     const { profile, recentFoods = [], timeOfDay = "morning" } = body;
     const profileSummary = buildProfileSummary(profile);
     const foodsStr = (recentFoods as string[]).slice(0, 10).join(", ") || "not provided";
+
+    // Smart mode: accepts full context, AI decides what to say
+    if (body.mode === "smart") {
+      const prompt = buildSmartPrompt(body);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 12_000);
+      try {
+        const response = await fetch(ANTHROPIC_URL, {
+          method: "POST",
+          signal: controller.signal,
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": apiKey,
+            "anthropic-version": "2023-06-01",
+          },
+          body: JSON.stringify({
+            model: "claude-haiku-4-5-20251001",
+            max_tokens: 200,
+            temperature: 0.8,
+            system: SMART_NUDGE_SYSTEM_PROMPT,
+            messages: [{ role: "user", content: prompt }],
+          }),
+        });
+        if (!response.ok) throw new Error("Anthropic request failed");
+        const result = await response.json();
+        const raw = (result.content?.[0]?.text ?? "").trim();
+        const jsonMatch = raw.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) return NextResponse.json({ nudge: null });
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (!parsed.message) return NextResponse.json({ nudge: null });
+        return NextResponse.json({ nudge: parsed });
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    }
 
     // Batch mode: accepts nudges:[{nudgeType, data}] — one Claude call for all
     const nudges = body.nudges as Array<{ nudgeType: string; data?: Record<string, unknown> }> | undefined;
