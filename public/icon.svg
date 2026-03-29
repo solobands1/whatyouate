@@ -4,25 +4,24 @@
       <stop offset="0%"   stop-color="#82B8FF"/>
       <stop offset="100%" stop-color="#4A84E8"/>
     </radialGradient>
-
-    <!-- Mask: white = visible, black circle = the bite -->
     <mask id="bite">
       <rect width="512" height="512" fill="white"/>
-      <circle cx="378" cy="142" r="82" fill="black"/>
+      <path d="M 512 0 L 512 310 L 445 208 A 22 22 0 0 0 415 181 A 22 22 0 0 1 385 154 A 22 22 0 0 0 355 127 A 22 22 0 0 1 325 100 A 22 22 0 0 0 295 73 L 400 0 Z" fill="black"/>
     </mask>
   </defs>
 
   <!-- Background -->
   <rect width="512" height="512" fill="url(#bg)" rx="100"/>
 
-  <!-- Plate (everything masked by the bite) -->
+  <!-- Plate -->
   <g mask="url(#bite)">
-    <!-- Rim base -->
-    <circle cx="256" cy="275" r="178" fill="rgba(255,255,255,0.80)"/>
-    <!-- Rim inner shadow ring to show depth of the raised edge -->
-    <circle cx="256" cy="275" r="168"
-      fill="none" stroke="rgba(160,190,230,0.50)" stroke-width="20"/>
-    <!-- Flat eating surface -->
-    <circle cx="256" cy="275" r="158" fill="rgba(255,255,255,0.95)"/>
+    <!-- Outer shadow ring: gives the plate a sense of depth and edge -->
+    <circle cx="256" cy="268" r="180" fill="rgba(180,205,238,0.55)"/>
+    <!-- Rim surface: the raised rim of the plate, bright white -->
+    <circle cx="256" cy="268" r="168" fill="rgba(255,255,255,0.93)"/>
+    <!-- Rim-to-surface groove: subtle shadow at the base of the rim -->
+    <circle cx="256" cy="268" r="152" fill="rgba(200,222,248,0.72)"/>
+    <!-- Eating surface: flat inner area, brightest white -->
+    <circle cx="256" cy="268" r="143" fill="rgba(255,255,255,0.97)"/>
   </g>
 </svg>
