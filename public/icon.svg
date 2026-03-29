@@ -1,27 +1,42 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
   <defs>
-    <radialGradient id="bg" cx="50%" cy="30%" r="70%">
+    <radialGradient id="bg" cx="50%" cy="25%" r="75%">
       <stop offset="0%" stop-color="#82B8FF"/>
       <stop offset="100%" stop-color="#4F88E8"/>
+    </radialGradient>
+    <!-- Blue glass gradient: lighter centre, richer edge -->
+    <radialGradient id="lens" cx="38%" cy="33%" r="65%">
+      <stop offset="0%"   stop-color="#A8D0FF"/>
+      <stop offset="60%"  stop-color="#5A9AFF"/>
+      <stop offset="100%" stop-color="#2D6ED6"/>
     </radialGradient>
   </defs>
 
   <!-- Background -->
   <rect width="512" height="512" fill="url(#bg)" rx="100"/>
 
-  <!-- Plate outer rim -->
-  <circle cx="256" cy="310" r="162" fill="rgba(255,255,255,0.18)"/>
-  <!-- Plate surface -->
-  <circle cx="256" cy="310" r="135" fill="rgba(255,255,255,0.28)"/>
-  <!-- Plate inner well -->
-  <circle cx="256" cy="310" r="92" fill="rgba(255,255,255,0.40)"/>
+  <!-- ── Plate ── -->
+  <!-- Full plate disc -->
+  <circle cx="256" cy="318" r="160" fill="rgba(255,255,255,0.78)"/>
+  <!-- Rim shadow: a thin dark stroke just inside the edge to show depth -->
+  <circle cx="256" cy="318" r="149" fill="none"
+    stroke="rgba(180,200,240,0.55)" stroke-width="22"/>
+  <!-- Flat surface (slightly whiter than rim) -->
+  <circle cx="256" cy="318" r="138" fill="rgba(255,255,255,0.88)"/>
+  <!-- Subtle centre well -->
+  <circle cx="256" cy="318" r="78" fill="rgba(255,255,255,0.80)"/>
 
-  <!-- Camera outer dark ring -->
-  <circle cx="256" cy="148" r="60" fill="#1A2535"/>
-  <!-- Camera white ring -->
-  <circle cx="256" cy="148" r="44" fill="rgba(255,255,255,0.92)"/>
-  <!-- Camera dark core -->
-  <circle cx="256" cy="148" r="26" fill="#1A2535"/>
-  <!-- Highlight dot -->
-  <circle cx="272" cy="135" r="9" fill="rgba(255,255,255,0.85)"/>
+  <!-- ── Camera ── -->
+  <!-- Viewfinder bump -->
+  <rect x="200" y="90" width="32" height="14" rx="5" fill="#18202E"/>
+  <!-- Camera body -->
+  <rect x="182" y="100" width="148" height="96" rx="18" fill="#18202E"/>
+  <!-- Lens mount ring -->
+  <circle cx="256" cy="148" r="36" fill="#2A3547"/>
+  <!-- Blue glass -->
+  <circle cx="256" cy="148" r="28" fill="url(#lens)"/>
+  <!-- Dark aperture -->
+  <circle cx="256" cy="148" r="14"  fill="#0E1622"/>
+  <!-- Lens reflection highlight -->
+  <circle cx="266" cy="138" r="5"  fill="rgba(255,255,255,0.78)"/>
 </svg>
