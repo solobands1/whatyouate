@@ -78,7 +78,7 @@ export default function SummaryScreen() {
   const [nudgeExpanded, setNudgeExpanded] = useState<Record<string, "why" | "what" | null>>({});
   const smartNudgeFetchedRef = useRef(false);
   // { message, type, suggestions } from smart AI call, or null if AI said nothing, or undefined while loading
-  const [smartNudge, setSmartNudge] = useState<{ message: string; type: NudgeType; suggestions?: string[] } | null | undefined>(undefined);
+  const [smartNudge, setSmartNudge] = useState<{ message: string; type: NudgeType; action?: string; suggestions?: string[] } | null | undefined>(undefined);
   const [expandedHistoryNudge, setExpandedHistoryNudge] = useState<string | null>(null);
   const getAiSuggestions = (nudgeType: string): string[] | null => {
     if (typeof window === "undefined") return null;
@@ -884,7 +884,7 @@ export default function SummaryScreen() {
                   const nudge = smartNudge;
                   const goal = profile?.goalDirection ?? "maintain";
                   const why = getNudgeWhy(nudge.type, goal);
-                  const action = getNudgeAction(nudge.type, goal);
+                  const action = nudge.action ?? getNudgeAction(nudge.type, goal);
                   const behavioralChips = getNudgeBehavioralChips(nudge.type, goal);
                   const showFoodChips = nudge.type !== "workout_missing" && nudge.type !== "calorie_high" && nudge.type !== "on_track" && suggestions.length > 0;
                   const showChips = behavioralChips.length > 0 || showFoodChips;

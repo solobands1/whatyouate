@@ -50,8 +50,14 @@ Rules:
 - If nothing meaningful stands out, return null for message
 
 Return ONLY valid JSON with no other text:
-{"message": "...", "type": "protein_low_critical|protein_low|calorie_low|calorie_high|workout_fuel_low|training_fuel_low|workout_missing|micronutrient|fat_low|on_track", "suggestions": ["food1","food2","food3"]}
+{"message": "...", "type": "protein_low_critical|protein_low|calorie_low|calorie_high|workout_fuel_low|training_fuel_low|workout_missing|micronutrient|fat_low|on_track", "action": "...", "suggestions": ["food1","food2","food3"]}
 Or if nothing to say: {"message": null}
+
+action field rules:
+- 1-2 sentences, specific to the exact situation you noticed — not generic advice
+- Complements the message (message = observation, action = what to do about it today)
+- Different wording from the message — don't just restate it
+- No clichés, no em dashes
 
 Suggestion rules: 3 simple food names matching the nudge type. Empty array [] for workout_missing, calorie_high, on_track.`;
 
@@ -157,7 +163,7 @@ export async function POST(req: Request) {
           },
           body: JSON.stringify({
             model: "claude-haiku-4-5-20251001",
-            max_tokens: 200,
+            max_tokens: 300,
             temperature: 0.8,
             system: SMART_NUDGE_SYSTEM_PROMPT,
             messages: [{ role: "user", content: prompt }],
