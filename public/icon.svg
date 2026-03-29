@@ -1,39 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
   <rect width="512" height="512" fill="#F1F6FF" rx="100"/>
-  <!-- What -->
-  <text
-    x="256" y="198"
-    font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif"
-    font-weight="600"
-    font-size="138"
-    fill="#1F2937"
-    text-anchor="middle"
-    dominant-baseline="auto">What</text>
-  <!-- You -->
-  <text
-    x="256" y="311"
-    font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif"
-    font-weight="600"
-    font-size="104"
-    fill="#1F2937"
-    text-anchor="middle"
-    dominant-baseline="auto">You</text>
-  <!-- Ate -->
-  <text
-    x="256" y="408"
-    font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif"
-    font-weight="600"
-    font-size="78"
-    fill="#1F2937"
-    text-anchor="middle"
-    dominant-baseline="auto">Ate</text>
-  <!-- ai superscript -->
-  <text
-    x="323" y="352"
-    font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif"
-    font-weight="600"
-    font-size="26"
-    fill="rgba(31,41,55,0.6)"
-    text-anchor="start"
-    dominant-baseline="auto">ai</text>
+  <text x="256" y="170" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-weight="600" font-size="185" fill="#1F2937" text-anchor="middle">What</text>
+  <text x="256" y="315"  font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-weight="600" font-size="185" fill="#1F2937" text-anchor="middle">You</text>
+  <text x="256" y="455"  font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-weight="600" font-size="185" fill="#1F2937" text-anchor="middle">Ate</text>
+  <text x="394" y="358" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-weight="600" font-size="48" fill="rgba(31,41,55,0.6)" text-anchor="start">ai</text>
 </svg>
