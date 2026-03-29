@@ -21,34 +21,28 @@ function makeSvg(size) {
   const px = b(256), py = b(268);
 
   // ── Bite mark path ────────────────────────────────────────────────────────
-  // Replaces the old circle mask with a path whose inner edge has 3 tooth
-  // arcs and 2 valleys, producing a recognisable bite mark.
-  //
-  // The bite edge runs diagonally from (445, 208) → (295, 73) — upper-right
-  // to lower-left — divided into 5 arcs alternating sweep=0 (tooth, convex
-  // toward outside) and sweep=1 (valley, concave toward outside).
-  //
-  // When the mask removes this path, the remaining plate has 3 concave tooth
-  // impressions at its upper-right edge, which is exactly what a bite looks like.
-  //
-  // Arc radius = 22px — at 180px output this renders as ~7.7px, clearly visible.
-
-  // Bite arc radius: 38px → 13.4px at 180px output, clearly visible teeth.
-  // The bite boundary is shifted ~50px deeper into the plate vs before,
-  // so the midpoints of the tooth arcs sit well inside the plate radius (≈120px
-  // from centre vs the plate radius of 180px). This gives a much bigger, more
-  // dramatic chunk removed from the upper-right of the plate.
-  const tr = b(38); // tooth arc radius
+  // 5 teeth (4 incisors + 2 canines) with 4 valleys between them.
+  // 10 points spaced evenly along the diagonal (455,265)→(185,65) — the same
+  // line the original 3-tooth design used, which is proven to pass through the
+  // plate interior. Each step is ~(-30, -22) px; chord ≈ 37px.
+  // tr=20 is just above the minimum (chord/2 ≈ 18.7), giving deep, rounded
+  // semicircular tooth impressions that look like real incisors.
+  // sweep=0 → tooth (arc curves into plate), sweep=1 → valley (ridge between).
+  const tr = b(20); // tooth arc radius — near-semicircular for rounded look
 
   const biteD = [
     `M ${b(512)} ${b(0)}`,
-    `L ${b(512)} ${b(330)}`,
+    `L ${b(512)} ${b(310)}`,
     `L ${b(455)} ${b(265)}`,
-    `A ${tr} ${tr} 0 0 0 ${b(401)} ${b(225)}`,  // tooth 1
-    `A ${tr} ${tr} 0 0 1 ${b(347)} ${b(185)}`,  // valley
-    `A ${tr} ${tr} 0 0 0 ${b(293)} ${b(145)}`,  // tooth 2
-    `A ${tr} ${tr} 0 0 1 ${b(239)} ${b(105)}`,  // valley
-    `A ${tr} ${tr} 0 0 0 ${b(185)} ${b(65)}`,   // tooth 3
+    `A ${tr} ${tr} 0 0 0 ${b(425)} ${b(243)}`,  // tooth 1
+    `A ${tr} ${tr} 0 0 1 ${b(395)} ${b(221)}`,  // valley
+    `A ${tr} ${tr} 0 0 0 ${b(365)} ${b(199)}`,  // tooth 2
+    `A ${tr} ${tr} 0 0 1 ${b(335)} ${b(177)}`,  // valley
+    `A ${tr} ${tr} 0 0 0 ${b(305)} ${b(155)}`,  // tooth 3
+    `A ${tr} ${tr} 0 0 1 ${b(275)} ${b(133)}`,  // valley
+    `A ${tr} ${tr} 0 0 0 ${b(245)} ${b(111)}`,  // tooth 4
+    `A ${tr} ${tr} 0 0 1 ${b(215)} ${b(89)}`,   // valley
+    `A ${tr} ${tr} 0 0 0 ${b(185)} ${b(65)}`,   // tooth 5
     `L ${b(295)} ${b(0)}`,
     `Z`,
   ].join(" ");
