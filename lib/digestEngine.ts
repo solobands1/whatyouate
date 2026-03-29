@@ -492,12 +492,12 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
       nudges.push({
         message: isMorning
           ? pickVariant([
-              `You've had some solid sessions this week. Food intake has been a bit light relative to the output. Worth eating more today.`,
-              `Training load is up but food intake has been lower than ideal. Try to eat a bit more around your sessions today.`,
-              `Good training week but the food hasn't quite kept pace. Aiming to eat a bit more today would help.`,
+              `Solid sessions this week! Food intake has been a bit light relative to the effort though. Worth eating a bit more today.`,
+              `Training load is up but food intake hasn't quite kept pace. Try to eat a bit more around your sessions today.`,
+              `Good training week! The food side just needs to catch up a bit. Aiming to eat more today would help.`,
             ])
           : pickVariant([
-              `You've been active this week but intake has been a bit light. At ${todayCalMid} kcal today, there's still room to fuel up.`,
+              `Good activity this week! Intake has been a bit light though. At ${todayCalMid} kcal today, there's still room to add more.`,
               `Solid training week but food hasn't kept up. ${todayCalMid} kcal logged today with more time to add.`,
             ]),
         type: "workout_fuel_low",
@@ -533,7 +533,7 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
             `Looks like ${nutrient} has been a bit low lately. It's easy to miss, but worth mixing in a few new foods.`,
           ]),
           type: "micronutrient",
-          data: { nutrient },
+          data: { nutrient, daysLow: days.size },
           priority: 1 + microBias,
           slot: "trend",
         });
@@ -552,12 +552,12 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
     nudges.push({
       message: isMorning
         ? pickVariant([
-            `Good training week. Food intake has been a bit light relative to the effort. Worth eating a bit more today.`,
-            `Solid sessions this week but the food hasn't kept pace. Try to add a bit more fuel today.`,
-            `Active week so far. Intake has been running a little low for the amount of training you're doing.`,
+            `Great training week! Food intake has been a bit light relative to the effort though. Worth eating a bit more today.`,
+            `Solid sessions this week but the food hasn't quite kept pace. Try to add a bit more fuel today.`,
+            `Active week so far! Intake has been running a little low for the amount of training you're doing.`,
           ])
         : pickVariant([
-            `Good training week but intake has been on the lighter side. You're at ${todayCalMid} kcal today.`,
+            `Good training week! Intake has been on the lighter side though. You're at ${todayCalMid} kcal today.`,
             `Active week but calorie intake hasn't matched the output. Still time to eat a bit more today.`,
           ]),
       type: "training_fuel_low",
@@ -590,13 +590,25 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
   // On-track trend — fires only when no other trend nudges found
   const hasTrendNudge = nudges.some((n) => n.slot === "trend");
   if (!hasTrendNudge && profile?.weight && dayCount >= 5 && avgWeekCalories > 0) {
+    const proteinGood = !gentleTargets?.protein || avgWeekProtein >= gentleTargets.protein * 0.85;
+    const calGood = !gentleTargets?.calories || (
+      avgWeekCalories >= gentleTargets.calories * 0.9 &&
+      avgWeekCalories <= gentleTargets.calories * 1.1
+    );
     nudges.push({
-      message: pickWeekly([
-        `Intake is looking solid this week.`,
-        `Things are tracking well across the board this week.`,
-        `Good week of eating. The patterns are all in a healthy range.`,
-        `Everything is looking balanced this week. Keep doing what you're doing.`,
-      ]),
+      message: (calGood && proteinGood)
+        ? pickWeekly([
+            `Calories and protein have both been close to target this week. That's a really solid pattern!`,
+            `Great week. Both protein and calorie intake are right where they should be.`,
+            `Everything's tracking well this week. Protein and calories are both in a good range!`,
+            `Solid, consistent week. Protein and calories have both been on target.`,
+          ])
+        : pickWeekly([
+            `Food intake is looking good this week. Nothing significant stands out.`,
+            `Things are tracking well overall this week. Keep the consistency going!`,
+            `Intake looks balanced this week. Keep doing what you're doing!`,
+            `Good week of eating. The patterns are all in a healthy range.`,
+          ]),
       type: "on_track",
       data: {},
       priority: 0,
@@ -616,9 +628,9 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
     if (workedOutToday && gentleTargets.calories && todayCalMid < gentleTargets.calories * 0.6) {
       todayNudges.push({
         message: pickVariant([
-          `You logged a workout today but food is sitting at ${todayCalMid} kcal. Make sure dinner covers the extra cost.`,
-          `Active day today and you're only at ${todayCalMid} kcal. Worth eating a bit more to recover properly.`,
-          `Good session today. Food intake is at ${todayCalMid} kcal so far, dinner is a good chance to refuel.`,
+          `Nice work today! Food is at ${todayCalMid} kcal though. Make sure dinner covers the extra cost from your session.`,
+          `Active day! You're only at ${todayCalMid} kcal so far. Worth eating a bit more to recover properly.`,
+          `Good session today! Food intake is at ${todayCalMid} kcal so far. Dinner is a great chance to refuel.`,
         ]),
         type: "workout_fuel_low",
         data: { actual: todayCalMid, target: Math.round(gentleTargets.calories) },
@@ -671,10 +683,10 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
     if (todayNudges.length === 0 && todayCalMid > 0) {
       todayNudges.push({
         message: pickVariant([
-          `Today is looking well-balanced. A consistent dinner keeps the pattern going.`,
-          `Good day of eating so far. You're tracking right where you should be.`,
-          `Things are looking solid today. Finishing with a balanced dinner keeps it on track.`,
-          `Today's intake is looking good. Stay consistent through dinner and you're set.`,
+          `Today is looking well-balanced! A solid dinner keeps that going.`,
+          `Good day of eating so far! You're tracking right where you should be.`,
+          `Things are looking great today. Finishing with a balanced dinner keeps it on track.`,
+          `Today's intake is looking good! Stay consistent through dinner and you're set.`,
         ]),
         type: "on_track",
         data: {},
