@@ -38,17 +38,17 @@ function UnlockTimeline({ milestones }: { milestones: MilestoneItem[] }) {
         </p>
       )}
       {/* Dot row */}
-      <div className="relative flex items-center justify-between">
-        <div className="absolute inset-x-0 top-[5px] h-px bg-ink/10" />
+      <div className="relative flex items-start justify-between">
+        <div className="absolute inset-x-0 top-[6px] h-px bg-ink/10" />
         {milestones.map((m) => (
           <button
             key={m.label}
-            className="relative z-10 flex flex-col items-center transition active:opacity-60 focus:outline-none"
+            className={`relative z-10 flex flex-col items-center transition active:opacity-60 focus:outline-none ${m.unlocked ? "mt-3" : "mt-0"}`}
             style={{ width: colWidth }}
             onClick={() => setActiveTip(activeTip === m.label ? null : m.label)}
           >
             <div className={`h-3 w-3 rounded-full transition-colors ${m.unlocked ? "bg-primary/80" : activeTip === m.label ? "bg-ink/35" : "bg-ink/20"}`} />
-            <p className={`mt-1.5 text-center text-[10px] leading-tight ${m.unlocked ? "text-ink/70" : "text-muted/45"}`}>{m.label}</p>
+            <p className={`mt-1.5 text-center text-[10px] leading-tight ${m.unlocked ? "text-primary/70" : "text-muted/45"}`}>{m.label}</p>
             {m.sub && <p className="mt-0.5 text-center text-[10px] leading-tight text-primary/60">{m.sub}</p>}
           </button>
         ))}
