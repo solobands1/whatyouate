@@ -480,7 +480,7 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
       nudges.push({
         message: pickVariant([
           `No workouts logged this week. If you've been training, adding them helps the app connect your food and energy more accurately.`,
-          `Workout tracking has been quiet. Logging sessions — even rough ones — gives the app a much better picture of what you need.`,
+          `Workout tracking has been quiet. Logging sessions, even rough ones, gives the app a much better picture of what you need.`,
           `Nothing logged on the workout side this week. If you're staying active, tracking it helps calibrate your food targets.`,
         ]),
         type: "workout_missing",
@@ -498,7 +498,7 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
             ])
           : pickVariant([
               `Great activity this week! Food has been a bit light for it though. You're at ${todayCalMid} kcal today with dinner still ahead.`,
-              `Good training week but intake hasn't kept up. At ${todayCalMid} kcal today, there's still a real chance to refuel.`,
+              `Good training week! Intake hasn't quite kept up. At ${todayCalMid} kcal today, there's still a real chance to refuel.`,
             ]),
         type: "workout_fuel_low",
         data: { actual: Math.round(avgWeekCalories), target: gentleTargets?.calories },
@@ -553,12 +553,12 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
       message: isMorning
         ? pickVariant([
             `Great training week! Food intake has been a bit light relative to the effort though. Worth eating a bit more today.`,
-            `Solid sessions this week but the food hasn't quite kept pace. Try to add a bit more fuel today.`,
+            `Solid sessions this week! The food hasn't quite kept up. Try to add a bit more fuel today.`,
             `Active week so far! Intake has been running a little low for the amount of training you're doing.`,
           ])
         : pickVariant([
             `Good training week! Intake has been on the lighter side though. You're at ${todayCalMid} kcal today.`,
-            `Active week but calorie intake hasn't matched the output. Still time to eat a bit more today.`,
+            `Active week! Calorie intake hasn't quite matched the output. Still time to eat a bit more today.`,
           ]),
       type: "training_fuel_low",
       data: { actual: Math.round(avgWeekCalories), target: gentleTargets?.calories },
@@ -599,14 +599,14 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
       message: (calGood && proteinGood)
         ? pickWeekly([
             `Both protein and calories have been right on target this week. That kind of consistency is what actually moves the needle!`,
-            `Really solid week. Protein and calorie intake are both where they should be.`,
+            `Really solid week! Protein and calorie intake are both where they should be.`,
             `Everything is tracking well this week. Protein and calories are both in a great range!`,
             `Consistent and on target this week. Protein and calories are both right where you want them.`,
           ])
         : pickWeekly([
             `Eating is looking well-balanced this week. Nothing stands out as a problem.`,
             `Things are in a good place overall this week. The patterns all look healthy.`,
-            `Intake is looking solid this week. Whatever you've been doing is working.`,
+            `Intake is looking solid this week. Whatever you've been doing is working!`,
             `Good week of eating. The patterns are all tracking in a healthy range.`,
           ]),
       type: "on_track",
@@ -685,7 +685,7 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
         message: pickVariant([
           `Today is looking well-balanced! A solid dinner keeps the momentum going.`,
           `Good day of eating so far! You're right where you should be.`,
-          `Things are looking great today. A balanced dinner and you're set.`,
+          `Things are looking great today! A balanced dinner and you're set.`,
           `Today's intake is on point! Finishing strong at dinner locks it in.`,
         ]),
         type: "on_track",
