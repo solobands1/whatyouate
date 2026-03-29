@@ -9,7 +9,7 @@ import Card from "./Card";
 import { useAuth } from "./AuthProvider";
 import { useAppData } from "./AppDataProvider";
 import { addNudge, listNudges, pruneNudges } from "../lib/supabaseDb";
-import { computeNudges, computeSummaryMarkers, type ComputedNudge } from "../lib/digestEngine";
+import { computeNudges, computeSummaryMarkers, type ComputedNudge, type NudgeType } from "../lib/digestEngine";
 
 
 type MilestoneItem = { label: string; sub: string; desc: string; unlocked: boolean };
@@ -77,9 +77,13 @@ export default function SummaryScreen() {
   const [visibleNudgeGroupCount, setVisibleNudgeGroupCount] = useState(3);
   const [nudgeExpanded, setNudgeExpanded] = useState<Record<string, "why" | "what" | null>>({});
   const aiNudgeFetchedRef = useRef<Set<string>>(new Set());
-  // Snapshot AI messages once when nudges first render — prevents mid-session swaps.
-  // AI fetch still runs in background and caches for next visit.
-  const aiSnapshotRef = useRef<Record<string, string> | "pending">("pending");
+  // Trigger re-render when AI messages arrive so they show immediately in this session
+  const [, setAiLoaded] = useState(0);
+  const [expandedHistoryNudge, setExpandedHistoryNudge] = useState<string | null>(null);
+  const getAiMessage = (nudgeType: string): string | null => {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem(`wya_ai_nudge_${todayKey()}_${nudgeType}`);
+  };
   const getAiSuggestions = (nudgeType: string): string[] | null => {
     if (typeof window === "undefined") return null;
     const raw = localStorage.getItem(`wya_ai_nudge_${todayKey()}_${nudgeType}_suggestions`);
@@ -395,7 +399,7 @@ export default function SummaryScreen() {
             }
           }
         });
-        // Message cached — will display on next visit (no mid-session swap)
+        setAiLoaded((v) => v + 1);
       } catch {
         // Fall back to hardcoded messages
       } finally {
@@ -423,25 +427,28 @@ export default function SummaryScreen() {
       (note) => !savedTypesToday.has(note.type) && !savedThisSessionRef.current.has(note.type)
     );
     if (missing.length === 0) return;
+    // Build up a local message→type map so historical nudges can show "Why?" context
+    const metaKey = `wya_nudge_type_meta_${user.id}`;
+    let typeMeta: Record<string, string> = {};
+    try { typeMeta = JSON.parse(localStorage.getItem(metaKey) ?? "{}"); } catch {}
     missing.forEach((note) => {
       savedThisSessionRef.current.add(note.type);
       savedTypesToday.add(note.type);
-      addNudge(user.id, "awareness", note.message).catch(() => {});
+      addNudge(user.id, note.type, note.message).catch(() => {});
+      typeMeta[note.message] = note.type;
     });
+    try { localStorage.setItem(metaKey, JSON.stringify(typeMeta)); } catch {}
     try { localStorage.setItem(savedTypesKey, JSON.stringify([...savedTypesToday])); } catch {}
     pruneNudges(user.id).catch(() => {});
   }, [user, visibleNotes, nudgesLoaded]);
 
-  // Snapshot cached AI messages on first render so the card text never swaps mid-session
-  if (aiSnapshotRef.current === "pending" && visibleNotes.length > 0 && typeof window !== "undefined") {
-    const todayStr = todayKey();
-    const snapshot: Record<string, string> = {};
-    visibleNotes.forEach((note) => {
-      const cached = localStorage.getItem(`wya_ai_nudge_${todayStr}_${note.type}`);
-      if (cached) snapshot[note.type] = cached;
-    });
-    aiSnapshotRef.current = snapshot;
-  }
+  const getHistoryNudgeType = (message: string): NudgeType | null => {
+    if (typeof window === "undefined" || !user) return null;
+    try {
+      const meta: Record<string, string> = JSON.parse(localStorage.getItem(`wya_nudge_type_meta_${user.id}`) ?? "{}");
+      return (meta[message] as NudgeType) ?? null;
+    } catch { return null; }
+  };
 
   const weeklyVariant = (variants: string[]): string => {
     const week = Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000));
@@ -889,7 +896,7 @@ export default function SummaryScreen() {
                   const showChips = behavioralChips.length > 0 || showFoodChips;
                   return (
                     <div key={nudge.type} className="rounded-xl border border-primary/60 bg-primary/5 px-4 py-3 space-y-2.5">
-                      <p className="text-sm font-medium text-ink/90">{((aiSnapshotRef.current !== "pending" ? aiSnapshotRef.current[nudge.type] : null) ?? nudge.message).replace(/[.]+$/, "")}</p>
+                      <p className="text-sm font-medium text-ink/90">{getAiMessage(nudge.type) ?? nudge.message}</p>
                       {(why || action || showChips) && (
                         <div className="flex flex-wrap gap-1.5">
                           {why && (
@@ -975,14 +982,28 @@ export default function SummaryScreen() {
               {groupedNudges.filter((g) => g.label !== "Today").slice(0, visibleNudgeGroupCount).map((group) => (
                 <div key={group.label} className="space-y-1.5">
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/50">{group.label}</p>
-                  {group.items.map((nudge) => (
-                    <div
-                      key={nudge.id ?? nudge.message}
-                      className="rounded-lg bg-ink/5 px-3 py-2 text-xs text-muted/70"
-                    >
-                      {nudge.message.replace(/ • /g, ". ").replace(/[.]+$/, "")}
-                    </div>
-                  ))}
+                  {group.items.map((nudge) => {
+                    const histType = getHistoryNudgeType(nudge.message);
+                    const histWhy = histType ? getNudgeWhy(histType, profile?.goalDirection ?? "maintain") : null;
+                    const histKey = nudge.id ?? nudge.message;
+                    const isExpanded = expandedHistoryNudge === histKey;
+                    return (
+                      <div
+                        key={histKey}
+                        className={`rounded-lg bg-ink/5 px-3 py-2 text-xs text-muted/70 ${histWhy ? "cursor-pointer active:opacity-70 transition-opacity" : ""}`}
+                        onClick={histWhy ? () => setExpandedHistoryNudge(isExpanded ? null : histKey) : undefined}
+                      >
+                        <p>{nudge.message.replace(/ • /g, ". ").replace(/\.{2,}$/g, "")}</p>
+                        {isExpanded && histWhy && (
+                          <div className="mt-2 space-y-1 border-t border-ink/10 pt-2">
+                            {histWhy.split(" • ").map((part, i) => (
+                              <p key={i} className="text-ink/55">{part.trim()}</p>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               ))}
               {visibleNudgeGroupCount < groupedNudges.filter((g) => g.label !== "Today").length && (

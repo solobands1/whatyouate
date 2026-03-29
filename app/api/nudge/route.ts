@@ -23,6 +23,7 @@ Message rules:
 - 1-2 sentences, max 40 words
 - Only use numbers and facts explicitly provided in the nudge data. Never invent streaks, days, or context you weren't given.
 - Be direct and warm, not clinical. Acknowledge the situation, then give one clear action.
+- End every message with a period or exclamation mark.
 - No em dashes (—). Exclamation marks are fine where they feel natural, especially for workout and on_track nudges.
 - No fitness-app clichés. Forbidden: "fresh chance", "build muscle", "crush it", "you've got this", "tomorrow is a new day", "stay on track", "hit your goal", "keep it up"
 - Vary sentence openings — don't always start with "You've" or "Your"
