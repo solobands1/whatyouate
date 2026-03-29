@@ -391,15 +391,15 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
       nudges.push({
         message: isMorning
           ? pickVariant([
-              `Food intake has been on the lighter side for ${daysCalStr}. Worth aiming to eat a bit more throughout today.`,
-              `Calorie intake has come in below your target for ${daysCalStr}. Today is a good chance to bring that up.`,
-              `You've been eating below your goal for ${daysCalStr}. Building today's meals with that in mind can help.`,
-              `Energy intake has been low for ${daysCalStr}. A bit more at each meal today should close that gap.`,
+              `Eating has been a bit light for ${daysCalStr}. Try making today's meals a little heartier than usual.`,
+              `You've been under on food for ${daysCalStr}. Today's a good day to be a bit more generous with your meals.`,
+              `Intake has been low for ${daysCalStr}. Building in an extra snack or a bigger lunch today should help.`,
+              `Food has been coming in below target for ${daysCalStr}. Small additions throughout today add up more than you'd think.`,
             ])
           : pickVariant([
-              `Calorie intake has been below target for ${daysCalStr}. At ${todayCalMid} kcal today, there's still room to add more.`,
-              `Most recent days have come in light on food. Today is at ${todayCalMid} kcal so far with more meals ahead.`,
-              `You've been short on total intake for ${daysCalStr}. There's still time today to add something more.`,
+              `You've been light on food for ${daysCalStr}, and today is at ${todayCalMid} kcal so far. Dinner is a solid chance to catch up.`,
+              `Intake has been low most days this week. At ${todayCalMid} kcal today, there's still room to add something more.`,
+              `You've been short on total food for ${daysCalStr}. Still time tonight to bring the day closer to your goal.`,
             ]),
         type: "calorie_low",
         data: { actual: Math.round(avgWeekCalories), target: gentleTargets.calories, daysLow: daysCalorieLow },
@@ -409,10 +409,10 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
     } else if (weekHigh) {
       nudges.push({
         message: pickVariant([
-          `Intake has been a bit above your target for most of this week. Just something to stay aware of.`,
-          `Calories have been running a bit high this week. Keeping an eye on portions could help keep things balanced.`,
-          `Food intake has been above your goal for a few days. Worth checking in on what's driving that.`,
-          `You've been eating a bit more than your target this week. Staying aware of it is already half the work.`,
+          `Eating has been running a bit over most days this week. Nothing urgent, but it's worth noticing.`,
+          `Calories have been a bit high this week. Small tweaks to portions usually make a bigger difference than cutting anything out.`,
+          `Food has been over your target for a few days. Checking in on what's been adding up is usually the easiest fix.`,
+          `Intake has been slightly above goal this week. Staying aware of it tends to naturally bring things back into range.`,
         ]),
         type: "calorie_high",
         data: { actual: Math.round(avgWeekCalories), target: gentleTargets.calories },
@@ -436,15 +436,15 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
       nudges.push({
         message: isMorning
           ? pickVariant([
-              `Protein has been well below your goal for ${daysProtStr}. Try to build each meal today around a solid protein source.`,
-              `You've been short on protein for ${daysProtStr}. Even small additions at each meal today add up fast.`,
-              `Protein intake has been low for ${daysProtStr}. Making it a focus today could really shift the weekly average.`,
-              `The protein gap has been consistent for ${daysProtStr}. Today is a clean opportunity to close it.`,
+              `Protein has been low for ${daysProtStr}. Making it the anchor of each meal today would really help shift the week.`,
+              `You've been well under on protein for ${daysProtStr}. Even adding one solid source per meal makes a noticeable difference.`,
+              `Protein has been consistently low for ${daysProtStr}. Today is a good day to make it the priority.`,
+              `The protein gap has been building for ${daysProtStr}. Keeping a source at every meal today is the easiest way to close it.`,
             ])
           : pickVariant([
-              `Protein has been short for ${daysProtStr}. At ${todayProteinMid}g today, dinner is still a real opportunity.`,
-              `Protein intake has been low this week. ${todayProteinMid}g in today so far, a protein-rich dinner can still make a dent.`,
-              `You've been under on protein for ${daysProtStr}. At ${todayProteinMid}g today, a strong finish at dinner would help.`,
+              `Protein has been low for ${daysProtStr} and you're at ${todayProteinMid}g today. A protein-focused dinner can still make a real dent.`,
+              `You've been well under on protein this week. At ${todayProteinMid}g today, dinner is the best remaining shot at closing the gap.`,
+              `Protein is short for ${daysProtStr}. At ${todayProteinMid}g today with dinner ahead, there's still a solid opportunity.`,
             ]),
         type: "protein_low_critical",
         data: { actual: Math.round(avgWeekProtein), target: Math.round(target), daysLow: daysProteinLow },
@@ -455,14 +455,14 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
       nudges.push({
         message: isMorning
           ? pickVariant([
-              `Protein has been a little short for ${daysProtStr}. Worth nudging it up a bit today.`,
-              `You've been slightly under your protein goal for ${daysProtStr}. A bit more at each meal today should get you there.`,
-              `Protein has been coming in just under target lately. Today's a good day to aim a bit higher.`,
+              `Protein has been slightly under for ${daysProtStr}. Nudging it up a bit today should get you there.`,
+              `You've been a little short on protein for ${daysProtStr}. A small addition at each meal today makes a bigger difference than it seems.`,
+              `Protein has been just under target lately. Today's a good day to make it a bit more of a focus.`,
             ])
           : pickVariant([
-              `Protein has been slightly below target for ${daysProtStr}. At ${todayProteinMid}g today with more meals ahead.`,
-              `You've been a bit short on protein this week. ${todayProteinMid}g logged today so far.`,
-              `Protein is slightly under where it should be this week. Still time to add a bit more today.`,
+              `Protein has been a bit short for ${daysProtStr}. You're at ${todayProteinMid}g today with dinner still ahead.`,
+              `You've been slightly under on protein this week. At ${todayProteinMid}g today, a good dinner can close that gap nicely.`,
+              `Protein is a touch below where it should be. At ${todayProteinMid}g today, there's still time to bring it up.`,
             ]),
         type: "protein_low",
         data: { actual: Math.round(avgWeekProtein), target: Math.round(target), daysLow: daysProteinLow },
@@ -479,9 +479,9 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
     if (recentWorkoutCount === 0 && mealCount >= 10) {
       nudges.push({
         message: pickVariant([
-          `No workouts logged this week. If you've been training, adding sessions helps the app give you better intake guidance.`,
-          `Workout tracking has been quiet this week. Logging sessions helps connect food and energy patterns over time.`,
-          `No sessions logged this week. If you're active, tracking workouts gives the app better context for your intake.`,
+          `No workouts logged this week. If you've been training, adding them helps the app connect your food and energy more accurately.`,
+          `Workout tracking has been quiet. Logging sessions — even rough ones — gives the app a much better picture of what you need.`,
+          `Nothing logged on the workout side this week. If you're staying active, tracking it helps calibrate your food targets.`,
         ]),
         type: "workout_missing",
         data: {},
@@ -492,13 +492,13 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
       nudges.push({
         message: isMorning
           ? pickVariant([
-              `Solid sessions this week! Food intake has been a bit light relative to the effort though. Worth eating a bit more today.`,
-              `Training load is up but food intake hasn't quite kept pace. Try to eat a bit more around your sessions today.`,
-              `Good training week! The food side just needs to catch up a bit. Aiming to eat more today would help.`,
+              `Good training week! Food has been a bit light for the effort though. Try to eat a bit more today than you normally would.`,
+              `You've been active but food hasn't quite caught up. Making today's meals a bit bigger than usual would help.`,
+              `Solid sessions this week! Intake just needs to match the output a bit better. Today's a good day for that.`,
             ])
           : pickVariant([
-              `Good activity this week! Intake has been a bit light though. At ${todayCalMid} kcal today, there's still room to add more.`,
-              `Solid training week but food hasn't kept up. ${todayCalMid} kcal logged today with more time to add.`,
+              `Great activity this week! Food has been a bit light for it though. You're at ${todayCalMid} kcal today with dinner still ahead.`,
+              `Good training week but intake hasn't kept up. At ${todayCalMid} kcal today, there's still a real chance to refuel.`,
             ]),
         type: "workout_fuel_low",
         data: { actual: Math.round(avgWeekCalories), target: gentleTargets?.calories },
@@ -527,10 +527,10 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
         const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
         nudges.push({
           message: pickVariant([
-            `${cap(nutrient)} has been on the lower side across your recent meals. Small changes in variety can add up over time.`,
-            `Your recent meals have shown lower ${nutrient} than ideal. Adding a bit of variety can bring that up.`,
-            `${cap(nutrient)} has appeared low across ${days.size} recent days. More variety in what you eat tends to help.`,
-            `Looks like ${nutrient} has been a bit low lately. It's easy to miss, but worth mixing in a few new foods.`,
+            `${cap(nutrient)} has been low in your recent meals. A bit more variety in what you eat tends to bring it up naturally.`,
+            `Your meals have been a bit short on ${nutrient} over the last ${days.size} days. Mixing in a few different foods usually does the trick.`,
+            `${cap(nutrient)} has come up low across ${days.size} recent days. It's easy to miss, but simple to address with a bit of variety.`,
+            `Looks like ${nutrient} has been consistently low lately. Small swaps in your regular meals can fix that faster than you'd expect.`,
           ]),
           type: "micronutrient",
           data: { nutrient, daysLow: days.size },
@@ -574,10 +574,10 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
     if (avgWeekFat < fatTarget * 0.7) {
       nudges.push({
         message: pickVariant([
-          `Fat intake has been on the lower side this week. Healthy fats help with energy, hormones, and absorbing vitamins.`,
-          `Your meals have been a bit low in fat this week. Things like nuts, avocado, or olive oil help more than you might expect.`,
-          `Fat intake has been below where it should be. It quietly affects energy, mood, and how well vitamins get absorbed.`,
-          `Healthy fats have been low in your recent meals. Even small additions to what you normally eat can make a difference.`,
+          `Healthy fats have been low this week. They do more than you'd think for energy, hormones, and absorbing vitamins.`,
+          `Fat intake has been below where it should be. Things like nuts, avocado, or olive oil are easy additions that quietly make a difference.`,
+          `Your meals have been a bit low in fat this week. It's the kind of thing that affects energy and mood more than people realise.`,
+          `Fat has been coming in low in your recent meals. Even small additions to what you normally eat tend to have a noticeable effect.`,
         ]),
         type: "fat_low",
         data: { actual: Math.round(avgWeekFat), target: Math.round(fatTarget) },
@@ -598,16 +598,16 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
     nudges.push({
       message: (calGood && proteinGood)
         ? pickWeekly([
-            `Calories and protein have both been close to target this week. That's a really solid pattern!`,
-            `Great week. Both protein and calorie intake are right where they should be.`,
-            `Everything's tracking well this week. Protein and calories are both in a good range!`,
-            `Solid, consistent week. Protein and calories have both been on target.`,
+            `Both protein and calories have been right on target this week. That kind of consistency is what actually moves the needle!`,
+            `Really solid week. Protein and calorie intake are both where they should be.`,
+            `Everything is tracking well this week. Protein and calories are both in a great range!`,
+            `Consistent and on target this week. Protein and calories are both right where you want them.`,
           ])
         : pickWeekly([
-            `Food intake is looking good this week. Nothing significant stands out.`,
-            `Things are tracking well overall this week. Keep the consistency going!`,
-            `Intake looks balanced this week. Keep doing what you're doing!`,
-            `Good week of eating. The patterns are all in a healthy range.`,
+            `Eating is looking well-balanced this week. Nothing stands out as a problem.`,
+            `Things are in a good place overall this week. The patterns all look healthy.`,
+            `Intake is looking solid this week. Whatever you've been doing is working.`,
+            `Good week of eating. The patterns are all tracking in a healthy range.`,
           ]),
       type: "on_track",
       data: {},
@@ -628,9 +628,9 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
     if (workedOutToday && gentleTargets.calories && todayCalMid < gentleTargets.calories * 0.6) {
       todayNudges.push({
         message: pickVariant([
-          `Nice work today! Food is at ${todayCalMid} kcal though. Make sure dinner covers the extra cost from your session.`,
-          `Active day! You're only at ${todayCalMid} kcal so far. Worth eating a bit more to recover properly.`,
-          `Good session today! Food intake is at ${todayCalMid} kcal so far. Dinner is a great chance to refuel.`,
+          `Nice session today! Food is only at ${todayCalMid} kcal though. Make sure dinner does some of the recovery work.`,
+          `Good workout today! At ${todayCalMid} kcal so far, your body needs a bit more fuel after that effort.`,
+          `Active day! At ${todayCalMid} kcal so far, dinner is a great opportunity to properly refuel after your session.`,
         ]),
         type: "workout_fuel_low",
         data: { actual: todayCalMid, target: Math.round(gentleTargets.calories) },
@@ -647,10 +647,10 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
     ) {
       todayNudges.push({
         message: pickVariant([
-          `Protein is light today at ${todayProteinMid}g. A protein-focused dinner could get you much closer to your goal.`,
-          `You're at ${todayProteinMid}g of protein today. There's still a real opportunity with dinner to bring that up.`,
-          `Today's protein is at ${todayProteinMid}g so far. Dinner is the best remaining chance to close the gap.`,
-          `Only ${todayProteinMid}g of protein logged today. A solid dinner choice can still turn that around.`,
+          `Protein is at ${todayProteinMid}g today. A protein-focused dinner could get you much closer to where you want to be.`,
+          `You're at ${todayProteinMid}g of protein today. Dinner is still a real opportunity to bring that up significantly.`,
+          `Today's protein is at ${todayProteinMid}g so far. A good dinner choice is the best remaining chance to close that gap.`,
+          `Only ${todayProteinMid}g of protein so far today. The right dinner can still turn that around.`,
         ]),
         type: "protein_low",
         data: { actual: todayProteinMid, target: Math.round(gentleTargets.protein) },
@@ -668,9 +668,9 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
     ) {
       todayNudges.push({
         message: pickVariant([
-          `Today has been pretty light on food at ${todayCalMid} kcal. A solid dinner can help bring the day into balance.`,
-          `Only ${todayCalMid} kcal logged today. Dinner is a good chance to make up for the lighter day.`,
-          `Food intake is low today at ${todayCalMid} kcal. There's still time to add something more nourishing.`,
+          `Today has been light on food at ${todayCalMid} kcal. A proper dinner can bring the day back into balance.`,
+          `Only ${todayCalMid} kcal logged today. Dinner is a good chance to make up for the lighter start.`,
+          `Food has been low today at ${todayCalMid} kcal. There's still time to add something more substantial.`,
         ]),
         type: "calorie_low",
         data: { actual: todayCalMid, target: Math.round(gentleTargets.calories) },
@@ -683,10 +683,10 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
     if (todayNudges.length === 0 && todayCalMid > 0) {
       todayNudges.push({
         message: pickVariant([
-          `Today is looking well-balanced! A solid dinner keeps that going.`,
-          `Good day of eating so far! You're tracking right where you should be.`,
-          `Things are looking great today. Finishing with a balanced dinner keeps it on track.`,
-          `Today's intake is looking good! Stay consistent through dinner and you're set.`,
+          `Today is looking well-balanced! A solid dinner keeps the momentum going.`,
+          `Good day of eating so far! You're right where you should be.`,
+          `Things are looking great today. A balanced dinner and you're set.`,
+          `Today's intake is on point! Finishing strong at dinner locks it in.`,
         ]),
         type: "on_track",
         data: {},
