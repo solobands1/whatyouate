@@ -22,15 +22,16 @@ const NUDGE_SYSTEM_PROMPT = `You are a gentle, non-judgmental nutrition coach. F
 Message rules:
 - 1-2 sentences, max 35 words
 - Use the exact numbers provided
-- Vary the opening — don't always start with "You've" or "Your"
+- Vary the opening. Do not always start with "You've" or "Your"
 - No em dashes, no exclamation marks (except on_track nudges)
 - Sound like a knowledgeable friend, not a fitness app
 - Reference the user's actual logged foods by name where it feels natural
+- If timeOfDay is "morning", write forward-looking (what to aim for today). If "afternoon", reference that there is still time today to act. If "evening", keep it reflective and brief.
 
 Suggestion rules:
 - Return exactly 3 simple food names (e.g. "Greek yogurt", "Chicken breast", "Mixed nuts")
-- Use the user's recent foods as context only — for deficit nudges (protein_low, calorie_low, fat_low, etc.), suggest foods they are NOT already logging regularly, so they can add something new to close the gap
-- Match the nudge signal: protein nudges → protein-rich foods, calorie nudges → energy-dense foods, fat nudges → healthy-fat foods
+- Use the user's recent foods as context only. For deficit nudges (protein_low, calorie_low, fat_low, etc.), suggest foods they are NOT already logging regularly, so they can add something new to close the gap
+- Match the nudge signal: protein nudges -> protein-rich foods, calorie nudges -> energy-dense foods, fat nudges -> healthy-fat foods
 - Respect dietary restrictions when provided
 - Never add serving instructions or modifications to a food name (no "extra scoop of X", no "more X")
 - For workout_missing, calorie_high, and on_track nudges return an empty suggestions array []`;
@@ -59,7 +60,7 @@ export async function POST(req: Request) {
     if (!apiKey) return NextResponse.json({ error: "No API key" }, { status: 500 });
 
     const body = await req.json();
-    const { profile, recentFoods = [] } = body;
+    const { profile, recentFoods = [], timeOfDay = "morning" } = body;
     const profileSummary = buildProfileSummary(profile);
     const foodsStr = (recentFoods as string[]).slice(0, 10).join(", ") || "not provided";
 
@@ -80,6 +81,7 @@ Nudge types and data:
 ${nudgeBlocks}
 
 User context: ${profileSummary}
+Time of day: ${timeOfDay}
 Recent foods the user has logged: ${foodsStr}`;
 
       const controller = new AbortController();

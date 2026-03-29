@@ -375,6 +375,7 @@ export default function SummaryScreen() {
             nudges: missing.map((n) => ({ nudgeType: n.type, data: n.data })),
             profile,
             recentFoods,
+            timeOfDay: (() => { const h = new Date().getHours(); return h < 12 ? "morning" : h < 20 ? "afternoon" : "evening"; })(),
           }),
           signal: controller.signal,
         });
