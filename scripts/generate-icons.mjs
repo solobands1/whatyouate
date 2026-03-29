@@ -33,18 +33,23 @@ function makeSvg(size) {
   //
   // Arc radius = 22px — at 180px output this renders as ~7.7px, clearly visible.
 
-  const tr = b(22); // tooth arc radius
+  // Bite arc radius: 38px → 13.4px at 180px output, clearly visible teeth.
+  // The bite boundary is shifted ~50px deeper into the plate vs before,
+  // so the midpoints of the tooth arcs sit well inside the plate radius (≈120px
+  // from centre vs the plate radius of 180px). This gives a much bigger, more
+  // dramatic chunk removed from the upper-right of the plate.
+  const tr = b(38); // tooth arc radius
 
   const biteD = [
     `M ${b(512)} ${b(0)}`,
-    `L ${b(512)} ${b(310)}`,
-    `L ${b(445)} ${b(208)}`,
-    `A ${tr} ${tr} 0 0 0 ${b(415)} ${b(181)}`,  // tooth 1
-    `A ${tr} ${tr} 0 0 1 ${b(385)} ${b(154)}`,  // valley
-    `A ${tr} ${tr} 0 0 0 ${b(355)} ${b(127)}`,  // tooth 2
-    `A ${tr} ${tr} 0 0 1 ${b(325)} ${b(100)}`,  // valley
-    `A ${tr} ${tr} 0 0 0 ${b(295)} ${b(73)}`,   // tooth 3
-    `L ${b(400)} ${b(0)}`,
+    `L ${b(512)} ${b(330)}`,
+    `L ${b(455)} ${b(265)}`,
+    `A ${tr} ${tr} 0 0 0 ${b(401)} ${b(225)}`,  // tooth 1
+    `A ${tr} ${tr} 0 0 1 ${b(347)} ${b(185)}`,  // valley
+    `A ${tr} ${tr} 0 0 0 ${b(293)} ${b(145)}`,  // tooth 2
+    `A ${tr} ${tr} 0 0 1 ${b(239)} ${b(105)}`,  // valley
+    `A ${tr} ${tr} 0 0 0 ${b(185)} ${b(65)}`,   // tooth 3
+    `L ${b(295)} ${b(0)}`,
     `Z`,
   ].join(" ");
 

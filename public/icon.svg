@@ -6,7 +6,7 @@
     </radialGradient>
     <mask id="bite">
       <rect width="512" height="512" fill="white"/>
-      <path d="M 512 0 L 512 310 L 445 208 A 22 22 0 0 0 415 181 A 22 22 0 0 1 385 154 A 22 22 0 0 0 355 127 A 22 22 0 0 1 325 100 A 22 22 0 0 0 295 73 L 400 0 Z" fill="black"/>
+      <path d="M 512 0 L 512 330 L 455 265 A 38 38 0 0 0 401 225 A 38 38 0 0 1 347 185 A 38 38 0 0 0 293 145 A 38 38 0 0 1 239 105 A 38 38 0 0 0 185 65 L 295 0 Z" fill="black"/>
     </mask>
   </defs>
 
