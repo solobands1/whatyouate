@@ -8,7 +8,8 @@ import BottomNav from "./BottomNav";
 import Card from "./Card";
 import { useAuth } from "./AuthProvider";
 import { useAppData } from "./AppDataProvider";
-import { addNudge, listNudges, pruneNudges } from "../lib/supabaseDb";
+import { addNudge, pruneNudges } from "../lib/supabaseDb";
+import { notifyNudgesUpdated } from "../lib/dataEvents";
 import { buildSmartNudgeContext, computeNudges, computeSummaryMarkers, type ComputedNudge, type NudgeType } from "../lib/digestEngine";
 
 
@@ -66,11 +67,8 @@ function UnlockTimeline({ milestones }: { milestones: MilestoneItem[] }) {
 export default function SummaryScreen() {
   const router = useRouter();
   const { user, loading } = useAuth();
-  const { profile, meals, workouts, loading: loadingData } = useAppData();
+  const { profile, meals, workouts, nudges, nudgesLoaded, loading: loadingData } = useAppData();
   const [hydrated, setHydrated] = useState(false);
-  const [nudges, setNudges] = useState<Array<{ id: string; type?: string; message: string; created_at: string }>>([]);
-  const nudgesLoadedRef = useRef(false);
-  const [nudgesLoaded, setNudgesLoaded] = useState(false);
   const savedThisSessionRef = useRef<Set<string>>(new Set());
   const mountedRef = useRef(true);
   const [runSummaryTour, setRunSummaryTour] = useState(false);
@@ -110,22 +108,6 @@ export default function SummaryScreen() {
     }
   }, [loading, user, router]);
 
-  // Load nudges on mount (summary-specific, not in shared context)
-  useEffect(() => {
-    if (!user || nudgesLoadedRef.current) return;
-    nudgesLoadedRef.current = true;
-    listNudges(user.id, 100)
-      .then((nudgesData) => {
-        if (!mountedRef.current) return;
-        setNudges(nudgesData as any);
-        setNudgesLoaded(true);
-      })
-      .catch(() => {
-        if (!mountedRef.current) return;
-        setNudges([]);
-        setNudgesLoaded(true);
-      });
-  }, [user]);
 
   useEffect(() => {
     if (!user) return;
@@ -421,7 +403,9 @@ export default function SummaryScreen() {
     if (localStorage.getItem(savedKey) || savedThisSessionRef.current.has(todayStr) || alreadyInDb) return;
     savedThisSessionRef.current.add(todayStr);
     localStorage.setItem(savedKey, "1");
-    addNudge(user.id, smartNudge.type, smartNudge.message).catch(() => {});
+    addNudge(user.id, smartNudge.type, smartNudge.message)
+      .then(() => notifyNudgesUpdated())
+      .catch(() => {});
     pruneNudges(user.id).catch(() => {});
   }, [user, nudgesLoaded, smartNudge, nudges]);
 
