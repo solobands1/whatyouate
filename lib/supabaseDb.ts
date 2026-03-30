@@ -618,6 +618,7 @@ export async function addNudge(userId: string, type: string, message: string) {
 
   const payload = {
     user_id: userId,
+    type,
     message
   };
   const { data, error } = await supabase.from("nudges").insert(payload).select("*").single();

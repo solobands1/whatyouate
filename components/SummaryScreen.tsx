@@ -68,7 +68,7 @@ export default function SummaryScreen() {
   const { user, loading } = useAuth();
   const { profile, meals, workouts, loading: loadingData } = useAppData();
   const [hydrated, setHydrated] = useState(false);
-  const [nudges, setNudges] = useState<Array<{ id: string; message: string; created_at: string }>>([]);
+  const [nudges, setNudges] = useState<Array<{ id: string; type?: string; message: string; created_at: string }>>([]);
   const nudgesLoadedRef = useRef(false);
   const [nudgesLoaded, setNudgesLoaded] = useState(false);
   const savedThisSessionRef = useRef<Set<string>>(new Set());
@@ -416,20 +416,19 @@ export default function SummaryScreen() {
     if (!user || !nudgesLoaded || smartNudge === undefined || !smartNudge) return;
     const todayStr = todayKey();
     const savedKey = `wya_smart_nudge_saved_${user.id}_${todayStr}`;
-    if (localStorage.getItem(savedKey) || savedThisSessionRef.current.has(todayStr)) return;
+    // Skip if already saved this session, in localStorage, or already in DB for today
+    const alreadyInDb = nudges.some((n) => n.created_at && todayKey(new Date(n.created_at)) === todayStr);
+    if (localStorage.getItem(savedKey) || savedThisSessionRef.current.has(todayStr) || alreadyInDb) return;
     savedThisSessionRef.current.add(todayStr);
     localStorage.setItem(savedKey, "1");
     addNudge(user.id, smartNudge.type, smartNudge.message).catch(() => {});
-    // Store message→type for history "Why?" expansion
-    const metaKey = `wya_nudge_type_meta_${user.id}`;
-    let typeMeta: Record<string, string> = {};
-    try { typeMeta = JSON.parse(localStorage.getItem(metaKey) ?? "{}"); } catch {}
-    typeMeta[smartNudge.message] = smartNudge.type;
-    try { localStorage.setItem(metaKey, JSON.stringify(typeMeta)); } catch {}
     pruneNudges(user.id).catch(() => {});
-  }, [user, nudgesLoaded, smartNudge]);
+  }, [user, nudgesLoaded, smartNudge, nudges]);
 
   const getHistoryNudgeType = (message: string): NudgeType | null => {
+    const found = nudges.find((n) => n.message === message && n.type);
+    if (found?.type) return found.type as NudgeType;
+    // fallback: localStorage meta for nudges saved before type was stored in DB
     if (typeof window === "undefined" || !user) return null;
     try {
       const meta: Record<string, string> = JSON.parse(localStorage.getItem(`wya_nudge_type_meta_${user.id}`) ?? "{}");
@@ -973,6 +972,7 @@ export default function SummaryScreen() {
                   {group.items.map((nudge) => {
                     const histType = getHistoryNudgeType(nudge.message);
                     const histWhy = histType ? getNudgeWhy(histType, profile?.goalDirection ?? "maintain") : null;
+                    const histAction = histType ? getNudgeAction(histType, profile?.goalDirection ?? "maintain") : null;
                     const histKey = nudge.id ?? nudge.message;
                     const isExpanded = expandedHistoryNudge === histKey;
                     return (
@@ -982,11 +982,22 @@ export default function SummaryScreen() {
                         onClick={histWhy ? () => setExpandedHistoryNudge(isExpanded ? null : histKey) : undefined}
                       >
                         <p>{nudge.message.replace(/ • /g, ". ").replace(/\.{2,}$/g, "")}</p>
-                        {isExpanded && histWhy && (
-                          <div className="mt-2 space-y-1 border-t border-ink/10 pt-2">
-                            {histWhy.split(" • ").map((part, i) => (
-                              <p key={i} className="text-ink/55">{part.trim()}</p>
-                            ))}
+                        {isExpanded && (histWhy || histAction) && (
+                          <div className="mt-2 space-y-2 border-t border-ink/10 pt-2">
+                            {histWhy && (
+                              <div>
+                                <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted/40">Why?</p>
+                                {histWhy.split(" • ").map((part, i) => (
+                                  <p key={i} className="text-ink/55">{part.trim()}</p>
+                                ))}
+                              </div>
+                            )}
+                            {histAction && (
+                              <div>
+                                <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted/40">What to do?</p>
+                                <p className="text-ink/55">{histAction}</p>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
