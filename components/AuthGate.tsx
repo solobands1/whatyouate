@@ -1,34 +1,23 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useEffect, useState } from "react";
 import { useAuth } from "./AuthProvider";
 import { useAppData } from "./AppDataProvider";
 import SplashScreen from "./SplashScreen";
 
-// Once the app is fully ready (auth + data), never show the splash again this
-// session — prevents any auth event flicker from re-showing the full-screen splash.
-// Backed by sessionStorage so PWA wake-ups (minimize/restore) also skip it.
+// Module-level flag — persists through client-side navigation so the splash
+// never re-appears when switching tabs. Resets on full page reload (intentional:
+// on reload, data must be fetched fresh before the app is shown).
 let _appReady = false;
 
 export default function AuthGate({ children }: { children: ReactNode }) {
   const { loading: authLoading, user } = useAuth();
-  const { loading: dataLoading } = useAppData();
-  const [, setTick] = useState(0);
+  const { loading: dataLoading, nudgesLoaded } = useAppData();
 
-  // Restore from sessionStorage after mount — avoids SSR/client hydration mismatch
-  useEffect(() => {
-    if (!_appReady && sessionStorage.getItem("_appReady") === "1") {
-      _appReady = true;
-      setTick((t) => t + 1);
-    }
-  }, []);
-
-  // Mark ready when both auth and data have resolved
-  const fullyLoaded = !authLoading && (!user || !dataLoading);
+  // All three must resolve before the splash lifts
+  const fullyLoaded = !authLoading && (!user || (!dataLoading && nudgesLoaded));
   if (fullyLoaded && !_appReady) {
     _appReady = true;
-    try { sessionStorage.setItem("_appReady", "1"); } catch {}
   }
 
   if (!_appReady) {
