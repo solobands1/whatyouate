@@ -1,19 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Joyride, { CallBackProps, STATUS, type Step } from "react-joyride";
 import { useRouter } from "next/navigation";
-import type { MealLog, UserProfile } from "../../../lib/types";
 import { summarizeLoggedDays, summarizeWeek } from "../../../lib/summary";
 import { computeGentleTargets, normalizeWeightToKg, proteinTargetPerKg } from "../../../lib/digestEngine";
 import BottomNav from "../../../components/BottomNav";
 import Card from "../../../components/Card";
 import { useAuth } from "../../../components/AuthProvider";
-import { MEALS_UPDATED_EVENT, PROFILE_UPDATED_EVENT } from "../../../lib/dataEvents";
-import { getProfile, listMeals } from "../../../lib/supabaseDb";
+import { useAppData } from "../../../components/AppDataProvider";
 import { dayKeyFromTs } from "../../../lib/utils";
-
-const _insightsCache: { profile?: UserProfile; meals?: MealLog[]; mealsLoaded: boolean } = { mealsLoaded: false };
 
 const INSIGHT_NUTRIENTS = [
   "Iron",
@@ -68,9 +64,8 @@ const NUTRIENT_INFO: Record<string, string | string[]> = {
 export default function InsightsPage() {
   const router = useRouter();
   const { user, loading } = useAuth();
-  const [profile, setProfile] = useState<UserProfile | undefined>(() => _insightsCache.profile);
-  const [meals, setMeals] = useState<MealLog[]>(() => _insightsCache.meals ?? []);
-  const [loadingData, setLoadingData] = useState(() => !_insightsCache.mealsLoaded);
+  const { profile: ctxProfile, meals, loading: loadingData } = useAppData();
+  const profile = ctxProfile ?? undefined;
   const [activeNutrient, setActiveNutrient] = useState<string | null>(null);
   const [barsReady, setBarsReady] = useState(false);
   const mountedRef = useRef(true);
@@ -94,42 +89,6 @@ export default function InsightsPage() {
       router.replace("/login");
     }
   }, [loading, user, router]);
-
-  const loadData = useCallback(() => {
-    if (!user) return;
-    if (!_insightsCache.mealsLoaded) {
-      _insightsCache.mealsLoaded = true;
-      setLoadingData(true);
-    }
-    Promise.all([getProfile(user.id), listMeals(user.id, 200)])
-      .then(([profileData, mealsData]) => {
-        _insightsCache.profile = profileData ?? undefined;
-        _insightsCache.meals = mealsData;
-        if (!mountedRef.current) return;
-        setProfile(profileData ?? undefined);
-        setMeals(mealsData);
-      })
-      .finally(() => {
-        if (!mountedRef.current) return;
-        setLoadingData(false);
-      });
-  }, [user]);
-
-  useEffect(() => {
-    if (!user) return;
-    loadData();
-  }, [user, loadData]);
-
-  useEffect(() => {
-    if (!user) return;
-    const handler = () => loadData();
-    window.addEventListener(MEALS_UPDATED_EVENT, handler as EventListener);
-    window.addEventListener(PROFILE_UPDATED_EVENT, handler as EventListener);
-    return () => {
-      window.removeEventListener(MEALS_UPDATED_EVENT, handler as EventListener);
-      window.removeEventListener(PROFILE_UPDATED_EVENT, handler as EventListener);
-    };
-  }, [user, loadData]);
 
   useEffect(() => {
     if (!user) return;
