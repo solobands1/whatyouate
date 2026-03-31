@@ -109,8 +109,8 @@ export default function ProfileScreen() {
 
             const kg = data.weight ?? null;
             if (kg != null) {
-              const lb = Math.round(kg * 2.20462);
-              setWeight(String(lb));
+              const lb = Math.round(kg * 2.20462 * 10) / 10;
+              setWeight(String(Math.round(lb)));
             } else {
               setWeight("");
             }
@@ -252,7 +252,7 @@ export default function ProfileScreen() {
         parsedHeightCm = totalIn > 0 ? Math.round(totalIn * 2.54) : null;
 
         const lb = parseInteger(weight) ?? 0;
-        parsedWeightKg = lb > 0 ? Math.round(lb / 2.20462) : null;
+        parsedWeightKg = lb > 0 ? Math.round((lb / 2.20462) * 10) / 10 : null;
       }
 
       const payload = {
@@ -328,8 +328,8 @@ export default function ProfileScreen() {
 
           const kg = freshProfile.weight ?? null;
           if (kg != null) {
-            const lb = Math.round(kg * 2.20462);
-            setWeight(String(lb));
+            const lb = Math.round(kg * 2.20462 * 10) / 10;
+            setWeight(String(Math.round(lb)));
           } else {
             setWeight("");
           }
