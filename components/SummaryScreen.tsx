@@ -355,8 +355,8 @@ export default function SummaryScreen() {
     }
 
     smartNudgeFetchedRef.current.add(windowKey);
-    // Use last 3 nudge messages from DB as anti-repetition context
-    const recentNudgeMessages = nudges.slice(0, 3).map((n) => n.message);
+    // Use last 3 nudges as anti-repetition context — include type so AI avoids repeating same angle
+    const recentNudgeMessages = nudges.slice(0, 3).map((n) => n.type ? `${n.type}: ${n.message}` : n.message);
     const ctx = buildSmartNudgeContext(meals, workouts, profile, recentFoods, recentNudgeMessages);
 
     const controller = new AbortController();

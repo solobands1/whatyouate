@@ -45,7 +45,7 @@ Rules:
 - Be honest, direct, and specific — not generic
 - No em dashes (—). End with a period or exclamation mark.
 - No clichés: forbidden words/phrases: "crush it", "you've got this", "fresh start", "stay on track", "hit your goal", "keep it up", "build muscle"
-- Don't repeat the same angle as recent nudges — if you can see they've already been told about protein, find a different angle or say nothing
+- Don't repeat the same angle as recent nudges — recent nudges are shown as "type: message". Avoid the same type AND avoid the same thematic angle even under a different type
 - If timeOfDay is "morning": frame as intention. If "afternoon": note there's still time. If "evening": brief and reflective.
 - If nothing meaningful stands out, return null for message
 

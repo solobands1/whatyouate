@@ -805,7 +805,7 @@ export function buildSmartNudgeContext(
   });
 
   const hour = new Date().getHours();
-  const timeOfDay = hour < 12 ? "morning" : hour < 20 ? "afternoon" : "evening";
+  const timeOfDay = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
 
   return {
     profile,
