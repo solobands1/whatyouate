@@ -59,7 +59,10 @@ action field rules:
 - Different wording from the message — don't just restate it
 - No clichés, no em dashes
 
-Suggestion rules: 3 simple food names matching the nudge type. Empty array [] for workout_missing, calorie_high, on_track.`;
+Suggestion rules:
+- 3 simple food names matching the nudge type
+- CRITICAL: match suggestions to time of day — if morning suggest breakfast foods (eggs, yogurt, oats, smoothie), if afternoon suggest lunch/snack foods, if evening suggest dinner foods
+- Empty array [] for workout_missing, calorie_high, on_track`;
 
 function buildSmartPrompt(ctx: Record<string, unknown>): string {
   const profile = ctx.profile as Record<string, unknown> | null;

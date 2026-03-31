@@ -74,13 +74,16 @@ export default function SummaryScreen() {
   const [runSummaryTour, setRunSummaryTour] = useState(false);
   const [visibleNudgeGroupCount, setVisibleNudgeGroupCount] = useState(3);
   const [nudgeExpanded, setNudgeExpanded] = useState<Record<string, "why" | "what" | null>>({});
-  const smartNudgeFetchedRef = useRef(false);
+  const smartNudgeFetchedRef = useRef<Set<string>>(new Set());
   // { message, type, suggestions } from smart AI call, or null if AI said nothing, or undefined while loading
   const [smartNudge, setSmartNudge] = useState<{ message: string; type: NudgeType; action?: string; suggestions?: string[] } | null | undefined>(undefined);
   const [expandedHistoryNudge, setExpandedHistoryNudge] = useState<string | null>(null);
   const getAiSuggestions = (nudgeType: string): string[] | null => {
     if (typeof window === "undefined") return null;
-    const raw = localStorage.getItem(`wya_ai_nudge_${todayKey()}_${nudgeType}_suggestions`);
+    const hour = new Date().getHours();
+    const win = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
+    const raw = localStorage.getItem(`wya_ai_nudge_${todayKey()}_${win}_${nudgeType}_suggestions`)
+      ?? localStorage.getItem(`wya_ai_nudge_${todayKey()}_${nudgeType}_suggestions`); // legacy fallback
     if (!raw) return null;
     try { return JSON.parse(raw); } catch { return null; }
   };
@@ -328,24 +331,30 @@ export default function SummaryScreen() {
 
 
 
-  // Fetch smart AI nudge — one call with full context, AI decides what to say
+  // Fetch smart AI nudge — once per time window (morning / afternoon / evening)
   useEffect(() => {
-    if (!profile || !nudgesLoaded || smartNudgeFetchedRef.current) return;
-    // Need at least some meal data
+    if (!profile || !nudgesLoaded) return;
     if (meals.length < 5) { setSmartNudge(null); return; }
 
+    const hour = new Date().getHours();
+    const window = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
     const todayStr = todayKey();
-    const cacheKey = `wya_smart_nudge_${todayStr}`;
+    const windowKey = `${todayStr}_${window}`;
+
+    if (smartNudgeFetchedRef.current.has(windowKey)) return;
+
+    const cacheKey = `wya_smart_nudge_${windowKey}`;
     const cached = localStorage.getItem(cacheKey);
     if (cached) {
       try {
         const parsed = JSON.parse(cached);
         setSmartNudge(parsed);
+        smartNudgeFetchedRef.current.add(windowKey);
         return;
       } catch {}
     }
 
-    smartNudgeFetchedRef.current = true;
+    smartNudgeFetchedRef.current.add(windowKey);
     // Use last 3 nudge messages from DB as anti-repetition context
     const recentNudgeMessages = nudges.slice(0, 3).map((n) => n.message);
     const ctx = buildSmartNudgeContext(meals, workouts, profile, recentFoods, recentNudgeMessages);
@@ -374,7 +383,7 @@ export default function SummaryScreen() {
         if (nudge?.message) {
           localStorage.setItem(cacheKey, JSON.stringify(nudge));
           if (nudge.suggestions?.length) {
-            localStorage.setItem(`wya_ai_nudge_${todayStr}_${nudge.type}_suggestions`, JSON.stringify(nudge.suggestions.slice(0, 3)));
+            localStorage.setItem(`wya_ai_nudge_${windowKey}_${nudge.type}_suggestions`, JSON.stringify(nudge.suggestions.slice(0, 3)));
           }
           setSmartNudge(nudge);
         } else {
@@ -393,15 +402,16 @@ export default function SummaryScreen() {
       });
   }, [profile, nudgesLoaded, meals, workouts, recentFoods, nudges]);
 
-  // Save smart nudge to DB once per day — only after AI responds
+  // Save smart nudge to DB once per time window — only after AI responds
   useEffect(() => {
     if (!user || !nudgesLoaded || smartNudge === undefined || !smartNudge) return;
+    const hour = new Date().getHours();
+    const window = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
     const todayStr = todayKey();
-    const savedKey = `wya_smart_nudge_saved_${user.id}_${todayStr}`;
-    // Skip if already saved this session, in localStorage, or already in DB for today
-    const alreadyInDb = nudges.some((n) => n.created_at && todayKey(new Date(n.created_at)) === todayStr);
-    if (localStorage.getItem(savedKey) || savedThisSessionRef.current.has(todayStr) || alreadyInDb) return;
-    savedThisSessionRef.current.add(todayStr);
+    const windowKey = `${todayStr}_${window}`;
+    const savedKey = `wya_smart_nudge_saved_${user.id}_${windowKey}`;
+    if (localStorage.getItem(savedKey) || savedThisSessionRef.current.has(windowKey)) return;
+    savedThisSessionRef.current.add(windowKey);
     localStorage.setItem(savedKey, "1");
     addNudge(user.id, smartNudge.type, smartNudge.message)
       .then(() => notifyNudgesUpdated())
