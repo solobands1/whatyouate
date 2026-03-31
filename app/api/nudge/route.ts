@@ -42,6 +42,8 @@ const SMART_NUDGE_SYSTEM_PROMPT = `You are a sharp, warm nutrition coach. You ha
 Rules:
 - 1-2 sentences, max 40 words
 - Only reference numbers and patterns you can actually see in the data
+- CRITICAL: use all numbers exactly as provided — never round, approximate, or recalculate them. If the data says 58g protein remaining, say 58g, not ~60g or "around 60"
+- For today-specific nudges, prefer referencing the pre-calculated "remaining" values over the raw targets
 - Be honest, direct, and specific — not generic
 - No em dashes (—). End with a period or exclamation mark.
 - No clichés: forbidden words/phrases: "crush it", "you've got this", "fresh start", "stay on track", "hit your goal", "keep it up", "build muscle"
@@ -100,10 +102,24 @@ function buildSmartPrompt(ctx: Record<string, unknown>): string {
   const todayPro = ctx.todayProtein as number;
   const todayFat = ctx.todayFat as number;
   const todayCarbs = ctx.todayCarbs as number;
+  const remCal = ctx.remainingCalories as number | null;
+  const remPro = ctx.remainingProtein as number | null;
   if (todayCal > 0 || todayPro > 0) {
     lines.push(`Today so far (${ctx.timeOfDay}): ${todayCal} kcal / ${todayPro}g protein / ${todayFat}g fat / ${todayCarbs}g carbs`);
+    if (remCal !== null || remPro !== null) {
+      const parts = [];
+      if (remCal !== null) parts.push(`${remCal} kcal remaining to target`);
+      if (remPro !== null) parts.push(`${remPro}g protein remaining to target`);
+      lines.push(`Still needed today: ${parts.join(" | ")}`);
+    }
   } else {
     lines.push(`Today so far (${ctx.timeOfDay}): nothing logged yet`);
+    if (remCal !== null || remPro !== null) {
+      const parts = [];
+      if (remCal !== null) parts.push(`${remCal} kcal calories target`);
+      if (remPro !== null) parts.push(`${remPro}g protein target`);
+      lines.push(`Full targets for today: ${parts.join(" | ")}`);
+    }
   }
 
   const foods = ctx.recentFoods as string[] | undefined;

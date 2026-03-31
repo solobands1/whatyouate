@@ -27,6 +27,8 @@ export interface SmartNudgeContext {
   todayCarbs: number;
   targetCalories: number | null;
   targetProtein: number | null;
+  remainingCalories: number | null;
+  remainingProtein: number | null;
   last7Days: DailyNudgeSnapshot[];
   timeOfDay: "morning" | "afternoon" | "evening";
   recentFoods: string[];
@@ -807,14 +809,21 @@ export function buildSmartNudgeContext(
   const hour = new Date().getHours();
   const timeOfDay = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
 
+  const targetCalories = targets?.calories ?? null;
+  const targetProtein = targets?.protein ?? null;
+  const remainingCalories = targetCalories !== null ? Math.max(0, targetCalories - todayCalories) : null;
+  const remainingProtein = targetProtein !== null ? Math.max(0, targetProtein - todayProtein) : null;
+
   return {
     profile,
     todayCalories,
     todayProtein,
     todayFat,
     todayCarbs,
-    targetCalories: targets?.calories ?? null,
-    targetProtein: targets?.protein ?? null,
+    targetCalories,
+    targetProtein,
+    remainingCalories,
+    remainingProtein,
     last7Days,
     timeOfDay,
     recentFoods,
