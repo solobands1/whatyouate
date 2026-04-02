@@ -1,3 +1,5 @@
+import type { SupplementEntry } from "./types";
+
 export type FoodCacheEntry = {
   name: string;
   brand: string;
@@ -187,7 +189,7 @@ function dailySuppLoggedKey(userId: string) {
   return `wya_daily_supps_logged_${userId}_${today}`;
 }
 
-export function getDailySupplements(userId: string): string[] {
+export function getDailySupplements(userId: string): SupplementEntry[] {
   if (typeof window === "undefined") return [];
   try {
     return JSON.parse(localStorage.getItem(dailySuppKey(userId)) ?? "[]");
@@ -196,10 +198,10 @@ export function getDailySupplements(userId: string): string[] {
   }
 }
 
-export function setDailySupplements(userId: string, names: string[]): void {
+export function setDailySupplements(userId: string, entries: SupplementEntry[]): void {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(dailySuppKey(userId), JSON.stringify(names));
+    localStorage.setItem(dailySuppKey(userId), JSON.stringify(entries));
   } catch {}
 }
 

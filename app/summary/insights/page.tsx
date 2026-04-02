@@ -10,6 +10,8 @@ import Card from "../../../components/Card";
 import { useAuth } from "../../../components/AuthProvider";
 import { useAppData } from "../../../components/AppDataProvider";
 import { dayKeyFromTs } from "../../../lib/utils";
+import { getRda, supplementToNutrient } from "../../../lib/rda";
+import { suppName } from "../../../lib/types";
 
 const INSIGHT_NUTRIENTS = [
   "Iron",
@@ -180,20 +182,50 @@ export default function InsightsPage() {
       }
     }
 
+    // Compute supplement coverage per nutrient (dose vs RDA)
+    const suppRatioByNutrient = new Map<string, number>();
+    const rda = profile ? getRda(profile.sex, profile.age) : null;
+    if (rda && profile?.dailySupplements?.length) {
+      for (const entry of profile.dailySupplements) {
+        const name = suppName(entry);
+        const dose = typeof entry === "string" ? undefined : entry.dose;
+        const unit = typeof entry === "string" ? undefined : entry.unit;
+        const mapped = supplementToNutrient(name, dose, unit);
+        if (!mapped) continue;
+        const rdaVal = rda[mapped.nutrient];
+        if (!rdaVal) continue;
+        suppRatioByNutrient.set(
+          mapped.nutrient,
+          (suppRatioByNutrient.get(mapped.nutrient) ?? 0) + mapped.doseInRdaUnit / rdaVal
+        );
+      }
+    }
+
     return INSIGHT_NUTRIENTS.map((nutrient) => {
       const key = nutrient.toLowerCase();
       const days = daysByNutrient.get(key)?.size ?? 0;
-      const ratio = recentDayCount ? days / recentDayCount : 0;
+      const foodRatio = recentDayCount ? days / recentDayCount : 0;
       let label = "Rarely detected";
-      if (ratio >= 0.3) label = "Frequently detected";
-      else if (ratio >= 0.1) label = "Sometimes detected";
+      if (foodRatio >= 0.3) label = "Frequently detected";
+      else if (foodRatio >= 0.1) label = "Sometimes detected";
+
+      const rawSuppRatio = suppRatioByNutrient.get(key) ?? 0;
+      // Cap supplement display at 1.0 (100% of RDA) but flag over-RDA
+      const suppRatio = Math.min(1, rawSuppRatio);
+
+      const foodPct = Math.min(96, Math.max(4, Math.round(foodRatio * 100)));
+      const suppPct = rawSuppRatio > 0 ? Math.min(96, Math.round(suppRatio * 100)) : 0;
+
       return {
         name: nutrient,
         label,
-        width: patternBarWidthFromRatio(ratio)
+        foodPct,
+        suppPct,
+        hasSupplement: rawSuppRatio > 0,
+        overRda: rawSuppRatio > 1,
       };
     });
-  }, [meals]);
+  }, [meals, profile]);
 
   const hasEnoughData = dayCount >= 5 && mealCount >= 5;
 
@@ -280,7 +312,10 @@ export default function InsightsPage() {
     : INSIGHT_NUTRIENTS.map((name) => ({
         name,
         label: "Sometimes detected",
-        width: patternBarWidthFromRatio(0.25)
+        foodPct: 25,
+        suppPct: 0,
+        hasSupplement: false,
+        overRda: false,
       }));
 
   const insightsTourSteps = [
@@ -518,7 +553,12 @@ export default function InsightsPage() {
             {displayMicronutrients.map((pattern, index) => (
               <div key={pattern.name} data-tour={index < 2 ? "insights-micro" : undefined}>
                 <div className="flex items-center justify-between">
-                  <p className="text-sm text-ink/80">{pattern.name}</p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-sm text-ink/80">{pattern.name}</p>
+                    {pattern.overRda && (
+                      <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-medium text-amber-700">over RDA</span>
+                    )}
+                  </div>
                   <button
                     type="button"
                     className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-ink/10 text-[10px] font-semibold text-ink/60"
@@ -529,18 +569,35 @@ export default function InsightsPage() {
                     i
                   </button>
                 </div>
-                <div className="mt-2 h-2 rounded-full border border-ink/5 bg-ink/5">
+                <div className="mt-2 h-2 rounded-full bg-ink/5 flex overflow-hidden isolate">
+                  {/* Food segment — darker */}
                   <div
-                    className="h-2 rounded-full bg-primary/35"
-                    style={{ width: barsReady ? pattern.width : "0%", transition: `width 600ms cubic-bezier(0.22,1,0.36,1) ${index * 55}ms` }}
+                    className="h-full shrink-0 bg-primary/45"
+                    style={{
+                      width: barsReady ? `${pattern.foodPct}%` : "0%",
+                      transition: `width 600ms cubic-bezier(0.22,1,0.36,1) ${index * 55}ms`,
+                    }}
                   />
+                  {/* Supplement segment — lighter, only shown when dose data exists */}
+                  {pattern.hasSupplement && (
+                    <div
+                      className="h-full shrink-0 bg-primary/20"
+                      style={{
+                        width: barsReady ? `${pattern.suppPct}%` : "0%",
+                        transition: `width 600ms cubic-bezier(0.22,1,0.36,1) ${index * 55}ms`,
+                      }}
+                    />
+                  )}
                 </div>
-                <p className="mt-1 text-[11px] text-muted/50">{pattern.label}</p>
+                <p className="mt-1 text-[11px] text-muted/50">
+                  {pattern.label}
+                  {pattern.hasSupplement && <span className="ml-1.5 text-muted/40">· supplement</span>}
+                </p>
               </div>
             ))}
           </div>
           <p className="mt-4 text-xs text-muted/70">
-            These bars show how often each nutrient was clearly detected across your logged meals — not a measure of actual intake. Some nutrients may be present in meals but not flagged depending on how the food was identified. Tap the{" "}
+            The solid bar shows how often each nutrient was detected in your meals. The lighter extension shows supplement coverage against your recommended daily amount. Tap the{" "}
             <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-ink/10 text-[10px] font-semibold text-ink/60 align-middle">i</span>
             {" "}next to any nutrient to learn more about it.
           </p>

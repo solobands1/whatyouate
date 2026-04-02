@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Joyride, { CallBackProps, STATUS, type Step } from "react-joyride";
 import { useRouter } from "next/navigation";
 import type { MealLog, UserProfile, WorkoutSession } from "../lib/types";
+import { suppName, suppLabel } from "../lib/types";
 import {
   PROFILE_UPDATED_EVENT,
   notifyMealsUpdated,
@@ -685,12 +686,12 @@ export default function HomeScreen() {
     if (!supplements.length) return;
     markDailySuppsLoggedToday(user.id);
     (async () => {
-      const allNutrients = supplements.flatMap((name) => matchSupplementNutrients(name));
+      const allNutrients = supplements.flatMap((s) => matchSupplementNutrients(suppName(s)));
       const uniqueNutrients = [...new Set(allNutrients)];
       const analysis = {
         name: "Supplements",
         source: "supplement" as const,
-        detected_items: supplements.map((name) => ({ name, confidence_0_1: 1 as number })),
+        detected_items: supplements.map((s) => ({ name: suppLabel(s), confidence_0_1: 1 as number })),
         estimated_ranges: {
           calories_min: 0, calories_max: 0,
           protein_g_min: 0, protein_g_max: 0,

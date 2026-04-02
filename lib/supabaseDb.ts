@@ -1,6 +1,6 @@
 import { supabase } from "./supabaseClient";
 import { LOCAL_MODE } from "./config";
-import type { MealAnalysis, MealLog, UserProfile, WorkoutSession } from "./types";
+import type { MealAnalysis, MealLog, SupplementEntry, UserProfile, WorkoutSession } from "./types";
 import { approxFromRange } from "./utils";
 import { safeFallbackAnalysis } from "./ai/schema";
 
@@ -263,7 +263,7 @@ export async function saveStreak(userId: string, streak: number, lastDate: strin
   }
 }
 
-export async function saveDailySupplements(userId: string, names: string[]): Promise<void> {
+export async function saveDailySupplements(userId: string, names: SupplementEntry[]): Promise<void> {
   const { error } = await supabase
     .from("profiles")
     .upsert({ user_id: userId, daily_supplements: names, updated_at: new Date().toISOString() }, { onConflict: "user_id" });

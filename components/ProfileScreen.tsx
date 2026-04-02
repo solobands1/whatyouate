@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Joyride, { STATUS, CallBackProps, type Step } from "react-joyride";
 import { notifyProfileUpdated } from "../lib/dataEvents";
-import type { ActivityLevel, GoalDirection, Units, UserProfile } from "../lib/types";
+import type { ActivityLevel, GoalDirection, SupplementEntry, Units, UserProfile } from "../lib/types";
+import { suppLabel, suppName } from "../lib/types";
 import { clearAllData, getProfile, saveProfile, saveDailySupplements, LOCAL_MODE } from "../lib/supabaseDb";
 import { getDailySupplements, setDailySupplements } from "../lib/foodCache";
 import { supabase } from "../lib/supabaseClient";
@@ -55,8 +56,10 @@ export default function ProfileScreen() {
   const [showFeedbackToast, setShowFeedbackToast] = useState(false);
   const [showSavedToast, setShowSavedToast] = useState(false);
   const [editingName, setEditingName] = useState(false);
-  const [dailySupplements, setDailySupplementsState] = useState<string[]>([]);
+  const [dailySupplements, setDailySupplementsState] = useState<SupplementEntry[]>([]);
   const [newSuppInput, setNewSuppInput] = useState("");
+  const [newSuppDose, setNewSuppDose] = useState("");
+  const [newSuppUnit, setNewSuppUnit] = useState("mg");
   const [editFirstName, setEditFirstName] = useState("");
   const [editLastName, setEditLastName] = useState("");
 
@@ -834,61 +837,88 @@ export default function ProfileScreen() {
 
           <label className="mt-8 block border-t border-ink/5 pt-7 text-xs text-muted/70">
             <span className="text-[11px] font-semibold uppercase tracking-wide text-ink/70">Daily supplements</span>
-            <p className="mt-1 text-[11px] text-muted/60">Added automatically every day in the background.</p>
+            <p className="mt-1 text-[11px] text-muted/60">Added automatically every day in the background. Add a dose to track against recommended daily amounts.</p>
             <div className="mt-3 flex flex-wrap gap-2">
-              {dailySupplements.map((name) => (
+              {dailySupplements.map((entry, idx) => (
                 <span
-                  key={name}
+                  key={idx}
                   className="inline-flex items-center gap-1.5 rounded-full border border-ink/10 bg-ink/5 px-3 py-1 text-xs text-ink/80"
                 >
-                  {name}
+                  {suppLabel(entry)}
                   <button
                     type="button"
                     className="text-ink/40 transition hover:text-ink/70"
                     onClick={(e) => {
                       e.stopPropagation();
-                      const updated = dailySupplements.filter((s) => s !== name);
+                      const updated = dailySupplements.filter((_, i) => i !== idx);
                       setDailySupplementsState(updated);
                       if (user) { setDailySupplements(user.id, updated); saveDailySupplements(user.id, updated).catch(() => {}); }
                     }}
-                    aria-label={`Remove ${name}`}
+                    aria-label={`Remove ${suppName(entry)}`}
                   >
                     ×
                   </button>
                 </span>
               ))}
             </div>
-            <div className="mt-2 flex gap-2">
+            <div className="mt-2 flex flex-col gap-1.5">
               <input
                 type="text"
-                className="mt-1 flex-1 rounded-xl border border-ink/10 px-3 py-2 text-sm"
+                className="w-full rounded-xl border border-ink/10 px-3 py-2 text-sm"
                 placeholder="e.g. Vitamin D"
                 value={newSuppInput}
                 onChange={(e) => setNewSuppInput(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key !== "Enter") return;
                   const name = newSuppInput.trim();
-                  if (!name || dailySupplements.includes(name)) { setNewSuppInput(""); return; }
-                  const updated = [...dailySupplements, name];
+                  if (!name) return;
+                  const dose = parseFloat(newSuppDose);
+                  const entry: SupplementEntry = !isNaN(dose) && dose > 0
+                    ? { name, dose, unit: newSuppUnit }
+                    : name;
+                  const updated = [...dailySupplements, entry];
                   setDailySupplementsState(updated);
                   if (user) { setDailySupplements(user.id, updated); saveDailySupplements(user.id, updated).catch(() => {}); }
-                  setNewSuppInput("");
+                  setNewSuppInput(""); setNewSuppDose("");
                 }}
               />
-              <button
-                type="button"
-                className="mt-1 self-end rounded-xl bg-ink/5 px-4 py-2 text-sm font-semibold text-ink/70 transition hover:bg-ink/10"
-                onClick={() => {
-                  const name = newSuppInput.trim();
-                  if (!name || dailySupplements.includes(name)) { setNewSuppInput(""); return; }
-                  const updated = [...dailySupplements, name];
-                  setDailySupplementsState(updated);
-                  if (user) { setDailySupplements(user.id, updated); saveDailySupplements(user.id, updated).catch(() => {}); }
-                  setNewSuppInput("");
-                }}
-              >
-                Add
-              </button>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  className="w-24 rounded-xl border border-ink/10 px-3 py-2 text-sm"
+                  placeholder="dose (opt)"
+                  value={newSuppDose}
+                  onChange={(e) => setNewSuppDose(e.target.value)}
+                  min={0}
+                />
+                <select
+                  className="rounded-xl border border-ink/10 bg-white px-2 py-2 text-sm text-ink/70"
+                  value={newSuppUnit}
+                  onChange={(e) => setNewSuppUnit(e.target.value)}
+                >
+                  {["mg", "mcg", "IU", "g", "mL"].map((u) => (
+                    <option key={u} value={u}>{u}</option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  className="flex-1 rounded-xl bg-ink/5 px-4 py-2 text-sm font-semibold text-ink/70 transition hover:bg-ink/10"
+                  onClick={() => {
+                    const name = newSuppInput.trim();
+                    if (!name) return;
+                    const dose = parseFloat(newSuppDose);
+                    const entry: SupplementEntry = !isNaN(dose) && dose > 0
+                      ? { name, dose, unit: newSuppUnit }
+                      : name;
+                    const updated = [...dailySupplements, entry];
+                    setDailySupplementsState(updated);
+                    if (user) { setDailySupplements(user.id, updated); saveDailySupplements(user.id, updated).catch(() => {}); }
+                    setNewSuppInput(""); setNewSuppDose("");
+                  }}
+                >
+                  Add
+                </button>
+              </div>
             </div>
           </label>
 

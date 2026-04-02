@@ -1,5 +1,22 @@
 export type Units = "metric" | "imperial";
 
+/** A supplement entry. `name` is always present; dose + unit are optional.
+ *  Legacy rows stored as plain strings are migrated on read. */
+export type SupplementEntry = string | { name: string; dose?: number; unit?: string };
+
+/** Extract the name string from a SupplementEntry. */
+export function suppName(entry: SupplementEntry): string {
+  return typeof entry === "string" ? entry : entry.name;
+}
+
+/** Formatted label: "Vitamin D 2000 IU" or just "Vitamin D". */
+export function suppLabel(entry: SupplementEntry): string {
+  if (typeof entry === "string") return entry;
+  if (entry.dose != null && entry.unit) return `${entry.name} ${entry.dose} ${entry.unit}`;
+  if (entry.dose != null) return `${entry.name} ${entry.dose}`;
+  return entry.name;
+}
+
 export type GoalDirection = "gain" | "maintain" | "balance" | "lose";
 
 export type ActivityLevel = "sedentary" | "lightly_active" | "moderately_active" | "very_active";
@@ -18,7 +35,7 @@ export interface UserProfile {
   activityLevel?: ActivityLevel;
   dietaryRestrictions?: string[];
   units: Units;
-  dailySupplements?: string[];
+  dailySupplements?: SupplementEntry[];
   streak?: number;
   streakLastDate?: string; // YYYY-MM-DD
 }
