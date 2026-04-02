@@ -1,13 +1,12 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useAuth } from "./AuthProvider";
 import { useAppData } from "./AppDataProvider";
 import SplashScreen from "./SplashScreen";
 
-// Module-level flag — may reset on route changes due to Next.js module re-evaluation.
-// Backed by sessionStorage so tab switches never re-show the splash once ready.
-// Hard reload clears sessionStorage intentionally — data must re-fetch on cold start.
+// Module-level flag persists across client-side navigations (Providers stays mounted).
+// sessionStorage backup handles the case where the module is re-evaluated.
 let _appReady = false;
 
 function isSessionReady(): boolean {
@@ -22,21 +21,28 @@ export default function AuthGate({ children }: { children: ReactNode }) {
   const { loading: authLoading, user } = useAuth();
   const { loading: dataLoading, nudgesLoaded } = useAppData();
 
-  // Restore from sessionStorage if module was re-evaluated during navigation
-  if (!_appReady && isSessionReady()) {
-    _appReady = true;
-  }
+  // Start as false so server and client agree on initial render — no hydration mismatch.
+  const [ready, setReady] = useState(false);
 
-  // Mark ready once auth + data + nudges have all resolved for the first time
   const fullyLoaded = !authLoading && (!user || (!dataLoading && nudgesLoaded));
-  if (fullyLoaded && !_appReady) {
+
+  // On mount (client only): if this session already completed the splash, skip it immediately.
+  useEffect(() => {
+    if (_appReady || isSessionReady()) {
+      _appReady = true;
+      setReady(true);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Once auth + data are fully loaded for the first time, mark ready and persist.
+  useEffect(() => {
+    if (ready || !fullyLoaded) return;
     _appReady = true;
     markSessionReady();
-  }
+    setReady(true);
+  }, [fullyLoaded, ready]);
 
-  if (!_appReady) {
-    return <SplashScreen />;
-  }
-
-  return children;
+  if (!ready) return <SplashScreen />;
+  return <>{children}</>;
 }
