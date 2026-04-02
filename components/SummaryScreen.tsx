@@ -110,7 +110,7 @@ function MacroRing({
             style={{ transition: "stroke-dashoffset 700ms cubic-bezier(0.22,1,0.36,1)" }}
           />
         </svg>
-        <div className="absolute inset-0 flex items-center justify-center" style={{ paddingBottom: 8 }}>
+        <div className="absolute inset-0 flex items-center justify-center">
           <p className="text-[15px] font-semibold leading-none text-ink">{displayVal}</p>
         </div>
       </div>
