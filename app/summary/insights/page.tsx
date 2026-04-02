@@ -553,12 +553,7 @@ export default function InsightsPage() {
             {displayMicronutrients.map((pattern, index) => (
               <div key={pattern.name} data-tour={index < 2 ? "insights-micro" : undefined}>
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <p className="text-sm text-ink/80">{pattern.name}</p>
-                    {pattern.overRda && (
-                      <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-medium text-amber-700">over RDA</span>
-                    )}
-                  </div>
+                  <p className="text-sm text-ink/80">{pattern.name}</p>
                   <button
                     type="button"
                     className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-ink/10 text-[10px] font-semibold text-ink/60"
