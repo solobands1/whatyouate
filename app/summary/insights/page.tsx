@@ -212,8 +212,13 @@ export default function InsightsPage() {
       // If supplement pushes combined coverage to 80%+, override label
       if (rawSuppRatio > 0 && combinedRatio >= 0.80) label = "Well covered";
 
-      const foodPct = Math.min(96, Math.round(foodRatio * 100));
-      const suppPct = rawSuppRatio > 0 ? Math.min(96, Math.round(suppRatio * 100)) : 0;
+      // Scale both segments proportionally so both are always visible when combined > 96%
+      const rawFoodPct = Math.round(foodRatio * 100);
+      const rawSuppPct = rawSuppRatio > 0 ? Math.round(suppRatio * 100) : 0;
+      const rawTotal = rawFoodPct + rawSuppPct;
+      const cappedTotal = Math.min(96, rawTotal);
+      const foodPct = rawTotal > 0 ? Math.round((rawFoodPct / rawTotal) * cappedTotal) : 0;
+      const suppPct = rawTotal > 0 ? cappedTotal - foodPct : 0;
 
       return {
         name: nutrient,
