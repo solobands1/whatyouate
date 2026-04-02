@@ -852,7 +852,7 @@ export default function ProfileScreen() {
                       e.stopPropagation();
                       const updated = dailySupplements.filter((_, i) => i !== idx);
                       setDailySupplementsState(updated);
-                      if (user) { setDailySupplements(user.id, updated); saveDailySupplements(user.id, updated).catch(() => {}); }
+                      if (user) { setDailySupplements(user.id, updated); saveDailySupplements(user.id, updated).catch(() => {}); notifyProfileUpdated(); }
                     }}
                     aria-label={`Remove ${suppName(entry)}`}
                   >
@@ -878,7 +878,7 @@ export default function ProfileScreen() {
                     : name;
                   const updated = [...dailySupplements, entry];
                   setDailySupplementsState(updated);
-                  if (user) { setDailySupplements(user.id, updated); saveDailySupplements(user.id, updated).catch(() => {}); }
+                  if (user) { setDailySupplements(user.id, updated); saveDailySupplements(user.id, updated).catch(() => {}); notifyProfileUpdated(); }
                   setNewSuppInput(""); setNewSuppDose("");
                 }}
               />
