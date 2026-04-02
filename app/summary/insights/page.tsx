@@ -237,15 +237,9 @@ export default function InsightsPage() {
 
       // --- Label ---
       let label = "Rarely detected";
-      if (!usingAmounts) {
-        if (foodRatio >= 0.70) label = "Frequently detected";
-        else if (foodRatio >= 0.45) label = "Building pattern";
-        else if (foodRatio >= 0.20) label = "Sometimes detected";
-      } else {
-        if (foodRatio >= 0.70) label = "Frequently detected";
-        else if (foodRatio >= 0.45) label = "Building pattern";
-        else if (foodRatio >= 0.20) label = "Sometimes detected";
-      }
+      if (foodRatio >= 0.70) label = "Frequently detected";
+      else if (foodRatio >= 0.45) label = "Building pattern";
+      else if (foodRatio >= 0.20) label = "Sometimes detected";
 
       const rawSuppRatio = suppRatioByNutrient.get(key) ?? 0;
       const suppRatio = Math.min(1, rawSuppRatio);

@@ -91,9 +91,10 @@ MICRONUTRIENT AMOUNTS
 - Estimate amounts only for these 10 nutrients: Iron, B12, Magnesium, Zinc, Vitamin D, Calcium, Omega-3, Vitamin C, Potassium, Fiber.
 - Use these units: Iron mg, B12 mcg, Magnesium mg, Zinc mg, Vitamin D IU, Calcium mg, Omega-3 mg, Vitamin C mg, Potassium mg, Fiber g.
 - Only include a nutrient if the food is a meaningful source of it. Omit nutrients where the amount would be negligible or unknown.
-- Use typical portion weights × nutrient density per 100g from standard food databases.
+- First estimate portion weight in grams from visual cues (plate size, food density, typical serving), then multiply by nutrient density per 100g from standard food databases.
 - Provide realistic ranges (min/max). For well-known foods keep ranges tight (±20%). For mixed meals widen proportionally.
 - Do not fabricate values. If genuinely uncertain about a nutrient amount, omit it rather than guess.
+- amount_min must always be ≤ amount_max.
 
 MICRONUTRIENTS
 - For clearly identified whole foods, tag their well-established nutrients — this is applying food science, not hallucinating.
@@ -197,9 +198,10 @@ MICRONUTRIENT AMOUNTS
 - Estimate amounts only for these 10 nutrients: Iron, B12, Magnesium, Zinc, Vitamin D, Calcium, Omega-3, Vitamin C, Potassium, Fiber.
 - Use these units: Iron mg, B12 mcg, Magnesium mg, Zinc mg, Vitamin D IU, Calcium mg, Omega-3 mg, Vitamin C mg, Potassium mg, Fiber g.
 - Only include a nutrient if the ingredient is a meaningful source. Omit negligible or unknown amounts.
-- Use typical portion weights × nutrient density per 100g from standard food databases.
+- First estimate portion weight in grams from the description (use typical serving sizes when unspecified), then multiply by nutrient density per 100g from standard food databases.
 - Provide realistic ranges (min/max). For specific named foods keep ranges tight (±20%). For vague descriptions widen proportionally.
 - Do not fabricate values. If genuinely uncertain, omit rather than guess.
+- amount_min must always be ≤ amount_max.
 
 MICRONUTRIENTS
 - For clearly named ingredients, tag their well-established nutrients — this is applying food science, not hallucinating.

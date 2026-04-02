@@ -119,12 +119,16 @@ export function coerceAnalysis(input: any): MealAnalysis {
     const micronutrient_amounts: MicronutrientAmount[] | undefined = Array.isArray(input.micronutrient_amounts)
       ? input.micronutrient_amounts
           .filter((a: any) => a && typeof a.nutrient === "string" && typeof a.amount_min === "number" && typeof a.amount_max === "number")
-          .map((a: any) => ({
-            nutrient: String(a.nutrient),
-            amount_min: Math.max(0, Number(a.amount_min)),
-            amount_max: Math.max(0, Number(a.amount_max)),
-            unit: String(a.unit ?? "mg"),
-          }))
+          .map((a: any) => {
+            const lo = Math.max(0, Number(a.amount_min));
+            const hi = Math.max(0, Number(a.amount_max));
+            return {
+              nutrient: String(a.nutrient),
+              amount_min: Math.min(lo, hi),
+              amount_max: Math.max(lo, hi),
+              unit: String(a.unit ?? "mg"),
+            };
+          })
       : undefined;
 
     const micronutrient_signals = Array.isArray(input.micronutrient_signals)
