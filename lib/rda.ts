@@ -238,8 +238,23 @@ export function supplementToNutrient(
   dose?: number,
   unit?: string
 ): { nutrient: string; doseInRdaUnit: number } | null {
-  const canonical = canonicalNutrient(name);
-  if (!canonical || dose == null || dose <= 0) return null;
+  if (dose == null || dose <= 0) return null;
+
+  // First try direct alias lookup (e.g. "vitamin c" → "vitamin c")
+  let canonical = canonicalNutrient(name);
+
+  // Fall back to keyword map for product names (e.g. "Emergen-C" → "vitamin c")
+  if (!canonical) {
+    const lower = name.toLowerCase();
+    for (const { keywords, nutrients } of SUPPLEMENT_KEYWORD_MAP) {
+      if (nutrients.length === 1 && keywords.some((k) => lower.includes(k))) {
+        canonical = nutrients[0];
+        break;
+      }
+    }
+  }
+
+  if (!canonical) return null;
 
   const rdaUnit = NUTRIENT_UNITS[canonical];
   if (!rdaUnit) return null;
