@@ -547,7 +547,19 @@ export default function InsightsPage() {
             <p className="text-xs uppercase tracking-wide text-muted/70" data-tour="insights-micro-title">
               Micronutrients
             </p>
-            {!hasEnoughData && <p className="text-[11px] uppercase tracking-wide text-muted/50">Preview</p>}
+            <div className="flex items-center gap-3">
+              {!hasEnoughData && <p className="text-[11px] uppercase tracking-wide text-muted/50">Preview</p>}
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
+                  <div className="h-2 w-4 rounded-sm bg-primary/45" />
+                  <p className="text-[10px] text-muted/50">Food</p>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="h-2 w-4 rounded-sm bg-primary/20" />
+                  <p className="text-[10px] text-muted/50">Supplements</p>
+                </div>
+              </div>
+            </div>
           </div>
           <div className="mt-4 space-y-4">
             {displayMicronutrients.map((pattern, index) => (
