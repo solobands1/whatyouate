@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Joyride, { CallBackProps, STATUS, type Step } from "react-joyride";
 import { useRouter } from "next/navigation";
-import { dayKeyFromTs, formatApprox, formatDateShort, todayKey } from "../lib/utils";
+import { dayKeyFromTs, formatDateShort, todayKey } from "../lib/utils";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
 import { useAuth } from "./AuthProvider";
@@ -60,6 +60,56 @@ function UnlockTimeline({ milestones }: { milestones: MilestoneItem[] }) {
           {activeMilestone.unlocked ? "✓ " : ""}{activeMilestone.desc}
         </p>
       )}
+    </div>
+  );
+}
+
+function MacroRing({
+  label,
+  value,
+  unit,
+  target,
+  animate,
+}: {
+  label: string;
+  value: number;
+  unit: string;
+  target: number | null;
+  animate: boolean;
+}) {
+  const SIZE = 68;
+  const R = 26;
+  const STROKE = 4;
+  const C = 2 * Math.PI * R;
+  const progress = target && value > 0 ? Math.min(1, value / target) : 0;
+  const offset = C * (1 - (animate ? progress : 0));
+  const displayVal = value > 0 ? `${value}${unit}` : "—";
+  return (
+    <div className="flex flex-col items-center">
+      <div className="relative" style={{ width: SIZE, height: SIZE }}>
+        <svg
+          width={SIZE}
+          height={SIZE}
+          viewBox={`0 0 ${SIZE} ${SIZE}`}
+          style={{ transform: "rotate(-90deg)" }}
+        >
+          <circle cx={SIZE / 2} cy={SIZE / 2} r={R} fill="none" stroke="currentColor" strokeWidth={STROKE} className="text-ink/8" />
+          <circle
+            cx={SIZE / 2} cy={SIZE / 2} r={R} fill="none"
+            stroke="currentColor" strokeWidth={STROKE}
+            className="text-primary/55"
+            strokeDasharray={C}
+            strokeDashoffset={offset}
+            strokeLinecap="round"
+            style={{ transition: "stroke-dashoffset 700ms cubic-bezier(0.22,1,0.36,1)" }}
+          />
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <p className="text-[12px] font-semibold leading-none text-ink">{displayVal}</p>
+        </div>
+      </div>
+      <p className="mt-1.5 text-[10px] uppercase tracking-wide text-muted/55">{label}</p>
+      <p className="text-[9px] text-muted/40">approx.</p>
     </div>
   );
 }
@@ -131,8 +181,6 @@ export default function SummaryScreen() {
     () => computeSummaryMarkers(meals, workouts, profile ?? undefined),
     [meals, workouts, profile]
   );
-  const formatClean = (min: number, max: number, unit = "") =>
-    formatApprox(min, max, unit).replace(/^~/, "");
   const visibleNotes = useMemo(
     () => computeNudges(meals, workouts, profile ?? undefined),
     [meals, workouts, profile]
@@ -785,35 +833,35 @@ export default function SummaryScreen() {
               Today
             </p>
           </div>
-          <div className="mt-5 flex items-baseline justify-between">
-            <div>
-              <p className="text-[11px] uppercase tracking-wide text-muted/60">Calories</p>
-              <p className="mt-1 text-xl font-semibold">
-                {formatClean(summaryMarkers.todayTotals.calories_min, summaryMarkers.todayTotals.calories_max)}
-              </p>
-              <p className="text-[10px] text-muted/50">approx.</p>
-            </div>
-            <div>
-              <p className="text-[11px] uppercase tracking-wide text-muted/60">Carbs</p>
-              <p className="mt-1 text-xl font-semibold">
-                {formatClean(summaryMarkers.todayTotals.carbs_g_min, summaryMarkers.todayTotals.carbs_g_max, "g")}
-              </p>
-              <p className="text-[10px] text-muted/50">approx.</p>
-            </div>
-            <div>
-              <p className="text-[11px] uppercase tracking-wide text-muted/60">Fats</p>
-              <p className="mt-1 text-xl font-semibold">
-                {formatClean(summaryMarkers.todayTotals.fat_g_min, summaryMarkers.todayTotals.fat_g_max, "g")}
-              </p>
-              <p className="text-[10px] text-muted/50">approx.</p>
-            </div>
-            <div>
-              <p className="text-[11px] uppercase tracking-wide text-muted/60">Protein</p>
-              <p className="mt-1 text-xl font-semibold">
-                {formatClean(summaryMarkers.todayTotals.protein_g_min, summaryMarkers.todayTotals.protein_g_max, "g")}
-              </p>
-              <p className="text-[10px] text-muted/50">approx.</p>
-            </div>
+          <div className="mt-4 flex justify-between">
+            <MacroRing
+              label="Calories"
+              value={Math.round((summaryMarkers.todayTotals.calories_min + summaryMarkers.todayTotals.calories_max) / 2)}
+              unit=""
+              target={summaryMarkers.gentleTargets?.calories ?? null}
+              animate={hydrated}
+            />
+            <MacroRing
+              label="Carbs"
+              value={Math.round((summaryMarkers.todayTotals.carbs_g_min + summaryMarkers.todayTotals.carbs_g_max) / 2)}
+              unit="g"
+              target={summaryMarkers.gentleTargets?.calories ? Math.round(summaryMarkers.gentleTargets.calories * 0.50 / 4) : null}
+              animate={hydrated}
+            />
+            <MacroRing
+              label="Fats"
+              value={Math.round((summaryMarkers.todayTotals.fat_g_min + summaryMarkers.todayTotals.fat_g_max) / 2)}
+              unit="g"
+              target={summaryMarkers.gentleTargets?.calories ? Math.round(summaryMarkers.gentleTargets.calories * 0.30 / 9) : null}
+              animate={hydrated}
+            />
+            <MacroRing
+              label="Protein"
+              value={Math.round((summaryMarkers.todayTotals.protein_g_min + summaryMarkers.todayTotals.protein_g_max) / 2)}
+              unit="g"
+              target={summaryMarkers.gentleTargets?.protein ?? null}
+              animate={hydrated}
+            />
           </div>
           {summaryMarkers.gentleTargets ? (
             <button

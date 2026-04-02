@@ -30,10 +30,10 @@ function avgRangeMidpoint(mins: number[], maxes: number[]) {
   return Math.round(total / (mins.length + maxes.length));
 }
 
-function patternBarWidth(label: string) {
-  if (label === "Low appearance") return "20%";
-  if (label === "Emerging pattern") return "50%";
-  return "85%";
+function patternBarWidthFromRatio(ratio: number) {
+  // Use actual detection ratio as bar width for genuine visual differentiation.
+  // Floor at 4% so zero-detection bars are still visible; cap at 96%.
+  return `${Math.min(96, Math.max(4, Math.round(ratio * 100)))}%`;
 }
 
 const NUTRIENT_INFO: Record<string, string | string[]> = {
@@ -176,13 +176,13 @@ export default function InsightsPage() {
       const key = nutrient.toLowerCase();
       const count = byNutrient.get(key) ?? 0;
       const ratio = recentMealCount ? count / recentMealCount : 0;
-      let label = "Low appearance";
-      if (ratio >= 0.3) label = "Strong pattern";
-      else if (ratio >= 0.1) label = "Emerging pattern";
+      let label = "Rarely detected";
+      if (ratio >= 0.3) label = "Frequently detected";
+      else if (ratio >= 0.1) label = "Sometimes detected";
       return {
         name: nutrient,
         label,
-        width: patternBarWidth(label)
+        width: patternBarWidthFromRatio(ratio)
       };
     });
   }, [meals]);
@@ -271,8 +271,8 @@ export default function InsightsPage() {
     ? micronutrientPatterns
     : INSIGHT_NUTRIENTS.map((name) => ({
         name,
-        label: "Emerging pattern",
-        width: patternBarWidth("Emerging pattern")
+        label: "Sometimes detected",
+        width: patternBarWidthFromRatio(0.25)
       }));
 
   const insightsTourSteps = [
@@ -532,7 +532,7 @@ export default function InsightsPage() {
             ))}
           </div>
           <p className="mt-4 text-xs text-muted/70">
-            These bars show how often each nutrient appears across your recent meals. A longer bar means it's showing up regularly in what you eat. A shorter one just means fewer of those foods lately, not that something is wrong. Tap the{" "}
+            These bars show how often each nutrient was clearly detected across your logged meals — not a measure of actual intake. Some nutrients may be present in meals but not flagged depending on how the food was identified. Tap the{" "}
             <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-ink/10 text-[10px] font-semibold text-ink/60 align-middle">i</span>
             {" "}next to any nutrient to learn more about it.
           </p>
