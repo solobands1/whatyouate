@@ -885,8 +885,8 @@ export default function ProfileScreen() {
               <div className="flex gap-2">
                 <input
                   type="number"
-                  className="w-24 rounded-xl border border-ink/10 px-3 py-2 text-sm"
-                  placeholder="dose (opt)"
+                  className="w-32 rounded-xl border border-ink/10 px-3 py-2 text-sm"
+                  placeholder="dose (optional)"
                   value={newSuppDose}
                   onChange={(e) => setNewSuppDose(e.target.value)}
                   min={0}
