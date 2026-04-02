@@ -77,38 +77,44 @@ function MacroRing({
   target: number | null;
   animate: boolean;
 }) {
-  const SIZE = 68;
-  const R = 26;
-  const STROKE = 4;
+  // 3/4 arc (270°) — gap at bottom, speedometer style
+  const SIZE = 72;
+  const R = 28;
+  const STROKE = 5;
   const C = 2 * Math.PI * R;
+  const ARC = 0.75 * C; // 270° worth of circumference
   const progress = target && value > 0 ? Math.min(1, value / target) : 0;
-  const offset = C * (1 - (animate ? progress : 0));
+  const offset = ARC * (1 - (animate ? progress : 0));
   const displayVal = value > 0 ? `${value}${unit}` : "—";
   return (
     <div className="flex flex-col items-center">
       <div className="relative" style={{ width: SIZE, height: SIZE }}>
-        <svg
-          width={SIZE}
-          height={SIZE}
-          viewBox={`0 0 ${SIZE} ${SIZE}`}
-          style={{ transform: "rotate(-90deg)" }}
-        >
-          <circle cx={SIZE / 2} cy={SIZE / 2} r={R} fill="none" stroke="currentColor" strokeWidth={STROKE} className="text-ink/8" />
+        {/* rotate(135deg) places the arc start at bottom-left, gap at bottom */}
+        <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} style={{ transform: "rotate(135deg)" }}>
+          {/* Grey track */}
           <circle
-            cx={SIZE / 2} cy={SIZE / 2} r={R} fill="none"
-            stroke="currentColor" strokeWidth={STROKE}
-            className="text-primary/55"
-            strokeDasharray={C}
+            cx={SIZE / 2} cy={SIZE / 2} r={R}
+            fill="none" stroke="currentColor" strokeWidth={STROKE}
+            strokeDasharray={`${ARC} ${C}`}
+            className="text-ink/10"
+            strokeLinecap="butt"
+          />
+          {/* Primary progress — same color as home screen bars */}
+          <circle
+            cx={SIZE / 2} cy={SIZE / 2} r={R}
+            fill="none" stroke="currentColor" strokeWidth={STROKE}
+            strokeDasharray={`${ARC} ${C}`}
             strokeDashoffset={offset}
+            className="text-primary"
             strokeLinecap="round"
             style={{ transition: "stroke-dashoffset 700ms cubic-bezier(0.22,1,0.36,1)" }}
           />
         </svg>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <p className="text-[12px] font-semibold leading-none text-ink">{displayVal}</p>
+        <div className="absolute inset-0 flex items-center justify-center" style={{ paddingBottom: 8 }}>
+          <p className="text-[13px] font-semibold leading-none text-ink">{displayVal}</p>
         </div>
       </div>
-      <p className="mt-1.5 text-[10px] uppercase tracking-wide text-muted/55">{label}</p>
+      <p className="text-[10px] uppercase tracking-wide text-muted/55">{label}</p>
       <p className="text-[9px] text-muted/40">approx.</p>
     </div>
   );
