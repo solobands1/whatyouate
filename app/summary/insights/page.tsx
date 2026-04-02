@@ -32,11 +32,6 @@ function avgRangeMidpoint(mins: number[], maxes: number[]) {
   return Math.round(total / (mins.length + maxes.length));
 }
 
-function patternBarWidthFromRatio(ratio: number) {
-  // Use actual detection ratio as bar width for genuine visual differentiation.
-  // Floor at 4% so zero-detection bars are still visible; cap at 96%.
-  return `${Math.min(96, Math.max(4, Math.round(ratio * 100)))}%`;
-}
 
 const NUTRIENT_INFO: Record<string, string | string[]> = {
   "Macros": "Averages from your logged meals over the last 14 days, skipping any days you didn't log, so gaps don't drag the numbers down. Calories and protein have a suggested range based on your profile and goal. Carbs and fat are shown as observed patterns · no strict target.",
@@ -213,7 +208,7 @@ export default function InsightsPage() {
       // Cap supplement display at 1.0 (100% of RDA) but flag over-RDA
       const suppRatio = Math.min(1, rawSuppRatio);
 
-      const foodPct = Math.min(96, Math.max(4, Math.round(foodRatio * 100)));
+      const foodPct = Math.min(96, Math.round(foodRatio * 100));
       const suppPct = rawSuppRatio > 0 ? Math.min(96, Math.round(suppRatio * 100)) : 0;
 
       return {
