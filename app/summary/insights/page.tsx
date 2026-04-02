@@ -162,20 +162,28 @@ export default function InsightsPage() {
   const micronutrientPatterns = useMemo(() => {
     const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
     const recentMeals = meals.filter((meal) => meal.ts > cutoff);
-    const recentMealCount = recentMeals.length;
-    const signals = recentMeals.flatMap((meal) => meal.analysisJson.micronutrient_signals ?? []);
 
-    const byNutrient = new Map<string, number>();
-    for (const signal of signals) {
-      if (signal.signal !== "adequate_appearance") continue;
-      const name = String(signal.nutrient || "").toLowerCase();
-      byNutrient.set(name, (byNutrient.get(name) ?? 0) + 1);
+    // Use unique logged days as denominator — fairer than meal count since
+    // logging 3 meals in one day shouldn't penalise the ratio vs 1 meal days.
+    const recentDayCount = new Set(recentMeals.map((m) => dayKeyFromTs(m.ts))).size;
+
+    // Count any day where a nutrient was detected (adequate OR low) — both mean
+    // the nutrient appeared in the diet. Track per day to match the denominator.
+    const daysByNutrient = new Map<string, Set<string>>();
+    for (const meal of recentMeals) {
+      const dayKey = dayKeyFromTs(meal.ts);
+      for (const signal of meal.analysisJson.micronutrient_signals ?? []) {
+        if (signal.signal === "uncertain") continue;
+        const name = String(signal.nutrient || "").toLowerCase();
+        if (!daysByNutrient.has(name)) daysByNutrient.set(name, new Set());
+        daysByNutrient.get(name)!.add(dayKey);
+      }
     }
 
     return INSIGHT_NUTRIENTS.map((nutrient) => {
       const key = nutrient.toLowerCase();
-      const count = byNutrient.get(key) ?? 0;
-      const ratio = recentMealCount ? count / recentMealCount : 0;
+      const days = daysByNutrient.get(key)?.size ?? 0;
+      const ratio = recentDayCount ? days / recentDayCount : 0;
       let label = "Rarely detected";
       if (ratio >= 0.3) label = "Frequently detected";
       else if (ratio >= 0.1) label = "Sometimes detected";

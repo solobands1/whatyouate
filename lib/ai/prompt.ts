@@ -82,9 +82,25 @@ WHEN A NUTRITION LABEL IMAGE IS PROVIDED
 - If uncertain between two values, prefer the lower value unless clearly contradicted by the label.
 
 MICRONUTRIENTS
-- Only include micronutrient_signals when visually plausible.
-- Do not hallucinate specific vitamin quantities.
-- Use "low_appearance" only when absence is visually plausible over time.
+- For clearly identified whole foods, tag their well-established nutrients — this is applying food science, not hallucinating.
+- Use "adequate_appearance" when the food is clearly present and the nutrient is well-established in it.
+- Aim for 2–4 signals per meal when foods are clearly identified.
+- Known relationships to apply:
+  - Fatty fish (salmon, sardines, mackerel, tuna): Omega-3, B12, Vitamin D
+  - Eggs: B12, Vitamin D, Choline (tag as Iron if yolks are prominent)
+  - Red meat (beef, lamb, bison, steak): Iron, Zinc, B12
+  - Poultry (chicken, turkey, duck): B12, Zinc, Iron
+  - Leafy greens (spinach, kale, arugula, chard): Iron, Magnesium, Vitamin K, Folate
+  - Legumes (lentils, chickpeas, black beans, edamame): Iron, Magnesium, Folate, Fiber
+  - Dairy (milk, yogurt, cheese): Calcium, B12
+  - Nuts and seeds (almonds, walnuts, pumpkin seeds): Magnesium, Zinc, Vitamin E
+  - Whole grains (oats, brown rice, quinoa, whole wheat): Magnesium, Fiber
+  - Orange/yellow vegetables (sweet potato, carrots, squash): Vitamin A, Potassium
+  - Citrus fruit, bell peppers, broccoli, strawberries: Vitamin C
+  - Avocado: Potassium, Folate
+  - Shellfish (oysters, shrimp, clams): Zinc, Iron, B12
+- Use "low_appearance" when the meal is clearly missing an entire nutrient category.
+- Do not tag nutrients for foods where the relationship is unclear or unlikely.
 
 CONFIDENCE
 - confidence_overall_0_1 must reflect visual certainty + portion clarity.
@@ -158,9 +174,25 @@ MACRONUTRIENT CALCULATION
 - Protein ranges should be proportionally consistent with food type and weight.
 
 MICRONUTRIENTS
-- Only include micronutrient_signals when plausible given the described ingredients.
-- Do not hallucinate specific vitamin quantities.
-- Use "low_appearance" only when absence is plausible given what was described.
+- For clearly named ingredients, tag their well-established nutrients — this is applying food science, not hallucinating.
+- Use "adequate_appearance" when the ingredient is explicitly mentioned and the nutrient is well-established in it.
+- Aim for 2–4 signals per meal when ingredients are clearly described.
+- Known relationships to apply:
+  - Fatty fish (salmon, sardines, mackerel, tuna): Omega-3, B12, Vitamin D
+  - Eggs: B12, Vitamin D
+  - Red meat (beef, lamb, bison, steak): Iron, Zinc, B12
+  - Poultry (chicken, turkey): B12, Zinc, Iron
+  - Leafy greens (spinach, kale, arugula, chard): Iron, Magnesium, Vitamin K, Folate
+  - Legumes (lentils, chickpeas, black beans, edamame): Iron, Magnesium, Folate, Fiber
+  - Dairy (milk, yogurt, cheese): Calcium, B12
+  - Nuts and seeds (almonds, walnuts, pumpkin seeds): Magnesium, Zinc, Vitamin E
+  - Whole grains (oats, brown rice, quinoa, whole wheat): Magnesium, Fiber
+  - Orange/yellow vegetables (sweet potato, carrots, squash): Vitamin A, Potassium
+  - Citrus fruit, bell peppers, broccoli, strawberries: Vitamin C
+  - Avocado: Potassium, Folate
+  - Shellfish (oysters, shrimp, clams): Zinc, Iron, B12
+- Use "low_appearance" when an ingredient is explicitly absent or missing from the described meal.
+- Do not tag nutrients for vague descriptions where ingredients are unclear.
 
 CONFIDENCE
 - confidence_overall_0_1 must reflect how specific and complete the description is.
