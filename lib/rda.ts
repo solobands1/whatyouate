@@ -47,6 +47,9 @@ export const NUTRIENT_ALIASES: Record<string, string> = {
   fiber: "fiber",
   fibre: "fiber",
   "dietary fiber": "fiber",
+  psyllium: "fiber",
+  metamucil: "fiber",
+  inulin: "fiber",
 };
 
 /**
@@ -85,6 +88,8 @@ export const SUPPLEMENT_KEYWORD_MAP: Array<{ keywords: string[]; nutrients: stri
   { keywords: ["iron", "ferrous", "ferric"],                                            nutrients: ["iron"] },
   { keywords: ["calcium", "cal citrate", "cal carbonate"],                             nutrients: ["calcium"] },
   { keywords: ["fish oil", "omega-3", "omega 3", "omega3", "dha", "epa", "krill"],    nutrients: ["omega-3"] },
+  { keywords: ["potassium"],                                                            nutrients: ["potassium"] },
+  { keywords: ["fiber", "fibre", "psyllium", "metamucil", "inulin"],                   nutrients: ["fiber"] },
   {
     keywords: ["multivitamin", "multi vitamin", "multi-vitamin"],
     nutrients: ["vitamin c", "vitamin d", "b12", "iron", "zinc", "magnesium", "calcium"],

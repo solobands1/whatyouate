@@ -6,6 +6,7 @@ import Joyride, { STATUS, CallBackProps, type Step } from "react-joyride";
 import { notifyProfileUpdated } from "../lib/dataEvents";
 import type { ActivityLevel, GoalDirection, SupplementEntry, Units, UserProfile } from "../lib/types";
 import { suppLabel, suppName } from "../lib/types";
+import { matchSupplementNutrients } from "../lib/rda";
 import { clearAllData, getProfile, saveProfile, saveDailySupplements, LOCAL_MODE } from "../lib/supabaseDb";
 import { getDailySupplements, setDailySupplements } from "../lib/foodCache";
 import { supabase } from "../lib/supabaseClient";
@@ -60,6 +61,7 @@ export default function ProfileScreen() {
   const [newSuppInput, setNewSuppInput] = useState("");
   const [newSuppDose, setNewSuppDose] = useState("");
   const [newSuppUnit, setNewSuppUnit] = useState("mg");
+  const [suppMatchHint, setSuppMatchHint] = useState<string | null>(null);
   const [editFirstName, setEditFirstName] = useState("");
   const [editLastName, setEditLastName] = useState("");
 
@@ -867,7 +869,14 @@ export default function ProfileScreen() {
                 className="w-full rounded-xl border border-ink/10 px-3 py-2 text-sm"
                 placeholder="e.g. Vitamin D"
                 value={newSuppInput}
-                onChange={(e) => setNewSuppInput(e.target.value)}
+                onChange={(e) => {
+                  setNewSuppInput(e.target.value);
+                  const matched = matchSupplementNutrients(e.target.value.trim());
+                  setSuppMatchHint(
+                    e.target.value.trim().length < 2 ? null :
+                    matched.length ? `Tracks: ${matched.join(", ")}` : "Not recognized for tracking"
+                  );
+                }}
                 onKeyDown={(e) => {
                   if (e.key !== "Enter") return;
                   const name = newSuppInput.trim();
@@ -879,9 +888,14 @@ export default function ProfileScreen() {
                   const updated = [...dailySupplements, entry];
                   setDailySupplementsState(updated);
                   if (user) { setDailySupplements(user.id, updated); saveDailySupplements(user.id, updated).then(() => notifyProfileUpdated()).catch(() => {}); }
-                  setNewSuppInput(""); setNewSuppDose("");
+                  setNewSuppInput(""); setNewSuppDose(""); setSuppMatchHint(null);
                 }}
               />
+              {suppMatchHint && (
+                <p className={`-mt-0.5 text-[11px] ${suppMatchHint.startsWith("Tracks") ? "text-primary/70" : "text-muted/50"}`}>
+                  {suppMatchHint}
+                </p>
+              )}
               <div className="flex gap-2">
                 <input
                   type="text"
@@ -913,7 +927,7 @@ export default function ProfileScreen() {
                     const updated = [...dailySupplements, entry];
                     setDailySupplementsState(updated);
                     if (user) { setDailySupplements(user.id, updated); saveDailySupplements(user.id, updated).then(() => notifyProfileUpdated()).catch(() => {}); }
-                    setNewSuppInput(""); setNewSuppDose("");
+                    setNewSuppInput(""); setNewSuppDose(""); setSuppMatchHint(null);
                   }}
                 >
                   Add
