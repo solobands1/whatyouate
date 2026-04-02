@@ -205,7 +205,15 @@ export async function getProfile(userId: string): Promise<UserProfile | null> {
     activityLevel: data.activity_level ?? undefined,
     dietaryRestrictions: Array.isArray(data.dietary_restrictions) ? data.dietary_restrictions : [],
     units: data.units ?? "imperial",
-    dailySupplements: Array.isArray(data.daily_supplements) ? data.daily_supplements : [],
+    dailySupplements: Array.isArray(data.daily_supplements)
+      ? data.daily_supplements.map((s: unknown) => {
+          if (typeof s === "string") {
+            try { const p = JSON.parse(s); if (p && typeof p === "object" && typeof p.name === "string") return p as SupplementEntry; } catch {}
+            return s as SupplementEntry;
+          }
+          return s as SupplementEntry;
+        })
+      : [],
     streak: data.streak ?? 0,
     streakLastDate: data.streak_last_date ?? "",
   };
@@ -235,7 +243,7 @@ export async function saveProfile(userId: string, profile: UserProfile) {
     activity_level: profile.activityLevel ?? null,
     dietary_restrictions: profile.dietaryRestrictions ?? [],
     units: profile.units,
-    daily_supplements: profile.dailySupplements ?? [],
+    daily_supplements: (profile.dailySupplements ?? []).map((e) => typeof e === "string" ? e : JSON.stringify(e)),
     updated_at: new Date().toISOString()
   };
   const { error } = await supabase.from("profiles").upsert(payload, { onConflict: "user_id" });
@@ -264,9 +272,11 @@ export async function saveStreak(userId: string, streak: number, lastDate: strin
 }
 
 export async function saveDailySupplements(userId: string, names: SupplementEntry[]): Promise<void> {
+  // Serialize structured entries as JSON strings so they survive a text[] column
+  const serialized = names.map((e) => typeof e === "string" ? e : JSON.stringify(e));
   const { error } = await supabase
     .from("profiles")
-    .upsert({ user_id: userId, daily_supplements: names, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+    .upsert({ user_id: userId, daily_supplements: serialized, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
   if (error) throw error;
   profileCache.delete(userId);
 }
