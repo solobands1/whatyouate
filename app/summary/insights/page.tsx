@@ -206,8 +206,11 @@ export default function InsightsPage() {
       else if (foodRatio >= 0.20) label = "Sometimes detected";
 
       const rawSuppRatio = suppRatioByNutrient.get(key) ?? 0;
-      // Cap supplement display at 1.0 (100% of RDA) but flag over-RDA
       const suppRatio = Math.min(1, rawSuppRatio);
+      const combinedRatio = Math.min(1, foodRatio + suppRatio);
+
+      // If supplement pushes combined coverage to 80%+, override label
+      if (rawSuppRatio > 0 && combinedRatio >= 0.80) label = "Well covered";
 
       const foodPct = Math.min(96, Math.round(foodRatio * 100));
       const suppPct = rawSuppRatio > 0 ? Math.min(96, Math.round(suppRatio * 100)) : 0;
