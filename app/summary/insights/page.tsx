@@ -642,10 +642,7 @@ export default function InsightsPage() {
                     />
                   )}
                 </div>
-                <p className="mt-1 text-[11px] text-muted/50">
-                  {pattern.label}
-                  {pattern.hasSupplement && <span className="ml-1.5 text-muted/40">· supplement</span>}
-                </p>
+                <p className="mt-1 text-[11px] text-muted/50">{pattern.label}</p>
               </div>
             ))}
           </div>
