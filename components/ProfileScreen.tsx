@@ -62,6 +62,8 @@ export default function ProfileScreen() {
   const [newSuppDose, setNewSuppDose] = useState("");
   const [newSuppUnit, setNewSuppUnit] = useState("mg");
   const [suppMatchHint, setSuppMatchHint] = useState<string | null>(null);
+  const [suppLookingUp, setSuppLookingUp] = useState(false);
+  const suppLookupTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [editFirstName, setEditFirstName] = useState("");
   const [editLastName, setEditLastName] = useState("");
 
@@ -870,12 +872,39 @@ export default function ProfileScreen() {
                 placeholder="e.g. Vitamin D"
                 value={newSuppInput}
                 onChange={(e) => {
-                  setNewSuppInput(e.target.value);
-                  const matched = matchSupplementNutrients(e.target.value.trim());
-                  setSuppMatchHint(
-                    e.target.value.trim().length < 2 ? null :
-                    matched.length ? `Tracks: ${matched.join(", ")}` : "Not recognized for tracking"
-                  );
+                  const val = e.target.value;
+                  setNewSuppInput(val);
+                  // Clear any pending lookup
+                  if (suppLookupTimer.current) clearTimeout(suppLookupTimer.current);
+                  if (val.trim().length < 2) { setSuppMatchHint(null); return; }
+                  // Show keyword-based hint immediately
+                  const matched = matchSupplementNutrients(val.trim());
+                  setSuppMatchHint(matched.length ? `Tracks: ${matched.join(", ")}` : null);
+                  // Debounce AI lookup — fires 800ms after user stops typing
+                  suppLookupTimer.current = setTimeout(async () => {
+                    setSuppLookingUp(true);
+                    try {
+                      const res = await fetch("/api/analyze-supplement", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ name: val.trim() }),
+                      });
+                      if (!res.ok) return;
+                      const data = await res.json();
+                      if (data.dose) {
+                        setNewSuppDose(String(data.dose));
+                        setNewSuppUnit(data.unit ?? "mg");
+                      }
+                      const reMatched = matchSupplementNutrients(val.trim());
+                      const canonMatched = data.canonical_name ? matchSupplementNutrients(data.canonical_name) : [];
+                      const allMatched = [...new Set([...reMatched, ...canonMatched])];
+                      setSuppMatchHint(allMatched.length ? `Tracks: ${allMatched.join(", ")}` : "Not recognized for tracking");
+                    } catch {
+                      // silently fail — hint stays as keyword match
+                    } finally {
+                      setSuppLookingUp(false);
+                    }
+                  }, 800);
                 }}
                 onKeyDown={(e) => {
                   if (e.key !== "Enter") return;
@@ -891,9 +920,9 @@ export default function ProfileScreen() {
                   setNewSuppInput(""); setNewSuppDose(""); setSuppMatchHint(null);
                 }}
               />
-              {suppMatchHint && (
-                <p className={`-mt-0.5 text-[11px] ${suppMatchHint.startsWith("Tracks") ? "text-primary/70" : "text-muted/50"}`}>
-                  {suppMatchHint}
+              {(suppMatchHint || suppLookingUp) && (
+                <p className={`-mt-0.5 text-[11px] ${suppLookingUp ? "text-muted/40" : suppMatchHint?.startsWith("Tracks") ? "text-primary/70" : "text-muted/50"}`}>
+                  {suppLookingUp ? "Looking up dose..." : suppMatchHint}
                 </p>
               )}
               <div className="flex gap-2">
