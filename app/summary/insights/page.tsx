@@ -201,8 +201,9 @@ export default function InsightsPage() {
       const days = daysByNutrient.get(key)?.size ?? 0;
       const foodRatio = recentDayCount ? days / recentDayCount : 0;
       let label = "Rarely detected";
-      if (foodRatio >= 0.3) label = "Frequently detected";
-      else if (foodRatio >= 0.1) label = "Sometimes detected";
+      if (foodRatio >= 0.70) label = "Frequently detected";
+      else if (foodRatio >= 0.45) label = "Building pattern";
+      else if (foodRatio >= 0.20) label = "Sometimes detected";
 
       const rawSuppRatio = suppRatioByNutrient.get(key) ?? 0;
       // Cap supplement display at 1.0 (100% of RDA) but flag over-RDA
@@ -306,7 +307,7 @@ export default function InsightsPage() {
     ? micronutrientPatterns
     : INSIGHT_NUTRIENTS.map((name) => ({
         name,
-        label: "Sometimes detected",
+        label: "Building pattern",
         foodPct: 25,
         suppPct: 0,
         hasSupplement: false,
