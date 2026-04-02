@@ -254,7 +254,15 @@ export default function SummaryScreen() {
       yesterdayDate.setDate(yesterdayDate.getDate() - 1);
       const yesterday = todayKey(yesterdayDate);
       const key = todayKey(new Date(ts));
-      const label = key === today ? "Today" : key === yesterday ? "Yesterday" : formatDateShort(ts);
+      let label: string;
+      if (key === today) {
+        const hr = new Date(ts).getHours();
+        label = hr < 12 ? "This Morning" : hr < 17 ? "This Afternoon" : "This Evening";
+      } else if (key === yesterday) {
+        label = "Yesterday";
+      } else {
+        label = formatDateShort(ts);
+      }
       const last = groups[groups.length - 1];
       if (last && last.label === label) {
         last.items.push(nudge);
@@ -264,6 +272,16 @@ export default function SummaryScreen() {
     });
     return groups;
   }, [uniqueNudges]);
+
+  const currentWindowLabel = (() => {
+    const hr = new Date().getHours();
+    return hr < 12 ? "This Morning" : hr < 17 ? "This Afternoon" : "This Evening";
+  })();
+
+  const historyGroups = useMemo(
+    () => groupedNudges.filter((g) => g.label !== currentWindowLabel),
+    [groupedNudges, currentWindowLabel]
+  );
 
   const summaryTourSteps = [
     {
@@ -308,10 +326,11 @@ export default function SummaryScreen() {
   const recentFoods = useMemo(() => {
     const seen = new Set<string>();
     const foods: string[] = [];
+    const threeDaysAgo = Date.now() - 3 * 24 * 60 * 60 * 1000;
     meals
       .slice()
       .sort((a, b) => b.ts - a.ts)
-      .slice(0, 20)
+      .filter((m) => m.ts >= threeDaysAgo)
       .forEach((meal) => {
         const items = [
           meal.analysisJson?.name,
@@ -348,9 +367,16 @@ export default function SummaryScreen() {
     if (cached) {
       try {
         const parsed = JSON.parse(cached);
-        setSmartNudge(parsed);
-        smartNudgeFetchedRef.current.add(windowKey);
-        return;
+        // Invalidate if meal count changed since cache was written
+        const cachedMealCount = parsed?._mealCount;
+        const mealCountChanged = cachedMealCount !== undefined && cachedMealCount !== meals.length;
+        if (!mealCountChanged) {
+          const { _mealCount: _mc2, ...parsedClean } = parsed as typeof parsed & { _mealCount?: number };
+          void _mc2;
+          setSmartNudge(parsedClean);
+          smartNudgeFetchedRef.current.add(windowKey);
+          return;
+        }
       } catch {}
     }
 
@@ -381,11 +407,13 @@ export default function SummaryScreen() {
         if (!res.ok) throw new Error("nudge failed");
         const { nudge } = await res.json();
         if (nudge?.message) {
-          localStorage.setItem(cacheKey, JSON.stringify(nudge));
+          localStorage.setItem(cacheKey, JSON.stringify({ ...nudge, _mealCount: meals.length }));
           if (nudge.suggestions?.length) {
             localStorage.setItem(`wya_ai_nudge_${windowKey}_${nudge.type}_suggestions`, JSON.stringify(nudge.suggestions.slice(0, 3)));
           }
-          setSmartNudge(nudge);
+          const { _mealCount: _mc, ...nudgeClean } = nudge as typeof nudge & { _mealCount?: number };
+          void _mc;
+          setSmartNudge(nudgeClean);
         } else {
           localStorage.setItem(cacheKey, "null");
           setSmartNudge(null);
@@ -862,10 +890,12 @@ export default function SummaryScreen() {
             </div>
           ) : (
             <div className="mt-4 space-y-3">
-              {/* Today’s nudge */}
-              {groupedNudges.some((g) => g.label !== "Today") && (
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/50">Today</p>
-              )}
+              {/* Today’s nudge — labeled by time window */}
+              {(() => {
+                const hr = new Date().getHours();
+                const windowLabel = hr < 12 ? "This Morning" : hr < 17 ? "This Afternoon" : "This Evening";
+                return <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/50">{windowLabel}</p>;
+              })()}
               {smartNudge === undefined ? (
                 /* Loading state — subtle pulse while AI thinks */
                 <div className="rounded-xl border border-ink/10 bg-ink/5 px-4 py-3 space-y-2">
@@ -960,7 +990,7 @@ export default function SummaryScreen() {
                 null
               )}
               {/* Past nudges • flat date-grouped scroll, mirrors HomeScreen feed */}
-              {groupedNudges.filter((g) => g.label !== "Today").slice(0, visibleNudgeGroupCount).map((group) => (
+              {historyGroups.slice(0, visibleNudgeGroupCount).map((group) => (
                 <div key={group.label} className="space-y-1.5">
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/50">{group.label}</p>
                   {group.items.map((nudge) => {
@@ -999,7 +1029,7 @@ export default function SummaryScreen() {
                   })}
                 </div>
               ))}
-              {visibleNudgeGroupCount < groupedNudges.filter((g) => g.label !== "Today").length && (
+              {visibleNudgeGroupCount < historyGroups.length && (
                 <button
                   type="button"
                   className="mt-1 text-[11px] font-semibold text-ink/50 underline transition active:opacity-50"

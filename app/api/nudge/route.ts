@@ -91,7 +91,7 @@ function buildSmartPrompt(ctx: Record<string, unknown>): string {
 
   const last7 = ctx.last7Days as Array<Record<string, unknown>> | undefined;
   if (last7?.length) {
-    lines.push(`Last ${last7.length} logged days (date | kcal | protein | fat | workout):`);
+    lines.push(`Last ${last7.length} days (date | kcal | protein | fat | workout). 0 values mean no meals were logged that day — not a fasted day:`);
     last7.forEach((d) => {
       const wk = d.hasWorkout ? ` | workout ${d.workoutMinutes ?? "?"}min ${d.workoutIntensity ?? ""}` : "";
       lines.push(`  ${d.dateKey}: ${d.calories} kcal / ${d.protein}g protein / ${d.fat}g fat${wk}`);
