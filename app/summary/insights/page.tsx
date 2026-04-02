@@ -164,11 +164,32 @@ export default function InsightsPage() {
     // logging 3 meals in one day shouldn't penalise the ratio vs 1 meal days.
     const recentDayCount = new Set(recentMeals.map((m) => dayKeyFromTs(m.ts))).size;
 
-    // Count any day where a nutrient was detected (adequate OR low) — both mean
-    // the nutrient appeared in the diet. Track per day to match the denominator.
+    // Build per-nutrient daily totals from micronutrient_amounts (new meals)
+    // and fall back to frequency detection for older meals without amounts.
+    const rda = profile ? getRda(profile.sex, profile.age) : null;
+
+    // amountTotalsByNutrient: nutrient key → sum of midpoint amounts across all recent meals
+    const amountTotalsByNutrient = new Map<string, number>();
+    // amountMealCountByNutrient: how many meals contributed an amount for this nutrient
+    const amountMealCountByNutrient = new Map<string, number>();
+    // daysByNutrient: fallback frequency tracking for meals without amounts
     const daysByNutrient = new Map<string, Set<string>>();
+
     for (const meal of recentMeals) {
+      if (meal.analysisJson.source === "supplement") continue;
       const dayKey = dayKeyFromTs(meal.ts);
+      const amounts = meal.analysisJson.micronutrient_amounts;
+
+      if (amounts?.length) {
+        for (const a of amounts) {
+          const key = a.nutrient.toLowerCase();
+          const midpoint = (a.amount_min + a.amount_max) / 2;
+          amountTotalsByNutrient.set(key, (amountTotalsByNutrient.get(key) ?? 0) + midpoint);
+          amountMealCountByNutrient.set(key, (amountMealCountByNutrient.get(key) ?? 0) + 1);
+        }
+      }
+
+      // Always track frequency as fallback
       for (const signal of meal.analysisJson.micronutrient_signals ?? []) {
         if (signal.signal === "uncertain") continue;
         const name = String(signal.nutrient || "").toLowerCase();
@@ -179,7 +200,6 @@ export default function InsightsPage() {
 
     // Compute supplement coverage per nutrient (dose vs RDA)
     const suppRatioByNutrient = new Map<string, number>();
-    const rda = profile ? getRda(profile.sex, profile.age) : null;
     if (rda && profile?.dailySupplements?.length) {
       for (const entry of profile.dailySupplements) {
         const name = suppName(entry);
@@ -198,27 +218,54 @@ export default function InsightsPage() {
 
     return INSIGHT_NUTRIENTS.map((nutrient) => {
       const key = nutrient.toLowerCase();
-      const days = daysByNutrient.get(key)?.size ?? 0;
-      const foodRatio = recentDayCount ? days / recentDayCount : 0;
+      const rdaVal = rda ? rda[key] : null;
+
+      // --- Food ratio ---
+      // Prefer amount-based calculation; fall back to frequency
+      let foodRatio = 0;
+      let usingAmounts = false;
+
+      if (rdaVal && amountTotalsByNutrient.has(key) && recentDayCount > 0) {
+        // Average daily amount = total across all meals / number of logged days
+        const avgDailyAmount = amountTotalsByNutrient.get(key)! / recentDayCount;
+        foodRatio = avgDailyAmount / rdaVal;
+        usingAmounts = true;
+      } else if (recentDayCount > 0) {
+        const days = daysByNutrient.get(key)?.size ?? 0;
+        foodRatio = days / recentDayCount;
+      }
+
+      // --- Label ---
       let label = "Rarely detected";
-      if (foodRatio >= 0.70) label = "Frequently detected";
-      else if (foodRatio >= 0.45) label = "Building pattern";
-      else if (foodRatio >= 0.20) label = "Sometimes detected";
+      if (!usingAmounts) {
+        if (foodRatio >= 0.70) label = "Frequently detected";
+        else if (foodRatio >= 0.45) label = "Building pattern";
+        else if (foodRatio >= 0.20) label = "Sometimes detected";
+      } else {
+        if (foodRatio >= 0.70) label = "Frequently detected";
+        else if (foodRatio >= 0.45) label = "Building pattern";
+        else if (foodRatio >= 0.20) label = "Sometimes detected";
+      }
 
       const rawSuppRatio = suppRatioByNutrient.get(key) ?? 0;
       const suppRatio = Math.min(1, rawSuppRatio);
-      const combinedRatio = Math.min(1, foodRatio + suppRatio);
+      const combinedRatio = Math.min(1, foodRatio + rawSuppRatio);
 
-      // If supplement pushes combined coverage to 80%+, override label
-      if (rawSuppRatio > 0 && combinedRatio >= 0.80) label = "Well covered";
+      // Override label when combined coverage is strong
+      if (rawSuppRatio > 0 && combinedRatio >= 0.80) {
+        const overPct = Math.round((foodRatio + rawSuppRatio - 1) * 100);
+        label = overPct > 5 ? `Well covered · ~${overPct}% over RDA` : "Well covered";
+      } else if (usingAmounts && foodRatio >= 0.80) {
+        const overPct = Math.round((foodRatio - 1) * 100);
+        label = overPct > 5 ? `Well covered · ~${overPct}% over RDA` : "Well covered";
+      }
 
-      // Scale both segments proportionally so both are always visible when combined > 96%
-      const rawFoodPct = Math.round(foodRatio * 100);
-      const rawSuppPct = rawSuppRatio > 0 ? Math.round(suppRatio * 100) : 0;
-      const rawTotal = rawFoodPct + rawSuppPct;
-      const cappedTotal = Math.min(96, rawTotal);
-      const foodPct = rawTotal > 0 ? Math.round((rawFoodPct / rawTotal) * cappedTotal) : 0;
-      const suppPct = rawTotal > 0 ? cappedTotal - foodPct : 0;
+      // Bar widths — keep food and supplement proportional to their actual contribution
+      const clampedFoodRatio = Math.min(1, foodRatio);
+      const rawTotal = clampedFoodRatio + suppRatio;
+      const cappedTotal = Math.min(0.96, rawTotal);
+      const foodPct = rawTotal > 0 ? Math.round((clampedFoodRatio / rawTotal) * cappedTotal * 100) : 0;
+      const suppPct = rawTotal > 0 && rawSuppRatio > 0 ? Math.round(cappedTotal * 100) - foodPct : 0;
 
       return {
         name: nutrient,
@@ -226,7 +273,8 @@ export default function InsightsPage() {
         foodPct,
         suppPct,
         hasSupplement: rawSuppRatio > 0,
-        overRda: rawSuppRatio > 1,
+        overRda: combinedRatio > 1,
+        usingAmounts,
       };
     });
   }, [meals, profile]);
@@ -608,9 +656,9 @@ export default function InsightsPage() {
             ))}
           </div>
           <p className="mt-4 text-xs text-muted/70">
-            The solid bar shows how often each nutrient was detected in your meals. The lighter extension shows supplement coverage against your recommended daily amount. Tap the{" "}
+            The solid bar shows estimated food intake as a % of your recommended daily amount. The lighter extension shows supplement coverage. Older meals show detection frequency until re-analyzed. Tap the{" "}
             <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-ink/10 text-[10px] font-semibold text-ink/60 align-middle">i</span>
-            {" "}next to any nutrient to learn more about it.
+            {" "}next to any nutrient to learn more.
           </p>
         </Card>
       </div>

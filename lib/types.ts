@@ -40,6 +40,13 @@ export interface UserProfile {
   streakLastDate?: string; // YYYY-MM-DD
 }
 
+export interface MicronutrientAmount {
+  nutrient: string;
+  amount_min: number;
+  amount_max: number;
+  unit: string;
+}
+
 export interface MealAnalysis {
   name?: string;
   detected_items: Array<{
@@ -57,6 +64,7 @@ export interface MealAnalysis {
     fat_g_min: number;
     fat_g_max: number;
   };
+  micronutrient_amounts?: MicronutrientAmount[];
   micronutrient_signals: Array<{
     nutrient: string;
     signal: "low_appearance" | "adequate_appearance" | "uncertain";

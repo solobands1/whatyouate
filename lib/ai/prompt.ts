@@ -21,6 +21,12 @@ Return STRICT JSON ONLY matching this schema:
     "fat_g_min": number,
     "fat_g_max": number
   },
+  "micronutrient_amounts": [{
+    "nutrient": "string",
+    "amount_min": number,
+    "amount_max": number,
+    "unit": "string"
+  }],
   "micronutrient_signals": [{
     "nutrient": "string",
     "signal": "low_appearance" | "adequate_appearance" | "uncertain",
@@ -81,6 +87,14 @@ WHEN A NUTRITION LABEL IMAGE IS PROVIDED
 - Double-check that the extracted calorie value is consistent with protein/carbs/fat totals (approximately 4/4/9 rule) and avoid implausible totals.
 - If uncertain between two values, prefer the lower value unless clearly contradicted by the label.
 
+MICRONUTRIENT AMOUNTS
+- Estimate amounts only for these 10 nutrients: Iron, B12, Magnesium, Zinc, Vitamin D, Calcium, Omega-3, Vitamin C, Potassium, Fiber.
+- Use these units: Iron mg, B12 mcg, Magnesium mg, Zinc mg, Vitamin D IU, Calcium mg, Omega-3 mg, Vitamin C mg, Potassium mg, Fiber g.
+- Only include a nutrient if the food is a meaningful source of it. Omit nutrients where the amount would be negligible or unknown.
+- Use typical portion weights × nutrient density per 100g from standard food databases.
+- Provide realistic ranges (min/max). For well-known foods keep ranges tight (±20%). For mixed meals widen proportionally.
+- Do not fabricate values. If genuinely uncertain about a nutrient amount, omit it rather than guess.
+
 MICRONUTRIENTS
 - For clearly identified whole foods, tag their well-established nutrients — this is applying food science, not hallucinating.
 - Use "adequate_appearance" when the food is clearly present and the nutrient is well-established in it.
@@ -135,6 +149,12 @@ Return STRICT JSON ONLY matching this schema:
     "fat_g_min": number,
     "fat_g_max": number
   },
+  "micronutrient_amounts": [{
+    "nutrient": "string",
+    "amount_min": number,
+    "amount_max": number,
+    "unit": "string"
+  }],
   "micronutrient_signals": [{
     "nutrient": "string",
     "signal": "low_appearance" | "adequate_appearance" | "uncertain",
@@ -172,6 +192,14 @@ MACRONUTRIENT CALCULATION
 - For mixed or complex meals, or vague descriptions:
   - Widen ranges proportionally. Do not exceed ±30%.
 - Protein ranges should be proportionally consistent with food type and weight.
+
+MICRONUTRIENT AMOUNTS
+- Estimate amounts only for these 10 nutrients: Iron, B12, Magnesium, Zinc, Vitamin D, Calcium, Omega-3, Vitamin C, Potassium, Fiber.
+- Use these units: Iron mg, B12 mcg, Magnesium mg, Zinc mg, Vitamin D IU, Calcium mg, Omega-3 mg, Vitamin C mg, Potassium mg, Fiber g.
+- Only include a nutrient if the ingredient is a meaningful source. Omit negligible or unknown amounts.
+- Use typical portion weights × nutrient density per 100g from standard food databases.
+- Provide realistic ranges (min/max). For specific named foods keep ranges tight (±20%). For vague descriptions widen proportionally.
+- Do not fabricate values. If genuinely uncertain, omit rather than guess.
 
 MICRONUTRIENTS
 - For clearly named ingredients, tag their well-established nutrients — this is applying food science, not hallucinating.

@@ -1,4 +1,4 @@
-import type { MealAnalysis } from "../types";
+import type { MealAnalysis, MicronutrientAmount } from "../types";
 import { clampNumber } from "../utils";
 
 export const LOW_CONFIDENCE_THRESHOLD = 0.55;
@@ -116,6 +116,17 @@ export function coerceAnalysis(input: any): MealAnalysis {
       fat_g_max: Math.max(fatMin, fatMax)
     };
 
+    const micronutrient_amounts: MicronutrientAmount[] | undefined = Array.isArray(input.micronutrient_amounts)
+      ? input.micronutrient_amounts
+          .filter((a: any) => a && typeof a.nutrient === "string" && typeof a.amount_min === "number" && typeof a.amount_max === "number")
+          .map((a: any) => ({
+            nutrient: String(a.nutrient),
+            amount_min: Math.max(0, Number(a.amount_min)),
+            amount_max: Math.max(0, Number(a.amount_max)),
+            unit: String(a.unit ?? "mg"),
+          }))
+      : undefined;
+
     const micronutrient_signals = Array.isArray(input.micronutrient_signals)
       ? input.micronutrient_signals.slice(0, 4).map((signal: any) => ({
           nutrient: String(signal?.nutrient ?? "General"),
@@ -148,6 +159,7 @@ export function coerceAnalysis(input: any): MealAnalysis {
       ...(displayName ? { name: displayName } : {}),
       detected_items,
       estimated_ranges,
+      ...(micronutrient_amounts?.length ? { micronutrient_amounts } : {}),
       micronutrient_signals,
       confidence_overall_0_1,
       detected_brand: detected_brand == null ? null : String(detected_brand),
