@@ -254,10 +254,12 @@ export default function InsightsPage() {
         label = overPct > 5 ? `Well covered · ~${overPct}% over RDA` : "Well covered";
       }
 
-      // Bar widths — keep food and supplement proportional to their actual contribution
+      // Bar widths — proportional to actual contribution.
+      // If combined >= 100% of RDA, fill the bar completely (100%) to clearly signal coverage.
       const clampedFoodRatio = Math.min(1, foodRatio);
       const rawTotal = clampedFoodRatio + suppRatio;
-      const cappedTotal = Math.min(0.96, rawTotal);
+      const isFullyCovered = (foodRatio + rawSuppRatio) >= 1;
+      const cappedTotal = isFullyCovered ? 1 : Math.min(0.96, rawTotal);
       const foodPct = rawTotal > 0 ? Math.round((clampedFoodRatio / rawTotal) * cappedTotal * 100) : 0;
       const suppPct = rawTotal > 0 && rawSuppRatio > 0 ? Math.round(cappedTotal * 100) - foodPct : 0;
 
