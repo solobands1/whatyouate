@@ -886,13 +886,13 @@ export default function ProfileScreen() {
                 <input
                   type="text"
                   inputMode="decimal"
-                  className="min-w-0 flex-1 rounded-xl border border-ink/10 px-3 py-2 text-sm"
+                  className="w-28 rounded-xl border border-ink/10 px-3 py-2 text-sm"
                   placeholder="dose (if available)"
                   value={newSuppDose}
                   onChange={(e) => setNewSuppDose(e.target.value)}
                 />
                 <select
-                  className="rounded-xl border border-ink/10 bg-white px-2 py-2 text-sm text-ink/70"
+                  className="rounded-xl border border-ink/10 bg-white px-3 py-2 text-sm text-ink/70"
                   value={newSuppUnit}
                   onChange={(e) => setNewSuppUnit(e.target.value)}
                 >
@@ -902,7 +902,7 @@ export default function ProfileScreen() {
                 </select>
                 <button
                   type="button"
-                  className="rounded-xl bg-ink/5 px-4 py-2 text-sm font-semibold text-ink/70 transition hover:bg-ink/10"
+                  className="rounded-xl bg-ink/5 px-5 py-2 text-sm font-semibold text-ink/70 transition hover:bg-ink/10"
                   onClick={() => {
                     const name = newSuppInput.trim();
                     if (!name) return;
