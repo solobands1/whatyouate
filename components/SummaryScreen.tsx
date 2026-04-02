@@ -80,7 +80,7 @@ function MacroRing({
   // 3/4 arc (270°) — gap at bottom, speedometer style
   const SIZE = 72;
   const R = 28;
-  const STROKE = 5;
+  const STROKE = 7;
   const C = 2 * Math.PI * R;
   const ARC = 0.75 * C; // 270° worth of circumference
   const progress = target && value > 0 ? Math.min(1, value / target) : 0;
@@ -111,7 +111,7 @@ function MacroRing({
           />
         </svg>
         <div className="absolute inset-0 flex items-center justify-center" style={{ paddingBottom: 8 }}>
-          <p className="text-[13px] font-semibold leading-none text-ink">{displayVal}</p>
+          <p className="text-[15px] font-semibold leading-none text-ink">{displayVal}</p>
         </div>
       </div>
       <p className="text-[10px] uppercase tracking-wide text-muted/55">{label}</p>
