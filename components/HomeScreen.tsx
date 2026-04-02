@@ -6,6 +6,7 @@ import Joyride, { CallBackProps, STATUS, type Step } from "react-joyride";
 import { useRouter } from "next/navigation";
 import type { MealLog, UserProfile, WorkoutSession } from "../lib/types";
 import { suppName, suppLabel } from "../lib/types";
+import { matchSupplementNutrients } from "../lib/rda";
 import {
   PROFILE_UPDATED_EVENT,
   notifyMealsUpdated,
@@ -33,32 +34,6 @@ import { safeFallbackAnalysis } from "../lib/ai/schema";
 import { useWorkout, WORKOUT_TYPE_OPTIONS } from "../hooks/useWorkout";
 import { useMeals } from "../hooks/useMeals";
 
-// Keyword → micronutrient signals mapping for free-text supplement entry
-const SUPPLEMENT_KEYWORD_MAP: Array<{ keywords: string[]; nutrients: string[] }> = [
-  { keywords: ["vitamin c", "vit c", "ascorbic", "emergen"],                          nutrients: ["Vitamin C"] },
-  { keywords: ["vitamin d", "vit d", "cholecalciferol"],                               nutrients: ["Vitamin D"] },
-  { keywords: ["b12", "vitamin b12", "cobalamin", "methylcobalamin", "cyanocobalamin"], nutrients: ["B12"] },
-  { keywords: ["magnesium", "mag glycinate", "mag citrate", "mag oxide"],              nutrients: ["Magnesium"] },
-  { keywords: ["zinc"],                                                                 nutrients: ["Zinc"] },
-  { keywords: ["iron", "ferrous", "ferric"],                                           nutrients: ["Iron"] },
-  { keywords: ["calcium", "cal citrate", "cal carbonate"],                             nutrients: ["Calcium"] },
-  { keywords: ["fish oil", "omega-3", "omega 3", "omega3", "dha", "epa", "krill"],    nutrients: ["Omega-3"] },
-  {
-    keywords: ["multivitamin", "multi vitamin", "multi-vitamin"],
-    nutrients: ["Vitamin C", "Vitamin D", "B12", "Iron", "Zinc", "Magnesium", "Calcium"],
-  },
-];
-
-function matchSupplementNutrients(text: string): string[] {
-  const lower = text.toLowerCase();
-  const matched = new Set<string>();
-  for (const { keywords, nutrients } of SUPPLEMENT_KEYWORD_MAP) {
-    if (keywords.some((k) => lower.includes(k))) {
-      nutrients.forEach((n) => matched.add(n));
-    }
-  }
-  return Array.from(matched);
-}
 
 function makeDemoMeals(): MealLog[] {
   const at = (h: number, m: number) => {

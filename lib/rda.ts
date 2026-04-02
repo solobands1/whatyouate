@@ -58,6 +58,57 @@ export function canonicalNutrient(raw: string): string | null {
   return NUTRIENT_ALIASES[key] ?? null;
 }
 
+/** Canonical key → display name used in micronutrient_signals and INSIGHT_NUTRIENTS */
+export const NUTRIENT_DISPLAY_NAMES: Record<string, string> = {
+  iron: "Iron",
+  b12: "B12",
+  magnesium: "Magnesium",
+  zinc: "Zinc",
+  "vitamin d": "Vitamin D",
+  calcium: "Calcium",
+  "omega-3": "Omega-3",
+  "vitamin c": "Vitamin C",
+  potassium: "Potassium",
+  fiber: "Fiber",
+};
+
+/**
+ * Single source of truth: supplement keyword → canonical nutrient key(s).
+ * Used both for auto-logging meal signals and for RDA bar matching.
+ */
+export const SUPPLEMENT_KEYWORD_MAP: Array<{ keywords: string[]; nutrients: string[] }> = [
+  { keywords: ["vitamin c", "vit c", "ascorbic", "emergen"],                           nutrients: ["vitamin c"] },
+  { keywords: ["vitamin d", "vit d", "cholecalciferol", "vitamin d3"],                 nutrients: ["vitamin d"] },
+  { keywords: ["b12", "vitamin b12", "cobalamin", "methylcobalamin", "cyanocobalamin"], nutrients: ["b12"] },
+  { keywords: ["magnesium", "mag glycinate", "mag citrate", "mag oxide"],              nutrients: ["magnesium"] },
+  { keywords: ["zinc"],                                                                 nutrients: ["zinc"] },
+  { keywords: ["iron", "ferrous", "ferric"],                                            nutrients: ["iron"] },
+  { keywords: ["calcium", "cal citrate", "cal carbonate"],                             nutrients: ["calcium"] },
+  { keywords: ["fish oil", "omega-3", "omega 3", "omega3", "dha", "epa", "krill"],    nutrients: ["omega-3"] },
+  {
+    keywords: ["multivitamin", "multi vitamin", "multi-vitamin"],
+    nutrients: ["vitamin c", "vitamin d", "b12", "iron", "zinc", "magnesium", "calcium"],
+  },
+];
+
+/**
+ * Returns display names (e.g. "Vitamin D", "B12") for any nutrients matched
+ * by the given supplement text. Used when auto-logging daily supplements as meals.
+ */
+export function matchSupplementNutrients(text: string): string[] {
+  const lower = text.toLowerCase();
+  const matched = new Set<string>();
+  for (const { keywords, nutrients } of SUPPLEMENT_KEYWORD_MAP) {
+    if (keywords.some((k) => lower.includes(k))) {
+      nutrients.forEach((n) => {
+        const display = NUTRIENT_DISPLAY_NAMES[n];
+        if (display) matched.add(display);
+      });
+    }
+  }
+  return Array.from(matched);
+}
+
 interface RdaTable {
   // age ranges are inclusive lower, exclusive upper: [min, max)
   // sex keys: "male" | "female" | "other"
