@@ -347,10 +347,10 @@ export default function InsightsPage() {
   }, [sparklineData, gentleTargets]);
 
   const gentleTargetsDisplay = gentleTargets;
-  const displayAvgCalories = hasEnoughData ? `${avgCalories}` : "—";
-  const displayAvgProtein = hasEnoughData ? `${avgProtein}g` : "—";
-  const displayAvgCarbs = hasEnoughData ? `${avgCarbs}g` : "—";
-  const displayAvgFat = hasEnoughData ? `${avgFat}g` : "—";
+  const displayAvgCalories = hasEnoughData ? `${avgCalories}` : "·";
+  const displayAvgProtein = hasEnoughData ? `${avgProtein}g` : "·";
+  const displayAvgCarbs = hasEnoughData ? `${avgCarbs}g` : "·";
+  const displayAvgFat = hasEnoughData ? `${avgFat}g` : "·";
   const displayEnergyPattern = hasEnoughData ? energyPattern : "Moderate intake pattern";
   const displayProteinPattern = hasEnoughData ? proteinPattern : "Moderate protein pattern";
   const displayFatPattern = hasEnoughData ? fatPattern : "Moderate fat pattern";

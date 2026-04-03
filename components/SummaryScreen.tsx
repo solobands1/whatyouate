@@ -85,7 +85,7 @@ function MacroRing({
   const ARC = 0.75 * C; // 270° worth of circumference
   const progress = target && value > 0 ? Math.min(1, value / target) : 0;
   const offset = ARC * (1 - (animate ? progress : 0));
-  const displayVal = value > 0 ? `${value}${unit}` : "—";
+  const displayVal = value > 0 ? `${value}${unit}` : "·";
   return (
     <div className="flex flex-col items-center">
       <div className="relative" style={{ width: SIZE, height: SIZE }}>
