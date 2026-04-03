@@ -964,7 +964,7 @@ export default function SummaryScreen() {
         <Card className="mt-6" data-tour="nudges-card">
           <div className="flex items-center gap-2">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Nudges</p>
-            {nudgeCardIsNew && (
+            {nudgeCardIsNew && smartNudge && (
               <span className="flex h-2 w-2 rounded-full bg-primary" />
             )}
           </div>
@@ -1080,7 +1080,9 @@ export default function SummaryScreen() {
                   );
                 })()
               ) : (
-                <p className="text-sm text-muted/50">Nothing to say yet. Keep logging and when something useful comes up, it'll appear here.</p>
+                <div className="rounded-xl border border-primary/60 bg-primary/5 px-4 py-3">
+                  <p className="text-sm text-ink/50">Nothing to say yet. Keep logging and when something useful comes up, it'll appear here.</p>
+                </div>
               )}
               {/* Past nudges • flat date-grouped scroll, mirrors HomeScreen feed */}
               {historyGroups.slice(0, visibleNudgeGroupCount).map((group) => (
