@@ -1118,7 +1118,8 @@ export default function HomeScreen() {
                 localStorage.setItem(`wya_walkthrough_stage_${user.id}`, "home");
                 setIsDemoMode(true);
                 setShowTourGate(false);
-                setTimeout(() => setRunTour(true), 50);
+                setRunTour(false);
+                setTimeout(() => setRunTour(true), 300);
               }}
             >
               Start Walkthrough
