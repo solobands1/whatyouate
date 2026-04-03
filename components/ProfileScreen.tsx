@@ -978,7 +978,7 @@ export default function ProfileScreen() {
         </Card>
 
         <Card className="mt-6">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Advanced</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Account</p>
           <button
             className="mt-3 w-full rounded-xl bg-ink/5 px-4 py-2.5 text-xs font-semibold text-ink/80 disabled:opacity-50"
             onClick={handleSignOut}
@@ -986,19 +986,29 @@ export default function ProfileScreen() {
           >
             {signingOut ? "Signing out…" : "Log out"}
           </button>
-          <button
-            className="mt-3 w-full rounded-xl border border-ink/10 px-4 py-2.5 text-xs font-semibold text-muted/70"
-            onClick={handleClear}
-          >
-            Clear All Data · Start Fresh
-          </button>
-          <button
-            className="mt-3 w-full rounded-xl border border-ink/10 px-4 py-2.5 text-xs font-semibold text-muted/70"
-            onClick={handleDeleteAccount}
-          >
-            Delete account
-          </button>
         </Card>
+
+        <div className="mt-8 px-1">
+          <div className="flex items-center gap-3">
+            <div className="h-px flex-1 bg-red-200/60" />
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-red-400/60">Danger zone</p>
+            <div className="h-px flex-1 bg-red-200/60" />
+          </div>
+          <div className="mt-4 space-y-3">
+            <button
+              className="w-full rounded-xl border border-red-200/60 px-4 py-2.5 text-xs font-semibold text-red-400/80 transition active:opacity-60"
+              onClick={handleClear}
+            >
+              Clear all data and start fresh
+            </button>
+            <button
+              className="w-full rounded-xl border border-red-200/60 px-4 py-2.5 text-xs font-semibold text-red-400/80 transition active:opacity-60"
+              onClick={handleDeleteAccount}
+            >
+              Delete account
+            </button>
+          </div>
+        </div>
       </div>
 
       <BottomNav current="home" />
