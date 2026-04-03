@@ -648,11 +648,10 @@ export default function InsightsPage() {
               </div>
             ))}
           </div>
-          <p className="mt-4 text-xs text-muted/70">
-            The solid bar shows estimated food intake as a % of your recommended daily amount. The lighter extension shows supplement coverage. Older meals show detection frequency until re-analyzed. Tap the{" "}
-            <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-ink/10 text-[10px] font-semibold text-ink/60 align-middle">i</span>
-            {" "}next to any nutrient to learn more.
-          </p>
+          <div className="mt-4 space-y-2 border-t border-ink/5 pt-4">
+            <p className="text-xs text-muted/70">Each bar shows how much of your daily recommended amount you're getting. The darker segment is from food, the lighter is from supplements.</p>
+            <p className="text-xs text-muted/70">Aim to build up the nutrients that are low. Logging more meals and adding supplements with doses will fill in the picture over time.</p>
+          </div>
         </Card>
       </div>
 
