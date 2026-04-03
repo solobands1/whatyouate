@@ -1123,6 +1123,13 @@ export default function HomeScreen() {
             >
               Start Walkthrough
             </button>
+            <button
+              type="button"
+              className="text-xs text-ink/40 underline underline-offset-2 transition hover:text-ink/60"
+              onClick={() => setShowTourGate(false)}
+            >
+              Explore on my own
+            </button>
           </div>
         </div>
       )}
