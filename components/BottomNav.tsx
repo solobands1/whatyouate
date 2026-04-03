@@ -9,7 +9,7 @@ function checkUnseen() {
   return nudgeTs > seenTs;
 }
 
-export default function BottomNav({ current }: { current: "home" | "summary" | "profile" }) {
+export default function BottomNav({ current }: { current: "home" | "summary" | "profile" | "none" }) {
   const [hasUnseenNudge, setHasUnseenNudge] = useState(false);
   const router = useRouter();
 
@@ -31,7 +31,7 @@ export default function BottomNav({ current }: { current: "home" | "summary" | "
             ? "bg-white text-ink shadow-[0_10px_20px_rgba(15,23,42,0.08)]"
             : "text-muted/70"
         }`}
-        onPointerDown={() => { if (!isActive) router.push(href); }}
+        onPointerDown={() => router.push(href)}
       >
         {label}
         {showBell && (
