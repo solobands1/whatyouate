@@ -151,7 +151,6 @@ export default function HomeScreen() {
 
   const [profile, setProfile] = useState<UserProfile | undefined>(undefined);
   const [runTour, setRunTour] = useState(false);
-  const [tourKey, setTourKey] = useState(0);
   const [showTourGate, setShowTourGate] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [demoData] = useState(() => ({ meals: makeDemoMeals(), workouts: makeDemoWorkouts() }));
@@ -835,10 +834,7 @@ export default function HomeScreen() {
     if (active && stage === "home") {
       if (localStorage.getItem(`wya_demo_mode_${user.id}`) === "true") setIsDemoMode(true);
       setShowTourGate(false);
-      setTimeout(() => {
-        setTourKey((k) => k + 1);
-        setRunTour(true);
-      }, 300);
+      setTimeout(() => setRunTour(true), 300);
       return;
     }
     // If user has meals, they're not new — skip the tour gate regardless of localStorage
@@ -1065,7 +1061,6 @@ export default function HomeScreen() {
     <div className="min-h-screen bg-surface">
       {typeof window !== "undefined" && (
         <Joyride
-          key={tourKey}
           steps={steps}
           run={runTour}
           continuous
@@ -1123,8 +1118,7 @@ export default function HomeScreen() {
                 localStorage.setItem(`wya_walkthrough_stage_${user.id}`, "home");
                 setIsDemoMode(true);
                 setShowTourGate(false);
-                setTourKey((k) => k + 1);
-                setRunTour(true);
+                setTimeout(() => setRunTour(true), 300);
               }}
             >
               Start Walkthrough
