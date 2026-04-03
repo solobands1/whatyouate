@@ -1023,8 +1023,7 @@ export default function SummaryScreen() {
                   );
                 })()
               ) : (
-                /* AI said nothing worth saying — show nothing */
-                null
+                <p className="text-sm text-muted/50">Nothing to say yet. Keep logging and when something useful comes up, it'll appear here.</p>
               )}
               {/* Past nudges • flat date-grouped scroll, mirrors HomeScreen feed */}
               {historyGroups.slice(0, visibleNudgeGroupCount).map((group) => (
