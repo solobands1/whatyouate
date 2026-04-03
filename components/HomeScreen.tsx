@@ -1912,10 +1912,10 @@ export default function HomeScreen() {
               {(() => {
                 const conf = quickConfirmMeal.analysisJson?.confidence_overall_0_1 ?? 1;
                 const wide = quickConfirmMeal.analysisJson?.precision_mode_available === true;
-                if (conf < 0.55) return "The food was hard to identify clearly · confirm or correct the details.";
-                if (conf < 0.7) return "Portion size was tricky to estimate · confirm or adjust as needed.";
-                if (wide) return "This meal has a wide calorie range · confirm to improve accuracy.";
-                return "AI wasn't sure · confirm or correct the details.";
+                if (conf < 0.55) return "Couldn't identify this clearly. Correct anything that looks off.";
+                if (conf < 0.7) return "Portion was tricky to estimate. Adjust if needed.";
+                if (wide) return "Wide calorie range on this one. Confirm to sharpen the estimate.";
+                return "Does this look right? Correct anything that seems off.";
               })()}
             </p>
             {quickConfirmMeal.imageThumb && (
