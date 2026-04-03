@@ -1352,7 +1352,7 @@ export default function HomeScreen() {
               )}
             </Link>
           </div>
-          <p className="mt-1 text-[13px] text-muted/70">Take photos, get nudges, improve.</p>
+          <p className="mt-1 text-[13px] text-muted/70">Log meals, get nudges, improve!</p>
           {!loadingData && mealCount === 0 && !isDemoMode && (
             <p className="mt-3 text-[11px] text-muted/60">
               All preview data will be replaced by real input once logging starts.

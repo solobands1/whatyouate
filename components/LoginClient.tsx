@@ -159,7 +159,7 @@ export default function LoginClient() {
               Beta
             </span>
           </div>
-          <p className="mt-1 text-[13px] text-muted/70">Take photos, get nudges, improve.</p>
+          <p className="mt-1 text-[13px] text-muted/70">Log meals, get nudges, improve!</p>
         </header>
 
         <Card>
