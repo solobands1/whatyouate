@@ -125,7 +125,7 @@ export default function SummaryScreen() {
   const { user, loading } = useAuth();
   const { profile, meals, workouts, nudges, nudgesLoaded, loading: loadingData } = useAppData();
   const [hydrated, setHydrated] = useState(false);
-  const savedThisSessionRef = useRef<Set<string>>(new Set());
+
   const mountedRef = useRef(true);
   const [runSummaryTour, setRunSummaryTour] = useState(false);
   const [visibleNudgeGroupCount, setVisibleNudgeGroupCount] = useState(3);
@@ -417,50 +417,40 @@ export default function SummaryScreen() {
 
 
 
-  // Fetch smart AI nudge — once per time window (morning / afternoon / evening)
+  // Smart nudge — DB-first, one per time window per day
+  // If today's window already has a saved nudge, use it. Otherwise call AI and save the result.
   useEffect(() => {
     if (!profile || !nudgesLoaded) return;
     if (meals.length < 5) { setSmartNudge(null); return; }
 
     const hour = new Date().getHours();
-    const window = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
+    const win = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
     const todayStr = todayKey();
-    const windowKey = `${todayStr}_${window}`;
+    const windowKey = `${todayStr}_${win}`;
 
     if (smartNudgeFetchedRef.current.has(windowKey)) return;
+    smartNudgeFetchedRef.current.add(windowKey);
 
-    const cacheKey = `wya_smart_nudge_${windowKey}`;
-    const cached = localStorage.getItem(cacheKey);
-    if (cached) {
-      try {
-        const parsed = JSON.parse(cached);
-        // Invalidate if meal count changed since cache was written
-        const cachedMealCount = parsed?._mealCount;
-        const mealCountChanged = cachedMealCount !== undefined && cachedMealCount !== meals.length;
-        if (!mealCountChanged) {
-          const { _mealCount: _mc2, ...parsedClean } = parsed as typeof parsed & { _mealCount?: number };
-          void _mc2;
-          setSmartNudge(parsedClean);
-          smartNudgeFetchedRef.current.add(windowKey);
-          return;
-        }
-      } catch {}
+    // Use saved DB nudge if one exists for this window — no API call needed
+    const existing = nudges.find((n) => {
+      if (!n.created_at) return false;
+      const d = new Date(n.created_at);
+      if (todayKey(d) !== todayStr) return false;
+      const h = d.getHours();
+      return (h < 12 ? "morning" : h < 17 ? "afternoon" : "evening") === win;
+    });
+    if (existing) {
+      setSmartNudge({ message: existing.message, type: existing.type as NudgeType });
+      return;
     }
 
-    smartNudgeFetchedRef.current.add(windowKey);
-    // Use last 3 nudges as anti-repetition context — include type so AI avoids repeating same angle
+    // No saved nudge yet — fetch from AI
     const recentNudgeMessages = nudges.slice(0, 3).map((n) => n.type ? `${n.type}: ${n.message}` : n.message);
     const ctx = buildSmartNudgeContext(meals, workouts, profile, recentFoods, recentNudgeMessages);
-
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
       controller.abort();
-      // On timeout fall back to static
-      if (visibleNotes.length > 0) {
-        setSmartNudge({ message: visibleNotes[0].message, type: visibleNotes[0].type });
-      } else {
-        setSmartNudge(null);
-      }
+      setSmartNudge(visibleNotes.length > 0 ? { message: visibleNotes[0].message, type: visibleNotes[0].type } : null);
     }, 12000);
 
     fetch("/api/nudge", {
@@ -474,56 +464,25 @@ export default function SummaryScreen() {
         if (!res.ok) throw new Error("nudge failed");
         const { nudge } = await res.json();
         if (nudge?.message) {
-          localStorage.setItem(cacheKey, JSON.stringify({ ...nudge, _mealCount: meals.length }));
           if (nudge.suggestions?.length) {
             localStorage.setItem(`wya_ai_nudge_${windowKey}_${nudge.type}_suggestions`, JSON.stringify(nudge.suggestions.slice(0, 3)));
           }
-          const { _mealCount: _mc, ...nudgeClean } = nudge as typeof nudge & { _mealCount?: number };
-          void _mc;
-          setSmartNudge(nudgeClean);
+          setSmartNudge({ message: nudge.message, type: nudge.type, action: nudge.action, suggestions: nudge.suggestions });
+          if (user) {
+            addNudge(user.id, nudge.type, nudge.message)
+              .then(() => notifyNudgesUpdated())
+              .catch(() => {});
+            pruneNudges(user.id).catch(() => {});
+          }
         } else {
-          localStorage.setItem(cacheKey, "null");
           setSmartNudge(null);
         }
       })
       .catch(() => {
         clearTimeout(timeoutId);
-        // Fall back to static on error
-        if (visibleNotes.length > 0) {
-          setSmartNudge({ message: visibleNotes[0].message, type: visibleNotes[0].type });
-        } else {
-          setSmartNudge(null);
-        }
+        setSmartNudge(visibleNotes.length > 0 ? { message: visibleNotes[0].message, type: visibleNotes[0].type } : null);
       });
-  }, [profile, nudgesLoaded, meals, workouts, recentFoods, nudges]);
-
-  // Save smart nudge to DB once per time window — only after AI responds
-  useEffect(() => {
-    if (!user || !nudgesLoaded || smartNudge === undefined || !smartNudge) return;
-    const hour = new Date().getHours();
-    const win = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
-    const todayStr = todayKey();
-    const windowKey = `${todayStr}_${win}`;
-    if (savedThisSessionRef.current.has(windowKey)) return;
-    // Check DB (already loaded) — if a nudge for this window exists, skip saving
-    const alreadyInDb = nudges.some((n) => {
-      if (!n.created_at) return false;
-      const nDate = new Date(n.created_at);
-      if (todayKey(nDate) !== todayStr) return false;
-      const nHour = nDate.getHours();
-      const nWin = nHour < 12 ? "morning" : nHour < 17 ? "afternoon" : "evening";
-      return nWin === win;
-    });
-    if (alreadyInDb) {
-      savedThisSessionRef.current.add(windowKey);
-      return;
-    }
-    savedThisSessionRef.current.add(windowKey);
-    addNudge(user.id, smartNudge.type, smartNudge.message)
-      .then(() => notifyNudgesUpdated())
-      .catch(() => {});
-    pruneNudges(user.id).catch(() => {});
-  }, [user, nudgesLoaded, smartNudge, nudges]);
+  }, [profile, nudgesLoaded, meals, workouts, recentFoods, nudges, user]);
 
   const getHistoryNudgeType = (message: string): NudgeType | null => {
     const found = nudges.find((n) => n.message === message && n.type);
