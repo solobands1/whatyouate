@@ -216,6 +216,11 @@ export default function SummaryScreen() {
     });
   }, [meals]);
 
+  const weeklyVariant = (variants: string[]): string => {
+    const week = Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000));
+    return variants[week % variants.length];
+  };
+
   const weekHeadline = useMemo(() => {
     if (mealCount === 0) return null;
     const loggedThisWeek = last7Days.filter((d) => d.logged).length;
@@ -223,36 +228,92 @@ export default function SummaryScreen() {
     const proTarget = summaryMarkers.gentleTargets?.protein;
     const calOk = !calTarget || !avgWeekCalories || (avgWeekCalories >= calTarget * 0.9 && avgWeekCalories <= calTarget * 1.1);
     const proOk = !proTarget || !avgWeekProtein || avgWeekProtein >= proTarget * 0.85;
-    if (loggedThisWeek >= 6 && calOk && proOk) return "Strong week across the board!";
-    if (loggedThisWeek >= 5 && (calOk || proOk)) return "Solid week overall!";
-    if (loggedThisWeek >= 5) return "Good effort this week!";
-    if (loggedThisWeek >= 3) return "Building habits!";
-    return "Getting started";
-  }, [last7Days, mealCount, avgWeekCalories, avgWeekProtein, summaryMarkers.gentleTargets]);
+    if (loggedThisWeek >= 6 && calOk && proOk) return weeklyVariant([
+      "Strong week across the board.",
+      "Everything's lining up this week.",
+      "Consistent and on target — great week.",
+      "This week is looking exactly how it should.",
+    ]);
+    if (loggedThisWeek >= 5 && (calOk || proOk)) return weeklyVariant([
+      "Solid week overall.",
+      "Good consistency this week.",
+      "More right than wrong this week.",
+      "A productive week — keep the momentum.",
+    ]);
+    if (loggedThisWeek >= 5) return weeklyVariant([
+      "Good effort this week.",
+      "Showing up consistently — that's the foundation.",
+      "Logging regularly is the hardest part. You're doing it.",
+      "Five days of data — patterns are starting to form.",
+    ]);
+    if (loggedThisWeek >= 3) return weeklyVariant([
+      "Building the habit.",
+      "A few good days this week.",
+      "Every logged day adds to the picture.",
+      "Momentum is building — keep going.",
+    ]);
+    return weeklyVariant([
+      "Getting started.",
+      "The first few logs are the hardest.",
+      "Early days — log a few more and I'll have more to say.",
+    ]);
+  }, [last7Days, mealCount, avgWeekCalories, avgWeekProtein, summaryMarkers.gentleTargets, weeklyVariant]);
 
   const weekObservations = useMemo(() => {
     const lines: string[] = [];
-    const loggedThisWeek = last7Days.filter((d) => d.logged).length;
-    if (loggedThisWeek > 0) {
-      lines.push(loggedThisWeek === 7 ? "Logged every day this week!" : `${loggedThisWeek} of 7 days logged`);
+    const loggedDays = last7Days.filter((d) => d.logged);
+    const loggedThisWeek = loggedDays.length;
+
+    // Streak: count consecutive logged days ending today
+    let streak = 0;
+    for (let i = last7Days.length - 1; i >= 0; i--) {
+      if (last7Days[i].logged) streak++;
+      else break;
     }
+
+    if (loggedThisWeek === 7) {
+      lines.push("Logged every day this week.");
+    } else if (streak >= 3) {
+      lines.push(`${streak}-day streak and counting.`);
+    } else if (loggedThisWeek > 0) {
+      lines.push(`${loggedThisWeek} of 7 days logged.`);
+    }
+
     if (mealCount >= 5 && avgWeekCalories > 0) {
       const calTarget = summaryMarkers.gentleTargets?.calories;
       if (calTarget) {
         const ratio = avgWeekCalories / calTarget;
-        const status = ratio >= 0.9 && ratio <= 1.1 ? "on track" : ratio < 0.9 ? "a bit light" : "a bit high";
-        lines.push(`Avg ${avgWeekCalories} kcal · ${status}`);
+        if (ratio >= 0.9 && ratio <= 1.1) {
+          lines.push(`Averaging ${avgWeekCalories} kcal — right in range.`);
+        } else if (ratio < 0.9) {
+          lines.push(`Averaging ${avgWeekCalories} kcal — a bit under target.`);
+        } else {
+          lines.push(`Averaging ${avgWeekCalories} kcal — slightly over target.`);
+        }
       } else {
-        lines.push(`Avg ${avgWeekCalories} kcal`);
+        lines.push(`Averaging ${avgWeekCalories} kcal this week.`);
       }
+
       const proTarget = summaryMarkers.gentleTargets?.protein;
       if (avgWeekProtein > 0) {
-        lines.push(proTarget ? `Avg ${avgWeekProtein}g protein · goal ${proTarget}g` : `Avg ${avgWeekProtein}g protein`);
+        if (proTarget) {
+          const gap = proTarget - avgWeekProtein;
+          if (gap <= 0) {
+            lines.push(`Protein at ${avgWeekProtein}g — hitting the goal.`);
+          } else if (gap <= 15) {
+            lines.push(`Protein at ${avgWeekProtein}g — close to the ${proTarget}g goal.`);
+          } else {
+            lines.push(`Protein at ${avgWeekProtein}g — ${gap}g short of the ${proTarget}g goal.`);
+          }
+        } else {
+          lines.push(`Averaging ${avgWeekProtein}g protein.`);
+        }
       }
     }
+
     if (workoutSummary.count > 0) {
       const mins = workoutSummary.totalMinutes > 0 ? ` · ${workoutSummary.totalMinutes} min` : "";
-      lines.push(`${workoutSummary.count} workout${workoutSummary.count !== 1 ? "s" : ""}${mins}${workoutSummary.count >= 3 ? "!" : ""}`);
+      lines.push(`${workoutSummary.count} workout${workoutSummary.count !== 1 ? "s" : ""}${mins}.`);
     }
     return lines;
   }, [last7Days, mealCount, avgWeekCalories, avgWeekProtein, summaryMarkers.gentleTargets, workoutSummary]);
@@ -495,10 +556,6 @@ export default function SummaryScreen() {
     } catch { return null; }
   };
 
-  const weeklyVariant = (variants: string[]): string => {
-    const week = Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000));
-    return variants[week % variants.length];
-  };
 
   const isVegan = profile?.dietaryRestrictions?.includes("Vegan") ?? false;
   const isVegetarian = isVegan || (profile?.dietaryRestrictions?.includes("Vegetarian") ?? false);
