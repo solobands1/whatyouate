@@ -202,7 +202,11 @@ export default function SummaryScreen() {
   const suggestions = summaryMarkers.suggestions;
 
   const last7Days = useMemo(() => {
-    const loggedKeys = new Set(meals.map((m) => dayKeyFromTs(m.ts)));
+    const loggedKeys = new Set(
+      meals
+        .filter((m) => m.analysisJson?.source !== "supplement" && m.status !== "failed")
+        .map((m) => dayKeyFromTs(m.ts))
+    );
     const dayLabels = ["S", "M", "T", "W", "T", "F", "S"];
     return Array.from({ length: 7 }, (_, i) => {
       const d = new Date();
