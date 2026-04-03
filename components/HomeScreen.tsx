@@ -151,6 +151,7 @@ export default function HomeScreen() {
 
   const [profile, setProfile] = useState<UserProfile | undefined>(undefined);
   const [runTour, setRunTour] = useState(false);
+  const [tourKey, setTourKey] = useState(0);
   const [showTourGate, setShowTourGate] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [demoData] = useState(() => ({ meals: makeDemoMeals(), workouts: makeDemoWorkouts() }));
@@ -1061,6 +1062,7 @@ export default function HomeScreen() {
     <div className="min-h-screen bg-surface">
       {typeof window !== "undefined" && (
         <Joyride
+          key={tourKey}
           steps={steps}
           run={runTour}
           continuous
@@ -1119,7 +1121,10 @@ export default function HomeScreen() {
                 setIsDemoMode(true);
                 setShowTourGate(false);
                 setRunTour(false);
-                setTimeout(() => setRunTour(true), 300);
+                setTimeout(() => {
+                  setTourKey((k) => k + 1);
+                  setRunTour(true);
+                }, 300);
               }}
             >
               Start Walkthrough
