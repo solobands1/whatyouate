@@ -501,13 +501,24 @@ export default function SummaryScreen() {
   useEffect(() => {
     if (!user || !nudgesLoaded || smartNudge === undefined || !smartNudge) return;
     const hour = new Date().getHours();
-    const window = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
+    const win = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
     const todayStr = todayKey();
-    const windowKey = `${todayStr}_${window}`;
-    const savedKey = `wya_smart_nudge_saved_${user.id}_${windowKey}`;
-    if (localStorage.getItem(savedKey) || savedThisSessionRef.current.has(windowKey)) return;
+    const windowKey = `${todayStr}_${win}`;
+    if (savedThisSessionRef.current.has(windowKey)) return;
+    // Check DB (already loaded) — if a nudge for this window exists, skip saving
+    const alreadyInDb = nudges.some((n) => {
+      if (!n.created_at) return false;
+      const nDate = new Date(n.created_at);
+      if (todayKey(nDate) !== todayStr) return false;
+      const nHour = nDate.getHours();
+      const nWin = nHour < 12 ? "morning" : nHour < 17 ? "afternoon" : "evening";
+      return nWin === win;
+    });
+    if (alreadyInDb) {
+      savedThisSessionRef.current.add(windowKey);
+      return;
+    }
     savedThisSessionRef.current.add(windowKey);
-    localStorage.setItem(savedKey, "1");
     addNudge(user.id, smartNudge.type, smartNudge.message)
       .then(() => notifyNudgesUpdated())
       .catch(() => {});
