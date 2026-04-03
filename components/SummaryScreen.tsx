@@ -291,7 +291,8 @@ export default function SummaryScreen() {
         if (nudge.message.includes("you're just") && nudge.message.includes("away from your")) return;
         const nudgeHour = new Date(nudge.created_at).getHours();
         const nudgeWindow = nudgeHour < 12 ? "morning" : nudgeHour < 17 ? "afternoon" : "evening";
-        const key = `${nudgeDayKey}:${nudgeWindow}:${nudge.message}`;
+        // One nudge per window per day — most recent wins (sorted desc above)
+        const key = `${nudgeDayKey}:${nudgeWindow}`;
         if (seenKeys.has(key)) return;
         seenKeys.add(key);
         items.push({
