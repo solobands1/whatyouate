@@ -6,7 +6,15 @@
     </radialGradient>
     <mask id="bite">
       <rect width="512" height="512" fill="white"/>
-      <path d="M 512 0 L 512 260 L 440 205 A 24 24 0 0 0 399 201 A 24 24 0 0 1 360 190 A 24 24 0 0 0 322 175 A 24 24 0 0 1 287 156 A 24 24 0 0 0 255 132 A 24 24 0 0 1 226 104 A 24 24 0 0 0 200 70 L 275 0 Z" fill="black"/>
+      <!-- Concave jaw-arc bite from upper-right of plate -->
+      <!-- Entry: ~15° from top (300,106), Exit: ~95° from top (423,283) -->
+      <!-- Jaw circle: center (547,66) radius 250 → ~38% bite depth -->
+      <path d="M 300 106 A 250 250 0 0 0 423 283 L 512 512 L 512 0 Z" fill="black"/>
+      <!-- 4 rounded teeth bumps along jaw arc -->
+      <circle cx="311" cy="148" r="18" fill="white"/>
+      <circle cx="329" cy="189" r="18" fill="white"/>
+      <circle cx="355" cy="226" r="18" fill="white"/>
+      <circle cx="386" cy="257" r="18" fill="white"/>
     </mask>
   </defs>
 
@@ -15,13 +23,13 @@
 
   <!-- Plate -->
   <g mask="url(#bite)">
-    <!-- Outer shadow ring: gives the plate a sense of depth and edge -->
+    <!-- Outer shadow ring -->
     <circle cx="256" cy="268" r="180" fill="rgba(180,205,238,0.55)"/>
-    <!-- Rim surface: the raised rim of the plate, bright white -->
+    <!-- Rim surface -->
     <circle cx="256" cy="268" r="168" fill="rgba(255,255,255,0.93)"/>
-    <!-- Rim-to-surface groove: subtle shadow at the base of the rim -->
+    <!-- Rim-to-surface groove -->
     <circle cx="256" cy="268" r="152" fill="rgba(200,222,248,0.72)"/>
-    <!-- Eating surface: flat inner area, brightest white -->
+    <!-- Eating surface -->
     <circle cx="256" cy="268" r="143" fill="rgba(255,255,255,0.97)"/>
   </g>
 </svg>
