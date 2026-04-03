@@ -805,7 +805,7 @@ export default function ProfileScreen() {
 
           <label className="mt-6 block text-xs text-muted/70">
             <span className="text-[11px] font-semibold uppercase tracking-wide text-ink/70">
-              Your main focus (optional)
+              What are you working toward? (optional)
             </span>
             <input
               type="text"
@@ -819,7 +819,7 @@ export default function ProfileScreen() {
           <label className="mt-8 block border-t border-ink/5 pt-7 text-xs text-muted/70">
             <span className="flex items-center justify-between">
               <span className="text-[11px] font-semibold uppercase tracking-wide text-ink/70">
-                Habits & context (optional)
+                Your eating habits (optional)
               </span>
               <button
                 type="button"
