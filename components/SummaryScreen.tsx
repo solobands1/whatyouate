@@ -231,31 +231,31 @@ export default function SummaryScreen() {
     if (loggedThisWeek >= 6 && calOk && proOk) return weeklyVariant([
       "Strong week across the board.",
       "Everything's lining up this week.",
-      "Consistent and on target — great week.",
+      "Consistent and on target. Great week!",
       "This week is looking exactly how it should.",
     ]);
     if (loggedThisWeek >= 5 && (calOk || proOk)) return weeklyVariant([
       "Solid week overall.",
       "Good consistency this week.",
       "More right than wrong this week.",
-      "A productive week — keep the momentum.",
+      "A productive week. Keep the momentum!",
     ]);
     if (loggedThisWeek >= 5) return weeklyVariant([
       "Good effort this week.",
-      "Showing up consistently — that's the foundation.",
+      "Showing up consistently. That's the foundation.",
       "Logging regularly is the hardest part. You're doing it.",
-      "Five days of data — patterns are starting to form.",
+      "Five days of data. Patterns are starting to form.",
     ]);
     if (loggedThisWeek >= 3) return weeklyVariant([
       "Building the habit.",
       "A few good days this week.",
       "Every logged day adds to the picture.",
-      "Momentum is building — keep going.",
+      "Momentum is building. Keep going!",
     ]);
     return weeklyVariant([
       "Getting started.",
       "The first few logs are the hardest.",
-      "Early days — log a few more and I'll have more to say.",
+      "Early days. Log a few more and I'll have more to say.",
     ]);
   }, [last7Days, mealCount, avgWeekCalories, avgWeekProtein, summaryMarkers.gentleTargets, weeklyVariant]);
 
@@ -284,11 +284,11 @@ export default function SummaryScreen() {
       if (calTarget) {
         const ratio = avgWeekCalories / calTarget;
         if (ratio >= 0.9 && ratio <= 1.1) {
-          lines.push(`Averaging ${avgWeekCalories} kcal — right in range.`);
+          lines.push(`Averaging ${avgWeekCalories} kcal, right in range!`);
         } else if (ratio < 0.9) {
-          lines.push(`Averaging ${avgWeekCalories} kcal — a bit under target.`);
+          lines.push(`Averaging ${avgWeekCalories} kcal, a bit under target.`);
         } else {
-          lines.push(`Averaging ${avgWeekCalories} kcal — slightly over target.`);
+          lines.push(`Averaging ${avgWeekCalories} kcal, slightly over target.`);
         }
       } else {
         lines.push(`Averaging ${avgWeekCalories} kcal this week.`);
@@ -299,11 +299,11 @@ export default function SummaryScreen() {
         if (proTarget) {
           const gap = proTarget - avgWeekProtein;
           if (gap <= 0) {
-            lines.push(`Protein at ${avgWeekProtein}g — hitting the goal.`);
+            lines.push(`Protein at ${avgWeekProtein}g, hitting the goal!`);
           } else if (gap <= 15) {
-            lines.push(`Protein at ${avgWeekProtein}g — close to the ${proTarget}g goal.`);
+            lines.push(`Protein at ${avgWeekProtein}g, close to the ${proTarget}g goal.`);
           } else {
-            lines.push(`Protein at ${avgWeekProtein}g — ${gap}g short of the ${proTarget}g goal.`);
+            lines.push(`Protein at ${avgWeekProtein}g, ${gap}g short of the ${proTarget}g goal.`);
           }
         } else {
           lines.push(`Averaging ${avgWeekProtein}g protein.`);
