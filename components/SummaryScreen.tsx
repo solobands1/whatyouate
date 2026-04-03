@@ -269,21 +269,29 @@ export default function SummaryScreen() {
   }, [user]);
 
   const uniqueNudges = useMemo(() => {
-    // Dedup by day+message so the same observation can appear on different days in history,
-    // but duplicates within the same day are collapsed.
+    // Dedup by day+window+message. Today's current-window nudge is shown in the card above,
+    // so skip it here. Earlier windows from today still appear in history.
     const seenKeys = new Set<string>();
     const items: Array<{ id?: string; message: string; created_at?: string; isNew?: boolean }> = [];
     const todayDateKey = todayKey();
+    const currentHour = new Date().getHours();
+    const currentWindowStr = currentHour < 12 ? "morning" : currentHour < 17 ? "afternoon" : "evening";
     nudges
       .slice()
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .forEach((nudge) => {
-        // Skip DB nudges from today • visibleNotes (fresh compute) covers today's state
         const nudgeDayKey = todayKey(new Date(nudge.created_at));
-        if (nudgeDayKey === todayDateKey) return;
+        if (nudgeDayKey === todayDateKey) {
+          // Skip only the current time window — earlier windows show in history
+          const nudgeHour = new Date(nudge.created_at).getHours();
+          const nudgeWindow = nudgeHour < 12 ? "morning" : nudgeHour < 17 ? "afternoon" : "evening";
+          if (nudgeWindow === currentWindowStr) return;
+        }
         // Filter out retired nudge types that may still exist in DB history
         if (nudge.message.includes("you're just") && nudge.message.includes("away from your")) return;
-        const key = `${nudgeDayKey}:${nudge.message}`;
+        const nudgeHour = new Date(nudge.created_at).getHours();
+        const nudgeWindow = nudgeHour < 12 ? "morning" : nudgeHour < 17 ? "afternoon" : "evening";
+        const key = `${nudgeDayKey}:${nudgeWindow}:${nudge.message}`;
         if (seenKeys.has(key)) return;
         seenKeys.add(key);
         items.push({
@@ -315,7 +323,7 @@ export default function SummaryScreen() {
       let label: string;
       if (key === today) {
         const hr = new Date(ts).getHours();
-        label = hr < 12 ? "This Morning" : hr < 17 ? "This Afternoon" : "This Evening";
+        label = hr < 12 ? "Morning" : hr < 17 ? "Afternoon" : "Evening";
       } else if (key === yesterday) {
         label = "Yesterday";
       } else {
@@ -333,7 +341,7 @@ export default function SummaryScreen() {
 
   const currentWindowLabel = (() => {
     const hr = new Date().getHours();
-    return hr < 12 ? "This Morning" : hr < 17 ? "This Afternoon" : "This Evening";
+    return hr < 12 ? "Morning" : hr < 17 ? "Afternoon" : "Evening";
   })();
 
   const historyGroups = useMemo(
@@ -1060,7 +1068,7 @@ export default function SummaryScreen() {
                     return (
                       <div
                         key={histKey}
-                        className={`rounded-lg bg-ink/5 px-3 py-2 text-xs text-muted/70 ${histWhy ? "cursor-pointer active:opacity-70 transition-opacity" : ""}`}
+                        className={`rounded-lg px-3 py-2 text-xs transition-colors ${isExpanded ? "bg-ink/[0.07] border border-ink/15 text-ink/80" : "bg-ink/5 text-ink/60"} ${histWhy ? "cursor-pointer active:opacity-70" : ""}`}
                         onClick={histWhy ? () => setExpandedHistoryNudge(isExpanded ? null : histKey) : undefined}
                       >
                         <p>{nudge.message.replace(/ • /g, ". ").replace(/\.{2,}$/g, "")}</p>
