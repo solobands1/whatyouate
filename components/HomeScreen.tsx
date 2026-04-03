@@ -833,8 +833,8 @@ export default function HomeScreen() {
     const stage = localStorage.getItem(stageKey) ?? "home";
     if (active && stage === "home") {
       if (localStorage.getItem(`wya_demo_mode_${user.id}`) === "true") setIsDemoMode(true);
+      setRunTour(true);
       setShowTourGate(false);
-      setTimeout(() => setRunTour(true), 300);
       return;
     }
     // If user has meals, they're not new — skip the tour gate regardless of localStorage
@@ -1118,7 +1118,7 @@ export default function HomeScreen() {
                 localStorage.setItem(`wya_walkthrough_stage_${user.id}`, "home");
                 setIsDemoMode(true);
                 setShowTourGate(false);
-                setTimeout(() => setRunTour(true), 300);
+                setRunTour(true);
               }}
             >
               Start Walkthrough
