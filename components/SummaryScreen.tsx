@@ -683,6 +683,8 @@ export default function SummaryScreen() {
           "Your numbers are looking balanced, and that's genuinely good work.",
           "This kind of consistency is what makes the nudges and patterns more accurate over time.",
         ]);
+      default:
+        return "";
     }
   };
 
@@ -705,6 +707,8 @@ export default function SummaryScreen() {
       case "fat_low":
         return ["+ healthy fats"];
       case "on_track":
+        return [];
+      default:
         return [];
     }
   };
@@ -797,6 +801,8 @@ export default function SummaryScreen() {
           "Adding a small amount of healthy fat to meals helps absorb nutrients and keeps energy more stable.",
         ]);
       case "on_track":
+        return "";
+      default:
         return "";
     }
   };
