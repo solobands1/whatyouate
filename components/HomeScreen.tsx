@@ -182,6 +182,7 @@ export default function HomeScreen() {
   const [pendingQuickConfirmId, setPendingQuickConfirmId] = useState<string | null>(null);
   const [quickConfirmMeal, setQuickConfirmMeal] = useState<MealLog | null>(null);
   const [quickConfirmName, setQuickConfirmName] = useState("");
+  const [quickConfirmOriginalName, setQuickConfirmOriginalName] = useState("");
   const [quickConfirmPortion, setQuickConfirmPortion] = useState<"small" | "medium" | "large">("medium");
   const [failedMealPrompt, setFailedMealPrompt] = useState<{ mealId: string; thumb?: string } | null>(null);
   const [failedMealText, setFailedMealText] = useState("");
@@ -365,23 +366,40 @@ export default function HomeScreen() {
   const handleQuickConfirm = async () => {
     if (!quickConfirmMeal || !user) return;
     setQuickConfirming(true);
+    const nameChanged = quickConfirmName.trim().toLowerCase() !== quickConfirmOriginalName.trim().toLowerCase();
     try {
-      const multiplier = quickConfirmPortion === "small" ? 0.7 : quickConfirmPortion === "large" ? 1.4 : 1;
-      const scale = (v: number) => Math.round(v * multiplier);
-      const r = quickConfirmMeal.analysisJson.estimated_ranges;
-      const updatedAnalysis = {
-        ...quickConfirmMeal.analysisJson,
-        name: quickConfirmName,
-        estimated_ranges: {
-          calories_min: scale(r.calories_min), calories_max: scale(r.calories_max),
-          protein_g_min: scale(r.protein_g_min), protein_g_max: scale(r.protein_g_max),
-          carbs_g_min: scale(r.carbs_g_min), carbs_g_max: scale(r.carbs_g_max),
-          fat_g_min: scale(r.fat_g_min), fat_g_max: scale(r.fat_g_max),
-        },
-      };
-      await updateMeal(quickConfirmMeal.id, updatedAnalysis as any, { userCorrection: quickConfirmName }, user?.id);
+      if (nameChanged && quickConfirmName.trim()) {
+        // Re-analyze with the corrected name — macros will update in DB
+        await fetch("/api/analyze-food", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            textDescription: quickConfirmName.trim(),
+            mealId: quickConfirmMeal.id,
+            userId: user.id,
+          }),
+        });
+        clearMealsCache(user.id);
+        notifyMealsUpdated();
+      } else {
+        // Name unchanged — just apply portion scaling
+        const multiplier = quickConfirmPortion === "small" ? 0.7 : quickConfirmPortion === "large" ? 1.4 : 1;
+        const scale = (v: number) => Math.round(v * multiplier);
+        const r = quickConfirmMeal.analysisJson.estimated_ranges;
+        const updatedAnalysis = {
+          ...quickConfirmMeal.analysisJson,
+          name: quickConfirmName,
+          estimated_ranges: {
+            calories_min: scale(r.calories_min), calories_max: scale(r.calories_max),
+            protein_g_min: scale(r.protein_g_min), protein_g_max: scale(r.protein_g_max),
+            carbs_g_min: scale(r.carbs_g_min), carbs_g_max: scale(r.carbs_g_max),
+            fat_g_min: scale(r.fat_g_min), fat_g_max: scale(r.fat_g_max),
+          },
+        };
+        await updateMeal(quickConfirmMeal.id, updatedAnalysis as any, { userCorrection: quickConfirmName }, user?.id);
+        await meals.load(user.id);
+      }
       setQuickConfirmMeal(null);
-      await meals.load(user.id);
     } catch (err) {
       console.error("Quick confirm failed", err);
     } finally {
@@ -741,6 +759,7 @@ export default function HomeScreen() {
       meal.analysisJson?.detected_items?.[0]?.name ??
       "Meal";
     setQuickConfirmName(name);
+    setQuickConfirmOriginalName(name);
     setQuickConfirmPortion("medium");
     setQuickConfirmMeal(meal);
   }, [pendingQuickConfirmId, meals.meals]);
