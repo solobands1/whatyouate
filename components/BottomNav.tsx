@@ -9,7 +9,7 @@ function checkUnseen() {
   return nudgeTs > seenTs;
 }
 
-export default function BottomNav({ current }: { current: "home" | "summary" | "profile" | "none" }) {
+export default function BottomNav({ current }: { current: "home" | "summary" | "patterns" | "none" }) {
   const [hasUnseenNudge, setHasUnseenNudge] = useState(false);
   const router = useRouter();
 
@@ -47,7 +47,7 @@ export default function BottomNav({ current }: { current: "home" | "summary" | "
         <div className="flex gap-2 rounded-2xl bg-ink/5 p-1">
           {item("/", "Home", "home")}
           {item("/summary", "Insights", "summary")}
-          {item("/summary/insights", "Patterns", "profile")}
+          {item("/summary/insights", "Patterns", "patterns")}
         </div>
       </div>
     </nav>

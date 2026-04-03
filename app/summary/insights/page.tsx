@@ -438,7 +438,7 @@ export default function InsightsPage() {
           <div className="mb-4 animate-pulse rounded-2xl bg-ink/10 p-5" style={{ height: 120 }} />
           <div className="animate-pulse rounded-2xl bg-ink/10 p-5" style={{ height: 120 }} />
         </div>
-        <BottomNav current="profile" />
+        <BottomNav current="patterns" />
       </div>
     );
   }
@@ -655,7 +655,7 @@ export default function InsightsPage() {
         </Card>
       </div>
 
-      <BottomNav current="profile" />
+      <BottomNav current="patterns" />
 
       {activeNutrient && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
