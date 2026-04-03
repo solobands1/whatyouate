@@ -1011,7 +1011,7 @@ export default function ProfileScreen() {
         </div>
       </div>
 
-      <BottomNav current="home" />
+      <BottomNav current="profile" />
 
       {editingName && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
