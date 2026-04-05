@@ -315,16 +315,7 @@ export default function LoginClient() {
                   </div>
                 </label>
               </div>
-              <div className="mt-4 flex gap-3">
-                <button
-                  type="button"
-                  className="w-full rounded-xl border border-ink/10 px-5 py-3 text-sm font-semibold text-ink/80"
-                  onClick={() => {
-                    setMode("signin");
-                  }}
-                >
-                  Back
-                </button>
+              <div className="mt-4 space-y-3">
                 <button
                   type="button"
                   className="w-full rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
@@ -333,7 +324,14 @@ export default function LoginClient() {
                 >
                   {submitting ? "Creating account…" : "Create account"}
                 </button>
-                <p className="mt-3 text-center text-[11px] text-muted/50">
+                <button
+                  type="button"
+                  className="w-full rounded-xl border border-ink/10 px-5 py-3 text-sm font-semibold text-ink/60"
+                  onClick={() => setMode("signin")}
+                >
+                  Back
+                </button>
+                <p className="text-center text-[11px] text-muted/50">
                   By creating an account you agree to our{" "}
                   <a href="/privacy" className="underline underline-offset-2 hover:text-muted/70">
                     Privacy Policy and Terms of Use
