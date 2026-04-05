@@ -122,12 +122,22 @@ function MacroRing({
   );
 }
 
+const DEMO_NUDGE = "Your protein has been strong this week, but your last two days have been lighter on calories overall. If you're training today, consider a bigger lunch or an extra snack before your session — your body will make better use of what you eat around activity.";
+
 export default function SummaryScreen() {
   const router = useRouter();
   const { user, loading } = useAuth();
   const { profile, meals, workouts, nudges, nudgesLoaded, loading: loadingData } = useAppData();
   const trial = useTrialStatus();
   const [hydrated, setHydrated] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    if (localStorage.getItem(`wya_demo_mode_${user.id}`) === "true") {
+      setIsDemoMode(true);
+    }
+  }, [user]);
 
   const mountedRef = useRef(true);
   const [runSummaryTour, setRunSummaryTour] = useState(false);
@@ -870,7 +880,7 @@ export default function SummaryScreen() {
         </header>
 
         {/* Unlock progress timeline — only shown until all milestones are reached (14 logged days) */}
-        {dayCount < 14 && (() => {
+        {!isDemoMode && dayCount < 14 && (() => {
           const nudgesUnlocked = mealCount >= 5;
           const patternsUnlocked = dayCount >= 5 && mealCount >= 5;
           const smartTargetsUnlocked = dayCount >= 7;
@@ -905,13 +915,13 @@ export default function SummaryScreen() {
           <div className="mt-4 flex justify-between">
             <MacroRing
               label="Calories"
-              value={Math.round((summaryMarkers.todayTotals.calories_min + summaryMarkers.todayTotals.calories_max) / 2)}
+              value={isDemoMode ? 1840 : Math.round((summaryMarkers.todayTotals.calories_min + summaryMarkers.todayTotals.calories_max) / 2)}
               unit=""
-              target={summaryMarkers.gentleTargets?.calories ?? null}
+              target={isDemoMode ? 2300 : (summaryMarkers.gentleTargets?.calories ?? null)}
               animate={hydrated}
             />
             {/* Carbs + Fats locked for expired users */}
-            {trial.isFree ? (
+            {!isDemoMode && trial.isFree ? (
               <button
                 type="button"
                 onClick={openUpgradeModal}
@@ -933,25 +943,25 @@ export default function SummaryScreen() {
               <>
                 <MacroRing
                   label="Carbs"
-                  value={Math.round((summaryMarkers.todayTotals.carbs_g_min + summaryMarkers.todayTotals.carbs_g_max) / 2)}
+                  value={isDemoMode ? 180 : Math.round((summaryMarkers.todayTotals.carbs_g_min + summaryMarkers.todayTotals.carbs_g_max) / 2)}
                   unit="g"
-                  target={summaryMarkers.gentleTargets?.calories ? Math.round(summaryMarkers.gentleTargets.calories * 0.50 / 4) : null}
+                  target={isDemoMode ? 288 : (summaryMarkers.gentleTargets?.calories ? Math.round(summaryMarkers.gentleTargets.calories * 0.50 / 4) : null)}
                   animate={hydrated}
                 />
                 <MacroRing
                   label="Fats"
-                  value={Math.round((summaryMarkers.todayTotals.fat_g_min + summaryMarkers.todayTotals.fat_g_max) / 2)}
+                  value={isDemoMode ? 62 : Math.round((summaryMarkers.todayTotals.fat_g_min + summaryMarkers.todayTotals.fat_g_max) / 2)}
                   unit="g"
-                  target={summaryMarkers.gentleTargets?.calories ? Math.round(summaryMarkers.gentleTargets.calories * 0.30 / 9) : null}
+                  target={isDemoMode ? 77 : (summaryMarkers.gentleTargets?.calories ? Math.round(summaryMarkers.gentleTargets.calories * 0.30 / 9) : null)}
                   animate={hydrated}
                 />
               </>
             )}
             <MacroRing
               label="Protein"
-              value={Math.round((summaryMarkers.todayTotals.protein_g_min + summaryMarkers.todayTotals.protein_g_max) / 2)}
+              value={isDemoMode ? 148 : Math.round((summaryMarkers.todayTotals.protein_g_min + summaryMarkers.todayTotals.protein_g_max) / 2)}
               unit="g"
-              target={summaryMarkers.gentleTargets?.protein ?? null}
+              target={isDemoMode ? 125 : (summaryMarkers.gentleTargets?.protein ?? null)}
               animate={hydrated}
             />
           </div>
@@ -983,15 +993,23 @@ export default function SummaryScreen() {
 
           {/* 7-day dot strip */}
           <div className="mt-3 flex items-start justify-between">
-            {last7Days.map((day) => (
+            {last7Days.map((day, i) => (
               <div key={day.key} className="flex flex-col items-center gap-1.5">
-                <div className={`h-2.5 w-2.5 rounded-full ${day.logged ? "bg-primary/70" : "bg-ink/10"}`} />
+                <div className={`h-2.5 w-2.5 rounded-full ${(isDemoMode ? [true,true,false,true,true,true,false][i] : day.logged) ? "bg-primary/70" : "bg-ink/10"}`} />
                 <p className={`text-[10px] ${day.isToday ? "font-semibold text-ink/60" : "text-muted/40"}`}>{day.label}</p>
               </div>
             ))}
           </div>
 
-          {dayCount === 0 ? (
+          {isDemoMode ? (
+            <>
+              <p className="mt-3 text-sm font-semibold text-ink/80">Strong week overall</p>
+              <div className="mt-1.5 space-y-1">
+                <p className="text-sm text-muted/60">5 of 7 days logged. Protein consistent across all logged days.</p>
+                <p className="text-sm text-muted/60">Averaging 1,840 kcal — slightly under your suggested range on lighter days.</p>
+              </div>
+            </>
+          ) : dayCount === 0 ? (
             <p className="mt-3 text-sm text-muted/60">Log your first meal and I'll start building your picture.</p>
           ) : trial.isFree ? (
             <button
@@ -1032,7 +1050,21 @@ export default function SummaryScreen() {
               <span className="flex h-2 w-2 rounded-full bg-primary" />
             )}
           </div>
-          {mealCount === 0 ? (
+          {isDemoMode ? (
+            <div className="mt-4 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/50">This Afternoon</p>
+                <span className="text-[11px] text-ink/30">2:14 pm</span>
+              </div>
+              <div className="rounded-xl border border-primary/60 bg-primary/5 px-4 py-3 space-y-2.5">
+                <p className="text-sm font-medium text-ink/90">{DEMO_NUDGE}</p>
+                <div className="flex flex-wrap gap-1.5">
+                  <span className="rounded-full border border-ink/15 px-2.5 py-0.5 text-[11px] font-medium text-ink/55">Why?</span>
+                  <span className="rounded-full border border-ink/15 px-2.5 py-0.5 text-[11px] font-medium text-ink/55">What to do?</span>
+                </div>
+              </div>
+            </div>
+          ) : mealCount === 0 ? (
             <div className="mt-3 space-y-1">
               <p className="text-sm text-ink/70">Log a few meals and I’ll start learning your patterns.</p>
               <p className="text-xs text-muted/50">Nudges appear after 5 meals.</p>
