@@ -1291,7 +1291,7 @@ export default function ProfileScreen() {
                     >
                       <span className="text-sm font-medium text-ink/80">{displayName}</span>
                       <span className={`text-xs font-semibold ${isOpen ? "text-primary/70" : "text-ink/30"}`}>
-                        {isOpen ? (entry.dose || entry.pct ? `${entry.mode === "pct" ? entry.pct + "% DV" : entry.dose + " " + entry.unit}` : "tap to set") : "+"}
+                        {isOpen ? (entry.dose || entry.pct ? `${entry.mode === "pct" ? entry.pct + "% DV" : entry.dose + " " + entry.unit}` : "") : "+"}
                       </span>
                     </button>
                     {isOpen && (
