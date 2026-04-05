@@ -195,6 +195,11 @@ export default function ProfileScreen() {
     return () => window.removeEventListener("profile-prompt-opened", handler as EventListener);
   }, []);
 
+  useEffect(() => {
+    document.body.style.overflow = showMultiSuppModal ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [showMultiSuppModal]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center text-sm text-muted">
@@ -1259,8 +1264,8 @@ export default function ProfileScreen() {
       )}
 
       {showMultiSuppModal && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/30 px-0 sm:items-center sm:px-5">
-          <div className="w-full max-w-sm rounded-t-2xl bg-white p-6 shadow-xl sm:rounded-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
             <h2 className="text-base font-semibold text-ink">{multiSuppName || "Supplement"}</h2>
             <p className="mt-1 text-xs text-muted/60">Tap a nutrient to enter the amount from the label.</p>
             <div className="mt-4 space-y-2 max-h-[55vh] overflow-y-auto">
