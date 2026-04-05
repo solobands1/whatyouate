@@ -1374,8 +1374,8 @@ export default function HomeScreen() {
           {loadError && <p className="mt-2 text-[11px] text-muted/60">{loadError}</p>}
         </header>
 
-        {/* Trial progress banner */}
-        {trial.isTrialActive && !isDemoMode && (
+        {/* Trial progress / expired banner */}
+        {!isDemoMode && trial.isTrialActive && (
           <button
             type="button"
             onClick={openUpgradeModal}
@@ -1392,6 +1392,18 @@ export default function HomeScreen() {
                 className="h-full rounded-full bg-primary/50 transition-all"
                 style={{ width: `${(trial.currentDay / 7) * 100}%` }}
               />
+            </div>
+          </button>
+        )}
+        {!isDemoMode && trial.isFree && (
+          <button
+            type="button"
+            onClick={openUpgradeModal}
+            className="mt-4 w-full rounded-xl bg-ink/5 px-4 py-2.5 text-left transition active:opacity-70"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[12px] font-medium text-ink/60">Your free trial has ended</span>
+              <span className="text-[11px] text-primary/70 font-medium">Upgrade</span>
             </div>
           </button>
         )}
