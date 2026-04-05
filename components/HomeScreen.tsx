@@ -1698,8 +1698,11 @@ export default function HomeScreen() {
             )}
             {!loadingData && recentItems.length === 0 ? (
               mealCount === 0 && displayWorkouts.length === 0 ? (
-                <div className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs text-ink/80">
-                  Example: Chicken bowl · 600 kcal · 40 g
+                <div className="inline-flex items-start rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5 text-xs text-ink/80">
+                  <span className="flex flex-col">
+                    <span>Chicken Bowl</span>
+                    <span className="text-ink/50">600 kcal · 40g protein</span>
+                  </span>
                 </div>
               ) : (
                 <p className="text-muted/70">No food or workouts yet.</p>
