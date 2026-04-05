@@ -198,6 +198,7 @@ export default function HomeScreen() {
   const [quickAddSelected, setQuickAddSelected] = useState<Record<string, "small" | "medium" | "large">>({});
   const [quickAddAdding, setQuickAddAdding] = useState(false);
   const [quickAddDate, setQuickAddDate] = useState(todayDateStr);
+  const [streakSaverDismissed, setStreakSaverDismissed] = useState(false);
 
   const mountedRef = useRef(true);
   const recentSentinelRef = useRef<HTMLDivElement | null>(null);
@@ -856,6 +857,10 @@ export default function HomeScreen() {
       localStorage.setItem(gateKey, "true");
       setShowTourGate(true);
     }
+    // Check if streak saver was already dismissed today
+    if (localStorage.getItem(`wya_streak_saver_dismissed_${user.id}_${todayKey()}`) === "true") {
+      setStreakSaverDismissed(true);
+    }
   }, [user]);
 
   const displayMeals = isDemoMode ? demoData.meals : meals.meals;
@@ -1021,6 +1026,30 @@ export default function HomeScreen() {
   const gentleTargetsDisplay = homeMarkers.gentleTargets ?? { calories: 2300, protein: 125 };
   const mealCount = homeMarkers.mealCount;
   const streak = homeMarkers.streak ?? 0;
+
+  // Streak saver: detect if yesterday was missed but there's still a saveable streak
+  const streakSaverInfo = (() => {
+    if (isDemoMode || streakSaverDismissed) return null;
+    const realMeals = (isDemoMode ? [] : meals.meals).filter(
+      (m) => m.analysisJson?.source !== "supplement" && m.status !== "failed"
+    );
+    const dayKeys = new Set(realMeals.map((m) => dayKeyFromTs(m.ts)));
+    const yest = new Date(); yest.setDate(yest.getDate() - 1);
+    const dayBefore = new Date(); dayBefore.setDate(dayBefore.getDate() - 2);
+    const yesterdayKey = dayKeyFromTs(yest.getTime());
+    const dayBeforeKey = dayKeyFromTs(dayBefore.getTime());
+    if (dayKeys.has(yesterdayKey) || !dayKeys.has(dayBeforeKey)) return null;
+    // Count streak length before yesterday
+    let savedStreak = 0;
+    const d = new Date(dayBefore.getTime());
+    while (dayKeys.has(dayKeyFromTs(d.getTime()))) {
+      savedStreak++;
+      d.setDate(d.getDate() - 1);
+    }
+    if (savedStreak < 2) return null;
+    const yStr = `${yest.getFullYear()}-${String(yest.getMonth() + 1).padStart(2, "0")}-${String(yest.getDate()).padStart(2, "0")}`;
+    return { savedStreak, yesterdayStr: yStr };
+  })();
   const calMid = (homeMarkers.todayTotals.calories_min + homeMarkers.todayTotals.calories_max) / 2;
   const protMid = (homeMarkers.todayTotals.protein_g_min + homeMarkers.todayTotals.protein_g_max) / 2;
   const calPct = Math.min(100, Math.round((calMid / gentleTargetsDisplay.calories) * 100));
@@ -1418,6 +1447,46 @@ export default function HomeScreen() {
               </Link>
             </div>
           </Card>
+        )}
+
+        {streakSaverInfo && (
+          <div className="mt-4 flex items-center justify-between rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+            <div className="flex items-center gap-2.5">
+              <svg width="16" height="18" viewBox="0 0 13 15" fill="none" aria-hidden="true">
+                <path d="M6.5 0C6.5 0 4 3.5 4 6C4 6.5 4.1 7 4.3 7.4C3.5 6.6 3.2 5.5 3.2 5.5C1.8 7 1 8.8 1 11C1 13.2 3.5 15 6.5 15C9.5 15 12 13.2 12 11C12 8.2 9.5 5.5 9.5 5.5C9.5 7 8.8 8 8 8.5C8.2 8 8.3 7.4 8.3 6.8C8.3 4.2 6.5 0 6.5 0Z" fill="#d97706"/>
+                <path d="M6.5 7.5C6.2 8.5 6 9.2 6 10C6 11.1 6.2 11.8 6.5 12C6.8 11.8 7 11.1 7 10C7 9.2 6.8 8.5 6.5 7.5Z" fill="#fbbf24"/>
+              </svg>
+              <div>
+                <p className="text-xs font-semibold text-amber-800">Save your {streakSaverInfo.savedStreak}-day streak</p>
+                <p className="text-[11px] text-amber-700">Log a meal for yesterday to keep it going</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                className="rounded-lg bg-amber-500 px-3 py-1.5 text-[11px] font-semibold text-white transition active:opacity-75"
+                onClick={() => {
+                  meals.openManualMealEntry();
+                  meals.setManualDate(streakSaverInfo.yesterdayStr);
+                }}
+              >
+                Log yesterday
+              </button>
+              <button
+                type="button"
+                className="text-amber-600/60 transition active:opacity-60"
+                onClick={() => {
+                  if (user) localStorage.setItem(`wya_streak_saver_dismissed_${user.id}_${todayKey()}`, "true");
+                  setStreakSaverDismissed(true);
+                }}
+                aria-label="Dismiss"
+              >
+                <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <path d="M4 4l8 8M12 4l-8 8" />
+                </svg>
+              </button>
+            </div>
+          </div>
         )}
 
         <Card className="mt-4">
