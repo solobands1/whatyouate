@@ -483,7 +483,7 @@ export default function InsightsScreen() {
   }
 
   return (
-    <div className="min-h-screen bg-surface">
+    <div className="relative min-h-screen bg-surface">
       <Joyride
         steps={insightsTourSteps}
         run={runInsightsTour && !loadingData}
@@ -513,9 +513,9 @@ export default function InsightsScreen() {
           }
         }}
       />
-      {/* Paywall overlay for expired trial */}
+      {/* Paywall overlay for expired trial — absolute so BottomNav remains clickable */}
       {trial.isFree && (
-        <div className="fixed inset-0 z-30 flex flex-col items-center justify-center px-8 text-center">
+        <div className="absolute inset-0 flex flex-col items-center justify-center px-8 text-center" style={{ bottom: "73px" }}>
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-ink/8 mb-5">
             <svg viewBox="0 0 24 24" className="h-7 w-7 text-ink/40" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="11" width="18" height="11" rx="2" />
