@@ -74,7 +74,7 @@ export default function ValueMomentSheet() {
             onClick={() => { close(); openUpgradeModal(); }}
             className="w-full rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition active:opacity-80"
           >
-            Unlock insights
+            Unlock Patterns
           </button>
           <button
             type="button"

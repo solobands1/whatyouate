@@ -918,14 +918,15 @@ export default function SummaryScreen() {
                 className="relative flex gap-3"
               >
                 <div className="blur-sm pointer-events-none select-none flex gap-3">
-                  <MacroRing label="Carbs" value={0} unit="g" target={null} animate={false} />
-                  <MacroRing label="Fats" value={0} unit="g" target={null} animate={false} />
+                  <MacroRing label="Carbs" value={42} unit="g" target={null} animate={false} />
+                  <MacroRing label="Fats" value={18} unit="g" target={null} animate={false} />
                 </div>
-                <div className="absolute inset-0 flex items-center justify-center">
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
                   <svg viewBox="0 0 24 24" className="h-5 w-5 text-ink/30" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="3" y="11" width="18" height="11" rx="2" />
                     <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                   </svg>
+                  <span className="text-[10px] font-medium text-ink/30">Upgrade to unlock</span>
                 </div>
               </button>
             ) : (
@@ -1002,11 +1003,12 @@ export default function SummaryScreen() {
                 <p className="text-sm font-semibold text-ink/80">Your week at a glance</p>
                 <p className="text-sm text-muted/60">Patterns and observations from your recent meals appear here.</p>
               </div>
-              <div className="absolute inset-0 flex items-center justify-center">
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
                 <svg viewBox="0 0 24 24" className="h-5 w-5 text-ink/30" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="11" width="18" height="11" rx="2" />
                   <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                 </svg>
+                <span className="text-[10px] font-medium text-ink/30">Upgrade to unlock</span>
               </div>
             </button>
           ) : (
