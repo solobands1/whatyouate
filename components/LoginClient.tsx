@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "./AuthProvider";
 import { LOCAL_MODE } from "../lib/config";
-import Card from "./Card";
 
 export default function LoginClient() {
   const router = useRouter();
@@ -27,34 +26,6 @@ export default function LoginClient() {
   const [showPassword, setShowPassword] = useState(false);
   const [status, setStatus] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
-  const togglePassword = () => setShowPassword((prev) => !prev);
-
-  const EyeIcon = ({ hidden }: { hidden: boolean }) => (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      className="h-4 w-4"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      {hidden ? (
-        <>
-          <path d="M3 3l18 18" />
-          <path d="M10.5 10.5a2.5 2.5 0 0 0 3.5 3.5" />
-          <path d="M6.5 6.5C4.2 8.2 2.7 10.4 2 12c2.1 4 6 7 10 7 2 0 4-.6 5.7-1.7" />
-          <path d="M9.9 4.3A9.5 9.5 0 0 1 12 4c4 0 7.9 3 10 8-0.6 1.2-1.5 2.4-2.6 3.5" />
-        </>
-      ) : (
-        <>
-          <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" />
-          <circle cx="12" cy="12" r="3" />
-        </>
-      )}
-    </svg>
-  );
 
   useEffect(() => {
     if (!loading && user) {
@@ -68,15 +39,12 @@ export default function LoginClient() {
     setSubmitting(true);
     const result = await signInWithEmailPassword(email.trim(), password);
     if (result.error) {
-      setStatus("Couldn’t sign in. Check your details.");
+      setStatus("Couldn't sign in. Check your details.");
       setSubmitting(false);
       return;
     }
     setStatus("");
-    if (LOCAL_MODE) {
-      router.replace("/");
-    }
-    // Keep submitting=true — navigation will unmount this component
+    if (LOCAL_MODE) router.replace("/");
   };
 
   const handleSignUp = async () => {
@@ -94,7 +62,6 @@ export default function LoginClient() {
       lastName: lastName.trim()
     });
     if (result.error) {
-      console.error("SIGNUP ERROR:", result.error);
       setStatus(result.error);
       setSubmitting(false);
       return;
@@ -104,14 +71,11 @@ export default function LoginClient() {
   };
 
   const handleSendCode = async () => {
-    if (!email) {
-      setStatus("Enter your email first.");
-      return;
-    }
+    if (!email) { setStatus("Enter your email first."); return; }
     setSubmitting(true);
     const result = await sendPasswordOtp(email.trim());
     if (result.error) {
-      setStatus("Couldn’t send code. Try again.");
+      setStatus("Couldn't send code. Try again.");
       setSubmitting(false);
       return;
     }
@@ -122,331 +86,275 @@ export default function LoginClient() {
 
   const handleResetPassword = async () => {
     if (!email || !otpCode || !password) return;
-    if (password !== confirmPassword) {
-      setStatus("Passwords do not match.");
-      return;
-    }
+    if (password !== confirmPassword) { setStatus("Passwords do not match."); return; }
     setSubmitting(true);
     const verify = await verifyPasswordOtp(email.trim(), otpCode.trim());
-    if (verify.error) {
-      setStatus("Invalid code. Try again.");
-      setSubmitting(false);
-      return;
-    }
+    if (verify.error) { setStatus("Invalid code. Try again."); setSubmitting(false); return; }
     const updated = await updatePassword(password);
-    if (updated.error) {
-      setStatus("Couldn’t update password.");
-      setSubmitting(false);
-      return;
-    }
+    if (updated.error) { setStatus("Couldn't update password."); setSubmitting(false); return; }
     setStatus("");
     router.replace("/");
   };
 
+  const inputClass = "w-full rounded-xl border border-ink/10 bg-white px-4 py-3 text-sm text-ink placeholder:text-muted/40 focus:outline-none focus:ring-1 focus:ring-primary/30";
+
+  const EyeToggle = () => (
+    <button
+      type="button"
+      className="absolute right-3 top-1/2 -translate-y-1/2 text-ink/30 transition active:opacity-60"
+      onClick={() => setShowPassword((v) => !v)}
+      aria-label={showPassword ? "Hide password" : "Show password"}
+    >
+      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        {showPassword ? (
+          <>
+            <path d="M3 3l18 18" />
+            <path d="M10.5 10.5a2.5 2.5 0 0 0 3.5 3.5" />
+            <path d="M6.5 6.5C4.2 8.2 2.7 10.4 2 12c2.1 4 6 7 10 7 2 0 4-.6 5.7-1.7" />
+            <path d="M9.9 4.3A9.5 9.5 0 0 1 12 4c4 0 7.9 3 10 8-0.6 1.2-1.5 2.4-2.6 3.5" />
+          </>
+        ) : (
+          <>
+            <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" />
+            <circle cx="12" cy="12" r="3" />
+          </>
+        )}
+      </svg>
+    </button>
+  );
+
   return (
-    <div className="min-h-screen bg-surface">
-      <div className="mx-auto flex min-h-screen max-w-md flex-col px-5 pb-20 pt-10">
-        <header className="mb-8">
-          <div className="flex items-center gap-3">
+    <div className="min-h-screen bg-surface flex flex-col">
+      <div className="mx-auto flex w-full max-w-sm flex-col px-6 pt-16 pb-10 flex-1">
+
+        {/* Branding */}
+        {(mode === "signin" || mode === "forgot") && (
+          <div className="flex flex-col items-center mb-10">
+            <div className="h-16 w-16 overflow-hidden rounded-2xl border border-ink/10 shadow-sm mb-4">
+              <img src="/icon-512.png" alt="WhatYouAte" className="h-full w-full object-cover" />
+            </div>
             <h1 className="text-2xl font-semibold tracking-tight text-ink">
               WhatYouAt<span className="relative inline-block">e
-                <span className="absolute -top-1 right-0 translate-x-[10px] text-[9px] font-semibold text-ink/60">
-                  AI
-                </span>
+                <span className="absolute -top-1 right-0 translate-x-[10px] text-[9px] font-semibold text-ink/50">AI</span>
               </span>
             </h1>
-            <span className="inline-flex items-center rounded-full bg-primary/15 px-2 py-0.5 text-[9px] font-semibold text-primary">
-              Beta
-            </span>
+            <p className="mt-1.5 text-sm text-muted/60">
+              {mode === "forgot" ? "We'll send you a reset code." : "Track what you eat. See what it means."}
+            </p>
           </div>
-          <p className="mt-1 text-[13px] text-muted/70">Log meals, get nudges, improve!</p>
-        </header>
+        )}
 
-        <Card>
-          {mode === "signin" && (
-            <>
-              <p className="text-sm text-ink/80">Sign in to continue.</p>
-              <form onSubmit={handleSignIn} className="mt-4">
-                <label className="text-xs text-muted/70">
-                  Email
-                  <input
-                    type="email"
-                    autoComplete="email"
-                    className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    placeholder="you@example.com"
-                    required
-                  />
-                </label>
-                <label className="mt-3 block text-xs text-muted/70">
-                  Password
-                  <div className="mt-1 flex items-center gap-2">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      autoComplete="current-password"
-                      className="w-full rounded-xl border border-ink/10 px-3 py-2 text-sm"
-                      value={password}
-                      onChange={(event) => setPassword(event.target.value)}
-                      placeholder="••••••••"
-                      required
-                    />
-                    <button
-                      type="button"
-                      className="rounded-full border border-ink/10 p-2 text-ink/60"
-                      onClick={togglePassword}
-                      aria-label={showPassword ? "Hide password" : "Show password"}
-                    >
-                      <EyeIcon hidden={showPassword} />
-                    </button>
-                  </div>
-                </label>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="mt-4 w-full rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
-                >
-                  {submitting ? "Signing in…" : "Sign in"}
-                </button>
-                <button
-                  type="button"
-                  className="mt-3 w-full rounded-xl border border-ink/10 px-5 py-3 text-sm font-semibold text-ink/80"
-                  onClick={() => {
-                    setMode("forgot");
-                    setStatus("");
-                  }}
-                >
-                  Forgot password
-                </button>
-                <button
-                  type="button"
-                  className="mt-3 w-full rounded-xl border border-ink/10 px-5 py-3 text-sm font-semibold text-ink/80"
-                  onClick={() => {
-                    setMode("signup");
-                    setStatus("");
-                  }}
-                >
-                  Create account
-                </button>
-              </form>
-            </>
-          )}
+        {/* Sign in */}
+        {mode === "signin" && (
+          <form onSubmit={handleSignIn} className="flex flex-col gap-3">
+            <input
+              type="email"
+              autoComplete="email"
+              className={inputClass}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email"
+              required
+            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
+                className={inputClass}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Password"
+                required
+              />
+              <EyeToggle />
+            </div>
+            {status && <p className="text-xs text-red-500/80">{status}</p>}
+            <button
+              type="submit"
+              disabled={submitting}
+              className="mt-1 w-full rounded-xl bg-primary py-3.5 text-sm font-semibold text-white transition active:opacity-80 disabled:opacity-50"
+            >
+              {submitting ? "Signing in…" : "Sign in"}
+            </button>
+            <button
+              type="button"
+              className="w-full rounded-xl border border-ink/10 py-3.5 text-sm font-semibold text-ink/70 transition active:opacity-60"
+              onClick={() => { setMode("signup"); setStatus(""); }}
+            >
+              Create account
+            </button>
+            <button
+              type="button"
+              className="mt-1 text-center text-xs text-muted/50 underline underline-offset-2 transition active:opacity-60"
+              onClick={() => { setMode("forgot"); setStatus(""); }}
+            >
+              Forgot password?
+            </button>
+          </form>
+        )}
 
-          {mode === "signup" && (
-            <>
-              <p className="text-sm text-ink/80">Create your account.</p>
-              <div className="mt-4">
-                <label className="text-xs text-muted/70">
-                  First name
-                  <input
-                    type="text"
-                    className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm"
-                    value={firstName}
-                    onChange={(event) => setFirstName(event.target.value)}
-                    placeholder="First name"
-                    required
-                  />
-                </label>
-                <label className="mt-3 block text-xs text-muted/70">
-                  Last name
-                  <input
-                    type="text"
-                    className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm"
-                    value={lastName}
-                    onChange={(event) => setLastName(event.target.value)}
-                    placeholder="Last name"
-                    required
-                  />
-                </label>
-                <label className="mt-3 block text-xs text-muted/70">
-                  Email
-                  <input
-                    type="email"
-                    autoComplete="email"
-                    className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    placeholder="you@example.com"
-                    required
-                  />
-                </label>
-                <label className="mt-3 block text-xs text-muted/70">
-                  Password
-                  <div className="mt-1 flex items-center gap-2">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      autoComplete="new-password"
-                      className="w-full rounded-xl border border-ink/10 px-3 py-2 text-sm"
-                      value={password}
-                      onChange={(event) => setPassword(event.target.value)}
-                      placeholder="••••••••"
-                      required
-                    />
-                    <button
-                      type="button"
-                      className="rounded-full border border-ink/10 p-2 text-ink/60"
-                      onClick={togglePassword}
-                      aria-label={showPassword ? "Hide password" : "Show password"}
-                    >
-                      <EyeIcon hidden={showPassword} />
-                    </button>
-                  </div>
-                </label>
-                <label className="mt-3 block text-xs text-muted/70">
-                  Confirm password
-                  <div className="mt-1 flex items-center gap-2">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      autoComplete="new-password"
-                      className="w-full rounded-xl border border-ink/10 px-3 py-2 text-sm"
-                      value={confirmPassword}
-                      onChange={(event) => setConfirmPassword(event.target.value)}
-                      placeholder="••••••••"
-                      required
-                    />
-                    <button
-                      type="button"
-                      className="rounded-full border border-ink/10 p-2 text-ink/60"
-                      onClick={togglePassword}
-                      aria-label={showPassword ? "Hide password" : "Show password"}
-                    >
-                      <EyeIcon hidden={showPassword} />
-                    </button>
-                  </div>
-                </label>
-              </div>
-              <div className="mt-4 space-y-3">
-                <button
-                  type="button"
-                  className="w-full rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
-                  onClick={handleSignUp}
-                  disabled={submitting}
-                >
-                  {submitting ? "Creating account…" : "Create account"}
-                </button>
-                <button
-                  type="button"
-                  className="w-full rounded-xl border border-ink/10 px-5 py-3 text-sm font-semibold text-ink/60"
-                  onClick={() => setMode("signin")}
-                >
-                  Back
-                </button>
-                <p className="text-center text-[11px] text-muted/50">
-                  By creating an account you agree to our{" "}
-                  <a href="/privacy" className="underline underline-offset-2 hover:text-muted/70">
-                    Privacy Policy and Terms of Use
-                  </a>
-                </p>
-              </div>
-            </>
-          )}
-
-          {mode === "forgot" && (
-            <>
-              <p className="text-sm text-ink/80">Reset your password.</p>
-              <div className="mt-4">
-                <label className="text-xs text-muted/70">
-                  Email
-                  <input
-                    type="email"
-                    autoComplete="email"
-                    className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    placeholder="you@example.com"
-                  />
-                </label>
-              </div>
+        {/* Sign up */}
+        {mode === "signup" && (
+          <>
+            <div className="mb-7">
               <button
                 type="button"
-                className="mt-4 w-full rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
-                onClick={handleSendCode}
+                className="mb-5 flex items-center gap-1.5 text-xs text-muted/50 transition active:opacity-60"
+                onClick={() => { setMode("signin"); setStatus(""); }}
+              >
+                <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10 12L6 8l4-4" />
+                </svg>
+                Back
+              </button>
+              <h2 className="text-xl font-semibold text-ink">Create account</h2>
+              <p className="mt-1 text-sm text-muted/60">Start your 7-day free trial.</p>
+            </div>
+            <div className="flex flex-col gap-3">
+              <div className="flex gap-3">
+                <input
+                  type="text"
+                  className={inputClass}
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  placeholder="First name"
+                />
+                <input
+                  type="text"
+                  className={inputClass}
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  placeholder="Last name"
+                />
+              </div>
+              <input
+                type="email"
+                autoComplete="email"
+                className={inputClass}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Email"
+              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  className={inputClass}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Password"
+                />
+                <EyeToggle />
+              </div>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  className={inputClass}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Confirm password"
+                />
+                <EyeToggle />
+              </div>
+              {status && <p className="text-xs text-red-500/80">{status}</p>}
+              <button
+                type="button"
+                className="mt-1 w-full rounded-xl bg-primary py-3.5 text-sm font-semibold text-white transition active:opacity-80 disabled:opacity-50"
+                onClick={handleSignUp}
                 disabled={submitting}
               >
-                {submitting ? "Sending…" : "Send code"}
+                {submitting ? "Creating account…" : "Create account"}
               </button>
-              <button
-                type="button"
-                className="mt-3 w-full rounded-xl border border-ink/10 px-5 py-3 text-sm font-semibold text-ink/80"
-                onClick={() => {
-                  setMode("signin");
-                  setStatus("");
-                }}
-              >
-                Back to sign in
-              </button>
-            </>
-          )}
+              <p className="text-center text-[11px] text-muted/40 leading-relaxed">
+                By creating an account you agree to our{" "}
+                <a href="/privacy" className="underline underline-offset-2">
+                  Privacy Policy and Terms of Use
+                </a>
+              </p>
+            </div>
+          </>
+        )}
 
-          {mode === "reset" && (
-            <>
-              <p className="text-sm text-ink/80">Enter your code and new password.</p>
-              <div className="mt-4">
-                <label className="text-xs text-muted/70">
-                  Code
-                  <input
-                    type="text"
-                    className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm"
-                    value={otpCode}
-                    onChange={(event) => setOtpCode(event.target.value)}
-                    placeholder="Enter code"
-                  />
-                </label>
-                <label className="mt-3 block text-xs text-muted/70">
-                  New password
-                  <div className="mt-1 flex items-center gap-2">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      autoComplete="new-password"
-                      className="w-full rounded-xl border border-ink/10 px-3 py-2 text-sm"
-                      value={password}
-                      onChange={(event) => setPassword(event.target.value)}
-                      placeholder="••••••••"
-                    />
-                    <button
-                      type="button"
-                      className="rounded-full border border-ink/10 p-2 text-ink/60"
-                      onClick={togglePassword}
-                      aria-label={showPassword ? "Hide password" : "Show password"}
-                    >
-                      <EyeIcon hidden={showPassword} />
-                    </button>
-                  </div>
-                </label>
-                <label className="mt-3 block text-xs text-muted/70">
-                  Confirm password
-                  <div className="mt-1 flex items-center gap-2">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      autoComplete="new-password"
-                      className="w-full rounded-xl border border-ink/10 px-3 py-2 text-sm"
-                      value={confirmPassword}
-                      onChange={(event) => setConfirmPassword(event.target.value)}
-                      placeholder="••••••••"
-                    />
-                    <button
-                      type="button"
-                      className="rounded-full border border-ink/10 p-2 text-ink/60"
-                      onClick={togglePassword}
-                      aria-label={showPassword ? "Hide password" : "Show password"}
-                    >
-                      <EyeIcon hidden={showPassword} />
-                    </button>
-                  </div>
-                </label>
+        {/* Forgot password */}
+        {mode === "forgot" && (
+          <div className="flex flex-col gap-3">
+            <input
+              type="email"
+              autoComplete="email"
+              className={inputClass}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email"
+            />
+            {status && <p className="text-xs text-muted/60">{status}</p>}
+            <button
+              type="button"
+              className="mt-1 w-full rounded-xl bg-primary py-3.5 text-sm font-semibold text-white transition active:opacity-80 disabled:opacity-50"
+              onClick={handleSendCode}
+              disabled={submitting}
+            >
+              {submitting ? "Sending…" : "Send reset code"}
+            </button>
+            <button
+              type="button"
+              className="w-full rounded-xl border border-ink/10 py-3.5 text-sm font-semibold text-ink/70 transition active:opacity-60"
+              onClick={() => { setMode("signin"); setStatus(""); }}
+            >
+              Back to sign in
+            </button>
+          </div>
+        )}
+
+        {/* Reset password */}
+        {mode === "reset" && (
+          <>
+            <div className="mb-7">
+              <h2 className="text-xl font-semibold text-ink">New password</h2>
+              <p className="mt-1 text-sm text-muted/60">Enter the code we sent to {email}.</p>
+            </div>
+            <div className="flex flex-col gap-3">
+              <input
+                type="text"
+                className={inputClass}
+                value={otpCode}
+                onChange={(e) => setOtpCode(e.target.value)}
+                placeholder="Reset code"
+              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  className={inputClass}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="New password"
+                />
+                <EyeToggle />
               </div>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  className={inputClass}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Confirm password"
+                />
+                <EyeToggle />
+              </div>
+              {status && <p className="text-xs text-red-500/80">{status}</p>}
               <button
                 type="button"
-                className="mt-4 w-full rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
+                className="mt-1 w-full rounded-xl bg-primary py-3.5 text-sm font-semibold text-white transition active:opacity-80 disabled:opacity-50"
                 onClick={handleResetPassword}
                 disabled={submitting}
               >
-                {submitting ? "Saving…" : "Create new password"}
+                {submitting ? "Saving…" : "Set new password"}
               </button>
-            </>
-          )}
-          {status && <p className="mt-3 text-xs text-muted/70">{status}</p>}
-        </Card>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
