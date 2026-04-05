@@ -8,7 +8,9 @@ import type { ActivityLevel, GoalDirection, SupplementEntry, SupplementNutrient,
 import { suppLabel, suppName } from "../lib/types";
 import { matchSupplementNutrients, NUTRIENT_UNITS, NUTRIENT_DISPLAY_NAMES } from "../lib/rda";
 import { clearAllData, getProfile, saveProfile, saveDailySupplements, LOCAL_MODE } from "../lib/supabaseDb";
-import { getDailySupplements, setDailySupplements } from "../lib/foodCache";
+import { getDailySupplements, setDailySupplements, clearDailySuppsLoggedToday } from "../lib/foodCache";
+import { clearMealsCache } from "../lib/supabaseDb";
+import { notifyMealsUpdated } from "../lib/dataEvents";
 import { supabase } from "../lib/supabaseClient";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
@@ -377,6 +379,29 @@ export default function ProfileScreen() {
 
   const handleClear = async () => {
     await clearAllData(user.id);
+
+    // Clear all localStorage keys for this user
+    const keysToRemove = [
+      `wya_daily_supps_${user.id}`,
+      `wya_profile_updated_${user.id}`,
+      `wya_profile_prompt_opened_${user.id}`,
+      `wya_profile_prompt_last_${user.id}`,
+      `wya_profile_prompt_sim_${user.id}`,
+      `wya_walkthrough_${user.id}`,
+      `wya_walkthrough_active_${user.id}`,
+      `wya_walkthrough_stage_${user.id}`,
+      `wya_walkthrough_gate_${user.id}`,
+      `wya_walkthrough_profile_${user.id}`,
+      `wya_nudge_view_count_${user.id}`,
+    ];
+    keysToRemove.forEach((k) => localStorage.removeItem(k));
+    clearDailySuppsLoggedToday(user.id);
+    // Clear shared food caches (not user-specific, but tied to their logged foods)
+    localStorage.removeItem("wya_food_cache_v1");
+    localStorage.removeItem("wya_food_text_cache_v1");
+    clearMealsCache(user.id);
+    notifyMealsUpdated();
+
     profileExistsRef.current = false;
     setFirstName("");
     setLastName("");
@@ -391,6 +416,7 @@ export default function ProfileScreen() {
     setActivityLevel("");
     setDietaryRestrictions([]);
     setUnits("imperial");
+    setDailySupplementsState([]);
     setStatus("All data cleared.");
   };
 
