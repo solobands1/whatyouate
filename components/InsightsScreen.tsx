@@ -712,7 +712,7 @@ export default function InsightsScreen() {
             onClick={openUpgradeModal}
             className="mt-6 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white transition active:opacity-80"
           >
-            Unlock insights
+            Unlock Patterns
           </button>
         </div>
       )}
