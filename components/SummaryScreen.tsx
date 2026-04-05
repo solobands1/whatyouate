@@ -1052,7 +1052,14 @@ export default function SummaryScreen() {
               {(() => {
                 const hr = new Date().getHours();
                 const windowLabel = hr < 12 ? "This Morning" : hr < 17 ? "This Afternoon" : "This Evening";
-                return <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/50">{windowLabel}</p>;
+                const nudgeTs = smartNudge && smartNudge !== undefined && (smartNudge as any).generatedAt ? new Date((smartNudge as any).generatedAt) : null;
+                const nudgeTimeLabel = nudgeTs ? nudgeTs.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }).toLowerCase() : null;
+                return (
+                  <div className="flex items-center justify-between">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/50">{windowLabel}</p>
+                    {nudgeTimeLabel && <span className="text-[11px] text-ink/30">{nudgeTimeLabel}</span>}
+                  </div>
+                );
               })()}
               {smartNudge === undefined ? (
                 /* Loading state — subtle pulse while AI thinks */
@@ -1100,15 +1107,8 @@ export default function SummaryScreen() {
                   return (
                     <div className="rounded-xl border border-primary/60 bg-primary/5 px-4 py-3 space-y-2.5">
                       <p className="text-sm font-medium text-ink/90">{nudge.message}</p>
-                      {(nudgeTimeLabel || isCaughtUp) && (
-                        <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
-                          {nudgeTimeLabel && (
-                            <span className="text-[11px] text-ink/35">· {nudgeTimeLabel}</span>
-                          )}
-                          {isCaughtUp && (
-                            <span className="text-[11px] text-primary/60 font-medium">Looks like you've caught up since then.</span>
-                          )}
-                        </div>
+                      {isCaughtUp && (
+                        <p className="text-[11px] text-primary/60 font-medium">Looks like you've caught up since then.</p>
                       )}
                       {(why || action || showChips) && (
                         <div className="flex flex-wrap gap-1.5">
