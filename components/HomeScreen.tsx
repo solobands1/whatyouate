@@ -1700,7 +1700,7 @@ export default function HomeScreen() {
               mealCount === 0 && displayWorkouts.length === 0 ? (
                 <div className="inline-flex items-start rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5 text-xs text-ink/80">
                   <span className="flex flex-col">
-                    <span>Chicken Bowl</span>
+                    <span>Chicken Bowl <span className="text-ink/35">(example)</span></span>
                     <span className="text-ink/50">600 kcal · 40g protein</span>
                   </span>
                 </div>
