@@ -28,8 +28,8 @@ export default function UpgradeModal() {
   const yearlySavings = Math.round((1 - yearlyCost / (monthlyCost * 12)) * 100);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
-      <div className="flex w-full max-w-md flex-col bg-surface rounded-2xl overflow-y-auto max-h-[90vh] shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/30">
+      <div className="flex w-full max-w-md flex-col bg-surface rounded-t-2xl overflow-y-auto max-h-[90vh] shadow-xl">
         {/* Close */}
         <div className="flex justify-end px-5 pt-5">
           <button
@@ -44,7 +44,7 @@ export default function UpgradeModal() {
           </button>
         </div>
 
-        <div className="flex flex-col items-center px-6 pb-8 pt-2">
+        <div className="flex flex-col items-center px-6 pt-2" style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 2rem)" }}>
           {/* Icon */}
           <div className="h-16 w-16 overflow-hidden rounded-2xl border border-ink/10 shadow-sm">
             <img src="/icon-512.png" alt="WhatYouAte" className="h-full w-full object-cover" />
