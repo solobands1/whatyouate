@@ -24,7 +24,7 @@ export default function UpgradeModal() {
 
   const monthlyCost = 9.99;
   const yearlyCost = 69.99;
-  const yearlySavings = Math.round((1 - yearlyCost / (monthlyCost * 12)) * 100);
+  const yearlySavings = 16;
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-surface">

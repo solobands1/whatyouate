@@ -45,7 +45,7 @@ export default function ValueMomentSheet() {
       />
 
       {/* Sheet */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl bg-surface px-6 pb-10 pt-6 shadow-xl">
+      <div className="fixed bottom-0 left-0 right-0 z-50 mx-auto max-w-md rounded-t-3xl bg-surface px-6 pb-10 pt-6 shadow-xl" style={{ left: "50%", transform: "translateX(-50%)", width: "100%" }}>
         {/* Handle */}
         <div className="mx-auto mb-5 h-1 w-10 rounded-full bg-ink/15" />
 
