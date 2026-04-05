@@ -396,14 +396,18 @@ export default function InsightsScreen() {
 
   const displayMicronutrients = hasEnoughData
     ? micronutrientPatterns
-    : INSIGHT_NUTRIENTS.map((name) => ({
-        name,
-        label: "Building pattern",
-        foodPct: 25,
-        suppPct: 0,
-        hasSupplement: false,
-        overRda: false,
-      }));
+    : [
+        { name: "Iron",      label: "Sometimes detected",  foodPct: 38, suppPct: 0,  hasSupplement: false, overRda: false },
+        { name: "B12",       label: "Well covered",        foodPct: 62, suppPct: 18, hasSupplement: true,  overRda: false },
+        { name: "Magnesium", label: "Rarely detected",     foodPct: 12, suppPct: 0,  hasSupplement: false, overRda: false },
+        { name: "Zinc",      label: "Building pattern",    foodPct: 50, suppPct: 0,  hasSupplement: false, overRda: false },
+        { name: "Vitamin D", label: "Well covered",        foodPct: 45, suppPct: 40, hasSupplement: true,  overRda: false },
+        { name: "Calcium",   label: "Frequently detected", foodPct: 74, suppPct: 0,  hasSupplement: false, overRda: false },
+        { name: "Omega-3",   label: "Rarely detected",     foodPct: 8,  suppPct: 0,  hasSupplement: false, overRda: false },
+        { name: "Vitamin C", label: "Frequently detected", foodPct: 80, suppPct: 0,  hasSupplement: false, overRda: false },
+        { name: "Potassium", label: "Sometimes detected",  foodPct: 32, suppPct: 0,  hasSupplement: false, overRda: false },
+        { name: "Fiber",     label: "Building pattern",    foodPct: 48, suppPct: 0,  hasSupplement: false, overRda: false },
+      ];
 
   const insightsTourSteps = [
     {
