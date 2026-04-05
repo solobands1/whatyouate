@@ -302,11 +302,11 @@ export default function SummaryScreen() {
         if (proTarget) {
           const gap = proTarget - avgWeekProtein;
           if (gap <= 0) {
-            lines.push(`Protein at ${avgWeekProtein}g, hitting the goal!`);
+            lines.push(`Averaging ${avgWeekProtein}g protein, hitting the goal!`);
           } else if (gap <= 15) {
-            lines.push(`Protein at ${avgWeekProtein}g, close to the ${proTarget}g goal.`);
+            lines.push(`Averaging ${avgWeekProtein}g protein, close to the ${proTarget}g goal.`);
           } else {
-            lines.push(`Protein at ${avgWeekProtein}g, ${gap}g short of the ${proTarget}g goal.`);
+            lines.push(`Averaging ${avgWeekProtein}g protein, ${gap}g short of the ${proTarget}g goal.`);
           }
         } else {
           lines.push(`Averaging ${avgWeekProtein}g protein.`);
