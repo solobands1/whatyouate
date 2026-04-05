@@ -27,7 +27,8 @@ export default function UpgradeModal() {
   const yearlySavings = Math.round((1 - yearlyCost / (monthlyCost * 12)) * 100);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-surface">
+    <div className="fixed inset-0 z-50 flex items-stretch justify-center bg-black/20">
+    <div className="flex w-full max-w-md flex-col bg-surface overflow-y-auto">
       {/* Close */}
       <div className="flex justify-end px-5 pt-10">
         <button
@@ -135,6 +136,7 @@ export default function UpgradeModal() {
           </button>
         </div>
       </div>
+    </div>
     </div>
   );
 }
