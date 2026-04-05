@@ -137,6 +137,11 @@ export default function SummaryScreen() {
     if (localStorage.getItem(`wya_demo_mode_${user.id}`) === "true") {
       setIsDemoMode(true);
     }
+    const handler = () => {
+      if (localStorage.getItem(`wya_demo_mode_${user.id}`) === "true") setIsDemoMode(true);
+    };
+    window.addEventListener("wya_demo_mode_on", handler);
+    return () => window.removeEventListener("wya_demo_mode_on", handler);
   }, [user]);
 
   const mountedRef = useRef(true);

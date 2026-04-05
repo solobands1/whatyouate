@@ -1130,6 +1130,7 @@ export default function HomeScreen() {
                 localStorage.setItem(`wya_walkthrough_active_${user.id}`, "true");
                 localStorage.setItem(`wya_walkthrough_stage_${user.id}`, "home");
                 setIsDemoMode(true);
+                window.dispatchEvent(new Event("wya_demo_mode_on"));
                 setShowTourGate(false);
                 setRunTour(true);
               }}
