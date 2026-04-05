@@ -11,9 +11,12 @@ export type NudgeType =
 
 export interface DailyNudgeSnapshot {
   dateKey: string;
+  dayOfWeek: string;
   calories: number;
   protein: number;
+  carbs: number;
   fat: number;
+  logged: boolean;
   hasWorkout: boolean;
   workoutMinutes?: number;
   workoutIntensity?: string;
@@ -33,6 +36,8 @@ export interface SmartNudgeContext {
   timeOfDay: "morning" | "afternoon" | "evening";
   recentFoods: string[];
   recentNudges: string[];
+  streak: number;
+  todayHasWorkout: boolean;
 }
 
 export interface NudgeData {
@@ -803,14 +808,21 @@ export function buildSmartNudgeContext(
       }
     });
 
-  const loggedDays = summarizeLoggedDays(meals, 7, false);
-  const last7Days: DailyNudgeSnapshot[] = loggedDays.map((d) => {
+  const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const allDays = summarizeWeek(meals, 7);
+  const last7Days: DailyNudgeSnapshot[] = allDays.map((d) => {
     const wk = workoutsByDay.get(d.dateKey);
+    const cal = Math.round((d.totals.calories_min + d.totals.calories_max) / 2);
+    const logged = cal > 0 || d.totals.protein_g_max > 0;
+    const date = new Date(d.dateKey + "T12:00:00");
     return {
       dateKey: d.dateKey,
-      calories: Math.round((d.totals.calories_min + d.totals.calories_max) / 2),
+      dayOfWeek: DOW[date.getDay()],
+      calories: cal,
       protein: Math.round((d.totals.protein_g_min + d.totals.protein_g_max) / 2),
+      carbs: Math.round((d.totals.carbs_g_min + d.totals.carbs_g_max) / 2),
       fat: Math.round((d.totals.fat_g_min + d.totals.fat_g_max) / 2),
+      logged,
       hasWorkout: !!wk,
       workoutMinutes: wk?.minutes,
       workoutIntensity: wk?.intensity,
@@ -824,6 +836,10 @@ export function buildSmartNudgeContext(
   const targetProtein = targets?.protein ?? null;
   const remainingCalories = targetCalories !== null ? Math.max(0, targetCalories - todayCalories) : null;
   const remainingProtein = targetProtein !== null ? Math.max(0, targetProtein - todayProtein) : null;
+
+  const todayK = dayKeyFromTs(Date.now());
+  const todayHasWorkout = workoutsByDay.has(todayK);
+  const streak = computeStreakFromMeals(meals);
 
   return {
     profile,
@@ -839,5 +855,7 @@ export function buildSmartNudgeContext(
     timeOfDay,
     recentFoods,
     recentNudges,
+    streak,
+    todayHasWorkout,
   };
 }

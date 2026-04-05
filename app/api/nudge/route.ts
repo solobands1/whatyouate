@@ -44,9 +44,10 @@ Rules:
 - Only reference numbers and patterns you can actually see in the data
 - CRITICAL: use all numbers exactly as provided — never round, approximate, or recalculate them. If the data says 58g protein remaining, say 58g, not ~60g or "around 60"
 - For today-specific nudges, prefer referencing the pre-calculated "remaining" values over the raw targets
+- Use day-of-week and workout context when it adds specificity (e.g. "you worked out today", "Wednesday tends to be lighter")
 - Be honest, direct, and specific — not generic
 - No em dashes (—). End with a period or exclamation mark.
-- No clichés: forbidden words/phrases: "crush it", "you've got this", "fresh start", "stay on track", "hit your goal", "keep it up", "build muscle"
+- No clichés: forbidden words/phrases: "crush it", "you've got this", "fresh start", "stay on track", "hit your goal", "keep it up", "build muscle", "well done", "great job", "amazing"
 - Don't repeat the same angle as recent nudges — recent nudges are shown as "type: message". Avoid the same type AND avoid the same thematic angle even under a different type
 - If timeOfDay is "morning": frame as intention. If "afternoon": note there's still time. If "evening": brief and reflective.
 - If nothing meaningful stands out, return null for message
@@ -91,10 +92,15 @@ function buildSmartPrompt(ctx: Record<string, unknown>): string {
 
   const last7 = ctx.last7Days as Array<Record<string, unknown>> | undefined;
   if (last7?.length) {
-    lines.push(`Last ${last7.length} days (date | kcal | protein | fat | workout). 0 values mean no meals were logged that day — not a fasted day:`);
+    lines.push(`Last 7 days (day | date | kcal | protein | carbs | fat | workout). Days marked "no log" were not logged:`);
     last7.forEach((d) => {
       const wk = d.hasWorkout ? ` | workout ${d.workoutMinutes ?? "?"}min ${d.workoutIntensity ?? ""}` : "";
-      lines.push(`  ${d.dateKey}: ${d.calories} kcal / ${d.protein}g protein / ${d.fat}g fat${wk}`);
+      const logged = d.logged as boolean;
+      if (!logged) {
+        lines.push(`  ${d.dayOfWeek} ${d.dateKey}: no log${wk}`);
+      } else {
+        lines.push(`  ${d.dayOfWeek} ${d.dateKey}: ${d.calories} kcal / ${d.protein}g protein / ${d.carbs}g carbs / ${d.fat}g fat${wk}`);
+      }
     });
   }
 
@@ -121,6 +127,13 @@ function buildSmartPrompt(ctx: Record<string, unknown>): string {
       lines.push(`Full targets for today: ${parts.join(" | ")}`);
     }
   }
+
+  const streak = ctx.streak as number | undefined;
+  const todayHasWorkout = ctx.todayHasWorkout as boolean | undefined;
+  const streakParts: string[] = [];
+  if (streak && streak > 1) streakParts.push(`${streak}-day logging streak`);
+  if (todayHasWorkout) streakParts.push("worked out today");
+  if (streakParts.length) lines.push(`Current: ${streakParts.join(", ")}`);
 
   const foods = ctx.recentFoods as string[] | undefined;
   if (foods?.length) {
@@ -181,9 +194,9 @@ export async function POST(req: Request) {
             "anthropic-version": "2023-06-01",
           },
           body: JSON.stringify({
-            model: "claude-haiku-4-5-20251001",
+            model: "claude-sonnet-4-6",
             max_tokens: 300,
-            temperature: 0.8,
+            temperature: 0.7,
             system: SMART_NUDGE_SYSTEM_PROMPT,
             messages: [{ role: "user", content: prompt }],
           }),
