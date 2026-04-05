@@ -69,6 +69,8 @@ export default function ProfileScreen() {
   const [multiSuppNutrients, setMultiSuppNutrients] = useState<Record<string, { dose: string; unit: string; pct: string; mode: "dose" | "pct" }>>({});
   const [editFirstName, setEditFirstName] = useState("");
   const [editLastName, setEditLastName] = useState("");
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -374,7 +376,6 @@ export default function ProfileScreen() {
   };
 
   const handleClear = async () => {
-    if (!confirm("Clear all data? This cannot be undone.")) return;
     await clearAllData(user.id);
     profileExistsRef.current = false;
     setFirstName("");
@@ -400,7 +401,6 @@ export default function ProfileScreen() {
   };
 
   const handleDeleteAccount = async () => {
-    if (!confirm("Delete your account and all data? This cannot be undone.")) return;
     if (!user) return;
     if (LOCAL_MODE) {
       await clearAllData(user.id);
@@ -1020,17 +1020,71 @@ export default function ProfileScreen() {
           <div className="mt-4 space-y-3">
             <button
               className="w-full rounded-xl border border-red-200/60 px-4 py-2.5 text-xs font-semibold text-red-400/80 transition active:opacity-60"
-              onClick={handleClear}
+              onClick={() => setShowClearConfirm(true)}
             >
               Clear all data and start fresh
             </button>
             <button
               className="w-full rounded-xl border border-red-200/60 px-4 py-2.5 text-xs font-semibold text-red-400/80 transition active:opacity-60"
-              onClick={handleDeleteAccount}
+              onClick={() => setShowDeleteConfirm(true)}
             >
               Delete account
             </button>
           </div>
+
+          {/* Clear data confirm */}
+          {showClearConfirm && (
+            <div className="fixed inset-0 z-50 flex items-end justify-center px-4 pb-6 sm:items-center sm:pb-0" onClick={() => setShowClearConfirm(false)}>
+              <div className="absolute inset-0 bg-black/30" />
+              <div className="relative w-full max-w-sm rounded-2xl bg-surface p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+                <h2 className="text-base font-semibold text-ink">Clear all data?</h2>
+                <p className="mt-1.5 text-sm text-muted/60">This will remove all your meals, profile, and history. This cannot be undone.</p>
+                <div className="mt-5 flex gap-3">
+                  <button
+                    type="button"
+                    className="flex-1 rounded-xl border border-ink/10 py-3 text-sm font-medium text-ink/60 transition active:opacity-60"
+                    onClick={() => setShowClearConfirm(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="flex-1 rounded-xl bg-red-500 py-3 text-sm font-semibold text-white transition active:opacity-80"
+                    onClick={() => { setShowClearConfirm(false); handleClear(); }}
+                  >
+                    Clear data
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Delete account confirm */}
+          {showDeleteConfirm && (
+            <div className="fixed inset-0 z-50 flex items-end justify-center px-4 pb-6 sm:items-center sm:pb-0" onClick={() => setShowDeleteConfirm(false)}>
+              <div className="absolute inset-0 bg-black/30" />
+              <div className="relative w-full max-w-sm rounded-2xl bg-surface p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+                <h2 className="text-base font-semibold text-ink">Delete account?</h2>
+                <p className="mt-1.5 text-sm text-muted/60">Your account and all data will be permanently deleted. This cannot be undone.</p>
+                <div className="mt-5 flex gap-3">
+                  <button
+                    type="button"
+                    className="flex-1 rounded-xl border border-ink/10 py-3 text-sm font-medium text-ink/60 transition active:opacity-60"
+                    onClick={() => setShowDeleteConfirm(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="flex-1 rounded-xl bg-red-500 py-3 text-sm font-semibold text-white transition active:opacity-80"
+                    onClick={() => { setShowDeleteConfirm(false); handleDeleteAccount(); }}
+                  >
+                    Delete account
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
           <p className="mt-5 text-center text-[11px] text-muted/40">
             <a href="/privacy" className="underline underline-offset-2 hover:text-muted/60">
               Privacy Policy and Terms of Use
