@@ -255,6 +255,7 @@ export function getQuickAddItems(): QuickAddItem[] {
     const key = entry.name.toLowerCase().trim();
     if (!key) continue;
     const existing = seen.get(key);
+    const combinedLogCount = (existing?.logCount ?? 0) + (entry.logCount ?? 0);
     if (!existing || entry.savedAt > existing.savedAt) {
       seen.set(key, {
         key,
@@ -263,8 +264,10 @@ export function getQuickAddItems(): QuickAddItem[] {
         ranges: entry.ranges,
         micronutrient_signals: entry.micronutrient_signals,
         savedAt: entry.savedAt,
-        logCount: entry.logCount ?? 0,
+        logCount: combinedLogCount,
       });
+    } else {
+      seen.set(key, { ...existing, logCount: combinedLogCount });
     }
   }
 
@@ -274,6 +277,7 @@ export function getQuickAddItems(): QuickAddItem[] {
     const key = entry.name.toLowerCase().trim();
     if (!key) continue;
     const existing = seen.get(key);
+    const combinedLogCount = (existing?.logCount ?? 0) + (entry.logCount ?? 0);
     if (!existing || entry.savedAt > existing.savedAt) {
       seen.set(key, {
         key,
@@ -287,15 +291,17 @@ export function getQuickAddItems(): QuickAddItem[] {
         brand: entry.brand,
         valuePer: entry.valuePer,
         savedAt: entry.savedAt,
-        logCount: entry.logCount ?? 0,
+        logCount: combinedLogCount,
       });
+    } else {
+      seen.set(key, { ...existing, logCount: combinedLogCount });
     }
   }
 
-  // Sort by log frequency first, then by most recently saved as tiebreaker; cap at 20
+  // Sort by log frequency first, then by most recently saved as tiebreaker; cap at 25
   return Array.from(seen.values()).sort((a, b) => {
     const countDiff = b.logCount - a.logCount;
     if (countDiff !== 0) return countDiff;
     return b.savedAt - a.savedAt;
-  }).slice(0, 20);
+  }).slice(0, 25);
 }
