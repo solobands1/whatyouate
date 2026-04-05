@@ -196,3 +196,20 @@ input, textarea, select {
 .animate-splash-breathe {
   animation: splashBreathe 1.8s ease-in-out infinite;
 }
+
+@keyframes logFlash {
+  0%   { opacity: 0; transform: translateY(2px); }
+  12%  { opacity: 1; transform: translateY(0); }
+  75%  { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(0); }
+}
+
+.animate-log-flash {
+  animation: logFlash 2.2s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-log-flash {
+    animation: none;
+  }
+}

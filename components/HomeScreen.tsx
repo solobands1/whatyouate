@@ -199,6 +199,9 @@ export default function HomeScreen() {
   const [quickAddAdding, setQuickAddAdding] = useState(false);
   const [quickAddDate, setQuickAddDate] = useState(todayDateStr);
   const [streakSaverDismissed, setStreakSaverDismissed] = useState(false);
+  const [recentlyLogged, setRecentlyLogged] = useState(false);
+  const prevDoneMealCountRef = useRef<number | null>(null);
+  const logFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const mountedRef = useRef(true);
   const recentSentinelRef = useRef<HTMLDivElement | null>(null);
@@ -673,8 +676,23 @@ export default function HomeScreen() {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
+      if (logFlashTimerRef.current) clearTimeout(logFlashTimerRef.current);
     };
   }, []);
+
+  // Flash "✓ Logged" on the Today card when a new meal finishes analyzing
+  useEffect(() => {
+    if (loadingData || isDemoMode) return;
+    const count = meals.meals.filter(
+      (m) => m.status === "done" && m.analysisJson?.source !== "supplement"
+    ).length;
+    if (prevDoneMealCountRef.current !== null && count > prevDoneMealCountRef.current) {
+      setRecentlyLogged(true);
+      if (logFlashTimerRef.current) clearTimeout(logFlashTimerRef.current);
+      logFlashTimerRef.current = setTimeout(() => setRecentlyLogged(false), 2200);
+    }
+    prevDoneMealCountRef.current = count;
+  }, [meals.meals, loadingData, isDemoMode]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -1398,7 +1416,7 @@ export default function HomeScreen() {
           <p className="mt-1 text-[13px] text-muted/70">Eat Confidently</p>
           {!loadingData && mealCount === 0 && !isDemoMode && (
             <p className="mt-3 text-[11px] text-muted/60">
-              All preview data will be replaced by real input once logging starts.
+              Take a photo of your first meal to get started.
             </p>
           )}
           {loadError && <p className="mt-2 text-[11px] text-muted/60">{loadError}</p>}
@@ -1409,7 +1427,7 @@ export default function HomeScreen() {
           <button
             type="button"
             onClick={openUpgradeModal}
-            className="mt-4 w-full rounded-xl bg-ink/5 px-4 py-2.5 text-left transition active:opacity-70"
+            className="mt-4 w-full rounded-xl border border-primary/15 bg-primary/[0.08] px-4 py-2.5 text-left transition active:opacity-70"
           >
             <div className="flex items-center justify-between">
               <span className="text-[12px] font-medium text-ink/60">
@@ -1429,11 +1447,11 @@ export default function HomeScreen() {
           <button
             type="button"
             onClick={openUpgradeModal}
-            className="mt-4 w-full rounded-xl bg-ink/5 px-4 py-2.5 text-left transition active:opacity-70"
+            className="mt-4 w-full rounded-xl border border-primary/25 bg-primary/10 px-4 py-2.5 text-left transition active:opacity-70"
           >
             <div className="flex items-center justify-between">
-              <span className="text-[12px] font-medium text-ink/60">Your free trial has ended</span>
-              <span className="text-[11px] text-primary/70 font-medium">Upgrade</span>
+              <span className="text-[12px] font-medium text-ink/60">Free trial ended</span>
+              <span className="text-[11px] text-primary font-semibold">Upgrade now →</span>
             </div>
           </button>
         )}
@@ -1441,7 +1459,7 @@ export default function HomeScreen() {
         {!loadingData && !isDemoMode && displayMeals.length >= 1 && (!profile || (profile.height === null && profile.weight === null && profile.age === null)) && (
           <Card className="mt-4 border border-primary/20 bg-primary/5">
             <div className="flex items-center justify-between gap-3">
-              <p className="text-sm text-ink/80">Complete your profile for accurate calorie targets.</p>
+              <p className="text-sm text-ink/80">Add your stats for a personalized calorie and protein target.</p>
               <Link href="/profile" className="shrink-0 text-xs font-semibold text-primary underline">
                 Set up
               </Link>
@@ -1491,7 +1509,12 @@ export default function HomeScreen() {
 
         <Card className="mt-4">
           <div className="flex items-center justify-between">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Today</p>
+            <div className="flex items-center gap-2">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Today</p>
+              {recentlyLogged && (
+                <span className="animate-log-flash text-[11px] font-semibold text-primary/80">✓ Logged</span>
+              )}
+            </div>
             {streak >= 1 && (() => {
               const todayMeals = meals.meals.filter(
                 (m) => m.analysisJson?.source !== "supplement" && m.status !== "failed" && dayKeyFromTs(m.ts) === todayKey()
