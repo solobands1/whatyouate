@@ -402,6 +402,9 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
 
   const gentleTargets = adjustTargetsForWorkouts(computeGentleTargets(meals, profile), workouts);
 
+  // Most recent logged day — used to suppress trend nudges when yesterday was on track
+  const mostRecentLoggedDay = loggedDays[loggedDays.length - 1];
+
   // ── TREND NUDGES (weekly pattern, one always shown) ──────────────────────────
 
   if (profile && dayCount >= 5 && mealCount >= 5 && avgWeekCalories && gentleTargets?.calories) {
@@ -413,7 +416,11 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
     }).length;
     const daysCalStr = daysCalorieLow > 1 ? `${daysCalorieLow} of the last 7 days` : "most days this week";
 
-    if (weekLow) {
+    // Suppress calorie_low if yesterday was at or above target — one good day shouldn't trigger a low nudge
+    const yesterdayCalories = mostRecentLoggedDay ? avgRangeMidpoint([mostRecentLoggedDay.totals.calories_min], [mostRecentLoggedDay.totals.calories_max]) : 0;
+    const yesterdayWasGood = yesterdayCalories >= gentleTargets.calories * 0.9;
+
+    if (weekLow && !yesterdayWasGood) {
       nudges.push({
         message: isMorning
           ? pickVariant([
@@ -458,7 +465,11 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
     }).length : 0;
     const daysProtStr = daysProteinLow > 1 ? `${daysProteinLow} of the last 7 days` : "most days recently";
 
-    if (target && avgWeekProtein < target * 0.7) {
+    // Suppress protein_low if yesterday was at or above target
+    const yesterdayProtein = mostRecentLoggedDay ? avgRangeMidpoint([mostRecentLoggedDay.totals.protein_g_min], [mostRecentLoggedDay.totals.protein_g_max]) : 0;
+    const yesterdayProteinWasGood = target ? yesterdayProtein >= target * 0.85 : false;
+
+    if (target && avgWeekProtein < target * 0.7 && !yesterdayProteinWasGood) {
       nudges.push({
         message: isMorning
           ? pickVariant([
@@ -477,7 +488,7 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
         priority: 3 + proteinBias,
         slot: "trend",
       });
-    } else if (target && avgWeekProtein < target * 0.85) {
+    } else if (target && avgWeekProtein < target * 0.85 && !yesterdayProteinWasGood) {
       nudges.push({
         message: isMorning
           ? pickVariant([
