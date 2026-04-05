@@ -87,7 +87,7 @@ function MacroRing({
   const ARC = 0.75 * C; // 270° worth of circumference
   const progress = target && value > 0 ? Math.min(1, value / target) : 0;
   const offset = ARC * (1 - (animate ? progress : 0));
-  const displayVal = value > 0 ? `${value}${unit}` : "·";
+  const displayVal = value > 0 ? `${value}${unit}` : "—";
   return (
     <div className="flex flex-col items-center">
       <div className="relative" style={{ width: SIZE, height: SIZE }}>
@@ -918,8 +918,8 @@ export default function SummaryScreen() {
                 className="relative flex gap-3"
               >
                 <div className="blur-sm pointer-events-none select-none flex gap-3">
-                  <MacroRing label="Carbs" value={42} unit="g" target={null} animate={false} />
-                  <MacroRing label="Fats" value={18} unit="g" target={null} animate={false} />
+                  <MacroRing label="Carbs" value={0} unit="g" target={null} animate={false} />
+                  <MacroRing label="Fats" value={0} unit="g" target={null} animate={false} />
                 </div>
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
                   <svg viewBox="0 0 24 24" className="h-5 w-5 text-ink/30" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
