@@ -217,6 +217,13 @@ export function markDailySuppsLoggedToday(userId: string): void {
   } catch {}
 }
 
+export function clearDailySuppsLoggedToday(userId: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem(dailySuppLoggedKey(userId));
+  } catch {}
+}
+
 // ── Quick Add ────────────────────────────────────────────────────────────────
 // Merges both caches into a deduplicated, sorted list for the Quick Add modal.
 

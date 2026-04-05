@@ -132,7 +132,7 @@ export default function SummaryScreen() {
   const [nudgeExpanded, setNudgeExpanded] = useState<Record<string, "why" | "what" | null>>({});
   const smartNudgeFetchedRef = useRef<Set<string>>(new Set());
   // { message, type, suggestions } from smart AI call, or null if AI said nothing, or undefined while loading
-  const [smartNudge, setSmartNudge] = useState<{ message: string; type: NudgeType; action?: string; suggestions?: string[] } | null | undefined>(undefined);
+  const [smartNudge, setSmartNudge] = useState<{ message: string; type: NudgeType; action?: string; suggestions?: string[]; generatedAt?: string } | null | undefined>(undefined);
   const [expandedHistoryNudge, setExpandedHistoryNudge] = useState<string | null>(null);
   const getAiSuggestions = (nudgeType: string): string[] | null => {
     if (typeof window === "undefined") return null;
@@ -501,7 +501,7 @@ export default function SummaryScreen() {
       return (h < 12 ? "morning" : h < 17 ? "afternoon" : "evening") === win;
     });
     if (existing) {
-      setSmartNudge({ message: existing.message, type: existing.type as NudgeType });
+      setSmartNudge({ message: existing.message, type: existing.type as NudgeType, generatedAt: existing.created_at ?? new Date().toISOString() });
       return;
     }
 
@@ -528,7 +528,7 @@ export default function SummaryScreen() {
           if (nudge.suggestions?.length) {
             localStorage.setItem(`wya_ai_nudge_${windowKey}_${nudge.type}_suggestions`, JSON.stringify(nudge.suggestions.slice(0, 3)));
           }
-          setSmartNudge({ message: nudge.message, type: nudge.type, action: nudge.action, suggestions: nudge.suggestions });
+          setSmartNudge({ message: nudge.message, type: nudge.type, action: nudge.action, suggestions: nudge.suggestions, generatedAt: new Date().toISOString() });
           if (user) {
             addNudge(user.id, nudge.type, nudge.message)
               .then(() => notifyNudgesUpdated())
@@ -1011,9 +1011,31 @@ export default function SummaryScreen() {
                   const behavioralChips = getNudgeBehavioralChips(nudge.type, goal);
                   const showFoodChips = nudge.type !== "workout_missing" && nudge.type !== "calorie_high" && nudge.type !== "on_track" && suggestions.length > 0;
                   const showChips = behavioralChips.length > 0 || showFoodChips;
+                  // Stale nudge check — show caught-up note if user has since hit target
+                  const nudgeTs = nudge.generatedAt ? new Date(nudge.generatedAt) : null;
+                  const nudgeTimeLabel = nudgeTs
+                    ? nudgeTs.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }).toLowerCase()
+                    : null;
+                  const todayCalAvg = (summaryMarkers.todayTotals.calories_min + summaryMarkers.todayTotals.calories_max) / 2;
+                  const todayProAvg = (summaryMarkers.todayTotals.protein_g_min + summaryMarkers.todayTotals.protein_g_max) / 2;
+                  const calTarget = summaryMarkers.gentleTargets?.calories ?? 0;
+                  const proTarget = summaryMarkers.gentleTargets?.protein ?? 0;
+                  const isCaughtUp =
+                    (nudge.type === "calorie_low" && calTarget > 0 && todayCalAvg >= calTarget * 0.9) ||
+                    ((nudge.type === "protein_low" || nudge.type === "protein_low_critical") && proTarget > 0 && todayProAvg >= proTarget * 0.85);
                   return (
                     <div className="rounded-xl border border-primary/60 bg-primary/5 px-4 py-3 space-y-2.5">
                       <p className="text-sm font-medium text-ink/90">{nudge.message}</p>
+                      {(nudgeTimeLabel || isCaughtUp) && (
+                        <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+                          {nudgeTimeLabel && (
+                            <span className="text-[11px] text-ink/35">· {nudgeTimeLabel}</span>
+                          )}
+                          {isCaughtUp && (
+                            <span className="text-[11px] text-primary/60 font-medium">Looks like you've caught up since then.</span>
+                          )}
+                        </div>
+                      )}
                       {(why || action || showChips) && (
                         <div className="flex flex-wrap gap-1.5">
                           {why && (

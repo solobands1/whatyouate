@@ -333,6 +333,12 @@ export default function LoginClient() {
                 >
                   {submitting ? "Creating account…" : "Create account"}
                 </button>
+                <p className="mt-3 text-center text-[11px] text-muted/50">
+                  By creating an account you agree to our{" "}
+                  <a href="/privacy" className="underline underline-offset-2 hover:text-muted/70">
+                    Privacy Policy
+                  </a>
+                </p>
               </div>
             </>
           )}

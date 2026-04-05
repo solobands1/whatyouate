@@ -16,7 +16,7 @@ import { formatApprox, formatDateShort, todayKey, dayKeyFromTs } from "../lib/ut
 import { supabase } from "../lib/supabaseClient";
 import "../lib/mealQueue";
 import BarcodeScannerOverlay from "./BarcodeScannerOverlay";
-import { getFoodCacheEntry, setFoodCacheEntry, deleteFoodCacheEntry, deleteFoodTextEntry, incrementFoodCacheLogCount, incrementFoodTextLogCount, getQuickAddItems, getDailySupplements, setDailySupplements, hasDailySuppsLoggedToday, markDailySuppsLoggedToday, type QuickAddItem } from "../lib/foodCache";
+import { getFoodCacheEntry, setFoodCacheEntry, deleteFoodCacheEntry, deleteFoodTextEntry, incrementFoodCacheLogCount, incrementFoodTextLogCount, getQuickAddItems, getDailySupplements, setDailySupplements, hasDailySuppsLoggedToday, markDailySuppsLoggedToday, clearDailySuppsLoggedToday, type QuickAddItem } from "../lib/foodCache";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
 import { useAuth } from "./AuthProvider";
@@ -204,6 +204,7 @@ export default function HomeScreen() {
   const nudgesLoadedRef = useRef(false);
   const savedThisSessionRef = useRef<Set<string>>(new Set());
   const dailySuppsAttemptedRef = useRef(false);
+  const [suppLogTrigger, setSuppLogTrigger] = useState(0);
 
   const onError = useCallback((msg: string) => setLoadError(msg), []);
 
@@ -343,10 +344,18 @@ export default function HomeScreen() {
     const { type, id } = pendingDelete;
     try {
       if (type === "meal") {
+        const deletedMeal = meals.meals.find((m) => m.id === id);
         await deleteMeal(id, user.id);
         meals.setMeals((prev) => prev.filter((m) => m.id !== id));
         meals.setEditingMeal(null);
         setEditRecents(false);
+        // If the deleted meal was a supplement entry, clear the daily guard
+        // so supplements are re-logged automatically
+        if (deletedMeal?.analysisJson?.source === "supplement") {
+          clearDailySuppsLoggedToday(user.id);
+          dailySuppsAttemptedRef.current = false;
+          setSuppLogTrigger((n) => n + 1);
+        }
       } else {
         await deleteWorkout(id, user.id);
         workout.setWorkouts((prev) => prev.filter((w) => w.id !== id));
@@ -677,7 +686,6 @@ export default function HomeScreen() {
     if (hasDailySuppsLoggedToday(user.id)) return;
     const supplements = getDailySupplements(user.id);
     if (!supplements.length) return;
-    markDailySuppsLoggedToday(user.id);
     (async () => {
       const allNutrients = supplements.flatMap((s) => matchSupplementNutrients(suppName(s)));
       const uniqueNutrients = [...new Set(allNutrients)];
@@ -707,13 +715,15 @@ export default function HomeScreen() {
           const midnight = new Date();
           midnight.setHours(0, 1, 0, 0);
           await updateMealTs(created.id, midnight.getTime());
+          // Only mark as logged after confirmed DB save
+          markDailySuppsLoggedToday(user.id);
         }
       } catch {
-        // silently fail — supplements are non-critical
+        // silently fail — supplements are non-critical; flag not set so next load retries
       }
       notifyMealsUpdated();
     })();
-  }, [user, loadingData]);
+  }, [user, loadingData, suppLogTrigger]);
 
   useEffect(() => {
     setEditRecents(false);

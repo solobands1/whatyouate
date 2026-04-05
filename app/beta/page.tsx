@@ -56,7 +56,7 @@ export default function BetaLandingPage() {
           </span>
         </h1>
         <p className="mt-2 text-sm text-muted/70">
-          Take photos, get nudges, improve.
+          Log meals, get nudges, improve!
         </p>
 
         <div className="mt-8 flex flex-col items-center">
