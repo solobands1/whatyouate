@@ -58,7 +58,9 @@ type RecentItem =
   | { type: "workout"; ts: number; workout: WorkoutSession };
 
 function dayCountFromMeals(meals: MealLog[]) {
-  const days = new Set(meals.map((meal) => dayKeyFromTs(meal.ts)));
+  const days = new Set(
+    meals.filter((m) => m.analysisJson?.source !== "supplement").map((meal) => dayKeyFromTs(meal.ts))
+  );
   return days.size;
 }
 
@@ -138,7 +140,7 @@ export function estimateMaintenance(profile: UserProfile): number | null {
 export function computeGentleTargets(meals: MealLog[], profile?: UserProfile) {
   if (!profile) return null;
   const dayCount = dayCountFromMeals(meals);
-  const mealCount = meals.length;
+  const mealCount = meals.filter((m) => m.analysisJson?.source !== "supplement").length;
   const goal = profile.goalDirection;
   const rawWeight = profile.weight ?? 0;
   const weight = rawWeight ? normalizeWeightToKg(rawWeight, profile.units) : 0;
@@ -238,7 +240,7 @@ export function computeHomeMarkers(meals: MealLog[], workouts: WorkoutSession[],
   const todayTotals = summarizeDay(meals);
   const weekSummary = summarizeWeek(meals, 7);
   const dayCount = dayCountFromMeals(meals);
-  const mealCount = meals.length;
+  const mealCount = meals.filter((m) => m.analysisJson?.source !== "supplement").length;
   const recent = computeRecent(meals, workouts);
 
   // Use logged-days-only averages so empty days don't deflate the numbers
@@ -275,7 +277,7 @@ export function computeSummaryMarkers(meals: MealLog[], workouts: WorkoutSession
   const weekSummary = summarizeWeek(meals, 7);
   const workoutSummary = summarizeWorkoutsWeek(workouts);
   const dayCount = dayCountFromMeals(meals);
-  const mealCount = meals.length;
+  const mealCount = meals.filter((m) => m.analysisJson?.source !== "supplement").length;
 
   // Use logged-days-only averages so empty days don't deflate the numbers
   const loggedDays = summarizeLoggedDays(meals, 7, true);
@@ -383,7 +385,7 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
   const todayCalMid = Math.round((todayTotals.calories_min + todayTotals.calories_max) / 2);
 
   const dayCount = dayCountFromMeals(meals);
-  const mealCount = meals.length;
+  const mealCount = meals.filter((m) => m.analysisJson?.source !== "supplement").length;
   const loggedDays = summarizeLoggedDays(meals, 7, true);
   const avgWeekCalories = avgRangeMidpoint(
     loggedDays.map((d) => d.totals.calories_min),

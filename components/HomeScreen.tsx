@@ -1456,7 +1456,7 @@ export default function HomeScreen() {
           </button>
         )}
 
-        {!loadingData && !isDemoMode && displayMeals.length >= 1 && (!profile || (profile.height === null && profile.weight === null && profile.age === null)) && (
+        {!loadingData && !isDemoMode && displayMeals.filter((m) => m.analysisJson?.source !== "supplement").length >= 1 && (!profile || (profile.height === null && profile.weight === null && profile.age === null)) && (
           <Card className="mt-4 border border-primary/20 bg-primary/5">
             <div className="flex items-center justify-between gap-3">
               <p className="text-sm text-ink/80">Add your stats for a personalized calorie and protein target.</p>
