@@ -1180,7 +1180,7 @@ export default function ProfileScreen() {
               <div>
                 <p className="text-sm font-semibold text-ink">Goal direction</p>
                 <p className="mt-2 text-sm text-muted/70">
-                  This sets a gentle direction for your ranges and nudges. It’s not a strict plan · just
+                  This sets a gentle direction for your ranges and nudges. It’s not a strict plan, just
                   a soft bias based on what you want. Everything is tuned to help improve nutrients and
                   how you feel over time while moving toward your direction.
                 </p>
@@ -1215,7 +1215,7 @@ export default function ProfileScreen() {
               <div>
                 <p className="text-sm font-semibold text-ink">Anything else?</p>
                 <p className="mt-2 text-sm text-muted/70">
-                  Use this to share anything that doesn't fit the other fields · like a specific focus area, a health condition, or how you typically eat. It helps keep nudges more aligned with your life.
+                  Use this to share anything that doesn't fit the other fields, like a specific focus area, a health condition, or how you typically eat. It helps keep nudges more aligned with your life.
                 </p>
               </div>
               <button

@@ -764,7 +764,7 @@ export default function HomeScreen() {
     const handler = (e: Event) => {
       const { mealId, rateLimited } = (e as CustomEvent<{ mealId: string; rateLimited: boolean }>).detail ?? {};
       if (rateLimited) {
-        setLoadError("Too many requests · please wait a moment before adding another photo.");
+        setLoadError("Too many requests. Please wait a moment before adding another photo.");
         return;
       }
       if (mealId) {
@@ -1220,7 +1220,7 @@ export default function HomeScreen() {
                     onClick={workout.handleStartWorkout}
                   >
                     <span className="text-sm font-semibold text-white">Start Workout</span>
-                    <span className="mt-0.5 text-xs text-white/70">Begin tracking time now</span>
+                    <span className="mt-0.5 text-xs text-white/70">Begin tracking time</span>
                   </button>
                   <button
                     type="button"
@@ -1719,9 +1719,9 @@ export default function HomeScreen() {
                       >
                         <span className="flex flex-col">
                           {meal.status === "processing" ? (
-                            isShimmer ? "Analyzing food…" : "Analysis failed · tap Edit to remove"
+                            isShimmer ? "Analyzing food…" : "Analysis failed · edit manually"
                           ) : meal.status === "failed" ? (
-                            "Analysis failed · tap Edit to remove"
+                            "Analysis failed · edit manually"
                           ) : (
                             <>
                               <span>
