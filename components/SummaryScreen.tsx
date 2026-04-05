@@ -876,7 +876,7 @@ export default function SummaryScreen() {
           const smartTargetsUnlocked = dayCount >= 7;
           const weeklyComparisonUnlocked = dayCount >= 10;
           const fullTrendsUnlocked = dayCount >= 14;
-          const milestones = [
+          const allMilestones = [
             { label: "First meal", sub: "", desc: "Log your first meal to get started.", unlocked: mealCount >= 1 },
             { label: "Nudges", sub: nudgesUnlocked ? "" : `${5 - mealCount} more meal${5 - mealCount !== 1 ? "s" : ""}`, desc: "Personalised suggestions based on what you've been eating.", unlocked: nudgesUnlocked },
             { label: "Patterns", sub: patternsUnlocked ? "" : `${Math.max(0, 5 - dayCount)} more day${Math.max(0, 5 - dayCount) !== 1 ? "s" : ""}`, desc: "See recurring habits and timing patterns across your week.", unlocked: patternsUnlocked },
@@ -884,6 +884,13 @@ export default function SummaryScreen() {
             { label: "Weekly compare", sub: weeklyComparisonUnlocked ? "" : `${10 - dayCount} more day${10 - dayCount !== 1 ? "s" : ""}`, desc: "Compare this week to last week to see how you're trending.", unlocked: weeklyComparisonUnlocked },
             { label: "Full trends", sub: fullTrendsUnlocked ? "" : `${14 - dayCount} more day${14 - dayCount !== 1 ? "s" : ""}`, desc: "Two weeks of data unlocks full macro and habit trend charts.", unlocked: fullTrendsUnlocked },
           ];
+          // Only show the countdown on the next locked milestone, not all future ones
+          let nextUnlockFound = false;
+          const milestones = allMilestones.map((m) => {
+            if (m.unlocked || !m.sub) return m;
+            if (!nextUnlockFound) { nextUnlockFound = true; return m; }
+            return { ...m, sub: "" };
+          });
           return (
             <UnlockTimeline milestones={milestones} />
           );
