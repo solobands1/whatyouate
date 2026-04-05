@@ -19,12 +19,12 @@ function markSessionReady(): void {
 
 export default function AuthGate({ children }: { children: ReactNode }) {
   const { loading: authLoading, user } = useAuth();
-  const { loading: dataLoading, nudgesLoaded } = useAppData();
+  const { loading: dataLoading } = useAppData();
 
   // Start as false so server and client agree on initial render — no hydration mismatch.
   const [ready, setReady] = useState(false);
 
-  const fullyLoaded = !authLoading && (!user || (!dataLoading && nudgesLoaded));
+  const fullyLoaded = !authLoading && (!user || !dataLoading);
 
   // On mount (client only): if this session already completed the splash, skip it immediately.
   useEffect(() => {
