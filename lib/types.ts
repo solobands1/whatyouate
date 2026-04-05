@@ -1,17 +1,22 @@
 export type Units = "metric" | "imperial";
 
+/** A nutrient entry within a multi-supplement */
+export type SupplementNutrient = { nutrient: string; dose: number; unit: string };
+
 /** A supplement entry. `name` is always present; dose + unit are optional.
+ *  Multi-supplements store their contents in `nutrients[]`.
  *  Legacy rows stored as plain strings are migrated on read. */
-export type SupplementEntry = string | { name: string; dose?: number; unit?: string };
+export type SupplementEntry = string | { name: string; dose?: number; unit?: string; nutrients?: SupplementNutrient[] };
 
 /** Extract the name string from a SupplementEntry. */
 export function suppName(entry: SupplementEntry): string {
   return typeof entry === "string" ? entry : entry.name;
 }
 
-/** Formatted label: "Vitamin D 2000 IU" or just "Vitamin D". */
+/** Formatted label: "Vitamin D 2000 IU", "Younited (multi)", or just "Vitamin D". */
 export function suppLabel(entry: SupplementEntry): string {
   if (typeof entry === "string") return entry;
+  if (entry.nutrients?.length) return `${entry.name} (${entry.nutrients.length} nutrients)`;
   if (entry.dose != null && entry.unit) return `${entry.name} ${entry.dose} ${entry.unit}`;
   if (entry.dose != null) return `${entry.name} ${entry.dose}`;
   return entry.name;

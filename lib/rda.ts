@@ -259,17 +259,11 @@ export function supplementToNutrient(
   const rdaUnit = NUTRIENT_UNITS[canonical];
   if (!rdaUnit) return null;
 
-  // Convert IU → mcg for Vitamin D (1 IU = 0.025 mcg)
-  // RDA table for Vitamin D uses IU, so no conversion needed
-  // For B12: user may enter mcg — matches directly
-  // For most: assume user enters in the same unit as RDA
   let converted = dose;
   const inputUnit = (unit ?? "").toLowerCase();
   if (canonical === "vitamin d" && rdaUnit === "IU") {
-    // Accept IU directly; if user enters mcg convert to IU (1mcg = 40 IU)
     if (inputUnit === "mcg") converted = dose * 40;
   } else if (canonical === "omega-3" && rdaUnit === "mg") {
-    // User might enter g; convert to mg
     if (inputUnit === "g") converted = dose * 1000;
   }
 

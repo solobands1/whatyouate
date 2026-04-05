@@ -202,6 +202,29 @@ export default function InsightsScreen() {
     const suppRatioByNutrient = new Map<string, number>();
     if (rda && profile?.dailySupplements?.length) {
       for (const entry of profile.dailySupplements) {
+        // Multi-supplement: iterate each nutrient entry directly
+        if (typeof entry !== "string" && entry.nutrients?.length) {
+          for (const n of entry.nutrients) {
+            // "ratio" unit: dose is already a 0–1 fraction of RDA (from % DV input)
+            if (n.unit === "ratio") {
+              suppRatioByNutrient.set(
+                n.nutrient,
+                (suppRatioByNutrient.get(n.nutrient) ?? 0) + n.dose
+              );
+              continue;
+            }
+            const mapped = supplementToNutrient(n.nutrient, n.dose, n.unit);
+            if (!mapped) continue;
+            const rdaVal = rda[mapped.nutrient];
+            if (!rdaVal) continue;
+            suppRatioByNutrient.set(
+              mapped.nutrient,
+              (suppRatioByNutrient.get(mapped.nutrient) ?? 0) + mapped.doseInRdaUnit / rdaVal
+            );
+          }
+          continue;
+        }
+        // Single-nutrient supplement
         const name = suppName(entry);
         const dose = typeof entry === "string" ? undefined : entry.dose;
         const unit = typeof entry === "string" ? undefined : entry.unit;

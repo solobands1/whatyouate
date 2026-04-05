@@ -4,9 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Joyride, { STATUS, CallBackProps, type Step } from "react-joyride";
 import { notifyProfileUpdated } from "../lib/dataEvents";
-import type { ActivityLevel, GoalDirection, SupplementEntry, Units, UserProfile } from "../lib/types";
+import type { ActivityLevel, GoalDirection, SupplementEntry, SupplementNutrient, Units, UserProfile } from "../lib/types";
 import { suppLabel, suppName } from "../lib/types";
-import { matchSupplementNutrients } from "../lib/rda";
+import { matchSupplementNutrients, NUTRIENT_UNITS, NUTRIENT_DISPLAY_NAMES } from "../lib/rda";
 import { clearAllData, getProfile, saveProfile, saveDailySupplements, LOCAL_MODE } from "../lib/supabaseDb";
 import { getDailySupplements, setDailySupplements } from "../lib/foodCache";
 import { supabase } from "../lib/supabaseClient";
@@ -64,6 +64,9 @@ export default function ProfileScreen() {
   const [suppMatchHint, setSuppMatchHint] = useState<string | null>(null);
   const [suppLookingUp, setSuppLookingUp] = useState(false);
   const suppLookupTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [showMultiSuppModal, setShowMultiSuppModal] = useState(false);
+  const [multiSuppName, setMultiSuppName] = useState("");
+  const [multiSuppNutrients, setMultiSuppNutrients] = useState<Record<string, { dose: string; unit: string; pct: string; mode: "dose" | "pct" }>>({});
   const [editFirstName, setEditFirstName] = useState("");
   const [editLastName, setEditLastName] = useState("");
 
@@ -921,9 +924,24 @@ export default function ProfileScreen() {
                 }}
               />
               {(suppMatchHint || suppLookingUp) && (
-                <p className={`-mt-0.5 text-[11px] ${suppLookingUp ? "text-muted/40" : suppMatchHint?.startsWith("Tracks") ? "text-primary/70" : "text-muted/50"}`}>
-                  {suppLookingUp ? "Looking up dose..." : suppMatchHint}
-                </p>
+                <div className="-mt-0.5 flex items-center gap-2">
+                  <p className={`text-[11px] ${suppLookingUp ? "text-muted/40" : suppMatchHint?.startsWith("Tracks") ? "text-primary/70" : "text-muted/50"}`}>
+                    {suppLookingUp ? "Looking up..." : suppMatchHint}
+                  </p>
+                  {!suppLookingUp && suppMatchHint === "Not recognized for tracking" && (
+                    <button
+                      type="button"
+                      className="text-[11px] font-semibold text-primary/80 underline"
+                      onClick={() => {
+                        setMultiSuppName(newSuppInput.trim());
+                        setMultiSuppNutrients({});
+                        setShowMultiSuppModal(true);
+                      }}
+                    >
+                      Add nutrients manually
+                    </button>
+                  )}
+                </div>
               )}
               <div className="flex gap-2">
                 <input
@@ -1236,6 +1254,136 @@ export default function ProfileScreen() {
         <div className="fixed inset-x-0 bottom-6 z-50 flex justify-center px-5">
           <div className="rounded-full bg-ink px-4 py-2 text-xs font-semibold text-white shadow-lg">
             Saved
+          </div>
+        </div>
+      )}
+
+      {showMultiSuppModal && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/30 px-0 sm:items-center sm:px-5">
+          <div className="w-full max-w-sm rounded-t-2xl bg-white p-6 shadow-xl sm:rounded-2xl">
+            <h2 className="text-base font-semibold text-ink">{multiSuppName || "Supplement"}</h2>
+            <p className="mt-1 text-xs text-muted/60">Tap a nutrient to enter the amount from the label.</p>
+            <div className="mt-4 space-y-2 max-h-[55vh] overflow-y-auto">
+              {Object.entries(NUTRIENT_DISPLAY_NAMES).map(([key, displayName]) => {
+                const entry = multiSuppNutrients[key];
+                const isOpen = !!entry;
+                const defaultUnit = NUTRIENT_UNITS[key] ?? "mg";
+                return (
+                  <div key={key} className="rounded-xl border border-ink/10 overflow-hidden">
+                    <button
+                      type="button"
+                      className={`flex w-full items-center justify-between px-4 py-3 text-left transition ${isOpen ? "bg-primary/5" : "bg-white hover:bg-ink/5"}`}
+                      onClick={() => {
+                        setMultiSuppNutrients((prev) => {
+                          if (prev[key]) {
+                            const next = { ...prev };
+                            delete next[key];
+                            return next;
+                          }
+                          return { ...prev, [key]: { dose: "", unit: defaultUnit, pct: "", mode: "dose" as const } };
+                        });
+                      }}
+                    >
+                      <span className="text-sm font-medium text-ink/80">{displayName}</span>
+                      <span className={`text-xs font-semibold ${isOpen ? "text-primary/70" : "text-ink/30"}`}>
+                        {isOpen ? (entry.dose || entry.pct ? `${entry.mode === "pct" ? entry.pct + "% DV" : entry.dose + " " + entry.unit}` : "tap to set") : "+"}
+                      </span>
+                    </button>
+                    {isOpen && (
+                      <div className="border-t border-ink/5 px-4 py-3 space-y-2">
+                        <div className="flex gap-2 text-[11px] font-semibold">
+                          <button
+                            type="button"
+                            className={`rounded-full px-3 py-1 transition ${entry.mode === "dose" ? "bg-primary/15 text-primary/80" : "bg-ink/5 text-ink/50"}`}
+                            onClick={() => setMultiSuppNutrients((prev) => ({ ...prev, [key]: { ...prev[key], mode: "dose" } }))}
+                          >
+                            Dose
+                          </button>
+                          <button
+                            type="button"
+                            className={`rounded-full px-3 py-1 transition ${entry.mode === "pct" ? "bg-primary/15 text-primary/80" : "bg-ink/5 text-ink/50"}`}
+                            onClick={() => setMultiSuppNutrients((prev) => ({ ...prev, [key]: { ...prev[key], mode: "pct" } }))}
+                          >
+                            % Daily Value
+                          </button>
+                        </div>
+                        {entry.mode === "dose" ? (
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              inputMode="decimal"
+                              placeholder="Amount"
+                              className="min-w-0 flex-1 rounded-xl border border-ink/10 px-3 py-2 text-sm"
+                              value={entry.dose}
+                              onChange={(e) => setMultiSuppNutrients((prev) => ({ ...prev, [key]: { ...prev[key], dose: e.target.value } }))}
+                            />
+                            <select
+                              className="rounded-full border border-ink/10 bg-white px-3 py-2 text-sm text-ink/70"
+                              value={entry.unit}
+                              onChange={(e) => setMultiSuppNutrients((prev) => ({ ...prev, [key]: { ...prev[key], unit: e.target.value } }))}
+                            >
+                              {["mg", "mcg", "IU", "g", "mL"].map((u) => (
+                                <option key={u} value={u}>{u}</option>
+                              ))}
+                            </select>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              inputMode="decimal"
+                              placeholder="% DV"
+                              className="w-24 rounded-xl border border-ink/10 px-3 py-2 text-sm"
+                              value={entry.pct}
+                              onChange={(e) => setMultiSuppNutrients((prev) => ({ ...prev, [key]: { ...prev[key], pct: e.target.value } }))}
+                            />
+                            <span className="text-sm text-muted/60">% of daily value</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-5 flex gap-3">
+              <button
+                type="button"
+                className="flex-1 rounded-xl border border-ink/10 px-4 py-3 text-sm font-semibold text-ink/70 transition hover:bg-ink/5"
+                onClick={() => { setShowMultiSuppModal(false); setMultiSuppNutrients({}); }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="flex-1 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white transition hover:bg-primary/90"
+                onClick={() => {
+                  const name = multiSuppName;
+                  if (!name) return;
+                  // Build nutrients array from filled entries
+                  const nutrients: SupplementNutrient[] = Object.entries(multiSuppNutrients)
+                    .filter(([, v]) => v.mode === "dose" ? parseFloat(v.dose) > 0 : parseFloat(v.pct) > 0)
+                    .map(([key, v]) => {
+                      if (v.mode === "pct") {
+                        // Convert % DV to absolute dose using RDA as reference
+                        const pct = parseFloat(v.pct) / 100;
+                        return { nutrient: key, dose: pct, unit: "ratio" };
+                      }
+                      return { nutrient: key, dose: parseFloat(v.dose), unit: v.unit };
+                    });
+                  const entry: SupplementEntry = nutrients.length > 0
+                    ? { name, nutrients }
+                    : name;
+                  const updated = [...dailySupplements, entry];
+                  setDailySupplementsState(updated);
+                  if (user) { setDailySupplements(user.id, updated); saveDailySupplements(user.id, updated).then(() => notifyProfileUpdated()).catch(() => {}); }
+                  setNewSuppInput(""); setSuppMatchHint(null);
+                  setShowMultiSuppModal(false); setMultiSuppNutrients({});
+                }}
+              >
+                Add supplement
+              </button>
+            </div>
           </div>
         </div>
       )}
