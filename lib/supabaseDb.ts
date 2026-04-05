@@ -412,6 +412,12 @@ export async function listMeals(userId: string, limit = 50) {
   return result;
 }
 
+export async function markMealFailed(id: string): Promise<void> {
+  if (useMemory) return;
+  await supabase.from("meals").update({ status: "failed" }).eq("id", id);
+  mealsCache.clear();
+}
+
 export async function updateMealTs(id: string, ts: number) {
   if (useMemory) {
     ensureLocalLoaded();

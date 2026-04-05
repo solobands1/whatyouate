@@ -1626,7 +1626,7 @@ export default function HomeScreen() {
                       >
                         <span className="flex flex-col">
                           {meal.status === "processing" ? (
-                            "Analyzing food…"
+                            isShimmer ? "Analyzing food…" : "Analysis failed · tap Edit to remove"
                           ) : meal.status === "failed" ? (
                             "Analysis failed · tap Edit to remove"
                           ) : (
