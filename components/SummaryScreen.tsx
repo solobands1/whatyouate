@@ -1138,8 +1138,20 @@ export default function SummaryScreen() {
                   <p className="text-sm text-ink/50">Nothing to say yet. Keep logging and when something useful comes up, it'll appear here.</p>
                 </div>
               )}
-              {/* Past nudges • flat date-grouped scroll, mirrors HomeScreen feed */}
-              {historyGroups.slice(0, visibleNudgeGroupCount).map((group) => (
+              {/* Past nudges — hidden for expired free users */}
+              {trial.isFree && historyGroups.length > 0 && (
+                <button
+                  type="button"
+                  onClick={openUpgradeModal}
+                  className="mt-1 w-full rounded-lg bg-ink/5 px-3 py-2.5 text-left transition active:opacity-70"
+                >
+                  <p className="text-xs text-ink/50">
+                    {historyGroups.reduce((n, g) => n + g.items.length, 0)} previous nudges are locked.{" "}
+                    <span className="font-semibold text-primary/70">Upgrade to read.</span>
+                  </p>
+                </button>
+              )}
+              {!trial.isFree && historyGroups.slice(0, visibleNudgeGroupCount).map((group) => (
                 <div key={group.label} className="space-y-1.5">
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/50">{group.label}</p>
                   {group.items.map((nudge) => {
@@ -1178,7 +1190,7 @@ export default function SummaryScreen() {
                   })}
                 </div>
               ))}
-              {visibleNudgeGroupCount < historyGroups.length && (
+              {!trial.isFree && visibleNudgeGroupCount < historyGroups.length && (
                 <button
                   type="button"
                   className="mt-1 text-[11px] font-semibold text-ink/50 underline transition active:opacity-50"
