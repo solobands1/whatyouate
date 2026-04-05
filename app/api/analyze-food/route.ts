@@ -109,7 +109,9 @@ async function analyzeWithAnthropic(imageBase64: string, model: string, apiKey: 
     });
 
     if (!response.ok) {
-      throw new Error("Anthropic request failed");
+      const errBody = await response.text().catch(() => "(unreadable)");
+      console.error("[analyze-food] Anthropic error", response.status, errBody);
+      throw new Error(`Anthropic request failed: ${response.status}`);
     }
 
     const data = await response.json();
@@ -595,7 +597,8 @@ export async function POST(req: Request) {
       new Promise<void>((resolve) => setTimeout(resolve, 4000))
     ]);
     return NextResponse.json({ analysis });
-  } catch {
+  } catch (err) {
+    console.error("[analyze-food] Unhandled error:", err);
     return NextResponse.json({ error: "Analysis failed" }, { status: 500 });
   }
 }
