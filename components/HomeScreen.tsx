@@ -1062,7 +1062,7 @@ export default function HomeScreen() {
       return;
     }
     if (data.type === "step:after" && data.index === steps.length - 1) {
-      clearDemo();
+      // Keep demo mode ON — SummaryScreen needs it to show example data during its tour
       localStorage.setItem(activeKey, "true");
       localStorage.setItem(stageKey, "summary");
       setRunTour(false);

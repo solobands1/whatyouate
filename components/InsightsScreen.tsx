@@ -72,6 +72,7 @@ export default function InsightsScreen() {
   const [barsReady, setBarsReady] = useState(false);
   const mountedRef = useRef(true);
   const [runInsightsTour, setRunInsightsTour] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(false);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -97,6 +98,7 @@ export default function InsightsScreen() {
     const active = localStorage.getItem(`wya_walkthrough_active_${user.id}`) === "true";
     const stage = localStorage.getItem(`wya_walkthrough_stage_${user.id}`);
     if (active && stage === "insights") {
+      setIsDemoMode(true);
       const timer = window.setTimeout(() => setRunInsightsTour(true), 400);
       return () => window.clearTimeout(timer);
     }
@@ -386,10 +388,10 @@ export default function InsightsScreen() {
   }, [sparklineData, gentleTargets]);
 
   const gentleTargetsDisplay = gentleTargets;
-  const displayAvgCalories = hasEnoughData ? `${avgCalories}` : "—";
-  const displayAvgProtein = hasEnoughData ? `${avgProtein}g` : "—";
-  const displayAvgCarbs = hasEnoughData ? `${avgCarbs}g` : "—";
-  const displayAvgFat = hasEnoughData ? `${avgFat}g` : "—";
+  const displayAvgCalories = hasEnoughData ? `${avgCalories}` : isDemoMode ? "1,840" : "—";
+  const displayAvgProtein = hasEnoughData ? `${avgProtein}g` : isDemoMode ? "148g" : "—";
+  const displayAvgCarbs = hasEnoughData ? `${avgCarbs}g` : isDemoMode ? "180g" : "—";
+  const displayAvgFat = hasEnoughData ? `${avgFat}g` : isDemoMode ? "62g" : "—";
   const displayEnergyPattern = hasEnoughData ? energyPattern : "Moderate intake pattern";
   const displayProteinPattern = hasEnoughData ? proteinPattern : "Moderate protein pattern";
   const displayFatPattern = hasEnoughData ? fatPattern : "Moderate fat pattern";
@@ -454,6 +456,8 @@ export default function InsightsScreen() {
   const handleInsightsTour = (data: CallBackProps) => {
     if (!user) return;
     if (data.status === STATUS.SKIPPED) {
+      localStorage.removeItem(`wya_demo_mode_${user.id}`);
+      setIsDemoMode(false);
       localStorage.setItem(`wya_walkthrough_${user.id}`, "true");
       localStorage.removeItem(`wya_walkthrough_active_${user.id}`);
       localStorage.removeItem(`wya_walkthrough_stage_${user.id}`);
@@ -461,6 +465,8 @@ export default function InsightsScreen() {
       return;
     }
     if (data.type === "step:after" && data.index === insightsTourSteps.length - 1) {
+      localStorage.removeItem(`wya_demo_mode_${user.id}`);
+      setIsDemoMode(false);
       localStorage.setItem(`wya_walkthrough_${user.id}`, "true");
       localStorage.removeItem(`wya_walkthrough_active_${user.id}`);
       localStorage.removeItem(`wya_walkthrough_stage_${user.id}`);
@@ -517,12 +523,12 @@ export default function InsightsScreen() {
           }
         }}
       />
-      <div className={`mx-auto flex min-h-screen max-w-md flex-col px-5 pb-24 pt-7 ${trial.isFree ? "blur-sm pointer-events-none select-none" : ""}`}>
+      <div className={`mx-auto flex min-h-screen max-w-md flex-col px-5 pb-24 pt-7 ${trial.isFree && !isDemoMode ? "blur-sm pointer-events-none select-none" : ""}`}>
         <header className="mb-6" data-tour="insights-header">
           <div>
             <h1 className="text-2xl font-semibold text-ink">Patterns</h1>
             <p className="mt-1 text-sm text-muted/70">Longer-term trends from your logged meals</p>
-            {!hasEnoughData && (
+            {!hasEnoughData && !isDemoMode && (
               <div className="mt-2 inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] text-amber-700">
                 Real data appears after a few more meals
               </div>
@@ -546,7 +552,7 @@ export default function InsightsScreen() {
             </div>
             <p className="text-[11px] uppercase tracking-wide text-muted/50">Avg trend</p>
           </div>
-          <div className={`mt-5 flex items-baseline justify-between${!hasEnoughData ? " opacity-50" : ""}`}>
+          <div className={`mt-5 flex items-baseline justify-between${!hasEnoughData && !isDemoMode ? " opacity-50" : ""}`}>
             <div>
               <p className="text-[11px] uppercase tracking-wide text-muted/60">Calories</p>
               <p className="mt-1 text-xl font-semibold">{displayAvgCalories}</p>

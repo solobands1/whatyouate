@@ -191,6 +191,7 @@ export default function SummaryScreen() {
     const active = localStorage.getItem(`wya_walkthrough_active_${user.id}`) === "true";
     const stage = localStorage.getItem(`wya_walkthrough_stage_${user.id}`);
     if (active && stage === "summary") {
+      setIsDemoMode(true);
       const timer = window.setTimeout(() => setRunSummaryTour(true), 400);
       return () => window.clearTimeout(timer);
     }
@@ -455,6 +456,8 @@ export default function SummaryScreen() {
   const handleSummaryTour = (data: CallBackProps) => {
     if (!user) return;
     if (data.status === STATUS.SKIPPED) {
+      localStorage.removeItem(`wya_demo_mode_${user.id}`);
+      setIsDemoMode(false);
       localStorage.setItem(`wya_walkthrough_${user.id}`, "true");
       localStorage.removeItem(`wya_walkthrough_active_${user.id}`);
       localStorage.removeItem(`wya_walkthrough_stage_${user.id}`);
