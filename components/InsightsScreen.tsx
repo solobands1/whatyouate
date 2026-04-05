@@ -513,29 +513,6 @@ export default function InsightsScreen() {
           }
         }}
       />
-      {/* Paywall overlay for expired trial — absolute so BottomNav remains clickable */}
-      {trial.isFree && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center px-8 text-center" style={{ bottom: "73px" }}>
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-ink/8 mb-5">
-            <svg viewBox="0 0 24 24" className="h-7 w-7 text-ink/40" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="11" width="18" height="11" rx="2" />
-              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-            </svg>
-          </div>
-          <p className="text-base font-semibold text-ink">Your patterns are ready</p>
-          <p className="mt-2 text-sm text-muted/70 leading-relaxed max-w-xs">
-            Upgrade to unlock your micronutrient trends, weekly averages, and what your body might be missing.
-          </p>
-          <button
-            type="button"
-            onClick={openUpgradeModal}
-            className="mt-6 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white transition active:opacity-80"
-          >
-            Unlock insights
-          </button>
-        </div>
-      )}
-
       <div className={`mx-auto flex min-h-screen max-w-md flex-col px-5 pb-24 pt-7 ${trial.isFree ? "blur-sm pointer-events-none select-none" : ""}`}>
         <header className="mb-6" data-tour="insights-header">
           <div>
@@ -716,6 +693,29 @@ export default function InsightsScreen() {
           </div>
         </Card>
       </div>
+
+      {/* Paywall overlay — fixed but stops above the nav so nav stays clickable */}
+      {trial.isFree && (
+        <div className="fixed inset-x-0 top-0 z-20 flex flex-col items-center justify-center px-8 text-center" style={{ bottom: "73px" }}>
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-ink/8 mb-5">
+            <svg viewBox="0 0 24 24" className="h-7 w-7 text-ink/40" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+          </div>
+          <p className="text-base font-semibold text-ink">Your patterns are ready</p>
+          <p className="mt-2 text-sm text-muted/70 leading-relaxed max-w-xs">
+            Upgrade to unlock your micronutrient trends, weekly averages, and what your body might be missing.
+          </p>
+          <button
+            type="button"
+            onClick={openUpgradeModal}
+            className="mt-6 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white transition active:opacity-80"
+          >
+            Unlock insights
+          </button>
+        </div>
+      )}
 
       <BottomNav current="patterns" />
 
