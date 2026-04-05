@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTrialStatus } from "../hooks/useTrialStatus";
+import { useAppData } from "./AppDataProvider";
+import { hasEnoughDataForPatterns } from "../lib/trial";
 
 function checkUnseen() {
   const nudgeTs = parseInt(localStorage.getItem("wya_nudge_ts") ?? "0");
@@ -12,6 +15,10 @@ function checkUnseen() {
 export default function BottomNav({ current }: { current: "home" | "summary" | "patterns" | "none" }) {
   const [hasUnseenNudge, setHasUnseenNudge] = useState(false);
   const router = useRouter();
+  const trial = useTrialStatus();
+  const { meals } = useAppData();
+
+  const showPatternsDot = !trial.isPro && hasEnoughDataForPatterns(meals);
 
   useEffect(() => {
     setHasUnseenNudge(checkUnseen());
@@ -22,6 +29,7 @@ export default function BottomNav({ current }: { current: "home" | "summary" | "
 
   const item = (href: string, label: string, key: string) => {
     const showBell = key === "summary" && hasUnseenNudge;
+    const showPulse = key === "patterns" && showPatternsDot;
     const isActive = current === key;
     return (
       <button
@@ -35,7 +43,13 @@ export default function BottomNav({ current }: { current: "home" | "summary" | "
       >
         {label}
         {showBell && (
-          <span className="absolute right-2 top-1.5 flex h-2 w-2 items-center justify-center rounded-full bg-primary" />
+          <span className="absolute right-2 top-1.5 h-2 w-2 rounded-full bg-primary" />
+        )}
+        {showPulse && (
+          <span className="absolute right-2 top-1.5 flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+          </span>
         )}
       </button>
     );

@@ -30,6 +30,8 @@ import {
   updateMealTs,
 } from "../lib/supabaseDb";
 import { computeHomeMarkers, computeNudges, computeRecent } from "../lib/digestEngine";
+import { useTrialStatus } from "../hooks/useTrialStatus";
+import { openUpgradeModal } from "./UpgradeModal";
 import { safeFallbackAnalysis } from "../lib/ai/schema";
 import { useWorkout, WORKOUT_TYPE_OPTIONS } from "../hooks/useWorkout";
 import { useMeals } from "../hooks/useMeals";
@@ -210,6 +212,7 @@ export default function HomeScreen() {
 
   const workout = useWorkout(user, onError, setEditRecents, []);
   const meals = useMeals(user, onError, setEditRecents, []);
+  const trial = useTrialStatus();
 
   const handleOpenQuickAdd = () => {
     setQuickAddItems(getQuickAddItems());
@@ -1370,6 +1373,28 @@ export default function HomeScreen() {
           )}
           {loadError && <p className="mt-2 text-[11px] text-muted/60">{loadError}</p>}
         </header>
+
+        {/* Trial progress banner */}
+        {trial.isTrialActive && !isDemoMode && (
+          <button
+            type="button"
+            onClick={openUpgradeModal}
+            className="mt-4 w-full rounded-xl bg-ink/5 px-4 py-2.5 text-left transition active:opacity-70"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[12px] font-medium text-ink/60">
+                Day {trial.currentDay} of 7 free
+              </span>
+              <span className="text-[11px] text-primary/70 font-medium">See plans</span>
+            </div>
+            <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-ink/10">
+              <div
+                className="h-full rounded-full bg-primary/50 transition-all"
+                style={{ width: `${(trial.currentDay / 7) * 100}%` }}
+              />
+            </div>
+          </button>
+        )}
 
         {!loadingData && !isDemoMode && displayMeals.length >= 1 && (!profile || (profile.height === null && profile.weight === null && profile.age === null)) && (
           <Card className="mt-4 border border-primary/20 bg-primary/5">

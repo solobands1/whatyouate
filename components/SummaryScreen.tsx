@@ -11,6 +11,8 @@ import { useAppData } from "./AppDataProvider";
 import { addNudge, pruneNudges } from "../lib/supabaseDb";
 import { notifyNudgesUpdated } from "../lib/dataEvents";
 import { buildSmartNudgeContext, computeNudges, computeSummaryMarkers, type ComputedNudge, type NudgeType } from "../lib/digestEngine";
+import { useTrialStatus } from "../hooks/useTrialStatus";
+import { openUpgradeModal } from "./UpgradeModal";
 
 
 type MilestoneItem = { label: string; sub: string; desc: string; unlocked: boolean };
@@ -124,6 +126,7 @@ export default function SummaryScreen() {
   const router = useRouter();
   const { user, loading } = useAuth();
   const { profile, meals, workouts, nudges, nudgesLoaded, loading: loadingData } = useAppData();
+  const trial = useTrialStatus();
   const [hydrated, setHydrated] = useState(false);
 
   const mountedRef = useRef(true);
@@ -483,6 +486,13 @@ export default function SummaryScreen() {
   useEffect(() => {
     if (!profile || !nudgesLoaded) return;
     if (meals.length < 5) { setSmartNudge(null); return; }
+    // Don't make new AI calls for expired free users — use last saved nudge or null
+    if (trial.isFree) {
+      const last = nudges[0];
+      if (last) setSmartNudge({ message: last.message, type: last.type as NudgeType, generatedAt: last.created_at });
+      else setSmartNudge(null);
+      return;
+    }
 
     const hour = new Date().getHours();
     const win = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
@@ -1001,6 +1011,22 @@ export default function SummaryScreen() {
                 <div className="rounded-xl border border-ink/10 bg-ink/5 px-4 py-3 space-y-2">
                   <div className="h-3.5 w-3/4 animate-pulse rounded bg-ink/10" />
                   <div className="h-3 w-1/2 animate-pulse rounded bg-ink/8" />
+                </div>
+              ) : smartNudge && trial.isFree ? (
+                /* Expired trial — show teaser with blur */
+                <div className="relative overflow-hidden rounded-xl border border-primary/30 bg-primary/5 px-4 py-3">
+                  <p className="text-sm font-medium text-ink/90 line-clamp-1">
+                    {smartNudge.message.slice(0, 48)}{smartNudge.message.length > 48 ? "..." : ""}
+                  </p>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-surface/80 backdrop-blur-[3px]">
+                    <button
+                      type="button"
+                      onClick={openUpgradeModal}
+                      className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition active:opacity-80"
+                    >
+                      Unlock to read
+                    </button>
+                  </div>
                 </div>
               ) : smartNudge ? (
                 (() => {

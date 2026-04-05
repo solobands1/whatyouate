@@ -12,6 +12,10 @@ import { useAppData } from "./AppDataProvider";
 import { dayKeyFromTs } from "../lib/utils";
 import { getRda, supplementToNutrient } from "../lib/rda";
 import { suppName } from "../lib/types";
+import { useTrialStatus } from "../hooks/useTrialStatus";
+import { openUpgradeModal } from "./UpgradeModal";
+import { triggerValueMoment } from "./ValueMomentSheet";
+import { hasEnoughDataForPatterns, countLoggedDays } from "../lib/trial";
 
 const INSIGHT_NUTRIENTS = [
   "Iron",
@@ -63,6 +67,7 @@ export default function InsightsScreen() {
   const { user, loading } = useAuth();
   const { profile: ctxProfile, meals, loading: loadingData } = useAppData();
   const profile = ctxProfile ?? undefined;
+  const trial = useTrialStatus();
   const [activeNutrient, setActiveNutrient] = useState<string | null>(null);
   const [barsReady, setBarsReady] = useState(false);
   const mountedRef = useRef(true);
@@ -96,6 +101,17 @@ export default function InsightsScreen() {
       return () => window.clearTimeout(timer);
     }
   }, [user]);
+
+  // Value moment: trigger the "your patterns are ready" sheet once per session
+  useEffect(() => {
+    if (loadingData || trial.isPro) return;
+    if (hasEnoughDataForPatterns(meals)) {
+      const realMeals = meals.filter(
+        (m) => m.analysisJson?.source !== "supplement" && m.status !== "failed"
+      );
+      triggerValueMoment({ mealCount: realMeals.length, dayCount: countLoggedDays(meals) });
+    }
+  }, [loadingData, meals, trial.isPro]);
 
   const dayCount = useMemo(() => {
     const days = new Set(meals.map((meal) => dayKeyFromTs(meal.ts)));
@@ -497,7 +513,30 @@ export default function InsightsScreen() {
           }
         }}
       />
-      <div className="mx-auto flex min-h-screen max-w-md flex-col px-5 pb-24 pt-7">
+      {/* Paywall overlay for expired trial */}
+      {trial.isFree && (
+        <div className="fixed inset-0 z-30 flex flex-col items-center justify-center px-8 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-ink/8 mb-5">
+            <svg viewBox="0 0 24 24" className="h-7 w-7 text-ink/40" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+          </div>
+          <p className="text-base font-semibold text-ink">Your patterns are ready</p>
+          <p className="mt-2 text-sm text-muted/70 leading-relaxed max-w-xs">
+            Upgrade to unlock your micronutrient trends, weekly averages, and what your body might be missing.
+          </p>
+          <button
+            type="button"
+            onClick={openUpgradeModal}
+            className="mt-6 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white transition active:opacity-80"
+          >
+            Unlock insights
+          </button>
+        </div>
+      )}
+
+      <div className={`mx-auto flex min-h-screen max-w-md flex-col px-5 pb-24 pt-7 ${trial.isFree ? "blur-sm pointer-events-none select-none" : ""}`}>
         <header className="mb-6" data-tour="insights-header">
           <div>
             <h1 className="text-2xl font-semibold text-ink">Patterns</h1>
