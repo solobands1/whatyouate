@@ -903,20 +903,42 @@ export default function SummaryScreen() {
               target={summaryMarkers.gentleTargets?.calories ?? null}
               animate={hydrated}
             />
-            <MacroRing
-              label="Carbs"
-              value={Math.round((summaryMarkers.todayTotals.carbs_g_min + summaryMarkers.todayTotals.carbs_g_max) / 2)}
-              unit="g"
-              target={summaryMarkers.gentleTargets?.calories ? Math.round(summaryMarkers.gentleTargets.calories * 0.50 / 4) : null}
-              animate={hydrated}
-            />
-            <MacroRing
-              label="Fats"
-              value={Math.round((summaryMarkers.todayTotals.fat_g_min + summaryMarkers.todayTotals.fat_g_max) / 2)}
-              unit="g"
-              target={summaryMarkers.gentleTargets?.calories ? Math.round(summaryMarkers.gentleTargets.calories * 0.30 / 9) : null}
-              animate={hydrated}
-            />
+            {/* Carbs + Fats locked for expired users */}
+            {trial.isFree ? (
+              <button
+                type="button"
+                onClick={openUpgradeModal}
+                className="relative flex gap-3"
+              >
+                <div className="blur-sm pointer-events-none select-none flex gap-3">
+                  <MacroRing label="Carbs" value={0} unit="g" target={null} animate={false} />
+                  <MacroRing label="Fats" value={0} unit="g" target={null} animate={false} />
+                </div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <svg viewBox="0 0 24 24" className="h-5 w-5 text-ink/30" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  </svg>
+                </div>
+              </button>
+            ) : (
+              <>
+                <MacroRing
+                  label="Carbs"
+                  value={Math.round((summaryMarkers.todayTotals.carbs_g_min + summaryMarkers.todayTotals.carbs_g_max) / 2)}
+                  unit="g"
+                  target={summaryMarkers.gentleTargets?.calories ? Math.round(summaryMarkers.gentleTargets.calories * 0.50 / 4) : null}
+                  animate={hydrated}
+                />
+                <MacroRing
+                  label="Fats"
+                  value={Math.round((summaryMarkers.todayTotals.fat_g_min + summaryMarkers.todayTotals.fat_g_max) / 2)}
+                  unit="g"
+                  target={summaryMarkers.gentleTargets?.calories ? Math.round(summaryMarkers.gentleTargets.calories * 0.30 / 9) : null}
+                  animate={hydrated}
+                />
+              </>
+            )}
             <MacroRing
               label="Protein"
               value={Math.round((summaryMarkers.todayTotals.protein_g_min + summaryMarkers.todayTotals.protein_g_max) / 2)}
@@ -963,6 +985,23 @@ export default function SummaryScreen() {
 
           {dayCount === 0 ? (
             <p className="mt-3 text-sm text-muted/60">Log your first meal and I'll start building your picture.</p>
+          ) : trial.isFree ? (
+            <button
+              type="button"
+              onClick={openUpgradeModal}
+              className="relative mt-3 w-full overflow-hidden rounded-lg text-left"
+            >
+              <div className="blur-sm pointer-events-none select-none space-y-1">
+                <p className="text-sm font-semibold text-ink/80">Your week at a glance</p>
+                <p className="text-sm text-muted/60">Patterns and observations from your recent meals appear here.</p>
+              </div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <svg viewBox="0 0 24 24" className="h-5 w-5 text-ink/30" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+              </div>
+            </button>
           ) : (
             <>
               {weekHeadline && (
