@@ -370,7 +370,8 @@ export default function ProfileScreen() {
       notifyProfileUpdated();
       setShowSavedToast(true);
       setTimeout(() => setShowSavedToast(false), 1800);
-    } catch {
+    } catch (err) {
+      console.error("Profile save error:", err);
       setStatus("Couldn’t save.");
     } finally {
       setSaving(false);
