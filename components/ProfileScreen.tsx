@@ -1033,7 +1033,7 @@ export default function ProfileScreen() {
           </div>
           <p className="mt-5 text-center text-[11px] text-muted/40">
             <a href="/privacy" className="underline underline-offset-2 hover:text-muted/60">
-              Privacy Policy
+              Privacy Policy and Terms of Use
             </a>
           </p>
         </div>
