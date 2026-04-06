@@ -125,12 +125,33 @@ export function incrementFoodTextLogCount(normalizedText: string): void {
   } catch {}
 }
 
+const FOOD_TEXT_DELETED_KEY = "wya_food_text_deleted_v1";
+
+function loadDeletedKeys(): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    return new Set(JSON.parse(localStorage.getItem(FOOD_TEXT_DELETED_KEY) ?? "[]"));
+  } catch {
+    return new Set();
+  }
+}
+
+function addDeletedKey(key: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    const keys = loadDeletedKeys();
+    keys.add(key);
+    localStorage.setItem(FOOD_TEXT_DELETED_KEY, JSON.stringify([...keys]));
+  } catch {}
+}
+
 export function deleteFoodTextEntry(normalizedText: string): void {
   if (typeof window === "undefined") return;
   try {
     const cache = loadTextCache();
     delete cache[normalizedText];
     localStorage.setItem(FOOD_TEXT_CACHE_KEY, JSON.stringify(cache));
+    addDeletedKey(normalizedText);
   } catch {}
 }
 
@@ -148,7 +169,10 @@ export function seedTextCacheFromMeals(meals: Array<{
 }>): void {
   if (typeof window === "undefined") return;
   const existing = loadTextCache();
-  if (Object.keys(existing).length > 0) return; // cache already populated
+  const deleted = loadDeletedKeys();
+  // Only seed if cache is empty (ignoring deleted keys which are intentionally absent)
+  const nonDeletedExisting = Object.keys(existing).filter((k) => !deleted.has(k));
+  if (nonDeletedExisting.length > 0) return; // cache already populated
 
   const foodMap = new Map<string, { name: string; ranges: FoodTextCacheEntry["ranges"]; signals: FoodTextCacheEntry["micronutrient_signals"]; count: number; latestTs: number }>();
   for (const meal of meals) {
@@ -158,6 +182,7 @@ export function seedTextCacheFromMeals(meals: Array<{
     if (!name) continue;
     const key = name.toLowerCase().trim();
     if (!key) continue;
+    if (deleted.has(key)) continue; // respect user deletion
     const entry = foodMap.get(key);
     if (entry) {
       entry.count++;
