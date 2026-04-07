@@ -18,37 +18,24 @@ export default function WyaaAvatar({
   className = "",
 }: WyaaAvatarProps) {
   const mouth = {
+    // gentle smile
     neutral: (
-      <path d="M15 29.5 Q20 32.5 25 29.5" stroke="#1a3a60" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+      <path d="M15.5 29.5 Q20 32.5 24.5 29.5" stroke="#1a3a60" strokeWidth="1.5" strokeLinecap="round" fill="none" />
     ),
+    // fuller smile
     happy: (
-      <path d="M14 29 Q20 34 26 29" stroke="#1a3a60" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+      <path d="M14 28.5 Q20 34 26 28.5" stroke="#1a3a60" strokeWidth="1.5" strokeLinecap="round" fill="none" />
     ),
+    // big open smile
     excited: (
       <>
-        <path d="M13 28.5 Q20 35.5 27 28.5" stroke="#1a3a60" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-        <ellipse cx="20" cy="32" rx="4" ry="2.2" fill="#1a3a60" opacity="0.10" />
+        <path d="M13.5 27.5 Q20 35 26.5 27.5" stroke="#1a3a60" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+        <ellipse cx="20" cy="31.5" rx="4" ry="2.2" fill="#1a3a60" opacity="0.10" />
       </>
     ),
+    // same gentle smile — attentive but always warm
     thinking: (
-      <path d="M15.5 30.5 Q20 28.5 24.5 30.5" stroke="#1a3a60" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-    ),
-  };
-
-  const eyebrows = {
-    neutral: null,
-    happy: null,
-    excited: (
-      <>
-        <path d="M12.5 17.5 Q15.5 15 18.5 17" stroke="#1a3a60" strokeWidth="1.2" strokeLinecap="round" fill="none" />
-        <path d="M21.5 17 Q24.5 15 27.5 17.5" stroke="#1a3a60" strokeWidth="1.2" strokeLinecap="round" fill="none" />
-      </>
-    ),
-    thinking: (
-      <>
-        <path d="M12.5 18 Q15.5 16 18.5 17.5" stroke="#1a3a60" strokeWidth="1.2" strokeLinecap="round" fill="none" />
-        <path d="M21.5 17.5 Q25 16.5 27.5 18.5" stroke="#1a3a60" strokeWidth="1.1" strokeLinecap="round" fill="none" />
-      </>
+      <path d="M15.5 29.5 Q20 32.5 24.5 29.5" stroke="#1a3a60" strokeWidth="1.5" strokeLinecap="round" fill="none" />
     ),
   };
 
@@ -69,29 +56,26 @@ export default function WyaaAvatar({
         <path d="M23 13 C24 10.5 25.5 9 27 9 C25 10 23.5 11.5 23 13Z" fill="#4F88E8" opacity="0.55" />
 
         {/* Body */}
-        <ellipse cx="20" cy="27.5" rx="16" ry="15" fill="#6FA8FF" />
+        <ellipse cx="20" cy="27" rx="16" ry="15" fill="#6FA8FF" />
 
-        {/* Soft inner highlight */}
-        <ellipse cx="13.5" cy="19.5" rx="5" ry="3.5" fill="#DDEBFF" opacity="0.55" />
+        {/* Soft highlight */}
+        <ellipse cx="13.5" cy="19" rx="5" ry="3.5" fill="#DDEBFF" opacity="0.6" />
 
         {/* Cheeks */}
-        <ellipse cx="11.5" cy="28" rx="3" ry="2" fill="#FFB5C8" opacity="0.28" />
-        <ellipse cx="28.5" cy="28" rx="3" ry="2" fill="#FFB5C8" opacity="0.28" />
+        <ellipse cx="11" cy="28" rx="3.2" ry="2" fill="#FFB5C8" opacity="0.32" />
+        <ellipse cx="29" cy="28" rx="3.2" ry="2" fill="#FFB5C8" opacity="0.32" />
 
-        {/* Eyes — white sclera */}
-        <circle cx="15" cy="24.5" r="3" fill="white" />
-        <circle cx="25" cy="24.5" r="3" fill="white" />
+        {/* Eyes — larger, higher, wider apart */}
+        <circle cx="14.5" cy="23.5" r="3.2" fill="white" />
+        <circle cx="25.5" cy="23.5" r="3.2" fill="white" />
 
         {/* Pupils — centered */}
-        <circle cx="15" cy="25.2" r="1.5" fill="#1a3a60" />
-        <circle cx="25" cy="25.2" r="1.5" fill="#1a3a60" />
+        <circle cx="14.5" cy="24.2" r="1.6" fill="#1a3a60" />
+        <circle cx="25.5" cy="24.2" r="1.6" fill="#1a3a60" />
 
         {/* Eye shine */}
-        <circle cx="15.9" cy="24.2" r="0.75" fill="white" />
-        <circle cx="25.9" cy="24.2" r="0.75" fill="white" />
-
-        {/* Eyebrows */}
-        {eyebrows[expression]}
+        <circle cx="15.5" cy="23.1" r="0.85" fill="white" />
+        <circle cx="26.5" cy="23.1" r="0.85" fill="white" />
 
         {/* Mouth */}
         {mouth[expression]}
