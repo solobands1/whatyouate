@@ -1315,33 +1315,35 @@ export default function SummaryScreen() {
 
       {/* About Wyaa sheet */}
       {showWyaaSheet && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={() => setShowWyaaSheet(false)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-6" onClick={() => setShowWyaaSheet(false)}>
           <div className="absolute inset-0 bg-black/30" />
           <div
-            className="animate-scaleIn relative w-full max-w-sm rounded-t-2xl bg-surface px-6 pb-10 pt-6 shadow-xl"
+            className="animate-scaleIn relative w-full max-w-xs"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="mb-1 flex justify-center">
-              <div className="h-1 w-10 rounded-full bg-ink/15" />
-            </div>
-            <div className="mt-5 flex flex-col items-center gap-4 text-center">
-              <WyaaAvatar expression="happy" size={72} />
-              <div>
-                <p className="text-lg font-semibold text-ink">Meet Wyaa</p>
-                <p className="mt-2 text-sm leading-relaxed text-muted/70">
-                  Wyaa is your nutrition companion. She reads your logs and sends you one honest, specific nudge each morning, afternoon, and evening — no fluff, just the thing that actually matters right now.
-                </p>
-                <p className="mt-3 text-sm leading-relaxed text-muted/70">
-                  The more you log, the sharper her advice gets.
-                </p>
+            {/* Speech bubble */}
+            <div className="relative rounded-2xl bg-white px-6 py-6 shadow-xl">
+              <div className="flex flex-col items-center gap-4 text-center">
+                <WyaaAvatar expression="happy" size={72} />
+                <div>
+                  <p className="text-base font-semibold text-ink">Hey! I&apos;m Wyaa.</p>
+                  <p className="mt-2.5 text-sm leading-relaxed text-muted/70">
+                    I keep an eye on your logs and send you one honest, specific nudge each morning, afternoon, and evening. Not generic tips — just the one thing that actually matters for you right now.
+                  </p>
+                  <p className="mt-2.5 text-sm leading-relaxed text-muted/70">
+                    The more you log, the better I get at reading your patterns.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="mt-1 rounded-full bg-primary/10 px-6 py-2.5 text-sm font-semibold text-primary active:opacity-70"
+                  onClick={() => setShowWyaaSheet(false)}
+                >
+                  Nice to meet you!
+                </button>
               </div>
-              <button
-                type="button"
-                className="mt-2 rounded-full bg-primary/10 px-6 py-2.5 text-sm font-semibold text-primary active:opacity-70"
-                onClick={() => setShowWyaaSheet(false)}
-              >
-                Got it
-              </button>
+              {/* Tail pointing down-right toward Wyaa in the card header */}
+              <div className="absolute -bottom-2.5 right-10 h-5 w-5 rotate-45 rounded-br-sm bg-white shadow-[2px_2px_4px_rgba(0,0,0,0.06)]" />
             </div>
           </div>
         </div>
