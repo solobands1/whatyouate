@@ -137,7 +137,7 @@ function buildSmartPrompt(ctx: Record<string, unknown>): string {
 
   const foods = ctx.recentFoods as string[] | undefined;
   if (foods?.length) {
-    lines.push(`Recently logged foods (last 3 days — do not assume which day each was logged): ${foods.slice(0, 12).join(", ")}`);
+    lines.push(`Foods logged in the last 1-2 days (excluding today): ${foods.slice(0, 12).join(", ")}`);
   }
 
   const recent = ctx.recentNudges as string[] | undefined;

@@ -476,10 +476,11 @@ export default function SummaryScreen() {
     const seen = new Set<string>();
     const foods: string[] = [];
     const threeDaysAgo = Date.now() - 3 * 24 * 60 * 60 * 1000;
+    const todayStr = todayKey();
     meals
       .slice()
       .sort((a, b) => b.ts - a.ts)
-      .filter((m) => m.ts >= threeDaysAgo)
+      .filter((m) => m.ts >= threeDaysAgo && todayKey(new Date(m.ts)) !== todayStr)
       .forEach((meal) => {
         const items = [
           meal.analysisJson?.name,
