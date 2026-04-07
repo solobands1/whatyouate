@@ -529,7 +529,7 @@ export default function InsightsScreen() {
             <h1 className="text-2xl font-semibold text-ink">Patterns</h1>
             <p className="mt-1 text-sm text-muted/70">Longer-term trends from your logged meals</p>
             {!hasEnoughData && !isDemoMode && (
-              <div className="mt-2 inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] text-amber-700">
+              <div className="mt-2 inline-flex items-center rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-[11px] text-primary/80">
                 Real data appears after a few more meals
               </div>
             )}

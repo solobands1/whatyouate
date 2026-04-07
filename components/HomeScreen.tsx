@@ -1651,7 +1651,7 @@ export default function HomeScreen() {
             <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Recent</p>
             <div className="flex items-center gap-2">
               {editRecents && (
-                <span className="inline-flex items-center rounded-full bg-yellow-200 px-2 py-0.5 text-[10px] font-semibold text-amber-900 shadow-[0_6px_14px_rgba(15,23,42,0.08)] ring-1 ring-yellow-100/60">
+                <span className="inline-flex items-center rounded-full border border-primary/25 bg-primary/15 px-2 py-0.5 text-[10px] font-semibold text-primary shadow-[0_6px_14px_rgba(15,23,42,0.08)]">
                   Editing
                 </span>
               )}
