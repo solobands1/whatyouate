@@ -16,7 +16,7 @@ import { formatApprox, formatDateShort, todayKey, dayKeyFromTs } from "../lib/ut
 import { supabase } from "../lib/supabaseClient";
 import "../lib/mealQueue";
 import BarcodeScannerOverlay from "./BarcodeScannerOverlay";
-import { getFoodCacheEntry, setFoodCacheEntry, deleteFoodCacheEntry, deleteFoodTextEntry, incrementFoodCacheLogCount, incrementFoodTextLogCount, getQuickAddItems, getDailySupplements, setDailySupplements, hasDailySuppsLoggedToday, markDailySuppsLoggedToday, clearDailySuppsLoggedToday, type QuickAddItem } from "../lib/foodCache";
+import { getFoodCacheEntry, setFoodCacheEntry, deleteFoodCacheEntry, deleteFoodTextEntry, incrementFoodCacheLogCount, incrementFoodTextLogCount, getQuickAddItems, getDailySupplements, setDailySupplements, hasDailySuppsLoggedToday, markDailySuppsLoggedToday, type QuickAddItem } from "../lib/foodCache";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
 import { useAuth } from "./AuthProvider";
@@ -210,7 +210,6 @@ export default function HomeScreen() {
   const nudgesLoadedRef = useRef(false);
   const savedThisSessionRef = useRef<Set<string>>(new Set());
   const dailySuppsAttemptedRef = useRef(false);
-  const [suppLogTrigger, setSuppLogTrigger] = useState(0);
 
   const onError = useCallback((msg: string) => setLoadError(msg), []);
 
@@ -356,13 +355,8 @@ export default function HomeScreen() {
         meals.setMeals((prev) => prev.filter((m) => m.id !== id));
         meals.setEditingMeal(null);
         setEditRecents(false);
-        // If the deleted meal was a supplement entry, clear the daily guard
-        // so supplements are re-logged automatically
-        if (deletedMeal?.analysisJson?.source === "supplement") {
-          clearDailySuppsLoggedToday(user.id);
-          dailySuppsAttemptedRef.current = false;
-          setSuppLogTrigger((n) => n + 1);
-        }
+        // If the deleted meal was a supplement entry, keep the daily guard set
+        // so auto-log does not re-add them. The user explicitly removed it.
       } else {
         await deleteWorkout(id, user.id);
         workout.setWorkouts((prev) => prev.filter((w) => w.id !== id));
@@ -745,7 +739,7 @@ export default function HomeScreen() {
       }
       notifyMealsUpdated();
     })();
-  }, [user, loadingData, suppLogTrigger]);
+  }, [user, loadingData]);
 
   useEffect(() => {
     setEditRecents(false);
