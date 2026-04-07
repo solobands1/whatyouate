@@ -213,3 +213,31 @@ input, textarea, select {
     animation: none;
   }
 }
+
+@keyframes wyaaFloat {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes wyaaBounce {
+  0%, 100% { transform: translateY(0px); }
+  20% { transform: translateY(-8px); }
+  40% { transform: translateY(-2px); }
+  60% { transform: translateY(-6px); }
+  80% { transform: translateY(-1px); }
+}
+
+.animate-wyaa-float {
+  animation: wyaaFloat 3s ease-in-out infinite;
+}
+
+.animate-wyaa-bounce {
+  animation: wyaaBounce 0.8s ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-wyaa-float,
+  .animate-wyaa-bounce {
+    animation: none;
+  }
+}

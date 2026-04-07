@@ -13,6 +13,7 @@ import { notifyNudgesUpdated } from "../lib/dataEvents";
 import { buildSmartNudgeContext, computeNudges, computeSummaryMarkers, type ComputedNudge, type NudgeType } from "../lib/digestEngine";
 import { useTrialStatus } from "../hooks/useTrialStatus";
 import { openUpgradeModal } from "./UpgradeModal";
+import WyaaAvatar from "./WyaaAvatar";
 
 
 type MilestoneItem = { label: string; sub: string; desc: string; unlocked: boolean };
@@ -169,6 +170,7 @@ export default function SummaryScreen() {
       return nudgeTs > seenTs;
     } catch { return false; }
   });
+  const [showWyaaSheet, setShowWyaaSheet] = useState(false);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -1058,6 +1060,19 @@ export default function SummaryScreen() {
             {nudgeCardIsNew && smartNudge && (
               <span className="animate-card-fade inline-flex items-center rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold text-primary">New</span>
             )}
+            <div className="ml-auto">
+              <WyaaAvatar
+                expression={
+                  smartNudge?.type === "on_track" ? "happy"
+                  : nudgeCardIsNew && smartNudge ? "excited"
+                  : smartNudge ? "thinking"
+                  : "neutral"
+                }
+                isNew={nudgeCardIsNew && !!smartNudge}
+                size={36}
+                onClick={() => setShowWyaaSheet(true)}
+              />
+            </div>
           </div>
           {isDemoMode ? (
             <div className="mt-4 space-y-2.5">
@@ -1148,6 +1163,7 @@ export default function SummaryScreen() {
                   return (
                     <div className="rounded-xl border border-primary/60 bg-primary/5 px-4 py-3 space-y-2.5">
                       <p className="text-sm font-medium text-ink/90">{nudge.message}</p>
+                      <p className="text-[11px] text-primary/50 font-medium">— Wyaa</p>
                       {isCaughtUp && (
                         <p className="text-[11px] text-primary/60 font-medium">Looks like you've caught up since then.</p>
                       )}
@@ -1296,6 +1312,40 @@ export default function SummaryScreen() {
       </div>
 
       <BottomNav current="summary" />
+
+      {/* About Wyaa sheet */}
+      {showWyaaSheet && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={() => setShowWyaaSheet(false)}>
+          <div className="absolute inset-0 bg-black/30" />
+          <div
+            className="animate-scaleIn relative w-full max-w-sm rounded-t-2xl bg-surface px-6 pb-10 pt-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-1 flex justify-center">
+              <div className="h-1 w-10 rounded-full bg-ink/15" />
+            </div>
+            <div className="mt-5 flex flex-col items-center gap-4 text-center">
+              <WyaaAvatar expression="happy" size={72} />
+              <div>
+                <p className="text-lg font-semibold text-ink">Meet Wyaa</p>
+                <p className="mt-2 text-sm leading-relaxed text-muted/70">
+                  Wyaa is your nutrition companion. She reads your logs and sends you one honest, specific nudge each morning, afternoon, and evening — no fluff, just the thing that actually matters right now.
+                </p>
+                <p className="mt-3 text-sm leading-relaxed text-muted/70">
+                  The more you log, the sharper her advice gets.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="mt-2 rounded-full bg-primary/10 px-6 py-2.5 text-sm font-semibold text-primary active:opacity-70"
+                onClick={() => setShowWyaaSheet(false)}
+              >
+                Got it
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
