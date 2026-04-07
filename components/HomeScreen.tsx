@@ -1180,7 +1180,7 @@ export default function HomeScreen() {
             </button>
             <button
               type="button"
-              className="text-xs text-ink/40 underline underline-offset-2 transition hover:text-ink/60"
+              className="text-xs text-ink/55 underline underline-offset-2 transition hover:text-ink/70"
               onClick={() => setShowTourGate(false)}
             >
               Explore on my own
@@ -1499,7 +1499,7 @@ export default function HomeScreen() {
                       </button>
                       <button
                         type="button"
-                        className="text-ink/30 transition active:opacity-60"
+                        className="text-ink/50 transition active:opacity-60"
                         onClick={() => {
                           if (user) localStorage.setItem(`wya_streak_saver_dismissed_${user.id}_${todayKey()}`, "true");
                           setStreakSaverDismissed(true);
@@ -1522,7 +1522,7 @@ export default function HomeScreen() {
               <p className="mt-1 text-2xl font-semibold">
                 {formatClean(homeMarkers.todayTotals.calories_min, homeMarkers.todayTotals.calories_max)}
               </p>
-              <p className="text-[10px] text-muted/50">approx.</p>
+              <p className="text-[10px] text-muted/65">approx.</p>
             </div>
             <div>
               <p className="text-[11px] uppercase tracking-wide text-muted/60">Protein</p>
@@ -1533,7 +1533,7 @@ export default function HomeScreen() {
                   "g"
                 )}
               </p>
-              <p className="text-[10px] text-muted/50">approx.</p>
+              <p className="text-[10px] text-muted/65">approx.</p>
             </div>
           </div>
           {mealCount > 0 && (
@@ -1555,11 +1555,11 @@ export default function HomeScreen() {
             className="mt-2 flex items-center gap-1 text-left text-xs text-muted/70 transition active:opacity-60"
             onClick={() => setShowTargetInfo((v) => !v)}
           >
-            <span>Suggested range<span className="text-muted/50">{!loadingData && mealCount === 0 && !profile ? " (preview)" : ""}</span>: {gentleTargetsDisplay.calories} kcal · {gentleTargetsDisplay.protein} g protein</span>
-            <span className="inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border border-muted/30 text-[8px] text-muted/50">i</span>
+            <span>Suggested range<span className="text-muted/65">{!loadingData && mealCount === 0 && !profile ? " (preview)" : ""}</span>: {gentleTargetsDisplay.calories} kcal · {gentleTargetsDisplay.protein} g protein</span>
+            <span className="inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border border-muted/40 text-[8px] text-muted/65">i</span>
           </button>
           {showTargetInfo && (
-            <p className="mt-1 text-[10px] text-muted/50">
+            <p className="mt-1 text-[10px] text-muted/65">
               {mealCount >= 10 && profile?.weight
                 ? "Based on your recent intake pattern, adjusted for your goal."
                 : profile?.weight && profile?.activityLevel
@@ -1718,7 +1718,7 @@ export default function HomeScreen() {
                                 })()}
                               </span>
                               {meal.analysisJson?.source === "supplement" ? (
-                                <span className="text-ink/40">added to your day</span>
+                                <span className="text-ink/55">added to your day</span>
                               ) : (
                                 <span className="text-ink/50">
                                   {meal.calories
@@ -2449,7 +2449,7 @@ export default function HomeScreen() {
                 </div>
               ))}
             </div>
-            <p className="mt-2 text-[10px] text-muted/50">
+            <p className="mt-2 text-[10px] text-muted/65">
               Per {barcodeProduct.valuePer === "100g" ? "100g" : "serving"}
             </p>
             {barcodeProduct.valuePer === "100g" && !barcodeEditMode && (
@@ -2496,7 +2496,7 @@ export default function HomeScreen() {
                 <div className="grid grid-cols-4 gap-2">
                   {(["calories", "protein", "carbs", "fat"] as const).map((field) => (
                     <div key={field}>
-                      <p className="mb-1 text-[9px] uppercase tracking-wide text-muted/50">{field === "calories" ? "Cal" : field}</p>
+                      <p className="mb-1 text-[9px] uppercase tracking-wide text-muted/65">{field === "calories" ? "Cal" : field}</p>
                       <input
                         inputMode="numeric"
                         className="w-full rounded-lg border border-ink/10 bg-white px-2 py-1.5 text-xs text-ink/80"
@@ -2658,7 +2658,7 @@ export default function HomeScreen() {
                         </div>
                         <button
                           type="button"
-                          className="ml-1 shrink-0 text-ink/30 hover:text-ink/60 active:scale-90 transition text-base leading-none"
+                          className="ml-1 shrink-0 text-ink/50 hover:text-ink/70 active:scale-90 transition text-base leading-none"
                           onClick={(e) => { e.stopPropagation(); handleRemoveQuickAddItem(item); }}
                         >
                           ×

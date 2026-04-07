@@ -117,8 +117,8 @@ function MacroRing({
           <p className="text-[15px] font-semibold leading-none text-ink">{displayVal}</p>
         </div>
       </div>
-      <p className="text-[10px] uppercase tracking-wide text-muted/55">{label}</p>
-      <p className="text-[9px] text-muted/40">approx.</p>
+      <p className="text-[10px] uppercase tracking-wide text-muted/65">{label}</p>
+      <p className="text-[9px] text-muted/60">approx.</p>
     </div>
   );
 }
@@ -947,7 +947,7 @@ export default function SummaryScreen() {
                     <rect x="3" y="11" width="18" height="11" rx="2" />
                     <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                   </svg>
-                  <span className="text-[10px] font-medium text-ink/30">Upgrade to unlock</span>
+                  <span className="text-[10px] font-medium text-ink/50">Upgrade to unlock</span>
                 </div>
               </button>
             ) : (
@@ -988,7 +988,7 @@ export default function SummaryScreen() {
             <p className="mt-2 text-xs text-muted/70">Complete your profile for a personalized range</p>
           )}
           {showTargetInfo && (
-            <p className="mt-1 text-[10px] text-muted/50">
+            <p className="mt-1 text-[10px] text-muted/65">
               {mealCount >= 10 && profile?.weight
                 ? "Based on your recent intake pattern, adjusted for your goal."
                 : profile?.weight && profile?.activityLevel
@@ -1007,7 +1007,7 @@ export default function SummaryScreen() {
             {last7Days.map((day, i) => (
               <div key={day.key} className="flex flex-col items-center gap-1.5">
                 <div className={`h-2.5 w-2.5 rounded-full ${(isDemoMode ? [true,true,false,true,true,true,false][i] : day.logged) ? "bg-primary/70" : "bg-ink/10"}`} />
-                <p className={`text-[10px] ${day.isToday ? "font-semibold text-ink/60" : "text-muted/40"}`}>{day.label}</p>
+                <p className={`text-[10px] ${day.isToday ? "font-semibold text-ink/70" : "text-muted/55"}`}>{day.label}</p>
               </div>
             ))}
           </div>
@@ -1037,7 +1037,7 @@ export default function SummaryScreen() {
                   <rect x="3" y="11" width="18" height="11" rx="2" />
                   <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                 </svg>
-                <span className="text-[10px] font-medium text-ink/30">Upgrade to unlock</span>
+                <span className="text-[10px] font-medium text-ink/50">Upgrade to unlock</span>
               </div>
             </button>
           ) : (
@@ -1086,7 +1086,7 @@ export default function SummaryScreen() {
           ) : mealCount === 0 ? (
             <div className="mt-3 space-y-1">
               <p className="text-sm text-ink/70">Log a few meals and I’ll start learning your patterns.</p>
-              <p className="text-xs text-muted/50">Nudges appear after 5 meals.</p>
+              <p className="text-xs text-muted/65">Nudges appear after 5 meals.</p>
             </div>
           ) : mealCount < 5 ? (
             <div className="mt-3 space-y-1">
@@ -1107,8 +1107,8 @@ export default function SummaryScreen() {
                 const nudgeTimeLabel = nudgeTs ? nudgeTs.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }).toLowerCase() : null;
                 return (
                   <div className="flex items-center justify-between">
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/50">{windowLabel}</p>
-                    {nudgeTimeLabel && <span className="text-[11px] text-ink/30">{nudgeTimeLabel}</span>}
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/65">{windowLabel}</p>
+                    {nudgeTimeLabel && <span className="text-[11px] text-ink/50">{nudgeTimeLabel}</span>}
                   </div>
                 );
               })()}
@@ -1253,7 +1253,7 @@ export default function SummaryScreen() {
               )}
               {!trial.isFree && historyGroups.slice(0, visibleNudgeGroupCount).map((group) => (
                 <div key={group.label} className="space-y-1.5">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/50">{group.label}</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/65">{group.label}</p>
                   {group.items.map((nudge) => {
                     const histType = getHistoryNudgeType(nudge.message);
                     const histWhy = histType ? getNudgeWhy(histType, profile?.goalDirection ?? "maintain") : null;
@@ -1271,7 +1271,7 @@ export default function SummaryScreen() {
                           <div className="mt-2 space-y-2 border-t border-ink/10 pt-2">
                             {histWhy && (
                               <div>
-                                <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted/40">Why?</p>
+                                <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted/60">Why?</p>
                                 {histWhy.split(" • ").map((part, i) => (
                                   <p key={i} className="text-ink/55">{part.trim()}</p>
                                 ))}
@@ -1279,7 +1279,7 @@ export default function SummaryScreen() {
                             )}
                             {histAction && (
                               <div>
-                                <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted/40">What to do?</p>
+                                <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted/60">What to do?</p>
                                 <p className="text-ink/55">{histAction}</p>
                               </div>
                             )}
@@ -1321,12 +1321,12 @@ export default function SummaryScreen() {
               <div className="flex flex-col items-center gap-4 text-center">
                 <WyaaAvatar size={72} />
                 <div>
-                  <p className="text-base font-semibold text-ink">I&apos;m your AI Nutrition Coach.</p>
-                  <p className="mt-2.5 text-sm leading-relaxed text-muted/70">
+                  <p className="text-base font-semibold text-ink">I&apos;m your AI Nutrition Coach</p>
+                  <p className="mt-2.5 text-sm leading-relaxed text-muted/80">
                     I read your logs and send you honest, specific nudges throughout the day based on what you&apos;ve actually eaten and what you&apos;re working toward.
                   </p>
-                  <p className="mt-2.5 text-sm leading-relaxed text-muted/70">
-                    The more you log, the more useful I get.
+                  <p className="mt-2.5 text-sm leading-relaxed text-muted/80">
+                    The more you log, the more useful I get!
                   </p>
                 </div>
                 <button

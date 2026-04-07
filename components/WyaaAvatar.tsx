@@ -27,9 +27,9 @@ export default function WyaaAvatar({
       <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <radialGradient id="wyaa-bg" cx="38%" cy="32%" r="65%">
-            <stop offset="0%" stopColor="#A8C8FF" />
-            <stop offset="55%" stopColor="#6FA8FF" />
-            <stop offset="100%" stopColor="#5182E8" />
+            <stop offset="0%" stopColor="#C4DAFF" />
+            <stop offset="60%" stopColor="#6FA8FF" />
+            <stop offset="100%" stopColor="#5A96F0" />
           </radialGradient>
           <radialGradient id="wyaa-glow" cx="50%" cy="50%" r="50%">
             <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.18" />

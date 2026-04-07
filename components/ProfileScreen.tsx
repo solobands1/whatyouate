@@ -534,7 +534,7 @@ export default function ProfileScreen() {
                 <button
                   type="button"
                   aria-label="Edit name"
-                  className="flex h-5 w-5 items-center justify-center rounded-full border border-ink/10 text-muted/50 hover:border-ink/20 hover:text-muted/80 transition"
+                  className="flex h-5 w-5 items-center justify-center rounded-full border border-ink/10 text-muted/65 hover:border-ink/20 hover:text-muted/80 transition"
                   onClick={() => {
                     setEditFirstName(firstName);
                     setEditLastName(lastName);
@@ -885,7 +885,7 @@ export default function ProfileScreen() {
                   {suppLabel(entry)}
                   <button
                     type="button"
-                    className="text-ink/40 transition hover:text-ink/70"
+                    className="text-ink/55 transition hover:text-ink/70"
                     onClick={(e) => {
                       e.stopPropagation();
                       const updated = dailySupplements.filter((_, i) => i !== idx);
@@ -956,7 +956,7 @@ export default function ProfileScreen() {
               />
               {(suppMatchHint || suppLookingUp) && (
                 <div className="-mt-0.5 flex items-center gap-2">
-                  <p className={`text-[11px] ${suppLookingUp ? "text-muted/40" : suppMatchHint?.startsWith("Tracks") ? "text-primary/70" : "text-muted/50"}`}>
+                  <p className={`text-[11px] ${suppLookingUp ? "text-muted/55" : suppMatchHint?.startsWith("Tracks") ? "text-primary/70" : "text-muted/65"}`}>
                     {suppLookingUp ? "Looking up..." : suppMatchHint}
                   </p>
                   {!suppLookingUp && suppMatchHint === "Not recognized for tracking" && (
@@ -1111,7 +1111,7 @@ export default function ProfileScreen() {
               </div>
             </div>
           )}
-          <p className="mt-5 text-center text-[11px] text-muted/40">
+          <p className="mt-5 text-center text-[11px] text-muted/55">
             <a href="/privacy" className="underline underline-offset-2 hover:text-muted/60">
               Privacy Policy and Terms of Use
             </a>
@@ -1375,7 +1375,7 @@ export default function ProfileScreen() {
                       }}
                     >
                       <span className="text-sm font-medium text-ink/80">{displayName}</span>
-                      <span className={`text-xs font-semibold ${isOpen ? "text-primary/70" : "text-ink/30"}`}>
+                      <span className={`text-xs font-semibold ${isOpen ? "text-primary/70" : "text-ink/50"}`}>
                         {isOpen ? (entry.dose || entry.pct ? `${entry.mode === "pct" ? entry.pct + "% DV" : entry.dose + " " + entry.unit}` : "") : "+"}
                       </span>
                     </button>
