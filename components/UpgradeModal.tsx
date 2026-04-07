@@ -23,7 +23,7 @@ export default function UpgradeModal() {
 
   if (!open) return null;
 
-  const monthlyCost = 9.99;
+  const monthlyCost = 12.99;
   const yearlyCost = 99;
   const yearlySavings = Math.round((1 - yearlyCost / (monthlyCost * 12)) * 100);
 
