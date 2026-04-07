@@ -24,34 +24,39 @@ export default function WyaaAvatar({
       aria-label="About Wyaa"
       style={{ background: "none", border: "none", padding: 0 }}
     >
-      <svg width={size} height={size} viewBox="0 0 40 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-        {/* Calyx crown */}
-        <path d="M14 13 C13 10 11 8 9 8 C11 9 13 11 14 13Z" fill="#4F88E8" opacity="0.9" />
-        <path d="M19.5 12 C19.5 9 19.5 6.5 20.5 5 C21.5 6.5 21.5 9 21.5 12Z" fill="#4F88E8" opacity="0.9" />
-        <path d="M26 13 C27 10 29 8 31 8 C29 9 27 11 26 13Z" fill="#4F88E8" opacity="0.9" />
-        <path d="M17 13 C16 10.5 14.5 9 13 9 C15 10 16.5 11.5 17 13Z" fill="#4F88E8" opacity="0.6" />
-        <path d="M23 13 C24 10.5 25.5 9 27 9 C25 10 23.5 11.5 23 13Z" fill="#4F88E8" opacity="0.6" />
+      <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="wyaa-bg" cx="38%" cy="32%" r="65%">
+            <stop offset="0%" stopColor="#A8C8FF" />
+            <stop offset="55%" stopColor="#6FA8FF" />
+            <stop offset="100%" stopColor="#4270CC" />
+          </radialGradient>
+          <radialGradient id="wyaa-glow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.18" />
+            <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+          </radialGradient>
+        </defs>
 
-        {/* Body */}
-        <ellipse cx="20" cy="27" rx="16" ry="15" fill="#6FA8FF" />
+        {/* Base circle */}
+        <circle cx="20" cy="20" r="19" fill="url(#wyaa-bg)" />
 
-        {/* Inner depth — subtle darker base */}
-        <ellipse cx="20" cy="30" rx="12" ry="10" fill="#4F88E8" opacity="0.18" />
+        {/* Inner glow */}
+        <circle cx="20" cy="20" r="19" fill="url(#wyaa-glow)" />
 
-        {/* Highlight — top-left glow */}
-        <ellipse cx="13" cy="19" rx="6" ry="4.5" fill="#DDEBFF" opacity="0.65" />
+        {/* Subtle top-left highlight */}
+        <ellipse cx="13.5" cy="12" rx="7" ry="5" fill="white" opacity="0.18" />
 
-        {/* AI sparkle — 4-point star, center of body */}
-        <g transform="translate(20, 27)">
-          {/* Vertical bar */}
-          <path d="M0 -6 C0.6 -2.5 0.6 2.5 0 6" fill="#DDEBFF" opacity="0.95" />
-          {/* Horizontal bar */}
-          <path d="M-6 0 C-2.5 0.6 2.5 0.6 6 0" fill="#DDEBFF" opacity="0.95" />
-          {/* Diagonal thin arms */}
-          <path d="M-3.2 -3.2 C-0.8 -0.8 0.8 0.8 3.2 3.2" stroke="#DDEBFF" strokeWidth="0.7" strokeLinecap="round" opacity="0.5" />
-          <path d="M3.2 -3.2 C0.8 -0.8 -0.8 0.8 -3.2 3.2" stroke="#DDEBFF" strokeWidth="0.7" strokeLinecap="round" opacity="0.5" />
-          {/* Center dot */}
-          <circle cx="0" cy="0" r="1.2" fill="white" opacity="0.9" />
+        {/* 4-point sparkle */}
+        <g transform="translate(20, 20)">
+          {/* Main vertical */}
+          <path d="M0 -7.5 C0.9 -3 0.9 3 0 7.5 C-0.9 3 -0.9 -3 0 -7.5Z" fill="white" opacity="0.95" />
+          {/* Main horizontal */}
+          <path d="M-7.5 0 C-3 0.9 3 0.9 7.5 0 C3 -0.9 -3 -0.9 -7.5 0Z" fill="white" opacity="0.95" />
+          {/* Thin diagonal arms */}
+          <path d="M-3.8 -3.8 C-1 -1 1 1 3.8 3.8" stroke="white" strokeWidth="0.9" strokeLinecap="round" opacity="0.4" />
+          <path d="M3.8 -3.8 C1 -1 -1 1 -3.8 3.8" stroke="white" strokeWidth="0.9" strokeLinecap="round" opacity="0.4" />
+          {/* Center */}
+          <circle r="1.4" fill="white" />
         </g>
       </svg>
     </button>
