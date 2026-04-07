@@ -97,7 +97,7 @@ function MacroRing({
           <defs>
             <linearGradient id={`ring-grad-${label}`} x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" stopColor="#6FA8FF" />
-              <stop offset="100%" stopColor="#4F88E8" />
+              <stop offset="100%" stopColor="#5A9AFF" />
             </linearGradient>
           </defs>
           {/* Grey track */}

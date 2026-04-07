@@ -29,7 +29,7 @@ export default function WyaaAvatar({
           <radialGradient id="wyaa-bg" cx="38%" cy="32%" r="65%">
             <stop offset="0%" stopColor="#A8C8FF" />
             <stop offset="55%" stopColor="#6FA8FF" />
-            <stop offset="100%" stopColor="#4270CC" />
+            <stop offset="100%" stopColor="#5182E8" />
           </radialGradient>
           <radialGradient id="wyaa-glow" cx="50%" cy="50%" r="50%">
             <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.18" />

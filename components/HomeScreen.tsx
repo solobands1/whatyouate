@@ -1590,7 +1590,7 @@ export default function HomeScreen() {
           <div className="mt-1 flex w-[92%] mx-auto">
             <button
               type="button"
-              className="flex flex-1 items-center justify-center gap-2 rounded-l-xl rounded-r-none bg-gradient-to-r from-primary to-primary-dark px-3 py-2 text-xs font-semibold text-white shadow-[0_8px_20px_rgba(15,23,42,0.14)] ring-1 ring-white/40 transition-all duration-150 active:translate-y-[1px] active:opacity-90"
+              className="flex flex-1 items-center justify-center gap-2 rounded-l-xl rounded-r-none bg-primary px-3 py-2 text-xs font-semibold text-white shadow-[0_8px_20px_rgba(15,23,42,0.14)] ring-1 ring-white/40 transition-all duration-150 active:translate-y-[1px] active:opacity-90"
               onClick={meals.openManualMealEntry}
             >
               <span>+</span>
@@ -1598,7 +1598,7 @@ export default function HomeScreen() {
             </button>
             <button
               type="button"
-              className="flex flex-1 items-center justify-center gap-2 rounded-none border-l border-white/30 bg-gradient-to-r from-primary to-primary-dark px-3 py-2 text-xs font-semibold text-white shadow-[0_8px_20px_rgba(15,23,42,0.14)] ring-1 ring-white/40 transition-all duration-150 active:translate-y-[1px] active:opacity-90"
+              className="flex flex-1 items-center justify-center gap-2 rounded-none border-l border-white/30 bg-primary px-3 py-2 text-xs font-semibold text-white shadow-[0_8px_20px_rgba(15,23,42,0.14)] ring-1 ring-white/40 transition-all duration-150 active:translate-y-[1px] active:opacity-90"
               onClick={() => setBarcodeOpen(true)}
             >
               <span>▦</span>
@@ -1606,7 +1606,7 @@ export default function HomeScreen() {
             </button>
             <button
               type="button"
-              className="flex flex-1 items-center justify-center gap-2 rounded-r-xl rounded-l-none border-l border-white/30 bg-gradient-to-r from-primary to-primary-dark px-3 py-2 text-xs font-semibold text-white shadow-[0_8px_20px_rgba(15,23,42,0.14)] ring-1 ring-white/40 transition-all duration-150 active:translate-y-[1px] active:opacity-90"
+              className="flex flex-1 items-center justify-center gap-2 rounded-r-xl rounded-l-none border-l border-white/30 bg-primary px-3 py-2 text-xs font-semibold text-white shadow-[0_8px_20px_rgba(15,23,42,0.14)] ring-1 ring-white/40 transition-all duration-150 active:translate-y-[1px] active:opacity-90"
               onClick={handleOpenQuickAdd}
             >
               <span>+</span>

@@ -648,7 +648,7 @@ export default function InsightsScreen() {
               {!hasEnoughData && <p className="text-[11px] uppercase tracking-wide text-muted/50">Preview</p>}
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1">
-                  <div className="h-2 w-4 rounded-sm" style={{ background: "linear-gradient(to right, #6FA8FF, #4F88E8)" }} />
+                  <div className="h-2 w-4 rounded-sm" style={{ background: "linear-gradient(to right, #6FA8FF, #5A9AFF)" }} />
                   <p className="text-[10px] text-muted/65">Food</p>
                 </div>
                 <div className="flex items-center gap-1">
@@ -679,7 +679,7 @@ export default function InsightsScreen() {
                     className="h-full shrink-0"
                     style={{
                       width: barsReady ? `${pattern.foodPct}%` : "0%",
-                      background: "linear-gradient(to right, #6FA8FF, #4F88E8)",
+                      background: "linear-gradient(to right, #6FA8FF, #5A9AFF)",
                       transition: `width 600ms cubic-bezier(0.22,1,0.36,1) ${index * 55}ms`,
                     }}
                   />

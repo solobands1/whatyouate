@@ -11,7 +11,7 @@ const config: Config = {
       colors: {
         primary: {
           DEFAULT: "#6FA8FF",
-          dark: "#4F88E8",
+          dark: "#5A9AFF",
           soft: "#DDEBFF"
         },
         ink: "#1F2937",
