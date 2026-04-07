@@ -1164,7 +1164,7 @@ export default function HomeScreen() {
             </div>
             <button
               type="button"
-              className="rounded-xl bg-gradient-to-r from-primary to-primary-dark px-6 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] ring-1 ring-white/40 transition active:opacity-90"
+              className="rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] ring-1 ring-white/40 transition hover:bg-primary/90"
               onClick={() => {
                 if (!user) return;
                 localStorage.setItem(`wya_demo_mode_${user.id}`, "true");
@@ -1210,7 +1210,7 @@ export default function HomeScreen() {
                 <div className="mt-4 space-y-2">
                   <button
                     type="button"
-                    className="flex w-full flex-col items-start rounded-xl bg-gradient-to-r from-primary to-primary-dark px-4 py-3 text-left transition active:opacity-90"
+                    className="flex w-full flex-col items-start rounded-xl bg-primary px-4 py-3 text-left transition hover:bg-primary/90"
                     onClick={workout.handleStartWorkout}
                   >
                     <span className="text-sm font-semibold text-white">Start Workout</span>
@@ -1311,7 +1311,7 @@ export default function HomeScreen() {
                 <button
                   type="button"
                   disabled={workout.isEndingWorkout}
-                  className="rounded-xl bg-gradient-to-r from-primary to-primary-dark px-4 py-2 text-xs font-semibold text-white transition active:opacity-90 disabled:opacity-50"
+                  className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
                   onClick={workout.handleEndWorkout}
                 >
                   {workout.isEndingWorkout ? "Ending…" : "End workout"}
@@ -1348,7 +1348,7 @@ export default function HomeScreen() {
               </button>
               <button
                 type="button"
-                className="rounded-xl bg-gradient-to-r from-primary to-primary-dark px-4 py-2 text-xs font-semibold text-white transition active:opacity-90 disabled:opacity-50"
+                className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
                 onClick={handleConfirmDelete}
                 disabled={deletingItem}
               >
@@ -1369,7 +1369,7 @@ export default function HomeScreen() {
                   </span>
                 </span>
               </h1>
-              <span className="inline-flex items-center rounded-full border border-primary/25 bg-primary/15 px-2 py-0.5 text-[9px] font-semibold text-primary">
+              <span className="inline-flex items-center rounded-full bg-primary/15 px-2 py-0.5 text-[9px] font-semibold text-primary">
                 BETA
               </span>
             </div>
@@ -1477,7 +1477,7 @@ export default function HomeScreen() {
               const atRisk = todayMeals.length === 0 && new Date().getHours() >= 18;
               return (
                 <div className="flex flex-col items-end gap-1">
-                  <div className={`flex items-center gap-1 rounded-full border border-primary/20 px-2.5 py-1 bg-primary/15 ${streakSaverInfo ? "animate-wiggle" : ""}`}>
+                  <div className={`flex items-center gap-1 rounded-full px-2.5 py-1 bg-primary/10 ${streakSaverInfo ? "animate-wiggle" : ""}`}>
                     <svg width="16" height="18" viewBox="0 0 13 15" fill="none" aria-hidden="true" className={atRisk ? "" : "animate-flame"}>
                       <path d="M6.5 0C6.5 0 4 3.5 4 6C4 6.5 4.1 7 4.3 7.4C3.5 6.6 3.2 5.5 3.2 5.5C1.8 7 1 8.8 1 11C1 13.2 3.5 15 6.5 15C9.5 15 12 13.2 12 11C12 8.2 9.5 5.5 9.5 5.5C9.5 7 8.8 8 8 8.5C8.2 8 8.3 7.4 8.3 6.8C8.3 4.2 6.5 0 6.5 0Z" fill="#f97316"/>
                       <path d="M6.5 7.5C6.2 8.5 6 9.2 6 10C6 11.1 6.2 11.8 6.5 12C6.8 11.8 7 11.1 7 10C7 9.2 6.8 8.5 6.5 7.5Z" fill="#fbbf24"/>
@@ -1522,7 +1522,7 @@ export default function HomeScreen() {
               <p className="mt-1 text-2xl font-semibold">
                 {formatClean(homeMarkers.todayTotals.calories_min, homeMarkers.todayTotals.calories_max)}
               </p>
-              <p className="text-[10px] text-muted/65">approx.</p>
+              <p className="text-[10px] text-muted/50">approx.</p>
             </div>
             <div>
               <p className="text-[11px] uppercase tracking-wide text-muted/60">Protein</p>
@@ -1533,19 +1533,19 @@ export default function HomeScreen() {
                   "g"
                 )}
               </p>
-              <p className="text-[10px] text-muted/65">approx.</p>
+              <p className="text-[10px] text-muted/50">approx.</p>
             </div>
           </div>
           {mealCount > 0 && (
             <div className="mt-3 flex gap-3">
               <div className="flex-1">
                 <div className="h-1.5 overflow-hidden rounded-full bg-ink/5">
-                  <div className="h-full rounded-full bg-gradient-to-r from-primary to-primary-dark" style={{ width: `${barsReady ? calPct : 0}%`, transition: "width 700ms cubic-bezier(0.22,1,0.36,1)" }} />
+                  <div className="h-full rounded-full bg-primary" style={{ width: `${barsReady ? calPct : 0}%`, transition: "width 700ms cubic-bezier(0.22,1,0.36,1)" }} />
                 </div>
               </div>
               <div className="flex-1">
                 <div className="h-1.5 overflow-hidden rounded-full bg-ink/5">
-                  <div className="h-full rounded-full bg-gradient-to-r from-primary to-primary-dark" style={{ width: `${barsReady ? protPct : 0}%`, transition: "width 700ms cubic-bezier(0.22,1,0.36,1) 80ms" }} />
+                  <div className="h-full rounded-full bg-primary" style={{ width: `${barsReady ? protPct : 0}%`, transition: "width 700ms cubic-bezier(0.22,1,0.36,1) 80ms" }} />
                 </div>
               </div>
             </div>
@@ -1582,7 +1582,7 @@ export default function HomeScreen() {
           <div data-tour="food-action">
           <button
             type="button"
-            className="block w-full rounded-xl bg-gradient-to-r from-primary to-primary-dark px-5 py-4 text-center text-base font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] ring-1 ring-white/40 transition active:scale-[0.98] active:opacity-90"
+            className="block w-full rounded-xl bg-primary px-5 py-4 text-center text-base font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] ring-1 ring-white/40 transition hover:bg-primary/90 active:scale-[0.98]"
             onClick={handleFoodPhotoClick}
           >
             Take Food Photo
@@ -1590,7 +1590,7 @@ export default function HomeScreen() {
           <div className="mt-1 flex w-[92%] mx-auto">
             <button
               type="button"
-              className="flex flex-1 items-center justify-center gap-2 rounded-l-xl rounded-r-none bg-primary px-3 py-2 text-xs font-semibold text-white shadow-[0_8px_20px_rgba(15,23,42,0.14)] ring-1 ring-white/40 transition-all duration-150 active:translate-y-[1px] active:opacity-90"
+              className="flex flex-1 items-center justify-center gap-2 rounded-l-xl rounded-r-none bg-primary px-3 py-2 text-xs font-semibold text-white shadow-[0_8px_20px_rgba(15,23,42,0.14)] ring-1 ring-white/40 transition-all duration-150 hover:bg-primary/90 active:translate-y-[1px] active:shadow-[0_3px_10px_rgba(15,23,42,0.18)]"
               onClick={meals.openManualMealEntry}
             >
               <span>+</span>
@@ -1598,7 +1598,7 @@ export default function HomeScreen() {
             </button>
             <button
               type="button"
-              className="flex flex-1 items-center justify-center gap-2 rounded-none border-l border-white/30 bg-primary px-3 py-2 text-xs font-semibold text-white shadow-[0_8px_20px_rgba(15,23,42,0.14)] ring-1 ring-white/40 transition-all duration-150 active:translate-y-[1px] active:opacity-90"
+              className="flex flex-1 items-center justify-center gap-2 rounded-none border-l border-white/30 bg-primary px-3 py-2 text-xs font-semibold text-white shadow-[0_8px_20px_rgba(15,23,42,0.14)] ring-1 ring-white/40 transition-all duration-150 hover:bg-primary/90 active:translate-y-[1px] active:shadow-[0_3px_10px_rgba(15,23,42,0.18)]"
               onClick={() => setBarcodeOpen(true)}
             >
               <span>▦</span>
@@ -1606,7 +1606,7 @@ export default function HomeScreen() {
             </button>
             <button
               type="button"
-              className="flex flex-1 items-center justify-center gap-2 rounded-r-xl rounded-l-none border-l border-white/30 bg-primary px-3 py-2 text-xs font-semibold text-white shadow-[0_8px_20px_rgba(15,23,42,0.14)] ring-1 ring-white/40 transition-all duration-150 active:translate-y-[1px] active:opacity-90"
+              className="flex flex-1 items-center justify-center gap-2 rounded-r-xl rounded-l-none border-l border-white/30 bg-primary px-3 py-2 text-xs font-semibold text-white shadow-[0_8px_20px_rgba(15,23,42,0.14)] ring-1 ring-white/40 transition-all duration-150 hover:bg-primary/90 active:translate-y-[1px] active:shadow-[0_3px_10px_rgba(15,23,42,0.18)]"
               onClick={handleOpenQuickAdd}
             >
               <span>+</span>
@@ -1617,14 +1617,14 @@ export default function HomeScreen() {
           <div className="mx-auto flex w-[84%] text-xs" data-tour="workout-markers">
             <button
               type="button"
-              className="flex flex-1 items-center justify-center rounded-l-xl rounded-r-none border border-ink/10 bg-white px-3 py-1.5 text-center font-normal text-ink/75 shadow-[0_4px_12px_rgba(15,23,42,0.08)] transition-all duration-150 hover:bg-ink/5 active:translate-y-[1px]"
+              className="flex flex-1 items-center justify-center rounded-l-xl rounded-r-none border border-ink/10 bg-white px-3 py-1.5 text-center font-normal text-ink/60 shadow-[0_4px_12px_rgba(15,23,42,0.08)] transition-all duration-150 hover:bg-ink/5 active:translate-y-[1px]"
               onClick={() => workout.setShowStartWorkoutModal(true)}
             >
               Start Workout
             </button>
             <button
               type="button"
-              className="flex flex-1 items-center justify-center rounded-r-xl rounded-l-none border border-l-0 border-ink/10 bg-white px-3 py-1.5 text-center font-normal text-ink/75 shadow-[0_4px_12px_rgba(15,23,42,0.08)] transition-all duration-150 hover:bg-ink/5 active:translate-y-[1px]"
+              className="flex flex-1 items-center justify-center rounded-r-xl rounded-l-none border border-l-0 border-ink/10 bg-white px-3 py-1.5 text-center font-normal text-ink/60 shadow-[0_4px_12px_rgba(15,23,42,0.08)] transition-all duration-150 hover:bg-ink/5 active:translate-y-[1px]"
               onClick={() => workout.setShowEndWorkoutModal(true)}
             >
               End Workout
@@ -1695,7 +1695,7 @@ export default function HomeScreen() {
                             meals.openMealEditor(meal);
                           }
                         }}
-                        className={`inline-flex w-full items-start justify-between rounded-full border border-primary/25 px-3 py-1.5 text-xs text-ink/80 ${editRecents ? "cursor-pointer animate-wiggle bg-primary/15" : (isShimmer ? "animate-shimmer" : "animate-pill-in bg-primary/15")}`}
+                        className={`inline-flex w-full items-start justify-between rounded-full border border-primary/20 px-3 py-1.5 text-xs text-ink/80 ${editRecents ? "cursor-pointer animate-wiggle bg-primary/10" : (isShimmer ? "animate-shimmer" : "animate-pill-in bg-primary/10")}`}
                         style={{
                           ...(isShimmer ? { background: "linear-gradient(90deg, #dbeafe 0%, #bfdbfe 40%, #dbeafe 60%, #dbeafe 100%)", backgroundSize: "200% 100%" } : {}),
                           ...(!editRecents && !isShimmer ? { animationDelay: `${idx * 35}ms` } : {})
@@ -1775,7 +1775,7 @@ export default function HomeScreen() {
             )}
             {!loadingData && recentItems.length === 0 ? (
               mealCount === 0 && displayWorkouts.length === 0 ? (
-                <div className="inline-flex items-start rounded-full border border-primary/25 bg-primary/15 px-3 py-1.5 text-xs text-ink/80">
+                <div className="inline-flex items-start rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5 text-xs text-ink/80">
                   <span className="flex flex-col">
                     <span>Chicken Bowl <span className="text-ink/35">(example)</span></span>
                     <span className="text-ink/50">600 kcal · 40g protein</span>
@@ -1808,7 +1808,7 @@ export default function HomeScreen() {
                   </button>
                   <button
                     type="button"
-                    className="rounded-xl bg-gradient-to-r from-primary to-primary-dark px-4 py-2 text-xs font-semibold text-white transition active:opacity-90 disabled:opacity-50"
+                    className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
                     onClick={handleConfirmDelete}
                     disabled={deletingItem}
                   >
@@ -1899,7 +1899,7 @@ export default function HomeScreen() {
                         </button>
                         <button
                           type="button"
-                          className="rounded-xl bg-gradient-to-r from-primary to-primary-dark px-4 py-2 text-xs font-semibold text-white transition active:opacity-90 disabled:opacity-50"
+                          className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
                           onClick={meals.confirmManualMeal}
                           disabled={meals.updatingMeal}
                         >
@@ -2004,7 +2004,7 @@ export default function HomeScreen() {
                     </button>
                     <button
                       type="button"
-                      className="rounded-xl bg-gradient-to-r from-primary to-primary-dark px-4 py-2 text-xs font-semibold text-white transition active:opacity-90 disabled:opacity-50"
+                      className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
                       onClick={meals.handleUpdateMeal}
                       disabled={meals.updatingMeal}
                     >
@@ -2046,7 +2046,7 @@ export default function HomeScreen() {
               </button>
               <button
                 type="button"
-                className="rounded-xl bg-gradient-to-r from-primary to-primary-dark px-4 py-2 text-xs font-semibold text-white transition active:opacity-90 disabled:opacity-50"
+                className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
                 onClick={handleFailedMealSubmit}
                 disabled={failedMealAnalyzing || !failedMealText.trim()}
               >
@@ -2113,7 +2113,7 @@ export default function HomeScreen() {
               </button>
               <button
                 type="button"
-                className="rounded-xl bg-gradient-to-r from-primary to-primary-dark px-4 py-2 text-xs font-semibold text-white transition active:opacity-90 disabled:opacity-50"
+                className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
                 onClick={handleQuickConfirm}
                 disabled={quickConfirming || !quickConfirmName.trim()}
               >
@@ -2143,7 +2143,7 @@ export default function HomeScreen() {
                   </button>
                   <button
                     type="button"
-                    className="rounded-xl bg-gradient-to-r from-primary to-primary-dark px-4 py-2 text-xs font-semibold text-white transition active:opacity-90 disabled:opacity-50"
+                    className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
                     onClick={handleConfirmDelete}
                     disabled={deletingItem}
                   >
@@ -2259,7 +2259,7 @@ export default function HomeScreen() {
                     </button>
                     <button
                       type="button"
-                      className={`rounded-xl bg-gradient-to-r from-primary to-primary-dark px-4 py-2 text-xs font-semibold text-white transition active:opacity-90 ${
+                      className={`rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 ${
                         workout.updatingWorkout ? "opacity-70" : ""
                       }`}
                       onClick={workout.handleUpdateWorkout}
@@ -2396,7 +2396,7 @@ export default function HomeScreen() {
               </button>
               <button
                 type="button"
-                className={`rounded-xl bg-gradient-to-r from-primary to-primary-dark px-4 py-2 text-xs font-semibold text-white transition active:opacity-90 ${
+                className={`rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 ${
                   workout.addingManual ? "opacity-70" : ""
                 }`}
                 onClick={workout.handleAddManualWorkout}
@@ -2433,7 +2433,7 @@ export default function HomeScreen() {
                 )}
               </div>
               {barcodeFromCache && (
-                <span className="shrink-0 rounded-full border border-primary/25 bg-primary/15 px-2 py-0.5 text-[10px] font-semibold text-primary">Saved</span>
+                <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">Saved</span>
               )}
             </div>
             <div className="mt-3 grid grid-cols-4 gap-2 text-center">
@@ -2522,7 +2522,7 @@ export default function HomeScreen() {
               {barcodeEditMode ? (
                 <button
                   type="button"
-                  className="rounded-xl bg-gradient-to-r from-primary to-primary-dark px-4 py-2 text-xs font-semibold text-white transition active:opacity-90 disabled:opacity-50"
+                  className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
                   onClick={handleSaveAndAddBarcode}
                   disabled={isAddingBarcode}
                 >
@@ -2531,7 +2531,7 @@ export default function HomeScreen() {
               ) : (
                 <button
                   type="button"
-                  className="rounded-xl bg-gradient-to-r from-primary to-primary-dark px-4 py-2 text-xs font-semibold text-white transition active:opacity-90 disabled:opacity-50"
+                  className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
                   onClick={handleConfirmBarcodeProduct}
                   disabled={isAddingBarcode}
                 >
@@ -2559,7 +2559,7 @@ export default function HomeScreen() {
               </button>
               <button
                 type="button"
-                className="rounded-xl bg-gradient-to-r from-primary to-primary-dark px-4 py-2 text-xs font-semibold text-white transition active:opacity-90"
+                className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90"
                 onClick={() => { setBarcodeNotFound(false); meals.openManualMealEntry(); }}
               >
                 Add Manually

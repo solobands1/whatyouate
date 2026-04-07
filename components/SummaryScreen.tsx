@@ -94,12 +94,6 @@ function MacroRing({
       <div className="relative" style={{ width: SIZE, height: SIZE }}>
         {/* rotate(135deg) places the arc start at bottom-left, gap at bottom */}
         <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} style={{ transform: "rotate(135deg)" }}>
-          <defs>
-            <linearGradient id={`ring-grad-${label}`} x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#6FA8FF" />
-              <stop offset="100%" stopColor="#5A9AFF" />
-            </linearGradient>
-          </defs>
           {/* Grey track */}
           <circle
             cx={SIZE / 2} cy={SIZE / 2} r={R}
@@ -108,12 +102,13 @@ function MacroRing({
             className="text-ink/10"
             strokeLinecap="butt"
           />
-          {/* Gradient progress arc */}
+          {/* Primary progress — same color as home screen bars */}
           <circle
             cx={SIZE / 2} cy={SIZE / 2} r={R}
-            fill="none" stroke={`url(#ring-grad-${label})`} strokeWidth={STROKE}
+            fill="none" stroke="currentColor" strokeWidth={STROKE}
             strokeDasharray={`${ARC} ${C}`}
             strokeDashoffset={offset}
+            className="text-primary"
             strokeLinecap="round"
             style={{ transition: "stroke-dashoffset 700ms cubic-bezier(0.22,1,0.36,1)" }}
           />
@@ -1071,7 +1066,7 @@ export default function SummaryScreen() {
           <div className="flex items-center gap-2">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Nudges</p>
             {nudgeCardIsNew && smartNudge && (
-              <span className="animate-card-fade inline-flex items-center rounded-full border border-primary/25 bg-primary/15 px-2 py-0.5 text-[10px] font-semibold text-primary">New</span>
+              <span className="animate-card-fade inline-flex items-center rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold text-primary">New</span>
             )}
           </div>
           {isDemoMode ? (
@@ -1133,7 +1128,7 @@ export default function SummaryScreen() {
                     <button
                       type="button"
                       onClick={openUpgradeModal}
-                      className="rounded-xl bg-gradient-to-r from-primary to-primary-dark px-4 py-2 text-xs font-semibold text-white transition active:opacity-80"
+                      className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition active:opacity-80"
                     >
                       Unlock to read
                     </button>
@@ -1161,7 +1156,7 @@ export default function SummaryScreen() {
                     (nudge.type === "calorie_low" && calTarget > 0 && todayCalAvg >= calTarget * 0.9) ||
                     ((nudge.type === "protein_low" || nudge.type === "protein_low_critical") && proTarget > 0 && todayProAvg >= proTarget * 0.85);
                   return (
-                    <div className="rounded-xl border border-primary/35 bg-primary/5 px-4 py-3 space-y-2.5">
+                    <div className="rounded-xl border border-primary/60 bg-primary/5 px-4 py-3 space-y-2.5">
                       <p className="text-sm font-medium text-ink/90">{nudge.message}</p>
                       <p className="text-[11px] text-primary/50 font-medium">— Coach</p>
                       {isCaughtUp && (
@@ -1212,7 +1207,7 @@ export default function SummaryScreen() {
                                   {behavioralChips.map((chip) => (
                                     <span
                                       key={chip}
-                                      className="rounded-full border border-primary/30 bg-primary/15 px-2.5 py-0.5 text-[11px] font-medium text-primary/90"
+                                      className="rounded-full border border-primary/25 bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary/80"
                                     >
                                       {chip}
                                     </span>

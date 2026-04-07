@@ -90,7 +90,7 @@ export default function UpgradeModal() {
                 }`}
               >
                 {plan === "yearly" && (
-                  <span className="absolute -top-2.5 right-3 rounded-full bg-gradient-to-r from-primary to-primary-dark px-2 py-0.5 text-[10px] font-semibold text-white">
+                  <span className="absolute -top-2.5 right-3 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-white">
                     Save {yearlySavings}%
                   </span>
                 )}
@@ -120,7 +120,7 @@ export default function UpgradeModal() {
             <button
               type="button"
               onClick={() => setTapped(true)}
-              className="w-full rounded-xl bg-gradient-to-r from-primary to-primary-dark px-5 py-3.5 text-sm font-semibold text-white transition active:opacity-80"
+              className="w-full rounded-xl bg-primary px-5 py-3.5 text-sm font-semibold text-white transition active:opacity-80"
             >
               Upgrade
             </button>
