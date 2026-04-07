@@ -1058,12 +1058,6 @@ export default function SummaryScreen() {
           {/* Wyaa floating on top-right corner */}
           <div className="absolute -top-5 -right-1 z-10">
             <WyaaAvatar
-              expression={
-                smartNudge?.type === "on_track" ? "happy"
-                : nudgeCardIsNew && smartNudge ? "excited"
-                : smartNudge ? "thinking"
-                : "neutral"
-              }
               isNew={nudgeCardIsNew && !!smartNudge}
               size={46}
               onClick={() => setShowWyaaSheet(true)}
@@ -1325,7 +1319,7 @@ export default function SummaryScreen() {
             {/* Speech bubble */}
             <div className="relative rounded-2xl bg-white px-6 py-6 shadow-xl">
               <div className="flex flex-col items-center gap-4 text-center">
-                <WyaaAvatar expression="happy" size={72} />
+                <WyaaAvatar size={72} />
                 <div>
                   <p className="text-base font-semibold text-ink">Hey! I&apos;m Wyaa the blueberry.</p>
                   <p className="mt-2.5 text-sm leading-relaxed text-muted/70">
