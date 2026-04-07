@@ -1157,8 +1157,8 @@ export default function SummaryScreen() {
                     ((nudge.type === "protein_low" || nudge.type === "protein_low_critical") && proTarget > 0 && todayProAvg >= proTarget * 0.85);
                   return (
                     <div className="rounded-xl border border-primary/60 bg-primary/5 px-4 py-3 space-y-2.5">
-                      <p className="text-sm font-medium text-ink/90">{nudge.message}</p>
-                      <p className="text-[11px] text-primary/50 font-medium">— Coach</p>
+                      <p className="text-sm font-medium text-ink/90">{nudge.message.replace(/\n+/g, " ")}</p>
+                      <p className="text-[11px] text-primary/70 font-medium">— Coach</p>
                       {isCaughtUp && (
                         <p className="text-[11px] text-primary/60 font-medium">Looks like you've caught up since then.</p>
                       )}

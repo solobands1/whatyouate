@@ -55,6 +55,7 @@ Rules:
 - Use day-of-week and workout context when it adds specificity
 - Be honest, direct, and specific — not generic
 - No em dashes (—). End with a period or exclamation mark.
+- Write as a single flowing paragraph — no line breaks, no newlines within the message
 - No clichés: forbidden: "crush it", "you've got this", "fresh start", "stay on track", "hit your goal", "keep it up", "build muscle", "well done", "great job", "amazing", "nice work"
 - Don't repeat the same angle as recent nudges — avoid the same type AND the same thematic angle under a different type
 - If timeOfDay is "morning": frame as intention. If "afternoon": note there's still time. If "evening": brief and reflective.
