@@ -634,7 +634,7 @@ export default function InsightsScreen() {
           {sparklineChart.hasTarget && (
             <div className="mt-2 flex items-center gap-1.5">
               <div className="h-2 w-3 rounded-sm bg-primary/15" />
-              <p className="text-[10px] text-muted/65">Target range</p>
+              <p className="text-[10px] text-muted/75">Target range</p>
             </div>
           )}
         </Card>
@@ -649,11 +649,11 @@ export default function InsightsScreen() {
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1">
                   <div className="h-2 w-4 rounded-sm bg-primary/45" />
-                  <p className="text-[10px] text-muted/65">Food</p>
+                  <p className="text-[10px] text-muted/75">Food</p>
                 </div>
                 <div className="flex items-center gap-1">
                   <div className="h-2 w-4 rounded-sm bg-primary/20" />
-                  <p className="text-[10px] text-muted/65">Supplements</p>
+                  <p className="text-[10px] text-muted/75">Supplements</p>
                 </div>
               </div>
             </div>
