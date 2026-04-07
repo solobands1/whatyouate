@@ -1164,7 +1164,7 @@ export default function HomeScreen() {
             </div>
             <button
               type="button"
-              className="rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] ring-1 ring-white/40 transition hover:bg-primary/90"
+              className="rounded-xl bg-gradient-to-r from-primary to-primary-dark px-6 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] ring-1 ring-white/40 transition active:opacity-90"
               onClick={() => {
                 if (!user) return;
                 localStorage.setItem(`wya_demo_mode_${user.id}`, "true");
@@ -1210,7 +1210,7 @@ export default function HomeScreen() {
                 <div className="mt-4 space-y-2">
                   <button
                     type="button"
-                    className="flex w-full flex-col items-start rounded-xl bg-primary px-4 py-3 text-left transition hover:bg-primary/90"
+                    className="flex w-full flex-col items-start rounded-xl bg-gradient-to-r from-primary to-primary-dark px-4 py-3 text-left transition active:opacity-90"
                     onClick={workout.handleStartWorkout}
                   >
                     <span className="text-sm font-semibold text-white">Start Workout</span>
@@ -1311,7 +1311,7 @@ export default function HomeScreen() {
                 <button
                   type="button"
                   disabled={workout.isEndingWorkout}
-                  className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
+                  className="rounded-xl bg-gradient-to-r from-primary to-primary-dark px-4 py-2 text-xs font-semibold text-white transition active:opacity-90 disabled:opacity-50"
                   onClick={workout.handleEndWorkout}
                 >
                   {workout.isEndingWorkout ? "Ending…" : "End workout"}
@@ -1348,7 +1348,7 @@ export default function HomeScreen() {
               </button>
               <button
                 type="button"
-                className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
+                className="rounded-xl bg-gradient-to-r from-primary to-primary-dark px-4 py-2 text-xs font-semibold text-white transition active:opacity-90 disabled:opacity-50"
                 onClick={handleConfirmDelete}
                 disabled={deletingItem}
               >
@@ -1540,12 +1540,12 @@ export default function HomeScreen() {
             <div className="mt-3 flex gap-3">
               <div className="flex-1">
                 <div className="h-1.5 overflow-hidden rounded-full bg-ink/5">
-                  <div className="h-full rounded-full bg-primary" style={{ width: `${barsReady ? calPct : 0}%`, transition: "width 700ms cubic-bezier(0.22,1,0.36,1)" }} />
+                  <div className="h-full rounded-full bg-gradient-to-r from-primary to-primary-dark" style={{ width: `${barsReady ? calPct : 0}%`, transition: "width 700ms cubic-bezier(0.22,1,0.36,1)" }} />
                 </div>
               </div>
               <div className="flex-1">
                 <div className="h-1.5 overflow-hidden rounded-full bg-ink/5">
-                  <div className="h-full rounded-full bg-primary" style={{ width: `${barsReady ? protPct : 0}%`, transition: "width 700ms cubic-bezier(0.22,1,0.36,1) 80ms" }} />
+                  <div className="h-full rounded-full bg-gradient-to-r from-primary to-primary-dark" style={{ width: `${barsReady ? protPct : 0}%`, transition: "width 700ms cubic-bezier(0.22,1,0.36,1) 80ms" }} />
                 </div>
               </div>
             </div>
@@ -1808,7 +1808,7 @@ export default function HomeScreen() {
                   </button>
                   <button
                     type="button"
-                    className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
+                    className="rounded-xl bg-gradient-to-r from-primary to-primary-dark px-4 py-2 text-xs font-semibold text-white transition active:opacity-90 disabled:opacity-50"
                     onClick={handleConfirmDelete}
                     disabled={deletingItem}
                   >
@@ -1899,7 +1899,7 @@ export default function HomeScreen() {
                         </button>
                         <button
                           type="button"
-                          className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
+                          className="rounded-xl bg-gradient-to-r from-primary to-primary-dark px-4 py-2 text-xs font-semibold text-white transition active:opacity-90 disabled:opacity-50"
                           onClick={meals.confirmManualMeal}
                           disabled={meals.updatingMeal}
                         >
@@ -2004,7 +2004,7 @@ export default function HomeScreen() {
                     </button>
                     <button
                       type="button"
-                      className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
+                      className="rounded-xl bg-gradient-to-r from-primary to-primary-dark px-4 py-2 text-xs font-semibold text-white transition active:opacity-90 disabled:opacity-50"
                       onClick={meals.handleUpdateMeal}
                       disabled={meals.updatingMeal}
                     >
@@ -2046,7 +2046,7 @@ export default function HomeScreen() {
               </button>
               <button
                 type="button"
-                className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
+                className="rounded-xl bg-gradient-to-r from-primary to-primary-dark px-4 py-2 text-xs font-semibold text-white transition active:opacity-90 disabled:opacity-50"
                 onClick={handleFailedMealSubmit}
                 disabled={failedMealAnalyzing || !failedMealText.trim()}
               >
@@ -2113,7 +2113,7 @@ export default function HomeScreen() {
               </button>
               <button
                 type="button"
-                className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
+                className="rounded-xl bg-gradient-to-r from-primary to-primary-dark px-4 py-2 text-xs font-semibold text-white transition active:opacity-90 disabled:opacity-50"
                 onClick={handleQuickConfirm}
                 disabled={quickConfirming || !quickConfirmName.trim()}
               >
@@ -2143,7 +2143,7 @@ export default function HomeScreen() {
                   </button>
                   <button
                     type="button"
-                    className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
+                    className="rounded-xl bg-gradient-to-r from-primary to-primary-dark px-4 py-2 text-xs font-semibold text-white transition active:opacity-90 disabled:opacity-50"
                     onClick={handleConfirmDelete}
                     disabled={deletingItem}
                   >
@@ -2259,7 +2259,7 @@ export default function HomeScreen() {
                     </button>
                     <button
                       type="button"
-                      className={`rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 ${
+                      className={`rounded-xl bg-gradient-to-r from-primary to-primary-dark px-4 py-2 text-xs font-semibold text-white transition active:opacity-90 ${
                         workout.updatingWorkout ? "opacity-70" : ""
                       }`}
                       onClick={workout.handleUpdateWorkout}
@@ -2396,7 +2396,7 @@ export default function HomeScreen() {
               </button>
               <button
                 type="button"
-                className={`rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 ${
+                className={`rounded-xl bg-gradient-to-r from-primary to-primary-dark px-4 py-2 text-xs font-semibold text-white transition active:opacity-90 ${
                   workout.addingManual ? "opacity-70" : ""
                 }`}
                 onClick={workout.handleAddManualWorkout}
@@ -2522,7 +2522,7 @@ export default function HomeScreen() {
               {barcodeEditMode ? (
                 <button
                   type="button"
-                  className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
+                  className="rounded-xl bg-gradient-to-r from-primary to-primary-dark px-4 py-2 text-xs font-semibold text-white transition active:opacity-90 disabled:opacity-50"
                   onClick={handleSaveAndAddBarcode}
                   disabled={isAddingBarcode}
                 >
@@ -2531,7 +2531,7 @@ export default function HomeScreen() {
               ) : (
                 <button
                   type="button"
-                  className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
+                  className="rounded-xl bg-gradient-to-r from-primary to-primary-dark px-4 py-2 text-xs font-semibold text-white transition active:opacity-90 disabled:opacity-50"
                   onClick={handleConfirmBarcodeProduct}
                   disabled={isAddingBarcode}
                 >
@@ -2559,7 +2559,7 @@ export default function HomeScreen() {
               </button>
               <button
                 type="button"
-                className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90"
+                className="rounded-xl bg-gradient-to-r from-primary to-primary-dark px-4 py-2 text-xs font-semibold text-white transition active:opacity-90"
                 onClick={() => { setBarcodeNotFound(false); meals.openManualMealEntry(); }}
               >
                 Add Manually

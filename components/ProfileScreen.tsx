@@ -567,7 +567,7 @@ export default function ProfileScreen() {
                 <button
                   type="button"
                   data-tour="feedback-button"
-                  className="rounded-full bg-primary px-3 py-1 text-[10px] font-semibold text-white transition hover:bg-primary/90"
+                  className="rounded-full bg-gradient-to-r from-primary to-primary-dark px-3 py-1 text-[10px] font-semibold text-white transition active:opacity-90"
                   onClick={() => setShowFeedback(true)}
                 >
                   Send Feedback
@@ -1016,7 +1016,7 @@ export default function ProfileScreen() {
 
           <div className="mt-8 border-t border-ink/5 pt-7">
           <button
-            className="w-full rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] ring-1 ring-white/40 transition-colors hover:bg-primary/90 disabled:opacity-50"
+            className="w-full rounded-xl bg-gradient-to-r from-primary to-primary-dark px-5 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] ring-1 ring-white/40 transition active:opacity-90 disabled:opacity-50"
             onClick={handleSave}
             disabled={saving}
           >
@@ -1156,7 +1156,7 @@ export default function ProfileScreen() {
               </button>
               <button
                 type="button"
-                className="flex-1 rounded-xl bg-primary py-2 text-xs font-semibold text-white disabled:opacity-50"
+                className="flex-1 rounded-xl bg-gradient-to-r from-primary to-primary-dark py-2 text-xs font-semibold text-white disabled:opacity-50"
                 disabled={savingName}
                 onClick={async () => {
                   setSavingName(true);
@@ -1291,7 +1291,7 @@ export default function ProfileScreen() {
               </button>
               <button
                 type="button"
-                className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90"
+                className="rounded-xl bg-gradient-to-r from-primary to-primary-dark px-4 py-2 text-xs font-semibold text-white transition active:opacity-90"
                 disabled={feedbackStatus === "sending" || feedbackText.trim().length === 0}
                 onClick={async () => {
                   if (!user) return;
@@ -1446,7 +1446,7 @@ export default function ProfileScreen() {
               </button>
               <button
                 type="button"
-                className="flex-1 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white transition hover:bg-primary/90"
+                className="flex-1 rounded-xl bg-gradient-to-r from-primary to-primary-dark px-4 py-3 text-sm font-semibold text-white transition active:opacity-90"
                 onClick={() => {
                   const name = multiSuppName;
                   if (!name) return;

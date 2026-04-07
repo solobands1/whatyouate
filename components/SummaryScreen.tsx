@@ -1128,7 +1128,7 @@ export default function SummaryScreen() {
                     <button
                       type="button"
                       onClick={openUpgradeModal}
-                      className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition active:opacity-80"
+                      className="rounded-xl bg-gradient-to-r from-primary to-primary-dark px-4 py-2 text-xs font-semibold text-white transition active:opacity-80"
                     >
                       Unlock to read
                     </button>
