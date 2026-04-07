@@ -1483,7 +1483,7 @@ export default function HomeScreen() {
               const atRisk = todayMeals.length === 0 && new Date().getHours() >= 18;
               return (
                 <div className="flex flex-col items-end gap-1">
-                  <div className={`flex items-center gap-1 rounded-full px-2.5 py-1 bg-primary/10 ${streakSaverInfo ? "animate-wiggle" : atRisk ? "animate-wiggle" : ""}`}>
+                  <div className={`flex items-center gap-1 rounded-full px-2.5 py-1 bg-primary/10 ${streakSaverInfo ? "animate-wiggle" : ""}`}>
                     <svg width="16" height="18" viewBox="0 0 13 15" fill="none" aria-hidden="true" className={atRisk ? "" : "animate-flame"}>
                       <path d="M6.5 0C6.5 0 4 3.5 4 6C4 6.5 4.1 7 4.3 7.4C3.5 6.6 3.2 5.5 3.2 5.5C1.8 7 1 8.8 1 11C1 13.2 3.5 15 6.5 15C9.5 15 12 13.2 12 11C12 8.2 9.5 5.5 9.5 5.5C9.5 7 8.8 8 8 8.5C8.2 8 8.3 7.4 8.3 6.8C8.3 4.2 6.5 0 6.5 0Z" fill="#f97316"/>
                       <path d="M6.5 7.5C6.2 8.5 6 9.2 6 10C6 11.1 6.2 11.8 6.5 12C6.8 11.8 7 11.1 7 10C7 9.2 6.8 8.5 6.5 7.5Z" fill="#fbbf24"/>
