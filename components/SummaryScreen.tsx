@@ -1054,25 +1054,26 @@ export default function SummaryScreen() {
           )}
         </Card>
 
-        <Card className={`mt-6${nudgeCardIsNew && smartNudge ? " ring-1 ring-primary/20" : ""}`} data-tour="nudges-card">
+        <Card className={`relative mt-6${nudgeCardIsNew && smartNudge ? " ring-1 ring-primary/20" : ""}`} data-tour="nudges-card">
+          {/* Wyaa floating on top-right corner */}
+          <div className="absolute -top-5 -right-1 z-10">
+            <WyaaAvatar
+              expression={
+                smartNudge?.type === "on_track" ? "happy"
+                : nudgeCardIsNew && smartNudge ? "excited"
+                : smartNudge ? "thinking"
+                : "neutral"
+              }
+              isNew={nudgeCardIsNew && !!smartNudge}
+              size={46}
+              onClick={() => setShowWyaaSheet(true)}
+            />
+          </div>
           <div className="flex items-center gap-2">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Nudges</p>
             {nudgeCardIsNew && smartNudge && (
               <span className="animate-card-fade inline-flex items-center rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold text-primary">New</span>
             )}
-            <div className="ml-auto">
-              <WyaaAvatar
-                expression={
-                  smartNudge?.type === "on_track" ? "happy"
-                  : nudgeCardIsNew && smartNudge ? "excited"
-                  : smartNudge ? "thinking"
-                  : "neutral"
-                }
-                isNew={nudgeCardIsNew && !!smartNudge}
-                size={36}
-                onClick={() => setShowWyaaSheet(true)}
-              />
-            </div>
           </div>
           {isDemoMode ? (
             <div className="mt-4 space-y-2.5">
@@ -1326,12 +1327,12 @@ export default function SummaryScreen() {
               <div className="flex flex-col items-center gap-4 text-center">
                 <WyaaAvatar expression="happy" size={72} />
                 <div>
-                  <p className="text-base font-semibold text-ink">Hey! I&apos;m Wyaa.</p>
+                  <p className="text-base font-semibold text-ink">Hey! I&apos;m Wyaa the blueberry.</p>
                   <p className="mt-2.5 text-sm leading-relaxed text-muted/70">
-                    I keep an eye on your logs and send you one honest, specific nudge each morning, afternoon, and evening. Not generic tips — just the one thing that actually matters for you right now.
+                    I keep an eye on your logs and send you honest nudges throughout the day. I&apos;m specific to you and what you&apos;re working toward. The more you log, the better I get at reading your patterns.
                   </p>
-                  <p className="mt-2.5 text-sm leading-relaxed text-muted/70">
-                    The more you log, the better I get at reading your patterns.
+                  <p className="mt-2 text-sm leading-relaxed text-muted/70">
+                    I&apos;m excited to help you!
                   </p>
                 </div>
                 <button
