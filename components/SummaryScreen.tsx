@@ -1071,7 +1071,7 @@ export default function SummaryScreen() {
           <div className="flex items-center gap-2">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Nudges</p>
             {nudgeCardIsNew && smartNudge && (
-              <span className="animate-card-fade inline-flex items-center rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold text-primary">New</span>
+              <span className="animate-card-fade inline-flex items-center rounded-full border border-primary/25 bg-primary/15 px-2 py-0.5 text-[10px] font-semibold text-primary">New</span>
             )}
           </div>
           {isDemoMode ? (
@@ -1161,7 +1161,7 @@ export default function SummaryScreen() {
                     (nudge.type === "calorie_low" && calTarget > 0 && todayCalAvg >= calTarget * 0.9) ||
                     ((nudge.type === "protein_low" || nudge.type === "protein_low_critical") && proTarget > 0 && todayProAvg >= proTarget * 0.85);
                   return (
-                    <div className="rounded-xl border border-primary/60 bg-primary/5 px-4 py-3 space-y-2.5">
+                    <div className="rounded-xl border border-primary/35 bg-primary/5 px-4 py-3 space-y-2.5">
                       <p className="text-sm font-medium text-ink/90">{nudge.message}</p>
                       <p className="text-[11px] text-primary/50 font-medium">— Coach</p>
                       {isCaughtUp && (
@@ -1212,7 +1212,7 @@ export default function SummaryScreen() {
                                   {behavioralChips.map((chip) => (
                                     <span
                                       key={chip}
-                                      className="rounded-full border border-primary/25 bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary/80"
+                                      className="rounded-full border border-primary/30 bg-primary/15 px-2.5 py-0.5 text-[11px] font-medium text-primary/90"
                                     >
                                       {chip}
                                     </span>

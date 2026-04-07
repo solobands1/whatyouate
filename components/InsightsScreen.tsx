@@ -550,28 +550,28 @@ export default function InsightsScreen() {
                 i
               </button>
             </div>
-            <p className="text-[11px] uppercase tracking-wide text-muted/50">Avg trend</p>
+            <p className="text-[11px] uppercase tracking-wide text-muted/65">Avg trend</p>
           </div>
           <div className={`mt-5 flex items-baseline justify-between${!hasEnoughData && !isDemoMode ? " opacity-50" : ""}`}>
             <div>
               <p className="text-[11px] uppercase tracking-wide text-muted/60">Calories</p>
               <p className="mt-1 text-xl font-semibold">{displayAvgCalories}</p>
-              <p className="text-[10px] text-muted/50">Avg trend</p>
+              <p className="text-[10px] text-muted/65">Avg trend</p>
             </div>
             <div>
               <p className="text-[11px] uppercase tracking-wide text-muted/60">Carbs</p>
               <p className="mt-1 text-xl font-semibold">{displayAvgCarbs}</p>
-              <p className="text-[10px] text-muted/50">Avg trend</p>
+              <p className="text-[10px] text-muted/65">Avg trend</p>
             </div>
             <div>
               <p className="text-[11px] uppercase tracking-wide text-muted/60">Fats</p>
               <p className="mt-1 text-xl font-semibold">{displayAvgFat}</p>
-              <p className="text-[10px] text-muted/50">Avg trend</p>
+              <p className="text-[10px] text-muted/65">Avg trend</p>
             </div>
             <div>
               <p className="text-[11px] uppercase tracking-wide text-muted/60">Protein</p>
               <p className="mt-1 text-xl font-semibold">{displayAvgProtein}</p>
-              <p className="text-[10px] text-muted/50">Avg trend</p>
+              <p className="text-[10px] text-muted/65">Avg trend</p>
             </div>
           </div>
           {gentleTargetsDisplay ? (
@@ -634,7 +634,7 @@ export default function InsightsScreen() {
           {sparklineChart.hasTarget && (
             <div className="mt-2 flex items-center gap-1.5">
               <div className="h-2 w-3 rounded-sm bg-primary/15" />
-              <p className="text-[10px] text-muted/50">Target range</p>
+              <p className="text-[10px] text-muted/65">Target range</p>
             </div>
           )}
         </Card>
@@ -648,12 +648,12 @@ export default function InsightsScreen() {
               {!hasEnoughData && <p className="text-[11px] uppercase tracking-wide text-muted/50">Preview</p>}
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1">
-                  <div className="h-2 w-4 rounded-sm bg-primary/45" />
-                  <p className="text-[10px] text-muted/50">Food</p>
+                  <div className="h-2 w-4 rounded-sm" style={{ background: "linear-gradient(to right, #6FA8FF, #4F88E8)" }} />
+                  <p className="text-[10px] text-muted/65">Food</p>
                 </div>
                 <div className="flex items-center gap-1">
-                  <div className="h-2 w-4 rounded-sm bg-primary/20" />
-                  <p className="text-[10px] text-muted/50">Supplements</p>
+                  <div className="h-2 w-4 rounded-sm bg-primary/25" />
+                  <p className="text-[10px] text-muted/65">Supplements</p>
                 </div>
               </div>
             </div>
