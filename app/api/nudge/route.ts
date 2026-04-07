@@ -92,7 +92,7 @@ function buildSmartPrompt(ctx: Record<string, unknown>): string {
 
   const last7 = ctx.last7Days as Array<Record<string, unknown>> | undefined;
   if (last7?.length) {
-    lines.push(`Last 7 days (day | date | kcal | protein | carbs | fat | workout). Days marked "no log" were not logged:`);
+    lines.push(`Previous days, excluding today (day | date | kcal | protein | carbs | fat | workout). Days marked "no log" were not logged:`);
     last7.forEach((d) => {
       const wk = d.hasWorkout ? ` | workout ${d.workoutMinutes ?? "?"}min ${d.workoutIntensity ?? ""}` : "";
       const logged = d.logged as boolean;
