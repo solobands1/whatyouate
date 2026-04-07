@@ -1467,45 +1467,6 @@ export default function HomeScreen() {
           </Card>
         )}
 
-        {streakSaverInfo && (
-          <div className="mt-4 flex items-center justify-between rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
-            <div className="flex items-center gap-2.5">
-              <svg width="16" height="18" viewBox="0 0 13 15" fill="none" aria-hidden="true">
-                <path d="M6.5 0C6.5 0 4 3.5 4 6C4 6.5 4.1 7 4.3 7.4C3.5 6.6 3.2 5.5 3.2 5.5C1.8 7 1 8.8 1 11C1 13.2 3.5 15 6.5 15C9.5 15 12 13.2 12 11C12 8.2 9.5 5.5 9.5 5.5C9.5 7 8.8 8 8 8.5C8.2 8 8.3 7.4 8.3 6.8C8.3 4.2 6.5 0 6.5 0Z" fill="#d97706"/>
-                <path d="M6.5 7.5C6.2 8.5 6 9.2 6 10C6 11.1 6.2 11.8 6.5 12C6.8 11.8 7 11.1 7 10C7 9.2 6.8 8.5 6.5 7.5Z" fill="#fbbf24"/>
-              </svg>
-              <div>
-                <p className="text-xs font-semibold text-amber-800">Save your {streakSaverInfo.savedStreak}-day streak</p>
-                <p className="text-[11px] text-amber-700">Log a meal for yesterday to keep it going</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                className="rounded-lg bg-amber-500 px-3 py-1.5 text-[11px] font-semibold text-white transition active:opacity-75"
-                onClick={() => {
-                  meals.openManualMealEntry();
-                  meals.setManualDate(streakSaverInfo.yesterdayStr);
-                }}
-              >
-                Log yesterday
-              </button>
-              <button
-                type="button"
-                className="text-amber-600/60 transition active:opacity-60"
-                onClick={() => {
-                  if (user) localStorage.setItem(`wya_streak_saver_dismissed_${user.id}_${todayKey()}`, "true");
-                  setStreakSaverDismissed(true);
-                }}
-                aria-label="Dismiss"
-              >
-                <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                  <path d="M4 4l8 8M12 4l-8 8" />
-                </svg>
-              </button>
-            </div>
-          </div>
-        )}
 
         <Card className="mt-4">
           <div className="flex items-center justify-between">
@@ -1521,13 +1482,42 @@ export default function HomeScreen() {
               );
               const atRisk = todayMeals.length === 0 && new Date().getHours() >= 18;
               return (
-                <div className={`flex items-center gap-1 rounded-full px-2.5 py-1 ${atRisk ? "bg-amber-50 ring-1 ring-amber-200" : "bg-primary/10"}`}>
-                  <svg width="16" height="18" viewBox="0 0 13 15" fill="none" aria-hidden="true" className={atRisk ? "" : "animate-flame"}>
-                    <path d="M6.5 0C6.5 0 4 3.5 4 6C4 6.5 4.1 7 4.3 7.4C3.5 6.6 3.2 5.5 3.2 5.5C1.8 7 1 8.8 1 11C1 13.2 3.5 15 6.5 15C9.5 15 12 13.2 12 11C12 8.2 9.5 5.5 9.5 5.5C9.5 7 8.8 8 8 8.5C8.2 8 8.3 7.4 8.3 6.8C8.3 4.2 6.5 0 6.5 0Z" fill={atRisk ? "#d97706" : "#f97316"}/>
-                    <path d="M6.5 7.5C6.2 8.5 6 9.2 6 10C6 11.1 6.2 11.8 6.5 12C6.8 11.8 7 11.1 7 10C7 9.2 6.8 8.5 6.5 7.5Z" fill={atRisk ? "#fbbf24" : "#fbbf24"}/>
-                  </svg>
-                  <span className={`text-[13px] font-semibold ${atRisk ? "text-amber-700" : "text-primary"}`}>{streak}</span>
-                  {atRisk && <span className="text-[11px] text-amber-600 font-medium">Log to save</span>}
+                <div className="flex flex-col items-end gap-1">
+                  <div className={`flex items-center gap-1 rounded-full px-2.5 py-1 ${atRisk ? "bg-amber-50 ring-1 ring-amber-200" : streakSaverInfo ? "bg-amber-50 ring-1 ring-amber-200" : "bg-primary/10"}`}>
+                    <svg width="16" height="18" viewBox="0 0 13 15" fill="none" aria-hidden="true" className={atRisk || streakSaverInfo ? "" : "animate-flame"}>
+                      <path d="M6.5 0C6.5 0 4 3.5 4 6C4 6.5 4.1 7 4.3 7.4C3.5 6.6 3.2 5.5 3.2 5.5C1.8 7 1 8.8 1 11C1 13.2 3.5 15 6.5 15C9.5 15 12 13.2 12 11C12 8.2 9.5 5.5 9.5 5.5C9.5 7 8.8 8 8 8.5C8.2 8 8.3 7.4 8.3 6.8C8.3 4.2 6.5 0 6.5 0Z" fill={atRisk || streakSaverInfo ? "#d97706" : "#f97316"}/>
+                      <path d="M6.5 7.5C6.2 8.5 6 9.2 6 10C6 11.1 6.2 11.8 6.5 12C6.8 11.8 7 11.1 7 10C7 9.2 6.8 8.5 6.5 7.5Z" fill="#fbbf24"/>
+                    </svg>
+                    <span className={`text-[13px] font-semibold ${atRisk || streakSaverInfo ? "text-amber-700" : "text-primary"}`}>{streak}</span>
+                    {atRisk && <span className="text-[11px] text-amber-600 font-medium">Log to save</span>}
+                  </div>
+                  {streakSaverInfo && (
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        className="text-[11px] font-medium text-amber-700 underline underline-offset-2 transition active:opacity-60"
+                        onClick={() => {
+                          meals.openManualMealEntry();
+                          meals.setManualDate(streakSaverInfo.yesterdayStr);
+                        }}
+                      >
+                        Log yesterday to save it
+                      </button>
+                      <button
+                        type="button"
+                        className="text-amber-500/60 transition active:opacity-60"
+                        onClick={() => {
+                          if (user) localStorage.setItem(`wya_streak_saver_dismissed_${user.id}_${todayKey()}`, "true");
+                          setStreakSaverDismissed(true);
+                        }}
+                        aria-label="Dismiss"
+                      >
+                        <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                          <path d="M4 4l8 8M12 4l-8 8" />
+                        </svg>
+                      </button>
+                    </div>
+                  )}
                 </div>
               );
             })()}
