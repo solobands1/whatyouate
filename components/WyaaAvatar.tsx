@@ -21,7 +21,7 @@ export default function WyaaAvatar({
       type="button"
       onClick={onClick}
       className={`inline-flex shrink-0 transition active:opacity-70 ${isNew ? "animate-wyaa-bounce" : "animate-wyaa-float"} ${className}`}
-      aria-label="About Wyaa"
+      aria-label="About your AI coach"
       style={{ background: "none", border: "none", padding: 0 }}
     >
       <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">

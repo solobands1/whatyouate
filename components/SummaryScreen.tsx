@@ -1158,7 +1158,7 @@ export default function SummaryScreen() {
                   return (
                     <div className="rounded-xl border border-primary/60 bg-primary/5 px-4 py-3 space-y-2.5">
                       <p className="text-sm font-medium text-ink/90">{nudge.message}</p>
-                      <p className="text-[11px] text-primary/50 font-medium">— Wyaa</p>
+                      <p className="text-[11px] text-primary/50 font-medium">— Coach</p>
                       {isCaughtUp && (
                         <p className="text-[11px] text-primary/60 font-medium">Looks like you've caught up since then.</p>
                       )}
@@ -1308,7 +1308,7 @@ export default function SummaryScreen() {
 
       <BottomNav current="summary" />
 
-      {/* About Wyaa sheet */}
+      {/* About AI Coach sheet */}
       {showWyaaSheet && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-6" onClick={() => setShowWyaaSheet(false)}>
           <div className="absolute inset-0 bg-black/30" />
@@ -1321,12 +1321,12 @@ export default function SummaryScreen() {
               <div className="flex flex-col items-center gap-4 text-center">
                 <WyaaAvatar size={72} />
                 <div>
-                  <p className="text-base font-semibold text-ink">Hey! I&apos;m Wyaa the blueberry.</p>
+                  <p className="text-base font-semibold text-ink">I&apos;m your AI Nutrition Coach.</p>
                   <p className="mt-2.5 text-sm leading-relaxed text-muted/70">
-                    I keep an eye on your logs and send you honest nudges throughout the day. I&apos;m specific to you and what you&apos;re working toward. The more you log, the better I get at reading your patterns.
+                    I read your logs and send you honest, specific nudges throughout the day based on what you&apos;ve actually eaten and what you&apos;re working toward.
                   </p>
-                  <p className="mt-2 text-sm leading-relaxed text-muted/70">
-                    I&apos;m excited to help you!
+                  <p className="mt-2.5 text-sm leading-relaxed text-muted/70">
+                    The more you log, the more useful I get.
                   </p>
                 </div>
                 <button
@@ -1334,7 +1334,7 @@ export default function SummaryScreen() {
                   className="mt-1 rounded-full bg-primary/10 px-6 py-2.5 text-sm font-semibold text-primary active:opacity-70"
                   onClick={() => setShowWyaaSheet(false)}
                 >
-                  Nice to meet you!
+                  Got it
                 </button>
               </div>
               {/* Tail pointing down-right toward Wyaa in the card header */}
