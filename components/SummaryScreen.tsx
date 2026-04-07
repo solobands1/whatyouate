@@ -94,6 +94,12 @@ function MacroRing({
       <div className="relative" style={{ width: SIZE, height: SIZE }}>
         {/* rotate(135deg) places the arc start at bottom-left, gap at bottom */}
         <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} style={{ transform: "rotate(135deg)" }}>
+          <defs>
+            <linearGradient id={`ring-grad-${label}`} x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#6FA8FF" />
+              <stop offset="100%" stopColor="#4F88E8" />
+            </linearGradient>
+          </defs>
           {/* Grey track */}
           <circle
             cx={SIZE / 2} cy={SIZE / 2} r={R}
@@ -102,13 +108,12 @@ function MacroRing({
             className="text-ink/10"
             strokeLinecap="butt"
           />
-          {/* Primary progress — same color as home screen bars */}
+          {/* Gradient progress arc */}
           <circle
             cx={SIZE / 2} cy={SIZE / 2} r={R}
-            fill="none" stroke="currentColor" strokeWidth={STROKE}
+            fill="none" stroke={`url(#ring-grad-${label})`} strokeWidth={STROKE}
             strokeDasharray={`${ARC} ${C}`}
             strokeDashoffset={offset}
-            className="text-primary"
             strokeLinecap="round"
             style={{ transition: "stroke-dashoffset 700ms cubic-bezier(0.22,1,0.36,1)" }}
           />

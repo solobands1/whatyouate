@@ -674,11 +674,12 @@ export default function InsightsScreen() {
                   </button>
                 </div>
                 <div className="mt-2 h-2 rounded-full bg-ink/5 flex overflow-hidden isolate">
-                  {/* Food segment — darker */}
+                  {/* Food segment — gradient */}
                   <div
-                    className="h-full shrink-0 bg-primary/45"
+                    className="h-full shrink-0"
                     style={{
                       width: barsReady ? `${pattern.foodPct}%` : "0%",
+                      background: "linear-gradient(to right, #6FA8FF, #4F88E8)",
                       transition: `width 600ms cubic-bezier(0.22,1,0.36,1) ${index * 55}ms`,
                     }}
                   />
@@ -720,7 +721,7 @@ export default function InsightsScreen() {
           <button
             type="button"
             onClick={openUpgradeModal}
-            className="mt-6 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white transition active:opacity-80"
+            className="mt-6 rounded-xl bg-gradient-to-r from-primary to-primary-dark px-6 py-3 text-sm font-semibold text-white transition active:opacity-80"
           >
             Unlock Patterns
           </button>
