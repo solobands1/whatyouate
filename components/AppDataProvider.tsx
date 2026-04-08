@@ -100,16 +100,24 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         const hasLoggedToday = finalMeals.some(
           (m) => m.analysisJson?.source !== "supplement" && m.status !== "failed" && dayKeyFromTs(m.ts) === todayStr
         );
+        // Always recompute from meals to catch cases where persisted streak drifted low
+        const computedStreak = computeStreakFromMeals(finalMeals);
         if (hasLoggedToday && storedLastDate !== todayStr) {
           let newStreak: number;
           if (storedLastDate === "") {
             // First time persisting — bootstrap from computed history
-            newStreak = computeStreakFromMeals(finalMeals);
+            newStreak = computedStreak;
           } else {
-            newStreak = storedLastDate === yesterdayStr ? storedStreak + 1 : 1;
+            const incrementedStreak = storedLastDate === yesterdayStr ? storedStreak + 1 : 1;
+            // Take the higher of incremented vs recomputed (fixes dev-phase drift)
+            newStreak = Math.max(incrementedStreak, computedStreak);
           }
           resolvedProfile = { ...profileData, streak: newStreak, streakLastDate: todayStr };
           saveStreak(userId, newStreak, todayStr).catch(() => {});
+        } else if (hasLoggedToday && storedLastDate === todayStr && computedStreak > storedStreak) {
+          // Already updated today but computed is higher — backfill once
+          resolvedProfile = { ...profileData, streak: computedStreak };
+          saveStreak(userId, computedStreak, todayStr).catch(() => {});
         } else if (!hasLoggedToday && storedLastDate < yesterdayStr && storedLastDate !== "" && storedStreak > 0) {
           // Streak broken — reset stored value so it doesn't show stale count
           resolvedProfile = { ...profileData, streak: 0 };
