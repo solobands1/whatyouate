@@ -533,7 +533,7 @@ export default function InsightsScreen() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <p className="text-xs uppercase tracking-wide text-muted/70">Macros</p>
-              {!hasEnoughData && <p className="text-[11px] uppercase tracking-wide text-muted/65">Preview</p>}
+              {!hasEnoughData && <p className="text-[11px] uppercase tracking-wide text-muted/70">Preview</p>}
               <button
                 type="button"
                 className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-ink/10 text-[10px] font-semibold text-ink/60"
@@ -543,28 +543,28 @@ export default function InsightsScreen() {
                 i
               </button>
             </div>
-            <p className="text-[11px] uppercase tracking-wide text-muted/65">Avg trend</p>
+            <p className="text-[11px] uppercase tracking-wide text-muted/70">Avg trend</p>
           </div>
           <div className={`mt-5 flex items-baseline justify-between${!hasEnoughData && !isDemoMode ? " opacity-50" : ""}`}>
             <div>
-              <p className="text-[11px] uppercase tracking-wide text-muted/60">Calories</p>
+              <p className="text-[11px] uppercase tracking-wide text-muted/70">Calories</p>
               <p className="mt-1 text-xl font-semibold">{displayAvgCalories}</p>
-              <p className="text-[10px] text-muted/65">Avg trend</p>
+              <p className="text-[10px] text-muted/70">Avg trend</p>
             </div>
             <div>
-              <p className="text-[11px] uppercase tracking-wide text-muted/60">Carbs</p>
+              <p className="text-[11px] uppercase tracking-wide text-muted/70">Carbs</p>
               <p className="mt-1 text-xl font-semibold">{displayAvgCarbs}</p>
-              <p className="text-[10px] text-muted/65">Avg trend</p>
+              <p className="text-[10px] text-muted/70">Avg trend</p>
             </div>
             <div>
-              <p className="text-[11px] uppercase tracking-wide text-muted/60">Fats</p>
+              <p className="text-[11px] uppercase tracking-wide text-muted/70">Fats</p>
               <p className="mt-1 text-xl font-semibold">{displayAvgFat}</p>
-              <p className="text-[10px] text-muted/65">Avg trend</p>
+              <p className="text-[10px] text-muted/70">Avg trend</p>
             </div>
             <div>
-              <p className="text-[11px] uppercase tracking-wide text-muted/60">Protein</p>
+              <p className="text-[11px] uppercase tracking-wide text-muted/70">Protein</p>
               <p className="mt-1 text-xl font-semibold">{displayAvgProtein}</p>
-              <p className="text-[10px] text-muted/65">Avg trend</p>
+              <p className="text-[10px] text-muted/70">Avg trend</p>
             </div>
           </div>
           {gentleTargetsDisplay ? (
@@ -579,7 +579,7 @@ export default function InsightsScreen() {
         <Card className="mt-6">
           <div className="flex items-center justify-between">
             <p className="text-xs uppercase tracking-wide text-muted/70">Daily Intake</p>
-            <p className="text-[11px] text-muted/60">{sparklineLoggedCount} / 7 days</p>
+            <p className="text-[11px] text-muted/70">{sparklineLoggedCount} / 7 days</p>
           </div>
           <div className="mt-3">
             <svg viewBox={`0 0 ${sparklineChart.W} ${sparklineChart.H}`} preserveAspectRatio="none" className="w-full" style={{ height: sparklineChart.H, display: "block" }}>
@@ -615,7 +615,7 @@ export default function InsightsScreen() {
                 return (
                   <span
                     key={d.dateKey}
-                    className={`absolute -translate-x-1/2 text-[9px] ${d.hasData ? "text-ink/60" : "text-ink/35"}`}
+                    className={`absolute -translate-x-1/2 text-[9px] ${d.hasData ? "text-ink/70" : "text-ink/45"}`}
                     style={{ left: `${sparklineChart.dots[i].labelLeftPct}%` }}
                   >
                     {["S","M","T","W","T","F","S"][date.getDay()]}
@@ -638,7 +638,7 @@ export default function InsightsScreen() {
               Micronutrients
             </p>
             <div className="flex items-center gap-3">
-              {!hasEnoughData && <p className="text-[11px] uppercase tracking-wide text-muted/65">Preview</p>}
+              {!hasEnoughData && <p className="text-[11px] uppercase tracking-wide text-muted/70">Preview</p>}
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1">
                   <div className="h-2 w-4 rounded-sm bg-primary/45" />
@@ -686,7 +686,7 @@ export default function InsightsScreen() {
                     />
                   )}
                 </div>
-                <p className="mt-1 text-[11px] text-muted/65">{pattern.label}</p>
+                <p className="mt-1 text-[11px] text-muted/70">{pattern.label}</p>
               </div>
             ))}
           </div>

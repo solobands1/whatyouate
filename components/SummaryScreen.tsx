@@ -1007,7 +1007,7 @@ export default function SummaryScreen() {
             {last7Days.map((day, i) => (
               <div key={day.key} className="flex flex-col items-center gap-1.5">
                 <div className={`h-2.5 w-2.5 rounded-full ${(isDemoMode ? [true,true,false,true,true,true,false][i] : day.logged) ? "bg-primary/70" : "bg-ink/10"}`} />
-                <p className={`text-[10px] ${day.isToday ? "font-semibold text-ink/70" : "text-muted/55"}`}>{day.label}</p>
+                <p className={`text-[10px] ${day.isToday ? "font-bold text-ink/80" : "text-muted/60"}`}>{day.label}</p>
               </div>
             ))}
           </div>
