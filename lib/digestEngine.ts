@@ -7,7 +7,9 @@ export type NudgeType =
   | "calorie_low" | "calorie_high"
   | "protein_low_critical" | "protein_low"
   | "workout_missing" | "workout_fuel_low" | "training_fuel_low"
-  | "micronutrient" | "fat_low" | "on_track";
+  | "micronutrient" | "fat_low" | "on_track"
+  | "win" | "momentum" | "pattern" | "meal_timing" | "food_insight"
+  | "variety" | "rest_day_fuel" | "workout_recovery" | "check_in";
 
 export interface DailyNudgeSnapshot {
   dateKey: string;
