@@ -105,15 +105,16 @@ export default function InsightsScreen() {
   }, [user]);
 
   // Value moment: trigger the "your patterns are ready" sheet once per session
+  // Only fires during an active trial — if expired, user will hit paywall instead
   useEffect(() => {
-    if (loadingData || trial.isPro) return;
+    if (loadingData || trial.isPro || trial.isFree) return;
     if (hasEnoughDataForPatterns(meals)) {
       const realMeals = meals.filter(
         (m) => m.analysisJson?.source !== "supplement" && m.status !== "failed"
       );
       triggerValueMoment({ mealCount: realMeals.length, dayCount: countLoggedDays(meals) });
     }
-  }, [loadingData, meals, trial.isPro]);
+  }, [loadingData, meals, trial.isPro, trial.isFree]);
 
   // Only average over days that were actually logged — gaps and missed days don't deflate the numbers
   const weekSummary = useMemo(() => summarizeLoggedDays(meals, 14), [meals]);
@@ -523,7 +524,7 @@ export default function InsightsScreen() {
             <p className="mt-1 text-sm text-muted/70">Longer-term trends from your logged meals</p>
             {!hasEnoughData && !isDemoMode && (
               <div className="mt-2 inline-flex items-center rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-[11px] text-primary/80">
-                Real data appears after a few more meals
+                Log meals across 5 days to unlock real data
               </div>
             )}
           </div>

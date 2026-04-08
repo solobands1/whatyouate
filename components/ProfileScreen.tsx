@@ -423,6 +423,7 @@ export default function ProfileScreen() {
   const handleSignOut = async () => {
     setSigningOut(true);
     await signOut();
+    sessionStorage.removeItem("_appReady");
     router.replace("/login");
   };
 
@@ -449,6 +450,7 @@ export default function ProfileScreen() {
         localStorage.removeItem("wya_local_users");
         localStorage.removeItem("wya_local_session");
       }
+      sessionStorage.removeItem("_appReady");
       await signOut();
       router.replace("/login");
       return;
@@ -471,6 +473,7 @@ export default function ProfileScreen() {
       setStatus("Couldn’t delete account.");
       return;
     }
+    sessionStorage.removeItem("_appReady");
     await signOut();
     router.replace("/login");
   };
@@ -1015,6 +1018,15 @@ export default function ProfileScreen() {
           </label>
 
           <div className="mt-8 border-t border-ink/5 pt-7">
+          {(() => {
+            const missingWeight = !weight || weight === "0";
+            const missingHeight = units === "metric" ? (!heightCm || heightCm === "0") : (!heightFt || heightFt === "0");
+            const missingAge = !age || age === "0";
+            const missing = [missingWeight && "weight", missingHeight && "height", missingAge && "age"].filter(Boolean);
+            return missing.length > 0 ? (
+              <p className="mb-3 text-[11px] text-muted/60">Add your {missing.join(", ")} for personalised nudges and targets.</p>
+            ) : null;
+          })()}
           <button
             className="w-full rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] ring-1 ring-white/40 transition-colors hover:bg-primary/90 disabled:opacity-50"
             onClick={handleSave}

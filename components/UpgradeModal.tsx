@@ -64,7 +64,7 @@ export default function UpgradeModal() {
               "Daily AI-powered nudges",
               "Micronutrient pattern tracking",
               "Weekly insights and trends",
-              "Unlimited meal logging",
+              "Full access to your Patterns history",
             ].map((item) => (
               <div key={item} className="flex items-center gap-3">
                 <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/15">
