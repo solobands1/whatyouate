@@ -1113,10 +1113,13 @@ export default function SummaryScreen() {
                 );
               })()}
               {smartNudge === undefined ? (
-                /* Loading state — subtle pulse while AI thinks */
-                <div className="rounded-xl border border-ink/10 bg-ink/5 px-4 py-3 space-y-2">
-                  <div className="h-3.5 w-3/4 animate-pulse rounded bg-ink/10" />
-                  <div className="h-3 w-1/2 animate-pulse rounded bg-ink/8" />
+                /* Loading state — blue card matching nudge style */
+                <div className="rounded-xl border border-primary/35 bg-primary/5 px-4 py-3 flex items-center gap-2.5">
+                  <span className="relative flex h-2 w-2 shrink-0">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-primary/80" />
+                  </span>
+                  <p className="text-sm text-primary/70 font-medium">Coach is thinking…</p>
                 </div>
               ) : smartNudge && trial.isFree ? (
                 /* Expired trial — show teaser with blur */
