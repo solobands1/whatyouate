@@ -1123,8 +1123,8 @@ export default function ProfileScreen() {
               </div>
             </div>
           )}
-          <p className="mt-5 text-center text-[11px] text-muted/55">
-            <a href="/privacy" className="underline underline-offset-2 hover:text-muted/60">
+          <p className="mt-5 text-center text-[11px] text-muted/65">
+            <a href="/privacy" className="underline underline-offset-2 hover:text-muted/75">
               Privacy Policy and Terms of Use
             </a>
           </p>

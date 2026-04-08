@@ -14,6 +14,20 @@ export type FoodCacheEntry = {
 };
 
 const FOOD_CACHE_KEY = "wya_food_cache_v1";
+const BARCODE_CACHE_MAX_ENTRIES = 200;
+const BARCODE_CACHE_TTL_MS = 90 * 24 * 60 * 60 * 1000; // 90 days
+
+function pruneBarcodeCacheIfNeeded(cache: Record<string, FoodCacheEntry>): Record<string, FoodCacheEntry> {
+  const now = Date.now();
+  // Remove entries older than TTL
+  const entries = Object.entries(cache).filter(([, v]) => now - v.savedAt < BARCODE_CACHE_TTL_MS);
+  // If still over max, keep the most recently saved
+  if (entries.length > BARCODE_CACHE_MAX_ENTRIES) {
+    entries.sort(([, a], [, b]) => b.savedAt - a.savedAt);
+    entries.splice(BARCODE_CACHE_MAX_ENTRIES);
+  }
+  return Object.fromEntries(entries);
+}
 
 function loadCache(): Record<string, FoodCacheEntry> {
   if (typeof window === "undefined") return {};
@@ -41,10 +55,11 @@ export function deleteFoodCacheEntry(barcode: string): void {
 export function setFoodCacheEntry(barcode: string, entry: FoodCacheEntry): void {
   if (typeof window === "undefined") return;
   try {
-    const cache = loadCache();
+    let cache = loadCache();
     // Preserve existing logCount so re-scanning doesn't reset frequency data
     const existingLogCount = cache[barcode]?.logCount;
     cache[barcode] = existingLogCount != null ? { ...entry, logCount: existingLogCount } : entry;
+    cache = pruneBarcodeCacheIfNeeded(cache);
     localStorage.setItem(FOOD_CACHE_KEY, JSON.stringify(cache));
   } catch {
     // Ignore storage failures (quota, private mode)

@@ -600,7 +600,7 @@ export default function SummaryScreen() {
           "Getting enough protein on a vegan diet is doable but takes consistency • variety across legumes, tofu, tempeh, and seeds helps a lot.",
         ]);
         if (isVegetarian) return weeklyVariant([
-          "Vegetarian protein sources are solid but often need a bit more volume to hit higher targets.",
+          "Vegetarian protein sources are reliable but often need a bit more volume to hit higher targets.",
           "Eggs, dairy, and legumes are your strongest protein levers • getting all three working consistently makes a big difference.",
         ]);
         if (goal === "gain") return weeklyVariant([
@@ -769,7 +769,7 @@ export default function SummaryScreen() {
           "Try pairing a grain with a legume or soy source at your main meals • that combination reliably closes small gaps.",
         ]);
         return weeklyVariant([
-          "Pairing each meal with a solid protein source is usually enough to close a gap like this.",
+          "Pairing each meal with a quality protein source is usually enough to close a gap like this.",
           "A small protein add at each meal tends to compound quickly • it doesn't need to be a big change.",
         ]);
       case "calorie_low":

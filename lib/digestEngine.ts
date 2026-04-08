@@ -439,7 +439,7 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
               `Food has been coming in below target for ${daysCalStr}. Small additions throughout today add up more than you'd think.`,
             ])
           : pickVariant([
-              `You've been light on food for ${daysCalStr}, and today is at ${todayCalMid} kcal so far. Dinner is a solid chance to catch up.`,
+              `You've been light on food for ${daysCalStr}, and today is at ${todayCalMid} kcal so far. Dinner is a good chance to catch up.`,
               `Intake has been low most days this week. At ${todayCalMid} kcal today, there's still room to add something more.`,
               `You've been short on total food for ${daysCalStr}. Still time tonight to bring the day closer to your goal.`,
             ]),
@@ -483,14 +483,14 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
         message: isMorning
           ? pickVariant([
               `Protein has been low for ${daysProtStr}. Making it the anchor of each meal today would really help shift the week.`,
-              `You've been well under on protein for ${daysProtStr}. Even adding one solid source per meal makes a noticeable difference.`,
+              `You've been well under on protein for ${daysProtStr}. Even adding one good source per meal makes a noticeable difference.`,
               `Protein has been consistently low for ${daysProtStr}. Today is a good day to make it the priority.`,
               `The protein gap has been building for ${daysProtStr}. Keeping a source at every meal today is the easiest way to close it.`,
             ])
           : pickVariant([
               `Protein has been low for ${daysProtStr} and you're at ${todayProteinMid}g today. A protein-focused dinner can still make a real dent.`,
               `You've been well under on protein this week. At ${todayProteinMid}g today, dinner is the best remaining shot at closing the gap.`,
-              `Protein is short for ${daysProtStr}. At ${todayProteinMid}g today with dinner ahead, there's still a solid opportunity.`,
+              `Protein is short for ${daysProtStr}. At ${todayProteinMid}g today with dinner ahead, there's still a real opportunity to close the gap.`,
             ]),
         type: "protein_low_critical",
         data: { actual: Math.round(avgWeekProtein), target: Math.round(target), daysLow: daysProteinLow },
@@ -645,14 +645,14 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
       message: (calGood && proteinGood)
         ? pickWeekly([
             `Both protein and calories have been right on target this week. That kind of consistency is what actually moves the needle!`,
-            `Really solid week! Protein and calorie intake are both where they should be.`,
+            `Great week. Protein and calorie intake are both right where they should be.`,
             `Everything is tracking well this week. Protein and calories are both in a great range!`,
             `Consistent and on target this week. Protein and calories are both right where you want them.`,
           ])
         : pickWeekly([
             `Eating is looking well-balanced this week. Nothing stands out as a problem.`,
             `Things are in a good place overall this week. The patterns all look healthy.`,
-            `Intake is looking solid this week. Whatever you've been doing is working!`,
+            `Intake is looking balanced this week. Whatever you've been doing is working!`,
             `Good week of eating. The patterns are all tracking in a healthy range.`,
           ]),
       type: "on_track",
@@ -729,7 +729,7 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
     if (todayNudges.length === 0 && todayCalMid > 0) {
       todayNudges.push({
         message: pickVariant([
-          `Today is looking well-balanced! A solid dinner keeps the momentum going.`,
+          `Today is looking well-balanced! A good dinner and you're set.`,
           `Good day of eating so far! You're right where you should be.`,
           `Things are looking great today! A balanced dinner and you're set.`,
           `Today's intake is on point! Finishing strong at dinner locks it in.`,
