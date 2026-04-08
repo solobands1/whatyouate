@@ -47,6 +47,12 @@ export default function ProfileScreen() {
   const [signingOut, setSigningOut] = useState(false);
   const [savingName, setSavingName] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
+  const statusTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const setStatusWithAutoDismiss = (msg: string | null) => {
+    if (statusTimer.current) clearTimeout(statusTimer.current);
+    setStatus(msg);
+    if (msg) statusTimer.current = setTimeout(() => setStatus(null), 4000);
+  };
   const [loadError, setLoadError] = useState<string | null>(null);
   const [runProfileTour, setRunProfileTour] = useState(false);
   const [showGoalInfo, setShowGoalInfo] = useState(false);
@@ -371,7 +377,7 @@ export default function ProfileScreen() {
       setShowSavedToast(true);
       setTimeout(() => setShowSavedToast(false), 1800);
     } catch {
-      setStatus("Couldn’t save.");
+      setStatusWithAutoDismiss("Couldn’t save. Check your connection and try again.");
     } finally {
       setSaving(false);
     }
@@ -417,7 +423,7 @@ export default function ProfileScreen() {
     setDietaryRestrictions([]);
     setUnits("imperial");
     setDailySupplementsState([]);
-    setStatus("All data cleared.");
+    setStatusWithAutoDismiss("All data cleared.");
   };
 
   const handleSignOut = async () => {
@@ -458,7 +464,7 @@ export default function ProfileScreen() {
     const { data } = await supabase.auth.getSession();
     const accessToken = data.session?.access_token;
     if (!accessToken) {
-      setStatus("Couldn’t delete account.");
+      setStatusWithAutoDismiss("Couldn’t delete account.");
       return;
     }
     const response = await fetch("/api/delete-account", {
@@ -470,7 +476,7 @@ export default function ProfileScreen() {
       body: JSON.stringify({ userId: user.id })
     });
     if (!response.ok) {
-      setStatus("Couldn’t delete account.");
+      setStatusWithAutoDismiss("Couldn’t delete account.");
       return;
     }
     sessionStorage.removeItem("_appReady");
@@ -565,7 +571,7 @@ export default function ProfileScreen() {
                     router.push("/");
                   }}
                 >
-                  Walkthrough
+                  Replay intro
                 </button>
                 <button
                   type="button"
@@ -640,7 +646,7 @@ export default function ProfileScreen() {
                 {units === "metric" ? (
                   <input
                     inputMode="numeric"
-                    className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm"
+                    className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
                     value={heightCm}
                     onChange={(event) => {
                       const raw = event.target.value.replace(/[^0-9]/g, "");
@@ -653,7 +659,7 @@ export default function ProfileScreen() {
                   <div className="mt-1 flex gap-2">
                     <input
                       inputMode="numeric"
-                      className="w-[45%] rounded-xl border border-ink/10 px-3 py-2 text-sm"
+                      className="w-[45%] rounded-xl border border-ink/10 px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
                       value={heightFt}
                       onChange={(event) => {
                         const raw = event.target.value.replace(/[^0-9]/g, "");
@@ -669,7 +675,7 @@ export default function ProfileScreen() {
                     />
                     <input
                       inputMode="numeric"
-                      className="w-[55%] rounded-xl border border-ink/10 px-3 py-2 text-sm"
+                      className="w-[55%] rounded-xl border border-ink/10 px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
                       value={heightIn}
                       onChange={(event) => {
                         const raw = event.target.value.replace(/[^0-9]/g, "");
@@ -690,7 +696,7 @@ export default function ProfileScreen() {
                 Weight ({units === "metric" ? "kg" : "lb"})
                 <input
                   inputMode="numeric"
-                  className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm"
+                  className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
                   value={weight}
                   onChange={(event) => {
                     const raw = event.target.value.replace(/[^0-9]/g, "");
@@ -704,7 +710,7 @@ export default function ProfileScreen() {
                 Age
                 <input
                   inputMode="numeric"
-                  className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm"
+                  className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
                   value={age}
                   onChange={(event) => {
                     const raw = event.target.value.replace(/[^0-9]/g, "");
@@ -730,7 +736,7 @@ export default function ProfileScreen() {
                     className={`rounded-xl border px-3 py-1.5 text-xs font-medium ${
                       sex === option.value
                         ? "border-primary/30 bg-primary/10 text-ink/80"
-                        : "border-ink/10 text-muted/70"
+                        : "border-ink/10 text-muted/65"
                     }`}
                     onClick={() => setSex(option.value)}
                   >
@@ -762,7 +768,7 @@ export default function ProfileScreen() {
                   className={`rounded-xl border px-3 py-1.5 text-xs font-medium ${
                     goalDirection === value || (goalDirection === "balance" && value === "maintain")
                       ? "border-primary/30 bg-primary/10 text-ink/80"
-                      : "border-ink/10 text-muted/70"
+                      : "border-ink/10 text-muted/65"
                   }`}
                   onClick={() => setGoalDirection(value)}
                   type="button"
@@ -790,7 +796,7 @@ export default function ProfileScreen() {
                   className={`rounded-xl border px-3 py-1.5 text-xs font-medium ${
                     activityLevel === option.value
                       ? "border-primary/30 bg-primary/10 text-ink/80"
-                      : "border-ink/10 text-muted/70"
+                      : "border-ink/10 text-muted/65"
                   }`}
                   onClick={() => setActivityLevel(option.value)}
                 >
@@ -804,7 +810,7 @@ export default function ProfileScreen() {
             <p className="text-[11px] font-semibold uppercase tracking-wide text-ink/70">
               Foods I avoid
             </p>
-            <p className="mt-1 text-[11px] text-muted/60">Select all that apply · nudges won't suggest these.</p>
+            <p className="mt-1 text-[11px] text-muted/60">Select all that apply. Nudges won't suggest these foods.</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {[
                 "Vegetarian",
@@ -825,7 +831,7 @@ export default function ProfileScreen() {
                     className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
                       active
                         ? "border-primary/30 bg-primary/10 text-ink/80"
-                        : "border-ink/10 text-muted/60"
+                        : "border-ink/10 text-muted/65"
                     }`}
                     onClick={() =>
                       setDietaryRestrictions((prev) =>
@@ -846,7 +852,7 @@ export default function ProfileScreen() {
             </span>
             <input
               type="text"
-              className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
               value={freeformFocus}
               onChange={(event) => setFreeformFocus(event.target.value)}
               placeholder="e.g. building strength, more energy, longevity"
@@ -869,7 +875,7 @@ export default function ProfileScreen() {
             </span>
             <textarea
               rows={3}
-              className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm resize-none"
+              className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30 resize-none"
               value={bodyPriority}
               onChange={(event) => setBodyPriority(event.target.value)}
               placeholder="e.g. I meal prep Sundays, I eat late at night, I skip breakfast"
@@ -905,7 +911,7 @@ export default function ProfileScreen() {
             <div className="mt-2 flex flex-col gap-1.5">
               <input
                 type="text"
-                className="w-full rounded-xl border border-ink/10 px-3 py-2 text-sm"
+                className="w-full rounded-xl border border-ink/10 px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
                 placeholder="e.g. Vitamin D"
                 value={newSuppInput}
                 onChange={(e) => {
@@ -935,7 +941,7 @@ export default function ProfileScreen() {
                       const reMatched = matchSupplementNutrients(val.trim());
                       const canonMatched = data.canonical_name ? matchSupplementNutrients(data.canonical_name) : [];
                       const allMatched = [...new Set([...reMatched, ...canonMatched])];
-                      setSuppMatchHint(allMatched.length ? `Tracks: ${allMatched.join(", ")}` : "Not recognized for tracking");
+                      setSuppMatchHint(allMatched.length ? `Tracks: ${allMatched.join(", ")}` : "No nutrient data found — add manually");
                     } catch {
                       // silently fail — hint stays as keyword match
                     } finally {
@@ -981,13 +987,13 @@ export default function ProfileScreen() {
                 <input
                   type="text"
                   inputMode="decimal"
-                  className="min-w-0 flex-1 rounded-xl border border-ink/10 px-3 py-2 text-sm"
+                  className="min-w-0 flex-1 rounded-xl border border-ink/10 px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
                   placeholder="dose (if available)"
                   value={newSuppDose}
                   onChange={(e) => setNewSuppDose(e.target.value)}
                 />
                 <select
-                  className="rounded-full border border-ink/10 bg-white px-3 py-2 text-sm text-ink/70"
+                  className="rounded-full border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80"
                   value={newSuppUnit}
                   onChange={(e) => setNewSuppUnit(e.target.value)}
                 >
@@ -997,7 +1003,7 @@ export default function ProfileScreen() {
                 </select>
                 <button
                   type="button"
-                  className="rounded-xl bg-ink/5 px-4 py-2 text-sm font-semibold text-ink/70 transition hover:bg-ink/10"
+                  className="rounded-xl bg-ink/5 px-4 py-2 text-sm font-semibold text-ink/80 transition hover:bg-ink/10"
                   onClick={() => {
                     const name = newSuppInput.trim();
                     if (!name) return;
@@ -1141,7 +1147,7 @@ export default function ProfileScreen() {
               <label className="text-[11px] text-muted/70">
                 First name
                 <input
-                  className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm"
+                  className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
                   value={editFirstName}
                   onChange={(e) => setEditFirstName(e.target.value)}
                   placeholder="First"
@@ -1151,7 +1157,7 @@ export default function ProfileScreen() {
               <label className="text-[11px] text-muted/70">
                 Last name
                 <input
-                  className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm"
+                  className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
                   value={editLastName}
                   onChange={(e) => setEditLastName(e.target.value)}
                   placeholder="Last"
@@ -1415,12 +1421,12 @@ export default function ProfileScreen() {
                               type="text"
                               inputMode="decimal"
                               placeholder="Amount"
-                              className="min-w-0 flex-1 rounded-xl border border-ink/10 px-3 py-2 text-sm"
+                              className="min-w-0 flex-1 rounded-xl border border-ink/10 px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
                               value={entry.dose}
                               onChange={(e) => setMultiSuppNutrients((prev) => ({ ...prev, [key]: { ...prev[key], dose: e.target.value } }))}
                             />
                             <select
-                              className="rounded-full border border-ink/10 bg-white px-3 py-2 text-sm text-ink/70"
+                              className="rounded-full border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80"
                               value={entry.unit}
                               onChange={(e) => setMultiSuppNutrients((prev) => ({ ...prev, [key]: { ...prev[key], unit: e.target.value } }))}
                             >
@@ -1435,7 +1441,7 @@ export default function ProfileScreen() {
                               type="text"
                               inputMode="decimal"
                               placeholder="% DV"
-                              className="w-24 rounded-xl border border-ink/10 px-3 py-2 text-sm"
+                              className="w-24 rounded-xl border border-ink/10 px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
                               value={entry.pct}
                               onChange={(e) => setMultiSuppNutrients((prev) => ({ ...prev, [key]: { ...prev[key], pct: e.target.value } }))}
                             />

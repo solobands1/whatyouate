@@ -1,4 +1,5 @@
 export const MEALS_UPDATED_EVENT = "meals-updated";
+export const MEALS_FAILED_EVENT = "meals-failed";
 export const WORKOUTS_UPDATED_EVENT = "workouts-updated";
 export const PROFILE_UPDATED_EVENT = "profile-updated";
 export const NUDGES_UPDATED_EVENT = "nudges-updated";
@@ -10,6 +11,11 @@ function dispatchWindowEvent(name: string) {
 
 export function notifyMealsUpdated() {
   dispatchWindowEvent(MEALS_UPDATED_EVENT);
+}
+
+export function notifyMealsFailed(count: number) {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(MEALS_FAILED_EVENT, { detail: { count } }));
 }
 
 export function notifyWorkoutsUpdated() {

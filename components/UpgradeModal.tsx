@@ -52,7 +52,7 @@ export default function UpgradeModal() {
 
           {/* Headline */}
           <h1 className="mt-5 text-center text-2xl font-semibold text-ink">
-            Keep the insights coming
+            Unlock your Patterns
           </h1>
           <p className="mt-2 max-w-xs text-center text-sm text-muted/70">
             Unlock your personalized nudges, micronutrient patterns, and weekly insights.

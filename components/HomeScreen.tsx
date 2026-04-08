@@ -9,6 +9,7 @@ import { suppName, suppLabel } from "../lib/types";
 import { matchSupplementNutrients } from "../lib/rda";
 import {
   PROFILE_UPDATED_EVENT,
+  MEALS_FAILED_EVENT,
   notifyMealsUpdated,
   notifyWorkoutsUpdated
 } from "../lib/dataEvents";
@@ -190,6 +191,7 @@ export default function HomeScreen() {
   const [failedMealText, setFailedMealText] = useState("");
   const [failedMealAnalyzing, setFailedMealAnalyzing] = useState(false);
   const [showProfileBell, setShowProfileBell] = useState(false);
+  const [failedMealNotice, setFailedMealNotice] = useState(false);
   const [quickConfirming, setQuickConfirming] = useState(false);
   const [editPortion, setEditPortion] = useState<"small" | "medium" | "large">("medium");
   const [showTargetInfo, setShowTargetInfo] = useState(false);
@@ -945,6 +947,15 @@ export default function HomeScreen() {
     };
   }, [user]);
 
+  useEffect(() => {
+    const handler = () => {
+      setFailedMealNotice(true);
+      setTimeout(() => setFailedMealNotice(false), 4000);
+    };
+    window.addEventListener(MEALS_FAILED_EVENT, handler as EventListener);
+    return () => window.removeEventListener(MEALS_FAILED_EVENT, handler as EventListener);
+  }, []);
+
   const formatTitle = (value: string) =>
     value
       .split(" ")
@@ -1414,6 +1425,9 @@ export default function HomeScreen() {
             </p>
           )}
           {loadError && <p className="mt-2 text-[11px] text-muted/60">{loadError}</p>}
+          {failedMealNotice && (
+            <p className="mt-2 text-[11px] text-muted/60">One or more meals couldn't be analysed and were removed from your log.</p>
+          )}
         </header>
 
         {/* Trial progress / expired banner */}
@@ -1425,7 +1439,7 @@ export default function HomeScreen() {
           >
             <div className="flex items-center justify-between">
               <span className="text-[12px] font-medium text-ink/60">
-                Day {trial.currentDay} of 7 free
+                Free trial · Day {trial.currentDay} of 7
               </span>
               <span className="text-[11px] text-primary/70 font-medium">See plans</span>
             </div>
