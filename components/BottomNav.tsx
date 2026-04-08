@@ -12,13 +12,43 @@ function checkUnseen() {
   return nudgeTs > seenTs;
 }
 
+function checkPatternsDot(isPro: boolean, isFree: boolean, hasData: boolean): boolean {
+  if (isPro || !hasData) return false;
+
+  // Bell state 2: trial expired — show until they visit, stored separately
+  if (isFree) {
+    const seen = localStorage.getItem("wya_patterns_expired_seen") === "1";
+    return !seen;
+  }
+
+  // Bell state 1: data just became available — show until they visit
+  const visited = localStorage.getItem("wya_patterns_visited") === "1";
+  return !visited;
+}
+
 export default function BottomNav({ current }: { current: "home" | "summary" | "patterns" | "none" }) {
   const [hasUnseenNudge, setHasUnseenNudge] = useState(false);
+  const [showPatternsDot, setShowPatternsDot] = useState(false);
   const router = useRouter();
   const trial = useTrialStatus();
   const { meals } = useAppData();
 
-  const showPatternsDot = !trial.isPro && hasEnoughDataForPatterns(meals);
+  const hasData = hasEnoughDataForPatterns(meals);
+
+  useEffect(() => {
+    setShowPatternsDot(checkPatternsDot(trial.isPro, trial.isFree, hasData));
+  }, [trial.isPro, trial.isFree, hasData]);
+
+  // Clear the dot when user is on the Patterns page
+  useEffect(() => {
+    if (current !== "patterns") return;
+    if (trial.isFree) {
+      localStorage.setItem("wya_patterns_expired_seen", "1");
+    } else {
+      localStorage.setItem("wya_patterns_visited", "1");
+    }
+    setShowPatternsDot(false);
+  }, [current, trial.isFree]);
 
   useEffect(() => {
     setHasUnseenNudge(checkUnseen());
