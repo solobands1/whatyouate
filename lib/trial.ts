@@ -78,9 +78,11 @@ export function countLoggedDays(meals: MealLog[]): number {
 }
 
 // Whether enough data exists to show the "your patterns are ready" value moment
+// Must match the InsightsScreen hasEnoughData threshold (5 days + 5 meals) so the
+// Patterns bell only fires when real data is actually visible in the screen.
 export function hasEnoughDataForPatterns(meals: MealLog[]): boolean {
   const realMeals = meals.filter(
     (m) => m.analysisJson?.source !== "supplement" && m.status !== "failed"
   );
-  return realMeals.length >= 5 && countLoggedDays(meals) >= 3;
+  return realMeals.length >= 5 && countLoggedDays(meals) >= 5;
 }

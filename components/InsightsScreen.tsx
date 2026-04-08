@@ -115,13 +115,6 @@ export default function InsightsScreen() {
     }
   }, [loadingData, meals, trial.isPro]);
 
-  const dayCount = useMemo(() => {
-    const days = new Set(meals.map((meal) => dayKeyFromTs(meal.ts)));
-    return days.size;
-  }, [meals]);
-
-  const mealCount = meals.length;
-
   // Only average over days that were actually logged — gaps and missed days don't deflate the numbers
   const weekSummary = useMemo(() => summarizeLoggedDays(meals, 14), [meals]);
 
@@ -316,7 +309,7 @@ export default function InsightsScreen() {
     });
   }, [meals, profile]);
 
-  const hasEnoughData = dayCount >= 5 && mealCount >= 5;
+  const hasEnoughData = hasEnoughDataForPatterns(meals);
 
   // Delegate to the single source of truth in digestEngine
   const gentleTargets = useMemo(() => computeGentleTargets(meals, profile), [meals, profile]);
