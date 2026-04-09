@@ -814,7 +814,8 @@ export function buildSmartNudgeContext(
 
   const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const todayKeyStr = dayKeyFromTs(Date.now());
-  const allDays = summarizeWeek(meals, 7).filter((d) => d.dateKey !== todayKeyStr);
+  // Fetch 8 days so after filtering today we always have 7 full days of history
+  const allDays = summarizeWeek(meals, 8).filter((d) => d.dateKey !== todayKeyStr);
   const last7Days: DailyNudgeSnapshot[] = allDays.map((d) => {
     const wk = workoutsByDay.get(d.dateKey);
     const cal = Math.round((d.totals.calories_min + d.totals.calories_max) / 2);

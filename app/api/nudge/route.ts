@@ -63,6 +63,7 @@ Rules:
 - For today-specific nudges, prefer the pre-calculated "remaining" values over raw targets
 - Calendar week rule: "this week" means Monday through today. Days before this Monday are "last week" or "in the last 7 days." Use todayDayOfWeek to determine where Monday falls.
 - When referencing a specific past day by name (e.g. "Friday"), only do so if it was yesterday or the day before. Older patterns use "earlier this week" or "your protein tends to drop mid-week."
+- CRITICAL: Never reference today's day of week as a missing or absent data point in the history. Today's data is in the "Today so far" section — the previous days history simply doesn't include today because it hasn't ended yet.
 - Be honest, direct, and specific — not generic
 - No em dashes (—). End with a period or exclamation mark.
 - No clichés: forbidden: "crush it", "you've got this", "fresh start", "stay on track", "hit your goal", "keep it up", "build muscle", "well done", "great job", "amazing", "nice work"
