@@ -202,6 +202,7 @@ export default function HomeScreen() {
   const [quickAddDate, setQuickAddDate] = useState(todayDateStr);
   const [streakSaverDismissed, setStreakSaverDismissed] = useState(false);
   const [recentlyLogged, setRecentlyLogged] = useState(false);
+  const [streakBouncing, setStreakBouncing] = useState(false);
   const prevDoneMealCountRef = useRef<number | null>(null);
   const logFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -332,6 +333,13 @@ export default function HomeScreen() {
 
   useEffect(() => {
     meals.setMeals(ctxMeals);
+    // Initialize the "done meal" baseline so the ✓ Logged flash doesn't fire on page load.
+    // Only set once — after that, the flash effect maintains it.
+    if (prevDoneMealCountRef.current === null) {
+      prevDoneMealCountRef.current = ctxMeals.filter(
+        (m) => m.status === "done" && m.analysisJson?.source !== "supplement"
+      ).length;
+    }
   }, [ctxMeals]);
 
   useEffect(() => {
@@ -689,6 +697,14 @@ export default function HomeScreen() {
     }
     prevDoneMealCountRef.current = count;
   }, [meals.meals, loadingData, isDemoMode]);
+
+  // Bounce the streak pill when a new meal is logged
+  useEffect(() => {
+    if (!recentlyLogged) return;
+    setStreakBouncing(true);
+    const t = setTimeout(() => setStreakBouncing(false), 700);
+    return () => clearTimeout(t);
+  }, [recentlyLogged]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -1491,7 +1507,7 @@ export default function HomeScreen() {
               const atRisk = todayMeals.length === 0 && new Date().getHours() >= 18;
               return (
                 <div className="flex flex-col items-end gap-1">
-                  <div className={`flex items-center gap-1 rounded-full px-2.5 py-1 bg-primary/10 ${streakSaverInfo ? "animate-wiggle" : ""}`}>
+                  <div className={`flex items-center gap-1 rounded-full px-2.5 py-1 bg-primary/10 ${streakSaverInfo ? "animate-wiggle" : ""} ${streakBouncing ? "animate-streak-bounce" : ""}`}>
                     <svg width="16" height="18" viewBox="0 0 13 15" fill="none" aria-hidden="true" className={atRisk ? "" : "animate-flame"}>
                       <defs>
                         <linearGradient id="flame-grad" x1="0" y1="15" x2="0" y2="0" gradientUnits="userSpaceOnUse">

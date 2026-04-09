@@ -214,6 +214,19 @@ input, textarea, select {
   }
 }
 
+@keyframes streakBounce {
+  0%   { transform: scale(1) translateY(0); }
+  28%  { transform: scale(1.18) translateY(-4px); }
+  52%  { transform: scale(0.94) translateY(1px); }
+  72%  { transform: scale(1.07) translateY(-2px); }
+  88%  { transform: scale(0.98) translateY(0); }
+  100% { transform: scale(1) translateY(0); }
+}
+
+.animate-streak-bounce {
+  animation: streakBounce 0.65s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards;
+}
+
 @keyframes wyaaFloat {
   0%, 100% { transform: translateY(0px); }
   50% { transform: translateY(-4px); }
