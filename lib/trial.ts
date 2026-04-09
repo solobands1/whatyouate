@@ -3,6 +3,7 @@ import type { MealLog } from "./types";
 // Users who always have full access regardless of trial status
 const UNLIMITED_USER_IDS = new Set([
   "4ef35614-32ec-4a17-b410-f4c31437c1bc", // Dillon
+  "b2d6d7a6-a147-4dfb-9750-375d070cccbf", // Andrea
 ]);
 
 const TRIAL_DAYS = 7;
