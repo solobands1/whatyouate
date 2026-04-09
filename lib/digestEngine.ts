@@ -845,7 +845,9 @@ export function buildSmartNudgeContext(
 
   const todayK = dayKeyFromTs(Date.now());
   const todayHasWorkout = workoutsByDay.has(todayK);
-  const streak = computeStreakFromMeals(meals);
+  // Prefer persisted streak from profile — it's accurate beyond the meal fetch window.
+  // Re-computing from meals can undercount when fetch limit cuts off early days.
+  const streak = profile?.streak ?? computeStreakFromMeals(meals);
 
   return {
     profile,
