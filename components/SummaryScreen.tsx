@@ -477,7 +477,7 @@ export default function SummaryScreen() {
   const recentFoods = useMemo(() => {
     const seen = new Set<string>();
     const foods: string[] = [];
-    const threeDaysAgo = Date.now() - 3 * 24 * 60 * 60 * 1000;
+    const threeDaysAgo = Date.now() - 4 * 24 * 60 * 60 * 1000;
     const todayStr = todayKey();
     meals
       .slice()
@@ -496,7 +496,7 @@ export default function SummaryScreen() {
           }
         });
       });
-    return foods.slice(0, 15);
+    return foods.slice(0, 20);
   }, [meals]);
 
 
