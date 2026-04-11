@@ -84,7 +84,7 @@ export default function InsightsScreen() {
   }, [user]);
 
   const feelLogsByDay = useMemo(() => {
-    const SCORE: Record<string, number> = { energized: 4, good: 3, okay: 2, low: 1, drained: 0 };
+    const SCORE: Record<string, number> = { energized: 4, good: 3, average: 2, low_energy: 1, drained: 0 };
     const map: Record<string, { avgScore: number; count: number }> = {};
     const grouped: Record<string, number[]> = {};
     for (const log of feelLogs) {

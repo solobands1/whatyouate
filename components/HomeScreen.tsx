@@ -107,8 +107,8 @@ function makeDemoWorkouts(): WorkoutSession[] {
 const FEEL_OPTIONS = [
   { tag: "energized", label: "Energized" },
   { tag: "good", label: "Good" },
-  { tag: "okay", label: "Okay" },
-  { tag: "low", label: "Low" },
+  { tag: "average", label: "Average" },
+  { tag: "low_energy", label: "Low Energy" },
   { tag: "drained", label: "Drained" },
 ] as const;
 

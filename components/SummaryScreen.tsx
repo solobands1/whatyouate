@@ -344,7 +344,7 @@ export default function SummaryScreen() {
     }
 
     // Energy observations — only when there are feel logs this week
-    const ENERGY_SCORE: Record<string, number> = { energized: 4, good: 3, okay: 2, low: 1, drained: 0 };
+    const ENERGY_SCORE: Record<string, number> = { energized: 4, good: 3, average: 2, low_energy: 1, drained: 0 };
     const weekStartMs = (() => { const d = new Date(); d.setDate(d.getDate() - 6); d.setHours(0, 0, 0, 0); return d.getTime(); })();
     const weekFeelLogs = recentFeelLogs.filter((l) => l.ts >= weekStartMs);
 
