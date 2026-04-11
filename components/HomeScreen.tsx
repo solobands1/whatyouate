@@ -18,7 +18,7 @@ import { supabase } from "../lib/supabaseClient";
 import "../lib/mealQueue";
 import BarcodeScannerOverlay from "./BarcodeScannerOverlay";
 import { getFoodCacheEntry, setFoodCacheEntry, deleteFoodCacheEntry, deleteFoodTextEntry, incrementFoodCacheLogCount, incrementFoodTextLogCount, getQuickAddItems, getDailySupplements, setDailySupplements, hasDailySuppsLoggedToday, markDailySuppsLoggedToday, type QuickAddItem } from "../lib/foodCache";
-import { addFeelLog, getFeelLogs } from "../lib/supabaseDb";
+import { addFeelLog, deleteFeelLog } from "../lib/supabaseDb";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
 import { useAuth } from "./AuthProvider";
@@ -214,14 +214,12 @@ export default function HomeScreen() {
   const [streakBouncing, setStreakBouncing] = useState(false);
   const mountTimeRef = useRef<number>(Date.now());
   const logFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [todayFeel, setTodayFeel] = useState<string | null>(null);
   const [feelSaving, setFeelSaving] = useState(false);
   const [feelLogged, setFeelLogged] = useState(false);
-  const [showFeelUndo, setShowFeelUndo] = useState(false);
+  const [lastFeelLogId, setLastFeelLogId] = useState<string | null>(null);
   const [showFeelModal, setShowFeelModal] = useState(false);
   const [feelPressed, setFeelPressed] = useState<string | null>(null);
   const feelFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const feelUndoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const mountedRef = useRef(true);
   const recentSentinelRef = useRef<HTMLDivElement | null>(null);
@@ -236,27 +234,17 @@ export default function HomeScreen() {
   const workout = useWorkout(user, onError, setEditRecents, []);
   const meals = useMeals(user, onError, setEditRecents, []);
 
-  useEffect(() => {
-    if (!user) return;
-    getFeelLogs(user.id, 5).then((logs) => {
-      const todayLog = logs.find((l) => dayKeyFromTs(l.ts) === todayKey());
-      if (todayLog) setTodayFeel(todayLog.tag);
-    }).catch(() => {});
-  }, [user]);
   const trial = useTrialStatus();
 
   const handleFeelLog = async (tag: string) => {
     if (!user || feelSaving) return;
-    setTodayFeel(tag);
     setFeelSaving(true);
     if (feelFlashTimerRef.current) clearTimeout(feelFlashTimerRef.current);
-    if (feelUndoTimerRef.current) clearTimeout(feelUndoTimerRef.current);
     try {
-      await addFeelLog(user.id, Date.now(), tag);
+      const id = await addFeelLog(user.id, Date.now(), tag);
+      setLastFeelLogId(id);
       setFeelLogged(true);
-      setShowFeelUndo(true);
       feelFlashTimerRef.current = setTimeout(() => setFeelLogged(false), 2000);
-      feelUndoTimerRef.current = setTimeout(() => setShowFeelUndo(false), 5000);
     } catch {
       // silently fail
     } finally {
@@ -264,12 +252,11 @@ export default function HomeScreen() {
     }
   };
 
-  const handleFeelUndo = () => {
-    setTodayFeel(null);
+  const handleFeelUndo = async () => {
+    if (lastFeelLogId) await deleteFeelLog(lastFeelLogId);
+    setLastFeelLogId(null);
     setFeelLogged(false);
-    setShowFeelUndo(false);
     if (feelFlashTimerRef.current) clearTimeout(feelFlashTimerRef.current);
-    if (feelUndoTimerRef.current) clearTimeout(feelUndoTimerRef.current);
   };
 
   const handleOpenQuickAdd = () => {
@@ -1723,13 +1710,13 @@ export default function HomeScreen() {
             <p className="text-center text-[11px] text-muted/60">Workout in progress</p>
           )}
           {!isDemoMode && (
-            <div className="mx-auto flex w-[60%] mt-1">
+            <div className="mx-auto flex w-[60%]">
               <button
                 type="button"
                 className="flex flex-1 items-center justify-center rounded-xl border border-ink/10 bg-white px-3 py-1.5 text-[11px] font-normal text-ink/60 shadow-[0_4px_12px_rgba(15,23,42,0.08)] transition-all duration-150 hover:bg-ink/5 active:translate-y-[1px]"
                 onClick={() => setShowFeelModal(true)}
               >
-                Log how you're feeling
+                Log How You're Feeling
               </button>
             </div>
           )}
@@ -2697,16 +2684,26 @@ export default function HomeScreen() {
 
       {/* Feel modal */}
       {showFeelModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5"
+          onPointerDown={(e) => { if (e.target === e.currentTarget) { setShowFeelModal(false); setFeelLogged(false); } }}
+        >
           <div className="w-full max-w-sm rounded-2xl bg-white px-5 pb-6 pt-5 shadow-xl">
             <div className="mb-1 flex items-center justify-between">
               <h2 className="text-base font-semibold text-ink">How are you feeling?</h2>
-              {feelLogged && (
-                <span className="animate-log-flash text-[11px] font-semibold text-primary/80">✓ Logged</span>
-              )}
+              <button
+                type="button"
+                onClick={() => { setShowFeelModal(false); setFeelLogged(false); }}
+                className="flex h-6 w-6 items-center justify-center rounded-full bg-ink/5 text-ink/40 transition active:opacity-60"
+              >
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              </button>
             </div>
-            <p className="mb-4 text-[12px] text-muted/60 leading-relaxed">Logging how you feel helps your AI coach connect your energy patterns to your eating habits over time.</p>
-            <div className="flex mb-5">
+            <p className="mb-3 text-[12px] text-muted/60 leading-relaxed">Each log is a timestamped snapshot. Your AI coach uses these to connect energy patterns to your eating habits over time.</p>
+            {feelLogged && (
+              <p className="animate-log-flash mb-3 text-[11px] font-semibold text-primary/80">✓ Logged</p>
+            )}
+            <div className="flex mb-4">
               {FEEL_OPTIONS.map(({ tag, label }, i) => (
                 <button
                   key={tag}
@@ -2726,13 +2723,13 @@ export default function HomeScreen() {
               ))}
             </div>
             <div className="flex gap-2">
-              {todayFeel && (
+              {lastFeelLogId && (
                 <button
                   type="button"
                   onClick={handleFeelUndo}
                   className="flex-1 rounded-xl border border-ink/10 py-2.5 text-sm font-medium text-muted/60 transition active:opacity-70"
                 >
-                  Undo
+                  Undo Last
                 </button>
               )}
               <button

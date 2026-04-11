@@ -699,12 +699,22 @@ export interface FeelLog {
   tag: string;
 }
 
-export async function addFeelLog(userId: string, ts: number, tag: string): Promise<void> {
+export async function addFeelLog(userId: string, ts: number, tag: string): Promise<string | null> {
+  if (useMemory) return null;
+  try {
+    const { data } = await supabase.from("feel_logs").insert({ user_id: userId, ts: Math.floor(ts / 1000), tag }).select("id").single();
+    return data?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function deleteFeelLog(id: string): Promise<void> {
   if (useMemory) return;
   try {
-    await supabase.from("feel_logs").insert({ user_id: userId, ts: Math.floor(ts / 1000), tag });
+    await supabase.from("feel_logs").delete().eq("id", id);
   } catch {
-    // Silently fail if table doesn't exist yet
+    // silently fail
   }
 }
 
