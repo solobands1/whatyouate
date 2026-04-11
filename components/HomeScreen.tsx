@@ -1884,7 +1884,7 @@ export default function HomeScreen() {
                           onClick={() => {
                             if (editRecents) handleDeleteHomeFeelLog(log.id);
                           }}
-                          className={`flex w-full flex-col items-center justify-center rounded-full border border-primary/20 bg-primary/10 px-3 py-0.5 text-[11px] text-ink/70 leading-tight ${editRecents ? "cursor-pointer animate-wiggle-neutral" : ""}`}
+                          className={`flex w-full flex-col items-center justify-center rounded-full border border-ink/10 bg-ink/5 px-3 py-0.5 text-[11px] text-ink/70 leading-tight ${editRecents ? "cursor-pointer animate-wiggle-neutral" : ""}`}
                         >
                           <span className="font-semibold text-ink/70 capitalize">{log.tag}</span>
                           <span className="-mt-0.5">{h}{period}</span>
