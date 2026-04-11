@@ -205,7 +205,7 @@ export default function HomeScreen() {
   const [streakBouncing, setStreakBouncing] = useState(false);
   const [voiceListening, setVoiceListening] = useState(false);
   const voiceRecognitionRef = useRef<any>(null);
-  const prevDoneMealCountRef = useRef<number | null>(null);
+  const mountTimeRef = useRef<number>(Date.now());
   const logFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const mountedRef = useRef(true);
@@ -367,13 +367,6 @@ export default function HomeScreen() {
 
   useEffect(() => {
     meals.setMeals(ctxMeals);
-    // Initialize the "done meal" baseline so the ✓ Logged flash doesn't fire on page load.
-    // Only set once — after that, the flash effect maintains it.
-    if (prevDoneMealCountRef.current === null) {
-      prevDoneMealCountRef.current = ctxMeals.filter(
-        (m) => m.status === "done" && m.analysisJson?.source !== "supplement"
-      ).length;
-    }
   }, [ctxMeals]);
 
   useEffect(() => {
@@ -718,18 +711,21 @@ export default function HomeScreen() {
     };
   }, []);
 
-  // Flash "✓ Logged" on the Today card when a new meal finishes analyzing
+  // Flash "✓ Logged" only when a meal logged during this session finishes analyzing.
+  // Uses mount timestamp instead of count comparison — immune to remount false-fires.
   useEffect(() => {
     if (loadingData || isDemoMode) return;
-    const count = meals.meals.filter(
-      (m) => m.status === "done" && m.analysisJson?.source !== "supplement"
-    ).length;
-    if (prevDoneMealCountRef.current !== null && count > prevDoneMealCountRef.current) {
+    const hasNewMeal = meals.meals.some(
+      (m) =>
+        m.status === "done" &&
+        m.analysisJson?.source !== "supplement" &&
+        m.ts >= mountTimeRef.current
+    );
+    if (hasNewMeal) {
       setRecentlyLogged(true);
       if (logFlashTimerRef.current) clearTimeout(logFlashTimerRef.current);
       logFlashTimerRef.current = setTimeout(() => setRecentlyLogged(false), 2200);
     }
-    prevDoneMealCountRef.current = count;
   }, [meals.meals, loadingData, isDemoMode]);
 
   // Bounce the streak pill when a new meal is logged
