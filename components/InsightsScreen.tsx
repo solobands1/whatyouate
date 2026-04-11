@@ -720,11 +720,11 @@ export default function InsightsScreen() {
               {!hasEnoughData && <p className="text-[11px] uppercase tracking-wide text-muted/70">Preview</p>}
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1">
-                  <div className="h-2 w-4 rounded-sm bg-primary/45" />
+                  <div className="h-2 w-4 rounded-sm bg-primary/70" />
                   <p className="text-[10px] text-muted/75">Food</p>
                 </div>
                 <div className="flex items-center gap-1">
-                  <div className="h-2 w-4 rounded-sm bg-primary/20" />
+                  <div className="h-2 w-4 rounded-sm bg-primary/35" />
                   <p className="text-[10px] text-muted/75">Supplements</p>
                 </div>
               </div>
@@ -748,7 +748,7 @@ export default function InsightsScreen() {
                 <div className="mt-2 h-2 rounded-full bg-ink/5 flex overflow-hidden isolate">
                   {/* Food segment — darker */}
                   <div
-                    className="h-full shrink-0 bg-primary/45"
+                    className="h-full shrink-0 bg-primary/70"
                     style={{
                       width: barsReady ? `${pattern.foodPct}%` : "0%",
                       transition: `width 600ms cubic-bezier(0.22,1,0.36,1) ${index * 55}ms`,
@@ -757,7 +757,7 @@ export default function InsightsScreen() {
                   {/* Supplement segment — lighter, only shown when dose data exists */}
                   {pattern.hasSupplement && (
                     <div
-                      className="h-full shrink-0 bg-primary/20"
+                      className="h-full shrink-0 bg-primary/35"
                       style={{
                         width: barsReady ? `${pattern.suppPct}%` : "0%",
                         transition: `width 600ms cubic-bezier(0.22,1,0.36,1) ${index * 55}ms`,
