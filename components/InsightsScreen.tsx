@@ -661,39 +661,42 @@ export default function InsightsScreen() {
           <Card className="mt-3 py-3">
             <div className="flex items-center justify-between mb-3">
               <p className="text-xs uppercase tracking-wide text-muted/70">Energy</p>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5">
                 {[
-                  { label: "Low", color: "rgba(100,116,139,0.45)" },
+                  { label: "Extra low", color: "rgba(100,116,139,0.45)" },
+                  { label: "Low", color: "rgba(148,163,184,0.50)" },
+                  { label: "Average", color: "rgba(111,168,255,0.45)" },
                   { label: "High", color: "rgba(111,168,255,0.9)" },
                 ].map(({ label, color }) => (
                   <div key={label} className="flex items-center gap-1">
-                    <div className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
-                    <p className="text-[10px] text-muted/60">{label}</p>
+                    <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
+                    <p className="text-[9px] text-muted/60">{label}</p>
                   </div>
                 ))}
               </div>
             </div>
-            <div className="flex items-center justify-between">
+            <div className="relative" style={{ height: 26 }}>
               {sparklineData.map((d, i) => {
                 const entry = feelLogsByDay[d.dateKey];
-                const date = new Date(`${d.dateKey}T12:00:00`);
-                const dayLabel = ["S","M","T","W","T","F","S"][date.getDay()];
                 const isToday = i === sparklineData.length - 1;
                 const score = entry?.avgScore ?? null;
                 const dotColor = score === null
                   ? "rgba(0,0,0,0.07)"
                   : score >= 3.5 ? "rgba(111,168,255,0.9)"
-                  : score >= 2.5 ? "rgba(111,168,255,0.65)"
-                  : score >= 1.5 ? "rgba(111,168,255,0.35)"
-                  : score >= 0.5 ? "rgba(148,163,184,0.50)"
+                  : score >= 2.5 ? "rgba(111,168,255,0.45)"
+                  : score >= 1.5 ? "rgba(148,163,184,0.50)"
                   : "rgba(100,116,139,0.45)";
+                const date = new Date(`${d.dateKey}T12:00:00`);
                 return (
-                  <div key={d.dateKey} className="flex flex-col items-center gap-1.5">
-                    <div
-                      className="rounded-full"
-                      style={{ width: 14, height: 14, backgroundColor: dotColor }}
-                    />
-                    <p className={`text-[10px] ${isToday ? "font-bold text-ink/80" : "text-muted/50"}`}>{dayLabel}</p>
+                  <div
+                    key={d.dateKey}
+                    className="absolute -translate-x-1/2 flex flex-col items-center gap-1.5"
+                    style={{ left: `${sparklineChart.dots[i].labelLeftPct}%` }}
+                  >
+                    <div className="rounded-full" style={{ width: 10, height: 10, backgroundColor: dotColor }} />
+                    <span className={`text-[9px] ${isToday ? "font-bold text-ink/80" : d.hasData ? "text-ink/70" : "text-ink/45"}`}>
+                      {["S","M","T","W","T","F","S"][date.getDay()]}
+                    </span>
                   </div>
                 );
               })}
