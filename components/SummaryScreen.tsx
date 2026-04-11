@@ -537,7 +537,7 @@ export default function SummaryScreen() {
     }
 
     // No saved nudge yet — fetch from AI
-    const recentNudgeMessages = nudges.slice(0, 3).map((n) => n.type ? `${n.type}: ${n.message}` : n.message);
+    const recentNudgeMessages = nudges.slice(0, 7).map((n) => n.type ? `${n.type}: ${n.message}` : n.message);
     const ctx = buildSmartNudgeContext(meals, workouts, profile, recentFoods, recentNudgeMessages);
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
@@ -714,6 +714,51 @@ export default function SummaryScreen() {
           "Your numbers are looking balanced, and that's genuinely good work.",
           "This kind of consistency is what makes the nudges and patterns more accurate over time.",
         ]);
+      case "win":
+        return weeklyVariant([
+          "Small wins compound. A single good day can set the tone for the rest of the week.",
+          "Noticing what's working helps reinforce the habit. Consistency builds on moments like this.",
+        ]);
+      case "momentum":
+        return weeklyVariant([
+          "Consistency is what separates short-term results from lasting change. You're building the harder thing.",
+          "Streaks matter because they reflect real daily decisions — not just intention but follow-through.",
+        ]);
+      case "pattern":
+        return weeklyVariant([
+          "Patterns show up slowly but shape results steadily. Catching one early is usually the cheapest time to adjust.",
+          "Most nutrition outcomes aren't caused by one bad day — they're caused by patterns that went unnoticed.",
+        ]);
+      case "meal_timing":
+        return weeklyVariant([
+          "When you eat affects energy and hunger throughout the day, not just what you eat.",
+          "Eating timing influences how your body uses nutrients and how steady your energy is.",
+        ]);
+      case "food_insight":
+        return weeklyVariant([
+          "Small shifts in what you eat regularly tend to have more impact than occasional big changes.",
+          "Food choices accumulate over time — a small recurring addition or swap can shift your weekly averages noticeably.",
+        ]);
+      case "variety":
+        return weeklyVariant([
+          "Eating a wide range of foods is one of the most consistent predictors of better micronutrient coverage.",
+          "Variety reduces the risk of consistent gaps — no single food or food group covers everything.",
+        ]);
+      case "rest_day_fuel":
+        return weeklyVariant([
+          "Rest days are when your body actually repairs. Underfuelling them can slow recovery between sessions.",
+          "Recovery nutrition matters as much as workout nutrition — the repair happens on the days in between.",
+        ]);
+      case "workout_recovery":
+        return weeklyVariant([
+          "What you eat after training directly affects how well you recover and how you feel next session.",
+          "Post-workout nutrition sets up your next training day. It's one of the highest-return habits to get right.",
+        ]);
+      case "check_in":
+        return weeklyVariant([
+          "Periodic check-ins help you stay aware of patterns before they drift too far.",
+          "Awareness is the first step. Catching a drift early keeps small adjustments small.",
+        ]);
       default:
         return "";
     }
@@ -833,6 +878,51 @@ export default function SummaryScreen() {
         ]);
       case "on_track":
         return "";
+      case "win":
+        return weeklyVariant([
+          "Keep the same approach tomorrow. The goal is to make today's choices feel ordinary.",
+          "Note what made today easier — whether it was prep, timing, or just circumstance. It's worth repeating.",
+        ]);
+      case "momentum":
+        return weeklyVariant([
+          "Focus on keeping the streak intact today rather than doing anything perfect.",
+          "Log what you eat even on harder days. The habit of logging is more valuable than any single perfect day.",
+        ]);
+      case "pattern":
+        return weeklyVariant([
+          "Pick one small adjustment and try it consistently for a few days. One change at a time tends to stick.",
+          "Identify which meal or time of day the pattern tends to show up. That's usually the highest-leverage place to act.",
+        ]);
+      case "meal_timing":
+        return weeklyVariant([
+          "Try shifting one meal slightly earlier or later and see how it affects energy and hunger later in the day.",
+          "Experimenting with meal spacing tends to reveal what works for your routine — start with one change.",
+        ]);
+      case "food_insight":
+        return weeklyVariant([
+          "Try swapping or adding one food this week and see what it does to your daily numbers.",
+          "Small recurring additions are usually easier to maintain than full meal changes — start with one.",
+        ]);
+      case "variety":
+        return weeklyVariant([
+          "Try adding one food this week you haven't eaten recently. It doesn't have to be a big change.",
+          "Pick one meal where variety is lowest and see what one new ingredient would add.",
+        ]);
+      case "rest_day_fuel":
+        return weeklyVariant([
+          "On rest days, try keeping protein intake close to your training-day levels even if total calories are slightly lower.",
+          "A protein-focused snack on rest days is usually the simplest way to keep recovery on track.",
+        ]);
+      case "workout_recovery":
+        return weeklyVariant([
+          "Aim for a meal with protein and carbs within a couple of hours after training — that window matters.",
+          "A small protein-and-carb snack right after a session is usually enough to support recovery even if a full meal isn't ready.",
+        ]);
+      case "check_in":
+        return weeklyVariant([
+          "Take a quick look at your weekly averages and see if anything has drifted from where you want to be.",
+          "Pick one thing that's slightly off and make one small change. You don't need to fix everything at once.",
+        ]);
       default:
         return "";
     }

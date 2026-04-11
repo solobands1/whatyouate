@@ -43,7 +43,7 @@ Nudge type priority — work down this list and use the first that genuinely app
 1. win — a specific, earned observation: a streak milestone, a clear improvement, or something that's visibly working. Only fire if the data actually shows it. No generic praise.
 2. momentum — forward-looking when there's an active streak (3+ days). "You've built X solid days — this is when habits start to stick." More motivating than a backward-looking win.
 3. pattern — something visible across 2 or more data points the user likely hasn't noticed: a day-of-week gap, a timing trend (light mornings, heavy evenings), a correlation with workouts. Must cite something specific. Do NOT fire on a single data point.
-4. meal_timing — fires when data shows a front/back-heavy eating pattern, or when it's morning and nothing is logged yet. If morning and no log: frame around the first meal specifically — not a general "today" goal. "Starting with X sets up your afternoon without the energy dip."
+4. meal_timing — fires when it's morning and nothing is logged yet. Frame around the first meal specifically — not a general "today" goal. "Starting with X sets up your afternoon without the energy dip." Do NOT infer front/back-heavy patterns from daily totals alone — you can't see meal timing within a day.
 5. food_insight — one practical food fact tied to what they're currently low on. Actionable, not trivia.
 6. variety — fires when the same foods appear repeatedly across the last 7 days. Suggest rotation for different nutrient profiles.
 7. rest_day_fuel — trained yesterday and today's calories or protein are notably low. Recovery nutrition matters the day after too.
@@ -60,6 +60,7 @@ Tone:
 - Vary sentence openings — don't always start with "You've" or "Your". Some nudges can open with the food, the time, the pattern, or a short observation.
 
 Rules:
+- If the user's profile includes a "focus" field, weight it heavily when picking nudge type. A user focused on longevity should get more food_insight and variety nudges. A user focused on performance should get more workout_recovery and fuel nudges. Let their stated focus shape what angle is most relevant.
 - Only reference numbers and patterns you can actually see in the data
 - CRITICAL: use all numbers exactly as provided — never round, approximate, or recalculate. If the data says 58g remaining, say 58g, not ~60g.
 - For today-specific nudges, prefer the pre-calculated "remaining" values over raw targets
@@ -124,7 +125,8 @@ function buildSmartPrompt(ctx: Record<string, unknown>): string {
   if (last7?.length) {
     lines.push(`Previous days, excluding today (day | date | kcal | protein | carbs | fat | workout). Days marked "no log" were not logged:`);
     last7.forEach((d) => {
-      const wk = d.hasWorkout ? ` | workout ${d.workoutMinutes ?? "?"}min ${d.workoutIntensity ?? ""}` : "";
+      const types = (d.workoutTypes as string[] | undefined)?.join(", ");
+      const wk = d.hasWorkout ? ` | workout ${d.workoutMinutes ?? "?"}min ${d.workoutIntensity ?? ""}${types ? ` (${types})` : ""}` : "";
       const logged = d.logged as boolean;
       if (!logged) {
         lines.push(`  ${d.dayOfWeek} ${d.dateKey}: no log${wk}`);
@@ -226,7 +228,7 @@ export async function POST(req: Request) {
           },
           body: JSON.stringify({
             model: "claude-sonnet-4-6",
-            max_tokens: 300,
+            max_tokens: 400,
             temperature: 0.7,
             system: SMART_NUDGE_SYSTEM_PROMPT,
             messages: [{ role: "user", content: prompt }],
