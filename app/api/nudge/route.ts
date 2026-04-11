@@ -89,7 +89,11 @@ Suggestion rules:
 - Suggestions must match the nudge type: protein nudges → protein-rich foods not in recentFoods, calorie nudges → energy-dense options not in recentFoods, fat nudges → healthy-fat options, variety nudges → foods with different nutrient profiles from what they've been eating.
 - If the nudge type is win, momentum, pattern, meal_timing (general), variety, workout_missing, calorie_high, on_track, or check_in — use [].
 - 3 simple food names — or [] per the rule above
-- Match time of day: morning → breakfast-friendly, afternoon → lunch/snack-friendly, evening → dinner-friendly
+- CRITICAL: Match time of day strictly:
+  - morning (before 12pm) → breakfast foods only (eggs, oats, yogurt, smoothie ingredients, etc.)
+  - afternoon 12–5pm → lunch or snack foods (wraps, salads, rice bowls, protein bars, fruit, etc.)
+  - evening (after 5pm) → dinner foods (fish, meat, roasted veg, legumes, etc.)
+  - If the nudge message itself references a specific meal (e.g. "first meal", "breakfast", "lunch", "dinner"), suggestions must match that meal, not the generic time window
 - Respect dietary restrictions when provided
 - No serving instructions in food names`;
 
