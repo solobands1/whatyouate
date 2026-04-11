@@ -203,9 +203,6 @@ export default function HomeScreen() {
   const [streakSaverDismissed, setStreakSaverDismissed] = useState(false);
   const [recentlyLogged, setRecentlyLogged] = useState(false);
   const [streakBouncing, setStreakBouncing] = useState(false);
-  const [voiceListening, setVoiceListening] = useState(false);
-  const voiceRecognitionRef = useRef<any>(null);
-  const voiceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mountTimeRef = useRef<number>(Date.now());
   const logFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -222,43 +219,6 @@ export default function HomeScreen() {
   const workout = useWorkout(user, onError, setEditRecents, []);
   const meals = useMeals(user, onError, setEditRecents, []);
   const trial = useTrialStatus();
-
-  const stopVoice = () => {
-    if (voiceTimeoutRef.current) { clearTimeout(voiceTimeoutRef.current); voiceTimeoutRef.current = null; }
-    voiceRecognitionRef.current = null;
-    setVoiceListening(false);
-  };
-
-  const startVoiceInput = () => {
-    if (voiceRecognitionRef.current) {
-      voiceRecognitionRef.current.abort();
-      stopVoice();
-      return;
-    }
-    const SpeechRecognition = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) return;
-    const recognition = new SpeechRecognition();
-    recognition.lang = "en-US";
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
-    voiceRecognitionRef.current = recognition;
-    recognition.onstart = () => {
-      setVoiceListening(true);
-      // Hard cap — iOS sometimes never fires onend
-      voiceTimeoutRef.current = setTimeout(() => stopVoice(), 15_000);
-    };
-    recognition.onresult = (event: any) => {
-      const transcript = event.results?.[0]?.[0]?.transcript ?? "";
-      if (transcript) meals.setManualText(transcript);
-      // Debounce stop — gives iOS a beat to fire onend naturally, then forces it
-      if (voiceTimeoutRef.current) clearTimeout(voiceTimeoutRef.current);
-      voiceTimeoutRef.current = setTimeout(() => stopVoice(), 800);
-    };
-    recognition.onerror = () => stopVoice();
-    recognition.onend = () => stopVoice();
-    try { recognition.start(); } catch { stopVoice(); }
-  };
 
   const handleOpenQuickAdd = () => {
     setQuickAddItems(getQuickAddItems());
@@ -1908,32 +1868,10 @@ export default function HomeScreen() {
                         autoFocus
                         onKeyDown={(e) => { if (e.key === "Enter") meals.analyzeManualText(); }}
                       />
+                      <p className="mt-1.5 text-[11px] text-muted/50">Tip: use your keyboard's mic to speak your meal.</p>
                     </div>
-                    <div className="mt-3 flex items-center gap-2">
+                    <div className="mt-3">
                       <ManualDateRow manualDate={meals.manualDate} setManualDate={meals.setManualDate} />
-                      <button
-                        type="button"
-                        aria-label={voiceListening ? "Stop listening" : "Speak your meal"}
-                        onClick={startVoiceInput}
-                        className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 transition active:opacity-70 ${voiceListening ? "border-primary/40 bg-primary/10" : "border-ink/10 bg-transparent"}`}
-                      >
-                        {voiceListening ? (
-                          <span className="relative flex h-2 w-2 shrink-0">
-                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
-                            <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
-                          </span>
-                        ) : (
-                          <svg className="h-3 w-3 shrink-0 text-primary/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <rect x="9" y="2" width="6" height="11" rx="3" />
-                            <path d="M5 10a7 7 0 0 0 14 0" strokeLinecap="round" />
-                            <line x1="12" y1="17" x2="12" y2="21" strokeLinecap="round" />
-                            <line x1="9" y1="21" x2="15" y2="21" strokeLinecap="round" />
-                          </svg>
-                        )}
-                        <span className={`text-[11px] font-medium select-none ${voiceListening ? "text-primary/80" : "text-primary/70"}`}>
-                          {voiceListening ? "Listening…" : "Speak"}
-                        </span>
-                      </button>
                     </div>
                     {meals.manualError && (
                       <p className="mt-3 text-xs text-red-500">{meals.manualError}</p>
