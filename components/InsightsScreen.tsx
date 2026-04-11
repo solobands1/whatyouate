@@ -660,8 +660,8 @@ export default function InsightsScreen() {
                 return (
                   <div key={log.id} className="flex shrink-0 items-center gap-1.5 rounded-xl border border-primary/25 bg-primary/10 px-2.5 py-1.5">
                     <div>
-                      <p className="text-[12px] font-medium text-primary/90 capitalize">{log.tag.replace(/_/g, " ")}</p>
-                      <p className="text-[10px] text-primary/50">{dayLabel} · {h}{period}</p>
+                      <p className="text-[12px] font-medium text-ink capitalize">{log.tag.replace(/_/g, " ")}</p>
+                      <p className="text-[10px] text-muted/70">{dayLabel} · {h}{period}</p>
                     </div>
                     <button
                       type="button"
