@@ -613,7 +613,7 @@ export default function InsightsScreen() {
                   y={sparklineChart.targetY1}
                   width={sparklineChart.targetRectW}
                   height={Math.max(0, sparklineChart.targetY2 - sparklineChart.targetY1)}
-                  fill="rgba(111,168,255,0.12)"
+                  fill="rgba(111,168,255,0.22)"
                   rx={2}
                 />
               )}
@@ -650,7 +650,7 @@ export default function InsightsScreen() {
           </div>
           {sparklineChart.hasTarget && (
             <div className="mt-2 flex items-center gap-1.5">
-              <div className="h-2 w-3 rounded-sm bg-primary/15" />
+              <div className="h-2 w-3 rounded-sm bg-primary/35" />
               <p className="text-[10px] text-muted/75">Target range</p>
             </div>
           )}
