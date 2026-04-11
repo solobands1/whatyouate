@@ -18,7 +18,7 @@ import { supabase } from "../lib/supabaseClient";
 import "../lib/mealQueue";
 import BarcodeScannerOverlay from "./BarcodeScannerOverlay";
 import { getFoodCacheEntry, setFoodCacheEntry, deleteFoodCacheEntry, deleteFoodTextEntry, incrementFoodCacheLogCount, incrementFoodTextLogCount, getQuickAddItems, getDailySupplements, setDailySupplements, hasDailySuppsLoggedToday, markDailySuppsLoggedToday, type QuickAddItem } from "../lib/foodCache";
-import { addFeelLog, deleteFeelLog } from "../lib/supabaseDb";
+import { addFeelLog, deleteFeelLog, getFeelLogs, type FeelLog } from "../lib/supabaseDb";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
 import { useAuth } from "./AuthProvider";
@@ -219,6 +219,7 @@ export default function HomeScreen() {
   const [lastFeelLogId, setLastFeelLogId] = useState<string | null>(null);
   const [showFeelModal, setShowFeelModal] = useState(false);
   const [feelPressed, setFeelPressed] = useState<string | null>(null);
+  const [homeFeelLogs, setHomeFeelLogs] = useState<FeelLog[]>([]);
   const feelFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const mountedRef = useRef(true);
@@ -241,9 +242,11 @@ export default function HomeScreen() {
     setFeelSaving(true);
     if (feelFlashTimerRef.current) clearTimeout(feelFlashTimerRef.current);
     try {
-      const id = await addFeelLog(user.id, Date.now(), tag);
+      const ts = Date.now();
+      const id = await addFeelLog(user.id, ts, tag);
       setLastFeelLogId(id);
       setFeelLogged(true);
+      if (id) setHomeFeelLogs((prev) => [{ id, ts, tag }, ...prev]);
       feelFlashTimerRef.current = setTimeout(() => setFeelLogged(false), 2000);
     } catch {
       // silently fail
@@ -253,10 +256,18 @@ export default function HomeScreen() {
   };
 
   const handleFeelUndo = async () => {
-    if (lastFeelLogId) await deleteFeelLog(lastFeelLogId);
+    if (lastFeelLogId) {
+      await deleteFeelLog(lastFeelLogId);
+      setHomeFeelLogs((prev) => prev.filter((f) => f.id !== lastFeelLogId));
+    }
     setLastFeelLogId(null);
     setFeelLogged(false);
     if (feelFlashTimerRef.current) clearTimeout(feelFlashTimerRef.current);
+  };
+
+  const handleDeleteHomeFeelLog = async (id: string) => {
+    setHomeFeelLogs((prev) => prev.filter((f) => f.id !== id));
+    await deleteFeelLog(id);
   };
 
   const handleOpenQuickAdd = () => {
@@ -747,6 +758,11 @@ export default function HomeScreen() {
     }
   }, [loading, user, router]);
 
+  useEffect(() => {
+    if (!user) return;
+    getFeelLogs(user.id, 50).then(setHomeFeelLogs).catch(() => {});
+  }, [user]);
+
   // Auto-log daily supplements once per calendar day, silently
   useEffect(() => {
     if (!user || loadingData) return;
@@ -1077,6 +1093,16 @@ export default function HomeScreen() {
     });
     return groups;
   }, [recentFiltered]);
+
+  const feelLogsByLabel = useMemo(() => {
+    const map: Record<string, FeelLog[]> = {};
+    homeFeelLogs.forEach((log) => {
+      const label = formatDayLabel(log.ts);
+      if (!map[label]) map[label] = [];
+      map[label].push(log);
+    });
+    return map;
+  }, [homeFeelLogs]);
 
   useEffect(() => {
     if (!recentSentinelRef.current) return;
@@ -1744,7 +1770,7 @@ export default function HomeScreen() {
           </div>
           <div className="mt-3 grid grid-cols-3 text-[10px] font-semibold uppercase tracking-wide text-muted/60">
             <span className="col-span-2">Food</span>
-            <span className="col-span-1 text-right">Workout</span>
+            <span className="col-span-1 text-right">Activity</span>
           </div>
           <div className="mt-3 space-y-4 text-sm text-ink/80">
             {(() => {
@@ -1848,6 +1874,23 @@ export default function HomeScreen() {
                         <span className="-mt-0.5">{formatWorkoutDurationLines(w).detail}</span>
                       </div>
                     ))}
+                    {(feelLogsByLabel[group.label] ?? []).map((log) => {
+                      const d = new Date(log.ts);
+                      const h = d.getHours() % 12 || 12;
+                      const period = d.getHours() < 12 ? "am" : "pm";
+                      return (
+                        <div
+                          key={log.id}
+                          onClick={() => {
+                            if (editRecents) handleDeleteHomeFeelLog(log.id);
+                          }}
+                          className={`flex w-full flex-col items-center justify-center rounded-full border border-primary/20 bg-primary/10 px-3 py-0.5 text-[11px] text-ink/70 leading-tight ${editRecents ? "cursor-pointer animate-wiggle-neutral" : ""}`}
+                        >
+                          <span className="font-semibold text-ink/70 capitalize">{log.tag}</span>
+                          <span className="-mt-0.5">{h}{period}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>

@@ -189,6 +189,7 @@ function buildSmartPrompt(ctx: Record<string, unknown>): string {
       return `${day} ${h}${period} - ${f.tag.replace(/_/g, " ")}`;
     }).join(", ");
     lines.push(`How the user has been feeling (recent logs): ${feelStr}`);
+    lines.push(`Energy correlation note: if the feel logs and meal data suggest a pattern — e.g. low energy follows skipped meals, big carb-heavy lunches, or low protein days — surface it as a pattern nudge with a specific, actionable observation.`);
   }
 
   const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];

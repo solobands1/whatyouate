@@ -63,6 +63,17 @@ const NUTRIENT_INFO: Record<string, string | string[]> = {
   "Vitamin B6": "Involved in protein metabolism, neurotransmitter production (serotonin, dopamine), and immune function. Low levels can affect mood and energy. Found in poultry, fish, potatoes, bananas, and chickpeas. Chickpeas are one of the richest plant sources."
 };
 
+const ENERGY_SCORE: Record<string, number> = { energized: 4, good: 3, okay: 2, low: 1, drained: 0 };
+
+function energySwatchColor(avgScore: number | null): string {
+  if (avgScore === null) return "rgba(0,0,0,0.06)";
+  if (avgScore >= 3.5) return "rgba(111,168,255,0.85)";
+  if (avgScore >= 2.5) return "rgba(111,168,255,0.58)";
+  if (avgScore >= 1.5) return "rgba(111,168,255,0.30)";
+  if (avgScore >= 0.5) return "rgba(148,163,184,0.40)";
+  return "rgba(100,116,139,0.52)";
+}
+
 export default function InsightsScreen() {
   const router = useRouter();
   const { user, loading } = useAuth();
@@ -85,6 +96,16 @@ export default function InsightsScreen() {
     setFeelLogs((prev) => prev.filter((f) => f.id !== id));
     await deleteFeelLog(id);
   }, []);
+
+  const feelLogsByDay = useMemo(() => {
+    const map: Record<string, FeelLog[]> = {};
+    for (const log of feelLogs) {
+      const key = dayKeyFromTs(log.ts);
+      if (!map[key]) map[key] = [];
+      map[key].push(log);
+    }
+    return map;
+  }, [feelLogs]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -636,47 +657,40 @@ export default function InsightsScreen() {
                 );
               })}
             </div>
+            {feelLogs.length > 0 && (
+              <div className="relative mt-2" style={{ height: 8 }}>
+                {sparklineData.map((d, i) => {
+                  const logs = feelLogsByDay[d.dateKey] ?? [];
+                  const avgScore = logs.length
+                    ? logs.reduce((sum, l) => sum + (ENERGY_SCORE[l.tag] ?? 2), 0) / logs.length
+                    : null;
+                  return (
+                    <div
+                      key={d.dateKey}
+                      className="absolute -translate-x-1/2 rounded-sm"
+                      style={{ left: `${sparklineChart.dots[i].labelLeftPct}%`, width: 16, height: 8, backgroundColor: energySwatchColor(avgScore) }}
+                    />
+                  );
+                })}
+              </div>
+            )}
           </div>
-          {sparklineChart.hasTarget && (
-            <div className="mt-2 flex items-center gap-1.5">
-              <div className="h-2 w-3 rounded-sm bg-primary/15" />
-              <p className="text-[10px] text-muted/75">Target range</p>
-            </div>
-          )}
+          <div className="mt-2 flex items-center gap-3">
+            {sparklineChart.hasTarget && (
+              <div className="flex items-center gap-1.5">
+                <div className="h-2 w-3 rounded-sm bg-primary/15" />
+                <p className="text-[10px] text-muted/75">Target range</p>
+              </div>
+            )}
+            {feelLogs.length > 0 && (
+              <div className="flex items-center gap-1.5">
+                <div className="h-2 w-3 rounded-sm bg-primary/60" />
+                <p className="text-[10px] text-muted/75">Energy</p>
+              </div>
+            )}
+          </div>
         </Card>
 
-{feelLogs.length > 0 && (
-          <Card className="mt-6">
-            <p className="text-xs uppercase tracking-wide text-muted/70 mb-3">Energy Check-ins</p>
-            <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
-              {feelLogs.map((log) => {
-                const d = new Date(log.ts);
-                const now = new Date();
-                const isToday = d.toDateString() === now.toDateString();
-                const isYesterday = new Date(now.getTime() - 86400000).toDateString() === d.toDateString();
-                const dayLabel = isToday ? "Today" : isYesterday ? "Yesterday" : d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-                const h = d.getHours() % 12 || 12;
-                const period = d.getHours() < 12 ? "am" : "pm";
-                return (
-                  <div key={log.id} className="flex shrink-0 items-center gap-1.5 rounded-xl border border-primary/25 bg-primary/10 px-2.5 py-1.5">
-                    <div>
-                      <p className="text-[12px] font-medium text-ink capitalize">{log.tag.replace(/_/g, " ")}</p>
-                      <p className="text-[10px] text-muted/70">{dayLabel} · {h}{period}</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteFeelLog(log.id)}
-                      className="ml-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-ink/5 text-ink/30 transition active:opacity-60"
-                      aria-label="Delete"
-                    >
-                      <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          </Card>
-        )}
 
         <Card className="mt-6" data-tour="insights-micro">
           <div className="flex items-center justify-between">
