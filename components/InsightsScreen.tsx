@@ -661,14 +661,13 @@ export default function InsightsScreen() {
               <div className="relative mt-2" style={{ height: 8 }}>
                 {sparklineData.map((d, i) => {
                   const logs = feelLogsByDay[d.dateKey] ?? [];
-                  const avgScore = logs.length
-                    ? logs.reduce((sum, l) => sum + (ENERGY_SCORE[l.tag] ?? 2), 0) / logs.length
-                    : null;
+                  if (!logs.length) return null;
+                  const avgScore = logs.reduce((sum, l) => sum + (ENERGY_SCORE[l.tag] ?? 2), 0) / logs.length;
                   return (
                     <div
                       key={d.dateKey}
-                      className="absolute -translate-x-1/2 rounded-sm"
-                      style={{ left: `${sparklineChart.dots[i].labelLeftPct}%`, width: 16, height: 8, backgroundColor: energySwatchColor(avgScore) }}
+                      className="absolute -translate-x-1/2 rounded-full"
+                      style={{ left: `${sparklineChart.dots[i].labelLeftPct}%`, width: 8, height: 8, backgroundColor: energySwatchColor(avgScore) }}
                     />
                   );
                 })}
@@ -684,7 +683,7 @@ export default function InsightsScreen() {
             )}
             {feelLogs.length > 0 && (
               <div className="flex items-center gap-1.5">
-                <div className="h-2 w-3 rounded-sm bg-primary/60" />
+                <div className="h-2 w-2 rounded-full bg-primary/60" />
                 <p className="text-[10px] text-muted/75">Energy</p>
               </div>
             )}
