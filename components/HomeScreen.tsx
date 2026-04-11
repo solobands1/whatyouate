@@ -105,11 +105,11 @@ function makeDemoWorkouts(): WorkoutSession[] {
 }
 
 const FEEL_OPTIONS = [
-  { tag: "great", emoji: "✨", label: "Great" },
-  { tag: "good", emoji: "🙂", label: "Good" },
-  { tag: "okay", emoji: "😐", label: "Okay" },
-  { tag: "tired", emoji: "😴", label: "Tired" },
-  { tag: "off", emoji: "🤒", label: "Off" },
+  { tag: "energized", label: "Energized" },
+  { tag: "good", label: "Good" },
+  { tag: "okay", label: "Okay" },
+  { tag: "low", label: "Low" },
+  { tag: "drained", label: "Drained" },
 ] as const;
 
 // Module-level cache — survives navigation, resets on full page reload
@@ -1649,8 +1649,51 @@ export default function HomeScreen() {
           )}
         </Card>
 
-        <div className="mt-4 h-px w-full bg-ink/5" />
-        <div className="mt-4 space-y-4">
+        {!loadingData && !isDemoMode && (
+          <Card className="mt-3">
+            <div className="relative">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">How are you feeling?</p>
+                <div className="flex items-center gap-2 h-4">
+                  {feelLogged && (
+                    <span className="animate-log-flash text-[11px] font-semibold text-primary/80">✓ Logged</span>
+                  )}
+                  {todayFeel && (
+                    <button
+                      type="button"
+                      onClick={handleFeelUndo}
+                      className="flex h-4 w-4 items-center justify-center rounded-full bg-primary text-white transition active:scale-90"
+                      aria-label="Undo feeling log"
+                    >
+                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 7v5h5" />
+                        <path d="M3 12a9 9 0 1 0 3.1-6.9L3 7" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div className={`flex overflow-hidden rounded-xl border transition-colors ${todayFeel ? "border-primary/30" : "border-ink/10"}`}>
+                {FEEL_OPTIONS.map(({ tag, label }, i) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    disabled={feelSaving}
+                    onClick={() => handleFeelLog(tag)}
+                    className={`flex flex-1 items-center justify-center py-1.5 text-[11px] font-medium select-none
+                      ${i > 0 ? "border-l border-ink/8" : ""}
+                      ${todayFeel === tag ? "bg-primary/10 text-primary" : "bg-white text-muted/50 active:bg-ink/5"}`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </Card>
+        )}
+
+        <div className="mt-3 h-px w-full bg-ink/5" />
+        <div className="mt-3 space-y-4">
           <input
             ref={foodInputRef}
             type="file"
@@ -1660,43 +1703,6 @@ export default function HomeScreen() {
             onChange={handleFoodFileSelected}
           />
           <div data-tour="food-action">
-          {!isDemoMode && (
-            <div className="mb-2 w-[92%] mx-auto">
-              <div className="relative pt-5">
-                {feelLogged && (
-                  <span className="animate-log-flash absolute top-0 right-0 text-[11px] font-semibold text-primary/80">✓ Feeling logged</span>
-                )}
-                {todayFeel && (
-                  <button
-                    type="button"
-                    onClick={handleFeelUndo}
-                    className="absolute top-0 left-0 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-white transition active:scale-90"
-                    aria-label="Undo feeling log"
-                  >
-                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M3 7v5h5" />
-                      <path d="M3 12a9 9 0 1 0 3.1-6.9L3 7" />
-                    </svg>
-                  </button>
-                )}
-                <div className={`flex overflow-hidden rounded-xl border transition-colors ${todayFeel ? "border-primary/30" : "border-ink/10"}`}>
-                  {FEEL_OPTIONS.map(({ tag, label }, i) => (
-                    <button
-                      key={tag}
-                      type="button"
-                      disabled={feelSaving}
-                      onClick={() => handleFeelLog(tag)}
-                      className={`flex flex-1 items-center justify-center py-1.5 text-[11px] font-medium select-none
-                        ${i > 0 ? "border-l border-ink/8" : ""}
-                        ${todayFeel === tag ? "bg-primary/10 text-primary" : "bg-white text-muted/50 active:bg-ink/5"}`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
           <button
             type="button"
             className="block w-full rounded-xl bg-primary px-5 py-4 text-center text-base font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] ring-1 ring-white/40 transition hover:bg-primary/90 active:scale-[0.98]"
@@ -1704,6 +1710,7 @@ export default function HomeScreen() {
           >
             Take Food Photo
           </button>
+
           <div className="mt-1 flex w-[92%] mx-auto">
             <button
               type="button"
