@@ -1343,7 +1343,7 @@ export default function ProfileScreen() {
                   }
                 }}
               >
-                Submit
+                {feedbackStatus === "sending" ? "Submitting…" : "Submit"}
               </button>
             </div>
           </div>
