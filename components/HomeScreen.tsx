@@ -223,25 +223,31 @@ export default function HomeScreen() {
   const trial = useTrialStatus();
 
   const startVoiceInput = () => {
-    const SpeechRecognition = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) return;
     if (voiceRecognitionRef.current) {
       voiceRecognitionRef.current.abort();
       voiceRecognitionRef.current = null;
       setVoiceListening(false);
       return;
     }
+    const SpeechRecognition = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
     const recognition = new SpeechRecognition();
     recognition.lang = "en-US";
-    recognition.interimResults = false;
+    recognition.continuous = false;
+    recognition.interimResults = true;
     recognition.maxAlternatives = 1;
     voiceRecognitionRef.current = recognition;
-    setVoiceListening(true);
+    recognition.onstart = () => setVoiceListening(true);
     recognition.onresult = (event: any) => {
-      const transcript = event.results[0]?.[0]?.transcript ?? "";
-      if (transcript) meals.setManualText(transcript);
-      voiceRecognitionRef.current = null;
-      setVoiceListening(false);
+      let transcript = "";
+      for (let i = 0; i < event.results.length; i++) {
+        transcript += event.results[i][0].transcript;
+      }
+      meals.setManualText(transcript);
+      if (event.results[event.results.length - 1]?.isFinal) {
+        voiceRecognitionRef.current = null;
+        setVoiceListening(false);
+      }
     };
     recognition.onerror = () => {
       voiceRecognitionRef.current = null;
@@ -251,7 +257,10 @@ export default function HomeScreen() {
       voiceRecognitionRef.current = null;
       setVoiceListening(false);
     };
-    recognition.start();
+    try { recognition.start(); } catch {
+      voiceRecognitionRef.current = null;
+      setVoiceListening(false);
+    }
   };
 
   const handleOpenQuickAdd = () => {
@@ -1894,40 +1903,44 @@ export default function HomeScreen() {
                   <>
                     <div className="mt-4">
                       <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">What did you eat?</p>
-                      <div className="relative mt-1">
-                        <input
-                          className="w-full rounded-lg border border-ink/10 bg-white py-2 pl-3 pr-9 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                          value={meals.manualText}
-                          onChange={(e) => meals.setManualText(e.target.value)}
-                          placeholder="e.g. chicken fettuccine, large bowl"
-                          autoFocus
-                          onKeyDown={(e) => { if (e.key === "Enter") meals.analyzeManualText(); }}
-                        />
-                        {typeof window !== "undefined" && ((window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition) && (
-                          <button
-                            type="button"
-                            aria-label={voiceListening ? "Stop listening" : "Speak your meal"}
-                            onClick={startVoiceInput}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-full transition active:opacity-60"
-                          >
-                            {voiceListening ? (
-                              <span className="relative flex h-4 w-4 items-center justify-center">
-                                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-50" />
-                                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-500" />
-                              </span>
-                            ) : (
-                              <svg className="h-4 w-4 text-muted/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                                <rect x="9" y="2" width="6" height="11" rx="3" />
-                                <path d="M5 10a7 7 0 0 0 14 0" strokeLinecap="round" />
-                                <line x1="12" y1="17" x2="12" y2="21" strokeLinecap="round" />
-                                <line x1="9" y1="21" x2="15" y2="21" strokeLinecap="round" />
-                              </svg>
-                            )}
-                          </button>
-                        )}
-                      </div>
+                      <input
+                        className="mt-1 w-full rounded-lg border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                        value={meals.manualText}
+                        onChange={(e) => meals.setManualText(e.target.value)}
+                        placeholder="e.g. chicken fettuccine, large bowl"
+                        autoFocus
+                        onKeyDown={(e) => { if (e.key === "Enter") meals.analyzeManualText(); }}
+                      />
                     </div>
-                    <ManualDateRow manualDate={meals.manualDate} setManualDate={meals.setManualDate} />
+                    <div className="mt-3 flex items-center gap-2">
+                      <ManualDateRow manualDate={meals.manualDate} setManualDate={meals.setManualDate} />
+                      <button
+                        type="button"
+                        aria-label={voiceListening ? "Stop listening" : "Speak your meal"}
+                        onClick={startVoiceInput}
+                        className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 transition active:opacity-70 ${voiceListening ? "border-primary/40 bg-primary/10" : "border-ink/10 bg-transparent"}`}
+                      >
+                        {voiceListening ? (
+                          <>
+                            <span className="relative flex h-2 w-2 shrink-0">
+                              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
+                              <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+                            </span>
+                            <span className="text-[11px] font-medium text-primary/80 select-none">Listening…</span>
+                          </>
+                        ) : (
+                          <>
+                            <svg className="h-3 w-3 shrink-0 text-primary/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <rect x="9" y="2" width="6" height="11" rx="3" />
+                              <path d="M5 10a7 7 0 0 0 14 0" strokeLinecap="round" />
+                              <line x1="12" y1="17" x2="12" y2="21" strokeLinecap="round" />
+                              <line x1="9" y1="21" x2="15" y2="21" strokeLinecap="round" />
+                            </svg>
+                            <span className="text-[11px] font-medium text-primary/70 select-none">Speak</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
                     {meals.manualError && (
                       <p className="mt-3 text-xs text-red-500">{meals.manualError}</p>
                     )}
