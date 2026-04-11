@@ -1720,14 +1720,14 @@ export default function HomeScreen() {
             <div className="flex w-[84%] text-xs">
               <button
                 type="button"
-                className="flex flex-1 items-center justify-center rounded-l-xl rounded-r-none border border-ink/10 bg-white px-3 py-1.5 text-center font-normal text-ink/60 shadow-[0_4px_12px_rgba(15,23,42,0.08)] transition-all duration-150 hover:bg-ink/5 active:translate-y-[1px]"
+                className="flex flex-1 items-center justify-center rounded-l-xl rounded-r-none border border-ink/10 bg-white px-3 py-1.5 text-center font-normal text-ink/60 shadow-[0_4px_12px_rgba(15,23,42,0.08),0_0_10px_rgba(111,168,255,0.22)] transition-all duration-150 hover:bg-ink/5 active:translate-y-[1px]"
                 onClick={() => workout.setShowStartWorkoutModal(true)}
               >
                 Start Workout
               </button>
               <button
                 type="button"
-                className="flex flex-1 items-center justify-center rounded-r-xl rounded-l-none border border-l-0 border-ink/10 bg-white px-3 py-1.5 text-center font-normal text-ink/60 shadow-[0_4px_12px_rgba(15,23,42,0.08)] transition-all duration-150 hover:bg-ink/5 active:translate-y-[1px]"
+                className="flex flex-1 items-center justify-center rounded-r-xl rounded-l-none border border-l-0 border-ink/10 bg-white px-3 py-1.5 text-center font-normal text-ink/60 shadow-[0_4px_12px_rgba(15,23,42,0.08),0_0_10px_rgba(111,168,255,0.22)] transition-all duration-150 hover:bg-ink/5 active:translate-y-[1px]"
                 onClick={() => workout.setShowEndWorkoutModal(true)}
               >
                 End Workout
