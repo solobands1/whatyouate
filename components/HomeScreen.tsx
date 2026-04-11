@@ -217,6 +217,7 @@ export default function HomeScreen() {
   const [todayFeel, setTodayFeel] = useState<string | null>(null);
   const [feelSaving, setFeelSaving] = useState(false);
   const [feelLogged, setFeelLogged] = useState(false);
+  const [feelPressed, setFeelPressed] = useState<string | null>(null);
   const feelFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const mountedRef = useRef(true);
@@ -1679,10 +1680,13 @@ export default function HomeScreen() {
                     key={tag}
                     type="button"
                     disabled={feelSaving}
-                    onClick={() => handleFeelLog(tag)}
-                    className={`flex flex-1 items-center justify-center py-1.5 text-[11px] font-medium select-none
+                    onPointerDown={() => setFeelPressed(tag)}
+                    onPointerUp={() => { setFeelPressed(null); handleFeelLog(tag); }}
+                    onPointerLeave={() => setFeelPressed(null)}
+                    onPointerCancel={() => setFeelPressed(null)}
+                    className={`flex flex-1 items-center justify-center py-1.5 text-[11px] font-medium select-none transition-colors
                       ${i > 0 ? "border-l border-ink/8" : ""}
-                      ${todayFeel === tag ? "bg-primary/10 text-primary" : "bg-white text-muted/50 active:bg-ink/5"}`}
+                      ${todayFeel === tag ? "bg-primary/10 text-primary" : feelPressed === tag ? "bg-ink/5 text-muted/50" : "bg-white text-muted/50"}`}
                   >
                     {label}
                   </button>
