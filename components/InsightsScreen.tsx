@@ -660,7 +660,7 @@ export default function InsightsScreen() {
 
         {feelLogs.length > 0 && (
           <Card className="mt-3 py-3">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-2">
                 <p className="text-xs uppercase tracking-wide text-muted/70">Energy</p>
                 <button
