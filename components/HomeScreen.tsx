@@ -1714,7 +1714,7 @@ export default function HomeScreen() {
               <div className="flex w-[60%]">
                 <button
                   type="button"
-                  className="flex flex-1 items-center justify-center rounded-xl border border-ink/10 bg-white px-3 py-1.5 text-[11px] font-normal text-ink/60 shadow-[0_4px_12px_rgba(15,23,42,0.08),0_0_10px_rgba(250,204,21,0.18)] transition-all duration-150 hover:bg-ink/5 active:translate-y-[1px]"
+                  className="flex flex-1 items-center justify-center rounded-xl border border-ink/10 bg-white px-3 py-1.5 text-[11px] font-normal text-ink/60 shadow-[0_4px_12px_rgba(15,23,42,0.08),0_0_10px_rgba(111,168,255,0.22)] transition-all duration-150 hover:bg-ink/5 active:translate-y-[1px]"
                   onClick={() => setShowFeelModal(true)}
                 >
                   Log How You're Feeling
