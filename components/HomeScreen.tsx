@@ -217,8 +217,10 @@ export default function HomeScreen() {
   const [todayFeel, setTodayFeel] = useState<string | null>(null);
   const [feelSaving, setFeelSaving] = useState(false);
   const [feelLogged, setFeelLogged] = useState(false);
+  const [showFeelUndo, setShowFeelUndo] = useState(false);
   const [feelPressed, setFeelPressed] = useState<string | null>(null);
   const feelFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const feelUndoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const mountedRef = useRef(true);
   const recentSentinelRef = useRef<HTMLDivElement | null>(null);
@@ -243,14 +245,17 @@ export default function HomeScreen() {
   const trial = useTrialStatus();
 
   const handleFeelLog = async (tag: string) => {
-    if (!user || feelSaving || todayFeel === tag) return;
+    if (!user || feelSaving) return;
     setTodayFeel(tag);
     setFeelSaving(true);
     if (feelFlashTimerRef.current) clearTimeout(feelFlashTimerRef.current);
+    if (feelUndoTimerRef.current) clearTimeout(feelUndoTimerRef.current);
     try {
       await addFeelLog(user.id, Date.now(), tag);
       setFeelLogged(true);
+      setShowFeelUndo(true);
       feelFlashTimerRef.current = setTimeout(() => setFeelLogged(false), 2000);
+      feelUndoTimerRef.current = setTimeout(() => setShowFeelUndo(false), 5000);
     } catch {
       // silently fail
     } finally {
@@ -261,7 +266,9 @@ export default function HomeScreen() {
   const handleFeelUndo = () => {
     setTodayFeel(null);
     setFeelLogged(false);
+    setShowFeelUndo(false);
     if (feelFlashTimerRef.current) clearTimeout(feelFlashTimerRef.current);
+    if (feelUndoTimerRef.current) clearTimeout(feelUndoTimerRef.current);
   };
 
   const handleOpenQuickAdd = () => {
@@ -1659,14 +1666,14 @@ export default function HomeScreen() {
                   {feelLogged && (
                     <span className="animate-log-flash text-[11px] font-semibold text-primary/80">✓ Logged</span>
                   )}
-                  {todayFeel && (
+                  {showFeelUndo && (
                     <button
                       type="button"
                       onClick={handleFeelUndo}
-                      className="flex h-4 w-4 items-center justify-center rounded-full bg-primary text-white transition active:scale-90"
+                      className="text-primary transition active:opacity-60"
                       aria-label="Undo feeling log"
                     >
-                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M3 7v5h5" />
                         <path d="M3 12a9 9 0 1 0 3.1-6.9L3 7" />
                       </svg>
@@ -1674,7 +1681,7 @@ export default function HomeScreen() {
                   )}
                 </div>
               </div>
-              <div className={`flex overflow-hidden rounded-xl border transition-colors ${todayFeel ? "border-primary/30" : "border-ink/10"}`}>
+              <div className="flex overflow-hidden rounded-xl border border-ink/10">
                 {FEEL_OPTIONS.map(({ tag, label }, i) => (
                   <button
                     key={tag}
@@ -1684,9 +1691,9 @@ export default function HomeScreen() {
                     onPointerUp={() => { setFeelPressed(null); handleFeelLog(tag); }}
                     onPointerLeave={() => setFeelPressed(null)}
                     onPointerCancel={() => setFeelPressed(null)}
-                    className={`flex flex-1 items-center justify-center py-1.5 text-[11px] font-medium select-none transition-colors
+                    className={`flex flex-1 items-center justify-center py-1.5 text-[11px] font-medium select-none
                       ${i > 0 ? "border-l border-ink/8" : ""}
-                      ${todayFeel === tag ? "bg-primary/10 text-primary" : feelPressed === tag ? "bg-ink/5 text-muted/50" : "bg-white text-muted/50"}`}
+                      ${feelPressed === tag ? "bg-ink/5 text-muted/60" : "bg-white text-muted/50"}`}
                   >
                     {label}
                   </button>
