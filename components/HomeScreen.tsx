@@ -122,7 +122,7 @@ function formatManualDate(dateStr: string) {
 function ManualDateRow({ manualDate, setManualDate }: { manualDate: string; setManualDate: (d: string) => void }) {
   const isToday = manualDate === todayDateStr();
   return (
-    <div className="relative mt-3 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 transition"
+    <div className="relative inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 transition"
       style={isToday
         ? { borderColor: "rgba(15,23,42,0.10)", background: "transparent" }
         : { borderColor: "rgba(99,133,255,0.35)", background: "rgba(99,133,255,0.06)" }
@@ -1988,7 +1988,7 @@ export default function HomeScreen() {
                         ))}
                       </div>
                     </div>
-                    <ManualDateRow manualDate={meals.manualDate} setManualDate={meals.setManualDate} />
+                    <div className="mt-3"><ManualDateRow manualDate={meals.manualDate} setManualDate={meals.setManualDate} /></div>
                     <div className="mt-5 flex items-center justify-between">
                       <button
                         type="button"
@@ -2792,9 +2792,7 @@ export default function HomeScreen() {
               </div>
             )}
             {quickAddItems.length > 0 && (
-              <>
-                <ManualDateRow manualDate={quickAddDate} setManualDate={setQuickAddDate} />
-              </>
+              <div className="mt-3"><ManualDateRow manualDate={quickAddDate} setManualDate={setQuickAddDate} /></div>
             )}
             {quickAddItems.length > 0 && (
               <button
