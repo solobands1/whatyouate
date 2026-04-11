@@ -693,6 +693,40 @@ export async function listNudges(userId: string, limit = 50) {
   return data ?? [];
 }
 
+export interface FeelLog {
+  id: string;
+  ts: number; // ms
+  tag: string;
+}
+
+export async function addFeelLog(userId: string, ts: number, tag: string): Promise<void> {
+  if (useMemory) return;
+  try {
+    await supabase.from("feel_logs").insert({ user_id: userId, ts: Math.floor(ts / 1000), tag });
+  } catch {
+    // Silently fail if table doesn't exist yet
+  }
+}
+
+export async function getFeelLogs(userId: string, limit = 10): Promise<FeelLog[]> {
+  if (useMemory) return [];
+  try {
+    const { data } = await supabase
+      .from("feel_logs")
+      .select("id, ts, tag")
+      .eq("user_id", userId)
+      .order("ts", { ascending: false })
+      .limit(limit);
+    return (data ?? []).map((r: { id: string; ts: number; tag: string }) => ({
+      id: r.id,
+      ts: r.ts * 1000,
+      tag: r.tag,
+    }));
+  } catch {
+    return [];
+  }
+}
+
 export async function exportAllData(userId: string) {
   if (useMemory) {
     ensureLocalLoaded();

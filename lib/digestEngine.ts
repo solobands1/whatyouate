@@ -22,6 +22,7 @@ export interface DailyNudgeSnapshot {
   hasWorkout: boolean;
   workoutMinutes?: number;
   workoutIntensity?: string;
+  workoutTypes?: string[];
 }
 
 export interface SmartNudgeContext {
@@ -40,6 +41,7 @@ export interface SmartNudgeContext {
   recentNudges: string[];
   streak: number;
   todayHasWorkout: boolean;
+  recentFeelLogs: Array<{ ts: number; tag: string }>;
 }
 
 export interface NudgeData {
@@ -787,7 +789,8 @@ export function buildSmartNudgeContext(
   workouts: WorkoutSession[],
   profile: UserProfile,
   recentFoods: string[],
-  recentNudges: string[]
+  recentNudges: string[],
+  recentFeelLogs: Array<{ ts: number; tag: string }> = []
 ): SmartNudgeContext {
   const todayTotals = summarizeDay(meals);
   const todayCalories = Math.round((todayTotals.calories_min + todayTotals.calories_max) / 2);
@@ -799,7 +802,7 @@ export function buildSmartNudgeContext(
 
   // Index workouts by day (last 7 days)
   const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
-  const workoutsByDay = new Map<string, { minutes: number; intensity: string }>();
+  const workoutsByDay = new Map<string, { minutes: number; intensity: string; types?: string[] }>();
   workouts
     .filter((w) => w.endTs != null && (w.endTs ?? w.startTs) >= cutoff)
     .forEach((w) => {
@@ -808,7 +811,7 @@ export function buildSmartNudgeContext(
       const intensity = w.intensity ?? "medium";
       const existing = workoutsByDay.get(key);
       if (!existing || mins > existing.minutes) {
-        workoutsByDay.set(key, { minutes: mins, intensity });
+        workoutsByDay.set(key, { minutes: mins, intensity, types: w.workoutTypes });
       }
     });
 
@@ -832,6 +835,7 @@ export function buildSmartNudgeContext(
       hasWorkout: !!wk,
       workoutMinutes: wk?.minutes,
       workoutIntensity: wk?.intensity,
+      workoutTypes: wk?.types,
     };
   });
 
@@ -865,5 +869,6 @@ export function buildSmartNudgeContext(
     recentNudges,
     streak,
     todayHasWorkout,
+    recentFeelLogs,
   };
 }

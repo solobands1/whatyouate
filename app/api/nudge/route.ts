@@ -177,6 +177,20 @@ function buildSmartPrompt(ctx: Record<string, unknown>): string {
     lines.push(`Recent nudges shown (don't repeat these angles):\n${recent.map((n) => `  - "${n}"`).join("\n")}`);
   }
 
+  const feelLogs = ctx.recentFeelLogs as Array<{ ts: number; tag: string }> | undefined;
+  if (feelLogs?.length) {
+    const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const feelStr = feelLogs.map((f) => {
+      const d = new Date(f.ts);
+      const day = DOW[d.getDay()];
+      const hour = d.getHours();
+      const h = hour % 12 || 12;
+      const period = hour < 12 ? "am" : "pm";
+      return `${day} ${h}${period} - ${f.tag.replace(/_/g, " ")}`;
+    }).join(", ");
+    lines.push(`How the user has been feeling (recent logs): ${feelStr}`);
+  }
+
   const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   lines.push(`\nToday is ${DOW[new Date().getDay()]}. Time of day: ${ctx.timeOfDay}`);
   lines.push(`\nAnalyze the data above. What is the single most useful, specific thing to tell this person right now? If nothing meaningful stands out, return null.`);

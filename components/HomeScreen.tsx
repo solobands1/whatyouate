@@ -18,6 +18,7 @@ import { supabase } from "../lib/supabaseClient";
 import "../lib/mealQueue";
 import BarcodeScannerOverlay from "./BarcodeScannerOverlay";
 import { getFoodCacheEntry, setFoodCacheEntry, deleteFoodCacheEntry, deleteFoodTextEntry, incrementFoodCacheLogCount, incrementFoodTextLogCount, getQuickAddItems, getDailySupplements, setDailySupplements, hasDailySuppsLoggedToday, markDailySuppsLoggedToday, type QuickAddItem } from "../lib/foodCache";
+import { addFeelLog, getFeelLogs } from "../lib/supabaseDb";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
 import { useAuth } from "./AuthProvider";
@@ -102,6 +103,14 @@ function makeDemoWorkouts(): WorkoutSession[] {
   };
   return [{ id: "demo-w1", startTs: at(6, 0), endTs: at(6, 45), durationMin: 45, workoutTypes: ["Strength"], intensity: "medium" }];
 }
+
+const FEEL_OPTIONS = [
+  { tag: "great", emoji: "✨", label: "Great" },
+  { tag: "good", emoji: "🙂", label: "Good" },
+  { tag: "okay", emoji: "😐", label: "Okay" },
+  { tag: "tired", emoji: "😴", label: "Tired" },
+  { tag: "off", emoji: "🤒", label: "Off" },
+] as const;
 
 // Module-level cache — survives navigation, resets on full page reload
 
@@ -205,6 +214,10 @@ export default function HomeScreen() {
   const [streakBouncing, setStreakBouncing] = useState(false);
   const mountTimeRef = useRef<number>(Date.now());
   const logFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [todayFeel, setTodayFeel] = useState<string | null>(null);
+  const [feelSaving, setFeelSaving] = useState(false);
+  const [feelLogged, setFeelLogged] = useState(false);
+  const feelFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const mountedRef = useRef(true);
   const recentSentinelRef = useRef<HTMLDivElement | null>(null);
@@ -218,7 +231,31 @@ export default function HomeScreen() {
 
   const workout = useWorkout(user, onError, setEditRecents, []);
   const meals = useMeals(user, onError, setEditRecents, []);
+
+  useEffect(() => {
+    if (!user) return;
+    getFeelLogs(user.id, 5).then((logs) => {
+      const todayLog = logs.find((l) => dayKeyFromTs(l.ts) === todayKey());
+      if (todayLog) setTodayFeel(todayLog.tag);
+    }).catch(() => {});
+  }, [user]);
   const trial = useTrialStatus();
+
+  const handleFeelLog = async (tag: string) => {
+    if (!user || feelSaving) return;
+    setTodayFeel(tag);
+    setFeelSaving(true);
+    if (feelFlashTimerRef.current) clearTimeout(feelFlashTimerRef.current);
+    try {
+      await addFeelLog(user.id, Date.now(), tag);
+      setFeelLogged(true);
+      feelFlashTimerRef.current = setTimeout(() => setFeelLogged(false), 2000);
+    } catch {
+      // silently fail
+    } finally {
+      setFeelSaving(false);
+    }
+  };
 
   const handleOpenQuickAdd = () => {
     setQuickAddItems(getQuickAddItems());
@@ -1605,6 +1642,33 @@ export default function HomeScreen() {
             </p>
           )}
         </Card>
+
+        {!loadingData && !isDemoMode && (
+          <div className="mt-4">
+            <div className="flex items-center gap-2">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Feeling</p>
+              {feelLogged && <span className="animate-log-flash text-[11px] font-semibold text-primary/80">✓</span>}
+            </div>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {FEEL_OPTIONS.map(({ tag, emoji, label }) => (
+                <button
+                  key={tag}
+                  type="button"
+                  disabled={feelSaving}
+                  onClick={() => handleFeelLog(tag)}
+                  className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium transition active:opacity-70 ${
+                    todayFeel === tag
+                      ? "border-primary/30 bg-primary/10 text-primary"
+                      : "border-ink/10 bg-transparent text-muted/65"
+                  }`}
+                >
+                  <span>{emoji}</span>
+                  <span>{label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="mt-4 h-px w-full bg-ink/5" />
         <div className="mt-4 space-y-4">

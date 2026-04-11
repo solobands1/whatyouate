@@ -8,7 +8,7 @@ import BottomNav from "./BottomNav";
 import Card from "./Card";
 import { useAuth } from "./AuthProvider";
 import { useAppData } from "./AppDataProvider";
-import { addNudge, pruneNudges } from "../lib/supabaseDb";
+import { addNudge, pruneNudges, getFeelLogs, type FeelLog } from "../lib/supabaseDb";
 import { notifyNudgesUpdated } from "../lib/dataEvents";
 import { buildSmartNudgeContext, computeNudges, computeSummaryMarkers, type ComputedNudge, type NudgeType } from "../lib/digestEngine";
 import { useTrialStatus } from "../hooks/useTrialStatus";
@@ -150,6 +150,7 @@ export default function SummaryScreen() {
   const [visibleNudgeGroupCount, setVisibleNudgeGroupCount] = useState(3);
   const [nudgeExpanded, setNudgeExpanded] = useState<Record<string, "why" | "what" | null>>({});
   const smartNudgeFetchedRef = useRef<Set<string>>(new Set());
+  const [recentFeelLogs, setRecentFeelLogs] = useState<FeelLog[]>([]);
   // { message, type, suggestions } from smart AI call, or null if AI said nothing, or undefined while loading
   const [smartNudge, setSmartNudge] = useState<{ message: string; type: NudgeType; action?: string; suggestions?: string[]; generatedAt?: string } | null | undefined>(undefined);
   const [expandedHistoryNudge, setExpandedHistoryNudge] = useState<string | null>(null);
@@ -180,6 +181,11 @@ export default function SummaryScreen() {
       mountedRef.current = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    getFeelLogs(user.id, 10).then(setRecentFeelLogs).catch(() => {});
+  }, [user]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -538,7 +544,7 @@ export default function SummaryScreen() {
 
     // No saved nudge yet — fetch from AI
     const recentNudgeMessages = nudges.slice(0, 7).map((n) => n.type ? `${n.type}: ${n.message}` : n.message);
-    const ctx = buildSmartNudgeContext(meals, workouts, profile, recentFoods, recentNudgeMessages);
+    const ctx = buildSmartNudgeContext(meals, workouts, profile, recentFoods, recentNudgeMessages, recentFeelLogs);
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
       controller.abort();
@@ -574,7 +580,7 @@ export default function SummaryScreen() {
         clearTimeout(timeoutId);
         setSmartNudge(visibleNotes.length > 0 ? { message: visibleNotes[0].message, type: visibleNotes[0].type } : null);
       });
-  }, [profile, nudgesLoaded, meals, workouts, recentFoods, nudges, user]);
+  }, [profile, nudgesLoaded, meals, workouts, recentFoods, nudges, user, recentFeelLogs]);
 
   const getHistoryNudgeType = (message: string): NudgeType | null => {
     const found = nudges.find((n) => n.message === message && n.type);
