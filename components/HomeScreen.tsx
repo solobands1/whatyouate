@@ -1658,7 +1658,7 @@ export default function HomeScreen() {
         </Card>
 
         {!loadingData && !isDemoMode && (
-          <Card className="mt-3 border border-primary/20">
+          <Card className="mt-3">
             <div className="relative">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">How are you feeling?</p>
@@ -1677,7 +1677,7 @@ export default function HomeScreen() {
                   )}
                 </div>
               </div>
-              <div className="flex overflow-hidden rounded-xl border border-ink/10">
+              <div className="flex gap-0">
                 {FEEL_OPTIONS.map(({ tag, label }, i) => (
                   <button
                     key={tag}
@@ -1687,9 +1687,10 @@ export default function HomeScreen() {
                     onPointerUp={() => { setFeelPressed(null); handleFeelLog(tag); }}
                     onPointerLeave={() => setFeelPressed(null)}
                     onPointerCancel={() => setFeelPressed(null)}
-                    className={`flex flex-1 items-center justify-center py-1.5 text-[11px] font-medium select-none
-                      ${i > 0 ? "border-l border-ink/8" : ""}
-                      ${feelPressed === tag ? "bg-ink/5 text-muted/60" : "bg-white text-muted/50"}`}
+                    className={`flex flex-1 items-center justify-center border border-ink/10 bg-white px-2 py-1.5 text-[11px] font-normal text-ink/60 shadow-[0_4px_12px_rgba(15,23,42,0.08)] select-none transition-all duration-150
+                      ${i === 0 ? "rounded-l-xl" : "border-l-0"}
+                      ${i === FEEL_OPTIONS.length - 1 ? "rounded-r-xl" : ""}
+                      ${feelPressed === tag ? "translate-y-[1px] shadow-[0_2px_6px_rgba(15,23,42,0.08)]" : ""}`}
                   >
                     {label}
                   </button>
