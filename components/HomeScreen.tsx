@@ -254,6 +254,10 @@ export default function HomeScreen() {
         transcript += event.results[i][0].transcript;
       }
       meals.setManualText(transcript);
+      // Clear immediately on final result — don't wait for onend which is unreliable on iOS
+      if (event.results[event.results.length - 1]?.isFinal) {
+        stopVoice();
+      }
     };
     recognition.onerror = () => stopVoice();
     recognition.onend = () => stopVoice();
@@ -1918,24 +1922,21 @@ export default function HomeScreen() {
                         className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 transition active:opacity-70 ${voiceListening ? "border-primary/40 bg-primary/10" : "border-ink/10 bg-transparent"}`}
                       >
                         {voiceListening ? (
-                          <>
-                            <span className="relative flex h-2 w-2 shrink-0">
-                              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
-                              <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
-                            </span>
-                            <span className="text-[11px] font-medium text-primary/80 select-none">Listening…</span>
-                          </>
+                          <span className="relative flex h-2 w-2 shrink-0">
+                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
+                            <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+                          </span>
                         ) : (
-                          <>
-                            <svg className="h-3 w-3 shrink-0 text-primary/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <rect x="9" y="2" width="6" height="11" rx="3" />
-                              <path d="M5 10a7 7 0 0 0 14 0" strokeLinecap="round" />
-                              <line x1="12" y1="17" x2="12" y2="21" strokeLinecap="round" />
-                              <line x1="9" y1="21" x2="15" y2="21" strokeLinecap="round" />
-                            </svg>
-                            <span className="text-[11px] font-medium text-primary/70 select-none">Speak</span>
-                          </>
+                          <svg className="h-3 w-3 shrink-0 text-primary/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <rect x="9" y="2" width="6" height="11" rx="3" />
+                            <path d="M5 10a7 7 0 0 0 14 0" strokeLinecap="round" />
+                            <line x1="12" y1="17" x2="12" y2="21" strokeLinecap="round" />
+                            <line x1="9" y1="21" x2="15" y2="21" strokeLinecap="round" />
+                          </svg>
                         )}
+                        <span className={`text-[11px] font-medium select-none ${voiceListening ? "text-primary/80" : "text-primary/70"}`}>
+                          {voiceListening ? "Listening…" : "Speak"}
+                        </span>
                       </button>
                     </div>
                     {meals.manualError && (
