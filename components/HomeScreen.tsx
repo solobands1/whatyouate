@@ -1643,33 +1643,6 @@ export default function HomeScreen() {
           )}
         </Card>
 
-        {!loadingData && !isDemoMode && (
-          <div className="mt-4">
-            <div className="flex items-center gap-2">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Feeling</p>
-              {feelLogged && <span className="animate-log-flash text-[11px] font-semibold text-primary/80">✓</span>}
-            </div>
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {FEEL_OPTIONS.map(({ tag, emoji, label }) => (
-                <button
-                  key={tag}
-                  type="button"
-                  disabled={feelSaving}
-                  onClick={() => handleFeelLog(tag)}
-                  className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium transition active:opacity-70 ${
-                    todayFeel === tag
-                      ? "border-primary/30 bg-primary/10 text-primary"
-                      : "border-ink/10 bg-transparent text-muted/65"
-                  }`}
-                >
-                  <span>{emoji}</span>
-                  <span>{label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
         <div className="mt-4 h-px w-full bg-ink/5" />
         <div className="mt-4 space-y-4">
           <input
@@ -1681,6 +1654,26 @@ export default function HomeScreen() {
             onChange={handleFoodFileSelected}
           />
           <div data-tour="food-action">
+          {!isDemoMode && (
+            <div className="mb-2 flex w-[92%] mx-auto text-xs">
+              {FEEL_OPTIONS.map(({ tag, label }, i) => (
+                <button
+                  key={tag}
+                  type="button"
+                  disabled={feelSaving}
+                  onClick={() => handleFeelLog(tag)}
+                  className={`flex flex-1 items-center justify-center border py-1.5 transition-all duration-150 active:translate-y-[1px] text-[11px] font-medium
+                    ${i === 0 ? "rounded-l-xl rounded-r-none" : i === FEEL_OPTIONS.length - 1 ? "rounded-r-xl rounded-l-none border-l-0" : "rounded-none border-l-0"}
+                    ${todayFeel === tag
+                      ? "border-primary/25 bg-primary/10 text-primary"
+                      : "border-ink/8 bg-white text-muted/50 hover:bg-ink/[0.03]"
+                    }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
           <button
             type="button"
             className="block w-full rounded-xl bg-primary px-5 py-4 text-center text-base font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] ring-1 ring-white/40 transition hover:bg-primary/90 active:scale-[0.98]"
