@@ -1723,13 +1723,13 @@ export default function HomeScreen() {
             <p className="text-center text-[11px] text-muted/60">Workout in progress</p>
           )}
           {!isDemoMode && (
-            <div className="mx-auto flex w-[84%]">
+            <div className="mx-auto flex w-[60%] mt-1">
               <button
                 type="button"
-                className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-ink/10 bg-white px-3 py-1.5 text-[11px] font-normal text-ink/60 shadow-[0_4px_12px_rgba(15,23,42,0.08)] transition-all duration-150 hover:bg-ink/5 active:translate-y-[1px]"
+                className="flex flex-1 items-center justify-center rounded-xl border border-ink/10 bg-white px-3 py-1.5 text-[11px] font-normal text-ink/60 shadow-[0_4px_12px_rgba(15,23,42,0.08)] transition-all duration-150 hover:bg-ink/5 active:translate-y-[1px]"
                 onClick={() => setShowFeelModal(true)}
               >
-                {todayFeel ? `Feeling: ${FEEL_OPTIONS.find(f => f.tag === todayFeel)?.label}` : "Log how you're feeling"}
+                Log how you're feeling
               </button>
             </div>
           )}
@@ -2697,15 +2697,16 @@ export default function HomeScreen() {
 
       {/* Feel modal */}
       {showFeelModal && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-5 pb-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5">
           <div className="w-full max-w-sm rounded-2xl bg-white px-5 pb-6 pt-5 shadow-xl">
-            <div className="mb-4 flex items-center justify-between">
+            <div className="mb-1 flex items-center justify-between">
               <h2 className="text-base font-semibold text-ink">How are you feeling?</h2>
               {feelLogged && (
                 <span className="animate-log-flash text-[11px] font-semibold text-primary/80">✓ Logged</span>
               )}
             </div>
-            <div className="flex gap-0 mb-5">
+            <p className="mb-4 text-[12px] text-muted/60 leading-relaxed">Logging how you feel helps your AI coach connect your energy patterns to your eating habits over time.</p>
+            <div className="flex mb-5">
               {FEEL_OPTIONS.map(({ tag, label }, i) => (
                 <button
                   key={tag}
@@ -2715,10 +2716,10 @@ export default function HomeScreen() {
                   onPointerUp={() => { setFeelPressed(null); handleFeelLog(tag); }}
                   onPointerLeave={() => setFeelPressed(null)}
                   onPointerCancel={() => setFeelPressed(null)}
-                  className={`flex flex-1 items-center justify-center border border-ink/10 py-2 text-[11px] font-normal select-none transition-all duration-150
+                  className={`flex flex-1 items-center justify-center border border-ink/10 py-2 text-[11px] font-normal select-none
                     ${i === 0 ? "rounded-l-xl" : "border-l-0"}
                     ${i === FEEL_OPTIONS.length - 1 ? "rounded-r-xl" : ""}
-                    ${todayFeel === tag ? "bg-primary/10 text-primary border-primary/25" : feelPressed === tag ? "bg-ink/5 text-ink/60" : "bg-white text-ink/60"}`}
+                    ${feelPressed === tag ? "bg-ink/5 text-ink/60" : "bg-white text-ink/60"}`}
                 >
                   {label}
                 </button>
