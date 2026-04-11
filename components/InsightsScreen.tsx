@@ -670,7 +670,7 @@ export default function InsightsScreen() {
                 ].map(({ label, color }) => (
                   <div key={label} className="flex items-center gap-1">
                     <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
-                    <p className="text-[9px] text-muted/60">{label}</p>
+                    <p className="text-[9px] text-ink/60">{label}</p>
                   </div>
                 ))}
               </div>
