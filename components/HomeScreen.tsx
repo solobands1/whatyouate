@@ -1690,36 +1690,38 @@ export default function HomeScreen() {
             </button>
           </div>
           </div>
-          <div className="mx-auto flex w-[84%] text-xs" data-tour="workout-markers">
-            <button
-              type="button"
-              className="flex flex-1 items-center justify-center rounded-l-xl rounded-r-none border border-ink/10 bg-white px-3 py-1.5 text-center font-normal text-ink/60 shadow-[0_4px_12px_rgba(15,23,42,0.08)] transition-all duration-150 hover:bg-ink/5 active:translate-y-[1px]"
-              onClick={() => workout.setShowStartWorkoutModal(true)}
-            >
-              Start Workout
-            </button>
-            <button
-              type="button"
-              className="flex flex-1 items-center justify-center rounded-r-xl rounded-l-none border border-l-0 border-ink/10 bg-white px-3 py-1.5 text-center font-normal text-ink/60 shadow-[0_4px_12px_rgba(15,23,42,0.08)] transition-all duration-150 hover:bg-ink/5 active:translate-y-[1px]"
-              onClick={() => workout.setShowEndWorkoutModal(true)}
-            >
-              End Workout
-            </button>
-          </div>
-          {workout.activeWorkout && (
-            <p className="text-center text-[11px] text-muted/60">Workout in progress</p>
-          )}
-          {!isDemoMode && (
-            <div className="mx-auto flex w-[60%]">
+          <div className="flex flex-col items-center gap-1.5" data-tour="workout-markers">
+            <div className="flex w-[84%] text-xs">
               <button
                 type="button"
-                className="flex flex-1 items-center justify-center rounded-xl border border-ink/10 bg-white px-3 py-1.5 text-[11px] font-normal text-ink/60 shadow-[0_4px_12px_rgba(15,23,42,0.08)] transition-all duration-150 hover:bg-ink/5 active:translate-y-[1px]"
-                onClick={() => setShowFeelModal(true)}
+                className="flex flex-1 items-center justify-center rounded-l-xl rounded-r-none border border-ink/10 bg-white px-3 py-1.5 text-center font-normal text-ink/60 shadow-[0_4px_12px_rgba(15,23,42,0.08)] transition-all duration-150 hover:bg-ink/5 active:translate-y-[1px]"
+                onClick={() => workout.setShowStartWorkoutModal(true)}
               >
-                Log How You're Feeling
+                Start Workout
+              </button>
+              <button
+                type="button"
+                className="flex flex-1 items-center justify-center rounded-r-xl rounded-l-none border border-l-0 border-ink/10 bg-white px-3 py-1.5 text-center font-normal text-ink/60 shadow-[0_4px_12px_rgba(15,23,42,0.08)] transition-all duration-150 hover:bg-ink/5 active:translate-y-[1px]"
+                onClick={() => workout.setShowEndWorkoutModal(true)}
+              >
+                End Workout
               </button>
             </div>
-          )}
+            {workout.activeWorkout && (
+              <p className="text-center text-[11px] text-muted/60">Workout in progress</p>
+            )}
+            {!isDemoMode && (
+              <div className="flex w-[60%]">
+                <button
+                  type="button"
+                  className="flex flex-1 items-center justify-center rounded-xl border border-ink/10 bg-white px-3 py-1.5 text-[11px] font-normal text-ink/60 shadow-[0_4px_12px_rgba(15,23,42,0.08)] transition-all duration-150 hover:bg-ink/5 active:translate-y-[1px]"
+                  onClick={() => setShowFeelModal(true)}
+                >
+                  Log How You're Feeling
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         <Card className="mt-7">
