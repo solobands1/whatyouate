@@ -1733,7 +1733,7 @@ export default function HomeScreen() {
                     setShowFeelModal(true);
                   }}
                 >
-                  Log How You're Feeling
+                  Log How You Are Feeling
                 </button>
               </div>
             )}
