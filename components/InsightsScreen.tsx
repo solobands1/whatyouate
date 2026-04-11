@@ -60,7 +60,8 @@ const NUTRIENT_INFO: Record<string, string | string[]> = {
   Sodium: "Necessary for fluid balance and nerve signaling, but most people already get more than enough. It tends to be higher with processed, packaged, and restaurant foods. Worth noticing if it's consistently elevated.",
   "Vitamin E": "A fat-soluble antioxidant that protects cells from damage and supports immune function. Deficiency is rare but more common with very low-fat diets. Best sources are sunflower seeds, almonds, wheat germ, and avocado.",
   Copper: "Works with iron to form red blood cells and supports bone, immune, and nerve health. Deficiency can mimic iron deficiency anemia. Shellfish, liver, dark chocolate, nuts, and seeds are the best sources.",
-  "Vitamin B6": "Involved in protein metabolism, neurotransmitter production (serotonin, dopamine), and immune function. Low levels can affect mood and energy. Found in poultry, fish, potatoes, bananas, and chickpeas. Chickpeas are one of the richest plant sources."
+  "Vitamin B6": "Involved in protein metabolism, neurotransmitter production (serotonin, dopamine), and immune function. Low levels can affect mood and energy. Found in poultry, fish, potatoes, bananas, and chickpeas. Chickpeas are one of the richest plant sources.",
+  "Energy check-ins": "Each dot represents how you logged your energy that day — from extra low to high. Days with no log show as empty circles. Use this to spot patterns: low energy days that line up with skipped meals or low protein days are worth paying attention to. Your AI coach uses this data to connect how you feel to what you ate."
 };
 
 
@@ -660,7 +661,17 @@ export default function InsightsScreen() {
         {feelLogs.length > 0 && (
           <Card className="mt-3 py-3">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs uppercase tracking-wide text-muted/70">Energy</p>
+              <div className="flex items-center gap-2">
+                <p className="text-xs uppercase tracking-wide text-muted/70">Energy</p>
+                <button
+                  type="button"
+                  className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-ink/10 text-[10px] font-semibold text-ink/60"
+                  onClick={() => setActiveNutrient("Energy check-ins")}
+                  aria-label="About energy check-ins"
+                >
+                  i
+                </button>
+              </div>
               <div className="flex items-center gap-2.5">
                 {[
                   { label: "Extra low", color: "rgba(71,85,105,0.65)" },
