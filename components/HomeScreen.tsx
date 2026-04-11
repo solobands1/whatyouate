@@ -1414,18 +1414,12 @@ export default function HomeScreen() {
               {user?.user_metadata?.avatar_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={user.user_metadata.avatar_url} alt="Profile" className="h-full w-full object-cover" />
-              ) : (() => {
-                const name = user?.user_metadata?.full_name ?? user?.email ?? "";
-                const initial = name.charAt(0).toUpperCase();
-                return initial ? (
-                  <span className="text-[13px] font-semibold text-primary leading-none">{initial}</span>
-                ) : (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
-                    <circle cx="12" cy="8" r="4" />
-                    <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
-                  </svg>
-                );
-              })()}
+              ) : (
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
+                  <circle cx="12" cy="8" r="4" />
+                  <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+                </svg>
+              )}
               {showProfileBell && (
                 <span className="absolute -right-0.5 -top-0.5 inline-flex h-3.5 w-3.5 items-center justify-center rounded-full border border-primary/40 bg-primary text-[8px] text-white animate-pulse shadow-[0_4px_10px_rgba(15,23,42,0.18)]">
                   <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
