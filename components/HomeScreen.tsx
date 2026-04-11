@@ -240,24 +240,20 @@ export default function HomeScreen() {
     const recognition = new SpeechRecognition();
     recognition.lang = "en-US";
     recognition.continuous = false;
-    recognition.interimResults = true;
+    recognition.interimResults = false;
     recognition.maxAlternatives = 1;
     voiceRecognitionRef.current = recognition;
     recognition.onstart = () => {
       setVoiceListening(true);
-      // Safety timeout — clears the listening state even if onend never fires (iOS quirk)
+      // Hard cap — iOS sometimes never fires onend
       voiceTimeoutRef.current = setTimeout(() => stopVoice(), 15_000);
     };
     recognition.onresult = (event: any) => {
-      let transcript = "";
-      for (let i = 0; i < event.results.length; i++) {
-        transcript += event.results[i][0].transcript;
-      }
-      meals.setManualText(transcript);
-      // Clear immediately on final result — don't wait for onend which is unreliable on iOS
-      if (event.results[event.results.length - 1]?.isFinal) {
-        stopVoice();
-      }
+      const transcript = event.results?.[0]?.[0]?.transcript ?? "";
+      if (transcript) meals.setManualText(transcript);
+      // Debounce stop — gives iOS a beat to fire onend naturally, then forces it
+      if (voiceTimeoutRef.current) clearTimeout(voiceTimeoutRef.current);
+      voiceTimeoutRef.current = setTimeout(() => stopVoice(), 800);
     };
     recognition.onerror = () => stopVoice();
     recognition.onend = () => stopVoice();
