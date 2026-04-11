@@ -490,28 +490,24 @@ export default function SummaryScreen() {
     [groupedNudges, currentWindowLabel]
   );
 
-  const summaryTourSteps = [
+  const summaryTourSteps: Step[] = [
     {
-      target: '[data-tour="summary-today"]',
-      content: "View your calories, protein, fats, and carbs throughout the day.",
-      disableBeacon: true
+      target: String.raw`[data-tour="summary-today"]`,
+      content: "Your daily snapshot: calories, protein, fats, and carbs so far today alongside your targets. It updates as you log.",
+      disableBeacon: true,
     },
     {
-      target: '[data-tour="nudges-card"]',
-      content: "You get gentle nudges to help improve desired food, nutrient, and activity patterns.",
-      disableBeacon: true
+      target: String.raw`[data-tour="nudges-card"]`,
+      content: "Your AI coach reads your meals, workouts, and energy check-ins and sends one specific, honest observation based on your actual patterns.",
+      disableBeacon: true,
     },
     {
-      target: '[data-tour="insights-button"]',
-      content: "Tap ‘Why these?’ for deeper guidance on today’s nudges.",
-      disableBeacon: true
+      target: String.raw`[data-tour="summary-today"]`,
+      content: "The This Week section shows your logging streak, averages, and energy trends. The more you log, including how you feel, the more useful this gets.",
+      disableBeacon: true,
+      placement: "bottom" as const,
     },
-    {
-      target: '[data-tour="dig-deeper"]',
-      content: "Patterns shows longer-term nutrient patterns.",
-      disableBeacon: true
-    }
-  ] as Step[];
+  ];
 
   const handleSummaryTour = (data: CallBackProps) => {
     if (!user) return;

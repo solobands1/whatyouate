@@ -431,13 +431,13 @@ export default function InsightsScreen() {
 
   const insightsTourSteps = [
     {
-      target: '[data-tour="insights-energy"]',
-      content: "View your average macros updated over time to give you pattern insights.",
+      target: '[data-tour="insights-header"]',
+      content: "Patterns shows your longer-term trends — weekly averages, micronutrients, and energy check-ins. It gets more useful the more you log.",
       disableBeacon: true
     },
     {
       target: '[data-tour="insights-micro"]',
-      content: "Micronutrient patterns emerge over time as you log more meals to help you improve general health.",
+      content: "Micronutrient bars build up over time from your logged meals and supplements. Tap any nutrient to learn why it matters and where to find it.",
       disableBeacon: true
     },
     {
@@ -463,7 +463,7 @@ export default function InsightsScreen() {
             i
           </div>
           <p style={{ margin: 0, fontSize: 15, fontWeight: 500, color: "#1F2937" }}>
-            Tap this icon anywhere in the app to learn more about that section.
+            Tap any i icon to learn more about that section.
           </p>
         </div>
       ),

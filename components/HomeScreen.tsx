@@ -1158,17 +1158,17 @@ export default function HomeScreen() {
   const steps = [
     {
       target: '[data-tour="food-action"]',
-      content: "Tap any of these to log a meal: snap a photo, scan a barcode, type what you ate, or quickly re-add something recent.",
+      content: "Log meals by snapping a photo, scanning a barcode, typing what you ate, or quickly re-adding something recent. The more you log, the smarter your coach gets.",
       disableBeacon: true
     },
     {
       target: '[data-tour="workout-markers"]',
-      content: "Workouts count too. The strength session this morning nudged today's calorie target up automatically.",
+      content: "Log workouts and check in on how you're feeling. Your AI coach uses both to spot patterns — like low energy on days you skipped breakfast.",
       disableBeacon: true
     },
     {
       target: '[data-tour="nav-summary"]',
-      content: "The Insights tab shows your week at a glance: trends, patterns, gentle nudges. No strict macros.",
+      content: "The Insights tab is your daily snapshot: today's nutrition, your week at a glance, and a message from your AI coach based on your actual data.",
       placement: "top" as const,
       disableBeacon: true
     },
