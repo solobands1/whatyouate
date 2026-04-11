@@ -111,13 +111,11 @@ export default function BottomNav({ current }: { current: "home" | "summary" | "
   };
 
   return (
-    <nav className="sticky bottom-0 left-0 right-0 border-t border-ink/5 bg-surface/95 backdrop-blur safe-bottom">
-      <div className="mx-auto max-w-md px-4 py-3">
-        <div className="flex gap-2 rounded-2xl bg-ink/5 p-1">
-          {item("/", "Home", "home")}
-          {item("/summary", "Insights", "summary")}
-          {item("/summary/insights", "Patterns", "patterns")}
-        </div>
+    <nav className="sticky bottom-0 left-0 right-0 border-t border-ink/8 bg-surface/95 backdrop-blur safe-bottom">
+      <div className="mx-auto flex max-w-md gap-1 px-4 py-2">
+        {item("/", "Home", "home")}
+        {item("/summary", "Insights", "summary")}
+        {item("/summary/insights", "Patterns", "patterns")}
       </div>
     </nav>
   );
