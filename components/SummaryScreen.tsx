@@ -342,8 +342,60 @@ export default function SummaryScreen() {
       const mins = workoutSummary.totalMinutes > 0 ? ` · ${workoutSummary.totalMinutes} min` : "";
       lines.push(`${workoutSummary.count} workout${workoutSummary.count !== 1 ? "s" : ""}${mins}.`);
     }
+
+    // Energy observations — only when there are feel logs this week
+    const ENERGY_SCORE: Record<string, number> = { energized: 4, good: 3, okay: 2, low: 1, drained: 0 };
+    const weekStartMs = (() => { const d = new Date(); d.setDate(d.getDate() - 6); d.setHours(0, 0, 0, 0); return d.getTime(); })();
+    const weekFeelLogs = recentFeelLogs.filter((l) => l.ts >= weekStartMs);
+
+    if (weekFeelLogs.length >= 2) {
+      // Per-day feel scores
+      const byDay: Record<string, number[]> = {};
+      for (const log of weekFeelLogs) {
+        const key = dayKeyFromTs(log.ts);
+        if (!byDay[key]) byDay[key] = [];
+        byDay[key].push(ENERGY_SCORE[log.tag] ?? 2);
+      }
+      const dayAvgs = Object.entries(byDay).map(([key, scores]) => ({
+        key,
+        avg: scores.reduce((s, v) => s + v, 0) / scores.length,
+      }));
+      const overallAvg = dayAvgs.reduce((s, d) => s + d.avg, 0) / dayAvgs.length;
+
+      // Per-day calories from meals for correlation
+      const calByDay: Record<string, number> = {};
+      for (const meal of meals) {
+        if (meal.analysisJson?.source === "supplement" || meal.status === "failed") continue;
+        const key = dayKeyFromTs(meal.ts);
+        const cal = meal.calories ?? Math.round(((meal.analysisJson?.estimated_ranges?.calories_min ?? 0) + (meal.analysisJson?.estimated_ranges?.calories_max ?? 0)) / 2);
+        calByDay[key] = (calByDay[key] ?? 0) + cal;
+      }
+
+      // Correlation: low energy days that also had below-average calories
+      const lowEnergyCorrelated = dayAvgs.filter((d) => {
+        const cal = calByDay[d.key] ?? 0;
+        return d.avg <= 1.5 && cal > 0 && avgWeekCalories > 0 && cal < avgWeekCalories * 0.85;
+      });
+
+      if (lowEnergyCorrelated.length >= 1) {
+        lines.push(`Low energy logged on ${lowEnergyCorrelated.length === 1 ? "a day" : `${lowEnergyCorrelated.length} days`} where calories were notably lower than your average.`);
+      } else if (overallAvg >= 3.5) {
+        lines.push(`Energy check-ins have been high this week.`);
+      } else if (overallAvg >= 2.5) {
+        lines.push(`Energy check-ins trending positive this week.`);
+      } else if (overallAvg <= 1.5) {
+        lines.push(`Energy check-ins have been low this week.`);
+      } else {
+        // Mixed — show dominant tag
+        const tagCounts: Record<string, number> = {};
+        for (const log of weekFeelLogs) tagCounts[log.tag] = (tagCounts[log.tag] ?? 0) + 1;
+        const dominant = Object.entries(tagCounts).sort((a, b) => b[1] - a[1])[0][0];
+        lines.push(`Mostly ${dominant} energy across ${weekFeelLogs.length} check-in${weekFeelLogs.length !== 1 ? "s" : ""} this week.`);
+      }
+    }
+
     return lines;
-  }, [last7Days, mealCount, avgWeekCalories, avgWeekProtein, summaryMarkers.gentleTargets, workoutSummary]);
+  }, [last7Days, mealCount, avgWeekCalories, avgWeekProtein, summaryMarkers.gentleTargets, workoutSummary, recentFeelLogs, meals]);
 
   const [nudgeViewCount, setNudgeViewCount] = useState(0);
   const [showTargetInfo, setShowTargetInfo] = useState(false);
