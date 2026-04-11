@@ -218,6 +218,7 @@ export default function HomeScreen() {
   const [feelSaving, setFeelSaving] = useState(false);
   const [feelLogged, setFeelLogged] = useState(false);
   const [showFeelUndo, setShowFeelUndo] = useState(false);
+  const [showFeelModal, setShowFeelModal] = useState(false);
   const [feelPressed, setFeelPressed] = useState<string | null>(null);
   const feelFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const feelUndoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1657,49 +1658,6 @@ export default function HomeScreen() {
           )}
         </Card>
 
-        {!loadingData && !isDemoMode && (
-          <Card className="mt-3 shadow-[0_4px_20px_rgba(111,168,255,0.18)]">
-            <div className="relative">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">How are you feeling?</p>
-                <div className="flex items-center gap-2 h-4">
-                  {feelLogged && (
-                    <span className="animate-log-flash text-[11px] font-semibold text-primary/80">✓ Logged</span>
-                  )}
-                  {showFeelUndo && (
-                    <button
-                      type="button"
-                      onClick={handleFeelUndo}
-                      className="text-[11px] font-medium text-primary/70 transition active:opacity-60"
-                    >
-                      Undo
-                    </button>
-                  )}
-                </div>
-              </div>
-              <div className="flex gap-0">
-                {FEEL_OPTIONS.map(({ tag, label }, i) => (
-                  <button
-                    key={tag}
-                    type="button"
-                    disabled={feelSaving}
-                    onPointerDown={() => setFeelPressed(tag)}
-                    onPointerUp={() => { setFeelPressed(null); handleFeelLog(tag); }}
-                    onPointerLeave={() => setFeelPressed(null)}
-                    onPointerCancel={() => setFeelPressed(null)}
-                    className={`flex flex-1 items-center justify-center border border-ink/10 bg-white px-2 py-1.5 text-[11px] font-normal text-ink/60 shadow-[0_4px_12px_rgba(15,23,42,0.08)] select-none transition-all duration-150
-                      ${i === 0 ? "rounded-l-xl" : "border-l-0"}
-                      ${i === FEEL_OPTIONS.length - 1 ? "rounded-r-xl" : ""}
-                      ${feelPressed === tag ? "translate-y-[1px] shadow-[0_2px_6px_rgba(15,23,42,0.08)]" : ""}`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </Card>
-        )}
-
         <div className="mt-2 space-y-4">
           <input
             ref={foodInputRef}
@@ -1763,6 +1721,17 @@ export default function HomeScreen() {
           </div>
           {workout.activeWorkout && (
             <p className="text-center text-[11px] text-muted/60">Workout in progress</p>
+          )}
+          {!isDemoMode && (
+            <div className="mx-auto flex w-[84%]">
+              <button
+                type="button"
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-ink/10 bg-white px-3 py-1.5 text-[11px] font-normal text-ink/60 shadow-[0_4px_12px_rgba(15,23,42,0.08)] transition-all duration-150 hover:bg-ink/5 active:translate-y-[1px]"
+                onClick={() => setShowFeelModal(true)}
+              >
+                {todayFeel ? `Feeling: ${FEEL_OPTIONS.find(f => f.tag === todayFeel)?.label}` : "Log how you're feeling"}
+              </button>
+            </div>
           )}
         </div>
 
@@ -2725,6 +2694,57 @@ export default function HomeScreen() {
         onClose={() => setBarcodeOpen(false)}
         onDetected={handleBarcodeDetected}
       />
+
+      {/* Feel modal */}
+      {showFeelModal && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-5 pb-8">
+          <div className="w-full max-w-sm rounded-2xl bg-white px-5 pb-6 pt-5 shadow-xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-base font-semibold text-ink">How are you feeling?</h2>
+              {feelLogged && (
+                <span className="animate-log-flash text-[11px] font-semibold text-primary/80">✓ Logged</span>
+              )}
+            </div>
+            <div className="flex gap-0 mb-5">
+              {FEEL_OPTIONS.map(({ tag, label }, i) => (
+                <button
+                  key={tag}
+                  type="button"
+                  disabled={feelSaving}
+                  onPointerDown={() => setFeelPressed(tag)}
+                  onPointerUp={() => { setFeelPressed(null); handleFeelLog(tag); }}
+                  onPointerLeave={() => setFeelPressed(null)}
+                  onPointerCancel={() => setFeelPressed(null)}
+                  className={`flex flex-1 items-center justify-center border border-ink/10 py-2 text-[11px] font-normal select-none transition-all duration-150
+                    ${i === 0 ? "rounded-l-xl" : "border-l-0"}
+                    ${i === FEEL_OPTIONS.length - 1 ? "rounded-r-xl" : ""}
+                    ${todayFeel === tag ? "bg-primary/10 text-primary border-primary/25" : feelPressed === tag ? "bg-ink/5 text-ink/60" : "bg-white text-ink/60"}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              {todayFeel && (
+                <button
+                  type="button"
+                  onClick={handleFeelUndo}
+                  className="flex-1 rounded-xl border border-ink/10 py-2.5 text-sm font-medium text-muted/60 transition active:opacity-70"
+                >
+                  Undo
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => { setShowFeelModal(false); setFeelLogged(false); }}
+                className="flex-1 rounded-xl bg-primary py-2.5 text-sm font-semibold text-white transition active:opacity-80"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Quick Add modal */}
       {showQuickAdd && (
