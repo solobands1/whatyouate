@@ -232,6 +232,15 @@ input, textarea, select {
   50% { transform: translateY(-4px); }
 }
 
+@keyframes wyaaShadow {
+  0%, 100% { transform: translateX(-50%) scaleX(1);    opacity: 0.9; }
+  50%       { transform: translateX(-50%) scaleX(0.55); opacity: 0.35; }
+}
+
+.animate-wyaa-shadow {
+  animation: wyaaShadow 3s ease-in-out infinite;
+}
+
 @keyframes wyaaBounce {
   0%, 100% { transform: translateY(0px); }
   20% { transform: translateY(-8px); }
@@ -250,7 +259,8 @@ input, textarea, select {
 
 @media (prefers-reduced-motion: reduce) {
   .animate-wyaa-float,
-  .animate-wyaa-bounce {
+  .animate-wyaa-bounce,
+  .animate-wyaa-shadow {
     animation: none;
   }
 }

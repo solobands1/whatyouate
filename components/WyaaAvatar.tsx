@@ -17,10 +17,11 @@ export default function WyaaAvatar({
   className = "",
 }: WyaaAvatarProps) {
   return (
+    <div className={`relative inline-flex shrink-0 flex-col items-center ${className}`} style={{ width: size, height: size + 8 }}>
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex shrink-0 transition active:opacity-70 ${isNew ? "animate-wyaa-bounce" : "animate-wyaa-float"} ${className}`}
+      className={`inline-flex shrink-0 transition active:opacity-70 ${isNew ? "animate-wyaa-bounce" : "animate-wyaa-float"}`}
       aria-label="About your AI coach"
       style={{ background: "none", border: "none", padding: 0 }}
     >
@@ -60,5 +61,20 @@ export default function WyaaAvatar({
         </g>
       </svg>
     </button>
+    <div
+      className={isNew ? "" : "animate-wyaa-shadow"}
+      style={{
+        position: "absolute",
+        bottom: 0,
+        left: "50%",
+        width: size * 0.55,
+        height: 4,
+        borderRadius: 9999,
+        background: "rgba(111,168,255,0.38)",
+        filter: "blur(3px)",
+        transformOrigin: "center",
+      }}
+    />
+    </div>
   );
 }
