@@ -16,7 +16,6 @@ import { useTrialStatus } from "../hooks/useTrialStatus";
 import { openUpgradeModal } from "./UpgradeModal";
 import { triggerValueMoment } from "./ValueMomentSheet";
 import { hasEnoughDataForPatterns, countLoggedDays } from "../lib/trial";
-import { getFeelLogs, deleteFeelLog, type FeelLog } from "../lib/supabaseDb";
 
 const INSIGHT_NUTRIENTS = [
   "Iron",
@@ -63,16 +62,6 @@ const NUTRIENT_INFO: Record<string, string | string[]> = {
   "Vitamin B6": "Involved in protein metabolism, neurotransmitter production (serotonin, dopamine), and immune function. Low levels can affect mood and energy. Found in poultry, fish, potatoes, bananas, and chickpeas. Chickpeas are one of the richest plant sources."
 };
 
-const ENERGY_SCORE: Record<string, number> = { energized: 4, good: 3, okay: 2, low: 1, drained: 0 };
-
-function energySwatchColor(avgScore: number | null): string {
-  if (avgScore === null) return "rgba(0,0,0,0.06)";
-  if (avgScore >= 3.5) return "rgba(111,168,255,0.85)";
-  if (avgScore >= 2.5) return "rgba(111,168,255,0.58)";
-  if (avgScore >= 1.5) return "rgba(111,168,255,0.30)";
-  if (avgScore >= 0.5) return "rgba(148,163,184,0.40)";
-  return "rgba(100,116,139,0.52)";
-}
 
 export default function InsightsScreen() {
   const router = useRouter();
@@ -85,27 +74,6 @@ export default function InsightsScreen() {
   const mountedRef = useRef(true);
   const [runInsightsTour, setRunInsightsTour] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
-  const [feelLogs, setFeelLogs] = useState<FeelLog[]>([]);
-
-  useEffect(() => {
-    if (!user) return;
-    getFeelLogs(user.id, 30).then(setFeelLogs).catch(() => {});
-  }, [user]);
-
-  const handleDeleteFeelLog = useCallback(async (id: string) => {
-    setFeelLogs((prev) => prev.filter((f) => f.id !== id));
-    await deleteFeelLog(id);
-  }, []);
-
-  const feelLogsByDay = useMemo(() => {
-    const map: Record<string, FeelLog[]> = {};
-    for (const log of feelLogs) {
-      const key = dayKeyFromTs(log.ts);
-      if (!map[key]) map[key] = [];
-      map[key].push(log);
-    }
-    return map;
-  }, [feelLogs]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -657,37 +625,13 @@ export default function InsightsScreen() {
                 );
               })}
             </div>
-            {feelLogs.length > 0 && (
-              <div className="relative mt-2" style={{ height: 8 }}>
-                {sparklineData.map((d, i) => {
-                  const logs = feelLogsByDay[d.dateKey] ?? [];
-                  if (!logs.length) return null;
-                  const avgScore = logs.reduce((sum, l) => sum + (ENERGY_SCORE[l.tag] ?? 2), 0) / logs.length;
-                  return (
-                    <div
-                      key={d.dateKey}
-                      className="absolute -translate-x-1/2 rounded-full"
-                      style={{ left: `${sparklineChart.dots[i].labelLeftPct}%`, width: 8, height: 8, backgroundColor: energySwatchColor(avgScore) }}
-                    />
-                  );
-                })}
-              </div>
-            )}
           </div>
-          <div className="mt-2 flex items-center gap-3">
-            {sparklineChart.hasTarget && (
-              <div className="flex items-center gap-1.5">
-                <div className="h-2 w-3 rounded-sm bg-primary/15" />
-                <p className="text-[10px] text-muted/75">Target range</p>
-              </div>
-            )}
-            {feelLogs.length > 0 && (
-              <div className="flex items-center gap-1.5">
-                <div className="h-2 w-2 rounded-full bg-primary/60" />
-                <p className="text-[10px] text-muted/75">Energy</p>
-              </div>
-            )}
-          </div>
+          {sparklineChart.hasTarget && (
+            <div className="mt-2 flex items-center gap-1.5">
+              <div className="h-2 w-3 rounded-sm bg-primary/15" />
+              <p className="text-[10px] text-muted/75">Target range</p>
+            </div>
+          )}
         </Card>
 
 
