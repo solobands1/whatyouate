@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Joyride, { CallBackProps, STATUS, type Step } from "react-joyride";
 import { useRouter } from "next/navigation";
 import { summarizeLoggedDays, summarizeWeek } from "../lib/summary";
@@ -16,6 +16,7 @@ import { useTrialStatus } from "../hooks/useTrialStatus";
 import { openUpgradeModal } from "./UpgradeModal";
 import { triggerValueMoment } from "./ValueMomentSheet";
 import { hasEnoughDataForPatterns, countLoggedDays } from "../lib/trial";
+import { getFeelLogs, type FeelLog } from "../lib/supabaseDb";
 
 const INSIGHT_NUTRIENTS = [
   "Iron",
@@ -74,6 +75,27 @@ export default function InsightsScreen() {
   const mountedRef = useRef(true);
   const [runInsightsTour, setRunInsightsTour] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
+  const [feelLogs, setFeelLogs] = useState<FeelLog[]>([]);
+
+  useEffect(() => {
+    if (!user) return;
+    getFeelLogs(user.id, 30).then(setFeelLogs).catch(() => {});
+  }, [user]);
+
+  const feelLogsByDay = useMemo(() => {
+    const SCORE: Record<string, number> = { energized: 4, good: 3, okay: 2, low: 1, drained: 0 };
+    const map: Record<string, { avgScore: number; count: number }> = {};
+    const grouped: Record<string, number[]> = {};
+    for (const log of feelLogs) {
+      const key = dayKeyFromTs(log.ts);
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(SCORE[log.tag] ?? 2);
+    }
+    for (const [key, scores] of Object.entries(grouped)) {
+      map[key] = { avgScore: scores.reduce((s, v) => s + v, 0) / scores.length, count: scores.length };
+    }
+    return map;
+  }, [feelLogs]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -634,6 +656,50 @@ export default function InsightsScreen() {
           )}
         </Card>
 
+
+        {feelLogs.length > 0 && (
+          <Card className="mt-3 py-3">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs uppercase tracking-wide text-muted/70">Energy</p>
+              <div className="flex items-center gap-2">
+                {[
+                  { label: "Low", color: "rgba(100,116,139,0.45)" },
+                  { label: "High", color: "rgba(111,168,255,0.9)" },
+                ].map(({ label, color }) => (
+                  <div key={label} className="flex items-center gap-1">
+                    <div className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
+                    <p className="text-[10px] text-muted/60">{label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="flex items-center justify-between">
+              {sparklineData.map((d, i) => {
+                const entry = feelLogsByDay[d.dateKey];
+                const date = new Date(`${d.dateKey}T12:00:00`);
+                const dayLabel = ["S","M","T","W","T","F","S"][date.getDay()];
+                const isToday = i === sparklineData.length - 1;
+                const score = entry?.avgScore ?? null;
+                const dotColor = score === null
+                  ? "rgba(0,0,0,0.07)"
+                  : score >= 3.5 ? "rgba(111,168,255,0.9)"
+                  : score >= 2.5 ? "rgba(111,168,255,0.65)"
+                  : score >= 1.5 ? "rgba(111,168,255,0.35)"
+                  : score >= 0.5 ? "rgba(148,163,184,0.50)"
+                  : "rgba(100,116,139,0.45)";
+                return (
+                  <div key={d.dateKey} className="flex flex-col items-center gap-1.5">
+                    <div
+                      className="rounded-full"
+                      style={{ width: 14, height: 14, backgroundColor: dotColor }}
+                    />
+                    <p className={`text-[10px] ${isToday ? "font-bold text-ink/80" : "text-muted/50"}`}>{dayLabel}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+        )}
 
         <Card className="mt-6" data-tour="insights-micro">
           <div className="flex items-center justify-between">
