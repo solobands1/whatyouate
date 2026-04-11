@@ -242,7 +242,7 @@ export default function HomeScreen() {
   const trial = useTrialStatus();
 
   const handleFeelLog = async (tag: string) => {
-    if (!user || feelSaving) return;
+    if (!user || feelSaving || todayFeel === tag) return;
     setTodayFeel(tag);
     setFeelSaving(true);
     if (feelFlashTimerRef.current) clearTimeout(feelFlashTimerRef.current);
@@ -255,6 +255,12 @@ export default function HomeScreen() {
     } finally {
       setFeelSaving(false);
     }
+  };
+
+  const handleFeelUndo = () => {
+    setTodayFeel(null);
+    setFeelLogged(false);
+    if (feelFlashTimerRef.current) clearTimeout(feelFlashTimerRef.current);
   };
 
   const handleOpenQuickAdd = () => {
@@ -1655,23 +1661,42 @@ export default function HomeScreen() {
           />
           <div data-tour="food-action">
           {!isDemoMode && (
-            <div className="mb-2 flex w-[92%] mx-auto text-xs">
-              {FEEL_OPTIONS.map(({ tag, label }, i) => (
-                <button
-                  key={tag}
-                  type="button"
-                  disabled={feelSaving}
-                  onClick={() => handleFeelLog(tag)}
-                  className={`flex flex-1 items-center justify-center border py-1.5 transition-all duration-150 active:translate-y-[1px] text-[11px] font-medium
-                    ${i === 0 ? "rounded-l-xl rounded-r-none" : i === FEEL_OPTIONS.length - 1 ? "rounded-r-xl rounded-l-none border-l-0" : "rounded-none border-l-0"}
-                    ${todayFeel === tag
-                      ? "border-primary/25 bg-primary/10 text-primary"
-                      : "border-ink/8 bg-white text-muted/50 hover:bg-ink/[0.03]"
-                    }`}
-                >
-                  {label}
-                </button>
-              ))}
+            <div className="mb-2 w-[92%] mx-auto">
+              <div className="relative">
+                {feelLogged && (
+                  <span className="animate-log-flash absolute -top-5 right-0 text-[11px] font-semibold text-primary/80">✓ Feeling logged</span>
+                )}
+                <div className="flex items-center gap-1.5">
+                  <div className={`flex flex-1 overflow-hidden rounded-xl border transition-colors ${todayFeel ? "border-primary/30" : "border-ink/10"}`}>
+                    {FEEL_OPTIONS.map(({ tag, label }, i) => (
+                      <button
+                        key={tag}
+                        type="button"
+                        disabled={feelSaving}
+                        onClick={() => handleFeelLog(tag)}
+                        className={`flex flex-1 items-center justify-center py-1.5 text-[11px] font-medium transition-colors active:opacity-60
+                          ${i > 0 ? "border-l border-ink/8" : ""}
+                          ${todayFeel === tag ? "bg-primary/10 text-primary" : "bg-white text-muted/50"}`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  {todayFeel && (
+                    <button
+                      type="button"
+                      onClick={handleFeelUndo}
+                      className="shrink-0 text-muted/35 transition active:opacity-60"
+                      aria-label="Undo feeling log"
+                    >
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 7v5h5" />
+                        <path d="M3 12a9 9 0 1 0 3.1-6.9L3 7" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
           )}
           <button
