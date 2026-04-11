@@ -1645,7 +1645,7 @@ export default function HomeScreen() {
           )}
         </Card>
 
-        <div className="mt-2 space-y-4">
+        <div className="mt-2 flex flex-col gap-1.5">
           <input
             ref={foodInputRef}
             type="file"

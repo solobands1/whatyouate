@@ -658,10 +658,10 @@ export default function InsightsScreen() {
                 const h = d.getHours() % 12 || 12;
                 const period = d.getHours() < 12 ? "am" : "pm";
                 return (
-                  <div key={log.id} className="flex shrink-0 items-center gap-1.5 rounded-xl border border-ink/8 bg-ink/[0.02] px-2.5 py-1.5">
+                  <div key={log.id} className="flex shrink-0 items-center gap-1.5 rounded-xl border border-primary/25 bg-primary/10 px-2.5 py-1.5">
                     <div>
-                      <p className="text-[12px] font-medium text-ink/80 capitalize">{log.tag.replace(/_/g, " ")}</p>
-                      <p className="text-[10px] text-muted/55">{dayLabel} · {h}{period}</p>
+                      <p className="text-[12px] font-medium text-primary/90 capitalize">{log.tag.replace(/_/g, " ")}</p>
+                      <p className="text-[10px] text-primary/50">{dayLabel} · {h}{period}</p>
                     </div>
                     <button
                       type="button"
