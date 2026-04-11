@@ -663,7 +663,7 @@ export default function InsightsScreen() {
               <p className="text-xs uppercase tracking-wide text-muted/70">Energy</p>
               <div className="flex items-center gap-2.5">
                 {[
-                  { label: "Extra low", color: "rgba(100,116,139,0.45)" },
+                  { label: "Extra low", color: "rgba(71,85,105,0.65)" },
                   { label: "Low", color: "rgba(148,163,184,0.50)" },
                   { label: "Average", color: "rgba(111,168,255,0.45)" },
                   { label: "High", color: "rgba(111,168,255,0.9)" },
@@ -681,11 +681,11 @@ export default function InsightsScreen() {
                 const isToday = i === sparklineData.length - 1;
                 const score = entry?.avgScore ?? null;
                 const dotColor = score === null
-                  ? "rgba(0,0,0,0.07)"
+                  ? null
                   : score >= 3.5 ? "rgba(111,168,255,0.9)"
                   : score >= 2.5 ? "rgba(111,168,255,0.45)"
                   : score >= 1.5 ? "rgba(148,163,184,0.50)"
-                  : "rgba(100,116,139,0.45)";
+                  : "rgba(71,85,105,0.65)";
                 const date = new Date(`${d.dateKey}T12:00:00`);
                 return (
                   <div
@@ -693,7 +693,14 @@ export default function InsightsScreen() {
                     className="absolute -translate-x-1/2 flex flex-col items-center gap-1.5"
                     style={{ left: `${sparklineChart.dots[i].labelLeftPct}%` }}
                   >
-                    <div className="rounded-full" style={{ width: 10, height: 10, backgroundColor: dotColor }} />
+                    <div
+                      className="rounded-full"
+                      style={{
+                        width: 10, height: 10,
+                        backgroundColor: dotColor ?? "white",
+                        border: dotColor ? "none" : "1.5px solid rgba(0,0,0,0.10)",
+                      }}
+                    />
                     <span className={`text-[9px] ${isToday ? "font-bold text-ink/80" : d.hasData ? "text-ink/70" : "text-ink/45"}`}>
                       {["S","M","T","W","T","F","S"][date.getDay()]}
                     </span>
