@@ -1658,7 +1658,7 @@ export default function HomeScreen() {
         </Card>
 
         {!loadingData && !isDemoMode && (
-          <Card className="mt-3 border border-primary/20">
+          <Card className="mt-3 shadow-[0_4px_20px_rgba(111,168,255,0.18)]">
             <div className="relative">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">How are you feeling?</p>
