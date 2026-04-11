@@ -214,13 +214,9 @@ export default function HomeScreen() {
   const [streakBouncing, setStreakBouncing] = useState(false);
   const mountTimeRef = useRef<number>(Date.now());
   const logFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [feelSaving, setFeelSaving] = useState(false);
-  const [feelLogged, setFeelLogged] = useState(false);
-  const [lastFeelLogId, setLastFeelLogId] = useState<string | null>(null);
   const [showFeelModal, setShowFeelModal] = useState(false);
   const [feelPressed, setFeelPressed] = useState<string | null>(null);
   const [homeFeelLogs, setHomeFeelLogs] = useState<FeelLog[]>([]);
-  const feelFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const mountedRef = useRef(true);
   const recentSentinelRef = useRef<HTMLDivElement | null>(null);
@@ -238,31 +234,14 @@ export default function HomeScreen() {
   const trial = useTrialStatus();
 
   const handleFeelLog = async (tag: string) => {
-    if (!user || feelSaving) return;
-    setFeelSaving(true);
-    if (feelFlashTimerRef.current) clearTimeout(feelFlashTimerRef.current);
+    if (!user) return;
     try {
       const ts = Date.now();
       const id = await addFeelLog(user.id, ts, tag);
-      setLastFeelLogId(id);
-      setFeelLogged(true);
       if (id) setHomeFeelLogs((prev) => [{ id, ts, tag }, ...prev]);
-      feelFlashTimerRef.current = setTimeout(() => setFeelLogged(false), 2000);
     } catch {
       // silently fail
-    } finally {
-      setFeelSaving(false);
     }
-  };
-
-  const handleFeelUndo = async () => {
-    if (lastFeelLogId) {
-      await deleteFeelLog(lastFeelLogId);
-      setHomeFeelLogs((prev) => prev.filter((f) => f.id !== lastFeelLogId));
-    }
-    setLastFeelLogId(null);
-    setFeelLogged(false);
-    if (feelFlashTimerRef.current) clearTimeout(feelFlashTimerRef.current);
   };
 
   const handleDeleteHomeFeelLog = async (id: string) => {
@@ -2729,62 +2708,49 @@ export default function HomeScreen() {
 
       {/* Feel modal */}
       {showFeelModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5"
-          onPointerDown={(e) => { if (e.target === e.currentTarget) { setShowFeelModal(false); setFeelLogged(false); } }}
-        >
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5">
           <div className="w-full max-w-sm rounded-2xl bg-white px-5 pb-6 pt-5 shadow-xl">
             <div className="mb-1 flex items-center justify-between">
               <h2 className="text-base font-semibold text-ink">How are you feeling?</h2>
               <button
                 type="button"
-                onClick={() => { setShowFeelModal(false); setFeelLogged(false); }}
+                onClick={() => { setShowFeelModal(false); setFeelPressed(null); }}
                 className="flex h-6 w-6 items-center justify-center rounded-full bg-ink/5 text-ink/40 transition active:opacity-60"
               >
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
               </button>
             </div>
-            <p className="mb-3 text-[12px] text-muted/60 leading-relaxed">Each log is a timestamped snapshot. Your AI coach uses these to connect energy patterns to your eating habits over time.</p>
-            {feelLogged && (
-              <p className="animate-log-flash mb-3 text-[11px] font-semibold text-primary/80">✓ Logged</p>
-            )}
-            <div className="flex mb-4">
+            <p className="mb-4 text-[12px] text-muted/60 leading-relaxed">Each log is a timestamped snapshot. Your AI coach uses these to connect energy patterns to your eating habits over time.</p>
+            <div className="flex mb-7">
               {FEEL_OPTIONS.map(({ tag, label }, i) => (
                 <button
                   key={tag}
                   type="button"
-                  disabled={feelSaving}
-                  onPointerDown={() => setFeelPressed(tag)}
-                  onPointerUp={() => { setFeelPressed(null); handleFeelLog(tag); }}
-                  onPointerLeave={() => setFeelPressed(null)}
-                  onPointerCancel={() => setFeelPressed(null)}
-                  className={`flex flex-1 items-center justify-center border border-ink/10 py-2 text-[11px] font-normal select-none
+                  onClick={() => setFeelPressed(tag)}
+                  className={`flex flex-1 items-center justify-center border py-2 text-[11px] font-normal select-none transition-colors
                     ${i === 0 ? "rounded-l-xl" : "border-l-0"}
                     ${i === FEEL_OPTIONS.length - 1 ? "rounded-r-xl" : ""}
-                    ${feelPressed === tag ? "bg-ink/5 text-ink/60" : "bg-white text-ink/60"}`}
+                    ${feelPressed === tag
+                      ? "border-primary/30 bg-primary/10 text-ink/80"
+                      : "border-ink/10 bg-white text-ink/60"}`}
                 >
                   {label}
                 </button>
               ))}
             </div>
-            <div className="flex gap-2">
-              {lastFeelLogId && (
-                <button
-                  type="button"
-                  onClick={handleFeelUndo}
-                  className="flex-1 rounded-xl border border-ink/10 py-2.5 text-sm font-medium text-muted/60 transition active:opacity-70"
-                >
-                  Undo Last
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={() => { setShowFeelModal(false); setFeelLogged(false); }}
-                className="flex-1 rounded-xl bg-primary py-2.5 text-sm font-semibold text-white transition active:opacity-80"
-              >
-                Done
-              </button>
-            </div>
+            <button
+              type="button"
+              disabled={!feelPressed}
+              onClick={async () => {
+                if (!feelPressed) return;
+                await handleFeelLog(feelPressed);
+                setShowFeelModal(false);
+                setFeelPressed(null);
+              }}
+              className="w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white transition active:opacity-80 disabled:opacity-40"
+            >
+              Done
+            </button>
           </div>
         </div>
       )}
