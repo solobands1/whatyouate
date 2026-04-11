@@ -1654,7 +1654,7 @@ export default function HomeScreen() {
             className="sr-only"
             onChange={handleFoodFileSelected}
           />
-          <div data-tour="food-action">
+          <div className="flex flex-col items-center gap-1.5" data-tour="food-action">
           <button
             type="button"
             className="block w-full rounded-xl bg-primary px-5 py-4 text-center text-base font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] ring-1 ring-white/40 transition hover:bg-primary/90 active:scale-[0.98]"
@@ -1663,7 +1663,7 @@ export default function HomeScreen() {
             Take Food Photo
           </button>
 
-          <div className="mt-1 flex w-[92%] mx-auto">
+          <div className="flex w-[92%]">
             <button
               type="button"
               className="flex flex-1 items-center justify-center gap-2 rounded-l-xl rounded-r-none bg-primary px-3 py-2 text-xs font-semibold text-white shadow-[0_8px_20px_rgba(15,23,42,0.14)] ring-1 ring-white/40 transition-all duration-150 hover:bg-primary/90 active:translate-y-[1px] active:shadow-[0_3px_10px_rgba(15,23,42,0.18)]"

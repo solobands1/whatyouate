@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import Joyride, { CallBackProps, STATUS, type Step } from "react-joyride";
 import { useRouter } from "next/navigation";
 import { summarizeLoggedDays, summarizeWeek } from "../lib/summary";
@@ -16,6 +16,7 @@ import { useTrialStatus } from "../hooks/useTrialStatus";
 import { openUpgradeModal } from "./UpgradeModal";
 import { triggerValueMoment } from "./ValueMomentSheet";
 import { hasEnoughDataForPatterns, countLoggedDays } from "../lib/trial";
+import { getFeelLogs, deleteFeelLog, type FeelLog } from "../lib/supabaseDb";
 
 const INSIGHT_NUTRIENTS = [
   "Iron",
@@ -73,6 +74,17 @@ export default function InsightsScreen() {
   const mountedRef = useRef(true);
   const [runInsightsTour, setRunInsightsTour] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
+  const [feelLogs, setFeelLogs] = useState<FeelLog[]>([]);
+
+  useEffect(() => {
+    if (!user) return;
+    getFeelLogs(user.id, 30).then(setFeelLogs).catch(() => {});
+  }, [user]);
+
+  const handleDeleteFeelLog = useCallback(async (id: string) => {
+    setFeelLogs((prev) => prev.filter((f) => f.id !== id));
+    await deleteFeelLog(id);
+  }, []);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -633,7 +645,40 @@ export default function InsightsScreen() {
           )}
         </Card>
 
-<Card className="mt-6" data-tour="insights-micro">
+{feelLogs.length > 0 && (
+          <Card className="mt-6">
+            <p className="text-xs uppercase tracking-wide text-muted/70 mb-3">Energy Check-ins</p>
+            <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+              {feelLogs.map((log) => {
+                const d = new Date(log.ts);
+                const now = new Date();
+                const isToday = d.toDateString() === now.toDateString();
+                const isYesterday = new Date(now.getTime() - 86400000).toDateString() === d.toDateString();
+                const dayLabel = isToday ? "Today" : isYesterday ? "Yesterday" : d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                const h = d.getHours() % 12 || 12;
+                const period = d.getHours() < 12 ? "am" : "pm";
+                return (
+                  <div key={log.id} className="flex shrink-0 items-center gap-1.5 rounded-xl border border-ink/8 bg-ink/[0.02] px-2.5 py-1.5">
+                    <div>
+                      <p className="text-[12px] font-medium text-ink/80 capitalize">{log.tag.replace(/_/g, " ")}</p>
+                      <p className="text-[10px] text-muted/55">{dayLabel} · {h}{period}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteFeelLog(log.id)}
+                      className="ml-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-ink/5 text-ink/30 transition active:opacity-60"
+                      aria-label="Delete"
+                    >
+                      <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+        )}
+
+        <Card className="mt-6" data-tour="insights-micro">
           <div className="flex items-center justify-between">
             <p className="text-xs uppercase tracking-wide text-muted/70" data-tour="insights-micro-title">
               Micronutrients
