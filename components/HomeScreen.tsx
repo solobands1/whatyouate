@@ -1662,39 +1662,37 @@ export default function HomeScreen() {
           <div data-tour="food-action">
           {!isDemoMode && (
             <div className="mb-2 w-[92%] mx-auto">
-              <div className="relative">
+              <div className="relative pt-5">
                 {feelLogged && (
-                  <span className="animate-log-flash absolute -top-5 right-0 text-[11px] font-semibold text-primary/80">✓ Feeling logged</span>
+                  <span className="animate-log-flash absolute top-0 right-0 text-[11px] font-semibold text-primary/80">✓ Feeling logged</span>
                 )}
-                <div className="flex items-center gap-1.5">
-                  <div className={`flex flex-1 overflow-hidden rounded-xl border transition-colors ${todayFeel ? "border-primary/30" : "border-ink/10"}`}>
-                    {FEEL_OPTIONS.map(({ tag, label }, i) => (
-                      <button
-                        key={tag}
-                        type="button"
-                        disabled={feelSaving}
-                        onClick={() => handleFeelLog(tag)}
-                        className={`flex flex-1 items-center justify-center py-1.5 text-[11px] font-medium transition-colors active:opacity-60
-                          ${i > 0 ? "border-l border-ink/8" : ""}
-                          ${todayFeel === tag ? "bg-primary/10 text-primary" : "bg-white text-muted/50"}`}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                  {todayFeel && (
+                {todayFeel && (
+                  <button
+                    type="button"
+                    onClick={handleFeelUndo}
+                    className="absolute top-0 left-0 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-white transition active:scale-90"
+                    aria-label="Undo feeling log"
+                  >
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 7v5h5" />
+                      <path d="M3 12a9 9 0 1 0 3.1-6.9L3 7" />
+                    </svg>
+                  </button>
+                )}
+                <div className={`flex overflow-hidden rounded-xl border transition-colors ${todayFeel ? "border-primary/30" : "border-ink/10"}`}>
+                  {FEEL_OPTIONS.map(({ tag, label }, i) => (
                     <button
+                      key={tag}
                       type="button"
-                      onClick={handleFeelUndo}
-                      className="shrink-0 text-muted/35 transition active:opacity-60"
-                      aria-label="Undo feeling log"
+                      disabled={feelSaving}
+                      onClick={() => handleFeelLog(tag)}
+                      className={`flex flex-1 items-center justify-center py-1.5 text-[11px] font-medium select-none
+                        ${i > 0 ? "border-l border-ink/8" : ""}
+                        ${todayFeel === tag ? "bg-primary/10 text-primary" : "bg-white text-muted/50 active:bg-ink/5"}`}
                     >
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M3 7v5h5" />
-                        <path d="M3 12a9 9 0 1 0 3.1-6.9L3 7" />
-                      </svg>
+                      {label}
                     </button>
-                  )}
+                  ))}
                 </div>
               </div>
             </div>
