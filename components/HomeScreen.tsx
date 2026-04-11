@@ -1670,13 +1670,9 @@ export default function HomeScreen() {
                     <button
                       type="button"
                       onClick={handleFeelUndo}
-                      className="text-primary transition active:opacity-60"
-                      aria-label="Undo feeling log"
+                      className="text-[11px] font-medium text-primary/70 transition active:opacity-60"
                     >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M15 2L12 4L15 7" />
-                        <path d="M12 4A8 8 0 1 0 20 12" />
-                      </svg>
+                      Undo
                     </button>
                   )}
                 </div>
