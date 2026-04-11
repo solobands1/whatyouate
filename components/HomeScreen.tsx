@@ -205,6 +205,7 @@ export default function HomeScreen() {
   const [streakBouncing, setStreakBouncing] = useState(false);
   const [voiceListening, setVoiceListening] = useState(false);
   const voiceRecognitionRef = useRef<any>(null);
+  const voiceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mountTimeRef = useRef<number>(Date.now());
   const logFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -222,11 +223,16 @@ export default function HomeScreen() {
   const meals = useMeals(user, onError, setEditRecents, []);
   const trial = useTrialStatus();
 
+  const stopVoice = () => {
+    if (voiceTimeoutRef.current) { clearTimeout(voiceTimeoutRef.current); voiceTimeoutRef.current = null; }
+    voiceRecognitionRef.current = null;
+    setVoiceListening(false);
+  };
+
   const startVoiceInput = () => {
     if (voiceRecognitionRef.current) {
       voiceRecognitionRef.current.abort();
-      voiceRecognitionRef.current = null;
-      setVoiceListening(false);
+      stopVoice();
       return;
     }
     const SpeechRecognition = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition;
@@ -237,30 +243,21 @@ export default function HomeScreen() {
     recognition.interimResults = true;
     recognition.maxAlternatives = 1;
     voiceRecognitionRef.current = recognition;
-    recognition.onstart = () => setVoiceListening(true);
+    recognition.onstart = () => {
+      setVoiceListening(true);
+      // Safety timeout — clears the listening state even if onend never fires (iOS quirk)
+      voiceTimeoutRef.current = setTimeout(() => stopVoice(), 15_000);
+    };
     recognition.onresult = (event: any) => {
       let transcript = "";
       for (let i = 0; i < event.results.length; i++) {
         transcript += event.results[i][0].transcript;
       }
       meals.setManualText(transcript);
-      if (event.results[event.results.length - 1]?.isFinal) {
-        voiceRecognitionRef.current = null;
-        setVoiceListening(false);
-      }
     };
-    recognition.onerror = () => {
-      voiceRecognitionRef.current = null;
-      setVoiceListening(false);
-    };
-    recognition.onend = () => {
-      voiceRecognitionRef.current = null;
-      setVoiceListening(false);
-    };
-    try { recognition.start(); } catch {
-      voiceRecognitionRef.current = null;
-      setVoiceListening(false);
-    }
+    recognition.onerror = () => stopVoice();
+    recognition.onend = () => stopVoice();
+    try { recognition.start(); } catch { stopVoice(); }
   };
 
   const handleOpenQuickAdd = () => {
