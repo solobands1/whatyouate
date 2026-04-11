@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type JSX } from "react";
 import { useRouter } from "next/navigation";
 import { useTrialStatus } from "../hooks/useTrialStatus";
 import { useAppData } from "./AppDataProvider";
@@ -57,6 +57,28 @@ export default function BottomNav({ current }: { current: "home" | "summary" | "
     return () => window.removeEventListener("wya_nudge_update", handler);
   }, []);
 
+  const icons: Record<string, JSX.Element> = {
+    home: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z" />
+        <path d="M9 21V12h6v9" />
+      </svg>
+    ),
+    summary: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="12" width="4" height="9" rx="1" />
+        <rect x="10" y="7" width="4" height="14" rx="1" />
+        <rect x="17" y="3" width="4" height="18" rx="1" />
+      </svg>
+    ),
+    patterns: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 17l4-8 4 5 3-3 4 6" />
+        <circle cx="20" cy="5" r="2" />
+      </svg>
+    ),
+  };
+
   const item = (href: string, label: string, key: string) => {
     const showBell = key === "summary" && hasUnseenNudge;
     const showPulse = key === "patterns" && showPatternsDot;
@@ -64,19 +86,22 @@ export default function BottomNav({ current }: { current: "home" | "summary" | "
     return (
       <button
         data-tour={key === "summary" ? "nav-summary" : undefined}
-        className={`relative flex-1 rounded-xl px-3 py-2 text-center text-sm font-medium transition-colors ${
+        className={`relative flex flex-1 flex-col items-center gap-1 rounded-xl px-3 py-2 transition-colors ${
           isActive
-            ? "bg-white text-ink shadow-[0_10px_20px_rgba(15,23,42,0.08)]"
-            : "text-muted/70"
+            ? "bg-white text-primary shadow-[0_4px_16px_rgba(111,168,255,0.18)]"
+            : "text-muted/50"
         }`}
         onPointerDown={() => router.push(href)}
       >
-        {label}
+        {icons[key]}
+        <span className={`text-[10px] font-semibold leading-none ${isActive ? "text-primary" : "text-muted/50"}`}>
+          {label}
+        </span>
         {showBell && (
-          <span className="absolute right-2 top-1.5 h-2 w-2 rounded-full bg-primary" />
+          <span className="absolute right-3 top-1.5 h-2 w-2 rounded-full bg-primary" />
         )}
         {showPulse && (
-          <span className="absolute right-2 top-1.5 flex h-2 w-2">
+          <span className="absolute right-3 top-1.5 flex h-2 w-2">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
           </span>
