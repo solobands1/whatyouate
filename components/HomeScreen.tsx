@@ -18,7 +18,7 @@ import { supabase } from "../lib/supabaseClient";
 import "../lib/mealQueue";
 import BarcodeScannerOverlay from "./BarcodeScannerOverlay";
 import { getFoodCacheEntry, setFoodCacheEntry, deleteFoodCacheEntry, deleteFoodTextEntry, incrementFoodCacheLogCount, incrementFoodTextLogCount, getQuickAddItems, getDailySupplements, setDailySupplements, hasDailySuppsLoggedToday, markDailySuppsLoggedToday, type QuickAddItem } from "../lib/foodCache";
-import { addFeelLog, deleteFeelLog, getFeelLogs, type FeelLog } from "../lib/supabaseDb";
+import { addFeelLog, deleteFeelLog, updateFeelLog, getFeelLogs, type FeelLog } from "../lib/supabaseDb";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
 import { useAuth } from "./AuthProvider";
@@ -216,7 +216,13 @@ export default function HomeScreen() {
   const logFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showFeelModal, setShowFeelModal] = useState(false);
   const [feelPressed, setFeelPressed] = useState<string | null>(null);
+  const [feelDate, setFeelDate] = useState("");
+  const [feelTime, setFeelTime] = useState("");
   const [homeFeelLogs, setHomeFeelLogs] = useState<FeelLog[]>([]);
+  const [editingFeelLog, setEditingFeelLog] = useState<FeelLog | null>(null);
+  const [editFeelTag, setEditFeelTag] = useState<string | null>(null);
+  const [editFeelDate, setEditFeelDate] = useState("");
+  const [editFeelTime, setEditFeelTime] = useState("");
 
   const mountedRef = useRef(true);
   const recentSentinelRef = useRef<HTMLDivElement | null>(null);
@@ -233,12 +239,11 @@ export default function HomeScreen() {
 
   const trial = useTrialStatus();
 
-  const handleFeelLog = async (tag: string) => {
+  const handleFeelLog = async (tag: string, ts: number) => {
     if (!user) return;
     try {
-      const ts = Date.now();
       const id = await addFeelLog(user.id, ts, tag);
-      if (id) setHomeFeelLogs((prev) => [{ id, ts, tag }, ...prev]);
+      if (id) setHomeFeelLogs((prev) => [{ id, ts, tag }, ...prev].sort((a, b) => b.ts - a.ts));
     } catch {
       // silently fail
     }
@@ -1720,7 +1725,13 @@ export default function HomeScreen() {
                 <button
                   type="button"
                   className="flex flex-1 items-center justify-center rounded-xl border border-ink/10 bg-white px-3 py-1.5 text-[11px] font-normal text-ink/60 shadow-[0_4px_12px_rgba(15,23,42,0.08),0_0_10px_rgba(111,168,255,0.22)] transition-all duration-150 hover:bg-ink/5 active:translate-y-[1px]"
-                  onClick={() => setShowFeelModal(true)}
+                  onClick={() => {
+                    const now = new Date();
+                    setFeelDate(now.toISOString().slice(0, 10));
+                    setFeelTime(now.toTimeString().slice(0, 5));
+                    setFeelPressed(null);
+                    setShowFeelModal(true);
+                  }}
                 >
                   Log How You're Feeling
                 </button>
@@ -1845,7 +1856,7 @@ export default function HomeScreen() {
                         onClick={() => {
                           if (editRecents) workout.openWorkoutEditor(w);
                         }}
-                        className={`flex w-full flex-col items-center justify-center rounded-full border border-ink/10 bg-ink/5 px-3 py-0.5 text-[11px] text-ink/60 leading-tight ${editRecents ? "cursor-pointer animate-wiggle-neutral" : ""}`}
+                        className={`flex w-full flex-col items-center justify-center rounded-full border border-ink/10 bg-white px-3 py-0.5 text-[11px] text-ink/60 leading-tight shadow-[0_0_8px_rgba(111,168,255,0.22)] ${editRecents ? "cursor-pointer animate-wiggle-neutral" : ""}`}
                       >
                         <span className="font-semibold text-ink/60">
                           {formatWorkoutDurationLines(w).title}
@@ -1861,11 +1872,17 @@ export default function HomeScreen() {
                         <div
                           key={log.id}
                           onClick={() => {
-                            if (editRecents) handleDeleteHomeFeelLog(log.id);
+                            if (editRecents) {
+                              setEditingFeelLog(log);
+                              setEditFeelTag(log.tag);
+                              const d = new Date(log.ts);
+                              setEditFeelDate(d.toISOString().slice(0, 10));
+                              setEditFeelTime(d.toTimeString().slice(0, 5));
+                            }
                           }}
                           className={`flex w-full flex-col items-center justify-center rounded-full border border-ink/10 bg-white px-3 py-0.5 text-[11px] text-ink/60 leading-tight shadow-[0_0_8px_rgba(111,168,255,0.22)] ${editRecents ? "cursor-pointer animate-wiggle-neutral" : ""}`}
                         >
-                          <span className="font-semibold text-ink/60 capitalize">{log.tag}</span>
+                          <span className="font-semibold text-ink/60 capitalize">{log.tag.replace(/_/g, " ")}</span>
                           <span className="-mt-0.5">{h}{period}</span>
                         </div>
                       );
@@ -2738,12 +2755,33 @@ export default function HomeScreen() {
                 </button>
               ))}
             </div>
+            <div className="flex gap-2 mb-5">
+              <div className="flex-1">
+                <p className="mb-1 text-[10px] uppercase tracking-wide text-muted/60">Date</p>
+                <input
+                  type="date"
+                  value={feelDate}
+                  onChange={(e) => setFeelDate(e.target.value)}
+                  className="w-full rounded-xl border border-ink/10 bg-white px-3 py-2 text-[12px] text-ink/70"
+                />
+              </div>
+              <div className="flex-1">
+                <p className="mb-1 text-[10px] uppercase tracking-wide text-muted/60">Time</p>
+                <input
+                  type="time"
+                  value={feelTime}
+                  onChange={(e) => setFeelTime(e.target.value)}
+                  className="w-full rounded-xl border border-ink/10 bg-white px-3 py-2 text-[12px] text-ink/70"
+                />
+              </div>
+            </div>
             <button
               type="button"
               disabled={!feelPressed}
               onClick={async () => {
                 if (!feelPressed) return;
-                await handleFeelLog(feelPressed);
+                const ts = feelDate && feelTime ? new Date(`${feelDate}T${feelTime}`).getTime() : Date.now();
+                await handleFeelLog(feelPressed, ts);
                 setShowFeelModal(false);
                 setFeelPressed(null);
               }}
@@ -2751,6 +2789,87 @@ export default function HomeScreen() {
             >
               Done
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Feel Log modal */}
+      {editingFeelLog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5">
+          <div className="w-full max-w-sm rounded-2xl bg-white px-5 pb-6 pt-5 shadow-xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-base font-semibold text-ink">Edit energy log</h2>
+              <button
+                type="button"
+                onClick={() => setEditingFeelLog(null)}
+                className="flex h-6 w-6 items-center justify-center rounded-full bg-ink/5 text-ink/40 transition active:opacity-60"
+              >
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              </button>
+            </div>
+            <div className="flex mb-5">
+              {FEEL_OPTIONS.map(({ tag, label }, i) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => setEditFeelTag(tag)}
+                  className={`flex flex-1 items-center justify-center border py-2 text-[11px] font-normal select-none transition-colors
+                    ${i === 0 ? "rounded-l-xl" : "border-l-0"}
+                    ${i === FEEL_OPTIONS.length - 1 ? "rounded-r-xl" : ""}
+                    ${editFeelTag === tag
+                      ? "border-primary/30 bg-primary/10 text-ink/80"
+                      : "border-ink/10 bg-white text-ink/60"}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2 mb-5">
+              <div className="flex-1">
+                <p className="mb-1 text-[10px] uppercase tracking-wide text-muted/60">Date</p>
+                <input
+                  type="date"
+                  value={editFeelDate}
+                  onChange={(e) => setEditFeelDate(e.target.value)}
+                  className="w-full rounded-xl border border-ink/10 bg-white px-3 py-2 text-[12px] text-ink/70"
+                />
+              </div>
+              <div className="flex-1">
+                <p className="mb-1 text-[10px] uppercase tracking-wide text-muted/60">Time</p>
+                <input
+                  type="time"
+                  value={editFeelTime}
+                  onChange={(e) => setEditFeelTime(e.target.value)}
+                  className="w-full rounded-xl border border-ink/10 bg-white px-3 py-2 text-[12px] text-ink/70"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={async () => {
+                  await handleDeleteHomeFeelLog(editingFeelLog.id);
+                  setEditingFeelLog(null);
+                }}
+                className="flex-1 rounded-xl border border-ink/10 py-2.5 text-sm font-medium text-red-400 transition active:opacity-70"
+              >
+                Delete
+              </button>
+              <button
+                type="button"
+                disabled={!editFeelTag}
+                onClick={async () => {
+                  if (!editFeelTag) return;
+                  const ts = editFeelDate && editFeelTime ? new Date(`${editFeelDate}T${editFeelTime}`).getTime() : editingFeelLog.ts;
+                  await updateFeelLog(editingFeelLog.id, ts, editFeelTag);
+                  setHomeFeelLogs((prev) => prev.map((f) => f.id === editingFeelLog.id ? { ...f, ts, tag: editFeelTag } : f).sort((a, b) => b.ts - a.ts));
+                  setEditingFeelLog(null);
+                }}
+                className="flex-1 rounded-xl bg-primary py-2.5 text-sm font-semibold text-white transition active:opacity-80 disabled:opacity-40"
+              >
+                Save
+              </button>
+            </div>
           </div>
         </div>
       )}

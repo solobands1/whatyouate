@@ -709,6 +709,15 @@ export async function addFeelLog(userId: string, ts: number, tag: string): Promi
   }
 }
 
+export async function updateFeelLog(id: string, ts: number, tag: string): Promise<void> {
+  if (useMemory) return;
+  try {
+    await supabase.from("feel_logs").update({ ts: Math.floor(ts / 1000), tag }).eq("id", id);
+  } catch {
+    // silently fail
+  }
+}
+
 export async function deleteFeelLog(id: string): Promise<void> {
   if (useMemory) return;
   try {
