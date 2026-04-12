@@ -101,7 +101,19 @@ function makeDemoWorkouts(): WorkoutSession[] {
   const at = (h: number, m: number) => {
     const d = new Date(); d.setHours(h, m, 0, 0); return d.getTime();
   };
-  return [{ id: "demo-w1", startTs: at(6, 0), endTs: at(6, 45), durationMin: 45, workoutTypes: ["Strength"], intensity: "medium" }];
+  return [
+    { id: "demo-w1", startTs: at(6, 0), endTs: at(6, 45), durationMin: 45, workoutTypes: ["Strength"], intensity: "medium" },
+  ];
+}
+
+function makeDemoFeelLogs(): FeelLog[] {
+  const at = (h: number, m: number) => {
+    const d = new Date(); d.setHours(h, m, 0, 0); return d.getTime();
+  };
+  return [
+    { id: "demo-feel-1", ts: at(8, 15), tag: "good_energy" },
+    { id: "demo-feel-2", ts: at(14, 30), tag: "low_energy" },
+  ];
 }
 
 const FEEL_OPTIONS = [
@@ -162,7 +174,7 @@ export default function HomeScreen() {
   const [runTour, setRunTour] = useState(false);
   const [showTourGate, setShowTourGate] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
-  const [demoData] = useState(() => ({ meals: makeDemoMeals(), workouts: makeDemoWorkouts() }));
+  const [demoData] = useState(() => ({ meals: makeDemoMeals(), workouts: makeDemoWorkouts(), feelLogs: makeDemoFeelLogs() }));
   const loadingData = dataLoading;
   const [loadError, setLoadError] = useState<string | null>(null);
   const [barcodeOpen, setBarcodeOpen] = useState(false);
@@ -937,6 +949,7 @@ export default function HomeScreen() {
 
   const displayMeals = isDemoMode ? demoData.meals : meals.meals;
   const displayWorkouts = isDemoMode ? demoData.workouts : workout.workouts;
+  const displayFeelLogs = isDemoMode ? demoData.feelLogs : homeFeelLogs;
 
   const homeVisibleNotes = useMemo(
     () => computeNudges(displayMeals, displayWorkouts, profile),
@@ -1093,13 +1106,13 @@ export default function HomeScreen() {
 
   const feelLogsByLabel = useMemo(() => {
     const map: Record<string, FeelLog[]> = {};
-    homeFeelLogs.forEach((log) => {
+    displayFeelLogs.forEach((log) => {
       const label = formatDayLabel(log.ts);
       if (!map[label]) map[label] = [];
       map[label].push(log);
     });
     return map;
-  }, [homeFeelLogs]);
+  }, [displayFeelLogs]);
 
   useEffect(() => {
     if (!recentSentinelRef.current) return;
@@ -1155,19 +1168,19 @@ export default function HomeScreen() {
   const steps = [
     {
       target: '[data-tour="food-action"]',
-      content: "Log meals by snapping a photo, scanning a barcode, typing what you ate, or quickly re-adding something recent. The more you log, the smarter your coach gets.",
-      disableBeacon: true
+      content: "This is where you log what you eat. Snap a photo and the AI identifies it automatically, scan a barcode for packaged foods, type it manually, or tap Quick Add to re-log something you've had before.\n\nThe more you log, the smarter your coach gets.",
+      disableBeacon: true,
     },
     {
       target: '[data-tour="workout-markers"]',
-      content: "Log workouts and check in on how you're feeling. Your AI coach uses both to spot patterns — like low energy on days you skipped breakfast.",
-      disableBeacon: true
+      content: "Use Start Workout and End Workout to track your training sessions. The High Energy and Low Energy buttons let you check in on how you're feeling throughout the day.\n\nYour coach uses all of this together to spot patterns — like feeling drained on days you ate lighter.",
+      disableBeacon: true,
     },
     {
       target: '[data-tour="nav-summary"]',
-      content: "The Insights tab is your daily snapshot: today's nutrition, your week at a glance, and a message from your AI coach based on your actual data.",
+      content: "Tap here to head to your Insights tab. That's where you'll see today's nutrition totals, your week at a glance, and a personal message from your AI coach based on what you've actually been eating.",
       placement: "top" as const,
-      disableBeacon: true
+      disableBeacon: true,
     },
   ] as Step[];
 
@@ -1240,11 +1253,13 @@ export default function HomeScreen() {
                   "there"}
               </p>
             </div>
-            <div className="space-y-1 text-sm text-ink/70">
-              <p className="text-[15px] font-semibold text-ink/80">Thanks for joining!</p>
+            <div className="space-y-2 text-sm text-ink/70">
+              <p className="text-[15px] font-semibold text-ink/80">Welcome to WhatYouAte!</p>
               <p>
-                We help you log meals and workouts so you can spot patterns, get gentle nudges, and
-                make small changes that add up over time. Take the walkthrough to get started.
+                Log your meals, workouts, and how you feel — and your AI coach connects the dots. You'll start spotting patterns between what you eat and how you feel, perform, and recover.
+              </p>
+              <p>
+                Take the quick walkthrough to see how everything works.
               </p>
             </div>
             <button

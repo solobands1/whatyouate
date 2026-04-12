@@ -83,16 +83,33 @@ export default function InsightsScreen() {
     getFeelLogs(user.id, 30).then(setFeelLogs).catch(() => {});
   }, [user]);
 
+  const demoFeelLogs = useMemo<FeelLog[]>(() => {
+    const day = (offsetDays: number, h: number, m: number) => {
+      const d = new Date(); d.setDate(d.getDate() - offsetDays); d.setHours(h, m, 0, 0); return d.getTime();
+    };
+    return [
+      { id: "df-1", ts: day(0, 8, 15), tag: "good_energy" },
+      { id: "df-2", ts: day(0, 14, 30), tag: "low_energy" },
+      { id: "df-3", ts: day(1, 9, 0), tag: "good_energy" },
+      { id: "df-4", ts: day(2, 13, 45), tag: "low_energy" },
+      { id: "df-5", ts: day(3, 8, 30), tag: "good_energy" },
+      { id: "df-6", ts: day(4, 16, 0), tag: "good_energy" },
+      { id: "df-7", ts: day(5, 11, 0), tag: "low_energy" },
+    ];
+  }, []);
+
+  const displayFeelLogs = isDemoMode ? demoFeelLogs : feelLogs;
+
   const feelLogsByDay = useMemo(() => {
     const map: Record<string, { ts: number; tag: string }[]> = {};
-    for (const log of feelLogs) {
+    for (const log of displayFeelLogs) {
       if (log.tag !== "good_energy" && log.tag !== "low_energy") continue;
       const key = dayKeyFromTs(log.ts);
       if (!map[key]) map[key] = [];
       map[key].push({ ts: log.ts, tag: log.tag });
     }
     return map;
-  }, [feelLogs]);
+  }, [displayFeelLogs]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -428,43 +445,24 @@ export default function InsightsScreen() {
   const insightsTourSteps = [
     {
       target: '[data-tour="insights-header"]',
-      content: "Patterns shows your longer-term trends — weekly averages, micronutrients, and energy check-ins. It gets more useful the more you log.",
-      disableBeacon: true
+      content: "Welcome to Patterns — this is your long-term view. While Insights shows you today and this week, Patterns shows you what's happening over time: your macro averages, micronutrients, and energy trends.\n\nIt gets more useful the more you log.",
+      disableBeacon: true,
+    },
+    {
+      target: '[data-tour="insights-energy"]',
+      content: "This is your Energy chart. Each dot shows when you logged High Energy or Low Energy, and its position tells you the time of day — PM towards the top, AM towards the bottom.\n\nThe grey line is the baseline. Days with no log just show the line, meaning average energy is assumed. Look for patterns — when do you feel low, and what did you eat before it?",
+      disableBeacon: true,
     },
     {
       target: '[data-tour="insights-micro"]',
-      content: "Micronutrient bars build up over time from your logged meals and supplements. Tap any nutrient to learn why it matters and where to find it.",
-      disableBeacon: true
+      content: "These bars track your micronutrients over time — things like Iron, Magnesium, Vitamin D, and Omega-3. They build up from your logged meals and supplements.\n\nTap any nutrient to learn why it matters and where to get more of it from food.",
+      disableBeacon: true,
     },
     {
       target: '[data-tour="insights-i-icon"]',
-      content: (
-        <div style={{ textAlign: "center", padding: "8px 4px" }}>
-          <div
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 32,
-              height: 32,
-              borderRadius: "50%",
-              border: "1px solid rgba(31,41,55,0.1)",
-              color: "rgba(31,41,55,0.6)",
-              fontSize: 14,
-              fontWeight: 600,
-              marginBottom: 12,
-              lineHeight: 1
-            }}
-          >
-            i
-          </div>
-          <p style={{ margin: 0, fontSize: 15, fontWeight: 500, color: "#1F2937" }}>
-            Tap any i icon to learn more about that section.
-          </p>
-        </div>
-      ),
-      disableBeacon: true
-    }
+      content: "You'll see little i buttons like this throughout the app. Tap them anytime you want a plain-English explanation of what a section is showing you and why it matters.",
+      disableBeacon: true,
+    },
   ] as Step[];
 
   const handleInsightsTour = (data: CallBackProps) => {

@@ -496,19 +496,18 @@ export default function SummaryScreen() {
   const summaryTourSteps: Step[] = [
     {
       target: String.raw`[data-tour="summary-today"]`,
-      content: "Your daily snapshot: calories, protein, fats, and carbs so far today alongside your targets. It updates as you log.",
+      content: "This is your daily intake card. It shows your calories, protein, carbs, and fat for today compared to your personal targets. The rings fill up as you log — so the more accurate your logging, the more useful this gets.",
+      disableBeacon: true,
+    },
+    {
+      target: String.raw`[data-tour="summary-week"]`,
+      content: "This Week gives you a quick read on how your week is going. The dots at the top show which days you logged. Below that you'll see your averages, streak, and any energy patterns that stand out.\n\nThe more you log — meals, workouts, and energy check-ins — the more insight this gives you.",
       disableBeacon: true,
     },
     {
       target: String.raw`[data-tour="nudges-card"]`,
-      content: "Your AI coach reads your meals, workouts, and energy check-ins and sends one specific, honest observation based on your actual patterns.",
+      content: "Meet your AI coach. It reads everything you log — meals, workouts, how you're feeling — and sends you one honest, specific observation at a time.\n\nNo generic tips. Just something relevant to what you've actually been doing.",
       disableBeacon: true,
-    },
-    {
-      target: String.raw`[data-tour="summary-today"]`,
-      content: "The This Week section shows your logging streak, averages, and energy trends. The more you log, including how you feel, the more useful this gets.",
-      disableBeacon: true,
-      placement: "bottom" as const,
     },
   ];
 
@@ -1156,7 +1155,7 @@ export default function SummaryScreen() {
           <div className="mt-3 h-px w-full bg-ink/5" />
         </Card>
 
-        <Card className="mt-6">
+        <Card className="mt-6" data-tour="summary-week">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">This week</p>
 
           {/* 7-day dot strip */}

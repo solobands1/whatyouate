@@ -223,7 +223,7 @@ export default function ProfileScreen() {
   const profileTourSteps = [
     {
       target: '[data-tour="profile-header"]',
-      content: "Fill out your profile, then head back to Home to log your first meal or workout to get started.",
+      content: "Last step — fill out your profile here. Your age, height, weight, and goal let the app set personalized calorie and protein targets just for you.\n\nThe more complete your profile, the more accurate your targets and the more useful your AI coach becomes. You can update it anytime.",
       disableBeacon: true,
       placement: "bottom" as const,
     }
