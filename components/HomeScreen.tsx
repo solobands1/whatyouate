@@ -2845,36 +2845,49 @@ export default function HomeScreen() {
                     ? Math.round(((item.ranges.protein_g_min + item.ranges.protein_g_max) / 2) * portionMultiplier)
                     : Math.round((item.protein ?? 0) * portionMultiplier);
                   return (
-                    <div key={item.key}>
-                      <div
-                        className={`cursor-pointer rounded-full border border-primary/40 bg-primary/10 px-3 py-1.5 transition ${isSelected ? "bg-primary/20" : ""}`}
-                        onClick={() => {
-                          setQuickAddSelected((prev) => {
-                            if (prev[item.key]) {
-                              const next = { ...prev };
-                              delete next[item.key];
-                              return next;
-                            }
-                            return { ...prev, [item.key]: "medium" };
-                          });
-                        }}
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex-1 min-w-0">
-                            <span className="truncate text-xs text-ink/80 font-medium">{formatTitle(item.name)}</span>
-                            <span className="text-[10px] text-muted/70"> · {midCal} kcal · {midProt}g protein</span>
-                          </div>
-                          <button
-                            type="button"
-                            className="shrink-0 text-ink/40 hover:text-ink/70 active:scale-90 transition text-base leading-none"
-                            onClick={(e) => { e.stopPropagation(); handleRemoveQuickAddItem(item); }}
-                          >
-                            ×
-                          </button>
+                    <div
+                      key={item.key}
+                      className={`cursor-pointer rounded-xl border px-3 py-2.5 transition ${isSelected ? "border-primary/40 bg-primary/10" : "border-primary/40 bg-primary/10"}`}
+                      onClick={() => {
+                        setQuickAddSelected((prev) => {
+                          if (prev[item.key]) {
+                            const next = { ...prev };
+                            delete next[item.key];
+                            return next;
+                          }
+                          return { ...prev, [item.key]: "medium" };
+                        });
+                      }}
+                    >
+                      <div className="flex items-start gap-2">
+                        <div
+                          className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border transition ${isSelected ? "border-primary bg-primary" : "border-ink/20 bg-white"}`}
+                        >
+                          {isSelected && (
+                            <svg viewBox="0 0 10 8" fill="none" stroke="white" strokeWidth="1.5" className="h-2.5 w-2.5">
+                              <path d="M1 4 L3.5 6.5 L9 1" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          )}
                         </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="truncate text-xs font-semibold text-ink">
+                            {formatTitle(item.name)}
+                          </p>
+                          <p className="text-[10px] text-muted/80">
+                            {midCal} kcal · {midProt}g protein
+                            {item.type === "barcode" && item.brand ? ` · ${item.brand}` : ""}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          className="ml-1 shrink-0 text-ink/50 hover:text-ink/70 active:scale-90 transition text-base leading-none"
+                          onClick={(e) => { e.stopPropagation(); handleRemoveQuickAddItem(item); }}
+                        >
+                          ×
+                        </button>
                       </div>
                       {isSelected && (
-                        <div className="mt-1.5 flex gap-1.5 px-1">
+                        <div className="mt-2 flex gap-1.5">
                           {(["small", "medium", "large"] as const).map((p) => (
                             <button
                               key={p}
