@@ -2756,7 +2756,7 @@ export default function HomeScreen() {
                 </button>
               ))}
             </div>
-            <div className="flex gap-2 mb-5 min-w-0">
+            <div className="flex gap-2 mb-5 min-w-0 origin-left" style={{ transform: "scale(0.72)", width: "139%" }}>
               <div className="min-w-0 flex-1">
                 <p className="mb-1 text-[10px] uppercase tracking-wide text-muted/60">Date</p>
                 <input
@@ -2825,7 +2825,7 @@ export default function HomeScreen() {
                 </button>
               ))}
             </div>
-            <div className="flex gap-2 mb-5 min-w-0">
+            <div className="flex gap-2 mb-5 min-w-0 origin-left" style={{ transform: "scale(0.72)", width: "139%" }}>
               <div className="min-w-0 flex-1">
                 <p className="mb-1 text-[10px] uppercase tracking-wide text-muted/60">Date</p>
                 <input
