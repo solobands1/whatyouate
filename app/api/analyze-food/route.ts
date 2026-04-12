@@ -577,21 +577,20 @@ export async function POST(req: Request) {
     let rawAnalysis: any = null;
 
     if (provider === "anthropic" && anthropicKey) {
-      // Use claude-3-5-sonnet for vision — claude-sonnet-4-6 does not support image inputs
-      const visionModel = "claude-3-5-sonnet-20241022";
+      const visionModel = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-4-6";
       try {
         rawAnalysis = await analyzeWithAnthropic(imageBase64, visionModel, anthropicKey, hints, imageBase64Secondary);
       } catch (anthropicErr) {
         console.error("[analyze-food] Anthropic vision failed, trying OpenAI fallback:", anthropicErr);
         if (openaiKey) {
-          const model = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
+          const model = process.env.OPENAI_MODEL ?? "gpt-4o";
           rawAnalysis = await analyzeWithOpenAI(imageBase64, model, openaiKey, hints, imageBase64Secondary);
         } else {
           throw anthropicErr;
         }
       }
     } else if (openaiKey) {
-      const model = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
+      const model = process.env.OPENAI_MODEL ?? "gpt-4o";
       rawAnalysis = await analyzeWithOpenAI(imageBase64, model, openaiKey, hints, imageBase64Secondary);
     } else {
       rawAnalysis = safeFallbackAnalysis();
