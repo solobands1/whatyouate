@@ -691,65 +691,53 @@ export default function InsightsScreen() {
             {/* Time-positioned dot chart — vertical axis = time of day (AM top, PM bottom) */}
             <div className="flex">
               {/* AM/PM axis labels */}
-              <div className="flex flex-col justify-between pr-1.5 pb-[14px]" style={{ height: 90 }}>
+              <div className="flex flex-col justify-between pr-1.5" style={{ height: 90, paddingBottom: 20 }}>
                 <span className="text-[8px] text-ink/35 leading-none">PM</span>
                 <span className="text-[8px] text-ink/35 leading-none">AM</span>
               </div>
-              <div className="relative flex-1" style={{ height: 90 }}>
+              <div className="relative flex-1" style={{ height: 110 }}>
                 {sparklineData.map((d, i) => {
                   const logs = feelLogsByDay[d.dateKey] ?? [];
                   const isToday = i === sparklineData.length - 1;
                   const date = new Date(`${d.dateKey}T12:00:00`);
                   const dayLabel = ["S","M","T","W","T","F","S"][date.getDay()];
-                  const DOT_AREA = 76;
-                  const DOT_SIZE = 6;
+                  const DOT_AREA = 90;
+                  const DOT_SIZE = 8;
                   return (
                     <div
                       key={d.dateKey}
                       className="absolute -translate-x-1/2"
-                      style={{ left: `${sparklineChart.dots[i].labelLeftPct}%`, top: 0, height: 90 }}
+                      style={{ left: `${sparklineChart.dots[i].labelLeftPct}%`, top: 0, height: 110 }}
                     >
                       {/* Dot area */}
                       <div className="relative" style={{ height: DOT_AREA }}>
                         {/* Vertical average line */}
                         <div className="absolute -translate-x-1/2 rounded-full" style={{ left: "50%", top: 0, bottom: 0, width: 1.5, height: "100%", backgroundColor: "rgba(203,213,225,0.45)" }} />
-                        {logs.length === 0 ? (
-                          <div
-                            className="absolute -translate-x-1/2 rounded-full"
-                            style={{
-                              width: DOT_SIZE, height: DOT_SIZE,
-                              top: (DOT_AREA - DOT_SIZE) / 2,
-                              left: "50%",
-                              backgroundColor: "white",
-                              border: "1.5px solid rgba(0,0,0,0.10)",
-                            }}
-                          />
-                        ) : (
-                          logs.map((log) => {
-                            const logDate = new Date(log.ts);
-                            const minuteOfDay = logDate.getHours() * 60 + logDate.getMinutes();
-                            // PM at top, AM at bottom — invert the mapping
-                            const pct = Math.min(1, Math.max(0, (minuteOfDay - 360) / (1380 - 360)));
-                            const topPx = (1 - pct) * (DOT_AREA - DOT_SIZE);
-                            const color = log.tag === "good_energy"
-                              ? "rgba(59,130,246,0.9)"
-                              : "rgba(147,197,253,0.9)";
-                            return (
-                              <div
-                                key={log.ts}
-                                className="absolute -translate-x-1/2 rounded-full"
-                                style={{
-                                  width: DOT_SIZE, height: DOT_SIZE,
-                                  top: topPx,
-                                  left: "50%",
-                                  backgroundColor: color,
-                                }}
-                              />
-                            );
-                          })
-                        )}
+                        {logs.map((log) => {
+                          const logDate = new Date(log.ts);
+                          const minuteOfDay = logDate.getHours() * 60 + logDate.getMinutes();
+                          // PM at top, AM at bottom — invert the mapping
+                          const pct = Math.min(1, Math.max(0, (minuteOfDay - 360) / (1380 - 360)));
+                          const topPx = (1 - pct) * (DOT_AREA - DOT_SIZE);
+                          const color = log.tag === "good_energy"
+                            ? "rgba(59,130,246,0.9)"
+                            : "rgba(147,197,253,0.9)";
+                          return (
+                            <div
+                              key={log.ts}
+                              className="absolute -translate-x-1/2 rounded-full"
+                              style={{
+                                width: DOT_SIZE, height: DOT_SIZE,
+                                top: topPx,
+                                left: "50%",
+                                backgroundColor: color,
+                              }}
+                            />
+                          );
+                        })}
                       </div>
-                      {/* Day label */}
+                      {/* Gap + Day label */}
+                      <div style={{ height: 6 }} />
                       <div className="flex justify-center" style={{ height: 14 }}>
                         <span className={`text-[9px] ${isToday ? "font-bold text-ink/80" : d.hasData ? "text-ink/70" : "text-ink/45"}`}>
                           {dayLabel}
