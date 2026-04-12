@@ -231,7 +231,7 @@ export default function CaptureScreen() {
       <div
         className={
           preview
-            ? "relative h-screen w-screen overflow-hidden bg-black"
+            ? "flex h-screen w-screen flex-col items-center justify-center bg-surface"
             : "mx-auto flex min-h-screen max-w-md flex-col px-5 pb-20 pt-7"
         }
       >
@@ -296,70 +296,71 @@ export default function CaptureScreen() {
         )}
 
         {preview && (
-          <div className="relative w-full">
-            <img src={preview} alt="Preview" className="w-full object-cover" />
-            <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white/80 to-transparent pointer-events-none" />
-            <div className="absolute inset-0 flex items-center justify-center bg-white/30 backdrop-blur-[1.5px]">
-              <div className="flex h-32 w-32 items-center justify-center rounded-full bg-primary shadow-2xl animate-circleImpact">
-                <svg
-                  className="h-16 w-16 text-white animate-checkmark"
-                  viewBox="0 0 52 52"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="5"
-                >
-                  <path d="M14 27 L22 35 L38 18" className="checkmark-path" />
-                </svg>
+          <div className="flex flex-col items-center justify-center flex-1 px-6 py-10 gap-6">
+            {/* Photo card with blue border */}
+            <div className="relative w-full max-w-sm rounded-2xl border-2 border-primary/60 overflow-hidden shadow-[0_0_24px_rgba(111,168,255,0.18)]">
+              <img src={preview} alt="Preview" className="w-full object-cover" />
+              {/* Checkmark overlay */}
+              <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-[1px]">
+                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary shadow-xl animate-circleImpact">
+                  <svg
+                    className="h-10 w-10 text-white animate-checkmark"
+                    viewBox="0 0 52 52"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="5"
+                  >
+                    <path d="M14 27 L22 35 L38 18" className="checkmark-path" />
+                  </svg>
+                </div>
               </div>
             </div>
-          </div>
-        )}
-        {preview && (
-          <div className="mt-6 flex flex-col items-center">
-            <p className="text-lg font-semibold text-ink animate-fadeIn">Image Captured</p>
-            {saveError ? (
-              <div className="mt-3 flex flex-col items-center gap-2">
-                <p className="text-sm text-muted/70">Something went wrong. Please try again.</p>
-                <button
-                  type="button"
-                  className="text-sm font-semibold text-ink/60 underline"
-                  onClick={() => router.push("/")}
-                >
-                  ← Back
-                </button>
-              </div>
-            ) : showTimePicker ? (
-              <div className="mt-4 flex flex-col items-center gap-3">
-                <p className="text-xs text-muted/70">When did you eat this?</p>
-                <input
-                  type="date"
-                  className="rounded-lg border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                  value={mealDate}
-                  min={minDateString()}
-                  max={todayDateString()}
-                  onChange={(e) => setMealDate(e.target.value)}
-                />
-                <input
-                  type="time"
-                  className="rounded-lg border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                  value={mealTime}
-                  max={mealDate === todayDateString() ? nowTimeString() : undefined}
-                  onChange={(e) => setMealTime(e.target.value)}
-                />
-                <button
-                  type="button"
-                  className="rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
-                  onClick={handleConfirmTime}
-                  disabled={confirmingTime}
-                >
-                  {confirmingTime ? "Saving…" : "Done"}
-                </button>
-              </div>
-            ) : (
-              <>
-                <p className="mt-1 text-sm text-muted/70">Adding to your day…</p>
-              </>
-            )}
+
+            {/* Text below card */}
+            <div className="flex flex-col items-center gap-1 animate-fadeIn">
+              <p className="text-lg font-semibold text-ink">Image Captured</p>
+              {saveError ? (
+                <div className="mt-2 flex flex-col items-center gap-2">
+                  <p className="text-sm text-muted/70">Something went wrong. Please try again.</p>
+                  <button
+                    type="button"
+                    className="text-sm font-semibold text-ink/60 underline"
+                    onClick={() => router.push("/")}
+                  >
+                    ← Back
+                  </button>
+                </div>
+              ) : showTimePicker ? (
+                <div className="mt-3 flex flex-col items-center gap-3">
+                  <p className="text-xs text-muted/70">When did you eat this?</p>
+                  <input
+                    type="date"
+                    className="rounded-lg border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    value={mealDate}
+                    min={minDateString()}
+                    max={todayDateString()}
+                    onChange={(e) => setMealDate(e.target.value)}
+                  />
+                  <input
+                    type="time"
+                    className="rounded-lg border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    value={mealTime}
+                    max={mealDate === todayDateString() ? nowTimeString() : undefined}
+                    onChange={(e) => setMealTime(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    className="rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
+                    onClick={handleConfirmTime}
+                    disabled={confirmingTime}
+                  >
+                    {confirmingTime ? "Saving…" : "Done"}
+                  </button>
+                </div>
+              ) : (
+                <p className="text-sm text-muted/70">Adding to Your Day</p>
+              )}
+            </div>
           </div>
         )}
       </div>
