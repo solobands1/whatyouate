@@ -687,8 +687,8 @@ export default function InsightsScreen() {
             <div className="flex">
               {/* AM/PM axis labels */}
               <div className="flex flex-col justify-between pr-1.5" style={{ height: 90 }}>
-                <span className="text-[8px] text-ink/35 leading-none">PM</span>
-                <span className="text-[8px] text-ink/35 leading-none">AM</span>
+                <span className="text-[8px] text-ink/55 leading-none">PM</span>
+                <span className="text-[8px] text-ink/55 leading-none">AM</span>
               </div>
               <div className="relative flex-1" style={{ height: 110 }}>
                 {sparklineData.map((d, i) => {
