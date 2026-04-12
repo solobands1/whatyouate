@@ -572,7 +572,7 @@ export default function ProfileScreen() {
                     router.push("/");
                   }}
                 >
-                  Replay intro
+                  Replay Walkthrough
                 </button>
                 <button
                   type="button"

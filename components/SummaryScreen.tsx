@@ -400,6 +400,7 @@ export default function SummaryScreen() {
 
   const [nudgeViewCount, setNudgeViewCount] = useState(0);
   const [showTargetInfo, setShowTargetInfo] = useState(false);
+  const [showTodayInfo, setShowTodayInfo] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -1064,9 +1065,19 @@ export default function SummaryScreen() {
 
         <Card data-tour="summary-today">
           <div className="flex items-center justify-between">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">
-              Today
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">
+                Today
+              </p>
+              <button
+                type="button"
+                className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-ink/10 text-[10px] font-semibold text-ink/60"
+                onClick={() => setShowTodayInfo(true)}
+                aria-label="About daily intake"
+              >
+                i
+              </button>
+            </div>
           </div>
           <div className="mt-4 flex justify-between">
             <MacroRing
@@ -1487,6 +1498,26 @@ export default function SummaryScreen() {
               </div>
               {/* Tail pointing down-right toward Wyaa in the card header */}
               <div className="absolute -bottom-2.5 right-10 h-5 w-5 rotate-45 rounded-br-sm bg-white shadow-[2px_2px_4px_rgba(0,0,0,0.06)]" />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showTodayInfo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
+          <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-base font-semibold text-ink">Daily Intake</p>
+                <p className="mt-2 text-sm text-muted/70">Your calories, protein, carbs, and fats logged today compared to your targets. The rings fill as you get closer to your goal. Log every meal to get an accurate picture of the day.</p>
+              </div>
+              <button
+                type="button"
+                className="text-sm font-semibold text-ink/60"
+                onClick={() => setShowTodayInfo(false)}
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>

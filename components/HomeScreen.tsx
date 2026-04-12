@@ -824,7 +824,7 @@ export default function HomeScreen() {
     if (!meal) return;
     setPendingQuickConfirmId(null);
     const confidence = meal.analysisJson?.confidence_overall_0_1 ?? 1;
-    const needsConfirm = meal.analysisJson?.precision_mode_available === true || confidence < 0.7;
+    const needsConfirm = confidence < 0.7;
     if (!needsConfirm) return;
     const name =
       meal.analysisJson?.name ??

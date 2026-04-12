@@ -61,11 +61,7 @@ const NUTRIENT_INFO: Record<string, string | string[]> = {
   "Vitamin E": "A fat-soluble antioxidant that protects cells from damage and supports immune function. Deficiency is rare but more common with very low-fat diets. Best sources are sunflower seeds, almonds, wheat germ, and avocado.",
   Copper: "Works with iron to form red blood cells and supports bone, immune, and nerve health. Deficiency can mimic iron deficiency anemia. Shellfish, liver, dark chocolate, nuts, and seeds are the best sources.",
   "Vitamin B6": "Involved in protein metabolism, neurotransmitter production (serotonin, dopamine), and immune function. Low levels can affect mood and energy. Found in poultry, fish, potatoes, bananas, and chickpeas. Chickpeas are one of the richest plant sources.",
-  "Energy Check-ins": [
-    "Each dot shows when you logged Good Energy (dark blue) or Low Energy (light blue) that day. The position tells you the time of day — PM at the top, AM at the bottom.",
-    "Look for patterns: low energy that lines up with lighter meals, low protein, or certain times of day are worth noticing.",
-    "Your AI coach uses this data to connect how you feel to what you ate."
-  ]
+  "Energy Check-ins": "Tap Good Energy or Low Energy throughout the day to track how you feel. Each dot's position shows the time — PM at top, AM at bottom. Dark blue is Good Energy, light blue is Low Energy. Look for days where low energy lines up with lighter meals or low protein.",
 };
 
 
@@ -658,8 +654,7 @@ export default function InsightsScreen() {
         </Card>
 
 
-        {feelLogs.length > 0 && (
-          <Card className="mt-3 py-3">
+        <Card className="mt-3 py-3">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <p className="text-xs uppercase tracking-wide text-muted/70">Energy</p>
@@ -691,7 +686,7 @@ export default function InsightsScreen() {
             {/* Time-positioned dot chart — vertical axis = time of day (AM top, PM bottom) */}
             <div className="flex">
               {/* AM/PM axis labels */}
-              <div className="flex flex-col justify-between pr-1.5" style={{ height: 90, paddingBottom: 20 }}>
+              <div className="flex flex-col justify-between pr-1.5" style={{ height: 90 }}>
                 <span className="text-[8px] text-ink/35 leading-none">PM</span>
                 <span className="text-[8px] text-ink/35 leading-none">AM</span>
               </div>
@@ -749,7 +744,6 @@ export default function InsightsScreen() {
               </div>
             </div>
           </Card>
-        )}
 
         <Card className="mt-6" data-tour="insights-micro">
           <div className="flex items-center justify-between">
