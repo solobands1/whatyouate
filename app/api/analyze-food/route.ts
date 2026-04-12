@@ -3,7 +3,7 @@ import { FOOD_ANALYSIS_PROMPT, TEXT_ANALYSIS_PROMPT } from "../../../lib/ai/prom
 import { coerceAnalysis, safeFallbackAnalysis } from "../../../lib/ai/schema";
 import { supabaseServer } from "../../../lib/server/supabaseServer";
 
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
@@ -89,7 +89,7 @@ async function analyzeWithAnthropic(imageBase64: string, model: string, apiKey: 
     content.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: packaging.split(",")[1] ?? "" } });
   }
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 25_000);
+  const timeoutId = setTimeout(() => controller.abort(), 15_000);
   try {
     const response = await fetch(ANTHROPIC_URL, {
       method: "POST",
@@ -608,7 +608,8 @@ export async function POST(req: Request) {
     ]);
     return NextResponse.json({ analysis });
   } catch (err) {
-    console.error("[analyze-food] Unhandled error:", err);
-    return NextResponse.json({ error: "Analysis failed" }, { status: 500 });
+    const errMsg = err instanceof Error ? err.message : String(err);
+    console.error("[analyze-food] Unhandled error:", errMsg);
+    return NextResponse.json({ error: "Analysis failed", detail: errMsg }, { status: 500 });
   }
 }
