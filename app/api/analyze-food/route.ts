@@ -36,7 +36,7 @@ function extractJson(text: string) {
 
 async function analyzeWithOpenAI(imageBase64: string, model: string, apiKey: string, hints?: string, packaging?: string) {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 25_000);
+  const timeoutId = setTimeout(() => controller.abort(), 8_000);
   try {
     const response = await fetch(OPENAI_URL, {
       method: "POST",
@@ -61,7 +61,7 @@ async function analyzeWithOpenAI(imageBase64: string, model: string, apiKey: str
           }
         ],
         temperature: 0.2,
-        max_tokens: 1024
+        max_tokens: 700
       })
     });
 
@@ -89,7 +89,7 @@ async function analyzeWithAnthropic(imageBase64: string, model: string, apiKey: 
     content.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: packaging.split(",")[1] ?? "" } });
   }
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 15_000);
+  const timeoutId = setTimeout(() => controller.abort(), 8_000);
   try {
     const response = await fetch(ANTHROPIC_URL, {
       method: "POST",
@@ -101,7 +101,7 @@ async function analyzeWithAnthropic(imageBase64: string, model: string, apiKey: 
       },
       body: JSON.stringify({
         model,
-        max_tokens: 2048,
+        max_tokens: 700,
         temperature: 0.2,
         system: FOOD_ANALYSIS_PROMPT,
         messages: [{ role: "user", content }]
