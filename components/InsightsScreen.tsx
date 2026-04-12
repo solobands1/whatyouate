@@ -61,7 +61,7 @@ const NUTRIENT_INFO: Record<string, string | string[]> = {
   "Vitamin E": "A fat-soluble antioxidant that protects cells from damage and supports immune function. Deficiency is rare but more common with very low-fat diets. Best sources are sunflower seeds, almonds, wheat germ, and avocado.",
   Copper: "Works with iron to form red blood cells and supports bone, immune, and nerve health. Deficiency can mimic iron deficiency anemia. Shellfish, liver, dark chocolate, nuts, and seeds are the best sources.",
   "Vitamin B6": "Involved in protein metabolism, neurotransmitter production (serotonin, dopamine), and immune function. Low levels can affect mood and energy. Found in poultry, fish, potatoes, bananas, and chickpeas. Chickpeas are one of the richest plant sources.",
-  "Energy Check-ins": "Tap Good Energy or Low Energy throughout the day to track how you feel. Each dot's position shows the time — PM at top, AM at bottom. Dark blue is Good Energy, light blue is Low Energy. Look for days where low energy lines up with lighter meals or low protein.",
+  "Energy Check-ins": "Each dot's position shows the time of day you logged your energy, PM towards the top and AM towards the bottom. No entry assumes average energy.\n\nThis helps you spot low or high energy patterns and relate them to foods you ate to improve energy based on your food intake.",
 };
 
 
@@ -853,7 +853,11 @@ export default function InsightsScreen() {
                       ))}
                     </ul>
                   ) : (
-                    <p className="mt-2 text-sm text-muted/70">{info}</p>
+                    <div className="mt-2 space-y-2">
+                      {String(info).split("\n\n").map((para, i) => (
+                        <p key={i} className="text-sm text-muted/70">{para}</p>
+                      ))}
+                    </div>
                   );
                 })()}
               </div>
