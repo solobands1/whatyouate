@@ -963,8 +963,14 @@ export default function HomeScreen() {
     if (newTypes.length === 0) return;
     newTypes.forEach((note) => notifiedTypes.add(note.type));
     localStorage.setItem(notifiedTypesKey, JSON.stringify([...notifiedTypes]));
-    localStorage.setItem("wya_nudge_ts", Date.now().toString());
-    window.dispatchEvent(new Event("wya_nudge_update"));
+    // Only bump wya_nudge_ts if user hasn't seen these nudge types yet today
+    const seenTs = parseInt(localStorage.getItem("wya_nudge_seen_ts") ?? "0");
+    const existingNudgeTs = parseInt(localStorage.getItem("wya_nudge_ts") ?? "0");
+    // If the existing nudge_ts is already after seen_ts, the bell is already lit — don't re-stamp
+    if (existingNudgeTs <= seenTs) {
+      localStorage.setItem("wya_nudge_ts", Date.now().toString());
+      window.dispatchEvent(new Event("wya_nudge_update"));
+    }
   }, [user, homeNotifyNotes]);
 
   const homeMarkers = useMemo(
