@@ -1891,7 +1891,7 @@ export default function HomeScreen() {
                           className={`flex w-full flex-col items-center justify-center rounded-full border border-ink/10 bg-white px-3 py-1 text-[11px] text-ink/60 leading-tight shadow-[0_0_8px_rgba(111,168,255,0.12)] ${editRecents ? "cursor-pointer animate-wiggle-neutral" : ""}`}
                         >
                           <span className="text-[9px] text-ink/55 tracking-wide">How You Felt</span>
-                          <span className="font-semibold text-ink/60 capitalize">{log.tag.replace(/_/g, " ")}</span>
+                          <span className="font-semibold text-ink/60">{log.tag === "good_energy" ? "High Energy" : log.tag === "low_energy" ? "Low Energy" : log.tag.replace(/_/g, " ")}</span>
                           <span className="text-[10px] text-ink/55">{h}:{String(d.getMinutes()).padStart(2, "0")}{period}</span>
                         </div>
                       );
