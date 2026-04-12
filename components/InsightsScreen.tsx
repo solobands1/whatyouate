@@ -687,23 +687,23 @@ export default function InsightsScreen() {
             {/* Time-positioned dot chart — vertical axis = time of day (AM top, PM bottom) */}
             <div className="flex">
               {/* AM/PM axis labels */}
-              <div className="flex flex-col justify-between pr-1.5" style={{ height: 76 }}>
+              <div className="flex flex-col justify-between pr-1.5 pb-[14px]" style={{ height: 90 }}>
                 <span className="text-[8px] text-ink/35 leading-none">PM</span>
                 <span className="text-[8px] text-ink/35 leading-none">AM</span>
               </div>
-              <div className="relative flex-1" style={{ height: 76 }}>
+              <div className="relative flex-1" style={{ height: 90 }}>
                 {sparklineData.map((d, i) => {
                   const logs = feelLogsByDay[d.dateKey] ?? [];
                   const isToday = i === sparklineData.length - 1;
                   const date = new Date(`${d.dateKey}T12:00:00`);
                   const dayLabel = ["S","M","T","W","T","F","S"][date.getDay()];
-                  const DOT_AREA = 62;
-                  const DOT_SIZE = 8;
+                  const DOT_AREA = 76;
+                  const DOT_SIZE = 6;
                   return (
                     <div
                       key={d.dateKey}
                       className="absolute -translate-x-1/2"
-                      style={{ left: `${sparklineChart.dots[i].labelLeftPct}%`, top: 0, height: 76 }}
+                      style={{ left: `${sparklineChart.dots[i].labelLeftPct}%`, top: 0, height: 90 }}
                     >
                       {/* Dot area */}
                       <div className="relative" style={{ height: DOT_AREA }}>
