@@ -162,7 +162,7 @@ export default function CaptureScreen() {
     if (redirectRef.current) window.clearTimeout(redirectRef.current);
     redirectRef.current = window.setTimeout(() => {
       if (!showTimePickerRef.current) router.push("/");
-    }, 1600);
+    }, 2400);
   };
 
   const handleChangeTime = () => {

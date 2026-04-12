@@ -124,10 +124,18 @@ input, textarea, select {
   }
 }
 
+@keyframes checkmarkBounce {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.18); }
+  70%  { transform: scale(0.92); }
+  100% { transform: scale(1); }
+}
+
 .animate-circleImpact {
   animation:
     circleImpact 0.5s cubic-bezier(0.22, 1.2, 0.36, 1) forwards,
-    glowPulse 0.6s ease-out forwards;
+    glowPulse 0.6s ease-out forwards,
+    checkmarkBounce 0.35s ease-in-out 0.75s 1 both;
 }
 
 .animate-checkmark .checkmark-path {
