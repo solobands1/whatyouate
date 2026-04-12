@@ -679,7 +679,7 @@ export default function InsightsScreen() {
                 ))}
                 <div className="flex items-center gap-1">
                   <div className="w-0.5 rounded-full" style={{ height: 10, backgroundColor: "rgba(203,213,225,0.6)" }} />
-                  <p className="text-[9px] text-ink/60">Average</p>
+                  <p className="text-[9px] text-ink/60">Average Energy</p>
                 </div>
               </div>
             </div>
