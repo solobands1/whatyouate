@@ -4,6 +4,7 @@ import { coerceAnalysis, safeFallbackAnalysis } from "../../../lib/ai/schema";
 import { supabaseServer } from "../../../lib/server/supabaseServer";
 
 export const maxDuration = 60;
+export const runtime = "nodejs";
 
 const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
@@ -36,7 +37,7 @@ function extractJson(text: string) {
 
 async function analyzeWithOpenAI(imageBase64: string, model: string, apiKey: string, hints?: string, packaging?: string) {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 9_000);
+  const timeoutId = setTimeout(() => controller.abort(), 20_000);
   try {
     const response = await fetch(OPENAI_URL, {
       method: "POST",
@@ -89,7 +90,7 @@ async function analyzeWithAnthropic(imageBase64: string, model: string, apiKey: 
     content.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: packaging.split(",")[1] ?? "" } });
   }
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 8_000);
+  const timeoutId = setTimeout(() => controller.abort(), 25_000);
   try {
     const response = await fetch(ANTHROPIC_URL, {
       method: "POST",
@@ -580,12 +581,22 @@ export async function POST(req: Request) {
 
     let rawAnalysis: any = null;
 
-    if (openaiKey) {
+    if (provider === "anthropic" && anthropicKey) {
+      const visionModel = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-4-6";
+      try {
+        rawAnalysis = await analyzeWithAnthropic(imageBase64, visionModel, anthropicKey, hints, imageBase64Secondary);
+      } catch (anthropicErr) {
+        console.error("[analyze-food] Anthropic vision failed, trying OpenAI fallback:", anthropicErr);
+        if (openaiKey) {
+          const model = process.env.OPENAI_MODEL ?? "gpt-4o";
+          rawAnalysis = await analyzeWithOpenAI(imageBase64, model, openaiKey, hints, imageBase64Secondary);
+        } else {
+          throw anthropicErr;
+        }
+      }
+    } else if (openaiKey) {
       const model = process.env.OPENAI_MODEL ?? "gpt-4o";
       rawAnalysis = await analyzeWithOpenAI(imageBase64, model, openaiKey, hints, imageBase64Secondary);
-    } else if (provider === "anthropic" && anthropicKey) {
-      const visionModel = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-4-6";
-      rawAnalysis = await analyzeWithAnthropic(imageBase64, visionModel, anthropicKey, hints, imageBase64Secondary);
     } else {
       rawAnalysis = safeFallbackAnalysis();
     }
