@@ -1477,7 +1477,7 @@ export default function HomeScreen() {
                 </svg>
               )}
               {showProfileBell && (
-                <span className="absolute -right-0.5 -top-0.5 inline-flex h-3.5 w-3.5 items-center justify-center rounded-full border border-primary/40 bg-primary text-[8px] text-white animate-pulse shadow-[0_4px_10px_rgba(15,23,42,0.18)]">
+                <span className="absolute -right-0.5 -top-0.5 inline-flex h-3.5 w-3.5 items-center justify-center rounded-full border border-primary/25 bg-primary text-[8px] text-white animate-pulse shadow-[0_4px_10px_rgba(15,23,42,0.18)]">
                   <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5" />
                     <path d="M9 17a3 3 0 0 0 6 0" />
@@ -1808,7 +1808,7 @@ export default function HomeScreen() {
                             meals.openMealEditor(meal);
                           }
                         }}
-                        className={`inline-flex w-full items-start justify-between rounded-full border border-primary/40 px-3 py-1.5 text-xs text-ink/80 ${editRecents ? "cursor-pointer animate-wiggle bg-primary/10" : (isShimmer ? "animate-shimmer" : "animate-pill-in bg-primary/10")}`}
+                        className={`inline-flex w-full items-start justify-between rounded-full border border-primary/25 px-3 py-1.5 text-xs text-ink/80 ${editRecents ? "cursor-pointer animate-wiggle bg-primary/10" : (isShimmer ? "animate-shimmer" : "animate-pill-in bg-primary/10")}`}
                         style={{
                           ...(isShimmer ? { background: "linear-gradient(90deg, #eff6ff 0%, #dbeafe 40%, #eff6ff 60%, #eff6ff 100%)", backgroundSize: "200% 100%" } : {}),
                           ...(!editRecents && !isShimmer ? { animationDelay: `${idx * 35}ms` } : {})
