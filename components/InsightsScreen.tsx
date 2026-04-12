@@ -675,7 +675,7 @@ export default function InsightsScreen() {
               <div className="flex items-center gap-2.5">
                 {[
                   { label: "Good Energy", color: "rgba(111,168,255,0.9)" },
-                  { label: "Low Energy", color: "rgba(148,163,184,0.55)" },
+                  { label: "Low Energy", color: "rgba(203,213,225,0.9)" },
                 ].map(({ label, color }) => (
                   <div key={label} className="flex items-center gap-1">
                     <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
@@ -687,29 +687,27 @@ export default function InsightsScreen() {
             {/* Time-positioned dot chart — vertical axis = time of day (AM top, PM bottom) */}
             <div className="flex">
               {/* AM/PM axis labels */}
-              <div className="flex flex-col justify-between pr-1.5" style={{ height: 52 }}>
-                <span className="text-[8px] text-ink/35 leading-none">AM</span>
+              <div className="flex flex-col justify-between pr-1.5" style={{ height: 76 }}>
                 <span className="text-[8px] text-ink/35 leading-none">PM</span>
+                <span className="text-[8px] text-ink/35 leading-none">AM</span>
               </div>
-              <div className="relative flex-1" style={{ height: 52 }}>
+              <div className="relative flex-1" style={{ height: 76 }}>
                 {sparklineData.map((d, i) => {
                   const logs = feelLogsByDay[d.dateKey] ?? [];
                   const isToday = i === sparklineData.length - 1;
                   const date = new Date(`${d.dateKey}T12:00:00`);
                   const dayLabel = ["S","M","T","W","T","F","S"][date.getDay()];
-                  // Chart area height minus day-label row (14px) = 38px for dots
-                  const DOT_AREA = 38;
-                  const DOT_SIZE = 7;
+                  const DOT_AREA = 62;
+                  const DOT_SIZE = 8;
                   return (
                     <div
                       key={d.dateKey}
                       className="absolute -translate-x-1/2"
-                      style={{ left: `${sparklineChart.dots[i].labelLeftPct}%`, top: 0, height: 52 }}
+                      style={{ left: `${sparklineChart.dots[i].labelLeftPct}%`, top: 0, height: 76 }}
                     >
                       {/* Dot area */}
                       <div className="relative" style={{ height: DOT_AREA }}>
                         {logs.length === 0 ? (
-                          // No log — empty circle at midday position
                           <div
                             className="absolute -translate-x-1/2 rounded-full"
                             style={{
@@ -724,12 +722,12 @@ export default function InsightsScreen() {
                           logs.map((log) => {
                             const logDate = new Date(log.ts);
                             const minuteOfDay = logDate.getHours() * 60 + logDate.getMinutes();
-                            // Map 6am–11pm (360–1380 mins) to 0–100% of dot area
+                            // PM at top, AM at bottom — invert the mapping
                             const pct = Math.min(1, Math.max(0, (minuteOfDay - 360) / (1380 - 360)));
-                            const topPx = pct * (DOT_AREA - DOT_SIZE);
+                            const topPx = (1 - pct) * (DOT_AREA - DOT_SIZE);
                             const color = log.tag === "good_energy"
                               ? "rgba(111,168,255,0.9)"
-                              : "rgba(148,163,184,0.55)";
+                              : "rgba(203,213,225,0.9)";
                             return (
                               <div
                                 key={log.ts}
