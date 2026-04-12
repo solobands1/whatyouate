@@ -391,7 +391,8 @@ export default function SummaryScreen() {
         const tagCounts: Record<string, number> = {};
         for (const log of weekFeelLogs) tagCounts[log.tag] = (tagCounts[log.tag] ?? 0) + 1;
         const dominant = Object.entries(tagCounts).sort((a, b) => b[1] - a[1])[0][0];
-        lines.push(`Mostly ${dominant} energy across ${weekFeelLogs.length} check-in${weekFeelLogs.length !== 1 ? "s" : ""} this week.`);
+        const dominantLabel = dominant === "good_energy" ? "High Energy" : dominant === "low_energy" ? "Low Energy" : dominant.replace(/_/g, " ");
+        lines.push(`Mostly ${dominantLabel} across ${weekFeelLogs.length} check-in${weekFeelLogs.length !== 1 ? "s" : ""} this week.`);
       }
     }
 
