@@ -61,6 +61,13 @@ export default function BottomNav({ current }: { current: "home" | "summary" | "
     return () => window.removeEventListener("wya_nudge_update", handler);
   }, [current]);
 
+  // Prefetch all nav routes so tapping feels instant.
+  useEffect(() => {
+    router.prefetch("/");
+    router.prefetch("/summary");
+    router.prefetch("/summary/insights");
+  }, [router]);
+
   const icons: Record<string, JSX.Element> = {
     home: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">

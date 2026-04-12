@@ -30,6 +30,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <link rel="preconnect" href="https://dopwptglzsfpdqmbeayw.supabase.co" />
+        <link rel="dns-prefetch" href="https://dopwptglzsfpdqmbeayw.supabase.co" />
+        <link rel="preconnect" href="https://api.anthropic.com" />
+        <link rel="preconnect" href="https://api.openai.com" />
       </head>
       <body>
         <ServiceWorkerRegister />
