@@ -88,17 +88,12 @@ export default function InsightsScreen() {
   }, [user]);
 
   const feelLogsByDay = useMemo(() => {
-    const SCORE: Record<string, number> = { good_energy: 3, low_energy: 1 };
-    const map: Record<string, { avgScore: number; count: number }> = {};
-    const grouped: Record<string, number[]> = {};
+    const map: Record<string, { ts: number; tag: string }[]> = {};
     for (const log of feelLogs) {
+      if (log.tag !== "good_energy" && log.tag !== "low_energy") continue;
       const key = dayKeyFromTs(log.ts);
-      if (!grouped[key]) grouped[key] = [];
-      const score = SCORE[log.tag];
-      if (score !== undefined) grouped[key].push(score);
-    }
-    for (const [key, scores] of Object.entries(grouped)) {
-      map[key] = { avgScore: scores.reduce((s, v) => s + v, 0) / scores.length, count: scores.length };
+      if (!map[key]) map[key] = [];
+      map[key].push({ ts: log.ts, tag: log.tag });
     }
     return map;
   }, [feelLogs]);
@@ -665,7 +660,7 @@ export default function InsightsScreen() {
 
         {feelLogs.length > 0 && (
           <Card className="mt-3 py-3">
-            <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <p className="text-xs uppercase tracking-wide text-muted/70">Energy</p>
                 <button
@@ -679,10 +674,8 @@ export default function InsightsScreen() {
               </div>
               <div className="flex items-center gap-2.5">
                 {[
-                  { label: "Extra low", color: "rgba(71,85,105,0.65)" },
-                  { label: "Low", color: "rgba(148,163,184,0.50)" },
-                  { label: "Average", color: "rgba(111,168,255,0.45)" },
-                  { label: "High", color: "rgba(111,168,255,0.9)" },
+                  { label: "Good Energy", color: "rgba(111,168,255,0.9)" },
+                  { label: "Low Energy", color: "rgba(148,163,184,0.55)" },
                 ].map(({ label, color }) => (
                   <div key={label} className="flex items-center gap-1">
                     <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
@@ -691,38 +684,77 @@ export default function InsightsScreen() {
                 ))}
               </div>
             </div>
-            <div className="relative" style={{ height: 26 }}>
-              {sparklineData.map((d, i) => {
-                const entry = feelLogsByDay[d.dateKey];
-                const isToday = i === sparklineData.length - 1;
-                const score = entry?.avgScore ?? null;
-                const dotColor = score === null
-                  ? null
-                  : score >= 3.5 ? "rgba(111,168,255,0.9)"
-                  : score >= 2.5 ? "rgba(111,168,255,0.45)"
-                  : score >= 1.5 ? "rgba(148,163,184,0.50)"
-                  : "rgba(71,85,105,0.65)";
-                const date = new Date(`${d.dateKey}T12:00:00`);
-                return (
-                  <div
-                    key={d.dateKey}
-                    className="absolute -translate-x-1/2 flex flex-col items-center gap-1.5"
-                    style={{ left: `${sparklineChart.dots[i].labelLeftPct}%` }}
-                  >
+            {/* Time-positioned dot chart — vertical axis = time of day (AM top, PM bottom) */}
+            <div className="flex">
+              {/* AM/PM axis labels */}
+              <div className="flex flex-col justify-between pr-1.5" style={{ height: 52 }}>
+                <span className="text-[8px] text-ink/35 leading-none">AM</span>
+                <span className="text-[8px] text-ink/35 leading-none">PM</span>
+              </div>
+              <div className="relative flex-1" style={{ height: 52 }}>
+                {sparklineData.map((d, i) => {
+                  const logs = feelLogsByDay[d.dateKey] ?? [];
+                  const isToday = i === sparklineData.length - 1;
+                  const date = new Date(`${d.dateKey}T12:00:00`);
+                  const dayLabel = ["S","M","T","W","T","F","S"][date.getDay()];
+                  // Chart area height minus day-label row (14px) = 38px for dots
+                  const DOT_AREA = 38;
+                  const DOT_SIZE = 7;
+                  return (
                     <div
-                      className="rounded-full"
-                      style={{
-                        width: 10, height: 10,
-                        backgroundColor: dotColor ?? "white",
-                        border: dotColor ? "none" : "1.5px solid rgba(0,0,0,0.10)",
-                      }}
-                    />
-                    <span className={`text-[9px] ${isToday ? "font-bold text-ink/80" : d.hasData ? "text-ink/70" : "text-ink/45"}`}>
-                      {["S","M","T","W","T","F","S"][date.getDay()]}
-                    </span>
-                  </div>
-                );
-              })}
+                      key={d.dateKey}
+                      className="absolute -translate-x-1/2"
+                      style={{ left: `${sparklineChart.dots[i].labelLeftPct}%`, top: 0, height: 52 }}
+                    >
+                      {/* Dot area */}
+                      <div className="relative" style={{ height: DOT_AREA }}>
+                        {logs.length === 0 ? (
+                          // No log — empty circle at midday position
+                          <div
+                            className="absolute -translate-x-1/2 rounded-full"
+                            style={{
+                              width: DOT_SIZE, height: DOT_SIZE,
+                              top: (DOT_AREA - DOT_SIZE) / 2,
+                              left: "50%",
+                              backgroundColor: "white",
+                              border: "1.5px solid rgba(0,0,0,0.10)",
+                            }}
+                          />
+                        ) : (
+                          logs.map((log) => {
+                            const logDate = new Date(log.ts);
+                            const minuteOfDay = logDate.getHours() * 60 + logDate.getMinutes();
+                            // Map 6am–11pm (360–1380 mins) to 0–100% of dot area
+                            const pct = Math.min(1, Math.max(0, (minuteOfDay - 360) / (1380 - 360)));
+                            const topPx = pct * (DOT_AREA - DOT_SIZE);
+                            const color = log.tag === "good_energy"
+                              ? "rgba(111,168,255,0.9)"
+                              : "rgba(148,163,184,0.55)";
+                            return (
+                              <div
+                                key={log.ts}
+                                className="absolute -translate-x-1/2 rounded-full"
+                                style={{
+                                  width: DOT_SIZE, height: DOT_SIZE,
+                                  top: topPx,
+                                  left: "50%",
+                                  backgroundColor: color,
+                                }}
+                              />
+                            );
+                          })
+                        )}
+                      </div>
+                      {/* Day label */}
+                      <div className="flex justify-center" style={{ height: 14 }}>
+                        <span className={`text-[9px] ${isToday ? "font-bold text-ink/80" : d.hasData ? "text-ink/70" : "text-ink/45"}`}>
+                          {dayLabel}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </Card>
         )}
