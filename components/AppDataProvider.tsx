@@ -61,7 +61,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     try {
       const [profileData, mealsData, workoutsData] = await Promise.all([
         getProfile(userId),
-        listMeals(userId, 60),
+        listMeals(userId, 120),
         listWorkouts(userId, 50),
       ]);
       if (!mountedRef.current) return;
@@ -82,7 +82,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
             updateMeal(m.id, safeFallbackAnalysis(), undefined, userId, "failed").catch(() => {})
           )
         );
-        const refreshed = await listMeals(userId, 60);
+        const refreshed = await listMeals(userId, 120);
         if (mountedRef.current) finalMeals = refreshed;
         notifyMealsFailed(stuck.length);
       }
