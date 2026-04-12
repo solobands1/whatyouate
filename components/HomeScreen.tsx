@@ -2729,7 +2729,7 @@ export default function HomeScreen() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5">
           <div className="w-full max-w-sm rounded-2xl bg-white px-5 pb-6 pt-5 shadow-xl">
             <div className="mb-1 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-ink">How are you feeling?</h2>
+              <h2 className="text-base font-semibold text-ink">How Are You Feeling?</h2>
               <button
                 type="button"
                 onClick={() => { setShowFeelModal(false); setFeelPressed(null); }}
@@ -2763,7 +2763,7 @@ export default function HomeScreen() {
                   type="date"
                   value={feelDate}
                   onChange={(e) => setFeelDate(e.target.value)}
-                  className="w-full min-w-0 rounded-lg border border-ink/10 bg-white px-1.5 py-1 text-[10px] text-ink/70"
+                  className="w-full min-w-0 rounded-lg border border-ink/10 bg-white px-1 py-0.5 text-[9px] text-ink/70"
                 />
               </div>
               <div className="min-w-0 flex-1">
@@ -2772,7 +2772,7 @@ export default function HomeScreen() {
                   type="time"
                   value={feelTime}
                   onChange={(e) => setFeelTime(e.target.value)}
-                  className="w-full min-w-0 rounded-lg border border-ink/10 bg-white px-1.5 py-1 text-[10px] text-ink/70"
+                  className="w-full min-w-0 rounded-lg border border-ink/10 bg-white px-1 py-0.5 text-[9px] text-ink/70"
                 />
               </div>
             </div>
@@ -2799,7 +2799,7 @@ export default function HomeScreen() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5">
           <div className="w-full max-w-sm rounded-2xl bg-white px-5 pb-6 pt-5 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-ink">Edit energy log</h2>
+              <h2 className="text-base font-semibold text-ink">Edit Energy Log</h2>
               <button
                 type="button"
                 onClick={() => setEditingFeelLog(null)}
@@ -2832,7 +2832,7 @@ export default function HomeScreen() {
                   type="date"
                   value={editFeelDate}
                   onChange={(e) => setEditFeelDate(e.target.value)}
-                  className="w-full min-w-0 rounded-lg border border-ink/10 bg-white px-1.5 py-1 text-[10px] text-ink/70"
+                  className="w-full min-w-0 rounded-lg border border-ink/10 bg-white px-1 py-0.5 text-[9px] text-ink/70"
                 />
               </div>
               <div className="min-w-0 flex-1">
@@ -2841,7 +2841,7 @@ export default function HomeScreen() {
                   type="time"
                   value={editFeelTime}
                   onChange={(e) => setEditFeelTime(e.target.value)}
-                  className="w-full min-w-0 rounded-lg border border-ink/10 bg-white px-1.5 py-1 text-[10px] text-ink/70"
+                  className="w-full min-w-0 rounded-lg border border-ink/10 bg-white px-1 py-0.5 text-[9px] text-ink/70"
                 />
               </div>
             </div>
