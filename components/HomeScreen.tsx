@@ -1724,9 +1724,6 @@ export default function HomeScreen() {
                 End Workout
               </button>
             </div>
-            {workout.activeWorkout && (
-              <p className="text-center text-[11px] text-muted/60">Workout in progress</p>
-            )}
             {!isDemoMode && (
               <div className="flex w-[60%] text-xs rounded-xl shadow-[0_4px_12px_rgba(15,23,42,0.08),0_0_8px_rgba(111,168,255,0.12)] overflow-hidden">
                 <button
@@ -1744,6 +1741,9 @@ export default function HomeScreen() {
                   Low Energy
                 </button>
               </div>
+            )}
+            {workout.activeWorkout && (
+              <p className="text-center text-[11px] text-muted/60">Workout in progress</p>
             )}
           </div>
         </div>
