@@ -682,6 +682,10 @@ export default function InsightsScreen() {
                     <p className="text-[9px] text-ink/60">{label}</p>
                   </div>
                 ))}
+                <div className="flex items-center gap-1">
+                  <div className="w-0.5 rounded-full" style={{ height: 10, backgroundColor: "rgba(203,213,225,0.6)" }} />
+                  <p className="text-[9px] text-ink/60">Average</p>
+                </div>
               </div>
             </div>
             {/* Time-positioned dot chart — vertical axis = time of day (AM top, PM bottom) */}
@@ -707,6 +711,8 @@ export default function InsightsScreen() {
                     >
                       {/* Dot area */}
                       <div className="relative" style={{ height: DOT_AREA }}>
+                        {/* Vertical average line */}
+                        <div className="absolute -translate-x-1/2 rounded-full" style={{ left: "50%", top: 0, bottom: 0, width: 1.5, height: "100%", backgroundColor: "rgba(203,213,225,0.45)" }} />
                         {logs.length === 0 ? (
                           <div
                             className="absolute -translate-x-1/2 rounded-full"
