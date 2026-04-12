@@ -1708,17 +1708,17 @@ export default function HomeScreen() {
           </div>
           </div>
           <div className="flex flex-col items-center gap-1.5" data-tour="workout-markers">
-            <div className="flex w-[84%] text-xs">
+            <div className="flex w-[84%] text-xs rounded-xl shadow-[0_4px_12px_rgba(15,23,42,0.08),0_0_8px_rgba(111,168,255,0.12)] overflow-hidden">
               <button
                 type="button"
-                className="flex flex-1 items-center justify-center rounded-l-xl rounded-r-none border border-ink/10 bg-white px-3 py-1.5 text-center font-normal text-ink/60 shadow-[0_4px_12px_rgba(15,23,42,0.08),0_0_8px_rgba(111,168,255,0.12)] transition-all duration-150 hover:bg-ink/5 active:translate-y-[1px]"
+                className="flex flex-1 items-center justify-center rounded-l-xl rounded-r-none border border-ink/10 bg-white px-3 py-1.5 text-center font-normal text-ink/60 transition-all duration-150 hover:bg-ink/5 active:translate-y-[1px]"
                 onClick={() => workout.setShowStartWorkoutModal(true)}
               >
                 Start Workout
               </button>
               <button
                 type="button"
-                className="flex flex-1 items-center justify-center rounded-r-xl rounded-l-none border border-l-0 border-ink/10 bg-white px-3 py-1.5 text-center font-normal text-ink/60 shadow-[0_4px_12px_rgba(15,23,42,0.08),0_0_8px_rgba(111,168,255,0.12)] transition-all duration-150 hover:bg-ink/5 active:translate-y-[1px]"
+                className="flex flex-1 items-center justify-center rounded-r-xl rounded-l-none border border-l-0 border-ink/10 bg-white px-3 py-1.5 text-center font-normal text-ink/60 transition-all duration-150 hover:bg-ink/5 active:translate-y-[1px]"
                 onClick={() => workout.setShowEndWorkoutModal(true)}
               >
                 End Workout
@@ -1728,17 +1728,17 @@ export default function HomeScreen() {
               <p className="text-center text-[11px] text-muted/60">Workout in progress</p>
             )}
             {!isDemoMode && (
-              <div className="flex w-[60%] text-xs">
+              <div className="flex w-[60%] text-xs rounded-xl shadow-[0_4px_12px_rgba(15,23,42,0.08),0_0_8px_rgba(111,168,255,0.12)] overflow-hidden">
                 <button
                   type="button"
-                  className="flex flex-1 items-center justify-center rounded-l-xl rounded-r-none border border-ink/10 bg-white px-3 py-1.5 text-center font-normal text-ink/60 shadow-[0_4px_12px_rgba(15,23,42,0.08),0_0_8px_rgba(111,168,255,0.12)] transition-all duration-150 hover:bg-ink/5 active:translate-y-[1px]"
+                  className="flex flex-1 items-center justify-center rounded-l-xl rounded-r-none border border-ink/10 bg-white px-3 py-1.5 text-center font-normal text-ink/60 transition-all duration-150 hover:bg-ink/5 active:translate-y-[1px]"
                   onClick={() => handleFeelLog("good_energy", Date.now())}
                 >
                   High Energy
                 </button>
                 <button
                   type="button"
-                  className="flex flex-1 items-center justify-center rounded-r-xl rounded-l-none border border-l-0 border-ink/10 bg-white px-3 py-1.5 text-center font-normal text-ink/60 shadow-[0_4px_12px_rgba(15,23,42,0.08),0_0_8px_rgba(111,168,255,0.12)] transition-all duration-150 hover:bg-ink/5 active:translate-y-[1px]"
+                  className="flex flex-1 items-center justify-center rounded-r-xl rounded-l-none border border-l-0 border-ink/10 bg-white px-3 py-1.5 text-center font-normal text-ink/60 transition-all duration-150 hover:bg-ink/5 active:translate-y-[1px]"
                   onClick={() => handleFeelLog("low_energy", Date.now())}
                 >
                   Low Energy
