@@ -669,8 +669,8 @@ export default function InsightsScreen() {
               </div>
               <div className="flex items-center gap-2.5">
                 {[
-                  { label: "High Energy", color: "rgba(59,130,246,0.9)" },
-                  { label: "Low Energy", color: "rgba(147,197,253,0.9)" },
+                  { label: "High Energy", color: "rgba(111,168,255,1)" },
+                  { label: "Low Energy", color: "rgba(111,168,255,0.35)" },
                 ].map(({ label, color }) => (
                   <div key={label} className="flex items-center gap-1">
                     <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
@@ -715,8 +715,8 @@ export default function InsightsScreen() {
                           const pct = Math.min(1, Math.max(0, (minuteOfDay - 360) / (1380 - 360)));
                           const topPx = (1 - pct) * (DOT_AREA - DOT_SIZE);
                           const color = log.tag === "good_energy"
-                            ? "rgba(59,130,246,0.9)"
-                            : "rgba(147,197,253,0.9)";
+                            ? "rgba(111,168,255,1)"
+                            : "rgba(111,168,255,0.35)";
                           return (
                             <div
                               key={log.ts}
