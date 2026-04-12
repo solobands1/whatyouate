@@ -669,7 +669,7 @@ export default function InsightsScreen() {
               </div>
               <div className="flex items-center gap-2.5">
                 {[
-                  { label: "Good Energy", color: "rgba(59,130,246,0.9)" },
+                  { label: "High Energy", color: "rgba(59,130,246,0.9)" },
                   { label: "Low Energy", color: "rgba(147,197,253,0.9)" },
                 ].map(({ label, color }) => (
                   <div key={label} className="flex items-center gap-1">
