@@ -2763,7 +2763,7 @@ export default function HomeScreen() {
                   type="date"
                   value={feelDate}
                   onChange={(e) => setFeelDate(e.target.value)}
-                  className="w-full min-w-0 rounded-xl border border-ink/10 bg-white px-2 py-1.5 text-[11px] text-ink/70"
+                  className="w-full min-w-0 rounded-lg border border-ink/10 bg-white px-1.5 py-1 text-[10px] text-ink/70"
                 />
               </div>
               <div className="min-w-0 flex-1">
@@ -2772,7 +2772,7 @@ export default function HomeScreen() {
                   type="time"
                   value={feelTime}
                   onChange={(e) => setFeelTime(e.target.value)}
-                  className="w-full min-w-0 rounded-xl border border-ink/10 bg-white px-2 py-1.5 text-[11px] text-ink/70"
+                  className="w-full min-w-0 rounded-lg border border-ink/10 bg-white px-1.5 py-1 text-[10px] text-ink/70"
                 />
               </div>
             </div>
@@ -2832,7 +2832,7 @@ export default function HomeScreen() {
                   type="date"
                   value={editFeelDate}
                   onChange={(e) => setEditFeelDate(e.target.value)}
-                  className="w-full min-w-0 rounded-xl border border-ink/10 bg-white px-2 py-1.5 text-[11px] text-ink/70"
+                  className="w-full min-w-0 rounded-lg border border-ink/10 bg-white px-1.5 py-1 text-[10px] text-ink/70"
                 />
               </div>
               <div className="min-w-0 flex-1">
@@ -2841,7 +2841,7 @@ export default function HomeScreen() {
                   type="time"
                   value={editFeelTime}
                   onChange={(e) => setEditFeelTime(e.target.value)}
-                  className="w-full min-w-0 rounded-xl border border-ink/10 bg-white px-2 py-1.5 text-[11px] text-ink/70"
+                  className="w-full min-w-0 rounded-lg border border-ink/10 bg-white px-1.5 py-1 text-[10px] text-ink/70"
                 />
               </div>
             </div>
