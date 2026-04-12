@@ -62,8 +62,8 @@ const NUTRIENT_INFO: Record<string, string | string[]> = {
   Copper: "Works with iron to form red blood cells and supports bone, immune, and nerve health. Deficiency can mimic iron deficiency anemia. Shellfish, liver, dark chocolate, nuts, and seeds are the best sources.",
   "Vitamin B6": "Involved in protein metabolism, neurotransmitter production (serotonin, dopamine), and immune function. Low levels can affect mood and energy. Found in poultry, fish, potatoes, bananas, and chickpeas. Chickpeas are one of the richest plant sources.",
   "Energy Check-ins": [
-    "Each dot represents your average energy for that day — from extra low to high. Empty circles mean no log that day.",
-    "Look for patterns: low energy days that line up with lighter meals or low protein are worth noticing.",
+    "Each dot shows when you logged Good Energy (dark blue) or Low Energy (light blue) that day. The position tells you the time of day — PM at the top, AM at the bottom.",
+    "Look for patterns: low energy that lines up with lighter meals, low protein, or certain times of day are worth noticing.",
     "Your AI coach uses this data to connect how you feel to what you ate."
   ]
 };
