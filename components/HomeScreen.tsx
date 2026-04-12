@@ -1864,7 +1864,7 @@ export default function HomeScreen() {
                         onClick={() => {
                           if (editRecents) workout.openWorkoutEditor(w);
                         }}
-                        className={`flex w-full flex-col items-center justify-center rounded-full border border-ink/10 bg-white px-3 py-0.5 text-[11px] text-ink/60 leading-tight shadow-[0_0_8px_rgba(111,168,255,0.22)] ${editRecents ? "cursor-pointer animate-wiggle-neutral" : ""}`}
+                        className={`flex w-full flex-col items-center justify-center rounded-full border border-ink/10 bg-white px-3 py-0.5 text-[11px] text-ink/60 leading-tight shadow-[0_0_8px_rgba(111,168,255,0.12)] ${editRecents ? "cursor-pointer animate-wiggle-neutral" : ""}`}
                       >
                         <span className="font-semibold text-ink/60">
                           {formatWorkoutDurationLines(w).title}
@@ -1888,7 +1888,7 @@ export default function HomeScreen() {
                               setEditFeelTime(d.toTimeString().slice(0, 5));
                             }
                           }}
-                          className={`flex w-full flex-col items-center justify-center rounded-full border border-ink/10 bg-white px-3 py-1 text-[11px] text-ink/60 leading-tight shadow-[0_0_8px_rgba(111,168,255,0.22)] ${editRecents ? "cursor-pointer animate-wiggle-neutral" : ""}`}
+                          className={`flex w-full flex-col items-center justify-center rounded-full border border-ink/10 bg-white px-3 py-1 text-[11px] text-ink/60 leading-tight shadow-[0_0_8px_rgba(111,168,255,0.12)] ${editRecents ? "cursor-pointer animate-wiggle-neutral" : ""}`}
                         >
                           <span className="text-[9px] text-ink/55 tracking-wide">How You Felt</span>
                           <span className="font-semibold text-ink/60 capitalize">{log.tag.replace(/_/g, " ")}</span>
