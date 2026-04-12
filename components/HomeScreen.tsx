@@ -1810,13 +1810,13 @@ export default function HomeScreen() {
                         }}
                         className={`inline-flex w-full items-start justify-between rounded-full border border-primary/20 px-3 py-1.5 text-xs text-ink/80 ${editRecents ? "cursor-pointer animate-wiggle bg-primary/10" : (isShimmer ? "animate-shimmer" : "animate-pill-in bg-primary/10")}`}
                         style={{
-                          ...(isShimmer ? { background: "linear-gradient(90deg, #dbeafe 0%, #bfdbfe 40%, #dbeafe 60%, #dbeafe 100%)", backgroundSize: "200% 100%" } : {}),
+                          ...(isShimmer ? { background: "linear-gradient(90deg, #eff6ff 0%, #dbeafe 40%, #eff6ff 60%, #eff6ff 100%)", backgroundSize: "200% 100%" } : {}),
                           ...(!editRecents && !isShimmer ? { animationDelay: `${idx * 35}ms` } : {})
                         }}
                       >
                         <span className="flex flex-col">
                           {meal.status === "processing" ? (
-                            isShimmer ? "Analyzing food…" : "Analysis failed · edit manually"
+                            isShimmer ? "Analyzing Food…" : "Analysis failed · edit manually"
                           ) : meal.status === "failed" ? (
                             "Analysis failed · edit manually"
                           ) : (
