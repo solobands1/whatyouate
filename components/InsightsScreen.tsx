@@ -88,13 +88,14 @@ export default function InsightsScreen() {
   }, [user]);
 
   const feelLogsByDay = useMemo(() => {
-    const SCORE: Record<string, number> = { energized: 4, good: 3, average: 2, low_energy: 1, drained: 0 };
+    const SCORE: Record<string, number> = { good_energy: 3, low_energy: 1 };
     const map: Record<string, { avgScore: number; count: number }> = {};
     const grouped: Record<string, number[]> = {};
     for (const log of feelLogs) {
       const key = dayKeyFromTs(log.ts);
       if (!grouped[key]) grouped[key] = [];
-      grouped[key].push(SCORE[log.tag] ?? 2);
+      const score = SCORE[log.tag];
+      if (score !== undefined) grouped[key].push(score);
     }
     for (const [key, scores] of Object.entries(grouped)) {
       map[key] = { avgScore: scores.reduce((s, v) => s + v, 0) / scores.length, count: scores.length };

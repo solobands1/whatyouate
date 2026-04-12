@@ -344,7 +344,7 @@ export default function SummaryScreen() {
     }
 
     // Energy observations — only when there are feel logs this week
-    const ENERGY_SCORE: Record<string, number> = { energized: 4, good: 3, average: 2, low_energy: 1, drained: 0 };
+    const ENERGY_SCORE: Record<string, number> = { good_energy: 3, low_energy: 1 };
     const weekStartMs = (() => { const d = new Date(); d.setDate(d.getDate() - 6); d.setHours(0, 0, 0, 0); return d.getTime(); })();
     const weekFeelLogs = recentFeelLogs.filter((l) => l.ts >= weekStartMs);
 
@@ -354,7 +354,8 @@ export default function SummaryScreen() {
       for (const log of weekFeelLogs) {
         const key = dayKeyFromTs(log.ts);
         if (!byDay[key]) byDay[key] = [];
-        byDay[key].push(ENERGY_SCORE[log.tag] ?? 2);
+        const score = ENERGY_SCORE[log.tag];
+        if (score !== undefined) byDay[key].push(score);
       }
       const dayAvgs = Object.entries(byDay).map(([key, scores]) => ({
         key,

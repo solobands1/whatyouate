@@ -105,11 +105,8 @@ function makeDemoWorkouts(): WorkoutSession[] {
 }
 
 const FEEL_OPTIONS = [
-  { tag: "energized", label: "Energized" },
-  { tag: "good", label: "Good" },
-  { tag: "average", label: "Average" },
+  { tag: "good_energy", label: "Good Energy" },
   { tag: "low_energy", label: "Low Energy" },
-  { tag: "drained", label: "Drained" },
 ] as const;
 
 // Module-level cache — survives navigation, resets on full page reload
@@ -214,10 +211,6 @@ export default function HomeScreen() {
   const [streakBouncing, setStreakBouncing] = useState(false);
   const mountTimeRef = useRef<number>(Date.now());
   const logFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [showFeelModal, setShowFeelModal] = useState(false);
-  const [feelPressed, setFeelPressed] = useState<string | null>(null);
-  const [feelDate, setFeelDate] = useState("");
-  const [feelTime, setFeelTime] = useState("");
   const [homeFeelLogs, setHomeFeelLogs] = useState<FeelLog[]>([]);
   const [editingFeelLog, setEditingFeelLog] = useState<FeelLog | null>(null);
   const [editFeelTag, setEditFeelTag] = useState<string | null>(null);
@@ -1735,19 +1728,20 @@ export default function HomeScreen() {
               <p className="text-center text-[11px] text-muted/60">Workout in progress</p>
             )}
             {!isDemoMode && (
-              <div className="flex w-[60%]">
+              <div className="flex w-[84%] text-xs">
                 <button
                   type="button"
-                  className="flex flex-1 items-center justify-center rounded-xl border border-ink/10 bg-white px-3 py-1.5 text-[11px] font-normal text-ink/60 shadow-[0_4px_12px_rgba(15,23,42,0.08),0_0_10px_rgba(111,168,255,0.22)] transition-all duration-150 hover:bg-ink/5 active:translate-y-[1px]"
-                  onClick={() => {
-                    const now = new Date();
-                    setFeelDate(now.toISOString().slice(0, 10));
-                    setFeelTime(now.toTimeString().slice(0, 5));
-                    setFeelPressed(null);
-                    setShowFeelModal(true);
-                  }}
+                  className="flex flex-1 items-center justify-center rounded-l-xl rounded-r-none border border-ink/10 bg-white px-3 py-1.5 text-center font-normal text-ink/60 shadow-[0_4px_12px_rgba(15,23,42,0.08),0_0_10px_rgba(111,168,255,0.22)] transition-all duration-150 hover:bg-ink/5 active:translate-y-[1px]"
+                  onClick={() => handleFeelLog("good_energy", Date.now())}
                 >
-                  Log How You Are Feeling
+                  Good Energy
+                </button>
+                <button
+                  type="button"
+                  className="flex flex-1 items-center justify-center rounded-r-xl rounded-l-none border border-l-0 border-ink/10 bg-white px-3 py-1.5 text-center font-normal text-ink/60 shadow-[0_4px_12px_rgba(15,23,42,0.08),0_0_10px_rgba(111,168,255,0.22)] transition-all duration-150 hover:bg-ink/5 active:translate-y-[1px]"
+                  onClick={() => handleFeelLog("low_energy", Date.now())}
+                >
+  Low Energy
                 </button>
               </div>
             )}
@@ -2739,75 +2733,6 @@ export default function HomeScreen() {
       />
 
       {/* Feel modal */}
-      {showFeelModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5">
-          <div className="w-full max-w-sm rounded-2xl bg-white px-5 pb-6 pt-5 shadow-xl">
-            <div className="mb-1 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-ink">How Are You Feeling?</h2>
-              <button
-                type="button"
-                onClick={() => { setShowFeelModal(false); setFeelPressed(null); }}
-                className="flex h-6 w-6 items-center justify-center rounded-full bg-ink/5 text-ink/40 transition active:opacity-60"
-              >
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
-              </button>
-            </div>
-            <p className="mb-4 text-[12px] text-muted/60 leading-relaxed">Each log is a timestamped snapshot. Your AI coach uses these to connect energy patterns to your eating habits over time.</p>
-            <div className="flex mb-7">
-              {FEEL_OPTIONS.map(({ tag, label }, i) => (
-                <button
-                  key={tag}
-                  type="button"
-                  onClick={() => setFeelPressed(tag)}
-                  className={`flex flex-1 items-center justify-center border py-2 text-[11px] font-normal select-none transition-colors
-                    ${i === 0 ? "rounded-l-xl" : "border-l-0"}
-                    ${i === FEEL_OPTIONS.length - 1 ? "rounded-r-xl" : ""}
-                    ${feelPressed === tag
-                      ? "border-primary/30 bg-primary/10 text-ink/80"
-                      : "border-ink/10 bg-white text-ink/60"}`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-            <div className="flex gap-2 mb-5 min-w-0 origin-left" style={{ transform: "scale(0.72)", width: "139%" }}>
-              <div className="min-w-0 flex-1">
-                <p className="mb-1 text-[10px] uppercase tracking-wide text-muted/60">Date</p>
-                <input
-                  type="date"
-                  value={feelDate}
-                  onChange={(e) => setFeelDate(e.target.value)}
-                  className="w-full min-w-0 rounded-lg border border-ink/10 bg-white px-1 py-0.5 text-[9px] text-ink/70"
-                />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="mb-1 text-[10px] uppercase tracking-wide text-muted/60">Time</p>
-                <input
-                  type="time"
-                  value={feelTime}
-                  onChange={(e) => setFeelTime(e.target.value)}
-                  className="w-full min-w-0 rounded-lg border border-ink/10 bg-white px-1 py-0.5 text-[9px] text-ink/70"
-                />
-              </div>
-            </div>
-            <button
-              type="button"
-              disabled={!feelPressed}
-              onClick={async () => {
-                if (!feelPressed) return;
-                const ts = feelDate && feelTime ? new Date(`${feelDate}T${feelTime}`).getTime() : Date.now();
-                await handleFeelLog(feelPressed, ts);
-                setShowFeelModal(false);
-                setFeelPressed(null);
-              }}
-              className="w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white transition active:opacity-80 disabled:opacity-40"
-            >
-              Done
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Edit Feel Log modal */}
       {editingFeelLog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5">
