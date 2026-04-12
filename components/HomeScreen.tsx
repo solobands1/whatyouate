@@ -907,9 +907,12 @@ export default function HomeScreen() {
       (m) => m.status === "processing" && Date.now() - m.ts < 90_000
     );
     if (!hasProcessing) return;
-    const interval = window.setInterval(() => reload(), 4_000);
+    const interval = window.setInterval(() => {
+      clearMealsCache(user?.id);
+      reload();
+    }, 4_000);
     return () => window.clearInterval(interval);
-  }, [meals.meals, reload]);
+  }, [meals.meals, reload, user]);
 
   useEffect(() => {
     if (!user) return;
