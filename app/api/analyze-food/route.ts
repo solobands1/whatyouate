@@ -358,7 +358,11 @@ async function updateMealServer(mealId: string, analysis: any, userId?: string) 
   let query = supabaseServer.from("meals").update(payload).eq("id", mealId);
   if (userId) query = query.eq("user_id", userId);
   const { error } = await query;
-  if (error) throw error;
+  if (error) {
+    console.error("[updateMealServer] Supabase update failed:", JSON.stringify(error));
+    throw error;
+  }
+  console.log("[updateMealServer] success mealId:", mealId, "calories:", calories, "status: done");
   if (process.env.DEBUG_MEALS === "1") {
     const { data: updatedRow, error: selectError } = await supabaseServer
       .from("meals")
