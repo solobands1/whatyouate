@@ -256,33 +256,33 @@ export default function SummaryScreen() {
     const calOk = !calTarget || !avgWeekCalories || (avgWeekCalories >= calTarget * 0.9 && avgWeekCalories <= calTarget * 1.1);
     const proOk = !proTarget || !avgWeekProtein || avgWeekProtein >= proTarget * 0.85;
     if (loggedThisWeek >= 6 && calOk && proOk) return weeklyVariant([
-      "Strong week across the board.",
-      "Everything's lining up this week.",
-      "Consistent and on target. Great week!",
-      "This week is looking exactly how it should.",
+      "Strong Week Across The Board",
+      "Everything Is Lining Up This Week",
+      "Consistent And On Target",
+      "This Week Is Looking Exactly How It Should",
     ]);
     if (loggedThisWeek >= 5 && (calOk || proOk)) return weeklyVariant([
-      "Solid week overall.",
-      "Good consistency this week.",
-      "More right than wrong this week.",
-      "A productive week. Keep the momentum!",
+      "Solid Week Overall",
+      "Good Consistency This Week",
+      "More Right Than Wrong This Week",
+      "A Productive Week",
     ]);
     if (loggedThisWeek >= 5) return weeklyVariant([
-      "Good effort this week.",
-      "Showing up consistently. That's the foundation.",
-      "Logging regularly is the hardest part. You're doing it.",
-      "Five days of data. Patterns are starting to form.",
+      "Good Effort This Week",
+      "Showing Up Consistently",
+      "Logging Regularly Is The Hardest Part",
+      "Five Days Of Data",
     ]);
     if (loggedThisWeek >= 3) return weeklyVariant([
-      "Building the habit.",
-      "A few good days this week.",
-      "Every logged day adds to the picture.",
-      "Momentum is building. Keep going!",
+      "Building The Habit",
+      "A Few Good Days This Week",
+      "Every Logged Day Adds To The Picture",
+      "Momentum Is Building",
     ]);
     return weeklyVariant([
-      "Getting started.",
-      "The first few logs are the hardest.",
-      "Early days. Log a few more and I'll have more to say.",
+      "Getting Started",
+      "The First Few Logs Are The Hardest",
+      "Early Days",
     ]);
   }, [last7Days, mealCount, avgWeekCalories, avgWeekProtein, summaryMarkers.gentleTargets, weeklyVariant]);
 
