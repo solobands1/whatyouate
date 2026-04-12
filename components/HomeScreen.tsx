@@ -1731,15 +1731,15 @@ export default function HomeScreen() {
               <div className="flex w-[60%] text-xs rounded-xl shadow-[0_4px_12px_rgba(15,23,42,0.08),0_0_8px_rgba(111,168,255,0.12)] overflow-hidden">
                 <button
                   type="button"
-                  className="flex flex-1 items-center justify-center rounded-l-xl rounded-r-none border border-ink/10 bg-white px-3 py-1.5 text-center font-normal text-ink/60 transition-all duration-150 hover:bg-ink/5 active:translate-y-[1px]"
-                  onClick={() => handleFeelLog("good_energy", Date.now())}
+                  className="flex flex-1 items-center justify-center rounded-l-xl rounded-r-none border border-ink/10 bg-white px-3 py-1.5 text-center font-normal text-ink/60 transition-all duration-150 hover:bg-ink/5 active:scale-[0.96] active:bg-primary/10"
+                  onClick={() => { handleFeelLog("good_energy", Date.now()); }}
                 >
                   High Energy
                 </button>
                 <button
                   type="button"
-                  className="flex flex-1 items-center justify-center rounded-r-xl rounded-l-none border border-l-0 border-ink/10 bg-white px-3 py-1.5 text-center font-normal text-ink/60 transition-all duration-150 hover:bg-ink/5 active:translate-y-[1px]"
-                  onClick={() => handleFeelLog("low_energy", Date.now())}
+                  className="flex flex-1 items-center justify-center rounded-r-xl rounded-l-none border border-l-0 border-ink/10 bg-white px-3 py-1.5 text-center font-normal text-ink/60 transition-all duration-150 hover:bg-ink/5 active:scale-[0.96] active:bg-primary/10"
+                  onClick={() => { handleFeelLog("low_energy", Date.now()); }}
                 >
                   Low Energy
                 </button>
@@ -1858,13 +1858,14 @@ export default function HomeScreen() {
                     ); })}
                   </div>
                   <div className="col-span-1 space-y-2 border-l border-ink/5 pl-2">
-                    {group.workouts.map((w) => (
+                    {group.workouts.map((w, wi) => (
                       <div
                         key={w.id}
                         onClick={() => {
                           if (editRecents) workout.openWorkoutEditor(w);
                         }}
-                        className={`flex w-full flex-col items-center justify-center rounded-full border border-ink/10 bg-white px-3 py-0.5 text-[11px] text-ink/60 leading-tight shadow-[0_0_8px_rgba(111,168,255,0.12)] ${editRecents ? "cursor-pointer animate-wiggle-neutral" : ""}`}
+                        className={`flex w-full flex-col items-center justify-center rounded-full border border-ink/10 bg-white px-3 py-0.5 text-[11px] text-ink/60 leading-tight shadow-[0_0_8px_rgba(111,168,255,0.12)] ${editRecents ? "cursor-pointer animate-wiggle-neutral" : "animate-pill-in"}`}
+                        style={editRecents ? undefined : { animationDelay: `${wi * 35}ms` }}
                       >
                         <span className="font-semibold text-ink/60">
                           {formatWorkoutDurationLines(w).title}
@@ -1872,7 +1873,7 @@ export default function HomeScreen() {
                         <span className="-mt-0.5">{formatWorkoutDurationLines(w).detail}</span>
                       </div>
                     ))}
-                    {(feelLogsByLabel[group.label] ?? []).map((log) => {
+                    {(feelLogsByLabel[group.label] ?? []).map((log, fi) => {
                       const d = new Date(log.ts);
                       const h = d.getHours() % 12 || 12;
                       const period = d.getHours() < 12 ? "am" : "pm";
@@ -1888,7 +1889,8 @@ export default function HomeScreen() {
                               setEditFeelTime(d.toTimeString().slice(0, 5));
                             }
                           }}
-                          className={`flex w-full flex-col items-center justify-center rounded-full border border-ink/10 bg-white px-3 py-1 text-[11px] text-ink/60 leading-tight shadow-[0_0_8px_rgba(111,168,255,0.12)] ${editRecents ? "cursor-pointer animate-wiggle-neutral" : ""}`}
+                          className={`flex w-full flex-col items-center justify-center rounded-full border border-ink/10 bg-white px-3 py-1 text-[11px] text-ink/60 leading-tight shadow-[0_0_8px_rgba(111,168,255,0.12)] ${editRecents ? "cursor-pointer animate-wiggle-neutral" : "animate-pill-in"}`}
+                          style={editRecents ? undefined : { animationDelay: `${fi * 35}ms` }}
                         >
                           <span className="text-[9px] text-ink/55 tracking-wide">How You Felt</span>
                           <span className="font-semibold text-ink/60">{log.tag === "good_energy" ? "High Energy" : log.tag === "low_energy" ? "Low Energy" : log.tag.replace(/_/g, " ")}</span>
