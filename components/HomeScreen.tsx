@@ -2847,7 +2847,7 @@ export default function HomeScreen() {
                   return (
                     <div
                       key={item.key}
-                      className={`cursor-pointer rounded-xl border px-3 py-2.5 transition ${isSelected ? "border-primary/40 bg-primary/10" : "border-primary/40 bg-primary/10"}`}
+                      className={`cursor-pointer rounded-xl border px-3 py-2.5 transition ${isSelected ? "border-primary/30 bg-primary/8" : "border-ink/8 bg-ink/[0.02]"}`}
                       onClick={() => {
                         setQuickAddSelected((prev) => {
                           if (prev[item.key]) {
