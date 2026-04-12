@@ -1486,7 +1486,7 @@ export default function HomeScreen() {
               )}
             </Link>
           </div>
-          <p className="mt-1 pl-0.5 text-[13px] text-muted/70">Eat Confidently</p>
+          <p className="mt-1 pl-0.5 text-[13px] text-muted/70">Eat Confidently | Feel Better</p>
           {!loadingData && mealCount === 0 && !isDemoMode && (
             <p className="mt-3 text-[11px] text-muted/60">
               Take a photo of your first meal to get started.

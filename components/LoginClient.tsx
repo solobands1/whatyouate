@@ -139,7 +139,7 @@ export default function LoginClient() {
               </span>
             </h1>
             <p className="mt-1.5 text-sm text-muted/60">
-              {mode === "forgot" ? "We'll send you a reset code." : "Eat Confidently"}
+              {mode === "forgot" ? "We'll send you a reset code." : "Eat Confidently | Feel Better"}
             </p>
           </div>
         )}
