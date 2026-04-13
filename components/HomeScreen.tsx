@@ -1170,7 +1170,7 @@ export default function HomeScreen() {
       disableBeacon: true,
       content: (
         <div>
-          <p style={{ fontWeight: 600, marginBottom: 10 }}>Logging your food is easy</p>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Logging Your Food Is Easy</p>
           <p>Take a photo, scan a barcode, type it manually, or tap quick add to re-log something you've had before.</p>
         </div>
       ),
@@ -1181,7 +1181,7 @@ export default function HomeScreen() {
       disableBeacon: true,
       content: (
         <div>
-          <p style={{ fontWeight: 600, marginBottom: 10 }}>Track your workouts</p>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Track Your Workouts</p>
           <p>Start and end your workouts to track your activities throughout the day.</p>
         </div>
       ),
@@ -1192,7 +1192,7 @@ export default function HomeScreen() {
       disableBeacon: true,
       content: (
         <div>
-          <p style={{ fontWeight: 600, marginBottom: 10 }}>Check in on your energy</p>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Check In On Your Energy</p>
           <p>The high and low energy buttons let you check in on how you're feeling throughout the day.</p>
           <p style={{ marginTop: 10 }}>This will come in handy later.</p>
         </div>
@@ -1204,7 +1204,6 @@ export default function HomeScreen() {
       disableBeacon: true,
       content: (
         <div>
-          <p style={{ fontWeight: 600, marginBottom: 10 }}>Head to your Insights tab</p>
           <p>That's where you'll see today's nutrition totals, your week at a glance, and a personal message from your AI coach based on what you've actually been eating.</p>
         </div>
       ),
@@ -1282,10 +1281,13 @@ export default function HomeScreen() {
                   "there"}
               </p>
             </div>
-            <div className="space-y-2 text-sm text-ink/70">
+            <div className="space-y-3 text-sm text-ink/70">
               <p className="text-[15px] font-semibold text-ink/80">Welcome to WhatYouAte!</p>
               <p>
-                Log your meals, workouts, and how you feel — and your AI coach connects the dots. You'll start spotting patterns between what you eat and how you feel, perform, and recover.
+                Log your meals, workouts, and how you feel, and your AI Coach connects the dots.
+              </p>
+              <p>
+                You'll start spotting patterns between what you eat and how you feel, perform, and recover.
               </p>
               <p>
                 Take the quick walkthrough to see how everything works.

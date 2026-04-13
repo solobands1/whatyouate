@@ -449,7 +449,7 @@ export default function InsightsScreen() {
       disableBeacon: true,
       content: (
         <div>
-          <p style={{ fontWeight: 600, marginBottom: 10 }}>Patterns is your long-term view</p>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Patterns Is Your Long-Term View</p>
           <p>While Insights shows you today and this week, Patterns shows you what's happening over time. Your macro averages, micronutrients, and energy trends get more useful the more you log.</p>
         </div>
       ),
@@ -460,7 +460,7 @@ export default function InsightsScreen() {
       disableBeacon: true,
       content: (
         <div>
-          <p style={{ fontWeight: 600, marginBottom: 10 }}>Your Energy chart</p>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Your Energy Chart</p>
           <p>This shows when you logged High Energy or Low Energy.</p>
           <p style={{ marginTop: 10 }}>Its position tells you the time of day. Days with no energy log show the grey line, which is your baseline.</p>
           <p style={{ marginTop: 10 }}>Look for patterns: When do you feel low energy, and what did you eat before that happened?</p>
@@ -473,7 +473,7 @@ export default function InsightsScreen() {
       disableBeacon: true,
       content: (
         <div>
-          <p style={{ fontWeight: 600, marginBottom: 10 }}>Your micronutrient bars</p>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Your Micronutrient Bars</p>
           <p>These bars track your micronutrients over time. They build up from your logged meals and supplements.</p>
           <p style={{ marginTop: 10 }}>Tap any nutrient to learn why it matters and where to get more of it from food.</p>
         </div>
@@ -481,12 +481,12 @@ export default function InsightsScreen() {
     },
     {
       target: '[data-tour="insights-i-icon"]',
-      placement: "top" as const,
+      placement: "left" as const,
       disableBeacon: true,
       content: (
         <div>
-          <p style={{ fontWeight: 600, marginBottom: 10 }}>The info button</p>
-          <p>You'll see <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 20, height: 20, borderRadius: "50%", background: "rgba(111,168,255,0.12)", border: "1px solid rgba(111,168,255,0.3)", fontSize: 12, fontWeight: 600, color: "rgba(111,168,255,0.9)", lineHeight: 1, verticalAlign: "middle", margin: "0 2px" }}>i</span> buttons like this throughout the app.</p>
+          <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 24, height: 24, borderRadius: "50%", border: "1px solid rgba(0,0,0,0.1)", fontSize: 13, fontWeight: 600, color: "rgba(0,0,0,0.5)", marginBottom: 10 }}>i</div>
+          <p>You'll see buttons like this throughout the app.</p>
           <p style={{ marginTop: 10 }}>Tap them anytime you want to learn more about that section.</p>
         </div>
       ),

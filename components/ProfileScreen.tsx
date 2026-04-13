@@ -225,9 +225,9 @@ export default function ProfileScreen() {
       target: '[data-tour="profile-header"]',
       content: (
         <div>
-          <p style={{ fontWeight: 600, marginBottom: 10 }}>Fill out your profile</p>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Fill Out Your Profile</p>
           <p>The more complete your profile, the more accurate your targets, and the more useful your AI Coach becomes.</p>
-          <p style={{ marginTop: 10 }}>We are excited for you to get started.</p>
+          <p style={{ marginTop: 10 }}>We are excited for you to get started!</p>
         </div>
       ),
       disableBeacon: true,

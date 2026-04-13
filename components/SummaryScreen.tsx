@@ -500,7 +500,7 @@ export default function SummaryScreen() {
       disableBeacon: true,
       content: (
         <div>
-          <p style={{ fontWeight: 600, marginBottom: 10 }}>Your daily intake card</p>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Your Daily Intake Card</p>
           <p>This shows your calories, protein, carbs, and fat for today compared to your personal targets.</p>
           <p style={{ marginTop: 10 }}>The rings fill up as you log, so the more accurate your logging, the more useful this gets.</p>
         </div>
@@ -512,7 +512,7 @@ export default function SummaryScreen() {
       disableBeacon: true,
       content: (
         <div>
-          <p style={{ fontWeight: 600, marginBottom: 10 }}>Here is a quick read on how your week is going</p>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Here Is A Quick Read On How Your Week Is Going</p>
           <p>This shows you which days you logged, your averages, streaks, and any energy patterns that stand out.</p>
           <p style={{ marginTop: 10 }}>The more you log, the more insight this gives you.</p>
         </div>
@@ -524,7 +524,7 @@ export default function SummaryScreen() {
       disableBeacon: true,
       content: (
         <div>
-          <p style={{ fontWeight: 600, marginBottom: 10 }}>Meet your AI Coach</p>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Meet Your AI Coach</p>
           <p>Coach keeps an eye on your meals, workouts, and how you're feeling, to send you honest observations. No generic tips. Just something relevant to what you've actually been doing.</p>
         </div>
       ),
