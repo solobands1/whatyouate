@@ -25,6 +25,13 @@ export interface DailyNudgeSnapshot {
   workoutTypes?: string[];
 }
 
+export interface TodayMealEntry {
+  name: string;
+  time: string; // e.g. "8:45am"
+  calories: number;
+  protein: number;
+}
+
 export interface SmartNudgeContext {
   profile: UserProfile;
   todayCalories: number;
@@ -42,6 +49,9 @@ export interface SmartNudgeContext {
   streak: number;
   todayHasWorkout: boolean;
   recentFeelLogs: Array<{ ts: number; tag: string }>;
+  todayMeals: TodayMealEntry[];
+  lastMealTime: string | null;
+  mealsLoggedToday: number;
 }
 
 export interface NudgeData {
@@ -853,6 +863,29 @@ export function buildSmartNudgeContext(
   // Re-computing from meals can undercount when fetch limit cuts off early days.
   const streak = profile?.streak ?? computeStreakFromMeals(meals);
 
+  // Build today's meal list with timestamps for meal-timing awareness
+  const todayMealsFull = meals.filter(
+    (m) => dayKeyFromTs(m.ts) === todayKeyStr && m.status !== "failed" && m.analysisJson?.source !== "supplement"
+  ).sort((a, b) => a.ts - b.ts);
+
+  const formatMealTime = (ts: number) => {
+    const d = new Date(ts);
+    const h = d.getHours() % 12 || 12;
+    const m = String(d.getMinutes()).padStart(2, "0");
+    const period = d.getHours() < 12 ? "am" : "pm";
+    return `${h}:${m}${period}`;
+  };
+
+  const todayMeals: TodayMealEntry[] = todayMealsFull.map((m) => ({
+    name: m.analysisJson?.name ?? m.analysisJson?.detected_items?.[0]?.name ?? "Meal",
+    time: formatMealTime(m.ts),
+    calories: Math.round((m.analysisJson?.estimated_ranges?.calories_min ?? 0 + (m.analysisJson?.estimated_ranges?.calories_max ?? 0)) / 2),
+    protein: Math.round(((m.analysisJson?.estimated_ranges?.protein_g_min ?? 0) + (m.analysisJson?.estimated_ranges?.protein_g_max ?? 0)) / 2),
+  }));
+
+  const lastMealTime = todayMealsFull.length > 0 ? formatMealTime(todayMealsFull[todayMealsFull.length - 1].ts) : null;
+  const mealsLoggedToday = todayMealsFull.length;
+
   return {
     profile,
     todayCalories,
@@ -870,5 +903,8 @@ export function buildSmartNudgeContext(
     streak,
     todayHasWorkout,
     recentFeelLogs,
+    todayMeals,
+    lastMealTime,
+    mealsLoggedToday,
   };
 }

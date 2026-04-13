@@ -72,6 +72,7 @@ Rules:
 - No clichés: forbidden: "crush it", "you've got this", "fresh start", "stay on track", "hit your goal", "keep it up", "build muscle", "well done", "great job", "amazing", "nice work"
 - Don't repeat the same angle as recent nudges — avoid the same type AND the same thematic angle under a different type
 - If timeOfDay is "morning": frame as intention. If "afternoon": note there's still time. If "evening": brief and reflective.
+- MEAL TIMING AWARENESS: If "Meals logged today" and "Last meal logged at" are provided, use them to infer what meal is next. If it's afternoon and the last meal was before 11am with only 1 meal logged, the user likely hasn't had lunch yet — reference lunch, not dinner. If 2+ meals are logged by afternoon, dinner framing is appropriate. Never assume what meal comes next based on time alone — always cross-reference with what's actually been logged.
 - If nothing meaningful stands out, return null for message
 
 Return ONLY valid JSON with no other text:
@@ -142,6 +143,10 @@ function buildSmartPrompt(ctx: Record<string, unknown>): string {
   const todayCarbs = ctx.todayCarbs as number;
   const remCal = ctx.remainingCalories as number | null;
   const remPro = ctx.remainingProtein as number | null;
+  const todayMeals = ctx.todayMeals as Array<{ name: string; time: string; calories: number; protein: number }> | undefined;
+  const lastMealTime = ctx.lastMealTime as string | null | undefined;
+  const mealsLoggedToday = ctx.mealsLoggedToday as number | undefined ?? 0;
+
   if (todayCal > 0 || todayPro > 0) {
     lines.push(`Today so far (${ctx.timeOfDay}): ${todayCal} kcal / ${todayPro}g protein / ${todayFat}g fat / ${todayCarbs}g carbs`);
     if (remCal !== null || remPro !== null) {
@@ -149,6 +154,11 @@ function buildSmartPrompt(ctx: Record<string, unknown>): string {
       if (remCal !== null) parts.push(`${remCal} kcal remaining to target`);
       if (remPro !== null) parts.push(`${remPro}g protein remaining to target`);
       lines.push(`Still needed today: ${parts.join(" | ")}`);
+    }
+    if (todayMeals?.length) {
+      const mealStr = todayMeals.map((m) => `${m.time} ${m.name} (~${m.calories} kcal, ${m.protein}g protein)`).join(", ");
+      lines.push(`Meals logged today: ${mealStr}`);
+      if (lastMealTime) lines.push(`Last meal logged at: ${lastMealTime}. Meals logged today: ${mealsLoggedToday}`);
     }
   } else {
     lines.push(`Today so far (${ctx.timeOfDay}): nothing logged yet`);
