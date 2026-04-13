@@ -597,9 +597,27 @@ export default function SummaryScreen() {
     const windowKey = `${todayStr}_${win}`;
 
     if (smartNudgeFetchedRef.current.has(windowKey)) return;
-    smartNudgeFetchedRef.current.add(windowKey);
 
-    // Use saved DB nudge if one exists for this window — no API call needed
+    // Staleness check: if macros have drifted >15% since last nudge generation, refetch
+    const snapshotKey = `wya_nudge_snapshot_${windowKey}`;
+    const currentCals = Math.round((summaryMarkers.todayTotals.calories_min + summaryMarkers.todayTotals.calories_max) / 2);
+    const currentProt = Math.round((summaryMarkers.todayTotals.protein_g_min + summaryMarkers.todayTotals.protein_g_max) / 2);
+    const savedSnapshot = typeof window !== "undefined" ? localStorage.getItem(snapshotKey) : null;
+    let isStale = false;
+    if (savedSnapshot) {
+      try {
+        const { cal, prot } = JSON.parse(savedSnapshot);
+        const calDrift = cal > 0 ? Math.abs(currentCals - cal) / cal : 0;
+        const protDrift = prot > 0 ? Math.abs(currentProt - prot) / prot : 0;
+        isStale = calDrift > 0.15 || protDrift > 0.15;
+      } catch { /* ignore */ }
+    }
+
+    if (!isStale) {
+      smartNudgeFetchedRef.current.add(windowKey);
+    }
+
+    // Use saved DB nudge if one exists for this window and data isn't stale — no API call needed
     const existing = nudges.find((n) => {
       if (!n.created_at) return false;
       const d = new Date(n.created_at);
@@ -607,7 +625,7 @@ export default function SummaryScreen() {
       const h = d.getHours();
       return (h < 12 ? "morning" : h < 17 ? "afternoon" : "evening") === win;
     });
-    if (existing) {
+    if (existing && !isStale) {
       setSmartNudge({ message: existing.message, type: existing.type as NudgeType, generatedAt: existing.created_at ?? new Date().toISOString() });
       return;
     }
@@ -635,6 +653,9 @@ export default function SummaryScreen() {
           if (nudge.suggestions?.length) {
             localStorage.setItem(`wya_ai_nudge_${windowKey}_${nudge.type}_suggestions`, JSON.stringify(nudge.suggestions.slice(0, 3)));
           }
+          // Save macro snapshot so staleness can be detected on next render
+          localStorage.setItem(snapshotKey, JSON.stringify({ cal: currentCals, prot: currentProt }));
+          smartNudgeFetchedRef.current.add(windowKey);
           setSmartNudge({ message: nudge.message, type: nudge.type, action: nudge.action, suggestions: nudge.suggestions, generatedAt: new Date().toISOString() });
           if (user) {
             addNudge(user.id, nudge.type, nudge.message)
