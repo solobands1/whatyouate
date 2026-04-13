@@ -445,27 +445,51 @@ export default function InsightsScreen() {
   const insightsTourSteps = [
     {
       target: '[data-tour="insights-header"]',
-      content: "Patterns is your long-term view.\n\nWhile Insights shows you today and this week, Patterns shows you what's happening over time. Your macro averages, micronutrients, and energy trends get more useful the more you log!",
+      placement: "bottom" as const,
       disableBeacon: true,
+      content: (
+        <div>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Patterns is your long-term view.</p>
+          <p>While Insights shows you today and this week, Patterns shows you what's happening over time. Your macro averages, micronutrients, and energy trends get more useful the more you log.</p>
+        </div>
+      ),
     },
     {
       target: '[data-tour="insights-energy"]',
-      content: "Your Energy chart shows when you logged High Energy or Low Energy. Its position tells you the time of day (PM towards the top, AM towards the bottom).\n\nDays with no energy log show the grey line, which is your baseline (average energy is assumed).\n\nLook for patterns: When do you feel low, and what did you eat before that happened?",
+      placement: "auto" as const,
       disableBeacon: true,
+      content: (
+        <div>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Your Energy chart.</p>
+          <p>This shows when you logged High Energy or Low Energy. Its position tells you the time of day — PM towards the top, AM towards the bottom.</p>
+          <p style={{ marginTop: 10 }}>Days with no energy log show the grey line, which is your baseline (average energy is assumed).</p>
+          <p style={{ marginTop: 10 }}>Look for patterns: When do you feel low, and what did you eat before that happened.</p>
+        </div>
+      ),
     },
     {
       target: '[data-tour="insights-micro"]',
-      content: "These bars track your micronutrients over time.\n\nThey build up from your logged meals and supplements. Tap any nutrient to learn why it matters and where to get more of it from food!",
+      placement: "auto" as const,
       disableBeacon: true,
+      content: (
+        <div>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Your micronutrient bars.</p>
+          <p>These bars track your micronutrients over time. They build up from your logged meals and supplements.</p>
+          <p style={{ marginTop: 10 }}>Tap any nutrient to learn why it matters and where to get more of it from food.</p>
+        </div>
+      ),
     },
     {
       target: '[data-tour="insights-i-icon"]',
-      content: (
-        <span>
-          You'll see little <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 16, height: 16, borderRadius: "50%", background: "rgba(111,168,255,0.12)", border: "1px solid rgba(111,168,255,0.3)", fontSize: 10, fontWeight: 600, color: "rgba(111,168,255,0.8)", lineHeight: 1, verticalAlign: "middle", margin: "0 1px" }}>i</span> buttons like this throughout the app.<br /><br />Tap them anytime you want to learn more about that section.
-        </span>
-      ),
+      placement: "auto" as const,
       disableBeacon: true,
+      content: (
+        <div>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>The info button.</p>
+          <p>You'll see little <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 16, height: 16, borderRadius: "50%", background: "rgba(111,168,255,0.12)", border: "1px solid rgba(111,168,255,0.3)", fontSize: 10, fontWeight: 600, color: "rgba(111,168,255,0.8)", lineHeight: 1, verticalAlign: "middle", margin: "0 1px" }}>i</span> buttons like this throughout the app.</p>
+          <p style={{ marginTop: 10 }}>Tap them anytime you want to learn more about that section.</p>
+        </div>
+      ),
     },
   ] as Step[];
 
@@ -517,6 +541,8 @@ export default function InsightsScreen() {
         showSkipButton
         hideCloseButton
         disableOverlayClose
+        scrollToFirstStep
+        scrollOffset={80}
         callback={handleInsightsTour}
         locale={{
           skip: "Skip",

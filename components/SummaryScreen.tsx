@@ -496,19 +496,38 @@ export default function SummaryScreen() {
   const summaryTourSteps: Step[] = [
     {
       target: String.raw`[data-tour="summary-today"]`,
-      content: "Your daily intake card shows your calories, protein, carbs, and fat for today compared to your personal targets.\n\nThe rings fill up as you log, so the more accurate your logging, the more useful this gets!",
+      placement: "auto" as const,
       disableBeacon: true,
+      content: (
+        <div>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Your daily intake card.</p>
+          <p>This shows your calories, protein, carbs, and fat for today compared to your personal targets.</p>
+          <p style={{ marginTop: 10 }}>The rings fill up as you log, so the more accurate your logging, the more useful this gets.</p>
+        </div>
+      ),
     },
     {
       target: String.raw`[data-tour="summary-week"]`,
-      content: "Here is a quick read on how your week is going.\n\nThis shows you which days you logged, your averages, streaks, and any energy patterns that stand out.\n\nThe more you log, the more insight this gives you!",
+      placement: "auto" as const,
       disableBeacon: true,
+      content: (
+        <div>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Here is a quick read on how your week is going.</p>
+          <p>This shows you which days you logged, your averages, streaks, and any energy patterns that stand out.</p>
+          <p style={{ marginTop: 10 }}>The more you log, the more insight this gives you.</p>
+        </div>
+      ),
     },
     {
       target: String.raw`[data-tour="nudges-card"]`,
-      content: "Meet your AI coach!\n\nCoach keeps an eye on your meals, workouts, and how you're feeling, to send you one honest observation. No generic tips. Just something relevant to what you've actually been doing.",
-      spotlightPadding: 28,
+      placement: "top" as const,
       disableBeacon: true,
+      content: (
+        <div>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Meet your AI coach.</p>
+          <p>Coach keeps an eye on your meals, workouts, and how you're feeling, to send you one honest observation. No generic tips. Just something relevant to what you've actually been doing.</p>
+        </div>
+      ),
     },
   ];
 
@@ -1009,6 +1028,8 @@ export default function SummaryScreen() {
         showSkipButton
         hideCloseButton
         disableOverlayClose
+        scrollToFirstStep
+        scrollOffset={80}
         callback={handleSummaryTour}
         locale={{
           skip: "Skip",

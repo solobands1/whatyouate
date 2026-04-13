@@ -223,7 +223,13 @@ export default function ProfileScreen() {
   const profileTourSteps = [
     {
       target: '[data-tour="profile-header"]',
-      content: "Before you do anything, fill out your profile!\n\nThe more complete your profile, the more accurate your targets and the more useful your AI coach becomes. You can update it anytime.\n\nWe're excited for you to get started!",
+      content: (
+        <div>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Before you do anything, fill out your profile.</p>
+          <p>The more complete your profile, the more accurate your targets and the more useful your AI coach becomes. You can update it anytime.</p>
+          <p style={{ marginTop: 10 }}>We are excited for you to get started.</p>
+        </div>
+      ),
       disableBeacon: true,
       placement: "bottom" as const,
     }
@@ -499,6 +505,8 @@ export default function ProfileScreen() {
             showSkipButton
             hideCloseButton
             disableOverlayClose
+            scrollToFirstStep
+            scrollOffset={80}
             callback={handleProfileTour}
             locale={{
               skip: "Skip",

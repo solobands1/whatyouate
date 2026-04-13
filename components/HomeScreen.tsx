@@ -1167,24 +1167,48 @@ export default function HomeScreen() {
   const steps = [
     {
       target: '[data-tour="food-action"]',
-      content: "Logging your food is easy!\n\nTake a photo, scan a barcode, type it manually, or tap quick add to re-log something you've had before.",
+      placement: "auto" as const,
       disableBeacon: true,
+      content: (
+        <div>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Logging your food is easy.</p>
+          <p>Take a photo, scan a barcode, type it manually, or tap quick add to re-log something you've had before.</p>
+        </div>
+      ),
     },
     {
       target: '[data-tour="workout-buttons"]',
-      content: "Start and end your workouts to track your activities throughout the day!",
+      placement: "auto" as const,
       disableBeacon: true,
+      content: (
+        <div>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Track your workouts.</p>
+          <p>Start and end your workouts to track your activities throughout the day.</p>
+        </div>
+      ),
     },
     {
       target: '[data-tour="energy-buttons"]',
-      content: "The high and low energy buttons let you check in on how you're feeling throughout the day.\n\nThis will come in handy later!",
+      placement: "auto" as const,
       disableBeacon: true,
+      content: (
+        <div>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Check in on your energy.</p>
+          <p>The high and low energy buttons let you check in on how you're feeling throughout the day.</p>
+          <p style={{ marginTop: 10 }}>This will come in handy later.</p>
+        </div>
+      ),
     },
     {
       target: '[data-tour="nav-summary"]',
-      content: "Head to your Insights tab. That's where you'll see today's nutrition totals, your week at a glance, and a personal message from your AI coach based on what you've actually been eating.",
       placement: "top" as const,
       disableBeacon: true,
+      content: (
+        <div>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Head to your Insights tab.</p>
+          <p>That's where you'll see today's nutrition totals, your week at a glance, and a personal message from your AI coach based on what you've actually been eating.</p>
+        </div>
+      ),
     },
   ] as Step[];
 
@@ -1223,6 +1247,8 @@ export default function HomeScreen() {
           showSkipButton
           hideCloseButton
           disableOverlayClose
+          scrollToFirstStep
+          scrollOffset={80}
           callback={handleTourCallback}
           locale={{
             skip: "Skip",
