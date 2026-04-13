@@ -569,7 +569,7 @@ export default function ProfileScreen() {
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  className="rounded-full border border-primary/30 px-2.5 py-0.5 text-[10px] font-medium text-muted/60"
+                  className="rounded-full border border-primary/30 px-2.5 py-0.5 text-[10px] font-medium text-ink/80"
                   onClick={() => {
                     if (!user) return;
                     localStorage.removeItem(`wya_walkthrough_${user.id}`);
