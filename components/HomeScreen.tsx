@@ -1314,7 +1314,7 @@ export default function HomeScreen() {
               className="text-xs text-ink/55 underline underline-offset-2 transition hover:text-ink/70"
               onClick={() => setShowTourGate(false)}
             >
-              Explore on my own
+              Explore On My Own
             </button>
           </div>
         </div>
