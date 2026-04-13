@@ -923,7 +923,7 @@ export function buildSmartNudgeContext(
   const todayMeals: TodayMealEntry[] = todayMealsFull.map((m) => ({
     name: m.analysisJson?.name ?? m.analysisJson?.detected_items?.[0]?.name ?? "Meal",
     time: formatMealTime(m.ts),
-    calories: Math.round((m.analysisJson?.estimated_ranges?.calories_min ?? 0 + (m.analysisJson?.estimated_ranges?.calories_max ?? 0)) / 2),
+    calories: Math.round(((m.analysisJson?.estimated_ranges?.calories_min ?? 0) + (m.analysisJson?.estimated_ranges?.calories_max ?? 0)) / 2),
     protein: Math.round(((m.analysisJson?.estimated_ranges?.protein_g_min ?? 0) + (m.analysisJson?.estimated_ranges?.protein_g_max ?? 0)) / 2),
   }));
 
