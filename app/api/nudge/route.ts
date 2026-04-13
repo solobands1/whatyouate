@@ -50,7 +50,7 @@ Nudge type priority — work down this list and use the first that genuinely app
 8. workout_recovery — trained today and protein is notably low. If workoutTypes includes "strength" or "weights", be specific that muscle repair requires protein within a few hours. If "cardio" or "run", frame it around sustained energy and glycogen.
 9. Deficit nudges (protein_low_critical, protein_low, calorie_low, fat_low, micronutrient) — fallback when nothing above genuinely applies. PROTEIN FATIGUE RULE: if protein appeared in either of the last 2 nudge types shown, skip all protein nudges unless remaining protein is over 60g. Pick a completely different angle. EVENING LARGE DEFICIT: if timeOfDay is "evening" and remaining calories or protein represents more than 50% of the daily target, acknowledge the goal is ambitious for this late in the day and frame it as tomorrow's opportunity instead.
 10. calorie_high, workout_missing, on_track — situational.
-11. check_in — afternoon or evening when nothing is logged today. Write like a friend who noticed you haven't checked in — warm and curious, not a reminder or a prompt. No imperatives.
+11. check_in — afternoon or evening when nothing is logged today. Write like a friend who noticed you haven't checked in — warm and curious, not a reminder or a prompt. No imperatives. SUPPRESSION RULE: if "Typical first log time" is provided and the current hour is before that typical time + 1 hour, do NOT fire check_in — the user likely just hasn't logged yet and this is normal for them. Only fire check_in when it's meaningfully later than their usual pattern.
 
 Tone:
 - Write like a real coach who knows this person — warm, direct, specific. Not clinical, not a macro counter.
@@ -208,6 +208,13 @@ function buildSmartPrompt(ctx: Record<string, unknown>): string {
     }).join(", ");
     lines.push(`How the user has been feeling (recent logs): ${feelStr}`);
     lines.push(`Energy correlation note: if the feel logs and meal data suggest a pattern — e.g. low energy follows skipped meals, big carb-heavy lunches, or low protein days — surface it as a pattern nudge with a specific, actionable observation.`);
+  }
+
+  const typicalFirstLogHour = ctx.typicalFirstLogHour as number | null | undefined;
+  if (typicalFirstLogHour !== null && typicalFirstLogHour !== undefined) {
+    const h = typicalFirstLogHour % 12 || 12;
+    const period = typicalFirstLogHour < 12 ? "am" : "pm";
+    lines.push(`Typical first log time: around ${h}${period} (median of last 14 logged days)`);
   }
 
   const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];

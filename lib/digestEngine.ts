@@ -62,6 +62,7 @@ export interface SmartNudgeContext {
   todayMeals: TodayMealEntry[];
   lastMealTime: string | null;
   mealsLoggedToday: number;
+  typicalFirstLogHour: number | null; // median hour of first meal across recent days
 }
 
 export interface NudgeData {
@@ -929,6 +930,28 @@ export function buildSmartNudgeContext(
   const lastMealTime = todayMealsFull.length > 0 ? formatMealTime(todayMealsFull[todayMealsFull.length - 1].ts) : null;
   const mealsLoggedToday = todayMealsFull.length;
 
+  // Compute typical first-log hour from last 14 days (median) to detect late loggers
+  const firstLogHours: number[] = [];
+  const pastMeals = meals.filter(
+    (m) => m.ts < Date.now() && dayKeyFromTs(m.ts) !== todayKeyStr && m.status !== "failed" && m.analysisJson?.source !== "supplement"
+  );
+  const mealsByDay = new Map<string, number[]>();
+  pastMeals.forEach((m) => {
+    const key = dayKeyFromTs(m.ts);
+    if (!mealsByDay.has(key)) mealsByDay.set(key, []);
+    mealsByDay.get(key)!.push(new Date(m.ts).getHours());
+  });
+  const recentDays = [...mealsByDay.keys()].sort().slice(-14);
+  recentDays.forEach((key) => {
+    const hours = mealsByDay.get(key)!;
+    firstLogHours.push(Math.min(...hours));
+  });
+  let typicalFirstLogHour: number | null = null;
+  if (firstLogHours.length >= 3) {
+    const sorted = [...firstLogHours].sort((a, b) => a - b);
+    typicalFirstLogHour = sorted[Math.floor(sorted.length / 2)];
+  }
+
   return {
     profile,
     todayCalories,
@@ -950,5 +973,6 @@ export function buildSmartNudgeContext(
     todayMeals,
     lastMealTime,
     mealsLoggedToday,
+    typicalFirstLogHour,
   };
 }
