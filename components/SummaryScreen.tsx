@@ -496,17 +496,18 @@ export default function SummaryScreen() {
   const summaryTourSteps: Step[] = [
     {
       target: String.raw`[data-tour="summary-today"]`,
-      content: "This is your daily intake card. It shows your calories, protein, carbs, and fat for today compared to your personal targets. The rings fill up as you log — so the more accurate your logging, the more useful this gets.",
+      content: "Your daily intake card shows your calories, protein, carbs, and fat for today compared to your personal targets.\n\nThe rings fill up as you log, so the more accurate your logging, the more useful this gets!",
       disableBeacon: true,
     },
     {
       target: String.raw`[data-tour="summary-week"]`,
-      content: "This Week gives you a quick read on how your week is going. The dots at the top show which days you logged. Below that you'll see your averages, streak, and any energy patterns that stand out.\n\nThe more you log — meals, workouts, and energy check-ins — the more insight this gives you.",
+      content: "Here is a quick read on how your week is going.\n\nThis shows you which days you logged, your averages, streaks, and any energy patterns that stand out.\n\nThe more you log, the more insight this gives you!",
       disableBeacon: true,
     },
     {
       target: String.raw`[data-tour="nudges-card"]`,
-      content: "Meet your AI coach. It reads everything you log — meals, workouts, how you're feeling — and sends you one honest, specific observation at a time.\n\nNo generic tips. Just something relevant to what you've actually been doing.",
+      content: "Meet your AI coach!\n\nCoach keeps an eye on your meals, workouts, and how you're feeling, to send you one honest observation. No generic tips. Just something relevant to what you've actually been doing.",
+      spotlightPadding: 28,
       disableBeacon: true,
     },
   ];

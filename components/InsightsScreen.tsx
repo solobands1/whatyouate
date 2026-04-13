@@ -445,22 +445,26 @@ export default function InsightsScreen() {
   const insightsTourSteps = [
     {
       target: '[data-tour="insights-header"]',
-      content: "Welcome to Patterns — this is your long-term view. While Insights shows you today and this week, Patterns shows you what's happening over time: your macro averages, micronutrients, and energy trends.\n\nIt gets more useful the more you log.",
+      content: "Patterns is your long-term view.\n\nWhile Insights shows you today and this week, Patterns shows you what's happening over time. Your macro averages, micronutrients, and energy trends get more useful the more you log!",
       disableBeacon: true,
     },
     {
       target: '[data-tour="insights-energy"]',
-      content: "This is your Energy chart. Each dot shows when you logged High Energy or Low Energy, and its position tells you the time of day — PM towards the top, AM towards the bottom.\n\nThe grey line is the baseline. Days with no log just show the line, meaning average energy is assumed. Look for patterns — when do you feel low, and what did you eat before it?",
+      content: "Your Energy chart shows when you logged High Energy or Low Energy. Its position tells you the time of day (PM towards the top, AM towards the bottom).\n\nDays with no energy log show the grey line, which is your baseline (average energy is assumed).\n\nLook for patterns: When do you feel low, and what did you eat before that happened?",
       disableBeacon: true,
     },
     {
       target: '[data-tour="insights-micro"]',
-      content: "These bars track your micronutrients over time — things like Iron, Magnesium, Vitamin D, and Omega-3. They build up from your logged meals and supplements.\n\nTap any nutrient to learn why it matters and where to get more of it from food.",
+      content: "These bars track your micronutrients over time.\n\nThey build up from your logged meals and supplements. Tap any nutrient to learn why it matters and where to get more of it from food!",
       disableBeacon: true,
     },
     {
       target: '[data-tour="insights-i-icon"]',
-      content: "You'll see little i buttons like this throughout the app. Tap them anytime you want a plain-English explanation of what a section is showing you and why it matters.",
+      content: (
+        <span>
+          You'll see little <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 16, height: 16, borderRadius: "50%", background: "rgba(111,168,255,0.12)", border: "1px solid rgba(111,168,255,0.3)", fontSize: 10, fontWeight: 600, color: "rgba(111,168,255,0.8)", lineHeight: 1, verticalAlign: "middle", margin: "0 1px" }}>i</span> buttons like this throughout the app.<br /><br />Tap them anytime you want to learn more about that section.
+        </span>
+      ),
       disableBeacon: true,
     },
   ] as Step[];

@@ -1167,17 +1167,22 @@ export default function HomeScreen() {
   const steps = [
     {
       target: '[data-tour="food-action"]',
-      content: "This is where you log what you eat. Snap a photo and the AI identifies it automatically, scan a barcode for packaged foods, type it manually, or tap Quick Add to re-log something you've had before.\n\nThe more you log, the smarter your coach gets.",
+      content: "Logging your food is easy!\n\nTake a photo, scan a barcode, type it manually, or tap quick add to re-log something you've had before.",
       disableBeacon: true,
     },
     {
-      target: '[data-tour="workout-markers"]',
-      content: "Use Start Workout and End Workout to track your training sessions. The High Energy and Low Energy buttons let you check in on how you're feeling throughout the day.\n\nYour coach uses all of this together to spot patterns — like feeling drained on days you ate lighter.",
+      target: '[data-tour="workout-buttons"]',
+      content: "Start and end your workouts to track your activities throughout the day!",
+      disableBeacon: true,
+    },
+    {
+      target: '[data-tour="energy-buttons"]',
+      content: "The high and low energy buttons let you check in on how you're feeling throughout the day.\n\nThis will come in handy later!",
       disableBeacon: true,
     },
     {
       target: '[data-tour="nav-summary"]',
-      content: "Tap here to head to your Insights tab. That's where you'll see today's nutrition totals, your week at a glance, and a personal message from your AI coach based on what you've actually been eating.",
+      content: "Head to your Insights tab. That's where you'll see today's nutrition totals, your week at a glance, and a personal message from your AI coach based on what you've actually been eating.",
       placement: "top" as const,
       disableBeacon: true,
     },
@@ -1728,7 +1733,7 @@ export default function HomeScreen() {
           </div>
           </div>
           <div className="flex flex-col items-center gap-1.5" data-tour="workout-markers">
-            <div className="flex w-[84%] text-xs rounded-xl shadow-[0_4px_12px_rgba(15,23,42,0.08),0_0_8px_rgba(111,168,255,0.12)] overflow-hidden">
+            <div className="flex w-[84%] text-xs rounded-xl shadow-[0_4px_12px_rgba(15,23,42,0.08),0_0_8px_rgba(111,168,255,0.12)] overflow-hidden" data-tour="workout-buttons">
               <button
                 type="button"
                 className="flex flex-1 items-center justify-center rounded-l-xl rounded-r-none border border-ink/10 bg-white px-3 py-1.5 text-center font-normal text-ink/60 transition-all duration-150 hover:bg-ink/5 active:translate-y-[1px]"
@@ -1744,24 +1749,22 @@ export default function HomeScreen() {
                 End Workout
               </button>
             </div>
-            {!isDemoMode && (
-              <div className="flex w-[60%] text-xs rounded-xl shadow-[0_4px_12px_rgba(15,23,42,0.08),0_0_8px_rgba(111,168,255,0.12)] overflow-hidden">
-                <button
-                  type="button"
-                  className="flex flex-1 items-center justify-center rounded-l-xl rounded-r-none border border-ink/10 bg-white px-3 py-1.5 text-center font-normal text-ink/60 transition-all duration-150 hover:bg-ink/5 active:scale-[0.96] active:bg-primary/10"
-                  onClick={() => { handleFeelLog("good_energy", Date.now()); }}
-                >
-                  High Energy
-                </button>
-                <button
-                  type="button"
-                  className="flex flex-1 items-center justify-center rounded-r-xl rounded-l-none border border-l-0 border-ink/10 bg-white px-3 py-1.5 text-center font-normal text-ink/60 transition-all duration-150 hover:bg-ink/5 active:scale-[0.96] active:bg-primary/10"
-                  onClick={() => { handleFeelLog("low_energy", Date.now()); }}
-                >
-                  Low Energy
-                </button>
-              </div>
-            )}
+            <div className="flex w-[60%] text-xs rounded-xl shadow-[0_4px_12px_rgba(15,23,42,0.08),0_0_8px_rgba(111,168,255,0.12)] overflow-hidden" data-tour="energy-buttons">
+              <button
+                type="button"
+                className="flex flex-1 items-center justify-center rounded-l-xl rounded-r-none border border-ink/10 bg-white px-3 py-1.5 text-center font-normal text-ink/60 transition-all duration-150 hover:bg-ink/5 active:scale-[0.96] active:bg-primary/10"
+                onClick={() => { if (!isDemoMode) handleFeelLog("good_energy", Date.now()); }}
+              >
+                High Energy
+              </button>
+              <button
+                type="button"
+                className="flex flex-1 items-center justify-center rounded-r-xl rounded-l-none border border-l-0 border-ink/10 bg-white px-3 py-1.5 text-center font-normal text-ink/60 transition-all duration-150 hover:bg-ink/5 active:scale-[0.96] active:bg-primary/10"
+                onClick={() => { if (!isDemoMode) handleFeelLog("low_energy", Date.now()); }}
+              >
+                Low Energy
+              </button>
+            </div>
             {workout.activeWorkout && (
               <p className="text-center text-[11px] text-muted/60">Workout in progress</p>
             )}
