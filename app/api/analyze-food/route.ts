@@ -72,7 +72,12 @@ async function analyzeWithOpenAI(imageBase64: string, model: string, apiKey: str
 
     const data = await response.json();
     const content = data?.choices?.[0]?.message?.content ?? "";
-    return extractJson(content) ?? safeFallbackAnalysis();
+    const parsed = extractJson(content);
+    if (!parsed) {
+      console.error("[analyze-food] OpenAI returned non-JSON:", content.slice(0, 200));
+      throw new Error("OpenAI returned non-JSON response");
+    }
+    return parsed;
   } finally {
     clearTimeout(timeoutId);
   }
@@ -117,7 +122,12 @@ async function analyzeWithAnthropic(imageBase64: string, model: string, apiKey: 
 
     const data = await response.json();
     const responseText = data?.content?.[0]?.text ?? "";
-    return extractJson(responseText) ?? safeFallbackAnalysis();
+    const parsed = extractJson(responseText);
+    if (!parsed) {
+      console.error("[analyze-food] Anthropic returned non-JSON:", responseText.slice(0, 200));
+      throw new Error("Anthropic returned non-JSON response");
+    }
+    return parsed;
   } finally {
     clearTimeout(timeoutId);
   }
