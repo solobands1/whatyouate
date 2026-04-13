@@ -574,9 +574,9 @@ export default function ProfileScreen() {
                     if (!user) return;
                     localStorage.removeItem(`wya_walkthrough_${user.id}`);
                     localStorage.removeItem(`wya_walkthrough_gate_${user.id}`);
-                    localStorage.setItem(`wya_demo_mode_${user.id}`, "true");
-                    localStorage.setItem(`wya_walkthrough_active_${user.id}`, "true");
-                    localStorage.setItem(`wya_walkthrough_stage_${user.id}`, "home");
+                    localStorage.removeItem(`wya_walkthrough_active_${user.id}`);
+                    localStorage.removeItem(`wya_walkthrough_stage_${user.id}`);
+                    localStorage.removeItem(`wya_demo_mode_${user.id}`);
                     router.push("/");
                   }}
                 >

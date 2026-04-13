@@ -934,9 +934,8 @@ export default function HomeScreen() {
       setShowTourGate(false);
       return;
     }
-    // If user has meals, they're not new — skip the tour gate regardless of localStorage
-    const hasMeals = ctxMeals.some((m) => m.analysisJson?.source !== "supplement" && m.status !== "failed");
-    if (!seen && !active && !gateSeen && !hasMeals) {
+    // Show gate if not yet seen — works for new users and replays (replay clears both keys)
+    if (!seen && !active && !gateSeen) {
       localStorage.setItem(gateKey, "true");
       setShowTourGate(true);
     }

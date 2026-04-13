@@ -839,7 +839,7 @@ export default function InsightsScreen() {
       </div>
 
       {/* Paywall overlay — fixed but stops above the nav so nav stays clickable */}
-      {trial.isFree && (
+      {trial.isFree && !isDemoMode && (
         <div className="fixed inset-x-0 top-0 z-20 flex flex-col items-center justify-center px-8 text-center" style={{ bottom: "73px" }}>
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-ink/8 mb-5">
             <svg viewBox="0 0 24 24" className="h-7 w-7 text-ink/40" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">

@@ -1200,7 +1200,7 @@ export default function SummaryScreen() {
             </>
           ) : dayCount === 0 ? (
             <p className="mt-3 text-sm text-muted/60">Log your first meal and I'll start building your picture.</p>
-          ) : trial.isFree ? (
+          ) : trial.isFree && !isDemoMode ? (
             <button
               type="button"
               onClick={openUpgradeModal}
@@ -1299,7 +1299,7 @@ export default function SummaryScreen() {
                   </span>
                   <p className="text-sm text-primary/70 font-medium">Coach is thinking…</p>
                 </div>
-              ) : smartNudge && trial.isFree ? (
+              ) : smartNudge && trial.isFree && !isDemoMode ? (
                 /* Expired trial — show teaser with blur */
                 <div className="relative overflow-hidden rounded-xl border border-primary/30 bg-primary/5 px-4 py-3">
                   <p className="text-sm font-medium text-ink/90 line-clamp-1">
