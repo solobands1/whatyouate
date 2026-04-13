@@ -32,6 +32,15 @@ export interface TodayMealEntry {
   protein: number;
 }
 
+export interface WeekSummary {
+  weekLabel: string; // e.g. "2 weeks ago"
+  daysLogged: number;
+  avgCalories: number;
+  avgProtein: number;
+  avgCarbs: number;
+  avgFat: number;
+}
+
 export interface SmartNudgeContext {
   profile: UserProfile;
   todayCalories: number;
@@ -43,6 +52,7 @@ export interface SmartNudgeContext {
   remainingCalories: number | null;
   remainingProtein: number | null;
   last7Days: DailyNudgeSnapshot[];
+  priorWeeks: WeekSummary[];
   timeOfDay: "morning" | "afternoon" | "evening";
   recentFoods: string[];
   recentNudges: string[];
@@ -829,6 +839,39 @@ export function buildSmartNudgeContext(
   const todayKeyStr = dayKeyFromTs(Date.now());
   // Fetch 8 days so after filtering today we always have 7 full days of history
   const allDays = summarizeWeek(meals, 8).filter((d) => d.dateKey !== todayKeyStr);
+
+  // Build prior weeks summary (weeks 1-3 before current week) for longitudinal pattern detection
+  const priorWeeks: WeekSummary[] = [];
+  for (let weekOffset = 1; weekOffset <= 3; weekOffset++) {
+    const weekStart = Date.now() - (weekOffset * 7 + 7) * 24 * 60 * 60 * 1000;
+    const weekEnd = Date.now() - weekOffset * 7 * 24 * 60 * 60 * 1000;
+    const weekMeals = meals.filter(
+      (m) => m.ts >= weekStart && m.ts < weekEnd && m.status !== "failed" && m.analysisJson?.source !== "supplement"
+    );
+    if (weekMeals.length === 0) continue;
+    const daysInWeek = new Set(weekMeals.map((m) => dayKeyFromTs(m.ts))).size;
+    const totals = weekMeals.reduce(
+      (acc, m) => {
+        const r = m.analysisJson?.estimated_ranges;
+        if (!r) return acc;
+        acc.cal += (r.calories_min + r.calories_max) / 2;
+        acc.prot += (r.protein_g_min + r.protein_g_max) / 2;
+        acc.carbs += (r.carbs_g_min + r.carbs_g_max) / 2;
+        acc.fat += (r.fat_g_min + r.fat_g_max) / 2;
+        return acc;
+      },
+      { cal: 0, prot: 0, carbs: 0, fat: 0 }
+    );
+    const d = daysInWeek || 1;
+    priorWeeks.push({
+      weekLabel: weekOffset === 1 ? "last week" : weekOffset === 2 ? "2 weeks ago" : "3 weeks ago",
+      daysLogged: daysInWeek,
+      avgCalories: Math.round(totals.cal / d),
+      avgProtein: Math.round(totals.prot / d),
+      avgCarbs: Math.round(totals.carbs / d),
+      avgFat: Math.round(totals.fat / d),
+    });
+  }
   const last7Days: DailyNudgeSnapshot[] = allDays.map((d) => {
     const wk = workoutsByDay.get(d.dateKey);
     const cal = Math.round((d.totals.calories_min + d.totals.calories_max) / 2);
@@ -897,6 +940,7 @@ export function buildSmartNudgeContext(
     remainingCalories,
     remainingProtein,
     last7Days,
+    priorWeeks,
     timeOfDay,
     recentFoods,
     recentNudges,

@@ -42,7 +42,7 @@ const SMART_NUDGE_SYSTEM_PROMPT = `You are a warm, sharp nutrition coach. You ha
 Nudge type priority — work down this list and use the first that genuinely applies:
 1. win — a specific, earned observation: a streak milestone, a clear improvement, or something that's visibly working. Only fire if the data actually shows it. No generic praise.
 2. momentum — forward-looking when there's an active streak (3+ days). "You've built X solid days — this is when habits start to stick." More motivating than a backward-looking win.
-3. pattern — something visible across 2 or more data points the user likely hasn't noticed: a day-of-week gap, a timing trend (light mornings, heavy evenings), a correlation with workouts. Must cite something specific. Do NOT fire on a single data point.
+3. pattern — something visible across 2 or more data points the user likely hasn't noticed: a day-of-week gap, a timing trend (light mornings, heavy evenings), a correlation with workouts, OR a multi-week trend (e.g. protein has been under target 3 weeks running, calories trending up/down week-over-week, logging consistency improving or dropping). If prior week data is provided, cross-reference it. A multi-week observation is higher signal than a single-week one. Must cite something specific — name the numbers or the days. Do NOT fire on a single data point.
 4. meal_timing — fires when it's morning and nothing is logged yet. Frame around the first meal specifically — not a general "today" goal. "Starting with X sets up your afternoon without the energy dip." Do NOT infer front/back-heavy patterns from daily totals alone — you can't see meal timing within a day.
 5. food_insight — one practical food fact tied to what they're currently low on. Actionable, not trivia.
 6. variety — fires when the same foods appear repeatedly across the last 7 days. Suggest rotation for different nutrient profiles.
@@ -180,6 +180,14 @@ function buildSmartPrompt(ctx: Record<string, unknown>): string {
   const foods = ctx.recentFoods as string[] | undefined;
   if (foods?.length) {
     lines.push(`Foods logged in the last 3-4 days (excluding today): ${foods.slice(0, 15).join(", ")}`);
+  }
+
+  const priorWeeks = ctx.priorWeeks as Array<{ weekLabel: string; daysLogged: number; avgCalories: number; avgProtein: number; avgCarbs: number; avgFat: number }> | undefined;
+  if (priorWeeks?.length) {
+    lines.push(`Prior weeks (avg per logged day | days logged):`);
+    priorWeeks.forEach((w) => {
+      lines.push(`  ${w.weekLabel}: ${w.avgCalories} kcal / ${w.avgProtein}g protein / ${w.avgCarbs}g carbs / ${w.avgFat}g fat — ${w.daysLogged} days logged`);
+    });
   }
 
   const recent = ctx.recentNudges as string[] | undefined;
