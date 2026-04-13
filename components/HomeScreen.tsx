@@ -1171,7 +1171,7 @@ export default function HomeScreen() {
       disableBeacon: true,
       content: (
         <div>
-          <p style={{ fontWeight: 600, marginBottom: 10 }}>Logging your food is easy.</p>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Logging your food is easy</p>
           <p>Take a photo, scan a barcode, type it manually, or tap quick add to re-log something you've had before.</p>
         </div>
       ),
@@ -1182,7 +1182,7 @@ export default function HomeScreen() {
       disableBeacon: true,
       content: (
         <div>
-          <p style={{ fontWeight: 600, marginBottom: 10 }}>Track your workouts.</p>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Track your workouts</p>
           <p>Start and end your workouts to track your activities throughout the day.</p>
         </div>
       ),
@@ -1193,7 +1193,7 @@ export default function HomeScreen() {
       disableBeacon: true,
       content: (
         <div>
-          <p style={{ fontWeight: 600, marginBottom: 10 }}>Check in on your energy.</p>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Check in on your energy</p>
           <p>The high and low energy buttons let you check in on how you're feeling throughout the day.</p>
           <p style={{ marginTop: 10 }}>This will come in handy later.</p>
         </div>
@@ -1205,7 +1205,7 @@ export default function HomeScreen() {
       disableBeacon: true,
       content: (
         <div>
-          <p style={{ fontWeight: 600, marginBottom: 10 }}>Head to your Insights tab.</p>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Head to your Insights tab</p>
           <p>That's where you'll see today's nutrition totals, your week at a glance, and a personal message from your AI coach based on what you've actually been eating.</p>
         </div>
       ),

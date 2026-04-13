@@ -449,7 +449,7 @@ export default function InsightsScreen() {
       disableBeacon: true,
       content: (
         <div>
-          <p style={{ fontWeight: 600, marginBottom: 10 }}>Patterns is your long-term view.</p>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Patterns is your long-term view</p>
           <p>While Insights shows you today and this week, Patterns shows you what's happening over time. Your macro averages, micronutrients, and energy trends get more useful the more you log.</p>
         </div>
       ),
@@ -460,10 +460,10 @@ export default function InsightsScreen() {
       disableBeacon: true,
       content: (
         <div>
-          <p style={{ fontWeight: 600, marginBottom: 10 }}>Your Energy chart.</p>
-          <p>This shows when you logged High Energy or Low Energy. Its position tells you the time of day — PM towards the top, AM towards the bottom.</p>
-          <p style={{ marginTop: 10 }}>Days with no energy log show the grey line, which is your baseline (average energy is assumed).</p>
-          <p style={{ marginTop: 10 }}>Look for patterns: When do you feel low, and what did you eat before that happened.</p>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Your Energy chart</p>
+          <p>This shows when you logged High Energy or Low Energy.</p>
+          <p style={{ marginTop: 10 }}>Its position tells you the time of day. Days with no energy log show the grey line, which is your baseline.</p>
+          <p style={{ marginTop: 10 }}>Look for patterns: When do you feel low energy, and what did you eat before that happened?</p>
         </div>
       ),
     },
@@ -473,7 +473,7 @@ export default function InsightsScreen() {
       disableBeacon: true,
       content: (
         <div>
-          <p style={{ fontWeight: 600, marginBottom: 10 }}>Your micronutrient bars.</p>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Your micronutrient bars</p>
           <p>These bars track your micronutrients over time. They build up from your logged meals and supplements.</p>
           <p style={{ marginTop: 10 }}>Tap any nutrient to learn why it matters and where to get more of it from food.</p>
         </div>
@@ -481,12 +481,12 @@ export default function InsightsScreen() {
     },
     {
       target: '[data-tour="insights-i-icon"]',
-      placement: "auto" as const,
+      placement: "top" as const,
       disableBeacon: true,
       content: (
         <div>
-          <p style={{ fontWeight: 600, marginBottom: 10 }}>The info button.</p>
-          <p>You'll see little <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 16, height: 16, borderRadius: "50%", background: "rgba(111,168,255,0.12)", border: "1px solid rgba(111,168,255,0.3)", fontSize: 10, fontWeight: 600, color: "rgba(111,168,255,0.8)", lineHeight: 1, verticalAlign: "middle", margin: "0 1px" }}>i</span> buttons like this throughout the app.</p>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>The info button</p>
+          <p>You'll see <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 20, height: 20, borderRadius: "50%", background: "rgba(111,168,255,0.12)", border: "1px solid rgba(111,168,255,0.3)", fontSize: 12, fontWeight: 600, color: "rgba(111,168,255,0.9)", lineHeight: 1, verticalAlign: "middle", margin: "0 2px" }}>i</span> buttons like this throughout the app.</p>
           <p style={{ marginTop: 10 }}>Tap them anytime you want to learn more about that section.</p>
         </div>
       ),
@@ -578,7 +578,7 @@ export default function InsightsScreen() {
           </div>
         </header>
 
-        <Card data-tour="insights-energy">
+        <Card>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <p className="text-xs uppercase tracking-wide text-muted/70">Macros</p>
@@ -682,7 +682,7 @@ export default function InsightsScreen() {
         </Card>
 
 
-        <Card className="mt-3 py-3">
+        <Card className="mt-3 py-3" data-tour="insights-energy">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <p className="text-xs uppercase tracking-wide text-muted/70">Energy</p>
