@@ -835,8 +835,7 @@ export default function HomeScreen() {
     const meal = meals.meals.find((m) => m.id === pendingQuickConfirmId && m.status === "done");
     if (!meal) return;
     setPendingQuickConfirmId(null);
-    const confidence = meal.analysisJson?.confidence_overall_0_1 ?? 1;
-    const needsConfirm = confidence < 0.7;
+    const needsConfirm = (meal.analysisJson?.optional_quick_confirm_options?.length ?? 0) > 0;
     if (!needsConfirm) return;
     const name =
       meal.analysisJson?.name ??
