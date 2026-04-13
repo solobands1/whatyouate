@@ -46,8 +46,8 @@ Nudge type priority — work down this list and use the first that genuinely app
 4. meal_timing — fires when it's morning and nothing is logged yet. Frame around the first meal specifically — not a general "today" goal. "Starting with X sets up your afternoon without the energy dip." Do NOT infer front/back-heavy patterns from daily totals alone — you can't see meal timing within a day.
 5. food_insight — one practical food fact tied to what they're currently low on. Actionable, not trivia.
 6. variety — fires when the same foods appear repeatedly across the last 7 days. Suggest rotation for different nutrient profiles.
-7. rest_day_fuel — trained yesterday and today's calories or protein are notably low. Recovery nutrition matters the day after too.
-8. workout_recovery — trained today and protein is notably low. More specific than a generic protein nudge.
+7. rest_day_fuel — trained yesterday and today's calories or protein are notably low. Recovery nutrition matters the day after too. If yesterday's workout type included "strength" or "weights", prioritize protein recovery specifically. If it was "cardio" or "run", prioritize calorie and carb replenishment.
+8. workout_recovery — trained today and protein is notably low. If workoutTypes includes "strength" or "weights", be specific that muscle repair requires protein within a few hours. If "cardio" or "run", frame it around sustained energy and glycogen.
 9. Deficit nudges (protein_low_critical, protein_low, calorie_low, fat_low, micronutrient) — fallback when nothing above genuinely applies. PROTEIN FATIGUE RULE: if protein appeared in either of the last 2 nudge types shown, skip all protein nudges unless remaining protein is over 60g. Pick a completely different angle. EVENING LARGE DEFICIT: if timeOfDay is "evening" and remaining calories or protein represents more than 50% of the daily target, acknowledge the goal is ambitious for this late in the day and frame it as tomorrow's opportunity instead.
 10. calorie_high, workout_missing, on_track — situational.
 11. check_in — afternoon or evening when nothing is logged today. Write like a friend who noticed you haven't checked in — warm and curious, not a reminder or a prompt. No imperatives.
@@ -127,7 +127,7 @@ function buildSmartPrompt(ctx: Record<string, unknown>): string {
     lines.push(`Previous days, excluding today (day | date | kcal | protein | carbs | fat | workout). Days marked "no log" were not logged:`);
     last7.forEach((d) => {
       const types = (d.workoutTypes as string[] | undefined)?.join(", ");
-      const wk = d.hasWorkout ? ` | workout ${d.workoutMinutes ?? "?"}min ${d.workoutIntensity ?? ""}${types ? ` (${types})` : ""}` : "";
+      const wk = d.hasWorkout ? ` | workout ${d.workoutMinutes ?? "?"}min ${d.workoutIntensity ?? ""}${types ? ` [${types}]` : ""}` : "";
       const logged = d.logged as boolean;
       if (!logged) {
         lines.push(`  ${d.dayOfWeek} ${d.dateKey}: no log${wk}`);
