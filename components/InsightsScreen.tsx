@@ -77,10 +77,11 @@ export default function InsightsScreen() {
   const [runInsightsTour, setRunInsightsTour] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [feelLogs, setFeelLogs] = useState<FeelLog[]>([]);
+  const [feelLogsReady, setFeelLogsReady] = useState(false);
 
   useEffect(() => {
     if (!user) return;
-    getFeelLogs(user.id, 30).then(setFeelLogs).catch(() => {});
+    getFeelLogs(user.id, 30).then((logs) => { setFeelLogs(logs); setFeelLogsReady(true); }).catch(() => { setFeelLogsReady(true); });
   }, [user]);
 
   const demoFeelLogs = useMemo<FeelLog[]>(() => {
@@ -518,7 +519,7 @@ export default function InsightsScreen() {
 
   if (!user) return null;
 
-  if (loadingData) {
+  if (loadingData || (!isDemoMode && !feelLogsReady)) {
     return (
       <div className="min-h-screen bg-surface">
         <div className="mx-auto flex min-h-screen max-w-md flex-col px-5 pb-24 pt-7">

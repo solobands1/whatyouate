@@ -1182,7 +1182,7 @@ export default function HomeScreen() {
       content: (
         <div>
           <p style={{ fontWeight: 600, marginBottom: 10 }}>Track Your Workouts</p>
-          <p>Start and end your workouts to track your activities throughout the day.</p>
+          <p>Start and end your activities to track them throughout the day.</p>
         </div>
       ),
     },
@@ -1344,7 +1344,7 @@ export default function HomeScreen() {
                     className="flex w-full flex-col items-start rounded-xl bg-primary px-4 py-3 text-left transition hover:bg-primary/90"
                     onClick={workout.handleStartWorkout}
                   >
-                    <span className="text-sm font-semibold text-white">Start Workout</span>
+                    <span className="text-sm font-semibold text-white">Start Activity</span>
                     <span className="mt-0.5 text-xs text-white/70">Begin tracking time</span>
                   </button>
                   <button
@@ -1766,14 +1766,14 @@ export default function HomeScreen() {
                 className="flex flex-1 items-center justify-center rounded-l-xl rounded-r-none border border-ink/10 bg-white px-3 py-1.5 text-center font-normal text-ink/60 transition-all duration-150 hover:bg-ink/5 active:translate-y-[1px]"
                 onClick={() => workout.setShowStartWorkoutModal(true)}
               >
-                Start Workout
+                Start Activity
               </button>
               <button
                 type="button"
                 className="flex flex-1 items-center justify-center rounded-r-xl rounded-l-none border border-l-0 border-ink/10 bg-white px-3 py-1.5 text-center font-normal text-ink/60 transition-all duration-150 hover:bg-ink/5 active:translate-y-[1px]"
                 onClick={() => workout.setShowEndWorkoutModal(true)}
               >
-                End Workout
+                End Activity
               </button>
             </div>
             <div className="flex w-[60%] text-xs rounded-xl shadow-[0_4px_12px_rgba(15,23,42,0.08),0_0_8px_rgba(111,168,255,0.12)] overflow-hidden" data-tour="energy-buttons">
@@ -1782,14 +1782,14 @@ export default function HomeScreen() {
                 className="flex flex-1 items-center justify-center rounded-l-xl rounded-r-none border border-ink/10 bg-white px-3 py-1.5 text-center font-normal text-ink/60 transition-all duration-150 hover:bg-ink/5 active:scale-[0.96] active:bg-primary/10"
                 onClick={() => { if (!isDemoMode) handleFeelLog("good_energy", Date.now()); }}
               >
-                High Energy
+                Log High Energy
               </button>
               <button
                 type="button"
                 className="flex flex-1 items-center justify-center rounded-r-xl rounded-l-none border border-l-0 border-ink/10 bg-white px-3 py-1.5 text-center font-normal text-ink/60 transition-all duration-150 hover:bg-ink/5 active:scale-[0.96] active:bg-primary/10"
                 onClick={() => { if (!isDemoMode) handleFeelLog("low_energy", Date.now()); }}
               >
-                Low Energy
+                Log Low Energy
               </button>
             </div>
             {workout.activeWorkout && (
