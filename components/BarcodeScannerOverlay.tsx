@@ -146,7 +146,7 @@ export default function BarcodeScannerOverlay({ open, onClose, onDetected }: Pro
               <button
                 type="button"
                 onClick={toggleTorch}
-                className={`rounded-lg border px-2 py-1 text-xs font-semibold transition ${torchOn ? "border-yellow-400 bg-yellow-50 text-yellow-600" : "border-ink/10 bg-white text-ink/50 hover:bg-ink/5"}`}
+                className={`rounded-lg border px-2 py-1 text-xs font-semibold transition ${torchOn ? "border-primary/40 bg-primary/10 text-primary" : "border-ink/10 bg-white text-ink/50 hover:bg-ink/5"}`}
               >
                 {torchOn ? "Light On" : "Light"}
               </button>
