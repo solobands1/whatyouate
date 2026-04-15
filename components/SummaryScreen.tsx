@@ -1039,7 +1039,7 @@ export default function SummaryScreen() {
   if (loadingData) {
     return (
       <div className="min-h-screen bg-surface">
-        <div className="mx-auto flex min-h-screen max-w-md flex-col px-5 pb-24 pt-7">
+        <div className="mx-auto flex min-h-screen max-w-md flex-col px-5 pb-24 safe-top">
           <div className="mb-6 h-8 w-28 animate-pulse rounded-lg bg-ink/10" />
           <div className="mb-4 animate-pulse rounded-2xl bg-ink/10 p-5" style={{ height: 180 }} />
           <div className="animate-pulse rounded-2xl bg-ink/10 p-5" style={{ height: 140 }} />
@@ -1082,7 +1082,7 @@ export default function SummaryScreen() {
           }
         }}
       />
-      <div className="mx-auto flex min-h-screen max-w-md flex-col px-5 pb-24 pt-7">
+      <div className="mx-auto flex min-h-screen max-w-md flex-col px-5 pb-24 safe-top">
         <header className="mb-6" data-tour="summary-header">
           <h1 className="text-2xl font-semibold text-ink">Insights</h1>
           <p className="mt-1 text-sm text-muted/70">Daily snapshot and weekly insights at a glance</p>

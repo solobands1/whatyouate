@@ -1485,7 +1485,7 @@ export default function HomeScreen() {
           </div>
         </div>
       )}
-      <div className="relative mx-auto flex min-h-screen max-w-md flex-col px-5 pb-24 pt-6">
+      <div className="relative mx-auto flex min-h-screen max-w-md flex-col px-5 pb-24 safe-top">
         <header className="mb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">

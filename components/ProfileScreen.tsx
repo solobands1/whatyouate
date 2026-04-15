@@ -496,7 +496,7 @@ export default function ProfileScreen() {
 
   return (
     <div className="min-h-screen bg-surface">
-      <div className="mx-auto flex min-h-screen max-w-md flex-col px-5 pb-24 pt-8">
+      <div className="mx-auto flex min-h-screen max-w-md flex-col px-5 pb-24 safe-top">
         {mounted && (
           <Joyride
             steps={profileTourSteps}

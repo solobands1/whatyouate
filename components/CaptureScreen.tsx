@@ -232,7 +232,7 @@ export default function CaptureScreen() {
         className={
           preview
             ? "flex h-screen w-screen flex-col items-center justify-center bg-surface"
-            : "mx-auto flex min-h-screen max-w-md flex-col px-5 pb-20 pt-7"
+            : "mx-auto flex min-h-screen max-w-md flex-col px-5 pb-20 safe-top"
         }
       >
         {!file && (
