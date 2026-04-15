@@ -2623,9 +2623,6 @@ export default function HomeScreen() {
                   <p className="text-xs text-muted/60">{barcodeProduct.brand}</p>
                 )}
               </div>
-              {barcodeFromCache && (
-                <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">Saved</span>
-              )}
             </div>
             <div className="mt-3 grid grid-cols-4 gap-2 text-center">
               {[

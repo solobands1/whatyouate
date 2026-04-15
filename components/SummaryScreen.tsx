@@ -163,12 +163,10 @@ export default function SummaryScreen() {
     if (!raw) return null;
     try { return JSON.parse(raw); } catch { return null; }
   };
-  // Capture unseen state before the mount effect clears it, so the bell stays on the card while reading
+  // Show "New" only the very first time the user ever sees the nudge card
   const [nudgeCardIsNew] = useState(() => {
     try {
-      const nudgeTs = parseInt(localStorage.getItem("wya_nudge_ts") ?? "0");
-      const seenTs = parseInt(localStorage.getItem("wya_nudge_seen_ts") ?? "0");
-      return nudgeTs > seenTs;
+      return !localStorage.getItem("wya_nudge_ever_seen");
     } catch { return false; }
   });
   const [showWyaaSheet, setShowWyaaSheet] = useState(false);
@@ -176,6 +174,7 @@ export default function SummaryScreen() {
   useEffect(() => {
     mountedRef.current = true;
     localStorage.setItem("wya_nudge_seen_ts", Date.now().toString());
+    localStorage.setItem("wya_nudge_ever_seen", "1");
     window.dispatchEvent(new Event("wya_nudge_update"));
     return () => {
       mountedRef.current = false;
@@ -1264,6 +1263,9 @@ export default function SummaryScreen() {
           </div>
           <div className="flex items-center gap-2">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Nudges</p>
+            {nudgeCardIsNew && smartNudge && (
+              <span className="animate-card-fade inline-flex items-center rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold text-primary">New</span>
+            )}
           </div>
           {isDemoMode ? (
             <div className="mt-4 space-y-2.5">
