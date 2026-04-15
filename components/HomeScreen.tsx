@@ -1318,10 +1318,10 @@ export default function HomeScreen() {
       {workout.showStartWorkoutModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
           <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
-            <h2 className="text-base font-semibold text-ink">Log a workout</h2>
+            <h2 className="text-base font-semibold text-ink">Log an activity</h2>
             {workout.activeWorkout ? (
               <>
-                <p className="mt-2 text-sm text-muted/70">A workout is already in progress.</p>
+                <p className="mt-2 text-sm text-muted/70">An activity is already in progress.</p>
                 <div className="mt-5 flex justify-end">
                   <button
                     type="button"
@@ -1351,8 +1351,8 @@ export default function HomeScreen() {
                       workout.openManualWorkoutModal();
                     }}
                   >
-                    <span className="text-sm font-semibold text-ink">Manually Add Workout</span>
-                    <span className="mt-0.5 text-xs text-muted/60">Log a workout you already completed</span>
+                    <span className="text-sm font-semibold text-ink">Manually Add Activity</span>
+                    <span className="mt-0.5 text-xs text-muted/60">Log an activity you already completed</span>
                   </button>
                 </div>
                 <div className="mt-4 flex justify-end">
@@ -1372,9 +1372,9 @@ export default function HomeScreen() {
       {workout.showEndWorkoutModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
           <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
-            <h2 className="text-base font-semibold text-ink">End workout</h2>
+            <h2 className="text-base font-semibold text-ink">End activity</h2>
             <p className="mt-2 text-sm text-muted/70">
-              {workout.activeWorkout ? "Confirm your workout details." : "No active workout in progress."}
+              {workout.activeWorkout ? "Confirm your activity details." : "No active activity in progress."}
             </p>
             {workout.activeWorkout && (
               <div className="mt-4 space-y-4">
@@ -1441,7 +1441,7 @@ export default function HomeScreen() {
                   className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
                   onClick={workout.handleEndWorkout}
                 >
-                  {workout.isEndingWorkout ? "Ending…" : "End workout"}
+                  {workout.isEndingWorkout ? "Ending…" : "End activity"}
                 </button>
               )}
             </div>
@@ -2316,9 +2316,9 @@ export default function HomeScreen() {
           <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
             {pendingDelete?.type === "workout" ? (
               <>
-                <h2 className="text-base font-semibold text-ink">Delete workout</h2>
+                <h2 className="text-base font-semibold text-ink">Delete activity</h2>
                 <p className="mt-2 text-sm text-muted/70">
-                  Are you sure you want to delete this workout?
+                  Are you sure you want to delete this activity?
                 </p>
                 <div className="mt-5 flex items-center justify-end gap-2">
                   <button
@@ -2340,8 +2340,8 @@ export default function HomeScreen() {
               </>
             ) : (
               <>
-                <h2 className="text-base font-semibold text-ink">Edit workout</h2>
-                <p className="mt-2 text-sm text-muted/70">Update your workout details.</p>
+                <h2 className="text-base font-semibold text-ink">Edit activity</h2>
+                <p className="mt-2 text-sm text-muted/70">Update your activity details.</p>
 
                 <div className="mt-4 space-y-4">
                   <div>
@@ -2466,8 +2466,8 @@ export default function HomeScreen() {
       {workout.showManualWorkoutModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
           <div className="w-full max-w-sm rounded-xl bg-white p-5 shadow-xl">
-            <h2 className="text-base font-semibold text-ink">Add workout</h2>
-            <p className="mt-1 text-sm text-muted/70">Log a workout you already completed.</p>
+            <h2 className="text-base font-semibold text-ink">Add activity</h2>
+            <p className="mt-1 text-sm text-muted/70">Log an activity you already completed.</p>
 
             <div className="mt-4 space-y-4">
               <div className="overflow-hidden">
@@ -2589,7 +2589,7 @@ export default function HomeScreen() {
                 onClick={workout.handleAddManualWorkout}
                 disabled={workout.addingManual}
               >
-                {workout.addingManual ? "Saving..." : "Save workout"}
+                {workout.addingManual ? "Saving..." : "Save activity"}
               </button>
             </div>
           </div>
