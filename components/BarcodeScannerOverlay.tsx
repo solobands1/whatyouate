@@ -14,6 +14,8 @@ export default function BarcodeScannerOverlay({ open, onClose, onDetected }: Pro
   const detectedRef = useRef(false);
   const [cameraReady, setCameraReady] = useState(false);
   const [cameraError, setCameraError] = useState(false);
+  const [torchOn, setTorchOn] = useState(false);
+  const [torchSupported, setTorchSupported] = useState(false);
 
   const teardown = () => {
     const scanner = scannerRef.current;
@@ -29,11 +31,26 @@ export default function BarcodeScannerOverlay({ open, onClose, onDetected }: Pro
     try { scanner.clear?.(); } catch {}
   };
 
+  const toggleTorch = async () => {
+    const videoEl = document.getElementById(regionId.current)?.querySelector("video") as HTMLVideoElement | null;
+    const track = videoEl?.srcObject instanceof MediaStream
+      ? (videoEl.srcObject as MediaStream).getVideoTracks()[0]
+      : null;
+    if (!track) return;
+    const next = !torchOn;
+    try {
+      await track.applyConstraints({ advanced: [{ torch: next } as any] });
+      setTorchOn(next);
+    } catch {}
+  };
+
   useEffect(() => {
     if (!open) {
       detectedRef.current = false;
       setCameraReady(false);
       setCameraError(false);
+      setTorchOn(false);
+      setTorchSupported(false);
       return;
     }
 
@@ -49,7 +66,7 @@ export default function BarcodeScannerOverlay({ open, onClose, onDetected }: Pro
 
         await scanner.start(
           { facingMode: "environment" },
-          { fps: 10, qrbox: { width: 260, height: 150 }, aspectRatio: 1.7778 },
+          { fps: 25, qrbox: { width: 280, height: 160 }, aspectRatio: 1.7778 },
           (decodedText: string) => {
             if (detectedRef.current) return;
             detectedRef.current = true;
@@ -59,7 +76,18 @@ export default function BarcodeScannerOverlay({ open, onClose, onDetected }: Pro
           },
           () => {}
         );
-        if (!cancelled) setCameraReady(true);
+        if (!cancelled) {
+          setCameraReady(true);
+          // Check torch support
+          const videoEl = document.getElementById(regionId.current)?.querySelector("video") as HTMLVideoElement | null;
+          const track = videoEl?.srcObject instanceof MediaStream
+            ? (videoEl.srcObject as MediaStream).getVideoTracks()[0]
+            : null;
+          if (track) {
+            const caps = track.getCapabilities?.() as any;
+            if (caps?.torch) setTorchSupported(true);
+          }
+        }
       } catch {
         if (!cancelled) setCameraError(true);
       }
@@ -112,7 +140,18 @@ export default function BarcodeScannerOverlay({ open, onClose, onDetected }: Pro
           </div>
         </div>
         <div className="mt-4 flex items-center justify-between">
-          <p className="text-xs text-muted/60">Point camera at barcode</p>
+          <div className="flex items-center gap-2">
+            <p className="text-xs text-muted/60">Point camera at barcode</p>
+            {torchSupported && (
+              <button
+                type="button"
+                onClick={toggleTorch}
+                className={`rounded-lg border px-2 py-1 text-xs font-semibold transition ${torchOn ? "border-yellow-400 bg-yellow-50 text-yellow-600" : "border-ink/10 bg-white text-ink/50 hover:bg-ink/5"}`}
+              >
+                {torchOn ? "Light On" : "Light"}
+              </button>
+            )}
+          </div>
           <button
             type="button"
             className="rounded-xl border border-ink/10 bg-white px-4 py-2 text-xs font-semibold text-ink/70 transition hover:bg-ink/5"
