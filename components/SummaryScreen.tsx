@@ -346,7 +346,7 @@ export default function SummaryScreen() {
 
     if (workoutSummary.count > 0) {
       const mins = workoutSummary.totalMinutes > 0 ? ` · ${workoutSummary.totalMinutes} min` : "";
-      lines.push(`${workoutSummary.count} workout${workoutSummary.count !== 1 ? "s" : ""}${mins}.`);
+      lines.push(`${workoutSummary.count} activit${workoutSummary.count !== 1 ? "ies" : "y"}${mins}.`);
     }
 
     // Energy observations — only when there are feel logs this week
@@ -567,7 +567,7 @@ export default function SummaryScreen() {
     meals
       .slice()
       .sort((a, b) => b.ts - a.ts)
-      .filter((m) => m.ts >= threeDaysAgo && todayKey(new Date(m.ts)) !== todayStr)
+      .filter((m) => m.ts >= threeDaysAgo && todayKey(new Date(m.ts)) !== todayStr && m.analysisJson?.source !== "supplement" && m.status !== "failed")
       .forEach((meal) => {
         const items = [
           meal.analysisJson?.name,
@@ -622,10 +622,6 @@ export default function SummaryScreen() {
       } catch { /* ignore */ }
     }
 
-    if (!isStale) {
-      smartNudgeFetchedRef.current.add(windowKey);
-    }
-
     // Use saved DB nudge if one exists for this window and data isn't stale — no API call needed
     const existing = nudges.find((n) => {
       if (!n.created_at) return false;
@@ -635,9 +631,13 @@ export default function SummaryScreen() {
       return (h < 12 ? "morning" : h < 17 ? "afternoon" : "evening") === win;
     });
     if (existing && !isStale) {
+      smartNudgeFetchedRef.current.add(windowKey);
       setSmartNudge({ message: existing.message, type: existing.type as NudgeType, generatedAt: existing.created_at ?? new Date().toISOString() });
       return;
     }
+
+    // Mark as fetched immediately so concurrent re-renders don't fire duplicate requests
+    smartNudgeFetchedRef.current.add(windowKey);
 
     // No saved nudge yet — fetch from AI
     const recentNudgeMessages = nudges.slice(0, 7).map((n) => n.type ? `${n.type}: ${n.message}` : n.message);

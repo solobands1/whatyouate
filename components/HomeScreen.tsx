@@ -1380,7 +1380,7 @@ export default function HomeScreen() {
               <div className="mt-4 space-y-4">
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">
-                    Workout type
+                    Activity type
                   </p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {WORKOUT_TYPE_OPTIONS.map((type) => (
@@ -2368,7 +2368,7 @@ export default function HomeScreen() {
 
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">
-                      Workout type
+                      Activity type
                     </p>
                     <div className="mt-2 flex flex-wrap gap-2">
                       {WORKOUT_TYPE_OPTIONS.map((type) => (
@@ -2508,7 +2508,7 @@ export default function HomeScreen() {
 
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">
-                  Workout type
+                  Activity type
                 </p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {WORKOUT_TYPE_OPTIONS.map((type) => (
