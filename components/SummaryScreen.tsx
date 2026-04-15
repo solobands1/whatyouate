@@ -163,10 +163,12 @@ export default function SummaryScreen() {
     if (!raw) return null;
     try { return JSON.parse(raw); } catch { return null; }
   };
-  // Show "New" only the very first time the user ever sees the nudge card
+  // Show "New" if this nudge hasn't been seen yet — cleared on mount
   const [nudgeCardIsNew] = useState(() => {
     try {
-      return !localStorage.getItem("wya_nudge_ever_seen");
+      const nudgeTs = parseInt(localStorage.getItem("wya_nudge_ts") ?? "0");
+      const seenTs = parseInt(localStorage.getItem("wya_nudge_seen_ts") ?? "0");
+      return nudgeTs > seenTs;
     } catch { return false; }
   });
   const [showWyaaSheet, setShowWyaaSheet] = useState(false);
@@ -174,7 +176,6 @@ export default function SummaryScreen() {
   useEffect(() => {
     mountedRef.current = true;
     localStorage.setItem("wya_nudge_seen_ts", Date.now().toString());
-    localStorage.setItem("wya_nudge_ever_seen", "1");
     window.dispatchEvent(new Event("wya_nudge_update"));
     return () => {
       mountedRef.current = false;
