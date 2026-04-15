@@ -1264,9 +1264,6 @@ export default function SummaryScreen() {
           </div>
           <div className="flex items-center gap-2">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Nudges</p>
-            {nudgeCardIsNew && smartNudge && (
-              <span className="animate-card-fade inline-flex items-center rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold text-primary">New</span>
-            )}
           </div>
           {isDemoMode ? (
             <div className="mt-4 space-y-2.5">
