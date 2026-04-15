@@ -5,7 +5,7 @@ import type { User } from "@supabase/supabase-js";
 import type { MealAnalysis, MealLog } from "../lib/types";
 import { addMeal, listMeals, updateMeal, updateMealTs } from "../lib/supabaseDb";
 import { safeFallbackAnalysis } from "../lib/ai/schema";
-import { getFoodTextEntry, setFoodTextEntry, deleteFoodTextEntry, incrementFoodTextLogCount, seedTextCacheFromMeals } from "../lib/foodCache";
+import { getFoodTextEntry, setFoodTextEntry, deleteFoodTextEntry, incrementFoodTextLogCount, seedTextCacheFromMeals, normalizeFoodKey } from "../lib/foodCache";
 
 export function useMeals(
   user: User | null,
@@ -82,7 +82,7 @@ export function useMeals(
     if (!manualText.trim()) return;
 
     // Check text cache first — same food text always gives same result
-    const normalizedInput = manualText.trim().toLowerCase();
+    const normalizedInput = normalizeFoodKey(manualText.trim());
     const cached = getFoodTextEntry(normalizedInput);
     if (cached) {
       setManualResult({
@@ -127,7 +127,7 @@ export function useMeals(
         };
         setFoodTextEntry(normalizedInput, entry);
         // Also index by the AI's identified food name so e.g. "an apple" and "apple" converge
-        const normalizedAiName = (analysis.name ?? "").toLowerCase().trim();
+        const normalizedAiName = normalizeFoodKey(analysis.name ?? "");
         if (normalizedAiName && normalizedAiName !== normalizedInput) {
           setFoodTextEntry(normalizedAiName, entry);
         }
@@ -140,7 +140,7 @@ export function useMeals(
   };
 
   const clearManualTextCache = () => {
-    const normalizedInput = manualText.trim().toLowerCase();
+    const normalizedInput = normalizeFoodKey(manualText.trim());
     if (normalizedInput) deleteFoodTextEntry(normalizedInput);
   };
 
@@ -177,9 +177,9 @@ export function useMeals(
         body: JSON.stringify({ mealId: created.id, existingAnalysis: manualResult, userId: user.id })
       }).catch(() => {});
       // Increment frequency so this food rises in Quick Add
-      const normalizedInput = manualText.trim().toLowerCase();
+      const normalizedInput = normalizeFoodKey(manualText.trim());
       incrementFoodTextLogCount(normalizedInput);
-      const normalizedAiName = (manualResult.name ?? "").toLowerCase().trim();
+      const normalizedAiName = normalizeFoodKey(manualResult.name ?? "");
       if (normalizedAiName && normalizedAiName !== normalizedInput) {
         incrementFoodTextLogCount(normalizedAiName);
       }

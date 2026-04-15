@@ -9,7 +9,7 @@ import { dayKeyFromTs, todayKey } from "../lib/utils";
 import { computeStreakFromMeals } from "../lib/digestEngine";
 import { MEALS_UPDATED_EVENT, NUDGES_UPDATED_EVENT, PROFILE_UPDATED_EVENT, WORKOUTS_UPDATED_EVENT, notifyMealsFailed } from "../lib/dataEvents";
 import { safeFallbackAnalysis } from "../lib/ai/schema";
-import { seedTextCacheFromMeals } from "../lib/foodCache";
+import { seedTextCacheFromMeals, migrateTextCacheKeys } from "../lib/foodCache";
 
 // Module-level flag so AuthGate can check data has loaded at least once
 // (survives client-side navigation, resets on full page reload)
@@ -70,6 +70,8 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       ]);
       if (!mountedRef.current) return;
 
+      // Normalize existing text cache keys (one-time migration, idempotent)
+      migrateTextCacheKeys();
       // Seed quick-add text cache from history in case localStorage was cleared
       seedTextCacheFromMeals(mealsData);
 

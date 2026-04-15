@@ -1,7 +1,7 @@
 
 import { notifyMealsUpdated } from "./dataEvents";
 import { clearMealsCache, markMealFailed } from "./supabaseDb";
-import { setFoodTextEntry, incrementFoodTextLogCount } from "./foodCache";
+import { setFoodTextEntry, incrementFoodTextLogCount, normalizeFoodKey } from "./foodCache";
 
 type MealJob = {
   mealId: string;
@@ -60,7 +60,7 @@ async function processNext() {
     // for the same food name return the same macros as the photo analysis did.
     const analysis = data?.analysis;
     if (analysis?.name && analysis?.estimated_ranges) {
-      const normalizedName = (analysis.name as string).toLowerCase().trim();
+      const normalizedName = normalizeFoodKey(analysis.name as string);
       setFoodTextEntry(normalizedName, {
         name: analysis.name,
         ranges: analysis.estimated_ranges,

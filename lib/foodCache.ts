@@ -80,6 +80,58 @@ export function incrementFoodCacheLogCount(barcode: string): void {
 // Keyed by normalized food text so typing the same food always returns the
 // same macros instead of calling the AI fresh each time.
 
+/**
+ * Normalize a food name into a stable cache key.
+ * Strips parentheticals, size qualifiers, weight mentions, and articles
+ * so "Apple", "Apple (medium)", "apple, medium" and "Fresh apple" all
+ * resolve to the same key: "apple".
+ */
+export function normalizeFoodKey(text: string): string {
+  let s = text.toLowerCase().trim();
+  // Strip parenthetical qualifiers: "apple (medium, ~182g)" → "apple"
+  s = s.replace(/\s*\([^)]*\)/g, "");
+  // Strip leading articles/quantifiers: "an apple", "one banana"
+  s = s.replace(/^(a|an|one|some|half)\s+/, "");
+  // Strip qualifiers after a comma: "chicken breast, grilled" → "chicken breast"
+  s = s.replace(/,\s*(small|medium|large|fresh|raw|whole|organic|sliced|diced|chopped|cooked|uncooked|baked|grilled|steamed|boiled|fried|roasted|plain|ripe|dried|frozen|canned|approximately|approx|about)(\s.*)?$/, "");
+  // Strip trailing standalone size word: "apple medium" → "apple"
+  s = s.replace(/\s+(small|medium|large)$/, "");
+  // Strip weight/unit mentions: "100g", "~50g", "2 oz"
+  s = s.replace(/\s*~?\d+(\.\d+)?\s*(g|oz|ml|lb|kg|tbsp|tsp|cups?|pieces?|slices?)(\b|$)/g, "");
+  // Strip trailing punctuation left after removal
+  s = s.replace(/[,.\-–]+\s*$/, "");
+  // Collapse multiple spaces
+  s = s.replace(/\s{2,}/g, " ");
+  return s.trim();
+}
+
+/** One-time migration: re-key existing text cache entries using normalizeFoodKey.
+ *  Merges duplicates by summing logCounts and keeping the most recent macros. */
+export function migrateTextCacheKeys(): void {
+  if (typeof window === "undefined") return;
+  try {
+    const cache = loadTextCache();
+    const migrated: Record<string, FoodTextCacheEntry> = {};
+    for (const [key, entry] of Object.entries(cache)) {
+      const newKey = normalizeFoodKey(key);
+      if (!newKey) continue;
+      const existing = migrated[newKey];
+      if (!existing) {
+        migrated[newKey] = entry;
+      } else {
+        // Merge duplicates: sum logCounts, keep most recent macros
+        const mergedLogCount = (existing.logCount ?? 0) + (entry.logCount ?? 0);
+        if (entry.savedAt > existing.savedAt) {
+          migrated[newKey] = { ...entry, logCount: mergedLogCount };
+        } else {
+          migrated[newKey] = { ...existing, logCount: mergedLogCount };
+        }
+      }
+    }
+    localStorage.setItem(FOOD_TEXT_CACHE_KEY, JSON.stringify(migrated));
+  } catch {}
+}
+
 export type FoodTextCacheEntry = {
   name: string;
   ranges: {
@@ -195,7 +247,7 @@ export function seedTextCacheFromMeals(meals: Array<{
     if (meal.analysisJson?.source === "supplement") continue;
     const name = meal.analysisJson?.name;
     if (!name) continue;
-    const key = name.toLowerCase().trim();
+    const key = normalizeFoodKey(name);
     if (!key) continue;
     if (deleted.has(key)) continue; // respect user deletion
     const entry = foodMap.get(key);
@@ -291,8 +343,8 @@ export function getQuickAddItems(): QuickAddItem[] {
 
   // Text cache entries
   const textCache = loadTextCache();
-  for (const entry of Object.values(textCache)) {
-    const key = entry.name.toLowerCase().trim();
+  for (const [cacheKey, entry] of Object.entries(textCache)) {
+    const key = normalizeFoodKey(entry.name) || cacheKey;
     if (!key) continue;
     const existing = seen.get(key);
     const combinedLogCount = (existing?.logCount ?? 0) + (entry.logCount ?? 0);
@@ -314,7 +366,7 @@ export function getQuickAddItems(): QuickAddItem[] {
   // Barcode cache entries
   const barcodeCache = loadCache();
   for (const [barcode, entry] of Object.entries(barcodeCache)) {
-    const key = entry.name.toLowerCase().trim();
+    const key = normalizeFoodKey(entry.name) || entry.name.toLowerCase().trim();
     if (!key) continue;
     const existing = seen.get(key);
     const combinedLogCount = (existing?.logCount ?? 0) + (entry.logCount ?? 0);
