@@ -255,29 +255,40 @@ export default function SummaryScreen() {
       "Everything Is Lining Up This Week",
       "Consistent And On Target",
       "This Week Is Looking Exactly How It Should",
+      "Clean Numbers All Week",
+      "Hitting The Marks That Matter",
+      "One Of The Better Weeks In The Data",
     ]);
     if (loggedThisWeek >= 5 && (calOk || proOk)) return weeklyVariant([
       "Solid Week Overall",
       "Good Consistency This Week",
       "More Right Than Wrong This Week",
       "A Productive Week",
+      "The Numbers Are Working",
+      "Trending In The Right Direction",
+      "Good Fundamentals This Week",
     ]);
     if (loggedThisWeek >= 5) return weeklyVariant([
       "Good Effort This Week",
       "Showing Up Consistently",
       "Logging Regularly Is The Hardest Part",
       "Five Days Of Data",
+      "Consistent Logging, Plenty To Build On",
+      "The Habit Is There",
     ]);
     if (loggedThisWeek >= 3) return weeklyVariant([
       "Building The Habit",
       "A Few Good Days This Week",
       "Every Logged Day Adds To The Picture",
       "Momentum Is Building",
+      "The Pattern Is Starting To Show",
+      "More Data, Better Picture",
     ]);
     return weeklyVariant([
       "Getting Started",
       "The First Few Logs Are The Hardest",
       "Early Days",
+      "A Few Logs In",
     ]);
   }, [last7Days, mealCount, avgWeekCalories, avgWeekProtein, summaryMarkers.gentleTargets, weeklyVariant]);
 
@@ -376,18 +387,21 @@ export default function SummaryScreen() {
       if (lowEnergyCorrelated.length >= 1) {
         lines.push(`Low energy logged on ${lowEnergyCorrelated.length === 1 ? "a day" : `${lowEnergyCorrelated.length} days`} where calories were notably lower than your average.`);
       } else if (overallAvg >= 3.5) {
-        lines.push(`Energy check-ins have been high this week.`);
+        lines.push(`Energy has been high this week.`);
       } else if (overallAvg >= 2.5) {
-        lines.push(`Energy check-ins trending positive this week.`);
+        lines.push(`Energy trending positive this week.`);
       } else if (overallAvg <= 1.5) {
-        lines.push(`Energy check-ins have been low this week.`);
+        // Only show count of low-energy logs — don't frame absence of check-ins as a problem
+        const lowCount = weekFeelLogs.filter((l) => l.tag === "low_energy").length;
+        if (lowCount >= 2) lines.push(`Low energy logged on ${lowCount} days this week.`);
       } else {
-        // Mixed — show dominant tag
+        // Mixed — only surface if high energy is dominant (positive signal worth noting)
         const tagCounts: Record<string, number> = {};
         for (const log of weekFeelLogs) tagCounts[log.tag] = (tagCounts[log.tag] ?? 0) + 1;
         const dominant = Object.entries(tagCounts).sort((a, b) => b[1] - a[1])[0][0];
-        const dominantLabel = dominant === "good_energy" ? "High Energy" : dominant === "low_energy" ? "Low Energy" : dominant.replace(/_/g, " ");
-        lines.push(`Mostly ${dominantLabel} across ${weekFeelLogs.length} check-in${weekFeelLogs.length !== 1 ? "s" : ""} this week.`);
+        if (dominant === "good_energy") {
+          lines.push(`Mostly high energy across ${weekFeelLogs.length} check-in${weekFeelLogs.length !== 1 ? "s" : ""} this week.`);
+        }
       }
     }
 
