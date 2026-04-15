@@ -15,6 +15,31 @@ import { seedTextCacheFromMeals, migrateTextCacheKeys } from "../lib/foodCache";
 // (survives client-side navigation, resets on full page reload)
 export let _dataEverLoaded = false;
 
+function pruneNudgeSnapshots() {
+  try {
+    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+    const cutoff = Date.now() - SEVEN_DAYS_MS;
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const key = localStorage.key(i);
+      if (!key?.startsWith("wya_nudge_snapshot_")) continue;
+      // Key format: wya_nudge_snapshot_YYYY-WW  (e.g. 2026-15)
+      // Parse the date from the week key — use Sunday of that ISO week
+      const weekPart = key.replace("wya_nudge_snapshot_", "");
+      const [year, week] = weekPart.split("-").map(Number);
+      if (!year || !week) { localStorage.removeItem(key); continue; }
+      // Jan 4 is always in week 1; compute start of that week
+      const jan4 = new Date(year, 0, 4);
+      const startOfWeek1 = new Date(jan4);
+      startOfWeek1.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7));
+      const weekStart = new Date(startOfWeek1);
+      weekStart.setDate(startOfWeek1.getDate() + (week - 1) * 7);
+      if (weekStart.getTime() < cutoff) localStorage.removeItem(key);
+    }
+  } catch {
+    // localStorage unavailable — no-op
+  }
+}
+
 export type NudgeRow = { id: string; type?: string; message: string; created_at: string };
 
 type AppDataContextValue = {
@@ -74,6 +99,8 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       migrateTextCacheKeys();
       // Seed quick-add text cache from history in case localStorage was cleared
       seedTextCacheFromMeals(mealsData);
+      // Prune stale nudge snapshot keys (older than 7 days) to avoid localStorage bloat
+      pruneNudgeSnapshots();
 
       // Recover meals stuck in "processing" (e.g. tab closed mid-analysis)
       const STUCK_MS = 5 * 60 * 1000;

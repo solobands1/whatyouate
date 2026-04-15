@@ -126,11 +126,6 @@ export function useMeals(
           detected_product: analysis.detected_product ?? null,
         };
         setFoodTextEntry(normalizedInput, entry);
-        // Also index by the AI's identified food name so e.g. "an apple" and "apple" converge
-        const normalizedAiName = normalizeFoodKey(analysis.name ?? "");
-        if (normalizedAiName && normalizedAiName !== normalizedInput) {
-          setFoodTextEntry(normalizedAiName, entry);
-        }
       }
     } catch {
       setManualError("Something went wrong. Please try again.");
@@ -179,10 +174,6 @@ export function useMeals(
       // Increment frequency so this food rises in Quick Add
       const normalizedInput = normalizeFoodKey(manualText.trim());
       incrementFoodTextLogCount(normalizedInput);
-      const normalizedAiName = normalizeFoodKey(manualResult.name ?? "");
-      if (normalizedAiName && normalizedAiName !== normalizedInput) {
-        incrementFoodTextLogCount(normalizedAiName);
-      }
       // Optimistic local update — add the new meal to state immediately
       setMeals((prev) => [{ ...created, analysisJson: scaledAnalysis as any, userCorrection: manualResult.name, status: "done" as const }, ...prev]);
       setManualText("");
