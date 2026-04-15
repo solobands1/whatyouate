@@ -3,7 +3,8 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import type { MealLog, UserProfile, WorkoutSession } from "../lib/types";
 import { useAuth } from "./AuthProvider";
-import { getProfile, listMeals, listWorkouts, listNudges, updateMeal, saveStreak } from "../lib/supabaseDb";
+import { getProfile, listMeals, listWorkouts, listNudges, getFeelLogs, updateMeal, saveStreak } from "../lib/supabaseDb";
+import type { FeelLog } from "../lib/supabaseDb";
 import { dayKeyFromTs, todayKey } from "../lib/utils";
 import { computeStreakFromMeals } from "../lib/digestEngine";
 import { MEALS_UPDATED_EVENT, NUDGES_UPDATED_EVENT, PROFILE_UPDATED_EVENT, WORKOUTS_UPDATED_EVENT, notifyMealsFailed } from "../lib/dataEvents";
@@ -22,6 +23,7 @@ type AppDataContextValue = {
   workouts: WorkoutSession[];
   nudges: NudgeRow[];
   nudgesLoaded: boolean;
+  feelLogs: FeelLog[];
   loading: boolean;
   setMeals: React.Dispatch<React.SetStateAction<MealLog[]>>;
   setWorkouts: React.Dispatch<React.SetStateAction<WorkoutSession[]>>;
@@ -38,6 +40,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const [workouts, setWorkouts] = useState<WorkoutSession[]>([]);
   const [nudges, setNudges] = useState<NudgeRow[]>([]);
   const [nudgesLoaded, setNudgesLoaded] = useState(false);
+  const [feelLogs, setFeelLogs] = useState<FeelLog[]>([]);
   const [loading, setLoading] = useState(true);
   const mountedRef = useRef(true);
 
@@ -59,10 +62,11 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
 
   const load = useCallback(async (userId: string, isInitial = false) => {
     try {
-      const [profileData, mealsData, workoutsData] = await Promise.all([
+      const [profileData, mealsData, workoutsData, feelLogsData] = await Promise.all([
         getProfile(userId),
         listMeals(userId, 120),
         listWorkouts(userId, 50),
+        getFeelLogs(userId, 50),
       ]);
       if (!mountedRef.current) return;
 
@@ -129,6 +133,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       setProfile(resolvedProfile);
       setMeals(finalMeals);
       setWorkouts(workoutsData);
+      setFeelLogs(feelLogsData);
     } catch {
       // silently fail — screens handle empty state gracefully
     } finally {
@@ -172,7 +177,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AppDataContext.Provider
-      value={{ profile, meals, workouts, nudges, nudgesLoaded, loading, setMeals, setWorkouts, setProfile, reload }}
+      value={{ profile, meals, workouts, nudges, nudgesLoaded, feelLogs, loading, setMeals, setWorkouts, setProfile, reload }}
     >
       {children}
     </AppDataContext.Provider>

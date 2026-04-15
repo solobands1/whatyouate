@@ -16,7 +16,7 @@ import { useTrialStatus } from "../hooks/useTrialStatus";
 import { openUpgradeModal } from "./UpgradeModal";
 import { triggerValueMoment } from "./ValueMomentSheet";
 import { hasEnoughDataForPatterns, countLoggedDays } from "../lib/trial";
-import { getFeelLogs, type FeelLog } from "../lib/supabaseDb";
+import type { FeelLog } from "../lib/supabaseDb";
 
 const INSIGHT_NUTRIENTS = [
   "Iron",
@@ -68,7 +68,7 @@ const NUTRIENT_INFO: Record<string, string | string[]> = {
 export default function InsightsScreen() {
   const router = useRouter();
   const { user, loading } = useAuth();
-  const { profile: ctxProfile, meals, loading: loadingData } = useAppData();
+  const { profile: ctxProfile, meals, feelLogs, loading: loadingData } = useAppData();
   const profile = ctxProfile ?? undefined;
   const trial = useTrialStatus();
   const [activeNutrient, setActiveNutrient] = useState<string | null>(null);
@@ -76,13 +76,6 @@ export default function InsightsScreen() {
   const mountedRef = useRef(true);
   const [runInsightsTour, setRunInsightsTour] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
-  const [feelLogs, setFeelLogs] = useState<FeelLog[]>([]);
-  const [feelLogsReady, setFeelLogsReady] = useState(false);
-
-  useEffect(() => {
-    if (!user) return;
-    getFeelLogs(user.id, 30).then((logs) => { setFeelLogs(logs); setFeelLogsReady(true); }).catch(() => { setFeelLogsReady(true); });
-  }, [user]);
 
   const demoFeelLogs = useMemo<FeelLog[]>(() => {
     const day = (offsetDays: number, h: number, m: number) => {
@@ -519,7 +512,7 @@ export default function InsightsScreen() {
 
   if (!user) return null;
 
-  if (loadingData || (!isDemoMode && !feelLogsReady)) {
+  if (loadingData) {
     return (
       <div className="min-h-screen bg-surface">
         <div className="mx-auto flex min-h-screen max-w-md flex-col px-5 pb-24 pt-7">

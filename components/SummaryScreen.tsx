@@ -8,7 +8,7 @@ import BottomNav from "./BottomNav";
 import Card from "./Card";
 import { useAuth } from "./AuthProvider";
 import { useAppData } from "./AppDataProvider";
-import { addNudge, pruneNudges, getFeelLogs, type FeelLog } from "../lib/supabaseDb";
+import { addNudge, pruneNudges, type FeelLog } from "../lib/supabaseDb";
 import { notifyNudgesUpdated } from "../lib/dataEvents";
 import { buildSmartNudgeContext, computeNudges, computeSummaryMarkers, type ComputedNudge, type NudgeType } from "../lib/digestEngine";
 import { useTrialStatus } from "../hooks/useTrialStatus";
@@ -128,7 +128,7 @@ const DEMO_NUDGE = "Your protein has been strong this week, but your last two da
 export default function SummaryScreen() {
   const router = useRouter();
   const { user, loading } = useAuth();
-  const { profile, meals, workouts, nudges, nudgesLoaded, loading: loadingData } = useAppData();
+  const { profile, meals, workouts, nudges, nudgesLoaded, feelLogs: recentFeelLogs, loading: loadingData } = useAppData();
   const trial = useTrialStatus();
   const [hydrated, setHydrated] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
@@ -150,7 +150,6 @@ export default function SummaryScreen() {
   const [visibleNudgeGroupCount, setVisibleNudgeGroupCount] = useState(3);
   const [nudgeExpanded, setNudgeExpanded] = useState<Record<string, "why" | "what" | null>>({});
   const smartNudgeFetchedRef = useRef<Set<string>>(new Set());
-  const [recentFeelLogs, setRecentFeelLogs] = useState<FeelLog[]>([]);
   // { message, type, suggestions } from smart AI call, or null if AI said nothing, or undefined while loading
   const [smartNudge, setSmartNudge] = useState<{ message: string; type: NudgeType; action?: string; suggestions?: string[]; generatedAt?: string } | null | undefined>(undefined);
   const [expandedHistoryNudge, setExpandedHistoryNudge] = useState<string | null>(null);
@@ -182,10 +181,6 @@ export default function SummaryScreen() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!user) return;
-    getFeelLogs(user.id, 10).then(setRecentFeelLogs).catch(() => {});
-  }, [user]);
 
   useEffect(() => {
     if (!loading && !user) {

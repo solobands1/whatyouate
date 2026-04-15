@@ -18,7 +18,7 @@ import { supabase } from "../lib/supabaseClient";
 import "../lib/mealQueue";
 import BarcodeScannerOverlay from "./BarcodeScannerOverlay";
 import { getFoodCacheEntry, setFoodCacheEntry, deleteFoodCacheEntry, deleteFoodTextEntry, incrementFoodCacheLogCount, incrementFoodTextLogCount, getQuickAddItems, getDailySupplements, setDailySupplements, hasDailySuppsLoggedToday, markDailySuppsLoggedToday, type QuickAddItem } from "../lib/foodCache";
-import { addFeelLog, deleteFeelLog, updateFeelLog, getFeelLogs, type FeelLog } from "../lib/supabaseDb";
+import { addFeelLog, deleteFeelLog, updateFeelLog, type FeelLog } from "../lib/supabaseDb";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
 import { useAuth } from "./AuthProvider";
@@ -168,7 +168,7 @@ function ManualDateRow({ manualDate, setManualDate }: { manualDate: string; setM
 export default function HomeScreen() {
   const router = useRouter();
   const { user, loading } = useAuth();
-  const { profile: ctxProfile, meals: ctxMeals, workouts: ctxWorkouts, loading: dataLoading, reload } = useAppData();
+  const { profile: ctxProfile, meals: ctxMeals, workouts: ctxWorkouts, feelLogs: ctxFeelLogs, loading: dataLoading, reload } = useAppData();
 
   const [profile, setProfile] = useState<UserProfile | undefined>(undefined);
   const [runTour, setRunTour] = useState(false);
@@ -223,7 +223,7 @@ export default function HomeScreen() {
   const [streakBouncing, setStreakBouncing] = useState(false);
   const mountTimeRef = useRef<number>(Date.now());
   const logFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [homeFeelLogs, setHomeFeelLogs] = useState<FeelLog[]>([]);
+  const [homeFeelLogs, setHomeFeelLogs] = useState<FeelLog[]>(ctxFeelLogs);
   const [editingFeelLog, setEditingFeelLog] = useState<FeelLog | null>(null);
   const [editFeelTag, setEditFeelTag] = useState<string | null>(null);
   const [editFeelDate, setEditFeelDate] = useState("");
@@ -747,10 +747,6 @@ export default function HomeScreen() {
     }
   }, [loading, user, router]);
 
-  useEffect(() => {
-    if (!user) return;
-    getFeelLogs(user.id, 50).then(setHomeFeelLogs).catch(() => {});
-  }, [user]);
 
   // Auto-log daily supplements once per calendar day, silently
   useEffect(() => {
