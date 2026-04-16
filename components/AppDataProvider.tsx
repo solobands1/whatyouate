@@ -89,7 +89,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     try {
       const [profileData, mealsData, workoutsData, feelLogsData] = await Promise.all([
         getProfile(userId),
-        listMeals(userId, 120),
+        listMeals(userId, 400),
         listWorkouts(userId, 50),
         getFeelLogs(userId, 50),
       ]);
