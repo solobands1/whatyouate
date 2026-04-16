@@ -7,6 +7,7 @@ type MealJob = {
   mealId: string;
   imageBase64: string;
   userId?: string;
+  attempts?: number;
 };
 
 const queue: MealJob[] = [];
@@ -77,10 +78,19 @@ async function processNext() {
     notifyMealsUpdated();
     window.dispatchEvent(new CustomEvent("meal-analysis-complete", { detail: job.mealId }));
   } catch {
-    window.dispatchEvent(new CustomEvent("meal-analysis-error", { detail: { mealId: job.mealId, rateLimited: false } }));
-    markMealFailed(job.mealId).catch(() => {});
-    clearMealsCache(job.userId);
-    notifyMealsUpdated();
+    const attempts = (job.attempts ?? 0) + 1;
+    if (attempts < 3) {
+      // Retry transient failures up to 2 times with a 3s delay
+      setTimeout(() => {
+        queue.unshift({ ...job, attempts });
+        if (!isProcessing) processNext();
+      }, 3000);
+    } else {
+      window.dispatchEvent(new CustomEvent("meal-analysis-error", { detail: { mealId: job.mealId, rateLimited: false } }));
+      markMealFailed(job.mealId).catch(() => {});
+      clearMealsCache(job.userId);
+      notifyMealsUpdated();
+    }
   }
 
   processNext();

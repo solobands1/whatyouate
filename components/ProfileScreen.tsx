@@ -8,7 +8,7 @@ import type { ActivityLevel, GoalDirection, SupplementEntry, SupplementNutrient,
 import { suppLabel, suppName } from "../lib/types";
 import { matchSupplementNutrients, NUTRIENT_UNITS, NUTRIENT_DISPLAY_NAMES } from "../lib/rda";
 import { clearAllData, getProfile, saveProfile, saveDailySupplements, LOCAL_MODE } from "../lib/supabaseDb";
-import { getDailySupplements, setDailySupplements, clearDailySuppsLoggedToday } from "../lib/foodCache";
+import { getDailySupplements, setDailySupplements, clearDailySuppsLoggedToday, clearAllFoodCaches } from "../lib/foodCache";
 import { clearMealsCache } from "../lib/supabaseDb";
 import { notifyMealsUpdated } from "../lib/dataEvents";
 import { supabase } from "../lib/supabaseClient";
@@ -435,7 +435,9 @@ export default function ProfileScreen() {
   const handleSignOut = async () => {
     setSigningOut(true);
     await signOut();
+    clearAllFoodCaches();
     sessionStorage.removeItem("_appReady");
+    sessionStorage.removeItem("wya_pending_capture");
     router.replace("/login");
   };
 
@@ -462,7 +464,9 @@ export default function ProfileScreen() {
         localStorage.removeItem("wya_local_users");
         localStorage.removeItem("wya_local_session");
       }
+      clearAllFoodCaches();
       sessionStorage.removeItem("_appReady");
+      sessionStorage.removeItem("wya_pending_capture");
       await signOut();
       router.replace("/login");
       return;
@@ -485,7 +489,9 @@ export default function ProfileScreen() {
       setStatusWithAutoDismiss("Couldn’t delete account.");
       return;
     }
+    clearAllFoodCaches();
     sessionStorage.removeItem("_appReady");
+    sessionStorage.removeItem("wya_pending_capture");
     await signOut();
     router.replace("/login");
   };

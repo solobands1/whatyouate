@@ -42,6 +42,7 @@ export default function CaptureScreen() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const redirectRef = useRef<number | null>(null);
   const showTimePickerRef = useRef(false);
+  const analyzeStartedRef = useRef(false);
   const [cameraMode, setCameraMode] = useState<"idle" | "live" | "file">("idle");
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -88,6 +89,9 @@ export default function CaptureScreen() {
 
   useEffect(() => {
     if (!file || !user) return;
+    if (analyzeStartedRef.current) return;
+    analyzeStartedRef.current = true;
+    sessionStorage.removeItem("wya_pending_capture");
     handleAnalyze(file).catch(() => {});
   }, [file, user]);
 

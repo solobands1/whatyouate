@@ -316,6 +316,15 @@ export function clearDailySuppsLoggedToday(userId: string): void {
   } catch {}
 }
 
+export function clearAllFoodCaches(): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem(FOOD_CACHE_KEY);
+    localStorage.removeItem(FOOD_TEXT_CACHE_KEY);
+    localStorage.removeItem(FOOD_TEXT_DELETED_KEY);
+  } catch {}
+}
+
 // ── Quick Add ────────────────────────────────────────────────────────────────
 // Merges both caches into a deduplicated, sorted list for the Quick Add modal.
 
