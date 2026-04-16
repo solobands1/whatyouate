@@ -125,7 +125,7 @@ export default function LoginClient() {
 
   return (
     <div className="min-h-screen bg-surface flex flex-col">
-      <div className="mx-auto flex w-full max-w-sm flex-col px-6 pt-28 pb-10 flex-1">
+      <div className="mx-auto flex w-full max-w-sm flex-col px-6 flex-1 justify-center pb-24">
 
         {/* Branding */}
         {(mode === "signin" || mode === "forgot") && (
