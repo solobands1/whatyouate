@@ -754,6 +754,13 @@ export default function HomeScreen() {
     if (dailySuppsAttemptedRef.current) return;
     dailySuppsAttemptedRef.current = true;
     if (hasDailySuppsLoggedToday(user.id)) return;
+    // Also check loaded meals directly — covers new-device / cleared-localStorage case
+    // where the localStorage flag isn't set but the DB already has today's supplement
+    const todayMidnight = new Date(); todayMidnight.setHours(0, 0, 0, 0);
+    if (ctxMeals.some((m) => m.analysisJson?.source === "supplement" && m.ts >= todayMidnight.getTime())) {
+      markDailySuppsLoggedToday(user.id);
+      return;
+    }
     const supplements = getDailySupplements(user.id);
     if (!supplements.length) return;
     (async () => {
@@ -793,7 +800,7 @@ export default function HomeScreen() {
       }
       notifyMealsUpdated();
     })();
-  }, [user, loadingData]);
+  }, [user, loadingData, ctxMeals]);
 
   useEffect(() => {
     setEditRecents(false);
