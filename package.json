@@ -11,6 +11,7 @@
   "dependencies": {
     "@capacitor/core": "^8.3.0",
     "@capacitor/ios": "^8.3.0",
+    "@revenuecat/purchases-capacitor": "^13.0.0",
     "@supabase/supabase-js": "^2.45.4",
     "html5-qrcode": "^2.3.8",
     "idb": "^8.0.1",

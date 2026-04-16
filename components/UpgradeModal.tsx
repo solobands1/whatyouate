@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { PurchasesPackage } from "@revenuecat/purchases-capacitor";
+import { getOfferings, purchasePackage, restorePurchases } from "../lib/purchases";
+import { Capacitor } from "@capacitor/core";
 
 export const UPGRADE_EVENT = "wya_show_upgrade";
 
@@ -13,19 +16,91 @@ export function openUpgradeModal() {
 export default function UpgradeModal() {
   const [open, setOpen] = useState(false);
   const [plan, setPlan] = useState<"monthly" | "yearly">("yearly");
-  const [tapped, setTapped] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [restoring, setRestoring] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [packages, setPackages] = useState<{ monthly: PurchasesPackage | null; yearly: PurchasesPackage | null }>({ monthly: null, yearly: null });
+  const isNative = Capacitor.isNativePlatform();
 
   useEffect(() => {
-    const handler = () => { setOpen(true); setTapped(false); };
+    const handler = () => { setOpen(true); setError(null); };
     window.addEventListener(UPGRADE_EVENT, handler);
     return () => window.removeEventListener(UPGRADE_EVENT, handler);
   }, []);
 
+  // Load offerings when modal opens
+  useEffect(() => {
+    if (!open || !isNative) return;
+    getOfferings().then((offering) => {
+      if (!offering) return;
+      const monthly = offering.availablePackages.find(
+        (p) => p.product.identifier === "com.dillonpoulin.whatyouate.monthly"
+      ) ?? null;
+      const yearly = offering.availablePackages.find(
+        (p) => p.product.identifier === "com.dillonpoulin.whatyouate.yearly"
+      ) ?? null;
+      setPackages({ monthly, yearly });
+    }).catch(() => {});
+  }, [open, isNative]);
+
   if (!open) return null;
 
-  const monthlyCost = 12.99;
-  const yearlyCost = 99;
-  const yearlySavings = Math.round((1 - yearlyCost / (monthlyCost * 12)) * 100);
+  const monthlyCost = packages.monthly?.product.priceString ?? "$12.99";
+  const yearlyCost = packages.yearly?.product.priceString ?? "$99.99";
+  const yearlyMonthly = packages.yearly ? `${(packages.yearly.product.price / 12).toFixed(2)}` : "8.25";
+  const yearlySavings = Math.round((1 - (packages.yearly?.product.price ?? 99) / ((packages.monthly?.product.price ?? 12.99) * 12)) * 100);
+
+  const handlePurchase = async () => {
+    if (loading) return;
+    const pkg = plan === "monthly" ? packages.monthly : packages.yearly;
+
+    if (!isNative) {
+      setError("Purchases are only available in the iOS app.");
+      return;
+    }
+    if (!pkg) {
+      setError("Couldn't load products. Please try again.");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const customerInfo = await purchasePackage(pkg);
+      if (customerInfo.entitlements.active["pro"]) {
+        window.dispatchEvent(new CustomEvent("wya_purchase_complete"));
+        setOpen(false);
+      } else {
+        setError("Purchase completed but entitlement not found. Try restoring.");
+      }
+    } catch (e: unknown) {
+      const code = (e as { code?: string })?.code;
+      if (code !== "PURCHASE_CANCELLED") {
+        setError("Purchase failed. Please try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRestore = async () => {
+    if (restoring || !isNative) return;
+    setRestoring(true);
+    setError(null);
+    try {
+      const customerInfo = await restorePurchases();
+      if (customerInfo.entitlements.active["pro"]) {
+        window.dispatchEvent(new CustomEvent("wya_purchase_complete"));
+        setOpen(false);
+      } else {
+        setError("No active subscription found.");
+      }
+    } catch {
+      setError("Restore failed. Please try again.");
+    } finally {
+      setRestoring(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
@@ -84,9 +159,7 @@ export default function UpgradeModal() {
                 type="button"
                 onClick={() => setPlan("yearly")}
                 className={`relative flex-1 rounded-2xl border px-4 py-3.5 text-left transition ${
-                  plan === "yearly"
-                    ? "border-primary/50 bg-primary/5"
-                    : "border-ink/10 bg-white"
+                  plan === "yearly" ? "border-primary/50 bg-primary/5" : "border-ink/10 bg-white"
                 }`}
               >
                 {plan === "yearly" && (
@@ -96,50 +169,48 @@ export default function UpgradeModal() {
                 )}
                 <p className="text-sm font-semibold text-ink">Yearly</p>
                 <p className="mt-0.5 text-xs text-muted/70">
-                  ${yearlyCost}/year
-                  <span className="ml-1.5 text-ink/40">${(yearlyCost / 12).toFixed(2)}/mo</span>
+                  {yearlyCost}/year
+                  <span className="ml-1.5 text-ink/40">${yearlyMonthly}/mo</span>
                 </p>
               </button>
               <button
                 type="button"
                 onClick={() => setPlan("monthly")}
                 className={`flex-1 rounded-2xl border px-4 py-3.5 text-left transition ${
-                  plan === "monthly"
-                    ? "border-primary/50 bg-primary/5"
-                    : "border-ink/10 bg-white"
+                  plan === "monthly" ? "border-primary/50 bg-primary/5" : "border-ink/10 bg-white"
                 }`}
               >
                 <p className="text-sm font-semibold text-ink">Monthly</p>
-                <p className="mt-0.5 text-xs text-muted/70">${monthlyCost}/month</p>
+                <p className="mt-0.5 text-xs text-muted/70">{monthlyCost}/month</p>
               </button>
             </div>
           </div>
 
           {/* CTA */}
           <div className="mt-6 w-full space-y-3">
+            {error && (
+              <p className="text-center text-[11px] text-red-500/80">{error}</p>
+            )}
             <button
               type="button"
-              onClick={() => setTapped(true)}
-              className="w-full rounded-xl bg-primary px-5 py-3.5 text-sm font-semibold text-white transition active:opacity-80"
+              onClick={handlePurchase}
+              disabled={loading || restoring}
+              className="w-full rounded-xl bg-primary px-5 py-3.5 text-sm font-semibold text-white transition active:opacity-80 disabled:opacity-50"
             >
-              Upgrade
+              {loading ? "Processing…" : "Upgrade"}
             </button>
 
-            {tapped ? (
-              <p className="text-center text-[11px] text-primary/70 font-medium">
-                Payment launches with the App Store release. Beta testers have extended access in the meantime.
-              </p>
-            ) : (
-              <p className="text-center text-[11px] text-muted/50">
-                Cancel anytime. If you cancel, you keep full access until the end of your current billing period. Subscriptions are managed through Apple and can be cancelled in your device settings.
-              </p>
-            )}
+            <p className="text-center text-[11px] text-muted/50">
+              Cancel anytime. Subscriptions managed through Apple and can be cancelled in your device settings.
+            </p>
 
             <button
               type="button"
-              className="w-full text-center text-[11px] text-muted/40 underline underline-offset-2 active:opacity-60"
+              onClick={handleRestore}
+              disabled={loading || restoring}
+              className="w-full text-center text-[11px] text-muted/40 underline underline-offset-2 active:opacity-60 disabled:opacity-40"
             >
-              Restore purchase
+              {restoring ? "Restoring…" : "Restore purchase"}
             </button>
           </div>
         </div>
