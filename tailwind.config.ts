@@ -38,11 +38,17 @@ const config: Config = {
         shimmer: {
           "0%": { backgroundPosition: "200% center" },
           "100%": { backgroundPosition: "-200% center" }
+        },
+        pop: {
+          "0%": { transform: "scale(1)" },
+          "40%": { transform: "scale(1.04)" },
+          "100%": { transform: "scale(1)" }
         }
       },
       animation: {
         scan: "scan 2s ease-in-out infinite",
-        shimmer: "shimmer 2.5s ease-in-out infinite"
+        shimmer: "shimmer 2.5s ease-in-out infinite",
+        pop: "pop 0.25s ease-out"
       }
     }
   },

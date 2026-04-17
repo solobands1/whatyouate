@@ -21,6 +21,13 @@ export default function UpgradeModal() {
   const [error, setError] = useState<string | null>(null);
   const [packages, setPackages] = useState<{ monthly: PurchasesPackage | null; yearly: PurchasesPackage | null }>({ monthly: null, yearly: null });
   const [coachState, setCoachState] = useState<"thinking" | "message" | null>(null);
+  const [poppedPlan, setPoppedPlan] = useState<"monthly" | "yearly" | null>(null);
+
+  const handlePlanSelect = (p: "monthly" | "yearly") => {
+    setPlan(p);
+    setPoppedPlan(p);
+    setTimeout(() => setPoppedPlan(null), 250);
+  };
   const isNative = Capacitor.isNativePlatform();
 
   useEffect(() => {
@@ -165,10 +172,10 @@ export default function UpgradeModal() {
             <div className="flex gap-3">
               <button
                 type="button"
-                onClick={() => setPlan("yearly")}
+                onClick={() => handlePlanSelect("yearly")}
                 className={`relative flex-1 rounded-2xl border px-4 py-3.5 text-left transition ${
                   plan === "yearly" ? "border-primary/50 bg-primary/5" : "border-ink/10 bg-white"
-                }`}
+                } ${poppedPlan === "yearly" ? "animate-pop" : ""}`}
               >
                 <span className="absolute -top-2.5 right-3 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-white">
                   Save {yearlySavings}%
@@ -194,10 +201,10 @@ export default function UpgradeModal() {
               </button>
               <button
                 type="button"
-                onClick={() => setPlan("monthly")}
+                onClick={() => handlePlanSelect("monthly")}
                 className={`flex-1 rounded-2xl border px-4 py-3.5 text-left transition ${
                   plan === "monthly" ? "border-primary/50 bg-primary/5" : "border-ink/10 bg-white"
-                }`}
+                } ${poppedPlan === "monthly" ? "animate-pop" : ""}`}
               >
                 <div className="flex items-start justify-between">
                   <div>
