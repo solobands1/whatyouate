@@ -841,7 +841,7 @@ export default function InsightsScreen() {
               <path d="M7 11V7a5 5 0 0 1 10 0v4" />
             </svg>
           </div>
-          <p className="text-base font-semibold text-ink">Your patterns are ready</p>
+          <p className="text-base font-semibold text-ink">Your Patterns Are Ready</p>
           <p className="mt-2 text-sm text-muted/70 leading-relaxed max-w-xs">
             Upgrade to unlock your micronutrient trends, weekly averages, and what your body might be missing.
           </p>
