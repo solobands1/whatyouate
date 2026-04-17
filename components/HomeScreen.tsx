@@ -1558,11 +1558,8 @@ export default function HomeScreen() {
           <button
             type="button"
             onClick={openUpgradeModal}
-            className="relative mt-4 w-full overflow-hidden rounded-xl border border-primary/15 bg-primary/[0.08] px-4 py-2.5 text-left transition active:opacity-70"
+            className="mt-4 w-full rounded-xl border border-primary/15 bg-primary/[0.08] px-4 py-2.5 text-left transition active:opacity-70"
           >
-            <span className="pointer-events-none absolute inset-0">
-              <span className="absolute inset-0 animate-shimmer-sweep bg-gradient-to-r from-transparent via-white/50 to-transparent" />
-            </span>
             <div className="flex items-center justify-between">
               <span className="text-[12px] font-medium text-ink/60">
                 Free trial · Day {trial.currentDay} of 7
@@ -1581,11 +1578,8 @@ export default function HomeScreen() {
           <button
             type="button"
             onClick={openUpgradeModal}
-            className="relative mt-2 w-full overflow-hidden rounded-xl border border-primary/25 bg-primary/10 px-4 py-2.5 text-left transition active:opacity-70"
+            className="mt-2 w-full rounded-xl border border-primary/25 bg-primary/10 px-4 py-2.5 text-left transition active:opacity-70"
           >
-            <span className="pointer-events-none absolute inset-0">
-              <span className="absolute inset-0 animate-shimmer-sweep bg-gradient-to-r from-transparent via-white/50 to-transparent" />
-            </span>
             <div className="flex items-center justify-between">
               <span className="text-[12px] font-medium text-ink/60">Free Trial Ended</span>
               <span className="text-[11px] text-primary font-semibold">Upgrade Now →</span>
