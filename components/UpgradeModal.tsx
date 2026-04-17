@@ -159,7 +159,7 @@ export default function UpgradeModal() {
               <div
                 key={item}
                 className="flex items-center gap-3 animate-fade-slide-up"
-                style={{ animationDelay: `${i * 80}ms`, animationFillMode: "both" }}
+                style={{ animationDelay: `${i * 140}ms`, animationFillMode: "both" }}
               >
                 <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/15">
                   <svg viewBox="0 0 12 12" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -260,7 +260,7 @@ export default function UpgradeModal() {
               type="button"
               onClick={handlePurchase}
               disabled={loading || restoring}
-              className="w-full rounded-xl bg-primary px-5 py-3.5 text-sm font-semibold text-white shadow-[0_4px_14px_rgba(99,133,255,0.45)] transition active:opacity-80 active:scale-[0.98] disabled:opacity-50"
+              className="w-full rounded-xl bg-primary px-5 py-3.5 text-sm font-semibold text-white transition active:opacity-80 active:scale-[0.98] disabled:opacity-50"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">

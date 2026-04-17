@@ -97,7 +97,7 @@ export default function BottomNav({ current }: { current: "home" | "summary" | "
     return (
       <button
         data-tour={key === "summary" ? "nav-summary" : undefined}
-        className={`relative flex flex-1 flex-col items-center gap-1 rounded-xl px-3 py-2 transition-colors ${
+        className={`relative flex flex-1 flex-col items-center gap-1 rounded-xl px-3 py-2 transition active:scale-90 ${
           isActive
             ? "bg-white text-primary shadow-[0_4px_16px_rgba(111,168,255,0.18)]"
             : "text-muted/65"
