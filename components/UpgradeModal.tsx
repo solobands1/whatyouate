@@ -46,8 +46,8 @@ export default function UpgradeModal() {
 
   if (!open) return null;
 
-  const monthlyCost = packages.monthly?.product.priceString ?? "$12.99";
-  const yearlyCost = packages.yearly?.product.priceString ?? "$99.99";
+  const monthlyCost = packages.monthly?.product.priceString ?? "USD $12.99";
+  const yearlyCost = packages.yearly?.product.priceString ?? "USD $99.99";
   const yearlyMonthly = packages.yearly ? `${(packages.yearly.product.price / 12).toFixed(2)}` : "8.25";
   const yearlySavings = Math.round((1 - (packages.yearly?.product.price ?? 99) / ((packages.monthly?.product.price ?? 12.99) * 12)) * 100);
 
@@ -128,7 +128,7 @@ export default function UpgradeModal() {
 
           {/* Headline */}
           <h1 className="mt-5 text-center text-2xl font-semibold text-ink">
-            Unlock your Patterns
+            Unlock Your Patterns
           </h1>
           <p className="mt-2 max-w-xs text-center text-sm text-muted/70">
             Unlock your personalized nudges, micronutrient patterns, and weekly insights.
@@ -163,15 +163,13 @@ export default function UpgradeModal() {
                   plan === "yearly" ? "border-primary/50 bg-primary/5" : "border-ink/10 bg-white"
                 }`}
               >
-                {plan === "yearly" && (
-                  <span className="absolute -top-2.5 right-3 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-white">
-                    Save {yearlySavings}%
-                  </span>
-                )}
+                <span className="absolute -top-2.5 right-3 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-white">
+                  Save {yearlySavings}%
+                </span>
                 <p className="text-sm font-semibold text-ink">Yearly</p>
                 <p className="mt-0.5 text-xs text-muted/70">
                   {yearlyCost}/year
-                  <span className="ml-1.5 text-ink/40">${yearlyMonthly}/mo</span>
+                  <span className="ml-1.5 text-ink/40">(${yearlyMonthly}/mo)</span>
                 </p>
               </button>
               <button
@@ -198,7 +196,7 @@ export default function UpgradeModal() {
               disabled={loading || restoring}
               className="w-full rounded-xl bg-primary px-5 py-3.5 text-sm font-semibold text-white transition active:opacity-80 disabled:opacity-50"
             >
-              {loading ? "Processing…" : "Upgrade"}
+              {loading ? "Processing…" : "Unlock"}
             </button>
 
             <p className="text-center text-[11px] text-muted/50">
@@ -211,7 +209,7 @@ export default function UpgradeModal() {
               disabled={loading || restoring}
               className="w-full text-center text-[11px] text-muted/40 underline underline-offset-2 active:opacity-60 disabled:opacity-40"
             >
-              {restoring ? "Restoring…" : "Restore purchase"}
+              {restoring ? "Restoring…" : "Restore Purchase"}
             </button>
           </div>
         </div>
