@@ -186,7 +186,7 @@ export default function UpgradeModal() {
                 </span>
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-sm font-semibold text-ink">Yearly</p>
+                    <p className={`text-sm text-ink transition ${plan === "yearly" ? "font-bold" : "font-semibold"}`}>Yearly</p>
                     <p className="mt-0.5 text-xs text-muted/70">
                       {yearlyCost}/year
                     </p>
@@ -212,7 +212,7 @@ export default function UpgradeModal() {
               >
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-sm font-semibold text-ink">Monthly</p>
+                    <p className={`text-sm text-ink transition ${plan === "monthly" ? "font-bold" : "font-semibold"}`}>Monthly</p>
                     <p className="mt-0.5 text-xs text-muted/70">{monthlyCost}/month</p>
                   </div>
                   <div className={`mt-0.5 h-5 w-5 shrink-0 rounded-full border-2 flex items-center justify-center transition ${
