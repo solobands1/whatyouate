@@ -49,8 +49,10 @@ const config: Config = {
           "100%": { opacity: "1", transform: "translateY(0)" }
         },
         "shimmer-sweep": {
-          "0%, 75%, 100%": { transform: "translateX(-100%) skewX(-15deg)" },
-          "40%": { transform: "translateX(250%) skewX(-15deg)" }
+          "0%, 80%, 100%": { transform: "translateX(-100%) skewX(-12deg)", opacity: "0" },
+          "10%": { opacity: "1" },
+          "50%": { transform: "translateX(300%) skewX(-12deg)", opacity: "1" },
+          "60%": { opacity: "0" }
         }
       },
       animation: {
@@ -58,7 +60,7 @@ const config: Config = {
         shimmer: "shimmer 2.5s ease-in-out infinite",
         pop: "pop 0.25s ease-out",
         "fade-slide-up": "fade-slide-up 0.35s ease-out",
-        "shimmer-sweep": "shimmer-sweep 5s ease-in-out infinite"
+        "shimmer-sweep": "shimmer-sweep 8s ease-in-out infinite"
       }
     }
   },
