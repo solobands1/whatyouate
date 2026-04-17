@@ -1138,6 +1138,20 @@ export default function HomeScreen() {
   const mealCount = homeMarkers.mealCount;
   const streak = homeMarkers.streak ?? 0;
 
+  const todayHasActivity = (() => {
+    const key = todayKey();
+    const hasWorkout = displayWorkouts.some((w) => dayKeyFromTs(w.startTs) === key);
+    const hasFeelLog = displayFeelLogs.some((f) => dayKeyFromTs(f.ts) === key);
+    return mealCount > 0 || hasWorkout || hasFeelLog;
+  })();
+
+  const welcomeMessage = (() => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good morning. Let's make today count!";
+    if (hour < 17) return "Good afternoon. Let's log and improve!";
+    return "Good evening. Better late than never!";
+  })();
+
   // Streak saver: detect if yesterday was missed but there's still a saveable streak
   const streakSaverInfo = (() => {
     if (isDemoMode || streakSaverDismissed) return null;
@@ -1684,6 +1698,14 @@ export default function HomeScreen() {
               <p className="text-[10px] text-muted/65">approx.</p>
             </div>
           </div>
+          {!loadingData && !isDemoMode && !todayHasActivity && (
+            <p
+              className="mt-3 text-center text-xs text-muted/60 animate-fade-slide-up"
+              style={{ animationDelay: "400ms", animationFillMode: "both" }}
+            >
+              {welcomeMessage}
+            </p>
+          )}
           {mealCount > 0 && (
             <div className="mt-3 flex gap-3">
               <div className="flex-1">
