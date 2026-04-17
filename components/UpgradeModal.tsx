@@ -154,59 +154,61 @@ export default function UpgradeModal() {
           </div>
 
           {/* Plan toggle */}
-          <div className="mt-6 w-full space-y-2.5">
-            <button
-              type="button"
-              onClick={() => setPlan("yearly")}
-              className={`relative w-full rounded-2xl border px-4 py-3.5 text-left transition ${
-                plan === "yearly" ? "border-primary/50 bg-primary/5" : "border-ink/10 bg-white"
-              }`}
-            >
-              <span className="absolute -top-2.5 right-3 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-white">
-                Save {yearlySavings}%
-              </span>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-ink">Yearly</p>
-                  <p className="mt-0.5 text-xs text-muted/70">
-                    {yearlyCost}/year
-                    <span className="ml-1.5 text-ink/40">({`$${yearlyMonthly}/mo`})</span>
-                  </p>
+          <div className="mt-6 w-full">
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setPlan("yearly")}
+                className={`relative flex-1 rounded-2xl border px-4 py-3.5 text-left transition ${
+                  plan === "yearly" ? "border-primary/50 bg-primary/5" : "border-ink/10 bg-white"
+                }`}
+              >
+                <span className="absolute -top-2.5 right-3 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-white">
+                  Save {yearlySavings}%
+                </span>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-ink">Yearly</p>
+                    <p className="mt-0.5 text-xs text-muted/70">
+                      {yearlyCost}/year
+                    </p>
+                    <p className="text-[11px] text-ink/40">({`$${yearlyMonthly}/mo`})</p>
+                  </div>
+                  <div className={`mt-0.5 h-5 w-5 shrink-0 rounded-full border-2 flex items-center justify-center transition ${
+                    plan === "yearly" ? "border-primary bg-primary" : "border-ink/20 bg-white"
+                  }`}>
+                    {plan === "yearly" && (
+                      <svg viewBox="0 0 10 10" className="h-2.5 w-2.5" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M2 5l2.5 2.5 3.5-4" />
+                      </svg>
+                    )}
+                  </div>
                 </div>
-                <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center transition ${
-                  plan === "yearly" ? "border-primary bg-primary" : "border-ink/20 bg-white"
-                }`}>
-                  {plan === "yearly" && (
-                    <svg viewBox="0 0 10 10" className="h-2.5 w-2.5" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M2 5l2.5 2.5 3.5-4" />
-                    </svg>
-                  )}
+              </button>
+              <button
+                type="button"
+                onClick={() => setPlan("monthly")}
+                className={`flex-1 rounded-2xl border px-4 py-3.5 text-left transition ${
+                  plan === "monthly" ? "border-primary/50 bg-primary/5" : "border-ink/10 bg-white"
+                }`}
+              >
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-ink">Monthly</p>
+                    <p className="mt-0.5 text-xs text-muted/70">{monthlyCost}/month</p>
+                  </div>
+                  <div className={`mt-0.5 h-5 w-5 shrink-0 rounded-full border-2 flex items-center justify-center transition ${
+                    plan === "monthly" ? "border-primary bg-primary" : "border-ink/20 bg-white"
+                  }`}>
+                    {plan === "monthly" && (
+                      <svg viewBox="0 0 10 10" className="h-2.5 w-2.5" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M2 5l2.5 2.5 3.5-4" />
+                      </svg>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </button>
-            <button
-              type="button"
-              onClick={() => setPlan("monthly")}
-              className={`w-full rounded-2xl border px-4 py-3.5 text-left transition ${
-                plan === "monthly" ? "border-primary/50 bg-primary/5" : "border-ink/10 bg-white"
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-ink">Monthly</p>
-                  <p className="mt-0.5 text-xs text-muted/70">{monthlyCost}/month</p>
-                </div>
-                <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center transition ${
-                  plan === "monthly" ? "border-primary bg-primary" : "border-ink/20 bg-white"
-                }`}>
-                  {plan === "monthly" && (
-                    <svg viewBox="0 0 10 10" className="h-2.5 w-2.5" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M2 5l2.5 2.5 3.5-4" />
-                    </svg>
-                  )}
-                </div>
-              </div>
-            </button>
+              </button>
+            </div>
           </div>
 
           {/* CTA */}
