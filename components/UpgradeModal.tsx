@@ -32,9 +32,8 @@ export default function UpgradeModal() {
   useEffect(() => {
     if (!open || !isNative) return;
     getOfferings().then((offering) => {
-      if (!offering) { setError("DEBUG: getOfferings returned null"); return; }
+      if (!offering) return;
       const pkgs = offering.availablePackages;
-      setError(`DEBUG: got ${pkgs.length} pkgs: ${pkgs.map(p => p.product.identifier).join(", ")}`);
       const monthly = pkgs.find(
         (p) => p.product.identifier === "com.dillonpoulin.whatyouate.monthly"
       ) ?? null;
@@ -42,8 +41,7 @@ export default function UpgradeModal() {
         (p) => p.product.identifier === "com.dillonpoulin.whatyouate.yearly"
       ) ?? null;
       setPackages({ monthly, yearly });
-      if (monthly && yearly) setError(null);
-    }).catch((e: unknown) => { setError(`DEBUG: catch ${String(e)}`); });
+    }).catch(() => {});
   }, [open, isNative]);
 
   if (!open) return null;

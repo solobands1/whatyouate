@@ -252,6 +252,10 @@ export async function saveProfile(userId: string, profile: UserProfile) {
   return { success: true };
 }
 
+export function clearProfileCache(userId: string) {
+  profileCache.delete(userId);
+}
+
 export async function saveStreak(userId: string, streak: number, lastDate: string): Promise<void> {
   if (useMemory) {
     if (memProfiles[userId]) {

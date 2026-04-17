@@ -7,7 +7,7 @@ import { notifyProfileUpdated } from "../lib/dataEvents";
 import type { ActivityLevel, GoalDirection, SupplementEntry, SupplementNutrient, Units, UserProfile } from "../lib/types";
 import { suppLabel, suppName } from "../lib/types";
 import { matchSupplementNutrients, NUTRIENT_UNITS, NUTRIENT_DISPLAY_NAMES } from "../lib/rda";
-import { clearAllData, getProfile, saveProfile, saveDailySupplements, LOCAL_MODE } from "../lib/supabaseDb";
+import { clearAllData, getProfile, saveProfile, saveDailySupplements, clearProfileCache, LOCAL_MODE } from "../lib/supabaseDb";
 import { getDailySupplements, setDailySupplements, clearDailySuppsLoggedToday, clearAllFoodCaches } from "../lib/foodCache";
 import { clearMealsCache } from "../lib/supabaseDb";
 import { notifyMealsUpdated } from "../lib/dataEvents";
@@ -329,50 +329,8 @@ export default function ProfileScreen() {
         profileExistsRef.current = true;
       }
 
-      const freshProfile = await getProfile(user.id);
-      if (freshProfile) {
-        profileExistsRef.current = true;
-        setFirstName(freshProfile.firstName ?? "");
-        setLastName(freshProfile.lastName ?? "");
-        setSex(freshProfile.sex ?? "prefer_not");
-        setGoalDirection(freshProfile.goalDirection ?? "maintain");
-        setBodyPriority(freshProfile.bodyPriority ?? "");
-        setFreeformFocus(freshProfile.freeformFocus ?? "");
-        setActivityLevel(freshProfile.activityLevel ?? "");
-        setDietaryRestrictions(freshProfile.dietaryRestrictions ?? []);
-        setUnits(freshProfile.units ?? "imperial");
-
-        if ((freshProfile.units ?? "imperial") === "imperial") {
-          const cm = freshProfile.height ?? null;
-          if (cm != null) {
-            const inchesTotal = cm / 2.54;
-            const ft = Math.floor(inchesTotal / 12);
-            const inch = Math.round(inchesTotal % 12);
-            setHeightFt(String(ft));
-            setHeightIn(String(inch));
-            setHeightCm("");
-          } else {
-            setHeightFt("");
-            setHeightIn("");
-            setHeightCm("");
-          }
-
-          const kg = freshProfile.weight ?? null;
-          if (kg != null) {
-            const lb = Math.round(kg * 2.20462 * 10) / 10;
-            setWeight(String(Math.round(lb)));
-          } else {
-            setWeight("");
-          }
-        } else {
-          setHeightCm(freshProfile.height != null ? String(freshProfile.height) : "");
-          setHeightFt("");
-          setHeightIn("");
-          setWeight(freshProfile.weight != null ? String(freshProfile.weight) : "");
-        }
-
-        setAge(freshProfile.age != null ? String(freshProfile.age) : "");
-      }
+      clearProfileCache(user.id);
+      profileExistsRef.current = true;
 
       if (user) {
         localStorage.setItem(`wya_profile_updated_${user.id}`, String(Date.now()));

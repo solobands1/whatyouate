@@ -6,6 +6,7 @@ const RC_API_KEY = "appl_oXmyrQuxNbyCNOdoVhYoSyNsRez";
 
 type PurchasesModule = typeof import("@revenuecat/purchases-capacitor");
 let _mod: PurchasesModule | null = null;
+let _initialized = false;
 
 async function getMod(): Promise<PurchasesModule | null> {
   if (!Capacitor.isNativePlatform()) return null;
@@ -17,12 +18,13 @@ async function getMod(): Promise<PurchasesModule | null> {
 
 export async function initializePurchases(userId: string): Promise<void> {
   const mod = await getMod();
-  if (!mod) { console.log("[RC] initializePurchases: not native"); return; }
+  if (!mod) return;
+  if (_initialized) return;
+  _initialized = true;
   try {
-    console.log("[RC] configuring with userId:", userId);
     await mod.Purchases.configure({ apiKey: RC_API_KEY, appUserID: userId });
-    console.log("[RC] configured successfully");
   } catch (e) {
+    _initialized = false;
     console.error("[RC] configure error:", e);
   }
 }
