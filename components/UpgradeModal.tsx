@@ -20,13 +20,20 @@ export default function UpgradeModal() {
   const [restoring, setRestoring] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [packages, setPackages] = useState<{ monthly: PurchasesPackage | null; yearly: PurchasesPackage | null }>({ monthly: null, yearly: null });
+  const [showCoachPill, setShowCoachPill] = useState(false);
   const isNative = Capacitor.isNativePlatform();
 
   useEffect(() => {
-    const handler = () => { setOpen(true); setError(null); };
+    const handler = () => { setOpen(true); setError(null); setShowCoachPill(false); };
     window.addEventListener(UPGRADE_EVENT, handler);
     return () => window.removeEventListener(UPGRADE_EVENT, handler);
   }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const timer = setTimeout(() => setShowCoachPill(true), 3000);
+    return () => clearTimeout(timer);
+  }, [open]);
 
   // Load offerings when modal opens
   useEffect(() => {
@@ -149,6 +156,15 @@ export default function UpgradeModal() {
                   </svg>
                 </span>
                 <span className="text-sm text-ink/80">{item}</span>
+                {item === "Daily AI-powered nudges" && (
+                  <span
+                    className={`ml-auto shrink-0 rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-semibold text-primary transition-all duration-500 ${
+                      showCoachPill ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1"
+                    }`}
+                  >
+                    I have a lot to tell you — Coach
+                  </span>
+                )}
               </div>
             ))}
           </div>
