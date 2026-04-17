@@ -156,15 +156,6 @@ export default function UpgradeModal() {
                   </svg>
                 </span>
                 <span className="text-sm text-ink/80">{item}</span>
-                {item === "Daily AI-powered nudges" && (
-                  <span
-                    className={`ml-auto shrink-0 rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-semibold text-primary transition-all duration-500 ${
-                      showCoachPill ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1"
-                    }`}
-                  >
-                    I have a lot to tell you — Coach
-                  </span>
-                )}
               </div>
             ))}
           </div>
@@ -229,6 +220,13 @@ export default function UpgradeModal() {
 
           {/* CTA */}
           <div className="mt-6 w-full space-y-3">
+            {showCoachPill && (
+              <div className="flex justify-center">
+                <span className="animate-pulse rounded-full bg-primary/10 px-3 py-1.5 text-[11px] font-semibold text-primary">
+                  I have a lot to tell you — Coach
+                </span>
+              </div>
+            )}
             {error && (
               <p className="text-center text-[11px] text-red-500/80">{error}</p>
             )}
