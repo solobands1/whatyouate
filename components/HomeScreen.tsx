@@ -1148,9 +1148,9 @@ export default function HomeScreen() {
 
   const welcomeMessage = (() => {
     const hour = new Date().getHours();
-    if (hour < 12) return "Good morning. Let's make today count!";
-    if (hour < 17) return "Good afternoon. Let's log and improve!";
-    return "Good evening. Better late than never!";
+    if (hour < 12) return { greeting: "Good Morning", sub: "Let's make today count!" };
+    if (hour < 17) return { greeting: "Good Afternoon", sub: "Let's log and improve!" };
+    return { greeting: "Good Evening", sub: "Better late than never!" };
   })();
 
   // Streak saver: detect if yesterday was missed but there's still a saveable streak
@@ -1679,7 +1679,7 @@ export default function HomeScreen() {
               );
             })()}
           </div>
-          <div className="mt-3 flex items-baseline justify-between">
+          <div className="mt-3 flex items-start justify-between">
             <div>
               <p className="text-[11px] uppercase tracking-wide text-muted/60">Calories</p>
               <p className="mt-1 text-2xl font-semibold">
@@ -1687,7 +1687,16 @@ export default function HomeScreen() {
               </p>
               <p className="text-[10px] text-muted/65">approx.</p>
             </div>
-            <div>
+            {!loadingData && !isDemoMode && !todayHasActivity && (
+              <div
+                className="flex flex-col items-center text-center animate-fade-slide-up"
+                style={{ animationDelay: "400ms", animationFillMode: "both" }}
+              >
+                <p className="text-[11px] uppercase tracking-wide text-ink/50">{welcomeMessage.greeting}</p>
+                <p className="mt-1 text-xs font-semibold text-ink/70">{welcomeMessage.sub}</p>
+              </div>
+            )}
+            <div className="text-right">
               <p className="text-[11px] uppercase tracking-wide text-muted/60">Protein</p>
               <p className="mt-1 text-2xl font-semibold">
                 {formatClean(
@@ -1699,14 +1708,6 @@ export default function HomeScreen() {
               <p className="text-[10px] text-muted/65">approx.</p>
             </div>
           </div>
-          {!loadingData && !isDemoMode && !todayHasActivity && (
-            <p
-              className="mt-3 text-center text-xs text-muted/60 animate-fade-slide-up"
-              style={{ animationDelay: "400ms", animationFillMode: "both" }}
-            >
-              {welcomeMessage}
-            </p>
-          )}
           {mealCount > 0 && (
             <div className="mt-3 flex gap-3">
               <div className="flex-1">
