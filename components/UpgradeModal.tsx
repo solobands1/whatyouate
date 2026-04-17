@@ -227,21 +227,28 @@ export default function UpgradeModal() {
 
           {/* CTA */}
           <div className="mt-6 w-full space-y-3">
-            {coachState === "thinking" && (
-              <div className="rounded-xl border border-primary/35 bg-primary/5 px-4 py-3 flex items-center gap-2.5">
-                <span className="relative flex h-2 w-2 shrink-0">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-primary/80" />
-                </span>
-                <p className="text-sm text-primary/70 font-medium">Coach is thinking…</p>
-              </div>
-            )}
-            {coachState === "message" && (
-              <div className="rounded-xl border border-primary/60 bg-primary/5 px-4 py-3 space-y-1">
-                <p className="text-sm font-medium text-ink/90">I've been watching your patterns. I have a lot to tell you!</p>
-                <p className="text-[11px] text-primary/70 font-medium">— Coach</p>
-              </div>
-            )}
+            <div className="relative min-h-[44px]">
+              {coachState === "thinking" && (
+                <div
+                  className="rounded-xl border border-primary/35 bg-primary/5 px-4 py-3 flex items-center gap-2.5 transition-all duration-300"
+                  style={{ opacity: coachState === "thinking" ? 1 : 0 }}
+                >
+                  <span className="relative flex h-2 w-2 shrink-0">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-primary/80" />
+                  </span>
+                  <p className="text-sm text-primary/70 font-medium">Coach is thinking…</p>
+                </div>
+              )}
+              {coachState === "message" && (
+                <div
+                  className="rounded-xl border border-primary/60 bg-primary/5 px-4 py-3 space-y-1 transition-all duration-300 animate-fade-slide-up"
+                >
+                  <p className="text-sm font-medium text-ink/90">I've been watching your patterns. I have a lot to tell you!</p>
+                  <p className="text-[11px] text-primary/70 font-medium">— Coach</p>
+                </div>
+              )}
+            </div>
             {error && (
               <p className="text-center text-[11px] text-red-500/80">{error}</p>
             )}

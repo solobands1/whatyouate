@@ -43,12 +43,17 @@ const config: Config = {
           "0%": { transform: "scale(1)" },
           "40%": { transform: "scale(1.04)" },
           "100%": { transform: "scale(1)" }
+        },
+        "fade-slide-up": {
+          "0%": { opacity: "0", transform: "translateY(6px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" }
         }
       },
       animation: {
         scan: "scan 2s ease-in-out infinite",
         shimmer: "shimmer 2.5s ease-in-out infinite",
-        pop: "pop 0.25s ease-out"
+        pop: "pop 0.25s ease-out",
+        "fade-slide-up": "fade-slide-up 0.35s ease-out"
       }
     }
   },
