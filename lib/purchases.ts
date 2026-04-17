@@ -2,7 +2,7 @@
 
 import { Capacitor } from "@capacitor/core";
 
-const RC_API_KEY = "test_OlqPyiZnvspixiHkBbnowHYCwBL";
+const RC_API_KEY = "appl_oXmyrQuxNbyCNOdoVhYoSyNsRez";
 
 type PurchasesModule = typeof import("@revenuecat/purchases-capacitor");
 let _mod: PurchasesModule | null = null;
