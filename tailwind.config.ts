@@ -47,13 +47,18 @@ const config: Config = {
         "fade-slide-up": {
           "0%": { opacity: "0", transform: "translateY(6px)" },
           "100%": { opacity: "1", transform: "translateY(0)" }
+        },
+        "shimmer-sweep": {
+          "0%, 75%, 100%": { transform: "translateX(-100%) skewX(-15deg)" },
+          "40%": { transform: "translateX(250%) skewX(-15deg)" }
         }
       },
       animation: {
         scan: "scan 2s ease-in-out infinite",
         shimmer: "shimmer 2.5s ease-in-out infinite",
         pop: "pop 0.25s ease-out",
-        "fade-slide-up": "fade-slide-up 0.35s ease-out"
+        "fade-slide-up": "fade-slide-up 0.35s ease-out",
+        "shimmer-sweep": "shimmer-sweep 5s ease-in-out infinite"
       }
     }
   },
