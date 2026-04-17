@@ -1692,8 +1692,8 @@ export default function HomeScreen() {
                 className="flex flex-col items-center text-center animate-fade-slide-up"
                 style={{ animationDelay: "400ms", animationFillMode: "both" }}
               >
-                <p className="text-[11px] uppercase tracking-wide text-ink/50">{welcomeMessage.greeting}</p>
-                <p className="mt-1 text-xs font-semibold text-ink/70">{welcomeMessage.sub}</p>
+                <p className="text-[11px] uppercase tracking-wide text-ink/70">{welcomeMessage.greeting}</p>
+                <p className="mt-1 text-xs font-semibold text-ink/90">{welcomeMessage.sub}</p>
               </div>
             )}
             <div className="text-right">
