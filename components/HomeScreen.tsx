@@ -1599,7 +1599,7 @@ export default function HomeScreen() {
         )}
 
 
-        <Card className="mt-2">
+        <Card className="mt-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Today</p>

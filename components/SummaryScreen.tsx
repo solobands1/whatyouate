@@ -1155,7 +1155,7 @@ export default function SummaryScreen() {
                     <rect x="3" y="11" width="18" height="11" rx="2" />
                     <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                   </svg>
-                  <span className="text-[10px] font-medium text-ink/50">Upgrade to unlock</span>
+                  <span className="text-[10px] font-medium text-ink/50">Upgrade To Unlock</span>
                 </div>
               </button>
             ) : (
@@ -1245,7 +1245,7 @@ export default function SummaryScreen() {
                   <rect x="3" y="11" width="18" height="11" rx="2" />
                   <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                 </svg>
-                <span className="text-[10px] font-medium text-ink/50">Upgrade to unlock</span>
+                <span className="text-[10px] font-medium text-ink/50">Upgrade To Unlock</span>
               </div>
             </button>
           ) : (
@@ -1457,8 +1457,8 @@ export default function SummaryScreen() {
                   className="mt-1 w-full rounded-lg bg-ink/5 px-3 py-2.5 text-left transition active:opacity-70"
                 >
                   <p className="text-xs text-ink/50">
-                    {historyGroups.reduce((n, g) => n + g.items.length, 0)} previous nudges are locked.{" "}
-                    <span className="font-semibold text-primary/70">Upgrade to read.</span>
+                    {historyGroups.reduce((n, g) => n + g.items.length, 0)} previous nudges are locked{" "}
+                    <span className="font-semibold text-primary/70">Upgrade To Read</span>
                   </p>
                 </button>
               )}

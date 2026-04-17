@@ -221,23 +221,18 @@ export default function UpgradeModal() {
           {/* CTA */}
           <div className="mt-6 w-full space-y-3">
             {coachState === "thinking" && (
-              <div className="flex justify-center">
-                <span className="flex items-center gap-1 rounded-full bg-primary/10 px-4 py-2.5">
-                  {[0, 1, 2].map((i) => (
-                    <span
-                      key={i}
-                      className="h-1.5 w-1.5 rounded-full bg-primary/60 animate-bounce"
-                      style={{ animationDelay: `${i * 0.15}s`, animationDuration: "0.8s" }}
-                    />
-                  ))}
+              <div className="rounded-xl border border-primary/35 bg-primary/5 px-4 py-3 flex items-center gap-2.5">
+                <span className="relative flex h-2 w-2 shrink-0">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-primary/80" />
                 </span>
+                <p className="text-sm text-primary/70 font-medium">Coach is thinking…</p>
               </div>
             )}
             {coachState === "message" && (
-              <div className="flex justify-center">
-                <span className="rounded-full bg-primary/10 px-4 py-2 text-[11px] font-semibold text-primary">
-                  I have a lot to tell you — Coach
-                </span>
+              <div className="rounded-xl border border-primary/60 bg-primary/5 px-4 py-3 space-y-1">
+                <p className="text-sm font-medium text-ink/90">I have a lot to tell you.</p>
+                <p className="text-[11px] text-primary/70 font-medium">— Coach</p>
               </div>
             )}
             {error && (
