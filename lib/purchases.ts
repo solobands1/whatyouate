@@ -46,15 +46,12 @@ export async function checkIsPro(): Promise<boolean> {
 
 export async function getOfferings() {
   const mod = await getMod();
-  if (!mod) { console.log("[RC] getOfferings: not native"); return null; }
+  if (!mod) throw new Error("NOT_NATIVE");
   try {
-    console.log("[RC] calling getOfferings...");
     const { current } = await mod.Purchases.getOfferings();
-    console.log("[RC] getOfferings result:", JSON.stringify(current));
     return current;
   } catch (e) {
-    console.error("[RC] getOfferings error:", e);
-    return null;
+    throw e;
   }
 }
 
