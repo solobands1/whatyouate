@@ -20,18 +20,18 @@ export default function UpgradeModal() {
   const [restoring, setRestoring] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [packages, setPackages] = useState<{ monthly: PurchasesPackage | null; yearly: PurchasesPackage | null }>({ monthly: null, yearly: null });
-  const [showCoachPill, setShowCoachPill] = useState(false);
+  const [coachState, setCoachState] = useState<"thinking" | "message" | null>(null);
   const isNative = Capacitor.isNativePlatform();
 
   useEffect(() => {
-    const handler = () => { setOpen(true); setError(null); setShowCoachPill(false); };
+    const handler = () => { setOpen(true); setError(null); setCoachState("thinking"); };
     window.addEventListener(UPGRADE_EVENT, handler);
     return () => window.removeEventListener(UPGRADE_EVENT, handler);
   }, []);
 
   useEffect(() => {
     if (!open) return;
-    const timer = setTimeout(() => setShowCoachPill(true), 3000);
+    const timer = setTimeout(() => setCoachState("message"), 2000);
     return () => clearTimeout(timer);
   }, [open]);
 
@@ -220,9 +220,22 @@ export default function UpgradeModal() {
 
           {/* CTA */}
           <div className="mt-6 w-full space-y-3">
-            {showCoachPill && (
+            {coachState === "thinking" && (
               <div className="flex justify-center">
-                <span className="animate-pulse rounded-full bg-primary/10 px-3 py-1.5 text-[11px] font-semibold text-primary">
+                <span className="flex items-center gap-1 rounded-full bg-primary/10 px-4 py-2.5">
+                  {[0, 1, 2].map((i) => (
+                    <span
+                      key={i}
+                      className="h-1.5 w-1.5 rounded-full bg-primary/60 animate-bounce"
+                      style={{ animationDelay: `${i * 0.15}s`, animationDuration: "0.8s" }}
+                    />
+                  ))}
+                </span>
+              </div>
+            )}
+            {coachState === "message" && (
+              <div className="flex justify-center">
+                <span className="rounded-full bg-primary/10 px-4 py-2 text-[11px] font-semibold text-primary">
                   I have a lot to tell you — Coach
                 </span>
               </div>
