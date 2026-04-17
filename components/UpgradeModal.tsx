@@ -125,7 +125,7 @@ export default function UpgradeModal() {
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-ink/8 text-ink/50 transition active:opacity-60"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-ink/8 text-ink/50 transition active:scale-90 active:opacity-60"
             aria-label="Close"
           >
             <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -155,8 +155,12 @@ export default function UpgradeModal() {
               "Micronutrient pattern tracking",
               "Weekly insights and trends",
               "Full access to your Patterns history",
-            ].map((item) => (
-              <div key={item} className="flex items-center gap-3">
+            ].map((item, i) => (
+              <div
+                key={item}
+                className="flex items-center gap-3 animate-fade-slide-up"
+                style={{ animationDelay: `${i * 80}ms`, animationFillMode: "both" }}
+              >
                 <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/15">
                   <svg viewBox="0 0 12 12" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M2 6l3 3 5-5" />
@@ -173,7 +177,7 @@ export default function UpgradeModal() {
               <button
                 type="button"
                 onClick={() => handlePlanSelect("yearly")}
-                className={`relative flex-1 rounded-2xl border px-4 py-3.5 text-left transition ${
+                className={`relative flex-1 rounded-2xl border px-4 py-3.5 text-left transition active:scale-[0.98] ${
                   plan === "yearly" ? "border-primary/50 bg-primary/5" : "border-ink/10 bg-white"
                 } ${poppedPlan === "yearly" ? "animate-pop" : ""}`}
               >
@@ -202,7 +206,7 @@ export default function UpgradeModal() {
               <button
                 type="button"
                 onClick={() => handlePlanSelect("monthly")}
-                className={`flex-1 rounded-2xl border px-4 py-3.5 text-left transition ${
+                className={`flex-1 rounded-2xl border px-4 py-3.5 text-left transition active:scale-[0.98] ${
                   plan === "monthly" ? "border-primary/50 bg-primary/5" : "border-ink/10 bg-white"
                 } ${poppedPlan === "monthly" ? "animate-pop" : ""}`}
               >
@@ -256,7 +260,7 @@ export default function UpgradeModal() {
               type="button"
               onClick={handlePurchase}
               disabled={loading || restoring}
-              className="w-full rounded-xl bg-primary px-5 py-3.5 text-sm font-semibold text-white transition active:opacity-80 disabled:opacity-50"
+              className="w-full rounded-xl bg-primary px-5 py-3.5 text-sm font-semibold text-white shadow-[0_4px_14px_rgba(99,133,255,0.45)] transition active:opacity-80 active:scale-[0.98] disabled:opacity-50"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
