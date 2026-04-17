@@ -1140,9 +1140,10 @@ export default function HomeScreen() {
 
   const todayHasActivity = (() => {
     const key = todayKey();
+    const hasMeal = displayMeals.some((m) => m.analysisJson?.source !== "supplement" && m.status !== "failed" && dayKeyFromTs(m.ts) === key);
     const hasWorkout = displayWorkouts.some((w) => dayKeyFromTs(w.startTs) === key);
     const hasFeelLog = displayFeelLogs.some((f) => dayKeyFromTs(f.ts) === key);
-    return mealCount > 0 || hasWorkout || hasFeelLog;
+    return hasMeal || hasWorkout || hasFeelLog;
   })();
 
   const welcomeMessage = (() => {
