@@ -38,7 +38,7 @@ export default function UpgradeModal() {
 
   useEffect(() => {
     if (!open) return;
-    const timer = setTimeout(() => setCoachState("message"), 2000);
+    const timer = setTimeout(() => setCoachState("message"), 3500);
     return () => clearTimeout(timer);
   }, [open]);
 
