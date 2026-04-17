@@ -49,10 +49,8 @@ const config: Config = {
           "100%": { opacity: "1", transform: "translateY(0)" }
         },
         "shimmer-sweep": {
-          "0%, 80%, 100%": { transform: "translateX(-100%) skewX(-12deg)", opacity: "0" },
-          "10%": { opacity: "1" },
-          "50%": { transform: "translateX(300%) skewX(-12deg)", opacity: "1" },
-          "60%": { opacity: "0" }
+          "0%, 100%": { transform: "translateX(-150%) skewX(-12deg)" },
+          "35%": { transform: "translateX(300%) skewX(-12deg)" }
         }
       },
       animation: {
