@@ -17,11 +17,13 @@ async function getMod(): Promise<PurchasesModule | null> {
 
 export async function initializePurchases(userId: string): Promise<void> {
   const mod = await getMod();
-  if (!mod) return;
+  if (!mod) { console.log("[RC] initializePurchases: not native"); return; }
   try {
+    console.log("[RC] configuring with userId:", userId);
     await mod.Purchases.configure({ apiKey: RC_API_KEY, appUserID: userId });
-  } catch {
-    // Already configured — safe to ignore
+    console.log("[RC] configured successfully");
+  } catch (e) {
+    console.error("[RC] configure error:", e);
   }
 }
 
@@ -44,11 +46,14 @@ export async function checkIsPro(): Promise<boolean> {
 
 export async function getOfferings() {
   const mod = await getMod();
-  if (!mod) return null;
+  if (!mod) { console.log("[RC] getOfferings: not native"); return null; }
   try {
+    console.log("[RC] calling getOfferings...");
     const { current } = await mod.Purchases.getOfferings();
+    console.log("[RC] getOfferings result:", JSON.stringify(current));
     return current;
-  } catch {
+  } catch (e) {
+    console.error("[RC] getOfferings error:", e);
     return null;
   }
 }
