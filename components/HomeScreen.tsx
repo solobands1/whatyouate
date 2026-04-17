@@ -1493,7 +1493,7 @@ export default function HomeScreen() {
         </div>
       )}
       <div className="relative mx-auto flex min-h-screen max-w-md flex-col px-5 pb-24 safe-top">
-        <header className="mb-4">
+        <header className="mb-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-semibold text-ink">
@@ -1578,11 +1578,11 @@ export default function HomeScreen() {
           <button
             type="button"
             onClick={openUpgradeModal}
-            className="mt-4 w-full rounded-xl border border-primary/25 bg-primary/10 px-4 py-2.5 text-left transition active:opacity-70"
+            className="mt-2 w-full rounded-xl border border-primary/25 bg-primary/10 px-4 py-2.5 text-left transition active:opacity-70"
           >
             <div className="flex items-center justify-between">
-              <span className="text-[12px] font-medium text-ink/60">Free trial ended</span>
-              <span className="text-[11px] text-primary font-semibold">Upgrade now →</span>
+              <span className="text-[12px] font-medium text-ink/60">Free Trial Ended</span>
+              <span className="text-[11px] text-primary font-semibold">Upgrade Now →</span>
             </div>
           </button>
         )}
@@ -1599,7 +1599,7 @@ export default function HomeScreen() {
         )}
 
 
-        <Card className="mt-4">
+        <Card className="mt-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Today</p>
