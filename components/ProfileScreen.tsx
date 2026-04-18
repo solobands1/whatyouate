@@ -530,31 +530,14 @@ export default function ProfileScreen() {
               </div>
             </div>
             <div className="flex flex-col items-end gap-1">
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  className="rounded-full border border-primary/30 px-2.5 py-0.5 text-[10px] font-medium text-ink/80"
-                  onClick={() => {
-                    if (!user) return;
-                    localStorage.removeItem(`wya_walkthrough_${user.id}`);
-                    localStorage.removeItem(`wya_walkthrough_gate_${user.id}`);
-                    localStorage.removeItem(`wya_walkthrough_active_${user.id}`);
-                    localStorage.removeItem(`wya_walkthrough_stage_${user.id}`);
-                    localStorage.removeItem(`wya_demo_mode_${user.id}`);
-                    router.push("/");
-                  }}
-                >
-                  Replay Walkthrough
-                </button>
-                <button
-                  type="button"
-                  data-tour="feedback-button"
-                  className="rounded-full bg-primary px-3 py-1 text-[10px] font-semibold text-white transition hover:bg-primary/90"
-                  onClick={() => setShowFeedback(true)}
-                >
-                  Send Feedback
-                </button>
-              </div>
+              <button
+                type="button"
+                data-tour="feedback-button"
+                className="rounded-full bg-primary px-3 py-1 text-[10px] font-semibold text-white transition hover:bg-primary/90"
+                onClick={() => setShowFeedback(true)}
+              >
+                Send Feedback
+              </button>
               <span className="text-[10px] text-muted/60">Share a quick suggestion</span>
             </div>
           </div>
@@ -1020,7 +1003,22 @@ export default function ProfileScreen() {
         <Card className="mt-6">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Account</p>
           <button
-            className="mt-3 w-full rounded-xl bg-ink/5 px-4 py-2.5 text-xs font-semibold text-ink/80 disabled:opacity-50"
+            type="button"
+            className="mt-3 w-full rounded-xl bg-ink/5 px-4 py-2.5 text-xs font-semibold text-ink/80 transition active:opacity-60"
+            onClick={() => {
+              if (!user) return;
+              localStorage.removeItem(`wya_walkthrough_${user.id}`);
+              localStorage.removeItem(`wya_walkthrough_gate_${user.id}`);
+              localStorage.removeItem(`wya_walkthrough_active_${user.id}`);
+              localStorage.removeItem(`wya_walkthrough_stage_${user.id}`);
+              localStorage.removeItem(`wya_demo_mode_${user.id}`);
+              router.push("/");
+            }}
+          >
+            Replay Walkthrough
+          </button>
+          <button
+            className="mt-2 w-full rounded-xl bg-ink/5 px-4 py-2.5 text-xs font-semibold text-ink/80 disabled:opacity-50"
             onClick={handleSignOut}
             disabled={signingOut}
           >
