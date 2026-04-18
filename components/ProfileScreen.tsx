@@ -506,12 +506,18 @@ export default function ProfileScreen() {
             Back
           </button>
           <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-2xl font-semibold text-ink">Profile</h1>
-              <div className="mt-1 flex items-center gap-1.5">
-                <p className="text-sm text-muted/70">
-                  {[firstName, lastName].filter(Boolean).join(" ") || "Set name"}
-                </p>
+            <div className="flex items-center gap-3">
+              {(firstName || lastName) && (
+                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/15 text-sm font-semibold text-primary/80 shrink-0">
+                  {[firstName[0], lastName[0]].filter(Boolean).join("").toUpperCase()}
+                </div>
+              )}
+              <div>
+                <h1 className="text-2xl font-semibold text-ink">Profile</h1>
+                <div className="mt-1 flex items-center gap-1.5">
+                  <p className="text-sm text-muted/70">
+                    {[firstName, lastName].filter(Boolean).join(" ") || "Set name"}
+                  </p>
                 <button
                   type="button"
                   aria-label="Edit name"
@@ -527,6 +533,7 @@ export default function ProfileScreen() {
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                   </svg>
                 </button>
+                </div>
               </div>
             </div>
             <div className="flex flex-col items-end gap-1">
@@ -710,7 +717,7 @@ export default function ProfileScreen() {
               </span>
               <button
                 type="button"
-                className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-ink/10 text-[10px] font-semibold text-ink/60"
+                className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-primary/30 text-[10px] font-semibold text-primary/60"
                 onClick={() => setShowGoalInfo(true)}
                 aria-label="About goal direction"
               >
@@ -822,7 +829,7 @@ export default function ProfileScreen() {
               </span>
               <button
                 type="button"
-                className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-ink/10 text-[10px] font-semibold text-ink/60"
+                className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-primary/30 text-[10px] font-semibold text-primary/60"
                 onClick={() => setShowBodyInfo(true)}
                 aria-label="About body focus"
               >
@@ -845,7 +852,7 @@ export default function ProfileScreen() {
               {dailySupplements.map((entry, idx) => (
                 <span
                   key={idx}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-ink/10 bg-ink/5 px-3 py-1 text-xs text-ink/80"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs text-ink/80"
                 >
                   {suppLabel(entry)}
                   <button
@@ -990,7 +997,7 @@ export default function ProfileScreen() {
             ) : null;
           })()}
           <button
-            className="w-full rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] ring-1 ring-white/40 transition-colors hover:bg-primary/90 disabled:opacity-50"
+            className="w-full rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] ring-1 ring-white/40 transition-colors hover:bg-primary/90 active:scale-[0.98] disabled:opacity-50"
             onClick={handleSave}
             disabled={saving}
           >
@@ -1018,7 +1025,7 @@ export default function ProfileScreen() {
             Replay Walkthrough
           </button>
           <button
-            className="mt-2 w-full rounded-xl bg-ink/5 px-4 py-2.5 text-xs font-semibold text-ink/80 disabled:opacity-50"
+            className="mt-2 w-full rounded-xl bg-ink/5 px-4 py-2.5 text-xs font-semibold text-ink/80 transition active:opacity-60 disabled:opacity-50"
             onClick={handleSignOut}
             disabled={signingOut}
           >
