@@ -16,6 +16,17 @@ import BottomNav from "./BottomNav";
 import Card from "./Card";
 import { useAuth } from "./AuthProvider";
 
+function calculateAgeFromDob(dobStr: string): number | null {
+  if (!dobStr) return null;
+  const birth = new Date(dobStr + "T00:00:00");
+  if (isNaN(birth.getTime())) return null;
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+  return age >= 0 && age < 130 ? age : null;
+}
+
 const goals: { value: GoalDirection; label: string }[] = [
   { value: "gain", label: "Gain weight" },
   { value: "maintain", label: "Stay steady" },
@@ -35,7 +46,7 @@ export default function ProfileScreen() {
   const [heightFt, setHeightFt] = useState("");
   const [heightIn, setHeightIn] = useState("");
   const [weight, setWeight] = useState("");
-  const [age, setAge] = useState("");
+  const [dob, setDob] = useState("");
   const [sex, setSex] = useState<UserProfile["sex"]>("prefer_not");
   const [goalDirection, setGoalDirection] = useState<GoalDirection>("maintain");
   const [bodyPriority, setBodyPriority] = useState("");
@@ -141,7 +152,8 @@ export default function ProfileScreen() {
             setWeight(data.weight != null ? String(data.weight) : "");
           }
 
-          setAge(data.age != null ? String(data.age) : "");
+          const savedDob = localStorage.getItem(`wya_dob_${user.id}`);
+          if (savedDob) setDob(savedDob);
 
           // Seed localStorage from Supabase so supplements survive cache clears
           const supps = data.dailySupplements ?? [];
@@ -268,7 +280,7 @@ export default function ProfileScreen() {
     if (!user) return;
     try {
       setSaving(true);
-      const parsedAge = parseInteger(age);
+      const parsedAge = calculateAgeFromDob(dob);
 
       let parsedHeightCm: number | null = null;
       let parsedWeightKg: number | null = null;
@@ -336,6 +348,7 @@ export default function ProfileScreen() {
         localStorage.setItem(`wya_profile_updated_${user.id}`, String(Date.now()));
         localStorage.removeItem(`wya_profile_prompt_opened_${user.id}`);
         localStorage.removeItem(`wya_profile_prompt_last_${user.id}`);
+        if (dob) localStorage.setItem(`wya_dob_${user.id}`, dob);
       }
       notifyProfileUpdated();
       setShowSavedToast(true);
@@ -363,6 +376,7 @@ export default function ProfileScreen() {
       `wya_walkthrough_gate_${user.id}`,
       `wya_walkthrough_profile_${user.id}`,
       `wya_nudge_view_count_${user.id}`,
+      `wya_dob_${user.id}`,
     ];
     keysToRemove.forEach((k) => localStorage.removeItem(k));
     clearDailySuppsLoggedToday(user.id);
@@ -379,7 +393,7 @@ export default function ProfileScreen() {
     setHeightFt("");
     setHeightIn("");
     setWeight("");
-    setAge("");
+    setDob("");
     setSex("prefer_not");
     setGoalDirection("maintain");
     setBodyPriority("");
@@ -418,6 +432,7 @@ export default function ProfileScreen() {
         localStorage.removeItem(`wya_profile_prompt_opened_${user.id}`);
         localStorage.removeItem(`wya_profile_prompt_last_${user.id}`);
         localStorage.removeItem(`wya_nudge_view_count_${user.id}`);
+        localStorage.removeItem(`wya_dob_${user.id}`);
       } catch {
         localStorage.removeItem("wya_local_users");
         localStorage.removeItem("wya_local_session");
@@ -602,7 +617,7 @@ export default function ProfileScreen() {
                 {units === "metric" ? (
                   <input
                     inputMode="numeric"
-                    className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    className="mt-1 w-full rounded-xl border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
                     value={heightCm}
                     onChange={(event) => {
                       const raw = event.target.value.replace(/[^0-9]/g, "");
@@ -615,7 +630,7 @@ export default function ProfileScreen() {
                   <div className="mt-1 flex gap-2">
                     <input
                       inputMode="numeric"
-                      className="w-[45%] rounded-xl border border-ink/10 px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                      className="w-[45%] rounded-xl border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
                       value={heightFt}
                       onChange={(event) => {
                         const raw = event.target.value.replace(/[^0-9]/g, "");
@@ -631,7 +646,7 @@ export default function ProfileScreen() {
                     />
                     <input
                       inputMode="numeric"
-                      className="w-[55%] rounded-xl border border-ink/10 px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                      className="w-[55%] rounded-xl border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
                       value={heightIn}
                       onChange={(event) => {
                         const raw = event.target.value.replace(/[^0-9]/g, "");
@@ -652,7 +667,7 @@ export default function ProfileScreen() {
                 Weight ({units === "metric" ? "kg" : "lb"})
                 <input
                   inputMode="numeric"
-                  className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                  className="mt-1 w-full rounded-xl border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
                   value={weight}
                   onChange={(event) => {
                     const raw = event.target.value.replace(/[^0-9]/g, "");
@@ -662,20 +677,21 @@ export default function ProfileScreen() {
                   placeholder={units === "metric" ? "kg" : "lb"}
                 />
               </label>
-              <label className="text-[11px] text-muted/70">
-                Age
+            </div>
+            <div className="mt-5">
+              <p className="text-[11px] text-muted/70 mb-1.5">Date of Birth</p>
+              <div className="flex items-center gap-3">
                 <input
-                  inputMode="numeric"
-                  className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                  value={age}
-                  onChange={(event) => {
-                    const raw = event.target.value.replace(/[^0-9]/g, "");
-                    const cleaned = raw.replace(/^0+(?=\d)/, "");
-                    setAge(cleaned);
-                  }}
-                  placeholder="Age"
+                  type="date"
+                  className="flex-1 rounded-xl border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                  value={dob}
+                  max={new Date().toISOString().split("T")[0]}
+                  onChange={(e) => setDob(e.target.value)}
                 />
-              </label>
+                {dob && calculateAgeFromDob(dob) !== null && (
+                  <span className="text-sm font-semibold text-primary/70">{calculateAgeFromDob(dob)} yrs</span>
+                )}
+              </div>
             </div>
             <div className="mt-5">
               <p className="text-[11px] text-muted/70 mb-1.5">Sex</p>
@@ -689,9 +705,9 @@ export default function ProfileScreen() {
                   <button
                     key={option.value}
                     type="button"
-                    className={`rounded-xl border px-3 py-1.5 text-xs font-medium ${
+                    className={`rounded-xl border px-3 py-1.5 text-xs font-medium transition ${
                       sex === option.value
-                        ? "border-primary/30 bg-primary/10 text-ink/80"
+                        ? "border-primary/50 bg-primary/15 text-primary/80"
                         : "border-ink/10 text-muted/65"
                     }`}
                     onClick={() => setSex(option.value)}
@@ -702,8 +718,10 @@ export default function ProfileScreen() {
               </div>
             </div>
           </div>
+        </Card>
 
-          <label className="mt-8 block border-t border-ink/5 pt-7 text-xs text-muted/70">
+        <Card className="mt-4">
+          <label className="block text-xs text-muted/70">
             <span className="flex items-center justify-between">
               <span className="text-[11px] font-semibold uppercase tracking-wide text-ink/70">
                 Goal direction
@@ -721,9 +739,9 @@ export default function ProfileScreen() {
               {goals.map(({ value, label }) => (
                 <button
                   key={value}
-                  className={`rounded-xl border px-3 py-1.5 text-xs font-medium ${
+                  className={`rounded-xl border px-3 py-1.5 text-xs font-medium transition ${
                     goalDirection === value || (goalDirection === "balance" && value === "maintain")
-                      ? "border-primary/30 bg-primary/10 text-ink/80"
+                      ? "border-primary/50 bg-primary/15 text-primary/80"
                       : "border-ink/10 text-muted/65"
                   }`}
                   onClick={() => setGoalDirection(value)}
@@ -749,9 +767,9 @@ export default function ProfileScreen() {
                 <button
                   key={option.value}
                   type="button"
-                  className={`rounded-xl border px-3 py-1.5 text-xs font-medium ${
+                  className={`rounded-xl border px-3 py-1.5 text-xs font-medium transition ${
                     activityLevel === option.value
-                      ? "border-primary/30 bg-primary/10 text-ink/80"
+                      ? "border-primary/50 bg-primary/15 text-primary/80"
                       : "border-ink/10 text-muted/65"
                   }`}
                   onClick={() => setActivityLevel(option.value)}
@@ -786,7 +804,7 @@ export default function ProfileScreen() {
                     type="button"
                     className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
                       active
-                        ? "border-primary/30 bg-primary/10 text-ink/80"
+                        ? "border-primary/50 bg-primary/15 text-primary/80"
                         : "border-ink/10 text-muted/65"
                     }`}
                     onClick={() =>
@@ -808,7 +826,7 @@ export default function ProfileScreen() {
             </span>
             <input
               type="text"
-              className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+              className="mt-1 w-full rounded-xl border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
               value={freeformFocus}
               onChange={(event) => setFreeformFocus(event.target.value)}
               placeholder="e.g. building strength, more energy, longevity"
@@ -831,7 +849,7 @@ export default function ProfileScreen() {
             </span>
             <textarea
               rows={3}
-              className="mt-1 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30 resize-none"
+              className="mt-1 w-full rounded-xl border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30 resize-none"
               value={bodyPriority}
               onChange={(event) => setBodyPriority(event.target.value)}
               placeholder="e.g. I meal prep Sundays, I eat late at night, I skip breakfast"
@@ -983,8 +1001,8 @@ export default function ProfileScreen() {
           {(() => {
             const missingWeight = !weight || weight === "0";
             const missingHeight = units === "metric" ? (!heightCm || heightCm === "0") : (!heightFt || heightFt === "0");
-            const missingAge = !age || age === "0";
-            const missing = [missingWeight && "weight", missingHeight && "height", missingAge && "age"].filter(Boolean);
+            const missingDob = !dob;
+            const missing = [missingWeight && "weight", missingHeight && "height", missingDob && "date of birth"].filter(Boolean);
             return missing.length > 0 ? (
               <p className="mb-3 text-[11px] text-muted/60">Add your {missing.join(", ")} for personalised nudges and targets.</p>
             ) : null;
