@@ -707,7 +707,7 @@ export default function ProfileScreen() {
                     type="button"
                     className={`rounded-xl border px-3 py-1.5 text-xs font-medium transition ${
                       sex === option.value
-                        ? "border-primary/50 bg-primary/15 text-primary/80"
+                        ? "border-primary/60 bg-primary/10 text-ink/80"
                         : "border-ink/10 text-muted/65"
                     }`}
                     onClick={() => setSex(option.value)}
@@ -741,7 +741,7 @@ export default function ProfileScreen() {
                   key={value}
                   className={`rounded-xl border px-3 py-1.5 text-xs font-medium transition ${
                     goalDirection === value || (goalDirection === "balance" && value === "maintain")
-                      ? "border-primary/50 bg-primary/15 text-primary/80"
+                      ? "border-primary/60 bg-primary/10 text-ink/80"
                       : "border-ink/10 text-muted/65"
                   }`}
                   onClick={() => setGoalDirection(value)}
@@ -769,7 +769,7 @@ export default function ProfileScreen() {
                   type="button"
                   className={`rounded-xl border px-3 py-1.5 text-xs font-medium transition ${
                     activityLevel === option.value
-                      ? "border-primary/50 bg-primary/15 text-primary/80"
+                      ? "border-primary/60 bg-primary/10 text-ink/80"
                       : "border-ink/10 text-muted/65"
                   }`}
                   onClick={() => setActivityLevel(option.value)}
@@ -804,7 +804,7 @@ export default function ProfileScreen() {
                     type="button"
                     className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
                       active
-                        ? "border-primary/50 bg-primary/15 text-primary/80"
+                        ? "border-primary/60 bg-primary/10 text-ink/80"
                         : "border-ink/10 text-muted/65"
                     }`}
                     onClick={() =>
