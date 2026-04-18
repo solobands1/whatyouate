@@ -907,19 +907,6 @@ export default function HomeScreen() {
     return () => window.clearTimeout(timer);
   }, [meals.meals, reload]);
 
-  // Poll Supabase every 4s while any meal is actively processing so the pill
-  // updates live without needing to navigate away and back.
-  useEffect(() => {
-    const hasProcessing = meals.meals.some(
-      (m) => m.status === "processing" && Date.now() - m.ts < 90_000
-    );
-    if (!hasProcessing) return;
-    const interval = window.setInterval(() => {
-      clearMealsCache(user?.id);
-      reload();
-    }, 4_000);
-    return () => window.clearInterval(interval);
-  }, [meals.meals, reload, user]);
 
   useEffect(() => {
     if (!user) return;
