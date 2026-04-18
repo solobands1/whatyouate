@@ -594,7 +594,7 @@ export default function ProfileScreen() {
           {loadError && <p className="mt-2 text-xs text-muted/70">{loadError}</p>}
         </header>
 
-        <Card className="mt-4 border border-primary/20">
+        <Card className="mt-4 border border-primary/40">
           <div className="mt-0 border-t-0 pt-0">
             <div className="flex items-center justify-between">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Body</p>
@@ -780,7 +780,7 @@ export default function ProfileScreen() {
           </div>
         </Card>
 
-        <Card className="mt-4 border border-primary/20">
+        <Card className="mt-4 border border-primary/40">
           <label className="block text-xs text-muted/70">
             <span className="flex items-center justify-between">
               <span className="text-[11px] font-semibold uppercase tracking-wide text-ink/70">
