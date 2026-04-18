@@ -175,6 +175,15 @@ export default function ProfileScreen() {
           setFirstName(meta.first_name ?? "");
           setLastName(meta.last_name ?? "");
           setDailySupplementsState(getDailySupplements(user.id));
+          const savedDob = localStorage.getItem(`wya_dob_${user.id}`);
+          if (savedDob) {
+            const parts = savedDob.split("-");
+            if (parts.length === 3) {
+              setDobYear(parts[0]);
+              setDobMonth(String(parseInt(parts[1], 10)));
+              setDobDay(String(parseInt(parts[2], 10)));
+            }
+          }
         }
       })
       .catch(() => {
@@ -288,11 +297,13 @@ export default function ProfileScreen() {
 
   const handleSave = async () => {
     if (!user) return;
+    // Save DOB synchronously before any async work so it's never lost
+    const dobString = dobYear && dobMonth && dobDay
+      ? `${dobYear}-${dobMonth.padStart(2, "0")}-${dobDay.padStart(2, "0")}`
+      : "";
+    if (dobString) localStorage.setItem(`wya_dob_${user.id}`, dobString);
     try {
       setSaving(true);
-      const dobString = dobYear && dobMonth && dobDay
-        ? `${dobYear}-${dobMonth.padStart(2, "0")}-${dobDay.padStart(2, "0")}`
-        : "";
       const parsedAge = calculateAgeFromDob(dobString);
 
       let parsedHeightCm: number | null = null;
@@ -361,10 +372,6 @@ export default function ProfileScreen() {
         localStorage.setItem(`wya_profile_updated_${user.id}`, String(Date.now()));
         localStorage.removeItem(`wya_profile_prompt_opened_${user.id}`);
         localStorage.removeItem(`wya_profile_prompt_last_${user.id}`);
-        const dobString = dobYear && dobMonth && dobDay
-          ? `${dobYear}-${dobMonth.padStart(2, "0")}-${dobDay.padStart(2, "0")}`
-          : "";
-        if (dobString) localStorage.setItem(`wya_dob_${user.id}`, dobString);
       }
       notifyProfileUpdated();
       setShowSavedToast(true);
