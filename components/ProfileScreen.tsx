@@ -28,9 +28,9 @@ function calculateAgeFromDob(dobStr: string): number | null {
 }
 
 const goals: { value: GoalDirection; label: string }[] = [
-  { value: "gain", label: "Gain weight" },
-  { value: "maintain", label: "Stay steady" },
-  { value: "lose", label: "Lose weight" },
+  { value: "gain", label: "Gain Weight" },
+  { value: "maintain", label: "Stay Steady" },
+  { value: "lose", label: "Lose Weight" },
 ];
 
 export default function ProfileScreen() {
@@ -349,13 +349,8 @@ export default function ProfileScreen() {
       };
 
       if (!LOCAL_MODE) {
-        if (profileExistsRef.current) {
-          const { error } = await supabase.from("profiles").update(payload).eq("user_id", user.id);
-          if (error) throw error;
-        } else {
-          const { error } = await supabase.from("profiles").insert(payload);
-          if (error) throw error;
-        }
+        const { error } = await supabase.from("profiles").upsert(payload, { onConflict: "user_id" });
+        if (error) throw error;
       } else {
         await saveProfile(user.id, {
           id: user.id,
@@ -544,7 +539,7 @@ export default function ProfileScreen() {
             }}
           />
         )}
-        <header className="mb-4" data-tour="profile-header">
+        <header className="mb-2" data-tour="profile-header">
           <button
             type="button"
             className="mb-3 flex items-center gap-1 text-xs font-medium text-muted/60 hover:text-ink transition"
@@ -555,7 +550,7 @@ export default function ProfileScreen() {
             </svg>
             Back
           </button>
-          <div className="flex items-start justify-between">
+          <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-semibold text-ink">Profile</h1>
               <div className="mt-1 flex items-center gap-1.5">
@@ -579,17 +574,14 @@ export default function ProfileScreen() {
                 </button>
               </div>
             </div>
-            <div className="flex flex-col items-end gap-1">
-              <button
-                type="button"
-                data-tour="feedback-button"
-                className="rounded-full bg-primary px-3 py-1 text-[10px] font-semibold text-white transition hover:bg-primary/90"
-                onClick={() => setShowFeedback(true)}
-              >
-                Send Feedback
-              </button>
-              <span className="text-[10px] text-muted/60">Share a quick suggestion</span>
-            </div>
+            <button
+              type="button"
+              data-tour="feedback-button"
+              className="rounded-full bg-primary px-3 py-1 text-[10px] font-semibold text-white transition hover:bg-primary/90"
+              onClick={() => setShowFeedback(true)}
+            >
+              Send Feedback
+            </button>
           </div>
           {loadError && <p className="mt-2 text-xs text-muted/70">{loadError}</p>}
         </header>
@@ -760,7 +752,7 @@ export default function ProfileScreen() {
                   { value: "male", label: "Male" },
                   { value: "female", label: "Female" },
                   { value: "other", label: "Other" },
-                  { value: "prefer_not", label: "Rather not say" }
+                  { value: "prefer_not", label: "Rather Not Say" }
                 ] as const).map((option) => (
                   <button
                     key={option.value}
@@ -819,10 +811,10 @@ export default function ProfileScreen() {
             </p>
             <div className="mt-2 grid grid-cols-2 gap-2">
               {([
-                { value: "sedentary", label: "Not very active" },
-                { value: "lightly_active", label: "Lightly active" },
-                { value: "moderately_active", label: "Moderately active" },
-                { value: "very_active", label: "Very active" }
+                { value: "sedentary", label: "Not Very Active" },
+                { value: "lightly_active", label: "Lightly Active" },
+                { value: "moderately_active", label: "Moderately Active" },
+                { value: "very_active", label: "Very Active" }
               ] as const).map((option) => (
                 <button
                   key={option.value}
