@@ -98,6 +98,17 @@ export default function ProfileScreen() {
   }, []);
 
   useEffect(() => {
+    if (!user) return;
+    const savedDob = localStorage.getItem(`wya_dob_${user.id}`);
+    if (!savedDob) return;
+    const parts = savedDob.split("-");
+    if (parts.length !== 3) return;
+    setDobYear(parts[0]);
+    setDobMonth(String(parseInt(parts[1], 10)));
+    setDobDay(String(parseInt(parts[2], 10)));
+  }, [user]);
+
+  useEffect(() => {
     if (!loading && !user) {
       router.replace("/login");
     }
@@ -152,16 +163,6 @@ export default function ProfileScreen() {
             setHeightFt("");
             setHeightIn("");
             setWeight(data.weight != null ? String(data.weight) : "");
-          }
-
-          const savedDob = localStorage.getItem(`wya_dob_${user.id}`);
-          if (savedDob) {
-            const parts = savedDob.split("-");
-            if (parts.length === 3) {
-              setDobYear(parts[0]);
-              setDobMonth(String(parseInt(parts[1], 10)));
-              setDobDay(String(parseInt(parts[2], 10)));
-            }
           }
 
           // Seed localStorage from Supabase so supplements survive cache clears
@@ -634,7 +635,7 @@ export default function ProfileScreen() {
                 {units === "metric" ? (
                   <input
                     inputMode="numeric"
-                    className="mt-1 w-full rounded-xl border border-ink/10 bg-white px-3 py-1.5 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    className="mt-1 w-full rounded-xl border border-ink/10 bg-white px-3 py-1.5 text-xs text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
                     value={heightCm}
                     onChange={(event) => {
                       const raw = event.target.value.replace(/[^0-9]/g, "");
@@ -647,7 +648,7 @@ export default function ProfileScreen() {
                   <div className="mt-1 flex gap-2">
                     <input
                       inputMode="numeric"
-                      className="w-[45%] rounded-xl border border-ink/10 bg-white px-3 py-1.5 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                      className="w-[45%] rounded-xl border border-ink/10 bg-white px-3 py-1.5 text-xs text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
                       value={heightFt}
                       onChange={(event) => {
                         const raw = event.target.value.replace(/[^0-9]/g, "");
@@ -663,7 +664,7 @@ export default function ProfileScreen() {
                     />
                     <input
                       inputMode="numeric"
-                      className="w-[55%] rounded-xl border border-ink/10 bg-white px-3 py-1.5 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                      className="w-[55%] rounded-xl border border-ink/10 bg-white px-3 py-1.5 text-xs text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
                       value={heightIn}
                       onChange={(event) => {
                         const raw = event.target.value.replace(/[^0-9]/g, "");
@@ -684,7 +685,7 @@ export default function ProfileScreen() {
                 Weight ({units === "metric" ? "kg" : "lb"})
                 <input
                   inputMode="numeric"
-                  className="mt-1 w-full rounded-xl border border-ink/10 bg-white px-3 py-1.5 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                  className="mt-1 w-full rounded-xl border border-ink/10 bg-white px-3 py-1.5 text-xs text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
                   value={weight}
                   onChange={(event) => {
                     const raw = event.target.value.replace(/[^0-9]/g, "");
@@ -868,7 +869,7 @@ export default function ProfileScreen() {
             </span>
             <input
               type="text"
-              className="mt-1 w-full rounded-xl border border-ink/10 bg-white px-3 py-1.5 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+              className="mt-1 w-full rounded-xl border border-ink/10 bg-white px-3 py-1.5 text-xs text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
               value={freeformFocus}
               onChange={(event) => setFreeformFocus(event.target.value)}
               placeholder="e.g. building strength, more energy, longevity"
@@ -1009,7 +1010,7 @@ export default function ProfileScreen() {
                   onChange={(e) => setNewSuppDose(e.target.value)}
                 />
                 <select
-                  className="rounded-full border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80"
+                  className="rounded-full border border-ink/10 bg-white px-3 py-1.5 text-xs text-ink/80"
                   value={newSuppUnit}
                   onChange={(e) => setNewSuppUnit(e.target.value)}
                 >
@@ -1457,7 +1458,7 @@ export default function ProfileScreen() {
                               onChange={(e) => setMultiSuppNutrients((prev) => ({ ...prev, [key]: { ...prev[key], dose: e.target.value } }))}
                             />
                             <select
-                              className="rounded-full border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80"
+                              className="rounded-full border border-ink/10 bg-white px-3 py-1.5 text-xs text-ink/80"
                               value={entry.unit}
                               onChange={(e) => setMultiSuppNutrients((prev) => ({ ...prev, [key]: { ...prev[key], unit: e.target.value } }))}
                             >
