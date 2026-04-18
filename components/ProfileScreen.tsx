@@ -64,7 +64,7 @@ export default function ProfileScreen() {
   const setStatusWithAutoDismiss = (msg: string | null) => {
     if (statusTimer.current) clearTimeout(statusTimer.current);
     setStatus(msg);
-    if (msg) statusTimer.current = setTimeout(() => setStatus(null), 4000);
+    if (msg) statusTimer.current = setTimeout(() => setStatus(null), 8000);
   };
   const [loadError, setLoadError] = useState<string | null>(null);
   const [runProfileTour, setRunProfileTour] = useState(false);
@@ -380,9 +380,9 @@ export default function ProfileScreen() {
       }
       notifyProfileUpdated();
       setShowSavedToast(true);
-      setTimeout(() => setShowSavedToast(false), 1800);
-    } catch {
-      setStatusWithAutoDismiss("Couldn’t save. Check your connection and try again.");
+      setTimeout(() => setShowSavedToast(false), 4000);
+    } catch (err) {
+      setStatusWithAutoDismiss(`Save error: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setSaving(false);
     }
@@ -1404,8 +1404,8 @@ export default function ProfileScreen() {
 
       {showSavedToast && (
         <div className="fixed inset-x-0 bottom-6 z-50 flex justify-center px-5">
-          <div className="rounded-full bg-ink px-4 py-2 text-xs font-semibold text-white shadow-lg">
-            Saved
+          <div className="rounded-full bg-ink px-4 py-2 text-xs font-semibold text-white shadow-lg text-center">
+            Saved{dobYear && dobMonth && dobDay ? ` · DOB: ${dobYear}-${dobMonth}-${dobDay}` : " · No DOB captured"}
           </div>
         </div>
       )}
