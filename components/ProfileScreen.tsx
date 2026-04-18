@@ -593,7 +593,7 @@ export default function ProfileScreen() {
           <div className="mt-0 border-t-0 pt-0">
             <div className="flex items-center justify-between">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Body</p>
-              <div className="inline-flex rounded-full border border-ink/10 bg-ink/5 p-0.5 text-[10px]">
+              <div className="inline-flex rounded-full border border-primary/40 bg-ink/5 p-0.5 text-[10px]">
                 {(["metric", "imperial"] as Units[]).map((unit) => (
                   <button
                     key={unit}
@@ -911,7 +911,10 @@ export default function ProfileScreen() {
             />
           </label>
 
-          <label className="mt-8 block border-t border-ink/5 pt-7 text-xs text-muted/70">
+        </Card>
+
+        <Card className="mt-4 border border-primary/40">
+          <label className="block text-xs text-muted/70">
             <span className="text-[11px] font-semibold uppercase tracking-wide text-ink/70">Daily supplements</span>
             <p className="mt-1 text-[11px] text-muted/60">Added automatically every day in the background. Add a dose to track against recommended daily amounts.</p>
             <div className="mt-3 flex flex-wrap gap-2">
@@ -1051,8 +1054,10 @@ export default function ProfileScreen() {
               </div>
             </div>
           </label>
+        </Card>
 
-          <div className="mt-8 border-t border-ink/5 pt-7">
+        <Card className="mt-4 border border-primary/40">
+          <div>
           {(() => {
             const missingWeight = !weight || weight === "0";
             const missingHeight = units === "metric" ? (!heightCm || heightCm === "0") : (!heightFt || heightFt === "0");
