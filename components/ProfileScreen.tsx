@@ -165,6 +165,15 @@ export default function ProfileScreen() {
             setWeight(data.weight != null ? String(data.weight) : "");
           }
 
+          if (data.dateOfBirth) {
+            const parts = data.dateOfBirth.split("-");
+            if (parts.length === 3) {
+              setDobYear(parts[0]);
+              setDobMonth(String(parseInt(parts[1], 10)));
+              setDobDay(String(parseInt(parts[2], 10)));
+            }
+          }
+
           // Seed localStorage from Supabase so supplements survive cache clears
           const supps = data.dailySupplements ?? [];
           setDailySupplements(user.id, supps);
@@ -329,6 +338,7 @@ export default function ProfileScreen() {
         height: parsedHeightCm ?? null,
         weight: parsedWeightKg ?? null,
         age: parsedAge ?? null,
+        date_of_birth: dobString || null,
         sex,
         goal_direction: goalDirection,
         body_priority: bodyPriority || null,
@@ -584,7 +594,7 @@ export default function ProfileScreen() {
           {loadError && <p className="mt-2 text-xs text-muted/70">{loadError}</p>}
         </header>
 
-        <Card className="mt-4">
+        <Card className="mt-4 border border-primary/20">
           <div className="mt-0 border-t-0 pt-0">
             <div className="flex items-center justify-between">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Body</p>
@@ -770,7 +780,7 @@ export default function ProfileScreen() {
           </div>
         </Card>
 
-        <Card className="mt-4">
+        <Card className="mt-4 border border-primary/20">
           <label className="block text-xs text-muted/70">
             <span className="flex items-center justify-between">
               <span className="text-[11px] font-semibold uppercase tracking-wide text-ink/70">

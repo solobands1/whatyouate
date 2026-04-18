@@ -198,6 +198,7 @@ export async function getProfile(userId: string): Promise<UserProfile | null> {
     height: data.height ?? null,
     weight: data.weight ?? null,
     age: data.age ?? null,
+    dateOfBirth: data.date_of_birth ?? undefined,
     sex: data.sex ?? "prefer_not",
     goalDirection: data.goal_direction === "recomposition" ? "balance" : (data.goal_direction ?? "maintain"),
     bodyPriority: data.body_priority ?? "",

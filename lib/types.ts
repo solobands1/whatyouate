@@ -33,6 +33,7 @@ export interface UserProfile {
   height: number | null;
   weight: number | null;
   age: number | null;
+  dateOfBirth?: string;
   sex: "female" | "male" | "other" | "prefer_not";
   goalDirection: GoalDirection;
   bodyPriority?: string;
