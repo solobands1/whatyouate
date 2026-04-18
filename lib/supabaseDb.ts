@@ -285,6 +285,32 @@ export async function saveDailySupplements(userId: string, names: SupplementEntr
   profileCache.delete(userId);
 }
 
+export async function uploadMealThumbnail(userId: string, mealId: string, dataUrl: string): Promise<string | null> {
+  try {
+    const base64 = dataUrl.split(",")[1];
+    if (!base64) return null;
+    const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+    const path = `${userId}/${mealId}.jpg`;
+    const { error } = await supabase.storage
+      .from("meal-thumbnails")
+      .upload(path, bytes, { contentType: "image/jpeg", upsert: true });
+    if (error) return null;
+    const { data } = supabase.storage.from("meal-thumbnails").getPublicUrl(path);
+    return data.publicUrl;
+  } catch {
+    return null;
+  }
+}
+
+export async function updateMealImageUrl(mealId: string, userId: string, imageUrl: string): Promise<void> {
+  try {
+    await supabase.from("meals").update({ image_url: imageUrl }).eq("id", mealId).eq("user_id", userId);
+    for (const key of mealsCache.keys()) if (key.startsWith(userId + ":")) mealsCache.delete(key);
+  } catch {
+    // non-critical — meal is already saved
+  }
+}
+
 export async function addMeal(userId: string, analysis: MealAnalysis, imageOptional?: string, corrections?: any) {
   if (useMemory) {
     ensureLocalLoaded();

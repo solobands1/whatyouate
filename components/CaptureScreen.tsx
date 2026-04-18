@@ -6,7 +6,7 @@ import { fileToThumbnailDataUrl } from "../lib/utils";
 import { safeFallbackAnalysis } from "../lib/ai/schema";
 import { notifyMealsUpdated } from "../lib/dataEvents";
 import { useAuth } from "./AuthProvider";
-import { addMeal, updateMealTs } from "../lib/supabaseDb";
+import { addMeal, updateMealTs, uploadMealThumbnail, updateMealImageUrl } from "../lib/supabaseDb";
 import { enqueueMeal } from "../lib/mealQueue";
 
 function nowTimeString() {
@@ -154,11 +154,15 @@ export default function CaptureScreen() {
     const placeholder = safeFallbackAnalysis();
     let pendingMeal;
     try {
-      pendingMeal = await addMeal(user.id, placeholder, thumb);
+      pendingMeal = await addMeal(user.id, placeholder);
     } catch {
       setSaveError(true);
       return;
     }
+    // Upload thumbnail to Storage non-blocking — meal is already saved if this fails
+    uploadMealThumbnail(user.id, pendingMeal.id, thumb).then((url) => {
+      if (url) updateMealImageUrl(pendingMeal.id, user.id, url);
+    });
     setPendingMealId(pendingMeal.id);
     setMealTime(nowTimeString());
     notifyMealsUpdated();
