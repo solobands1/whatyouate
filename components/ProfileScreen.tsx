@@ -46,7 +46,9 @@ export default function ProfileScreen() {
   const [heightFt, setHeightFt] = useState("");
   const [heightIn, setHeightIn] = useState("");
   const [weight, setWeight] = useState("");
-  const [dob, setDob] = useState("");
+  const [dobYear, setDobYear] = useState("");
+  const [dobMonth, setDobMonth] = useState("");
+  const [dobDay, setDobDay] = useState("");
   const [sex, setSex] = useState<UserProfile["sex"]>("prefer_not");
   const [goalDirection, setGoalDirection] = useState<GoalDirection>("maintain");
   const [bodyPriority, setBodyPriority] = useState("");
@@ -153,7 +155,14 @@ export default function ProfileScreen() {
           }
 
           const savedDob = localStorage.getItem(`wya_dob_${user.id}`);
-          if (savedDob) setDob(savedDob);
+          if (savedDob) {
+            const parts = savedDob.split("-");
+            if (parts.length === 3) {
+              setDobYear(parts[0]);
+              setDobMonth(String(parseInt(parts[1], 10)));
+              setDobDay(String(parseInt(parts[2], 10)));
+            }
+          }
 
           // Seed localStorage from Supabase so supplements survive cache clears
           const supps = data.dailySupplements ?? [];
@@ -280,7 +289,10 @@ export default function ProfileScreen() {
     if (!user) return;
     try {
       setSaving(true);
-      const parsedAge = calculateAgeFromDob(dob);
+      const dobString = dobYear && dobMonth && dobDay
+        ? `${dobYear}-${dobMonth.padStart(2, "0")}-${dobDay.padStart(2, "0")}`
+        : "";
+      const parsedAge = calculateAgeFromDob(dobString);
 
       let parsedHeightCm: number | null = null;
       let parsedWeightKg: number | null = null;
@@ -348,7 +360,10 @@ export default function ProfileScreen() {
         localStorage.setItem(`wya_profile_updated_${user.id}`, String(Date.now()));
         localStorage.removeItem(`wya_profile_prompt_opened_${user.id}`);
         localStorage.removeItem(`wya_profile_prompt_last_${user.id}`);
-        if (dob) localStorage.setItem(`wya_dob_${user.id}`, dob);
+        const dobString = dobYear && dobMonth && dobDay
+          ? `${dobYear}-${dobMonth.padStart(2, "0")}-${dobDay.padStart(2, "0")}`
+          : "";
+        if (dobString) localStorage.setItem(`wya_dob_${user.id}`, dobString);
       }
       notifyProfileUpdated();
       setShowSavedToast(true);
@@ -393,7 +408,9 @@ export default function ProfileScreen() {
     setHeightFt("");
     setHeightIn("");
     setWeight("");
-    setDob("");
+    setDobYear("");
+    setDobMonth("");
+    setDobDay("");
     setSex("prefer_not");
     setGoalDirection("maintain");
     setBodyPriority("");
@@ -617,7 +634,7 @@ export default function ProfileScreen() {
                 {units === "metric" ? (
                   <input
                     inputMode="numeric"
-                    className="mt-1 w-full rounded-xl border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    className="mt-1 w-full rounded-xl border border-ink/10 bg-white px-3 py-1.5 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
                     value={heightCm}
                     onChange={(event) => {
                       const raw = event.target.value.replace(/[^0-9]/g, "");
@@ -630,7 +647,7 @@ export default function ProfileScreen() {
                   <div className="mt-1 flex gap-2">
                     <input
                       inputMode="numeric"
-                      className="w-[45%] rounded-xl border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                      className="w-[45%] rounded-xl border border-ink/10 bg-white px-3 py-1.5 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
                       value={heightFt}
                       onChange={(event) => {
                         const raw = event.target.value.replace(/[^0-9]/g, "");
@@ -646,7 +663,7 @@ export default function ProfileScreen() {
                     />
                     <input
                       inputMode="numeric"
-                      className="w-[55%] rounded-xl border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                      className="w-[55%] rounded-xl border border-ink/10 bg-white px-3 py-1.5 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
                       value={heightIn}
                       onChange={(event) => {
                         const raw = event.target.value.replace(/[^0-9]/g, "");
@@ -667,7 +684,7 @@ export default function ProfileScreen() {
                 Weight ({units === "metric" ? "kg" : "lb"})
                 <input
                   inputMode="numeric"
-                  className="mt-1 w-full rounded-xl border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                  className="mt-1 w-full rounded-xl border border-ink/10 bg-white px-3 py-1.5 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
                   value={weight}
                   onChange={(event) => {
                     const raw = event.target.value.replace(/[^0-9]/g, "");
@@ -680,17 +697,42 @@ export default function ProfileScreen() {
             </div>
             <div className="mt-5">
               <p className="text-[11px] text-muted/70 mb-1.5">Date of Birth</p>
-              <div className="flex items-center gap-3">
-                <input
-                  type="date"
-                  className="flex-1 rounded-xl border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                  value={dob}
-                  max={new Date().toISOString().split("T")[0]}
-                  onChange={(e) => setDob(e.target.value)}
-                />
-                {dob && calculateAgeFromDob(dob) !== null && (
-                  <span className="text-sm font-semibold text-primary/70">{calculateAgeFromDob(dob)} yrs</span>
-                )}
+              <div className="flex items-center gap-2">
+                <select
+                  className="flex-1 rounded-xl border border-ink/10 bg-white px-2 py-1.5 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                  value={dobMonth}
+                  onChange={(e) => { setDobMonth(e.target.value); setDobDay(""); }}
+                >
+                  <option value="">Month</option>
+                  {["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"].map((m, i) => (
+                    <option key={i} value={String(i + 1)}>{m}</option>
+                  ))}
+                </select>
+                <select
+                  className="w-20 rounded-xl border border-ink/10 bg-white px-2 py-1.5 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                  value={dobDay}
+                  onChange={(e) => setDobDay(e.target.value)}
+                >
+                  <option value="">Day</option>
+                  {Array.from({ length: dobYear && dobMonth ? new Date(Number(dobYear), Number(dobMonth), 0).getDate() : 31 }, (_, i) => (
+                    <option key={i + 1} value={String(i + 1)}>{i + 1}</option>
+                  ))}
+                </select>
+                <select
+                  className="w-24 rounded-xl border border-ink/10 bg-white px-2 py-1.5 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                  value={dobYear}
+                  onChange={(e) => { setDobYear(e.target.value); setDobDay(""); }}
+                >
+                  <option value="">Year</option>
+                  {Array.from({ length: new Date().getFullYear() - 1919 }, (_, i) => new Date().getFullYear() - i).map((y) => (
+                    <option key={y} value={String(y)}>{y}</option>
+                  ))}
+                </select>
+                {(() => {
+                  const ds = dobYear && dobMonth && dobDay ? `${dobYear}-${dobMonth.padStart(2,"0")}-${dobDay.padStart(2,"0")}` : "";
+                  const age = calculateAgeFromDob(ds);
+                  return age !== null ? <span className="text-sm font-semibold text-primary/70 shrink-0">{age} yrs</span> : null;
+                })()}
               </div>
             </div>
             <div className="mt-5">
@@ -826,7 +868,7 @@ export default function ProfileScreen() {
             </span>
             <input
               type="text"
-              className="mt-1 w-full rounded-xl border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+              className="mt-1 w-full rounded-xl border border-ink/10 bg-white px-3 py-1.5 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
               value={freeformFocus}
               onChange={(event) => setFreeformFocus(event.target.value)}
               placeholder="e.g. building strength, more energy, longevity"
@@ -1001,7 +1043,7 @@ export default function ProfileScreen() {
           {(() => {
             const missingWeight = !weight || weight === "0";
             const missingHeight = units === "metric" ? (!heightCm || heightCm === "0") : (!heightFt || heightFt === "0");
-            const missingDob = !dob;
+            const missingDob = !dobYear || !dobMonth || !dobDay;
             const missing = [missingWeight && "weight", missingHeight && "height", missingDob && "date of birth"].filter(Boolean);
             return missing.length > 0 ? (
               <p className="mb-3 text-[11px] text-muted/60">Add your {missing.join(", ")} for personalised nudges and targets.</p>
