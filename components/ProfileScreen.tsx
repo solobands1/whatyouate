@@ -593,7 +593,7 @@ export default function ProfileScreen() {
           <div className="mt-0 border-t-0 pt-0">
             <div className="flex items-center justify-between">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Body</p>
-              <div className="inline-flex rounded-full border border-primary/40 bg-ink/5 p-0.5 text-[10px]">
+              <div className="inline-flex rounded-full border border-ink/10 bg-ink/5 p-0.5 text-[10px]">
                 {(["metric", "imperial"] as Units[]).map((unit) => (
                   <button
                     key={unit}
@@ -1056,7 +1056,7 @@ export default function ProfileScreen() {
           </label>
         </Card>
 
-        <Card className="mt-4 border border-primary/40">
+        <Card className="mt-4">
           <div>
           {(() => {
             const missingWeight = !weight || weight === "0";
