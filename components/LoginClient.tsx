@@ -207,8 +207,13 @@ export default function LoginClient() {
                 </svg>
                 Back
               </button>
-              <h2 className="text-xl font-semibold text-ink">Create account</h2>
-              <p className="mt-1 text-sm text-muted/60">Start your 7-day free trial.</p>
+              <div className="flex flex-col items-center mb-6">
+                <div className="h-16 w-16 overflow-hidden rounded-2xl border border-ink/10 shadow-sm mb-4">
+                  <img src="/icon-512.png" alt="WhatYouAte" className="h-full w-full object-cover" />
+                </div>
+                <h2 className="text-xl font-semibold text-ink">Create account</h2>
+                <p className="mt-1 text-sm text-muted/60">Eat Confidently | Feel Better</p>
+              </div>
             </div>
             <div className="flex flex-col gap-3">
               <div className="flex gap-3">
