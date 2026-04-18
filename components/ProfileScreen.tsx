@@ -506,18 +506,12 @@ export default function ProfileScreen() {
             Back
           </button>
           <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              {(firstName || lastName) && (
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/15 text-sm font-semibold text-primary/80 shrink-0">
-                  {[firstName[0], lastName[0]].filter(Boolean).join("").toUpperCase()}
-                </div>
-              )}
-              <div>
-                <h1 className="text-2xl font-semibold text-ink">Profile</h1>
-                <div className="mt-1 flex items-center gap-1.5">
-                  <p className="text-sm text-muted/70">
-                    {[firstName, lastName].filter(Boolean).join(" ") || "Set name"}
-                  </p>
+            <div>
+              <h1 className="text-2xl font-semibold text-ink">Profile</h1>
+              <div className="mt-1 flex items-center gap-1.5">
+                <p className="text-sm text-muted/70">
+                  {[firstName, lastName].filter(Boolean).join(" ") || "Set name"}
+                </p>
                 <button
                   type="button"
                   aria-label="Edit name"
@@ -533,7 +527,6 @@ export default function ProfileScreen() {
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                   </svg>
                 </button>
-                </div>
               </div>
             </div>
             <div className="flex flex-col items-end gap-1">
