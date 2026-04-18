@@ -550,7 +550,7 @@ export default function ProfileScreen() {
             </svg>
             Back
           </button>
-          <div className="flex items-center justify-between">
+          <div className="flex items-start justify-between">
             <div>
               <h1 className="text-2xl font-semibold text-ink">Profile</h1>
               <div className="mt-1 flex items-center gap-1.5">
@@ -574,14 +574,17 @@ export default function ProfileScreen() {
                 </button>
               </div>
             </div>
-            <button
-              type="button"
-              data-tour="feedback-button"
-              className="rounded-full bg-primary px-3 py-1 text-[10px] font-semibold text-white transition hover:bg-primary/90"
-              onClick={() => setShowFeedback(true)}
-            >
-              Send Feedback
-            </button>
+            <div className="flex flex-col items-end gap-1">
+              <button
+                type="button"
+                data-tour="feedback-button"
+                className="rounded-full bg-primary px-3 py-1 text-[10px] font-semibold text-white transition hover:bg-primary/90"
+                onClick={() => setShowFeedback(true)}
+              >
+                Send Feedback
+              </button>
+              <span className="text-[10px] text-muted/60">Share a quick suggestion</span>
+            </div>
           </div>
           {loadError && <p className="mt-2 text-xs text-muted/70">{loadError}</p>}
         </header>
