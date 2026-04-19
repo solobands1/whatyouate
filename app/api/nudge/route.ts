@@ -42,7 +42,12 @@ const SMART_NUDGE_SYSTEM_PROMPT = `You are a warm, sharp nutrition coach. You ha
 Nudge type priority — work down this list and use the first that genuinely applies:
 1. win — a specific, earned observation: a streak milestone, a clear improvement, or something that's visibly working. Only fire if the data actually shows it. No generic praise. WIN TONE RULE: when writing a win, lead with the achievement and let it breathe — do not immediately pivot to a deficit or what's still missing. The win should feel complete. If there's a natural action, it should feel like a bonus, not a correction.
 2. momentum — forward-looking when there's an active streak (3+ days). "You've built X solid days — this is when habits start to stick." More motivating than a backward-looking win. Same tone rule as win — open with the positive, don't immediately qualify it with what's lacking.
-3. pattern — something visible across 2 or more data points the user likely hasn't noticed: a day-of-week gap, a timing trend (light mornings, heavy evenings), a correlation with workouts, OR a multi-week trend (e.g. protein has been under target 3 weeks running, calories trending up/down week-over-week, logging consistency improving or dropping). If prior week data is provided, cross-reference it. A multi-week observation is higher signal than a single-week one. Must cite something specific — name the numbers or the days. Do NOT fire on a single data point.
+3. pattern — something visible across 2 or more data points the user likely hasn't noticed. Priority patterns to look for:
+   - ENERGY CORRELATION: if "Energy check-ins" data is provided, look for correlations between energy tags and food/timing. e.g. "Your high energy check-ins tend to follow days with breakfast before 9am and 140g+ protein" or "Low energy logs tend to come after days where your first meal was after 1pm." Only fire if there are 2+ feel logs and a clear pattern — cite the actual data.
+   - MEAL TIMING: if the per-day timing columns show a pattern (e.g. most calories after 6pm on low-protein days, or skipped morning meals on workout days), surface it specifically.
+   - DAY-OF-WEEK: gaps on specific days, timing trends, workout/food correlations.
+   - MULTI-WEEK: protein under target 3 weeks running, calories trending up/down, logging consistency changing.
+   Must cite specific numbers or days. Do NOT fire on a single data point.
 4. meal_timing — fires when it's morning and nothing is logged yet. Frame around the first meal specifically — not a general "today" goal. "Starting with X sets up your afternoon without the energy dip." Do NOT infer front/back-heavy patterns from daily totals alone — you can't see meal timing within a day.
 5. food_insight — one practical food fact tied to what they're currently low on. Actionable, not trivia.
 6. variety — fires when the same foods appear repeatedly across the last 7 days. Suggest rotation for different nutrient profiles.
@@ -132,7 +137,7 @@ function buildSmartPrompt(ctx: Record<string, unknown>): string {
 
   const last7 = ctx.last7Days as Array<Record<string, unknown>> | undefined;
   if (last7?.length) {
-    lines.push(`Previous days, excluding today (day | date | kcal | protein | carbs | fat | workout). Days marked "no log" were not logged:`);
+    lines.push(`Previous days, excluding today (day | date | kcal | protein | carbs | fat | meals | timing | workout). Days marked "no log" were not logged:`);
     last7.forEach((d) => {
       const types = (d.workoutTypes as string[] | undefined)?.join(", ");
       const wk = d.hasWorkout ? ` | workout ${d.workoutMinutes ?? "?"}min ${d.workoutIntensity ?? ""}${types ? ` [${types}]` : ""}` : "";
@@ -140,7 +145,15 @@ function buildSmartPrompt(ctx: Record<string, unknown>): string {
       if (!logged) {
         lines.push(`  ${d.dayOfWeek} ${d.dateKey}: no log${wk}`);
       } else {
-        lines.push(`  ${d.dayOfWeek} ${d.dateKey}: ${d.calories} kcal / ${d.protein}g protein / ${d.carbs}g carbs / ${d.fat}g fat${wk}`);
+        const mealCount = d.mealCount as number | undefined;
+        const firstH = d.firstMealHour as number | undefined;
+        const lastH = d.lastMealHour as number | undefined;
+        const pctAM = d.pctCaloriesAM as number | undefined;
+        const fmt = (h: number) => { const hh = h % 12 || 12; return `${hh}${h < 12 ? "am" : "pm"}`; };
+        const timing = mealCount != null
+          ? ` | ${mealCount} meal${mealCount !== 1 ? "s" : ""}${firstH != null && lastH != null ? ` (${fmt(firstH)}–${fmt(lastH)})` : ""}${pctAM != null ? ` ${pctAM}% cals before noon` : ""}`
+          : "";
+        lines.push(`  ${d.dayOfWeek} ${d.dateKey}: ${d.calories} kcal / ${d.protein}g protein / ${d.carbs}g carbs / ${d.fat}g fat${timing}${wk}`);
       }
     });
   }
@@ -213,19 +226,33 @@ function buildSmartPrompt(ctx: Record<string, unknown>): string {
     lines.push(`Recent nudges shown (don't repeat these angles):\n${recent.map((n) => `  - "${n}"`).join("\n")}`);
   }
 
-  const feelLogs = ctx.recentFeelLogs as Array<{ ts: number; tag: string }> | undefined;
-  if (feelLogs?.length) {
-    const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    const feelStr = feelLogs.map((f) => {
-      const d = new Date(f.ts);
-      const day = DOW[d.getDay()];
-      const hour = d.getHours();
-      const h = hour % 12 || 12;
-      const period = hour < 12 ? "am" : "pm";
-      return `${day} ${h}${period} - ${f.tag.replace(/_/g, " ")}`;
-    }).join(", ");
-    lines.push(`How the user has been feeling (recent logs): ${feelStr}`);
-    lines.push(`Energy correlation note: if the feel logs and meal data suggest a pattern — e.g. low energy follows skipped meals, big carb-heavy lunches, or low protein days — surface it as a pattern nudge with a specific, actionable observation.`);
+  const feelCorrelations = ctx.feelLogCorrelations as Array<{
+    dayKey: string; dayOfWeek: string; tag: string; logHour: number;
+    calories: number; protein: number; carbs: number; fat: number;
+    mealCount: number; firstMealHour?: number; hadWorkout: boolean;
+  }> | undefined;
+  if (feelCorrelations?.length) {
+    const fmt = (h: number) => { const hh = h % 12 || 12; return `${hh}${h < 12 ? "am" : "pm"}`; };
+    lines.push(`Energy check-ins with that day's food context (tag | time logged | kcal | protein | meals | first meal | workout):`);
+    feelCorrelations.forEach((c) => {
+      const firstMeal = c.firstMealHour != null ? ` | first meal ${fmt(c.firstMealHour)}` : "";
+      const wk = c.hadWorkout ? " | workout day" : "";
+      lines.push(`  ${c.dayOfWeek} ${fmt(c.logHour)} — ${c.tag.replace(/_/g, " ")} | ${c.calories} kcal / ${c.protein}g protein / ${c.mealCount} meal${c.mealCount !== 1 ? "s" : ""}${firstMeal}${wk}`);
+    });
+  } else {
+    const feelLogs = ctx.recentFeelLogs as Array<{ ts: number; tag: string }> | undefined;
+    if (feelLogs?.length) {
+      const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      const feelStr = feelLogs.map((f) => {
+        const d = new Date(f.ts);
+        const day = DOW[d.getDay()];
+        const hour = d.getHours();
+        const h = hour % 12 || 12;
+        const period = hour < 12 ? "am" : "pm";
+        return `${day} ${h}${period} - ${f.tag.replace(/_/g, " ")}`;
+      }).join(", ");
+      lines.push(`How the user has been feeling (recent logs): ${feelStr}`);
+    }
   }
 
   const typicalFirstLogHour = ctx.typicalFirstLogHour as number | null | undefined;

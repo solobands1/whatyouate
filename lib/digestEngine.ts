@@ -23,6 +23,24 @@ export interface DailyNudgeSnapshot {
   workoutMinutes?: number;
   workoutIntensity?: string;
   workoutTypes?: string[];
+  mealCount?: number;
+  firstMealHour?: number;
+  lastMealHour?: number;
+  pctCaloriesAM?: number; // % of day's calories logged before noon
+}
+
+export interface FeelLogCorrelation {
+  dayKey: string;
+  dayOfWeek: string;
+  tag: string;
+  logHour: number;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  mealCount: number;
+  firstMealHour?: number;
+  hadWorkout: boolean;
 }
 
 export interface TodayMealEntry {
@@ -64,7 +82,8 @@ export interface SmartNudgeContext {
   todayMeals: TodayMealEntry[];
   lastMealTime: string | null;
   mealsLoggedToday: number;
-  typicalFirstLogHour: number | null; // median hour of first meal across recent days
+  typicalFirstLogHour: number | null;
+  feelLogCorrelations: FeelLogCorrelation[];
 }
 
 export interface NudgeData {
@@ -875,11 +894,29 @@ export function buildSmartNudgeContext(
       avgFat: Math.round(totals.fat / d),
     });
   }
+  // Index past meals by day for timing enrichment
+  const mealsByDayMap = new Map<string, MealLog[]>();
+  meals.filter(
+    (m) => m.status !== "failed" && m.analysisJson?.source !== "supplement" && dayKeyFromTs(m.ts) !== todayKeyStr
+  ).forEach((m) => {
+    const key = dayKeyFromTs(m.ts);
+    if (!mealsByDayMap.has(key)) mealsByDayMap.set(key, []);
+    mealsByDayMap.get(key)!.push(m);
+  });
+
   const last7Days: DailyNudgeSnapshot[] = allDays.map((d) => {
     const wk = workoutsByDay.get(d.dateKey);
     const cal = Math.round((d.totals.calories_min + d.totals.calories_max) / 2);
     const logged = cal > 0 || d.totals.protein_g_max > 0;
     const date = new Date(d.dateKey + "T12:00:00");
+    const dayMeals = (mealsByDayMap.get(d.dateKey) ?? []).sort((a, b) => a.ts - b.ts);
+    const mealCount = dayMeals.length;
+    const firstMealHour = mealCount > 0 ? new Date(dayMeals[0].ts).getHours() : undefined;
+    const lastMealHour = mealCount > 0 ? new Date(dayMeals[mealCount - 1].ts).getHours() : undefined;
+    const calAM = dayMeals
+      .filter((m) => new Date(m.ts).getHours() < 12)
+      .reduce((sum, m) => sum + ((m.analysisJson?.estimated_ranges?.calories_min ?? 0) + (m.analysisJson?.estimated_ranges?.calories_max ?? 0)) / 2, 0);
+    const pctCaloriesAM = cal > 0 ? Math.round((calAM / cal) * 100) : undefined;
     return {
       dateKey: d.dateKey,
       dayOfWeek: DOW[date.getDay()],
@@ -892,6 +929,10 @@ export function buildSmartNudgeContext(
       workoutMinutes: wk?.minutes,
       workoutIntensity: wk?.intensity,
       workoutTypes: wk?.types,
+      mealCount: mealCount || undefined,
+      firstMealHour,
+      lastMealHour,
+      pctCaloriesAM,
     };
   });
 
@@ -940,6 +981,39 @@ export function buildSmartNudgeContext(
     typeof s === "string" ? s : s.dose != null && s.unit ? `${s.name} ${s.dose}${s.unit}` : s.name
   );
 
+  // Correlate feel logs with what was eaten on those days
+  const workoutDayKeys = new Set(
+    workouts.filter((w) => w.endTs != null).map((w) => dayKeyFromTs(w.endTs ?? w.startTs))
+  );
+  const feelLogCorrelations: FeelLogCorrelation[] = recentFeelLogs
+    .slice(0, 14)
+    .map((f) => {
+      const fDayKey = dayKeyFromTs(f.ts);
+      const fDate = new Date(f.ts);
+      const dayMeals = mealsByDayMap.get(fDayKey) ?? [];
+      const mealCount = dayMeals.length;
+      const totalCal = dayMeals.reduce((s, m) => s + ((m.analysisJson?.estimated_ranges?.calories_min ?? 0) + (m.analysisJson?.estimated_ranges?.calories_max ?? 0)) / 2, 0);
+      const totalProt = dayMeals.reduce((s, m) => s + ((m.analysisJson?.estimated_ranges?.protein_g_min ?? 0) + (m.analysisJson?.estimated_ranges?.protein_g_max ?? 0)) / 2, 0);
+      const totalCarbs = dayMeals.reduce((s, m) => s + ((m.analysisJson?.estimated_ranges?.carbs_g_min ?? 0) + (m.analysisJson?.estimated_ranges?.carbs_g_max ?? 0)) / 2, 0);
+      const totalFat = dayMeals.reduce((s, m) => s + ((m.analysisJson?.estimated_ranges?.fat_g_min ?? 0) + (m.analysisJson?.estimated_ranges?.fat_g_max ?? 0)) / 2, 0);
+      const sorted = [...dayMeals].sort((a, b) => a.ts - b.ts);
+      const firstMealHour = sorted.length > 0 ? new Date(sorted[0].ts).getHours() : undefined;
+      return {
+        dayKey: fDayKey,
+        dayOfWeek: DOW[fDate.getDay()],
+        tag: f.tag,
+        logHour: fDate.getHours(),
+        calories: Math.round(totalCal),
+        protein: Math.round(totalProt),
+        carbs: Math.round(totalCarbs),
+        fat: Math.round(totalFat),
+        mealCount,
+        firstMealHour,
+        hadWorkout: workoutDayKeys.has(fDayKey),
+      };
+    })
+    .filter((c) => c.calories > 0 || c.mealCount > 0);
+
   // Compute typical first-log hour from last 14 days (median) to detect late loggers
   const firstLogHours: number[] = [];
   const pastMeals = meals.filter(
@@ -986,5 +1060,6 @@ export function buildSmartNudgeContext(
     lastMealTime,
     mealsLoggedToday,
     typicalFirstLogHour,
+    feelLogCorrelations,
   };
 }
