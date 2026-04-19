@@ -1542,7 +1542,7 @@ export default function SummaryScreen() {
                 </div>
                 <button
                   type="button"
-                  className="mt-1 rounded-full bg-primary/10 px-6 py-2.5 text-sm font-semibold text-primary active:opacity-70"
+                  className="mt-1 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-white active:opacity-70"
                   onClick={() => setShowWyaaSheet(false)}
                 >
                   Got it
