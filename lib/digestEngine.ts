@@ -327,7 +327,7 @@ export function computeSummaryMarkers(meals: MealLog[], workouts: WorkoutSession
     if (dayCount < 5 || mealCount < 10) return [];
     const trends: string[] = [];
     const signals = meals
-      .filter((meal) => Date.now() - meal.ts <= 30 * 24 * 60 * 60 * 1000)
+      .filter((meal) => Date.now() - meal.ts <= 60 * 24 * 60 * 60 * 1000)
       .flatMap((meal) => meal.analysisJson.micronutrient_signals ?? []);
     const lowSignals = signals.filter((signal) => signal.signal === "low_appearance");
     const lowNames = new Set(lowSignals.map((signal) => signal.nutrient.toLowerCase()));
@@ -582,7 +582,7 @@ export function computeNudges(meals: MealLog[], workouts: WorkoutSession[], prof
 
   // Micronutrient nudges — require low signal across 3+ distinct days
   const signalsWithTs = meals
-    .filter((meal) => Date.now() - meal.ts <= 30 * 24 * 60 * 60 * 1000)
+    .filter((meal) => Date.now() - meal.ts <= 60 * 24 * 60 * 60 * 1000)
     .flatMap((meal) => (meal.analysisJson.micronutrient_signals ?? []).map((s) => ({ ...s, ts: meal.ts })));
   const lowSignals = signalsWithTs.filter((s) => s.signal === "low_appearance");
   if (lowSignals.length) {
