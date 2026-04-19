@@ -379,26 +379,36 @@ export function getQuickAddFromMeals(meals: Array<{
   const removed = getQuickAddRemoved();
   const seen = new Map<string, QuickAddItem>();
 
-  const sorted = [...meals]
-    .filter((m) => m.status !== "failed" && m.analysisJson?.source !== "supplement")
-    .sort((a, b) => b.ts - a.ts);
+  const valid = meals.filter(
+    (m) => m.status !== "failed" && m.analysisJson?.source !== "supplement" && m.analysisJson?.name
+  );
 
-  for (const meal of sorted) {
-    const name = meal.analysisJson?.name;
-    if (!name) continue;
+  for (const meal of valid) {
+    const name = meal.analysisJson.name!;
     const key = normalizeFoodKey(name);
-    if (!key || removed.has(key) || seen.has(key)) continue;
-    seen.set(key, {
-      key,
-      name,
-      type: "text",
-      ranges: meal.analysisJson.estimated_ranges,
-      micronutrient_signals: meal.analysisJson.micronutrient_signals ?? [],
-      savedAt: meal.ts,
-      logCount: 1,
-    });
-    if (seen.size >= 10) break;
+    if (!key || removed.has(key)) continue;
+    const existing = seen.get(key);
+    if (existing) {
+      existing.logCount += 1;
+      if (meal.ts > existing.savedAt) {
+        existing.savedAt = meal.ts;
+        existing.ranges = meal.analysisJson.estimated_ranges;
+        existing.micronutrient_signals = meal.analysisJson.micronutrient_signals ?? [];
+      }
+    } else {
+      seen.set(key, {
+        key,
+        name,
+        type: "text",
+        ranges: meal.analysisJson.estimated_ranges,
+        micronutrient_signals: meal.analysisJson.micronutrient_signals ?? [],
+        savedAt: meal.ts,
+        logCount: 1,
+      });
+    }
   }
 
-  return Array.from(seen.values());
+  return Array.from(seen.values())
+    .sort((a, b) => b.logCount - a.logCount || b.savedAt - a.savedAt)
+    .slice(0, 10);
 }
