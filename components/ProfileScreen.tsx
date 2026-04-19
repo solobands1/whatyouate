@@ -730,10 +730,10 @@ export default function ProfileScreen() {
                   return (
                     <button
                       type="button"
-                      className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-ink/5 px-2.5 py-0.5 text-[10px] text-muted/60 transition active:opacity-60"
+                      className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] text-primary/70 transition active:opacity-60"
                       onClick={() => setShowWeightHistory(true)}
                     >
-                      <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="6" cy="6" r="5"/><path d="M6 3.5v2.5l1.5 1.5"/></svg>
+                      <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-primary/60"><circle cx="6" cy="6" r="5"/><path d="M6 3.5v2.5l1.5 1.5"/></svg>
                       Last logged {label} · {displayW}
                     </button>
                   );
