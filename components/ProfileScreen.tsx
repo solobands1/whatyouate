@@ -84,6 +84,9 @@ export default function ProfileScreen() {
   const [editingName, setEditingName] = useState(false);
   const [trackWater, setTrackWater] = useState(false);
   const [waterUnit, setWaterUnit] = useState<"ml" | "oz">("ml");
+  const [customWaterGoalMl, setCustomWaterGoalMl] = useState<number | null>(null);
+  const [editingWaterGoal, setEditingWaterGoal] = useState(false);
+  const [waterGoalInput, setWaterGoalInput] = useState("");
   const [dailySupplements, setDailySupplementsState] = useState<SupplementEntry[]>([]);
   const [newSuppInput, setNewSuppInput] = useState("");
   const [newSuppDose, setNewSuppDose] = useState("");
@@ -184,6 +187,8 @@ export default function ProfileScreen() {
 
           setTrackWater(data.trackWater ?? false);
           setWaterUnit(data.waterUnit ?? "ml");
+          const storedGoal = typeof window !== "undefined" ? localStorage.getItem(`wya_water_goal_ml_${user.id}`) : null;
+          if (storedGoal) setCustomWaterGoalMl(parseInt(storedGoal, 10));
 
           // Seed localStorage from Supabase so supplements survive cache clears
           const supps = data.dailySupplements ?? [];
@@ -973,24 +978,113 @@ export default function ProfileScreen() {
                 })}
               </div>
             </div>
-            {trackWater && (
-              <div className="mt-3">
-                <p className="text-[11px] text-muted/60 mb-2">Preferred unit</p>
-                <div className="inline-flex rounded-full border border-ink/10 bg-ink/5 p-0.5 text-[10px]">
-                  {(["ml", "oz"] as const).map((unit) => (
-                    <button
-                      key={unit}
-                      type="button"
-                      className={`rounded-full px-2.5 py-0.5 font-medium transition ${waterUnit === unit ? "bg-white text-ink" : "text-muted/60"}`}
-                      onClick={() => setWaterUnit(unit)}
-                    >
-                      {unit}
-                    </button>
-                  ))}
+            {trackWater && (() => {
+              const weightKg = (() => {
+                if (units === "metric") { const n = parseInteger(weight); return n && n > 0 ? n : null; }
+                const lb = parseInteger(weight) ?? 0;
+                return lb > 0 ? Math.round((lb / 2.20462) * 10) / 10 : null;
+              })();
+              const recommendedGoalMl = weightKg ? Math.min(3500, Math.max(1500, Math.round(weightKg * 35))) : 2500;
+              const activeGoalMl = customWaterGoalMl ?? recommendedGoalMl;
+              const isRecommended = customWaterGoalMl === null;
+              const displayGoal = waterUnit === "oz"
+                ? `${Math.round(activeGoalMl / 29.5735)} oz`
+                : `${activeGoalMl} ml`;
+              return (
+                <div className="mt-4">
+                  <div className="grid grid-cols-2 gap-x-5 gap-y-4">
+                    {/* Preferred Unit */}
+                    <div>
+                      <p className="text-[11px] text-muted/70 mb-1.5">Preferred Unit</p>
+                      <div className="inline-flex rounded-full border border-ink/10 bg-ink/5 p-0.5 text-[10px]">
+                        {(["ml", "oz"] as const).map((unit) => (
+                          <button
+                            key={unit}
+                            type="button"
+                            className={`rounded-full px-2.5 py-0.5 font-medium transition ${waterUnit === unit ? "bg-white text-ink" : "text-muted/60"}`}
+                            onClick={() => setWaterUnit(unit)}
+                          >
+                            {unit}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    {/* Daily Intake Goal */}
+                    <div>
+                      <p className="text-[11px] text-muted/70 mb-1.5">Daily Intake Goal</p>
+                      {editingWaterGoal ? (
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            className="w-20 rounded-xl border border-ink/10 bg-white px-3 py-1.5 text-xs text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                            value={waterGoalInput}
+                            onChange={(e) => setWaterGoalInput(e.target.value.replace(/[^0-9]/g, ""))}
+                            placeholder={waterUnit === "oz" ? "oz" : "ml"}
+                            autoFocus
+                          />
+                          <button
+                            type="button"
+                            className="rounded-xl bg-primary px-2.5 py-1.5 text-xs font-semibold text-white transition active:opacity-70"
+                            onClick={() => {
+                              const val = parseInt(waterGoalInput, 10);
+                              if (!isNaN(val) && val > 0) {
+                                const ml = waterUnit === "oz" ? Math.round(val * 29.5735) : val;
+                                setCustomWaterGoalMl(ml);
+                                if (user) localStorage.setItem(`wya_water_goal_ml_${user.id}`, String(ml));
+                              }
+                              setEditingWaterGoal(false);
+                              setWaterGoalInput("");
+                            }}
+                          >
+                            Save
+                          </button>
+                          <button
+                            type="button"
+                            className="text-xs text-muted/60 transition active:opacity-60"
+                            onClick={() => { setEditingWaterGoal(false); setWaterGoalInput(""); }}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-semibold text-ink/80">{displayGoal}</span>
+                          <button
+                            type="button"
+                            className="rounded-xl border border-ink/10 px-2.5 py-1 text-[10px] font-semibold text-ink/60 transition hover:border-ink/20 active:opacity-60"
+                            onClick={() => {
+                              setWaterGoalInput(waterUnit === "oz" ? String(Math.round(activeGoalMl / 29.5735)) : String(activeGoalMl));
+                              setEditingWaterGoal(true);
+                            }}
+                          >
+                            Edit
+                          </button>
+                          {!isRecommended && (
+                            <button
+                              type="button"
+                              className="text-[10px] text-muted/50 underline transition active:opacity-60"
+                              onClick={() => {
+                                setCustomWaterGoalMl(null);
+                                if (user) localStorage.removeItem(`wya_water_goal_ml_${user.id}`);
+                              }}
+                            >
+                              Reset
+                            </button>
+                          )}
+                        </div>
+                      )}
+                      {isRecommended && !editingWaterGoal && (
+                        <p className="mt-1 text-[10px] text-muted/50">Recommended</p>
+                      )}
+                    </div>
+                  </div>
+                  <p className="mt-3 text-[11px] text-ink/60">
+                    A water tracker will appear on your home screen. Each tap adds {waterUnit === "oz" ? "3.5 oz" : "100 ml"}.
+                  </p>
                 </div>
-                <p className="mt-2 text-[10px] text-muted/50">A water tracker will appear on your home screen. Each tap adds 100ml (≈3.4 oz).</p>
-              </div>
-            )}
+              );
+            })()}
           </div>
 
           <label className="block text-xs text-muted/70">

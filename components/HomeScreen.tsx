@@ -1889,8 +1889,9 @@ export default function HomeScreen() {
         {profile?.trackWater && user && waterTick >= 0 && (() => {
           const WATER_KEY = `wya_water_${user.id}_${todayKey()}`;
           const stepMl = 100;
-          const rawGoalMl = profile.weight ? Math.min(3500, Math.max(1500, Math.round(profile.weight * 35))) : 2500;
-          const goalMl = rawGoalMl;
+          const recommendedGoalMl = profile.weight ? Math.min(3500, Math.max(1500, Math.round(profile.weight * 35))) : 2500;
+          const customGoalMl = (() => { try { const v = parseInt(localStorage.getItem(`wya_water_goal_ml_${user.id}`) ?? "", 10); return isNaN(v) ? null : v; } catch { return null; } })();
+          const goalMl = customGoalMl ?? recommendedGoalMl;
           const waterMl = (() => { try { return Math.max(0, parseInt(localStorage.getItem(WATER_KEY) ?? "0", 10) || 0); } catch { return 0; } })();
           const displayGoal = profile.waterUnit === "oz" ? `${Math.round(goalMl / 29.5735)} oz` : `${goalMl} ml`;
           const displayCurrent = profile.waterUnit === "oz" ? `${Math.round(waterMl / 29.5735)} oz` : `${waterMl} ml`;
