@@ -103,6 +103,7 @@ export interface SmartNudgeContext {
   feelLogCorrelations: FeelLogCorrelation[];
   followThrough?: NudgeFollowThrough;
   weightTrend?: WeightTrend;
+  waterIntake?: { consumedMl: number; goalMl: number; pct: number };
 }
 
 export interface NudgeData {
@@ -853,7 +854,8 @@ export function buildSmartNudgeContext(
   recentNudges: string[],
   recentFeelLogs: Array<{ ts: number; tag: string }> = [],
   lastNudgeRecord?: { type: string; message: string; created_at: string },
-  rawWeightLogs?: Array<{ weight_kg: number; logged_at: string }>
+  rawWeightLogs?: Array<{ weight_kg: number; logged_at: string }>,
+  waterConsumedMl?: number
 ): SmartNudgeContext {
   const todayTotals = summarizeDay(meals);
   const todayCalories = Math.round((todayTotals.calories_min + todayTotals.calories_max) / 2);
@@ -1094,6 +1096,16 @@ export function buildSmartNudgeContext(
     };
   }
 
+  let waterIntake: SmartNudgeContext["waterIntake"];
+  if (profile.trackWater && waterConsumedMl !== undefined && profile.weight) {
+    const goalMl = Math.min(3500, Math.max(1500, Math.round(profile.weight * 35)));
+    waterIntake = {
+      consumedMl: waterConsumedMl,
+      goalMl,
+      pct: Math.round((waterConsumedMl / goalMl) * 100),
+    };
+  }
+
   return {
     profile,
     todayCalories,
@@ -1121,5 +1133,6 @@ export function buildSmartNudgeContext(
     feelLogCorrelations,
     followThrough,
     weightTrend,
+    waterIntake,
   };
 }

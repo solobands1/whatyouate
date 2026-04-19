@@ -82,6 +82,8 @@ export default function ProfileScreen() {
   const [showFeedbackToast, setShowFeedbackToast] = useState(false);
   const [showSavedToast, setShowSavedToast] = useState(false);
   const [editingName, setEditingName] = useState(false);
+  const [trackWater, setTrackWater] = useState(false);
+  const [waterUnit, setWaterUnit] = useState<"ml" | "oz">("ml");
   const [dailySupplements, setDailySupplementsState] = useState<SupplementEntry[]>([]);
   const [newSuppInput, setNewSuppInput] = useState("");
   const [newSuppDose, setNewSuppDose] = useState("");
@@ -179,6 +181,9 @@ export default function ProfileScreen() {
               setDobDay(String(parseInt(parts[2], 10)));
             }
           }
+
+          setTrackWater(data.trackWater ?? false);
+          setWaterUnit(data.waterUnit ?? "ml");
 
           // Seed localStorage from Supabase so supplements survive cache clears
           const supps = data.dailySupplements ?? [];
@@ -351,7 +356,9 @@ export default function ProfileScreen() {
         freeform_focus: freeformFocus || null,
         activity_level: activityLevel || null,
         dietary_restrictions: dietaryRestrictions,
-        units
+        units,
+        track_water: trackWater,
+        water_unit: waterUnit
       };
 
       if (!LOCAL_MODE) {
@@ -945,6 +952,47 @@ export default function ProfileScreen() {
         </Card>
 
         <Card className="mt-4 border border-primary/40">
+          {/* Water Tracking */}
+          <div className="border-b border-ink/5 pb-5 mb-5">
+            <div className="flex items-center justify-between">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-ink/70">Track Water Intake</p>
+              <div className="inline-flex rounded-full border border-ink/10 bg-ink/5 p-0.5 text-[10px]">
+                {(["Yes", "No"] as const).map((opt) => {
+                  const isOn = opt === "Yes";
+                  const active = trackWater === isOn;
+                  return (
+                    <button
+                      key={opt}
+                      type="button"
+                      className={`rounded-full px-2.5 py-0.5 font-medium transition ${active ? "bg-white text-ink" : "text-muted/60"}`}
+                      onClick={() => setTrackWater(isOn)}
+                    >
+                      {opt}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            {trackWater && (
+              <div className="mt-3">
+                <p className="text-[11px] text-muted/60 mb-2">Preferred unit</p>
+                <div className="inline-flex rounded-full border border-ink/10 bg-ink/5 p-0.5 text-[10px]">
+                  {(["ml", "oz"] as const).map((unit) => (
+                    <button
+                      key={unit}
+                      type="button"
+                      className={`rounded-full px-2.5 py-0.5 font-medium transition ${waterUnit === unit ? "bg-white text-ink" : "text-muted/60"}`}
+                      onClick={() => setWaterUnit(unit)}
+                    >
+                      {unit}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-2 text-[10px] text-muted/50">A water tracker will appear on your home screen. Each tap adds 100ml (≈3.4 oz).</p>
+              </div>
+            )}
+          </div>
+
           <label className="block text-xs text-muted/70">
             <span className="text-[11px] font-semibold uppercase tracking-wide text-ink/70">Daily supplements</span>
             <p className="mt-1 text-[11px] text-muted/60">Added automatically every day in the background. Add a dose to track against recommended daily amounts.</p>

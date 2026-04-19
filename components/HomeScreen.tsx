@@ -167,12 +167,79 @@ function ManualDateRow({ manualDate, setManualDate }: { manualDate: string; setM
   );
 }
 
+function WaterBar({ pct, displayCurrent, displayGoal, onAdd, onRemove, unit }: {
+  pct: number;
+  displayCurrent: string;
+  displayGoal: string;
+  onAdd: () => void;
+  onRemove: () => void;
+  unit: "ml" | "oz";
+}) {
+  const done = pct >= 100;
+  return (
+    <div className="mt-3 overflow-hidden rounded-2xl border border-primary/20 bg-white shadow-sm">
+      <div className="relative h-14 overflow-hidden bg-primary/5">
+        {/* Wave fill */}
+        <div
+          className="absolute bottom-0 left-0 w-full transition-all duration-700 ease-out"
+          style={{ height: `${pct}%` }}
+        >
+          {/* Wave SVG */}
+          <div className="absolute -top-3 left-0 w-[200%] animate-wave">
+            <svg viewBox="0 0 1200 20" preserveAspectRatio="none" className="w-full h-4">
+              <path
+                d="M0,10 C150,20 350,0 600,10 C850,20 1050,0 1200,10 L1200,20 L0,20 Z"
+                fill={done ? "rgba(16,185,129,0.35)" : "rgba(111,168,255,0.35)"}
+              />
+            </svg>
+          </div>
+          <div className="absolute top-3 left-0 right-0 bottom-0" style={{ background: done ? "rgba(16,185,129,0.18)" : "rgba(111,168,255,0.18)" }} />
+        </div>
+        {/* Text overlay */}
+        <div className="absolute inset-0 flex items-center justify-between px-4">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-ink/50">Water</p>
+            <p className="text-sm font-semibold text-ink/80">
+              {displayCurrent} <span className="text-[10px] font-normal text-muted/60">/ {displayGoal}</span>
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              className="flex h-7 w-7 items-center justify-center rounded-full border border-ink/10 bg-white/80 text-ink/60 transition active:scale-90 active:opacity-60"
+              onClick={onRemove}
+              aria-label="Remove water"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M5 12h14"/></svg>
+            </button>
+            <button
+              type="button"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white shadow-sm transition active:scale-90 active:opacity-80"
+              onClick={onAdd}
+              aria-label="Add water"
+            >
+              {/* Water drop */}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C12 2 5 10 5 15a7 7 0 0 0 14 0c0-5-7-13-7-13z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      <p className="px-4 py-1.5 text-center text-[10px] text-muted/50">
+        {done ? "Goal reached!" : `Each tap adds ${unit === "oz" ? "3.4 oz" : "100 ml"} · tap − to undo`}
+      </p>
+    </div>
+  );
+}
+
 export default function HomeScreen() {
   const router = useRouter();
   const { user, loading } = useAuth();
   const { profile: ctxProfile, meals: ctxMeals, workouts: ctxWorkouts, feelLogs: ctxFeelLogs, nudges, nudgesLoaded, weightLogs, loading: dataLoading, reload } = useAppData();
 
   const [profile, setProfile] = useState<UserProfile | undefined>(undefined);
+  const [waterTick, setWaterTick] = useState(0);
   const [runTour, setRunTour] = useState(false);
   const [showTourGate, setShowTourGate] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
@@ -1031,7 +1098,10 @@ export default function HomeScreen() {
     const lastNudgeRecord = lastNudgeRaw?.type && lastNudgeRaw.created_at
       ? { type: lastNudgeRaw.type, message: lastNudgeRaw.message, created_at: lastNudgeRaw.created_at }
       : undefined;
-    const ctx = buildSmartNudgeContext(displayMeals as any, displayWorkouts, profile, recentFoodsForNudge, recentNudgeMessages, ctxFeelLogs, lastNudgeRecord, weightLogs);
+    const waterConsumedMl = profile.trackWater && user
+      ? (() => { try { return Math.max(0, parseInt(localStorage.getItem(`wya_water_${user.id}_${todayKey()}`) ?? "0", 10) || 0); } catch { return 0; } })()
+      : undefined;
+    const ctx = buildSmartNudgeContext(displayMeals as any, displayWorkouts, profile, recentFoodsForNudge, recentNudgeMessages, ctxFeelLogs, lastNudgeRecord, weightLogs, waterConsumedMl);
 
     fetch("/api/nudge", {
       method: "POST",
@@ -1814,6 +1884,36 @@ export default function HomeScreen() {
             </p>
           )}
         </Card>
+
+        {/* Water tracker — waterTick forces re-render on tap */}
+        {profile?.trackWater && user && waterTick >= 0 && (() => {
+          const WATER_KEY = `wya_water_${user.id}_${todayKey()}`;
+          const stepMl = 100;
+          const rawGoalMl = profile.weight ? Math.min(3500, Math.max(1500, Math.round(profile.weight * 35))) : 2500;
+          const goalMl = rawGoalMl;
+          const waterMl = (() => { try { return Math.max(0, parseInt(localStorage.getItem(WATER_KEY) ?? "0", 10) || 0); } catch { return 0; } })();
+          const displayGoal = profile.waterUnit === "oz" ? `${Math.round(goalMl / 29.5735)} oz` : `${goalMl} ml`;
+          const displayCurrent = profile.waterUnit === "oz" ? `${Math.round(waterMl / 29.5735)} oz` : `${waterMl} ml`;
+          const pct = Math.min(100, Math.round((waterMl / goalMl) * 100));
+          return (
+            <WaterBar
+              pct={pct}
+              displayCurrent={displayCurrent}
+              displayGoal={displayGoal}
+              onAdd={() => {
+                const next = waterMl + stepMl;
+                try { localStorage.setItem(WATER_KEY, String(next)); } catch {}
+                setWaterTick((t) => t + 1);
+              }}
+              onRemove={() => {
+                const next = Math.max(0, waterMl - stepMl);
+                try { localStorage.setItem(WATER_KEY, String(next)); } catch {}
+                setWaterTick((t) => t + 1);
+              }}
+              unit={profile.waterUnit ?? "ml"}
+            />
+          );
+        })()}
 
         <div className="mt-2 flex flex-col gap-1.5">
           <input

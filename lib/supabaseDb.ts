@@ -217,6 +217,8 @@ export async function getProfile(userId: string): Promise<UserProfile | null> {
       : [],
     streak: data.streak ?? 0,
     streakLastDate: data.streak_last_date ?? "",
+    trackWater: data.track_water ?? false,
+    waterUnit: (data.water_unit === "oz" ? "oz" : "ml") as "ml" | "oz",
   };
   profileCache.set(userId, { data: profile, ts: Date.now() });
   return profile;
@@ -245,6 +247,8 @@ export async function saveProfile(userId: string, profile: UserProfile) {
     dietary_restrictions: profile.dietaryRestrictions ?? [],
     units: profile.units,
     daily_supplements: (profile.dailySupplements ?? []).map((e) => typeof e === "string" ? e : JSON.stringify(e)),
+    track_water: profile.trackWater ?? false,
+    water_unit: profile.waterUnit ?? "ml",
     updated_at: new Date().toISOString()
   };
   const { error } = await supabase.from("profiles").upsert(payload, { onConflict: "user_id" });

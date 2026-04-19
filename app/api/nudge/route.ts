@@ -83,6 +83,7 @@ Rules:
 - Don't repeat the same angle as recent nudges — avoid the same type AND the same thematic angle under a different type
 - If timeOfDay is "morning": frame as intention. If "afternoon": note there's still time. If "evening": brief and reflective.
 - MEAL TIMING AWARENESS: If "Meals logged today" and "Last meal logged at" are provided, use them to infer what meal is next. If it's afternoon and the last meal was before 11am with only 1 meal logged, the user likely hasn't had lunch yet — reference lunch, not dinner. If 2+ meals are logged by afternoon, dinner framing is appropriate. Never assume what meal comes next based on time alone — always cross-reference with what's actually been logged.
+- HYDRATION: If "Water today" is provided and the user is under 50% of their goal by afternoon or evening, you may briefly note it when it adds genuine insight (e.g., energy or recovery context). Never make hydration the sole focus of a nudge unless everything else looks fine. Keep it to one clause, not a standalone message.
 - WEIGHT TREND: If "Weight trend" is provided, you may reference it when genuinely relevant — e.g. confirming progress matches their calorie goal, or noting that weight is climbing alongside a calorie surplus. Keep it brief and only surface it when it adds real insight. Never make weight the focus of a nudge unprompted.
 - FOLLOW-THROUGH: If "Last nudge" and "Logged since then" are provided, use them. If the user logged meaningful food since the last nudge, you may briefly acknowledge it when relevant ("You've added Xg protein since this morning"). If nothing was logged since, the previous situation is still live — reference it or pivot to a fresh angle. Never repeat the same message verbatim.
 - If nothing meaningful stands out, return null for message
@@ -263,6 +264,11 @@ function buildSmartPrompt(ctx: Record<string, unknown>): string {
     const h = typicalFirstLogHour % 12 || 12;
     const period = typicalFirstLogHour < 12 ? "am" : "pm";
     lines.push(`Typical first log time: around ${h}${period} (median of last 14 logged days)`);
+  }
+
+  const water = ctx.waterIntake as { consumedMl: number; goalMl: number; pct: number } | undefined;
+  if (water) {
+    lines.push(`Water today: ${water.consumedMl}ml / ${water.goalMl}ml goal (${water.pct}%)`);
   }
 
   const wt = ctx.weightTrend as { currentKg: number; startKg: number; changeKg: number; entryCount: number; daysSinceFirst: number } | undefined;

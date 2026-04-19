@@ -44,6 +44,8 @@ export interface UserProfile {
   dailySupplements?: SupplementEntry[];
   streak?: number;
   streakLastDate?: string; // YYYY-MM-DD
+  trackWater?: boolean;
+  waterUnit?: "ml" | "oz";
 }
 
 export interface MicronutrientAmount {

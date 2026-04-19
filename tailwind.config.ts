@@ -58,6 +58,11 @@ const config: Config = {
           "35%": { transform: "scale(0.82)" },
           "70%": { transform: "scale(1.08)" },
           "100%": { transform: "scale(1)" }
+        },
+        wave: {
+          "0%": { transform: "translateX(0) translateZ(0) scaleY(1)" },
+          "50%": { transform: "translateX(-25%) translateZ(0) scaleY(0.85)" },
+          "100%": { transform: "translateX(-50%) translateZ(0) scaleY(1)" }
         }
       },
       animation: {
@@ -66,7 +71,8 @@ const config: Config = {
         pop: "pop 0.25s ease-out",
         "fade-slide-up": "fade-slide-up 0.35s ease-out",
         "shimmer-sweep": "shimmer-sweep 10s linear infinite",
-        "nav-tap": "nav-tap 0.22s ease-out"
+        "nav-tap": "nav-tap 0.22s ease-out",
+        wave: "wave 2.5s linear infinite"
       }
     }
   },

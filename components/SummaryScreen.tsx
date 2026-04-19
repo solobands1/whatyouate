@@ -662,7 +662,10 @@ export default function SummaryScreen() {
     const lastNudgeRecord = lastNudgeRaw?.type && lastNudgeRaw.created_at
       ? { type: lastNudgeRaw.type, message: lastNudgeRaw.message, created_at: lastNudgeRaw.created_at }
       : undefined;
-    const ctx = buildSmartNudgeContext(meals, workouts, profile, recentFoods, recentNudgeMessages, recentFeelLogs, lastNudgeRecord, weightLogs);
+    const waterConsumedMl = profile.trackWater && user
+      ? (() => { try { return Math.max(0, parseInt(localStorage.getItem(`wya_water_${user.id}_${todayKey()}`) ?? "0", 10) || 0); } catch { return 0; } })()
+      : undefined;
+    const ctx = buildSmartNudgeContext(meals, workouts, profile, recentFoods, recentNudgeMessages, recentFeelLogs, lastNudgeRecord, weightLogs, waterConsumedMl);
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
       controller.abort();
