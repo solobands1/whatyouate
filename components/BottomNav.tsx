@@ -29,6 +29,7 @@ function checkPatternsDot(isPro: boolean, isFree: boolean, hasData: boolean): bo
 export default function BottomNav({ current }: { current: "home" | "summary" | "patterns" | "none" }) {
   const [hasUnseenNudge, setHasUnseenNudge] = useState(false);
   const [showPatternsDot, setShowPatternsDot] = useState(false);
+  const [tappedKey, setTappedKey] = useState<string | null>(null);
   const router = useRouter();
   const trial = useTrialStatus();
   const { meals } = useAppData();
@@ -97,12 +98,16 @@ export default function BottomNav({ current }: { current: "home" | "summary" | "
     return (
       <button
         data-tour={key === "summary" ? "nav-summary" : undefined}
-        className={`relative flex flex-1 flex-col items-center gap-1 rounded-xl px-3 py-2 transition active:scale-90 ${
+        className={`relative flex flex-1 flex-col items-center gap-1 rounded-xl px-3 py-2 transition ${tappedKey === key ? "animate-nav-tap" : ""} ${
           isActive
             ? "bg-white text-primary shadow-[0_4px_16px_rgba(111,168,255,0.18)]"
             : "text-muted/65"
         }`}
-        onPointerDown={() => router.push(href)}
+        onPointerDown={() => {
+          setTappedKey(key);
+          setTimeout(() => setTappedKey(null), 220);
+          router.push(href);
+        }}
       >
         {icons[key]}
         <span className={`text-[10px] font-semibold leading-none ${isActive ? "text-primary" : "text-muted/65"}`}>

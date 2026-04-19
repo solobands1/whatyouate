@@ -52,6 +52,12 @@ const config: Config = {
           "0%": { transform: "translateX(-150%) skewX(-12deg)" },
           "25%": { transform: "translateX(300%) skewX(-12deg)" },
           "26%, 100%": { transform: "translateX(-150%) skewX(-12deg)" }
+        },
+        "nav-tap": {
+          "0%": { transform: "scale(1)" },
+          "35%": { transform: "scale(0.82)" },
+          "70%": { transform: "scale(1.08)" },
+          "100%": { transform: "scale(1)" }
         }
       },
       animation: {
@@ -59,7 +65,8 @@ const config: Config = {
         shimmer: "shimmer 2.5s ease-in-out infinite",
         pop: "pop 0.25s ease-out",
         "fade-slide-up": "fade-slide-up 0.35s ease-out",
-        "shimmer-sweep": "shimmer-sweep 10s linear infinite"
+        "shimmer-sweep": "shimmer-sweep 10s linear infinite",
+        "nav-tap": "nav-tap 0.22s ease-out"
       }
     }
   },
