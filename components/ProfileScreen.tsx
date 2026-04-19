@@ -1645,7 +1645,7 @@ export default function ProfileScreen() {
 
             <button
               type="button"
-              className="mt-4 w-full rounded-xl bg-primary/10 py-2.5 text-sm font-semibold text-primary transition active:opacity-70"
+              className="mt-4 w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white transition active:opacity-70"
               onClick={() => { setShowWeightHistory(false); setTimeout(() => document.querySelector<HTMLInputElement>("input[placeholder='kg'], input[placeholder='lb']")?.focus(), 100); }}
             >
               Update Weight
