@@ -326,16 +326,15 @@ export function clearAllFoodCaches(): void {
 }
 
 // ── Quick Add ────────────────────────────────────────────────────────────────
-// Merges both caches into a deduplicated, sorted list for the Quick Add modal.
+// Derived from the 10 most recent unique meals. Deletions are permanent —
+// removed keys are stored in a blocklist and never backfill.
 
 export type QuickAddItem = {
-  key: string; // name.toLowerCase()
+  key: string;
   name: string;
   type: "text" | "barcode";
-  // text items
   ranges?: FoodTextCacheEntry["ranges"];
   micronutrient_signals?: FoodTextCacheEntry["micronutrient_signals"];
-  // barcode items
   barcode?: string;
   calories?: number;
   protein?: number;
@@ -347,62 +346,59 @@ export type QuickAddItem = {
   logCount: number;
 };
 
-export function getQuickAddItems(): QuickAddItem[] {
+const QUICK_ADD_REMOVED_KEY = "wya_quick_add_removed_v1";
+
+function getQuickAddRemoved(): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    return new Set(JSON.parse(localStorage.getItem(QUICK_ADD_REMOVED_KEY) ?? "[]"));
+  } catch {
+    return new Set();
+  }
+}
+
+export function addQuickAddRemoved(key: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    const removed = getQuickAddRemoved();
+    removed.add(key);
+    localStorage.setItem(QUICK_ADD_REMOVED_KEY, JSON.stringify([...removed]));
+  } catch {}
+}
+
+export function getQuickAddFromMeals(meals: Array<{
+  ts: number;
+  status?: string;
+  analysisJson: {
+    name?: string;
+    source?: string;
+    estimated_ranges: FoodTextCacheEntry["ranges"];
+    micronutrient_signals?: FoodTextCacheEntry["micronutrient_signals"];
+  };
+}>): QuickAddItem[] {
+  const removed = getQuickAddRemoved();
   const seen = new Map<string, QuickAddItem>();
 
-  // Text cache entries
-  const textCache = loadTextCache();
-  for (const [cacheKey, entry] of Object.entries(textCache)) {
-    const key = normalizeFoodKey(entry.name) || cacheKey;
-    if (!key) continue;
-    const existing = seen.get(key);
-    const combinedLogCount = (existing?.logCount ?? 0) + (entry.logCount ?? 0);
-    if (!existing || entry.savedAt > existing.savedAt) {
-      seen.set(key, {
-        key,
-        name: entry.name,
-        type: "text",
-        ranges: entry.ranges,
-        micronutrient_signals: entry.micronutrient_signals,
-        savedAt: entry.savedAt,
-        logCount: combinedLogCount,
-      });
-    } else {
-      seen.set(key, { ...existing, logCount: combinedLogCount });
-    }
+  const sorted = [...meals]
+    .filter((m) => m.status !== "failed" && m.analysisJson?.source !== "supplement")
+    .sort((a, b) => b.ts - a.ts);
+
+  for (const meal of sorted) {
+    const name = meal.analysisJson?.name;
+    if (!name) continue;
+    const key = normalizeFoodKey(name);
+    if (!key || removed.has(key) || seen.has(key)) continue;
+    seen.set(key, {
+      key,
+      name,
+      type: "text",
+      ranges: meal.analysisJson.estimated_ranges,
+      micronutrient_signals: meal.analysisJson.micronutrient_signals ?? [],
+      savedAt: meal.ts,
+      logCount: 1,
+    });
+    if (seen.size >= 10) break;
   }
 
-  // Barcode cache entries
-  const barcodeCache = loadCache();
-  for (const [barcode, entry] of Object.entries(barcodeCache)) {
-    const key = normalizeFoodKey(entry.name) || entry.name.toLowerCase().trim();
-    if (!key) continue;
-    const existing = seen.get(key);
-    const combinedLogCount = (existing?.logCount ?? 0) + (entry.logCount ?? 0);
-    if (!existing || entry.savedAt > existing.savedAt) {
-      seen.set(key, {
-        key,
-        name: entry.name,
-        type: "barcode",
-        barcode,
-        calories: entry.calories,
-        protein: entry.protein,
-        carbs: entry.carbs,
-        fat: entry.fat,
-        brand: entry.brand,
-        valuePer: entry.valuePer,
-        savedAt: entry.savedAt,
-        logCount: combinedLogCount,
-      });
-    } else {
-      seen.set(key, { ...existing, logCount: combinedLogCount });
-    }
-  }
-
-  // Sort by log frequency first, then by most recently saved as tiebreaker; cap at 25
-  return Array.from(seen.values()).sort((a, b) => {
-    const countDiff = b.logCount - a.logCount;
-    if (countDiff !== 0) return countDiff;
-    return b.savedAt - a.savedAt;
-  }).slice(0, 25);
+  return Array.from(seen.values());
 }

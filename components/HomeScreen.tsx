@@ -17,7 +17,7 @@ import { formatApprox, formatDateShort, todayKey, dayKeyFromTs } from "../lib/ut
 import { supabase } from "../lib/supabaseClient";
 import "../lib/mealQueue";
 import BarcodeScannerOverlay from "./BarcodeScannerOverlay";
-import { getFoodCacheEntry, setFoodCacheEntry, deleteFoodCacheEntry, deleteFoodTextEntry, incrementFoodCacheLogCount, incrementFoodTextLogCount, getQuickAddItems, getDailySupplements, setDailySupplements, hasDailySuppsLoggedToday, markDailySuppsLoggedToday, type QuickAddItem } from "../lib/foodCache";
+import { getFoodCacheEntry, setFoodCacheEntry, deleteFoodCacheEntry, deleteFoodTextEntry, incrementFoodCacheLogCount, incrementFoodTextLogCount, getQuickAddFromMeals, addQuickAddRemoved, getDailySupplements, setDailySupplements, hasDailySuppsLoggedToday, markDailySuppsLoggedToday, type QuickAddItem } from "../lib/foodCache";
 import { addFeelLog, deleteFeelLog, updateFeelLog, type FeelLog } from "../lib/supabaseDb";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
@@ -260,7 +260,7 @@ export default function HomeScreen() {
   };
 
   const handleOpenQuickAdd = () => {
-    setQuickAddItems(getQuickAddItems());
+    setQuickAddItems(getQuickAddFromMeals(meals.meals));
     setQuickAddSelected({});
     setQuickAddDate(todayDateStr());
     setShowQuickAdd(true);
@@ -341,11 +341,7 @@ export default function HomeScreen() {
   };
 
   const handleRemoveQuickAddItem = (item: QuickAddItem) => {
-    if (item.type === "text") {
-      deleteFoodTextEntry(item.key);
-    } else if (item.barcode) {
-      deleteFoodCacheEntry(item.barcode);
-    }
+    addQuickAddRemoved(item.key);
     setQuickAddItems((prev) => prev.filter((i) => i.key !== item.key));
     setQuickAddSelected((prev) => {
       const next = { ...prev };
