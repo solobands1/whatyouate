@@ -814,7 +814,7 @@ export default function ProfileScreen() {
               </span>
               <button
                 type="button"
-                className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-primary/30 text-[10px] font-semibold text-primary/60"
+                className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-ink/10 text-[10px] font-semibold text-ink/60"
                 onClick={() => setShowGoalInfo(true)}
                 aria-label="About goal direction"
               >
@@ -926,7 +926,7 @@ export default function ProfileScreen() {
               </span>
               <button
                 type="button"
-                className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-primary/30 text-[10px] font-semibold text-primary/60"
+                className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-ink/10 text-[10px] font-semibold text-ink/60"
                 onClick={() => setShowBodyInfo(true)}
                 aria-label="About body focus"
               >
