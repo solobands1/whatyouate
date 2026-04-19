@@ -128,7 +128,7 @@ const DEMO_NUDGE = "Your protein has been strong this week, but your last two da
 export default function SummaryScreen() {
   const router = useRouter();
   const { user, loading } = useAuth();
-  const { profile, meals, workouts, nudges, nudgesLoaded, feelLogs: recentFeelLogs, loading: loadingData } = useAppData();
+  const { profile, meals, workouts, nudges, nudgesLoaded, feelLogs: recentFeelLogs, weightLogs, loading: loadingData } = useAppData();
   const trial = useTrialStatus();
   const [hydrated, setHydrated] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
@@ -411,6 +411,13 @@ export default function SummaryScreen() {
   const [nudgeViewCount, setNudgeViewCount] = useState(0);
   const [showTargetInfo, setShowTargetInfo] = useState(false);
   const [showTodayInfo, setShowTodayInfo] = useState(false);
+  const [nudgeDismissed, setNudgeDismissed] = useState(() => {
+    try {
+      const hour = new Date().getHours();
+      const win = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
+      return localStorage.getItem(`wya_nudge_dismissed_${todayKey()}_${win}`) === "1";
+    } catch { return false; }
+  });
 
   useEffect(() => {
     if (!user) return;
@@ -636,12 +643,26 @@ export default function SummaryScreen() {
       return;
     }
 
+    // Race condition guard: if HomeScreen prefetch is already in-flight, skip
+    const inflightKey = `wya_nudge_inflight_${windowKey}`;
+    const inflightTs = parseInt(typeof window !== "undefined" ? localStorage.getItem(inflightKey) ?? "0" : "0");
+    if (inflightTs && Date.now() - inflightTs < 30_000) {
+      // Another caller fired within 30s — wait for DB to populate
+      smartNudgeFetchedRef.current.add(windowKey);
+      return;
+    }
+    localStorage.setItem(inflightKey, Date.now().toString());
+
     // Mark as fetched immediately so concurrent re-renders don't fire duplicate requests
     smartNudgeFetchedRef.current.add(windowKey);
 
     // No saved nudge yet — fetch from AI
     const recentNudgeMessages = nudges.slice(0, 7).map((n) => n.type ? `${n.type}: ${n.message}` : n.message);
-    const ctx = buildSmartNudgeContext(meals, workouts, profile, recentFoods, recentNudgeMessages, recentFeelLogs);
+    const lastNudgeRaw = nudges.length > 0 ? nudges[0] : undefined;
+    const lastNudgeRecord = lastNudgeRaw?.type && lastNudgeRaw.created_at
+      ? { type: lastNudgeRaw.type, message: lastNudgeRaw.message, created_at: lastNudgeRaw.created_at }
+      : undefined;
+    const ctx = buildSmartNudgeContext(meals, workouts, profile, recentFoods, recentNudgeMessages, recentFeelLogs, lastNudgeRecord, weightLogs);
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
       controller.abort();
@@ -658,6 +679,7 @@ export default function SummaryScreen() {
         clearTimeout(timeoutId);
         if (!res.ok) throw new Error("nudge failed");
         const { nudge } = await res.json();
+        localStorage.removeItem(inflightKey);
         if (nudge?.message) {
           if (nudge.suggestions?.length) {
             localStorage.setItem(`wya_ai_nudge_${windowKey}_${nudge.type}_suggestions`, JSON.stringify(nudge.suggestions.slice(0, 3)));
@@ -678,6 +700,7 @@ export default function SummaryScreen() {
       })
       .catch(() => {
         clearTimeout(timeoutId);
+        localStorage.removeItem(inflightKey);
         setSmartNudge(visibleNotes.length > 0 ? { message: visibleNotes[0].message, type: visibleNotes[0].type } : null);
       });
   }, [profile, nudgesLoaded, meals, workouts, recentFoods, nudges, user, recentFeelLogs]);
@@ -1345,6 +1368,22 @@ export default function SummaryScreen() {
                     </button>
                   </div>
                 </div>
+              ) : nudgeDismissed ? (
+                <div className="rounded-xl border border-ink/10 bg-ink/4 px-4 py-3 flex items-center justify-between gap-3">
+                  <p className="text-sm text-ink/40">Dismissed. Next update at the next time window.</p>
+                  <button
+                    type="button"
+                    className="text-[11px] font-semibold text-primary/60 transition active:opacity-50"
+                    onClick={() => {
+                      const hour = new Date().getHours();
+                      const win = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
+                      localStorage.removeItem(`wya_nudge_dismissed_${todayKey()}_${win}`);
+                      setNudgeDismissed(false);
+                    }}
+                  >
+                    Undo
+                  </button>
+                </div>
               ) : smartNudge ? (
                 (() => {
                   const nudge = smartNudge;
@@ -1367,30 +1406,48 @@ export default function SummaryScreen() {
                     (nudge.type === "calorie_low" && calTarget > 0 && todayCalAvg >= calTarget * 0.9) ||
                     ((nudge.type === "protein_low" || nudge.type === "protein_low_critical") && proTarget > 0 && todayProAvg >= proTarget * 0.85);
                   return (
-                    <div className="rounded-xl border border-primary/60 bg-primary/5 px-4 py-3 space-y-2.5">
-                      <p className="text-sm font-medium text-ink/90">{nudge.message.replace(/\n+/g, " ")}</p>
+                    <div className="relative rounded-xl border border-primary/60 bg-primary/5 px-4 py-3 space-y-2.5">
+                      <button
+                        type="button"
+                        aria-label="Dismiss nudge"
+                        className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full text-ink/25 transition hover:text-ink/50 active:opacity-50"
+                        onClick={() => {
+                          const hour = new Date().getHours();
+                          const win = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
+                          localStorage.setItem(`wya_nudge_dismissed_${todayKey()}_${win}`, "1");
+                          setNudgeDismissed(true);
+                        }}
+                      >
+                        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M2 2l8 8M10 2l-8 8"/></svg>
+                      </button>
+                      <p className="text-sm font-medium text-ink/90 pr-5">{nudge.message.replace(/\n+/g, " ")}</p>
                       <p className="text-[11px] text-primary/70 font-medium">— Coach</p>
                       {isCaughtUp && (
-                        <p className="text-[11px] text-primary/60 font-medium">Looks like you've caught up since then.</p>
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-600">
+                          <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 6l3 3 5-5"/></svg>
+                          Caught up since then
+                        </span>
                       )}
                       {(why || action || showChips) && (
                         <div className="flex flex-wrap gap-1.5">
                           {why && (
                             <button
                               type="button"
-                              className={`rounded-full border px-2.5 py-0.5 text-[11px] font-medium transition active:opacity-60 ${nudgeExpanded[nudge.type] === "why" ? "border-primary/40 bg-primary/10 text-primary/80" : "border-ink/15 text-ink/55"}`}
+                              className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-medium transition active:opacity-60 ${nudgeExpanded[nudge.type] === "why" ? "border-primary/40 bg-primary/10 text-primary/80" : "border-ink/15 text-ink/55"}`}
                               onClick={() => setNudgeExpanded((prev) => ({ ...prev, [nudge.type]: prev[nudge.type] === "why" ? null : "why" }))}
                             >
                               {nudge.type === "on_track" ? "Keep it up" : "Why?"}
+                              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: nudgeExpanded[nudge.type] === "why" ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}><path d="M2 4l4 4 4-4"/></svg>
                             </button>
                           )}
                           {(action || showChips) && (
                             <button
                               type="button"
-                              className={`rounded-full border px-2.5 py-0.5 text-[11px] font-medium transition active:opacity-60 ${nudgeExpanded[nudge.type] === "what" ? "border-primary/40 bg-primary/10 text-primary/80" : "border-ink/15 text-ink/55"}`}
+                              className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-medium transition active:opacity-60 ${nudgeExpanded[nudge.type] === "what" ? "border-primary/40 bg-primary/10 text-primary/80" : "border-ink/15 text-ink/55"}`}
                               onClick={() => setNudgeExpanded((prev) => ({ ...prev, [nudge.type]: prev[nudge.type] === "what" ? null : "what" }))}
                             >
                               What to do?
+                              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: nudgeExpanded[nudge.type] === "what" ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}><path d="M2 4l4 4 4-4"/></svg>
                             </button>
                           )}
                         </div>

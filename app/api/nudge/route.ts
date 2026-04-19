@@ -54,8 +54,8 @@ Nudge type priority — work down this list and use the first that genuinely app
 7. rest_day_fuel — trained yesterday and today's calories or protein are notably low. Recovery nutrition matters the day after too. If yesterday's workout type included "strength" or "weights", prioritize protein recovery specifically. If it was "cardio" or "run", prioritize calorie and carb replenishment.
 8. workout_recovery — trained today and protein is notably low. If workoutTypes includes "strength" or "weights", be specific that muscle repair requires protein within a few hours. If "cardio" or "run", frame it around sustained energy and glycogen.
 9. Deficit nudges (protein_low_critical, protein_low, calorie_low, fat_low, micronutrient) — fallback when nothing above genuinely applies.
-   PROTEIN FATIGUE RULE: if protein appeared in ANY of the last 3 nudge types shown, skip ALL protein nudges unless remaining protein is over 75g. Pick a completely different angle — food_insight, variety, a positive pattern, anything but protein again. Three protein nudges in a row is the ceiling; a fourth requires a very high remaining gap.
-   DEFICIT STREAK RULE: if all 3 recent nudges shown are deficit types (protein_low, protein_low_critical, calorie_low, fat_low), jump UP the priority list and pick the highest applicable non-deficit type instead, even if the deficit is real. The user needs a different perspective.
+   PROTEIN FATIGUE RULE: if protein appeared in 2 or more of the last 3 nudge types shown, suppress protein_low (mild) and pick a completely different angle — food_insight, variety, a positive pattern, anything but mild protein again. EXCEPTION: never suppress protein_low_critical — if remaining protein exceeds 60g, always surface it regardless of fatigue. Three mild protein nudges in a row is the ceiling; critical gaps override fatigue.
+   DEFICIT STREAK RULE: if all 3 recent nudges shown are deficit types (protein_low, protein_low_critical, calorie_low, fat_low), check severity first. If remaining calories or protein represent MORE than 50% of the daily target (a genuine critical gap), keep the deficit nudge but approach it from a completely different angle — a different framing, a different meal timing hook, not the same observation again. If the deficit is mild (remaining under 30% of target), jump UP the priority list and pick the highest applicable non-deficit type instead.
    EVENING LARGE DEFICIT: if timeOfDay is "evening" and remaining calories or protein represents more than 50% of the daily target, acknowledge the goal is ambitious for this late in the day and frame it as tomorrow's opportunity instead.
 10. calorie_high, workout_missing, on_track — situational.
 11. check_in — afternoon or evening when nothing is logged today. Write like a curious friend checking in — warm, not a reminder. No imperatives. No phrases like "no judgment" — they read as judgmental. SUPPRESSION RULE: if "Typical first log time" is provided and the current hour is before that typical time + 1 hour, do NOT fire check_in.
@@ -83,6 +83,8 @@ Rules:
 - Don't repeat the same angle as recent nudges — avoid the same type AND the same thematic angle under a different type
 - If timeOfDay is "morning": frame as intention. If "afternoon": note there's still time. If "evening": brief and reflective.
 - MEAL TIMING AWARENESS: If "Meals logged today" and "Last meal logged at" are provided, use them to infer what meal is next. If it's afternoon and the last meal was before 11am with only 1 meal logged, the user likely hasn't had lunch yet — reference lunch, not dinner. If 2+ meals are logged by afternoon, dinner framing is appropriate. Never assume what meal comes next based on time alone — always cross-reference with what's actually been logged.
+- WEIGHT TREND: If "Weight trend" is provided, you may reference it when genuinely relevant — e.g. confirming progress matches their calorie goal, or noting that weight is climbing alongside a calorie surplus. Keep it brief and only surface it when it adds real insight. Never make weight the focus of a nudge unprompted.
+- FOLLOW-THROUGH: If "Last nudge" and "Logged since then" are provided, use them. If the user logged meaningful food since the last nudge, you may briefly acknowledge it when relevant ("You've added Xg protein since this morning"). If nothing was logged since, the previous situation is still live — reference it or pivot to a fresh angle. Never repeat the same message verbatim.
 - If nothing meaningful stands out, return null for message
 
 Return ONLY valid JSON with no other text:
@@ -108,6 +110,7 @@ Suggestion rules:
   - morning (before 12pm) → breakfast foods only (eggs, oats, yogurt, smoothie ingredients, etc.)
   - afternoon 12–5pm → lunch or snack foods (wraps, salads, rice bowls, protein bars, fruit, etc.)
   - evening (after 5pm) → dinner foods (fish, meat, roasted veg, legumes, etc.)
+  - EXCEPTION: if "Meals logged today" shows 0 meals and it's afternoon, or if the nudge references a skipped first meal or morning, suggest breakfast-appropriate foods (eggs, oats, yogurt, etc.) regardless of time window — the user hasn't eaten yet
   - If the nudge message itself references a specific meal (e.g. "first meal", "breakfast", "lunch", "dinner"), suggestions must match that meal, not the generic time window
 - Respect dietary restrictions when provided
 - No serving instructions in food names`;
@@ -260,6 +263,25 @@ function buildSmartPrompt(ctx: Record<string, unknown>): string {
     const h = typicalFirstLogHour % 12 || 12;
     const period = typicalFirstLogHour < 12 ? "am" : "pm";
     lines.push(`Typical first log time: around ${h}${period} (median of last 14 logged days)`);
+  }
+
+  const wt = ctx.weightTrend as { currentKg: number; startKg: number; changeKg: number; entryCount: number; daysSinceFirst: number } | undefined;
+  if (wt) {
+    const dir = wt.changeKg < 0 ? "down" : wt.changeKg > 0 ? "up" : "stable";
+    const absKg = Math.abs(wt.changeKg);
+    lines.push(`Weight trend (${wt.entryCount} weigh-ins over ${wt.daysSinceFirst} days): ${dir} ${absKg}kg — started at ${wt.startKg}kg, now ${wt.currentKg}kg`);
+  }
+
+  const ft = ctx.followThrough as { nudgeType: string; nudgeMessage: string; minutesSinceNudge: number; mealsLoggedSince: number; caloriesSince: number; proteinSince: number } | undefined;
+  if (ft) {
+    const hrs = Math.floor(ft.minutesSinceNudge / 60);
+    const timeAgo = hrs >= 1 ? `${hrs}h ago` : `${ft.minutesSinceNudge}m ago`;
+    lines.push(`Last nudge (${ft.nudgeType}, ${timeAgo}): "${ft.nudgeMessage}"`);
+    if (ft.mealsLoggedSince > 0) {
+      lines.push(`Logged since that nudge: ${ft.mealsLoggedSince} meal${ft.mealsLoggedSince !== 1 ? "s" : ""} | ${ft.caloriesSince} kcal | ${ft.proteinSince}g protein`);
+    } else {
+      lines.push(`No meals logged since that nudge.`);
+    }
   }
 
   const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];

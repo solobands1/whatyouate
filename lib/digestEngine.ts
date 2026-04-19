@@ -59,6 +59,23 @@ export interface WeekSummary {
   avgFat: number;
 }
 
+export interface WeightTrend {
+  currentKg: number;
+  startKg: number;
+  changeKg: number;
+  entryCount: number;
+  daysSinceFirst: number;
+}
+
+export interface NudgeFollowThrough {
+  nudgeType: string;
+  nudgeMessage: string;
+  minutesSinceNudge: number;
+  mealsLoggedSince: number;
+  caloriesSince: number;
+  proteinSince: number;
+}
+
 export interface SmartNudgeContext {
   profile: UserProfile;
   todayCalories: number;
@@ -84,6 +101,8 @@ export interface SmartNudgeContext {
   mealsLoggedToday: number;
   typicalFirstLogHour: number | null;
   feelLogCorrelations: FeelLogCorrelation[];
+  followThrough?: NudgeFollowThrough;
+  weightTrend?: WeightTrend;
 }
 
 export interface NudgeData {
@@ -832,7 +851,9 @@ export function buildSmartNudgeContext(
   profile: UserProfile,
   recentFoods: string[],
   recentNudges: string[],
-  recentFeelLogs: Array<{ ts: number; tag: string }> = []
+  recentFeelLogs: Array<{ ts: number; tag: string }> = [],
+  lastNudgeRecord?: { type: string; message: string; created_at: string },
+  rawWeightLogs?: Array<{ weight_kg: number; logged_at: string }>
 ): SmartNudgeContext {
   const todayTotals = summarizeDay(meals);
   const todayCalories = Math.round((todayTotals.calories_min + todayTotals.calories_max) / 2);
@@ -1036,6 +1057,43 @@ export function buildSmartNudgeContext(
     typicalFirstLogHour = sorted[Math.floor(sorted.length / 2)];
   }
 
+  let weightTrend: WeightTrend | undefined;
+  if (rawWeightLogs && rawWeightLogs.length >= 2) {
+    const sorted = [...rawWeightLogs].sort((a, b) => new Date(a.logged_at).getTime() - new Date(b.logged_at).getTime());
+    const first = sorted[0];
+    const last = sorted[sorted.length - 1];
+    const daysSinceFirst = Math.round((new Date(last.logged_at).getTime() - new Date(first.logged_at).getTime()) / (1000 * 60 * 60 * 24));
+    weightTrend = {
+      currentKg: last.weight_kg,
+      startKg: first.weight_kg,
+      changeKg: Math.round((last.weight_kg - first.weight_kg) * 10) / 10,
+      entryCount: sorted.length,
+      daysSinceFirst,
+    };
+  }
+
+  let followThrough: NudgeFollowThrough | undefined;
+  if (lastNudgeRecord?.created_at) {
+    const nudgeTs = new Date(lastNudgeRecord.created_at).getTime();
+    const mealsSince = meals.filter(
+      (m) => m.ts > nudgeTs && m.status !== "failed" && m.analysisJson?.source !== "supplement"
+    );
+    const caloriesSince = Math.round(
+      mealsSince.reduce((s, m) => s + ((m.analysisJson?.estimated_ranges?.calories_min ?? 0) + (m.analysisJson?.estimated_ranges?.calories_max ?? 0)) / 2, 0)
+    );
+    const proteinSince = Math.round(
+      mealsSince.reduce((s, m) => s + ((m.analysisJson?.estimated_ranges?.protein_g_min ?? 0) + (m.analysisJson?.estimated_ranges?.protein_g_max ?? 0)) / 2, 0)
+    );
+    followThrough = {
+      nudgeType: lastNudgeRecord.type,
+      nudgeMessage: lastNudgeRecord.message,
+      minutesSinceNudge: Math.round((Date.now() - nudgeTs) / 60000),
+      mealsLoggedSince: mealsSince.length,
+      caloriesSince,
+      proteinSince,
+    };
+  }
+
   return {
     profile,
     todayCalories,
@@ -1061,5 +1119,7 @@ export function buildSmartNudgeContext(
     mealsLoggedToday,
     typicalFirstLogHour,
     feelLogCorrelations,
+    followThrough,
+    weightTrend,
   };
 }

@@ -7,7 +7,8 @@ import { notifyProfileUpdated } from "../lib/dataEvents";
 import type { ActivityLevel, GoalDirection, SupplementEntry, SupplementNutrient, Units, UserProfile } from "../lib/types";
 import { suppLabel, suppName } from "../lib/types";
 import { matchSupplementNutrients, NUTRIENT_UNITS, NUTRIENT_DISPLAY_NAMES } from "../lib/rda";
-import { clearAllData, getProfile, saveProfile, saveDailySupplements, clearProfileCache, LOCAL_MODE } from "../lib/supabaseDb";
+import { clearAllData, getProfile, saveProfile, saveDailySupplements, clearProfileCache, addWeightLog, getWeightLogs, LOCAL_MODE } from "../lib/supabaseDb";
+import type { WeightLog } from "../lib/supabaseDb";
 import { getDailySupplements, setDailySupplements, clearDailySuppsLoggedToday, clearAllFoodCaches } from "../lib/foodCache";
 import { clearMealsCache } from "../lib/supabaseDb";
 import { notifyMealsUpdated } from "../lib/dataEvents";
@@ -38,7 +39,10 @@ export default function ProfileScreen() {
   const searchParams = useSearchParams();
   const { user, loading, signOut } = useAuth();
   const profileExistsRef = useRef(false);
+  const initialWeightKgRef = useRef<number | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [weightLogs, setWeightLogs] = useState<WeightLog[]>([]);
+  const [showWeightHistory, setShowWeightHistory] = useState(false);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -121,10 +125,12 @@ export default function ProfileScreen() {
     if (localStorage.getItem(walkthroughKey)) {
       window.setTimeout(() => setRunProfileTour(true), 150);
     }
+    getWeightLogs(user.id).then(setWeightLogs).catch(() => {});
     getProfile(user.id)
       .then((data) => {
         if (data) {
           profileExistsRef.current = true;
+          initialWeightKgRef.current = data.weight ?? null;
           const meta = (user as { user_metadata?: Record<string, string> }).user_metadata ?? {};
           setFirstName(data.firstName || meta.first_name || "");
           setLastName(data.lastName || meta.last_name || "");
@@ -372,6 +378,14 @@ export default function ProfileScreen() {
 
       clearProfileCache(user.id);
       profileExistsRef.current = true;
+
+      // Auto-log weight if it changed
+      if (parsedWeightKg !== null && parsedWeightKg !== initialWeightKgRef.current) {
+        initialWeightKgRef.current = parsedWeightKg;
+        addWeightLog(user.id, parsedWeightKg)
+          .then((log) => { if (log) setWeightLogs((prev) => [log, ...prev]); })
+          .catch(() => {});
+      }
 
       if (user) {
         localStorage.setItem(`wya_profile_updated_${user.id}`, String(Date.now()));
@@ -706,6 +720,24 @@ export default function ProfileScreen() {
                   }}
                   placeholder={units === "metric" ? "kg" : "lb"}
                 />
+                {weightLogs.length > 0 && (() => {
+                  const last = weightLogs[0];
+                  const daysAgo = Math.floor((Date.now() - new Date(last.logged_at).getTime()) / (1000 * 60 * 60 * 24));
+                  const displayW = units === "imperial"
+                    ? `${Math.round(last.weight_kg * 2.20462)} lb`
+                    : `${last.weight_kg} kg`;
+                  const label = daysAgo === 0 ? "today" : daysAgo === 1 ? "yesterday" : `${daysAgo}d ago`;
+                  return (
+                    <button
+                      type="button"
+                      className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-ink/5 px-2.5 py-0.5 text-[10px] text-muted/60 transition active:opacity-60"
+                      onClick={() => setShowWeightHistory(true)}
+                    >
+                      <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="6" cy="6" r="5"/><path d="M6 3.5v2.5l1.5 1.5"/></svg>
+                      Last logged {label} · {displayW}
+                    </button>
+                  );
+                })()}
               </label>
             </div>
             <div className="mt-5">
@@ -1541,6 +1573,84 @@ export default function ProfileScreen() {
                 Add supplement
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showWeightHistory && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5" onClick={() => setShowWeightHistory(false)}>
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-4 flex items-center justify-between">
+              <p className="text-base font-semibold text-ink">Weight History</p>
+              <button type="button" className="text-sm font-semibold text-ink/50 transition active:opacity-60" onClick={() => setShowWeightHistory(false)}>Close</button>
+            </div>
+
+            {/* Sparkline chart */}
+            {weightLogs.length >= 2 && (() => {
+              const points = [...weightLogs].reverse(); // oldest first
+              const weights = points.map((p) => p.weight_kg);
+              const minW = Math.min(...weights);
+              const maxW = Math.max(...weights);
+              const range = maxW - minW || 1;
+              const W = 280; const H = 64; const PAD = 8;
+              const innerH = H - PAD * 2;
+              const times = points.map((p) => new Date(p.logged_at).getTime());
+              const minT = times[0]; const maxT = times[times.length - 1];
+              const tRange = maxT - minT || 1;
+              const px = (t: number) => ((t - minT) / tRange) * W;
+              const py = (w: number) => PAD + innerH - ((w - minW) / range) * innerH;
+              const d = points.map((p, i) => `${i === 0 ? "M" : "L"} ${px(times[i]).toFixed(1)} ${py(p.weight_kg).toFixed(1)}`).join(" ");
+              const isDown = weights[weights.length - 1] <= weights[0];
+              return (
+                <div className="mb-4 overflow-hidden rounded-xl bg-ink/[0.03] px-3 py-2">
+                  <svg width="100%" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="h-16">
+                    <path d={d} fill="none" stroke={isDown ? "#10b981" : "#6FA8FF"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    {points.map((p, i) => (
+                      <circle key={i} cx={px(times[i])} cy={py(p.weight_kg)} r="3" fill={isDown ? "#10b981" : "#6FA8FF"} />
+                    ))}
+                  </svg>
+                  <div className="mt-1 flex justify-between text-[10px] text-muted/50">
+                    <span>{units === "imperial" ? `${Math.round(minW * 2.20462)} lb` : `${minW} kg`}</span>
+                    <span>{units === "imperial" ? `${Math.round(maxW * 2.20462)} lb` : `${maxW} kg`}</span>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Entry list */}
+            <div className="max-h-64 space-y-1.5 overflow-y-auto">
+              {weightLogs.map((log, i) => {
+                const next = weightLogs[i + 1];
+                const delta = next ? log.weight_kg - next.weight_kg : null;
+                const displayW = units === "imperial"
+                  ? `${Math.round(log.weight_kg * 2.20462)} lb`
+                  : `${log.weight_kg} kg`;
+                const deltaDisplay = delta !== null
+                  ? (delta > 0 ? `+${units === "imperial" ? Math.round(delta * 2.20462 * 10) / 10 : Math.round(delta * 10) / 10}` : `${units === "imperial" ? Math.round(delta * 2.20462 * 10) / 10 : Math.round(delta * 10) / 10}`)
+                  : null;
+                const date = new Date(log.logged_at);
+                const dateLabel = date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: date.getFullYear() !== new Date().getFullYear() ? "numeric" : undefined });
+                return (
+                  <div key={log.id} className="flex items-center justify-between rounded-lg bg-ink/[0.03] px-3 py-2">
+                    <span className="text-xs text-muted/60">{dateLabel}</span>
+                    <div className="flex items-center gap-2">
+                      {deltaDisplay && (
+                        <span className={`text-[11px] font-medium ${delta! < 0 ? "text-emerald-500" : "text-ink/40"}`}>{deltaDisplay}</span>
+                      )}
+                      <span className="text-xs font-semibold text-ink/80">{displayW}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <button
+              type="button"
+              className="mt-4 w-full rounded-xl bg-primary/10 py-2.5 text-sm font-semibold text-primary transition active:opacity-70"
+              onClick={() => { setShowWeightHistory(false); setTimeout(() => document.querySelector<HTMLInputElement>("input[placeholder='kg'], input[placeholder='lb']")?.focus(), 100); }}
+            >
+              Update Weight
+            </button>
           </div>
         </div>
       )}

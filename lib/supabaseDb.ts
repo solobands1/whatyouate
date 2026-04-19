@@ -803,6 +803,31 @@ export async function exportAllData(userId: string) {
   };
 }
 
+export type WeightLog = { id: string; weight_kg: number; logged_at: string };
+
+export async function addWeightLog(userId: string, weightKg: number): Promise<WeightLog | null> {
+  if (useMemory) return null; // local mode — skip
+  const { data, error } = await supabase
+    .from("weight_logs")
+    .insert({ user_id: userId, weight_kg: weightKg })
+    .select("id, weight_kg, logged_at")
+    .single();
+  if (error) { console.error("addWeightLog", error); return null; }
+  return data as WeightLog;
+}
+
+export async function getWeightLogs(userId: string, limit = 60): Promise<WeightLog[]> {
+  if (useMemory) return [];
+  const { data, error } = await supabase
+    .from("weight_logs")
+    .select("id, weight_kg, logged_at")
+    .eq("user_id", userId)
+    .order("logged_at", { ascending: false })
+    .limit(limit);
+  if (error) { console.error("getWeightLogs", error); return []; }
+  return (data ?? []) as WeightLog[];
+}
+
 export async function clearAllData(userId: string) {
   if (useMemory) {
     ensureLocalLoaded();

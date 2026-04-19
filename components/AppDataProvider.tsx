@@ -3,8 +3,8 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import type { MealLog, UserProfile, WorkoutSession } from "../lib/types";
 import { useAuth } from "./AuthProvider";
-import { getProfile, listMeals, listWorkouts, listNudges, getFeelLogs, updateMeal, saveStreak } from "../lib/supabaseDb";
-import type { FeelLog } from "../lib/supabaseDb";
+import { getProfile, listMeals, listWorkouts, listNudges, getFeelLogs, getWeightLogs, updateMeal, saveStreak } from "../lib/supabaseDb";
+import type { FeelLog, WeightLog } from "../lib/supabaseDb";
 import { dayKeyFromTs, todayKey } from "../lib/utils";
 import { computeStreakFromMeals } from "../lib/digestEngine";
 import { MEALS_UPDATED_EVENT, NUDGES_UPDATED_EVENT, PROFILE_UPDATED_EVENT, WORKOUTS_UPDATED_EVENT, notifyMealsFailed } from "../lib/dataEvents";
@@ -41,6 +41,7 @@ function pruneNudgeSnapshots() {
 }
 
 export type NudgeRow = { id: string; type?: string; message: string; created_at: string };
+export type { WeightLog };
 
 type AppDataContextValue = {
   profile: UserProfile | null;
@@ -49,6 +50,7 @@ type AppDataContextValue = {
   nudges: NudgeRow[];
   nudgesLoaded: boolean;
   feelLogs: FeelLog[];
+  weightLogs: WeightLog[];
   loading: boolean;
   setMeals: React.Dispatch<React.SetStateAction<MealLog[]>>;
   setWorkouts: React.Dispatch<React.SetStateAction<WorkoutSession[]>>;
@@ -66,6 +68,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const [nudges, setNudges] = useState<NudgeRow[]>([]);
   const [nudgesLoaded, setNudgesLoaded] = useState(false);
   const [feelLogs, setFeelLogs] = useState<FeelLog[]>([]);
+  const [weightLogs, setWeightLogs] = useState<WeightLog[]>([]);
   const [loading, setLoading] = useState(true);
   const mountedRef = useRef(true);
 
@@ -87,11 +90,12 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
 
   const load = useCallback(async (userId: string, isInitial = false) => {
     try {
-      const [profileData, mealsData, workoutsData, feelLogsData] = await Promise.all([
+      const [profileData, mealsData, workoutsData, feelLogsData, weightLogsData] = await Promise.all([
         getProfile(userId),
         listMeals(userId, 400),
         listWorkouts(userId, 50),
         getFeelLogs(userId, 50),
+        getWeightLogs(userId, 60),
       ]);
       if (!mountedRef.current) return;
 
@@ -163,6 +167,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       setMeals(finalMeals);
       setWorkouts(workoutsData);
       setFeelLogs(feelLogsData);
+      setWeightLogs(weightLogsData);
     } catch {
       // silently fail — screens handle empty state gracefully
     } finally {
@@ -206,7 +211,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AppDataContext.Provider
-      value={{ profile, meals, workouts, nudges, nudgesLoaded, feelLogs, loading, setMeals, setWorkouts, setProfile, reload }}
+      value={{ profile, meals, workouts, nudges, nudgesLoaded, feelLogs, weightLogs, loading, setMeals, setWorkouts, setProfile, reload }}
     >
       {children}
     </AppDataContext.Provider>

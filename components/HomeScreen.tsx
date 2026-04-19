@@ -170,7 +170,7 @@ function ManualDateRow({ manualDate, setManualDate }: { manualDate: string; setM
 export default function HomeScreen() {
   const router = useRouter();
   const { user, loading } = useAuth();
-  const { profile: ctxProfile, meals: ctxMeals, workouts: ctxWorkouts, feelLogs: ctxFeelLogs, nudges, nudgesLoaded, loading: dataLoading, reload } = useAppData();
+  const { profile: ctxProfile, meals: ctxMeals, workouts: ctxWorkouts, feelLogs: ctxFeelLogs, nudges, nudgesLoaded, weightLogs, loading: dataLoading, reload } = useAppData();
 
   const [profile, setProfile] = useState<UserProfile | undefined>(undefined);
   const [runTour, setRunTour] = useState(false);
@@ -995,6 +995,14 @@ export default function HomeScreen() {
     });
     if (existing) { nudgePrefetchedRef.current.add(windowKey); return; }
 
+    // Race condition guard: claim the inflight lock; SummaryScreen will skip if we're in-flight
+    const inflightKey = `wya_nudge_inflight_${windowKey}`;
+    const inflightTs = parseInt(localStorage.getItem(inflightKey) ?? "0");
+    if (inflightTs && Date.now() - inflightTs < 30_000) {
+      nudgePrefetchedRef.current.add(windowKey);
+      return;
+    }
+    localStorage.setItem(inflightKey, Date.now().toString());
     nudgePrefetchedRef.current.add(windowKey);
 
     const recentFoodsForNudge = (() => {
@@ -1019,7 +1027,11 @@ export default function HomeScreen() {
     })();
 
     const recentNudgeMessages = nudges.slice(0, 7).map((n) => n.type ? `${n.type}: ${n.message}` : n.message);
-    const ctx = buildSmartNudgeContext(displayMeals as any, displayWorkouts, profile, recentFoodsForNudge, recentNudgeMessages, ctxFeelLogs);
+    const lastNudgeRaw = nudges.length > 0 ? nudges[0] : undefined;
+    const lastNudgeRecord = lastNudgeRaw?.type && lastNudgeRaw.created_at
+      ? { type: lastNudgeRaw.type, message: lastNudgeRaw.message, created_at: lastNudgeRaw.created_at }
+      : undefined;
+    const ctx = buildSmartNudgeContext(displayMeals as any, displayWorkouts, profile, recentFoodsForNudge, recentNudgeMessages, ctxFeelLogs, lastNudgeRecord, weightLogs);
 
     fetch("/api/nudge", {
       method: "POST",
@@ -1027,6 +1039,7 @@ export default function HomeScreen() {
       body: JSON.stringify({ mode: "smart", ...ctx }),
     })
       .then(async (res) => {
+        localStorage.removeItem(inflightKey);
         if (!res.ok) return;
         const { nudge } = await res.json();
         if (!nudge?.message) return;
@@ -1048,7 +1061,7 @@ export default function HomeScreen() {
           window.dispatchEvent(new Event("wya_nudge_update"));
         }
       })
-      .catch(() => {});
+      .catch(() => { localStorage.removeItem(inflightKey); });
   }, [profile, nudgesLoaded, nudges, user, displayMeals, displayWorkouts, ctxFeelLogs, trial.isFree]);
 
   const homeMarkers = useMemo(
