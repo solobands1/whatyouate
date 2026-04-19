@@ -1793,14 +1793,14 @@ export default function HomeScreen() {
                 className="flex flex-1 items-center justify-center rounded-l-xl rounded-r-none border border-ink/10 bg-white px-3 py-1.5 text-center font-normal text-ink/60 transition-all duration-150 hover:bg-ink/5 active:scale-[0.96] active:bg-primary/10"
                 onClick={() => { if (!isDemoMode) handleFeelLog("good_energy", Date.now()); }}
               >
-                Log High Energy
+                High Energy
               </button>
               <button
                 type="button"
                 className="flex flex-1 items-center justify-center rounded-r-xl rounded-l-none border border-l-0 border-ink/10 bg-white px-3 py-1.5 text-center font-normal text-ink/60 transition-all duration-150 hover:bg-ink/5 active:scale-[0.96] active:bg-primary/10"
                 onClick={() => { if (!isDemoMode) handleFeelLog("low_energy", Date.now()); }}
               >
-                Log Low Energy
+                Low Energy
               </button>
             </div>
             {workout.activeWorkout && (
