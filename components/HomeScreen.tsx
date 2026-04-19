@@ -1186,7 +1186,7 @@ export default function HomeScreen() {
       disableBeacon: true,
       content: (
         <div>
-          <p style={{ fontWeight: 600, marginBottom: 10 }}>Track Your Workouts</p>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Track Your Activities</p>
           <p>Start and end your activities to track them throughout the day.</p>
         </div>
       ),
