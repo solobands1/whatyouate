@@ -1680,7 +1680,7 @@ export default function HomeScreen() {
                 style={{ animationDelay: "400ms", animationFillMode: "both" }}
               >
                 <p className="text-[11px] uppercase tracking-wide text-ink/70">{welcomeMessage.greeting}</p>
-                <p className="mt-1 text-[9px] font-normal uppercase tracking-wide text-ink/40">{welcomeMessage.sub}</p>
+                <p className="mt-1 text-[9px] font-normal uppercase tracking-wide text-ink/55">{welcomeMessage.sub}</p>
               </div>
             )}
             <div className="text-right">
@@ -2033,7 +2033,7 @@ export default function HomeScreen() {
                         autoFocus
                         onKeyDown={(e) => { if (e.key === "Enter") meals.analyzeManualText(); }}
                       />
-                      <p className="mt-1.5 text-[11px] text-muted/50">Tip: use your keyboard's mic to speak your meal.</p>
+                      <p className="mt-1.5 text-[11px] text-muted/70">Tip: use your keyboard's mic to speak your meal.</p>
                     </div>
                     <div className="mt-3">
                       <ManualDateRow manualDate={meals.manualDate} setManualDate={meals.setManualDate} />
