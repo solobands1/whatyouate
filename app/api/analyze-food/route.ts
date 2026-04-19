@@ -62,7 +62,7 @@ async function analyzeWithOpenAI(imageBase64: string, model: string, apiKey: str
           }
         ],
         temperature: 0.2,
-        max_tokens: 700
+        max_tokens: 1200
       })
     });
 
@@ -107,7 +107,7 @@ async function analyzeWithAnthropic(imageBase64: string, model: string, apiKey: 
       },
       body: JSON.stringify({
         model,
-        max_tokens: 700,
+        max_tokens: 1200,
         temperature: 0.2,
         system: FOOD_ANALYSIS_PROMPT,
         messages: [{ role: "user", content }]
