@@ -745,7 +745,7 @@ export default function ProfileScreen() {
               <p className="text-[11px] text-muted/70 mb-1.5">Date of Birth</p>
               <div className="flex items-center gap-2">
                 <select
-                  className="flex-1 rounded-xl border border-ink/10 bg-white px-2 py-1.5 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                  className="flex-1 rounded-xl border border-ink/10 bg-white px-2 py-1.5 text-xs text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
                   value={dobMonth}
                   onChange={(e) => { setDobMonth(e.target.value); setDobDay(""); }}
                 >
@@ -755,7 +755,7 @@ export default function ProfileScreen() {
                   ))}
                 </select>
                 <select
-                  className="w-20 rounded-xl border border-ink/10 bg-white px-2 py-1.5 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                  className="w-20 rounded-xl border border-ink/10 bg-white px-2 py-1.5 text-xs text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
                   value={dobDay}
                   onChange={(e) => setDobDay(e.target.value)}
                 >
@@ -765,7 +765,7 @@ export default function ProfileScreen() {
                   ))}
                 </select>
                 <select
-                  className="w-24 rounded-xl border border-ink/10 bg-white px-2 py-1.5 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                  className="w-24 rounded-xl border border-ink/10 bg-white px-2 py-1.5 text-xs text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
                   value={dobYear}
                   onChange={(e) => setDobYear(e.target.value)}
                 >
@@ -777,7 +777,7 @@ export default function ProfileScreen() {
                 {(() => {
                   const ds = dobYear && dobMonth && dobDay ? `${dobYear}-${dobMonth.padStart(2,"0")}-${dobDay.padStart(2,"0")}` : "";
                   const age = calculateAgeFromDob(ds);
-                  return age !== null ? <span className="text-sm font-semibold text-primary/70 shrink-0">{age} yrs</span> : null;
+                  return age !== null ? <span className="text-xs font-semibold text-primary/70 shrink-0">{age} yrs</span> : null;
                 })()}
               </div>
             </div>
