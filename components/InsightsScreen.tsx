@@ -669,7 +669,7 @@ export default function InsightsScreen() {
           </div>
           {sparklineChart.hasTarget && (
             <div className="mt-2 flex items-center gap-1.5">
-              <div className="h-2 w-3 rounded-sm bg-primary/35" />
+              <div className="h-2 w-4 rounded-sm bg-primary/35" />
               <p className="text-[10px] text-ink/60">Target range</p>
             </div>
           )}
