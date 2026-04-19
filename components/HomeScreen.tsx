@@ -1289,13 +1289,10 @@ export default function HomeScreen() {
             <div className="space-y-3 text-sm text-ink/70">
               <p className="text-[15px] font-semibold text-ink/80">Welcome to WhatYouAte!</p>
               <p>
-                Log your meals, workouts, and how you feel, and your AI Coach connects the dots.
+                Log your meals, activity, and how you feel.
               </p>
               <p>
-                You'll start spotting patterns between what you eat and how you feel, perform, and recover.
-              </p>
-              <p>
-                Take the quick walkthrough to see how everything works.
+                Your AI Coach connects the dots and helps you spot patterns between what you eat and how you feel, perform, and recover.
               </p>
             </div>
             <button
