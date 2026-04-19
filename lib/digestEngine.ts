@@ -55,6 +55,8 @@ export interface SmartNudgeContext {
   priorWeeks: WeekSummary[];
   timeOfDay: "morning" | "afternoon" | "evening";
   recentFoods: string[];
+  todayFoods: string[];
+  dailySupplements: string[];
   recentNudges: string[];
   streak: number;
   todayHasWorkout: boolean;
@@ -930,6 +932,14 @@ export function buildSmartNudgeContext(
   const lastMealTime = todayMealsFull.length > 0 ? formatMealTime(todayMealsFull[todayMealsFull.length - 1].ts) : null;
   const mealsLoggedToday = todayMealsFull.length;
 
+  const todayFoods: string[] = todayMealsFull.flatMap((m) =>
+    (m.analysisJson?.detected_items ?? []).map((item) => item.name)
+  ).filter(Boolean);
+
+  const dailySupplements: string[] = (profile.dailySupplements ?? []).map((s) =>
+    typeof s === "string" ? s : s.dose != null && s.unit ? `${s.name} ${s.dose}${s.unit}` : s.name
+  );
+
   // Compute typical first-log hour from last 14 days (median) to detect late loggers
   const firstLogHours: number[] = [];
   const pastMeals = meals.filter(
@@ -966,6 +976,8 @@ export function buildSmartNudgeContext(
     priorWeeks,
     timeOfDay,
     recentFoods,
+    todayFoods,
+    dailySupplements,
     recentNudges,
     streak,
     todayHasWorkout,

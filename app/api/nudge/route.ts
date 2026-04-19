@@ -93,9 +93,10 @@ action field rules:
 - No clichés, no em dashes
 
 Suggestion rules:
-- CRITICAL: Look at the "Foods logged in the last 3-4 days" list. Do NOT suggest anything already on that list — the user is already eating those foods. Cross-check every suggestion against that list before including it.
-- Avoid the most overused defaults (chicken breast, eggs, Greek yogurt) unless they genuinely don't appear in the user's recent foods and there's no better option.
-- Suggestions must match the nudge type: protein nudges → protein-rich foods not in recentFoods, calorie nudges → energy-dense options not in recentFoods, fat nudges → healthy-fat options, variety nudges → foods with different nutrient profiles from what they've been eating.
+- Use "Recent eating pattern" to understand the user's diet and preferences — suggest foods that complement what they're already eating, pair well with it, or introduce similar options they haven't tried. Do NOT just avoid those foods — use them as context to make suggestions feel relevant and natural, not random.
+- Do NOT suggest anything in "Already eaten today" — they've had it. Do not suggest anything in "User's daily supplements" — they already take those.
+- For micronutrient nudges: identify the exact deficient nutrient from the nudge message and suggest foods that are specifically high in that nutrient AND fit the user's eating style (e.g., calcium → dairy, leafy greens, almonds, sardines; iron → red meat, lentils, spinach, tofu; vitamin D → fatty fish, fortified foods, egg yolks; magnesium → pumpkin seeds, dark chocolate, black beans; zinc → oysters, beef, pumpkin seeds). The suggestions must directly target the nutrient gap.
+- Suggestions must match the nudge type: protein nudges → protein-rich foods that complement their current meals, calorie nudges → energy-dense additions, fat nudges → healthy-fat options, variety nudges → foods with different nutrient profiles.
 - If the nudge type is win, momentum, pattern, meal_timing (general), variety, workout_missing, calorie_high, on_track, or check_in — use [].
 - 3 simple food names — or [] per the rule above
 - CRITICAL: Match time of day strictly:
@@ -186,7 +187,17 @@ function buildSmartPrompt(ctx: Record<string, unknown>): string {
 
   const foods = ctx.recentFoods as string[] | undefined;
   if (foods?.length) {
-    lines.push(`Foods logged in the last 3-4 days (excluding today): ${foods.slice(0, 15).join(", ")}`);
+    lines.push(`Recent eating pattern (last 3-4 days): ${foods.slice(0, 15).join(", ")}`);
+  }
+
+  const todayFoods = ctx.todayFoods as string[] | undefined;
+  if (todayFoods?.length) {
+    lines.push(`Already eaten today: ${todayFoods.join(", ")}`);
+  }
+
+  const dailySupps = ctx.dailySupplements as string[] | undefined;
+  if (dailySupps?.length) {
+    lines.push(`User's daily supplements (already covered — never suggest): ${dailySupps.join(", ")}`);
   }
 
   const priorWeeks = ctx.priorWeeks as Array<{ weekLabel: string; daysLogged: number; avgCalories: number; avgProtein: number; avgCarbs: number; avgFat: number }> | undefined;
