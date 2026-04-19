@@ -18,7 +18,9 @@ import { supabase } from "../lib/supabaseClient";
 import "../lib/mealQueue";
 import BarcodeScannerOverlay from "./BarcodeScannerOverlay";
 import { getFoodCacheEntry, setFoodCacheEntry, deleteFoodCacheEntry, deleteFoodTextEntry, incrementFoodCacheLogCount, incrementFoodTextLogCount, getQuickAddFromMeals, addQuickAddRemoved, getDailySupplements, setDailySupplements, hasDailySuppsLoggedToday, markDailySuppsLoggedToday, type QuickAddItem } from "../lib/foodCache";
-import { addFeelLog, deleteFeelLog, updateFeelLog, type FeelLog } from "../lib/supabaseDb";
+import { addFeelLog, deleteFeelLog, updateFeelLog, addNudge, pruneNudges, type FeelLog } from "../lib/supabaseDb";
+import { buildSmartNudgeContext } from "../lib/digestEngine";
+import { notifyNudgesUpdated } from "../lib/dataEvents";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
 import { useAuth } from "./AuthProvider";
@@ -168,7 +170,7 @@ function ManualDateRow({ manualDate, setManualDate }: { manualDate: string; setM
 export default function HomeScreen() {
   const router = useRouter();
   const { user, loading } = useAuth();
-  const { profile: ctxProfile, meals: ctxMeals, workouts: ctxWorkouts, feelLogs: ctxFeelLogs, loading: dataLoading, reload } = useAppData();
+  const { profile: ctxProfile, meals: ctxMeals, workouts: ctxWorkouts, feelLogs: ctxFeelLogs, nudges, nudgesLoaded, loading: dataLoading, reload } = useAppData();
 
   const [profile, setProfile] = useState<UserProfile | undefined>(undefined);
   const [runTour, setRunTour] = useState(false);
@@ -969,6 +971,85 @@ export default function HomeScreen() {
       window.dispatchEvent(new Event("wya_nudge_update"));
     }
   }, [user, homeNotifyNotes]);
+
+  // Background nudge pre-fetch — runs on home screen so nudge is ready before user opens Summary.
+  // Follows the same DB-first logic as SummaryScreen: if a nudge exists for this window, skip.
+  const nudgePrefetchedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!profile || !nudgesLoaded || !user) return;
+    if (displayMeals.filter((m) => (m as any).analysisJson?.source !== "supplement").length < 5) return;
+    if (trial.isFree) return;
+
+    const hour = new Date().getHours();
+    const win = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
+    const todayStr = todayKey();
+    const windowKey = `${todayStr}_${win}`;
+    if (nudgePrefetchedRef.current.has(windowKey)) return;
+
+    const existing = nudges.find((n) => {
+      if (!n.created_at) return false;
+      const d = new Date(n.created_at);
+      if (todayKey(d) !== todayStr) return false;
+      const h = d.getHours();
+      return (h < 12 ? "morning" : h < 17 ? "afternoon" : "evening") === win;
+    });
+    if (existing) { nudgePrefetchedRef.current.add(windowKey); return; }
+
+    nudgePrefetchedRef.current.add(windowKey);
+
+    const recentFoodsForNudge = (() => {
+      const seen = new Set<string>();
+      const foods: string[] = [];
+      const threeDaysAgo = Date.now() - 4 * 24 * 60 * 60 * 1000;
+      const todayK = todayKey();
+      displayMeals
+        .slice().sort((a, b) => b.ts - a.ts)
+        .filter((m) => m.ts >= threeDaysAgo && todayKey(new Date(m.ts)) !== todayK && (m as any).analysisJson?.source !== "supplement" && m.status !== "failed")
+        .forEach((meal) => {
+          const items = [
+            (meal as any).analysisJson?.name,
+            ...((meal as any).analysisJson?.detected_items ?? []).map((i: any) => i.name),
+          ].filter(Boolean) as string[];
+          items.forEach((name) => {
+            const key = name.toLowerCase();
+            if (!seen.has(key)) { seen.add(key); foods.push(name); }
+          });
+        });
+      return foods.slice(0, 20);
+    })();
+
+    const recentNudgeMessages = nudges.slice(0, 7).map((n) => n.type ? `${n.type}: ${n.message}` : n.message);
+    const ctx = buildSmartNudgeContext(displayMeals as any, displayWorkouts, profile, recentFoodsForNudge, recentNudgeMessages, ctxFeelLogs);
+
+    fetch("/api/nudge", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mode: "smart", ...ctx }),
+    })
+      .then(async (res) => {
+        if (!res.ok) return;
+        const { nudge } = await res.json();
+        if (!nudge?.message) return;
+        if (nudge.suggestions?.length) {
+          localStorage.setItem(`wya_ai_nudge_${windowKey}_${nudge.type}_suggestions`, JSON.stringify(nudge.suggestions.slice(0, 3)));
+        }
+        localStorage.setItem(`wya_nudge_snapshot_${windowKey}`, JSON.stringify({
+          cal: Math.round((ctx.todayCalories ?? 0)),
+          prot: Math.round((ctx.todayProtein ?? 0)),
+        }));
+        await addNudge(user.id, nudge.type, nudge.message).catch(() => {});
+        pruneNudges(user.id).catch(() => {});
+        notifyNudgesUpdated();
+        // Light the bell
+        const seenTs = parseInt(localStorage.getItem("wya_nudge_seen_ts") ?? "0");
+        const existingNudgeTs = parseInt(localStorage.getItem("wya_nudge_ts") ?? "0");
+        if (existingNudgeTs <= seenTs) {
+          localStorage.setItem("wya_nudge_ts", Date.now().toString());
+          window.dispatchEvent(new Event("wya_nudge_update"));
+        }
+      })
+      .catch(() => {});
+  }, [profile, nudgesLoaded, nudges, user, displayMeals, displayWorkouts, ctxFeelLogs, trial.isFree]);
 
   const homeMarkers = useMemo(
     () => computeHomeMarkers(displayMeals, displayWorkouts, profile),
