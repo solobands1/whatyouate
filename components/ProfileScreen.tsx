@@ -707,39 +707,37 @@ export default function ProfileScreen() {
                   </div>
                 )}
               </label>
-              <label className="text-[11px] text-muted/70">
-                Weight ({units === "metric" ? "kg" : "lb"})
-                <input
-                  inputMode="numeric"
-                  className="mt-1 w-full rounded-xl border border-ink/10 bg-white px-3 py-1.5 text-xs text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                  value={weight}
-                  onChange={(event) => {
-                    const raw = event.target.value.replace(/[^0-9]/g, "");
-                    const cleaned = raw.replace(/^0+(?=\d)/, "");
-                    setWeight(cleaned);
-                  }}
-                  placeholder={units === "metric" ? "kg" : "lb"}
-                />
+              <div>
+                <p className="text-[11px] text-muted/70">Weight ({units === "metric" ? "kg" : "lb"})</p>
+                <div className="mt-1 flex items-center gap-2">
+                  <input
+                    inputMode="numeric"
+                    className="w-20 rounded-xl border border-ink/10 bg-white px-3 py-1.5 text-xs text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    value={weight}
+                    onChange={(event) => {
+                      const raw = event.target.value.replace(/[^0-9]/g, "");
+                      const cleaned = raw.replace(/^0+(?=\d)/, "");
+                      setWeight(cleaned);
+                    }}
+                    placeholder={units === "metric" ? "kg" : "lb"}
+                  />
+                  {weightLogs.length > 0 && (
+                    <button
+                      type="button"
+                      className="rounded-xl bg-primary px-3 py-1.5 text-xs font-semibold text-white transition active:opacity-70"
+                      onClick={() => setShowWeightHistory(true)}
+                    >
+                      History
+                    </button>
+                  )}
+                </div>
                 {weightLogs.length > 0 && (() => {
                   const last = weightLogs[0];
                   const daysAgo = Math.floor((Date.now() - new Date(last.logged_at).getTime()) / (1000 * 60 * 60 * 24));
-                  const displayW = units === "imperial"
-                    ? `${Math.round(last.weight_kg * 2.20462)} lb`
-                    : `${last.weight_kg} kg`;
-                  const label = daysAgo === 0 ? "today" : daysAgo === 1 ? "yesterday" : `${daysAgo}d ago`;
-                  return (
-                    <button
-                      type="button"
-                      className="mt-1.5 inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/5 px-2.5 py-1 text-[10px] font-medium text-ink/80 transition active:opacity-60"
-                      onClick={() => setShowWeightHistory(true)}
-                    >
-                      <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-primary/60"><circle cx="6" cy="6" r="5"/><path d="M6 3.5v2.5l1.5 1.5"/></svg>
-                      Last Logged {label} · {displayW}
-                      <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary/50"><path d="M4.5 3l3 3-3 3"/></svg>
-                    </button>
-                  );
+                  const label = daysAgo === 0 ? "today" : daysAgo === 1 ? "yesterday" : `${daysAgo} days ago`;
+                  return <p className="mt-1 text-[10px] text-muted/50">Last updated {label}</p>;
                 })()}
-              </label>
+              </div>
             </div>
             <div className="mt-5">
               <p className="text-[11px] text-muted/70 mb-1.5">Date of Birth</p>
