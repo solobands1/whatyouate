@@ -167,14 +167,24 @@ function ManualDateRow({ manualDate, setManualDate }: { manualDate: string; setM
   );
 }
 
-function WaterBar({ pct, displayCurrent, displayGoal, unit }: {
+function WaterBar({ pct, displayCurrent, displayGoal }: {
   pct: number;
   displayCurrent: string;
   displayGoal: string;
-  unit: "ml" | "oz";
 }) {
   const done = pct >= 100;
   const fillPct = Math.max(0, Math.min(100, pct));
+  const [animatedPct, setAnimatedPct] = useState(0);
+
+  useEffect(() => {
+    const t = setTimeout(() => setAnimatedPct(fillPct), 120);
+    return () => clearTimeout(t);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    setAnimatedPct(fillPct);
+  }, [fillPct]);
 
   return (
     <div className="mt-1 px-4">
@@ -193,10 +203,10 @@ function WaterBar({ pct, displayCurrent, displayGoal, unit }: {
         </svg>
         {/* Horizontal bar */}
         <div className="relative flex-1 h-[13px] overflow-hidden rounded-full bg-primary/[0.06]">
-          {fillPct > 0 && (
+          {animatedPct > 0 && (
             <div
-              className="absolute left-0 top-0 h-full transition-[width] duration-700 ease-out"
-              style={{ width: `${fillPct}%` }}
+              className="absolute left-0 top-0 h-full transition-[width] duration-[1400ms] ease-out"
+              style={{ width: `${animatedPct}%` }}
             >
               <div
                 className="absolute inset-0"
@@ -206,15 +216,13 @@ function WaterBar({ pct, displayCurrent, displayGoal, unit }: {
                     : "linear-gradient(180deg, rgba(196,228,255,0.52) 0%, rgba(111,168,255,0.62) 100%)",
                 }}
               />
-              {fillPct < 99 && (
+              {animatedPct < 99 && (
                 <div className="absolute right-0 top-0 h-full animate-ripple-x" style={{ width: 22 }}>
                   <svg width="22" height="100%" viewBox="0 0 22 13" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-                    {/* Receding trough — lighter, both edges wavy */}
                     <path
                       d="M2 0 C5 2.5, 0 5, 2 7.5 C5 10, 0 12, 2 13 L14 13 C12 12, 17 10, 14 7.5 C11 5, 18 2.5, 14 0 Z"
                       fill={done ? "rgba(167,243,208,0.38)" : "rgba(196,228,255,0.38)"}
                     />
-                    {/* Leading crest — main water colour, wavy left edge */}
                     <path
                       d="M14 0 C18 2.5, 11 5, 14 7.5 C17 10, 12 12, 14 13 L22 13 L22 0 Z"
                       fill={done ? "rgba(52,211,153,0.58)" : "rgba(111,168,255,0.62)"}
@@ -227,9 +235,8 @@ function WaterBar({ pct, displayCurrent, displayGoal, unit }: {
         </div>
       </div>
 
-      {/* Below bar: label left, progress right — offset to align under bar (not icon) */}
-      <div className="mt-1.5 flex items-center justify-between pl-[26px]">
-        <p className="text-[10px] text-ink/60">Each Tap = {unit === "oz" ? "3.5 oz" : "100 ml"}</p>
+      {/* Progress numbers below bar */}
+      <div className="mt-1.5 flex items-center justify-end pl-[26px]">
         <p className="text-[10px] text-ink/65">
           {displayCurrent} <span className="text-ink/50">/ {displayGoal}</span>
         </p>
@@ -247,6 +254,10 @@ export default function HomeScreen() {
   const [waterTick, setWaterTick] = useState(0);
   const [showWaterUndo, setShowWaterUndo] = useState(false);
   const waterUndoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastAddedWaterMlRef = useRef(0);
+  const [waterModalOpen, setWaterModalOpen] = useState(false);
+  const [waterInputAmount, setWaterInputAmount] = useState("");
+  const [waterInputUnit, setWaterInputUnit] = useState<"ml" | "oz" | "cups" | "L">("ml");
   const [runTour, setRunTour] = useState(false);
   const [showTourGate, setShowTourGate] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
@@ -1417,9 +1428,17 @@ export default function HomeScreen() {
     const displayGoal = profile.waterUnit === "oz" ? `${Math.round(goalMl / 29.5735)} oz` : `${goalMl} ml`;
     const displayCurrent = profile.waterUnit === "oz" ? `${Math.round(waterMl / 29.5735)} oz` : `${waterMl} ml`;
     const pct = Math.min(100, Math.round((waterMl / goalMl) * 100));
-    const add = () => { try { localStorage.setItem(WATER_KEY, String(waterMl + 100)); } catch {} setWaterTick((t) => t + 1); };
-    const remove = () => { try { localStorage.setItem(WATER_KEY, String(Math.max(0, waterMl - 100))); } catch {} setWaterTick((t) => t + 1); };
-    return { waterMl, goalMl, displayGoal, displayCurrent, pct, add, remove, unit: profile.waterUnit ?? "ml" as "ml" | "oz" };
+    const addAmount = (ml: number) => {
+      try { localStorage.setItem(WATER_KEY, String(waterMl + ml)); } catch {}
+      lastAddedWaterMlRef.current = ml;
+      setWaterTick((t) => t + 1);
+    };
+    const remove = () => {
+      const toRemove = lastAddedWaterMlRef.current > 0 ? lastAddedWaterMlRef.current : 100;
+      try { localStorage.setItem(WATER_KEY, String(Math.max(0, waterMl - toRemove))); } catch {}
+      setWaterTick((t) => t + 1);
+    };
+    return { waterMl, goalMl, displayGoal, displayCurrent, pct, addAmount, remove, unit: profile.waterUnit ?? "ml" as "ml" | "oz" };
   })();
 
   return (
@@ -1913,7 +1932,6 @@ export default function HomeScreen() {
             pct={waterData.pct}
             displayCurrent={waterData.displayCurrent}
             displayGoal={waterData.displayGoal}
-            unit={waterData.unit}
           />
         )}
 
@@ -2001,12 +2019,7 @@ export default function HomeScreen() {
                   <button
                     type="button"
                     className="flex items-center justify-center gap-2 rounded-xl border border-ink/10 bg-white px-3 py-1 text-xs font-normal text-ink/60 transition-all duration-150 hover:bg-ink/5 active:scale-[0.96] active:bg-primary/10"
-                    onClick={() => {
-                      waterData.add();
-                      if (waterUndoTimerRef.current) clearTimeout(waterUndoTimerRef.current);
-                      setShowWaterUndo(true);
-                      waterUndoTimerRef.current = setTimeout(() => setShowWaterUndo(false), 3000);
-                    }}
+                    onClick={() => setWaterModalOpen(true)}
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                       <defs>
@@ -3219,6 +3232,76 @@ export default function HomeScreen() {
       )}
 
       <BottomNav current="home" />
+
+      {/* Water input modal */}
+      {waterModalOpen && waterData && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center"
+          style={{ background: "rgba(0,0,0,0.35)" }}
+          onClick={() => setWaterModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-t-2xl bg-white px-5 pt-6 pb-10 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="text-center text-base font-semibold text-ink mb-5">Add Water</p>
+
+            <input
+              type="number"
+              inputMode="decimal"
+              value={waterInputAmount}
+              onChange={(e) => setWaterInputAmount(e.target.value)}
+              placeholder="0"
+              autoFocus
+              className="w-full text-center text-4xl font-light text-ink outline-none bg-transparent mb-5"
+            />
+
+            {/* Unit pills */}
+            <div className="flex justify-center gap-2 mb-6">
+              {(["ml", "oz", "cups", "L"] as const).map((u) => (
+                <button
+                  key={u}
+                  type="button"
+                  onClick={() => setWaterInputUnit(u)}
+                  className={`px-4 py-1.5 rounded-full text-sm border transition-all ${
+                    waterInputUnit === u
+                      ? "bg-primary text-white border-primary"
+                      : "bg-white text-ink/55 border-ink/15 hover:border-ink/30"
+                  }`}
+                >
+                  {u}
+                </button>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                const amount = parseFloat(waterInputAmount);
+                if (isNaN(amount) || amount <= 0) return;
+                const ML_PER: Record<string, number> = { ml: 1, oz: 29.5735, cups: 236.588, L: 1000 };
+                const ml = Math.round(amount * ML_PER[waterInputUnit]);
+                waterData.addAmount(ml);
+                setWaterModalOpen(false);
+                setWaterInputAmount("");
+                if (waterUndoTimerRef.current) clearTimeout(waterUndoTimerRef.current);
+                setShowWaterUndo(true);
+                waterUndoTimerRef.current = setTimeout(() => setShowWaterUndo(false), 3000);
+              }}
+              className="w-full rounded-xl bg-primary py-3 text-center text-sm font-semibold text-white transition hover:bg-primary/90 active:scale-[0.98]"
+            >
+              Add
+            </button>
+            <button
+              type="button"
+              onClick={() => setWaterModalOpen(false)}
+              className="mt-2 w-full py-2 text-center text-sm text-ink/40"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
