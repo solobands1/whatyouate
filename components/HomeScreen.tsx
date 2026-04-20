@@ -183,9 +183,9 @@ function WaterBar({ pct, displayCurrent, displayGoal, unit }: {
         <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="shrink-0">
           <defs>
             <linearGradient id="wbar-drop" x1="0.35" y1="0" x2="0.65" y2="1">
-              <stop offset="0%" stopColor="#93C5FD" />
-              <stop offset="45%" stopColor="#6FA8FF" />
-              <stop offset="100%" stopColor="#3B6FD4" />
+              <stop offset="0%" stopColor="#BAD8FF" />
+              <stop offset="45%" stopColor="#93C5FD" />
+              <stop offset="100%" stopColor="#6FA8FF" />
             </linearGradient>
           </defs>
           <path d="M12 3C11.4 3 5 11 5 15.5a7 7 0 0 0 14 0C19 11 12.6 3 12 3z" fill={done ? "rgba(52,211,153,0.75)" : "url(#wbar-drop)"} />
@@ -204,14 +204,6 @@ function WaterBar({ pct, displayCurrent, displayGoal, unit }: {
                   background: done
                     ? "linear-gradient(180deg, rgba(134,239,172,0.48) 0%, rgba(52,211,153,0.58) 100%)"
                     : "linear-gradient(180deg, rgba(196,228,255,0.52) 0%, rgba(111,168,255,0.62) 100%)",
-                }}
-              />
-              <div
-                className="absolute inset-0 animate-shimmer-sweep"
-                style={{
-                  background: "linear-gradient(90deg, transparent 20%, rgba(255,255,255,0.6) 50%, transparent 80%)",
-                  opacity: 0.42,
-                  animationDuration: "24s",
                 }}
               />
               {fillPct < 99 && (
@@ -237,9 +229,9 @@ function WaterBar({ pct, displayCurrent, displayGoal, unit }: {
 
       {/* Below bar: label left, progress right — offset to align under bar (not icon) */}
       <div className="mt-1.5 flex items-center justify-between pl-[20px]">
-        <p className="text-[10px] text-ink/45">Each Tap = {unit === "oz" ? "3.5 oz" : "100 ml"}</p>
-        <p className="text-[10px] text-ink/50">
-          {displayCurrent} <span className="text-ink/35">/ {displayGoal}</span>
+        <p className="text-[10px] text-ink/60">Each Tap = {unit === "oz" ? "3.5 oz" : "100 ml"}</p>
+        <p className="text-[10px] text-ink/65">
+          {displayCurrent} <span className="text-ink/50">/ {displayGoal}</span>
         </p>
       </div>
     </div>
@@ -253,6 +245,8 @@ export default function HomeScreen() {
 
   const [profile, setProfile] = useState<UserProfile | undefined>(undefined);
   const [waterTick, setWaterTick] = useState(0);
+  const [showWaterUndo, setShowWaterUndo] = useState(false);
+  const waterUndoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [runTour, setRunTour] = useState(false);
   const [showTourGate, setShowTourGate] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
@@ -2002,24 +1996,38 @@ export default function HomeScreen() {
               </button>
             </div>
             {waterData && waterTick >= 0 && (
-              <div className="flex w-[22%] rounded-xl shadow-[0_4px_12px_rgba(15,23,42,0.08),0_0_8px_rgba(111,168,255,0.12)] overflow-hidden">
+              <div className="flex items-center gap-2">
+                <div className="flex w-[22%] min-w-[70px] rounded-xl shadow-[0_4px_12px_rgba(15,23,42,0.08),0_0_8px_rgba(111,168,255,0.12)] overflow-hidden">
+                  <button
+                    type="button"
+                    className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-ink/10 bg-white px-3 py-1 text-xs font-normal text-ink/60 transition-all duration-150 hover:bg-ink/5 active:scale-[0.96] active:bg-primary/10"
+                    onClick={() => {
+                      waterData.add();
+                      if (waterUndoTimerRef.current) clearTimeout(waterUndoTimerRef.current);
+                      setShowWaterUndo(true);
+                      waterUndoTimerRef.current = setTimeout(() => setShowWaterUndo(false), 3000);
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <defs>
+                        <linearGradient id="wbtn-drop" x1="0.35" y1="0" x2="0.65" y2="1">
+                          <stop offset="0%" stopColor="#BAD8FF" />
+                          <stop offset="45%" stopColor="#93C5FD" />
+                          <stop offset="100%" stopColor="#6FA8FF" />
+                        </linearGradient>
+                      </defs>
+                      <path d="M12 3C11.4 3 5 11 5 15.5a7 7 0 0 0 14 0C19 11 12.6 3 12 3z" fill="url(#wbtn-drop)" />
+                      <ellipse cx="9.8" cy="13.5" rx="1.2" ry="2" fill="rgba(255,255,255,0.40)" transform="rotate(-20 9.8 13.5)" />
+                    </svg>
+                    <span>Water</span>
+                  </button>
+                </div>
                 <button
                   type="button"
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-ink/10 bg-white px-3 py-1 text-xs font-normal text-ink/60 transition-all duration-150 hover:bg-ink/5 active:scale-[0.96] active:bg-primary/10"
-                  onClick={waterData.add}
+                  onClick={() => { waterData.remove(); setShowWaterUndo(false); if (waterUndoTimerRef.current) clearTimeout(waterUndoTimerRef.current); }}
+                  className={`text-[10px] text-ink/45 underline underline-offset-2 transition-opacity duration-500 ${showWaterUndo ? "opacity-100" : "opacity-0 pointer-events-none"}`}
                 >
-                  <svg width="12" height="12" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                      <linearGradient id="wbtn-drop" x1="0.35" y1="0" x2="0.65" y2="1">
-                        <stop offset="0%" stopColor="#BAD8FF" />
-                        <stop offset="45%" stopColor="#93C5FD" />
-                        <stop offset="100%" stopColor="#6FA8FF" />
-                      </linearGradient>
-                    </defs>
-                    <path d="M12 3C11.4 3 5 11 5 15.5a7 7 0 0 0 14 0C19 11 12.6 3 12 3z" fill="url(#wbtn-drop)" />
-                    <ellipse cx="9.8" cy="13.5" rx="1.2" ry="2" fill="rgba(255,255,255,0.40)" transform="rotate(-20 9.8 13.5)" />
-                  </svg>
-                  <span>Water</span>
+                  Undo
                 </button>
               </div>
             )}
