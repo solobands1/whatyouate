@@ -205,7 +205,7 @@ function WaterBar({ pct, displayCurrent, displayGoal }: {
         <div className="relative flex-1 h-[13px] overflow-hidden rounded-full bg-primary/[0.06]">
           {animatedPct > 0 && (
             <div
-              className="absolute left-0 top-0 h-full transition-[width] duration-[1400ms] ease-out"
+              className="absolute left-0 top-0 h-full transition-[width] duration-[3000ms] ease-out"
               style={{ width: `${animatedPct}%` }}
             >
               <div
