@@ -261,6 +261,27 @@ export function clearProfileCache(userId: string) {
   profileCache.delete(userId);
 }
 
+export async function fetchWaterLogs(userId: string): Promise<Record<string, number>> {
+  if (useMemory) return {};
+  try {
+    const { data } = await supabase.from("profiles").select("water_logs_json").eq("user_id", userId).single();
+    return (data?.water_logs_json as Record<string, number>) ?? {};
+  } catch { return {}; }
+}
+
+export async function upsertWaterLog(userId: string, dayKey: string, ml: number): Promise<void> {
+  if (useMemory) return;
+  try {
+    const { data } = await supabase.from("profiles").select("water_logs_json").eq("user_id", userId).single();
+    const current = (data?.water_logs_json as Record<string, number>) ?? {};
+    const updated = { ...current, [dayKey]: ml };
+    await supabase.from("profiles").upsert(
+      { user_id: userId, water_logs_json: updated, updated_at: new Date().toISOString() },
+      { onConflict: "user_id" }
+    );
+  } catch {}
+}
+
 export async function saveStreak(userId: string, streak: number, lastDate: string): Promise<void> {
   if (useMemory) {
     if (memProfiles[userId]) {

@@ -18,7 +18,7 @@ import { supabase } from "../lib/supabaseClient";
 import "../lib/mealQueue";
 import BarcodeScannerOverlay from "./BarcodeScannerOverlay";
 import { getFoodCacheEntry, setFoodCacheEntry, deleteFoodCacheEntry, deleteFoodTextEntry, incrementFoodCacheLogCount, incrementFoodTextLogCount, getQuickAddFromMeals, addQuickAddRemoved, getDailySupplements, setDailySupplements, hasDailySuppsLoggedToday, markDailySuppsLoggedToday, type QuickAddItem } from "../lib/foodCache";
-import { addFeelLog, deleteFeelLog, updateFeelLog, addNudge, pruneNudges, type FeelLog } from "../lib/supabaseDb";
+import { addFeelLog, deleteFeelLog, updateFeelLog, addNudge, pruneNudges, fetchWaterLogs, upsertWaterLog, type FeelLog } from "../lib/supabaseDb";
 import { buildSmartNudgeContext } from "../lib/digestEngine";
 import { notifyNudgesUpdated } from "../lib/dataEvents";
 import BottomNav from "./BottomNav";
@@ -271,6 +271,23 @@ export default function HomeScreen() {
       waterInputRef.current.focus({ preventScroll: true });
     }
   }, [waterModalOpen]);
+
+  // Seed water data from Supabase into localStorage on load (restores data after cache clear)
+  useEffect(() => {
+    if (!user || !profile?.trackWater) return;
+    fetchWaterLogs(user.id).then((logs) => {
+      let changed = false;
+      for (const [dayKey, ml] of Object.entries(logs)) {
+        if (ml <= 0) continue;
+        const key = `wya_water_${user.id}_${dayKey}`;
+        try {
+          const local = parseInt(localStorage.getItem(key) ?? "0", 10) || 0;
+          if (local === 0) { localStorage.setItem(key, String(ml)); changed = true; }
+        } catch {}
+      }
+      if (changed) setWaterTick((t) => t + 1);
+    }).catch(() => {});
+  }, [user?.id, profile?.trackWater]);
   const [waterInputAmount, setWaterInputAmount] = useState("");
   const [waterInputUnit, setWaterInputUnit] = useState<"ml" | "oz" | "cups" | "L">("ml");
   const [runTour, setRunTour] = useState(false);
@@ -1456,14 +1473,18 @@ export default function HomeScreen() {
     const displayCurrent = profile.waterUnit === "oz" ? `${Math.round(waterMl / 29.5735)} oz` : `${waterMl} ml`;
     const pct = Math.min(100, Math.round((waterMl / goalMl) * 100));
     const addAmount = (ml: number) => {
-      try { localStorage.setItem(WATER_KEY, String(waterMl + ml)); } catch {}
+      const newMl = waterMl + ml;
+      try { localStorage.setItem(WATER_KEY, String(newMl)); } catch {}
       lastAddedWaterMlRef.current = ml;
       setWaterTick((t) => t + 1);
+      upsertWaterLog(user.id, todayKey(), newMl).catch(() => {});
     };
     const remove = () => {
       const toRemove = lastAddedWaterMlRef.current > 0 ? lastAddedWaterMlRef.current : 100;
-      try { localStorage.setItem(WATER_KEY, String(Math.max(0, waterMl - toRemove))); } catch {}
+      const newMl = Math.max(0, waterMl - toRemove);
+      try { localStorage.setItem(WATER_KEY, String(newMl)); } catch {}
       setWaterTick((t) => t + 1);
+      upsertWaterLog(user.id, todayKey(), newMl).catch(() => {});
     };
     return { waterMl, goalMl, displayGoal, displayCurrent, pct, addAmount, remove, unit: profile.waterUnit ?? "ml" as "ml" | "oz" };
   })();
