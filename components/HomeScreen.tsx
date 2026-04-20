@@ -333,7 +333,6 @@ export default function HomeScreen() {
 
   const mountedRef = useRef(true);
   const recentSentinelRef = useRef<HTMLDivElement | null>(null);
-  const foodInputRef = useRef<HTMLInputElement | null>(null);
   const realtimeRefreshRef = useRef<number | null>(null);
   const nudgesLoadedRef = useRef(false);
   const savedThisSessionRef = useRef<Set<string>>(new Set());
@@ -613,30 +612,35 @@ export default function HomeScreen() {
   };
 
   const handleFoodPhotoClick = () => {
-    if (foodInputRef.current) {
-      foodInputRef.current.setAttribute("capture", "environment");
-      foodInputRef.current.click();
-    }
-  };
-
-  const handleFoodFileSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const selected = event.target.files?.[0] ?? null;
-    if (!selected) return;
-    const dataUrl = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result ?? ""));
-      reader.onerror = () => reject(new Error("Failed to read file"));
-      reader.readAsDataURL(selected);
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.setAttribute("capture", "environment");
+    input.style.cssText = "position:fixed;top:-9999px;opacity:0;pointer-events:none;";
+    document.body.appendChild(input);
+    const cleanup = () => { try { document.body.removeChild(input); } catch {} };
+    const safetyTimer = setTimeout(cleanup, 60_000);
+    input.addEventListener("change", async () => {
+      clearTimeout(safetyTimer);
+      const selected = input.files?.[0] ?? null;
+      cleanup();
+      if (!selected) return;
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result ?? ""));
+        reader.onerror = () => reject(new Error("Failed to read file"));
+        reader.readAsDataURL(selected);
+      });
+      try {
+        sessionStorage.setItem(
+          "wya_pending_capture",
+          JSON.stringify({ name: selected.name, type: selected.type, dataUrl })
+        );
+      } catch {}
+      router.push("/capture?type=food&from=home");
     });
-    try {
-      sessionStorage.setItem(
-        "wya_pending_capture",
-        JSON.stringify({ name: selected.name, type: selected.type, dataUrl })
-      );
-    } catch {
-      // If storage fails, fall back to capture screen.
-    }
-    router.push("/capture?type=food&from=home");
+    input.addEventListener("cancel", () => { clearTimeout(safetyTimer); cleanup(); });
+    input.click();
   };
 
   const handleBarcodeDetected = async (barcode: string) => {
@@ -1959,13 +1963,6 @@ export default function HomeScreen() {
         )}
 
         <div className="mt-2 flex flex-col gap-1.5">
-          <input
-            ref={foodInputRef}
-            type="file"
-            accept="image/*"
-            className="sr-only"
-            onChange={handleFoodFileSelected}
-          />
           <div className="flex flex-col items-center gap-1.5 mt-5" data-tour="food-action">
           <button
             type="button"
