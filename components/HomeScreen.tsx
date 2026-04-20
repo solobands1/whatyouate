@@ -199,7 +199,7 @@ function WaterBar({ pct, displayCurrent, displayGoal, onAdd, onRemove, unit }: {
         <div className="relative flex-1 h-[13px] overflow-hidden rounded-full bg-primary/[0.06]">
           {fillPct > 0 && (
             <div
-              className="absolute left-0 top-0 h-full rounded-r-full overflow-hidden animate-water-flow transition-[width] duration-700 ease-out"
+              className="absolute left-0 top-0 h-full transition-[width] duration-700 ease-out"
               style={{ width: `${fillPct}%` }}
             >
               {/* Transparent water fill */}
@@ -211,15 +211,26 @@ function WaterBar({ pct, displayCurrent, displayGoal, onAdd, onRemove, unit }: {
                     : "linear-gradient(180deg, rgba(196,228,255,0.52) 0%, rgba(111,168,255,0.62) 100%)",
                 }}
               />
-              {/* Very slow shimmer */}
+              {/* Slow shimmer */}
               <div
                 className="absolute inset-0 animate-shimmer-sweep"
                 style={{
                   background: "linear-gradient(90deg, transparent 20%, rgba(255,255,255,0.6) 50%, transparent 80%)",
                   opacity: 0.42,
-                  animationDuration: "28s",
+                  animationDuration: "24s",
                 }}
               />
+              {/* Rippling leading edge */}
+              {fillPct < 99 && (
+                <div className="absolute right-0 top-0 h-full animate-ripple-x" style={{ width: 10 }}>
+                  <svg width="10" height="100%" viewBox="0 0 10 13" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                      d="M5 0 C8 2.5, 2 5, 5 7.5 C8 10, 2 12, 5 13 L10 13 L10 0 Z"
+                      fill={done ? "rgba(52,211,153,0.58)" : "rgba(111,168,255,0.62)"}
+                    />
+                  </svg>
+                </div>
+              )}
             </div>
           )}
         </div>
