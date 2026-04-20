@@ -215,10 +215,16 @@ function WaterBar({ pct, displayCurrent, displayGoal, unit }: {
                 }}
               />
               {fillPct < 99 && (
-                <div className="absolute right-0 top-0 h-full animate-ripple-x" style={{ width: 10 }}>
-                  <svg width="10" height="100%" viewBox="0 0 10 13" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                <div className="absolute right-0 top-0 h-full animate-ripple-x" style={{ width: 22 }}>
+                  <svg width="22" height="100%" viewBox="0 0 22 13" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                    {/* Receding trough — lighter, both edges wavy */}
                     <path
-                      d="M5 0 C8 2.5, 2 5, 5 7.5 C8 10, 2 12, 5 13 L10 13 L10 0 Z"
+                      d="M2 0 C5 2.5, 0 5, 2 7.5 C5 10, 0 12, 2 13 L14 13 C12 12, 17 10, 14 7.5 C11 5, 18 2.5, 14 0 Z"
+                      fill={done ? "rgba(167,243,208,0.38)" : "rgba(196,228,255,0.38)"}
+                    />
+                    {/* Leading crest — main water colour, wavy left edge */}
+                    <path
+                      d="M14 0 C18 2.5, 11 5, 14 7.5 C17 10, 12 12, 14 13 L22 13 L22 0 Z"
                       fill={done ? "rgba(52,211,153,0.58)" : "rgba(111,168,255,0.62)"}
                     />
                   </svg>
