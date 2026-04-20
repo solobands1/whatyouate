@@ -180,7 +180,7 @@ function WaterBar({ pct, displayCurrent, displayGoal, unit }: {
     <div className="mt-1 px-4">
       {/* Drop icon + bar row */}
       <div className="flex items-center gap-2">
-        <svg width="12" height="12" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="shrink-0">
+        <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="shrink-0">
           <defs>
             <linearGradient id="wbar-drop" x1="0.35" y1="0" x2="0.65" y2="1">
               <stop offset="0%" stopColor="#93C5FD" />
@@ -1996,7 +1996,7 @@ export default function HomeScreen() {
               </button>
             </div>
             {waterData && waterTick >= 0 && (
-              <div className="flex w-[56%] rounded-xl shadow-[0_4px_12px_rgba(15,23,42,0.08),0_0_8px_rgba(111,168,255,0.12)] overflow-hidden">
+              <div className="flex w-[28%] rounded-xl shadow-[0_4px_12px_rgba(15,23,42,0.08),0_0_8px_rgba(111,168,255,0.12)] overflow-hidden">
                 <button
                   type="button"
                   className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-ink/10 bg-white px-3 py-1 text-xs font-normal text-ink/60 transition-all duration-150 hover:bg-ink/5 active:scale-[0.96] active:bg-primary/10"
