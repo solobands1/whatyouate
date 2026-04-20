@@ -179,7 +179,7 @@ function WaterBar({ pct, displayCurrent, displayGoal, onAdd, onRemove, unit }: {
   const fillPct = Math.max(0, Math.min(100, pct));
 
   return (
-    <div className="mt-4">
+    <div className="mt-4 px-4">
       {/* Label row */}
       <div className="mb-2 flex items-center justify-between">
         <div className="flex items-center gap-2">
