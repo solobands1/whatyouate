@@ -1996,11 +1996,11 @@ export default function HomeScreen() {
               </button>
             </div>
             {waterData && waterTick >= 0 && (
-              <div className="flex items-center gap-2">
-                <div className="flex w-[22%] min-w-[70px] rounded-xl shadow-[0_4px_12px_rgba(15,23,42,0.08),0_0_8px_rgba(111,168,255,0.12)] overflow-hidden">
+              <div className="relative">
+                <div className="flex rounded-xl shadow-[0_4px_12px_rgba(15,23,42,0.08),0_0_8px_rgba(111,168,255,0.12)] overflow-hidden">
                   <button
                     type="button"
-                    className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-ink/10 bg-white px-3 py-1 text-xs font-normal text-ink/60 transition-all duration-150 hover:bg-ink/5 active:scale-[0.96] active:bg-primary/10"
+                    className="flex items-center justify-center gap-2 rounded-xl border border-ink/10 bg-white px-3 py-1 text-xs font-normal text-ink/60 transition-all duration-150 hover:bg-ink/5 active:scale-[0.96] active:bg-primary/10"
                     onClick={() => {
                       waterData.add();
                       if (waterUndoTimerRef.current) clearTimeout(waterUndoTimerRef.current);
@@ -2025,7 +2025,7 @@ export default function HomeScreen() {
                 <button
                   type="button"
                   onClick={() => { waterData.remove(); setShowWaterUndo(false); if (waterUndoTimerRef.current) clearTimeout(waterUndoTimerRef.current); }}
-                  className={`text-[10px] text-ink/45 underline underline-offset-2 transition-opacity duration-500 ${showWaterUndo ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+                  className={`absolute left-full top-1/2 -translate-y-1/2 ml-2 whitespace-nowrap text-[10px] text-ink/45 transition-opacity duration-500 ${showWaterUndo ? "opacity-100" : "opacity-0 pointer-events-none"}`}
                 >
                   Undo
                 </button>
