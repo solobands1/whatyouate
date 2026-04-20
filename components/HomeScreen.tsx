@@ -167,109 +167,60 @@ function ManualDateRow({ manualDate, setManualDate }: { manualDate: string; setM
   );
 }
 
-function WaterBar({ pct, displayCurrent, displayGoal, onAdd, onRemove, unit }: {
+function WaterBar({ pct, displayCurrent, displayGoal, unit }: {
   pct: number;
   displayCurrent: string;
   displayGoal: string;
-  onAdd: () => void;
-  onRemove: () => void;
   unit: "ml" | "oz";
 }) {
   const done = pct >= 100;
   const fillPct = Math.max(0, Math.min(100, pct));
 
   return (
-    <div className="mt-4 px-4">
-      {/* Label row */}
-      <div className="mb-2 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-ink/50">Water</p>
-          {done && (
-            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-600">Goal reached!</span>
-          )}
-        </div>
-        <p className="text-[11px] text-ink/50">
+    <div className="mt-2 px-4">
+      {/* Horizontal bar */}
+      <div className="relative h-[13px] overflow-hidden rounded-full bg-primary/[0.06]">
+        {fillPct > 0 && (
+          <div
+            className="absolute left-0 top-0 h-full transition-[width] duration-700 ease-out"
+            style={{ width: `${fillPct}%` }}
+          >
+            <div
+              className="absolute inset-0"
+              style={{
+                background: done
+                  ? "linear-gradient(180deg, rgba(134,239,172,0.48) 0%, rgba(52,211,153,0.58) 100%)"
+                  : "linear-gradient(180deg, rgba(196,228,255,0.52) 0%, rgba(111,168,255,0.62) 100%)",
+              }}
+            />
+            <div
+              className="absolute inset-0 animate-shimmer-sweep"
+              style={{
+                background: "linear-gradient(90deg, transparent 20%, rgba(255,255,255,0.6) 50%, transparent 80%)",
+                opacity: 0.42,
+                animationDuration: "24s",
+              }}
+            />
+            {fillPct < 99 && (
+              <div className="absolute right-0 top-0 h-full animate-ripple-x" style={{ width: 10 }}>
+                <svg width="10" height="100%" viewBox="0 0 10 13" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                  <path
+                    d="M5 0 C8 2.5, 2 5, 5 7.5 C8 10, 2 12, 5 13 L10 13 L10 0 Z"
+                    fill={done ? "rgba(52,211,153,0.58)" : "rgba(111,168,255,0.62)"}
+                  />
+                </svg>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Below bar: label left, progress right */}
+      <div className="mt-1.5 flex items-center justify-between">
+        <p className="text-[10px] text-ink/45">Each Tap = {unit === "oz" ? "3.5 oz" : "100 ml"}</p>
+        <p className="text-[10px] text-ink/50">
           {displayCurrent} <span className="text-ink/35">/ {displayGoal}</span>
         </p>
-      </div>
-
-      {/* Bar + button row — bar left, button right */}
-      <div className="flex items-center gap-2.5">
-        {/* Horizontal bar */}
-        <div className="relative flex-1 h-[13px] overflow-hidden rounded-full bg-primary/[0.06]">
-          {fillPct > 0 && (
-            <div
-              className="absolute left-0 top-0 h-full transition-[width] duration-700 ease-out"
-              style={{ width: `${fillPct}%` }}
-            >
-              {/* Transparent water fill */}
-              <div
-                className="absolute inset-0"
-                style={{
-                  background: done
-                    ? "linear-gradient(180deg, rgba(134,239,172,0.48) 0%, rgba(52,211,153,0.58) 100%)"
-                    : "linear-gradient(180deg, rgba(196,228,255,0.52) 0%, rgba(111,168,255,0.62) 100%)",
-                }}
-              />
-              {/* Slow shimmer */}
-              <div
-                className="absolute inset-0 animate-shimmer-sweep"
-                style={{
-                  background: "linear-gradient(90deg, transparent 20%, rgba(255,255,255,0.6) 50%, transparent 80%)",
-                  opacity: 0.42,
-                  animationDuration: "24s",
-                }}
-              />
-              {/* Rippling leading edge */}
-              {fillPct < 99 && (
-                <div className="absolute right-0 top-0 h-full animate-ripple-x" style={{ width: 10 }}>
-                  <svg width="10" height="100%" viewBox="0 0 10 13" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-                    <path
-                      d="M5 0 C8 2.5, 2 5, 5 7.5 C8 10, 2 12, 5 13 L10 13 L10 0 Z"
-                      fill={done ? "rgba(52,211,153,0.58)" : "rgba(111,168,255,0.62)"}
-                    />
-                  </svg>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Add button — light blue ring, white bg, gradient drop */}
-        <button
-          type="button"
-          onClick={onAdd}
-          aria-label="Add water"
-          className="shrink-0 flex h-7 w-7 items-center justify-center rounded-full border border-primary/50 bg-white transition active:scale-90 active:opacity-80"
-        >
-          <svg width="13" height="13" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="wdrop-grad" x1="0.35" y1="0" x2="0.65" y2="1">
-                <stop offset="0%" stopColor="#93C5FD" />
-                <stop offset="45%" stopColor="#6FA8FF" />
-                <stop offset="100%" stopColor="#3B6FD4" />
-              </linearGradient>
-            </defs>
-            <path d="M12 3C11.4 3 5 11 5 15.5a7 7 0 0 0 14 0C19 11 12.6 3 12 3z" fill="url(#wdrop-grad)" />
-            <ellipse cx="9.8" cy="13.5" rx="1.2" ry="2" fill="rgba(255,255,255,0.40)" transform="rotate(-20 9.8 13.5)" />
-          </svg>
-        </button>
-      </div>
-
-      {/* Caption + undo */}
-      <div className="mt-1.5 flex items-center justify-between">
-        <p className="text-[10px] text-ink/45">
-          Each tap adds {unit === "oz" ? "3.5 oz" : "100 ml"}
-        </p>
-        {pct > 0 && (
-          <button
-            type="button"
-            onClick={onRemove}
-            className="text-[10px] text-ink/50 underline underline-offset-2 transition active:opacity-60"
-          >
-            Undo Tap
-          </button>
-        )}
       </div>
     </div>
   );
@@ -1442,6 +1393,21 @@ export default function HomeScreen() {
     }
   };
 
+  const waterData = (() => {
+    if (!profile?.trackWater || !user) return null;
+    const WATER_KEY = `wya_water_${user.id}_${todayKey()}`;
+    const recommendedGoalMl = profile.weight ? Math.min(3500, Math.max(1500, Math.round(profile.weight * 35 / 100) * 100)) : 2500;
+    const customGoalMl = (() => { try { const v = parseInt(localStorage.getItem(`wya_water_goal_ml_${user.id}`) ?? "", 10); return isNaN(v) ? null : v; } catch { return null; } })();
+    const goalMl = customGoalMl ?? recommendedGoalMl;
+    const waterMl = (() => { try { return Math.max(0, parseInt(localStorage.getItem(WATER_KEY) ?? "0", 10) || 0); } catch { return 0; } })();
+    const displayGoal = profile.waterUnit === "oz" ? `${Math.round(goalMl / 29.5735)} oz` : `${goalMl} ml`;
+    const displayCurrent = profile.waterUnit === "oz" ? `${Math.round(waterMl / 29.5735)} oz` : `${waterMl} ml`;
+    const pct = Math.min(100, Math.round((waterMl / goalMl) * 100));
+    const add = () => { try { localStorage.setItem(WATER_KEY, String(waterMl + 100)); } catch {} setWaterTick((t) => t + 1); };
+    const remove = () => { try { localStorage.setItem(WATER_KEY, String(Math.max(0, waterMl - 100))); } catch {} setWaterTick((t) => t + 1); };
+    return { waterMl, goalMl, displayGoal, displayCurrent, pct, add, remove, unit: profile.waterUnit ?? "ml" as "ml" | "oz" };
+  })();
+
   return (
     <div className="min-h-screen bg-surface">
       {typeof window !== "undefined" && (
@@ -1927,36 +1893,15 @@ export default function HomeScreen() {
           )}
         </Card>
 
-        {/* Water tracker — waterTick forces re-render on tap */}
-        {profile?.trackWater && user && waterTick >= 0 && (() => {
-          const WATER_KEY = `wya_water_${user.id}_${todayKey()}`;
-          const stepMl = 100;
-          const recommendedGoalMl = profile.weight ? Math.min(3500, Math.max(1500, Math.round(profile.weight * 35 / 100) * 100)) : 2500;
-          const customGoalMl = (() => { try { const v = parseInt(localStorage.getItem(`wya_water_goal_ml_${user.id}`) ?? "", 10); return isNaN(v) ? null : v; } catch { return null; } })();
-          const goalMl = customGoalMl ?? recommendedGoalMl;
-          const waterMl = (() => { try { return Math.max(0, parseInt(localStorage.getItem(WATER_KEY) ?? "0", 10) || 0); } catch { return 0; } })();
-          const displayGoal = profile.waterUnit === "oz" ? `${Math.round(goalMl / 29.5735)} oz` : `${goalMl} ml`;
-          const displayCurrent = profile.waterUnit === "oz" ? `${Math.round(waterMl / 29.5735)} oz` : `${waterMl} ml`;
-          const pct = Math.min(100, Math.round((waterMl / goalMl) * 100));
-          return (
-            <WaterBar
-              pct={pct}
-              displayCurrent={displayCurrent}
-              displayGoal={displayGoal}
-              onAdd={() => {
-                const next = waterMl + stepMl;
-                try { localStorage.setItem(WATER_KEY, String(next)); } catch {}
-                setWaterTick((t) => t + 1);
-              }}
-              onRemove={() => {
-                const next = Math.max(0, waterMl - stepMl);
-                try { localStorage.setItem(WATER_KEY, String(next)); } catch {}
-                setWaterTick((t) => t + 1);
-              }}
-              unit={profile.waterUnit ?? "ml"}
-            />
-          );
-        })()}
+        {/* Water bar — waterTick forces re-render on tap */}
+        {waterData && waterTick >= 0 && (
+          <WaterBar
+            pct={waterData.pct}
+            displayCurrent={waterData.displayCurrent}
+            displayGoal={waterData.displayGoal}
+            unit={waterData.unit}
+          />
+        )}
 
         <div className="mt-2 flex flex-col gap-1.5">
           <input
@@ -2036,6 +1981,39 @@ export default function HomeScreen() {
                 Low Energy
               </button>
             </div>
+            {waterData && waterTick >= 0 && (
+              <div className="flex flex-col items-center gap-0.5">
+                <div className="flex w-[44%] rounded-xl shadow-[0_4px_12px_rgba(15,23,42,0.08),0_0_8px_rgba(111,168,255,0.12)] overflow-hidden">
+                  <button
+                    type="button"
+                    className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-ink/10 bg-white px-3 py-1.5 text-xs font-normal text-ink/60 transition-all duration-150 hover:bg-ink/5 active:scale-[0.96] active:bg-primary/10"
+                    onClick={waterData.add}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <defs>
+                        <linearGradient id="wbtn-drop" x1="0.35" y1="0" x2="0.65" y2="1">
+                          <stop offset="0%" stopColor="#93C5FD" />
+                          <stop offset="45%" stopColor="#6FA8FF" />
+                          <stop offset="100%" stopColor="#3B6FD4" />
+                        </linearGradient>
+                      </defs>
+                      <path d="M12 3C11.4 3 5 11 5 15.5a7 7 0 0 0 14 0C19 11 12.6 3 12 3z" fill="url(#wbtn-drop)" />
+                      <ellipse cx="9.8" cy="13.5" rx="1.2" ry="2" fill="rgba(255,255,255,0.40)" transform="rotate(-20 9.8 13.5)" />
+                    </svg>
+                    <span>Water</span>
+                  </button>
+                </div>
+                {waterData.pct > 0 && (
+                  <button
+                    type="button"
+                    onClick={waterData.remove}
+                    className="text-[10px] text-ink/40 underline underline-offset-2 transition active:opacity-60"
+                  >
+                    Undo Tap
+                  </button>
+                )}
+              </div>
+            )}
             {workout.activeWorkout && (
               <p className="text-center text-[11px] text-muted/60">Workout in progress</p>
             )}
