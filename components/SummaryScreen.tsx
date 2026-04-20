@@ -405,8 +405,34 @@ export default function SummaryScreen() {
       }
     }
 
+    // Water hydration observation — only if user has tracking enabled
+    if (profile?.trackWater && user) {
+      const goalMl = profile.weight
+        ? Math.min(3500, Math.max(1500, Math.round(profile.weight * 35 / 100) * 100))
+        : 2500;
+      const customGoalMl = (() => { try { const v = parseInt(localStorage.getItem(`wya_water_goal_ml_${user.id}`) ?? "", 10); return isNaN(v) ? null : v; } catch { return null; } })();
+      const effectiveGoal = customGoalMl ?? goalMl;
+
+      let daysTracked = 0;
+      let daysOnTarget = 0;
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(); d.setDate(d.getDate() - i); d.setHours(0, 0, 0, 0);
+        const key = `wya_water_${user.id}_${todayKey(d)}`;
+        const val = (() => { try { return parseInt(localStorage.getItem(key) ?? "0", 10) || 0; } catch { return 0; } })();
+        if (val > 0) { daysTracked++; if (val >= effectiveGoal * 0.9) daysOnTarget++; }
+      }
+
+      if (daysTracked >= 3) {
+        if (daysOnTarget >= daysTracked * 0.7) {
+          lines.push(`Hydration on track most days.`);
+        } else if (daysOnTarget <= 1 && daysTracked >= 4) {
+          lines.push(`Hydration has been below goal most days.`);
+        }
+      }
+    }
+
     return lines;
-  }, [last7Days, mealCount, avgWeekCalories, avgWeekProtein, summaryMarkers.gentleTargets, workoutSummary, recentFeelLogs, meals]);
+  }, [last7Days, mealCount, avgWeekCalories, avgWeekProtein, summaryMarkers.gentleTargets, workoutSummary, recentFeelLogs, meals, profile, user]);
 
   const [nudgeViewCount, setNudgeViewCount] = useState(0);
   const [showTargetInfo, setShowTargetInfo] = useState(false);
