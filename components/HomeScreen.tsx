@@ -3282,7 +3282,7 @@ export default function HomeScreen() {
                       : "bg-white text-ink/55 border-ink/15 hover:border-ink/30"
                   }`}
                 >
-                  {u === "L" ? "Litres" : u}
+                  {u === "L" ? "litres" : u}
                 </button>
               ))}
             </div>
