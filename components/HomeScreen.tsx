@@ -2024,7 +2024,12 @@ export default function HomeScreen() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => { waterData.remove(); setShowWaterUndo(false); if (waterUndoTimerRef.current) clearTimeout(waterUndoTimerRef.current); }}
+                  onClick={() => {
+                    waterData.remove();
+                    if (waterUndoTimerRef.current) clearTimeout(waterUndoTimerRef.current);
+                    setShowWaterUndo(true);
+                    waterUndoTimerRef.current = setTimeout(() => setShowWaterUndo(false), 3000);
+                  }}
                   className={`absolute left-full top-1/2 -translate-y-1/2 ml-2 whitespace-nowrap text-[10px] text-ink/45 transition-opacity duration-500 ${showWaterUndo ? "opacity-100" : "opacity-0 pointer-events-none"}`}
                 >
                   Undo
