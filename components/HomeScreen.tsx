@@ -193,16 +193,55 @@ function WaterBar({ pct, displayCurrent, displayGoal, onAdd, onRemove, unit }: {
         </p>
       </div>
 
-      {/* Button + bar row */}
+      {/* Bar + button row — bar left, button right */}
       <div className="flex items-center gap-3">
-        {/* Add button — blue ring, white bg, gradient drop */}
+        {/* Horizontal bar */}
+        <div className="relative flex-1 h-[18px] overflow-hidden rounded-full bg-primary/[0.06]">
+          {fillPct > 0 && (
+            <div
+              className="absolute left-0 top-0 h-full transition-[width] duration-700 ease-out"
+              style={{ width: `${fillPct}%` }}
+            >
+              {/* Transparent water fill — soft light blue, slightly see-through */}
+              <div
+                className="absolute inset-0"
+                style={{
+                  background: done
+                    ? "linear-gradient(180deg, rgba(134,239,172,0.55) 0%, rgba(52,211,153,0.65) 100%)"
+                    : "linear-gradient(180deg, rgba(186,222,255,0.55) 0%, rgba(111,168,255,0.68) 100%)",
+                }}
+              />
+              {/* Moving shimmer — light rippling across the surface */}
+              <div
+                className="absolute inset-0 animate-shimmer-sweep"
+                style={{
+                  background: "linear-gradient(90deg, transparent 15%, rgba(255,255,255,0.55) 50%, transparent 85%)",
+                  opacity: 0.5,
+                }}
+              />
+              {/* Rippling leading edge */}
+              {fillPct < 99 && (
+                <div className="absolute right-0 top-0 h-full animate-ripple-x" style={{ width: 12 }}>
+                  <svg width="12" height="100%" viewBox="0 0 12 18" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                      d="M6 0 C9 3, 3 6, 6 9 C9 12, 3 15, 6 18 L12 18 L12 0 Z"
+                      fill={done ? "rgba(52,211,153,0.65)" : "rgba(111,168,255,0.68)"}
+                    />
+                  </svg>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Add button — blue ring, white bg, gradient drop, no glow */}
         <button
           type="button"
           onClick={onAdd}
           aria-label="Add water"
-          className="shrink-0 flex h-12 w-12 items-center justify-center rounded-full border-[2.5px] border-primary bg-white shadow-[0_2px_12px_rgba(111,168,255,0.35)] transition active:scale-90 active:shadow-sm"
+          className="shrink-0 flex h-9 w-9 items-center justify-center rounded-full border-2 border-primary bg-white transition active:scale-90 active:opacity-80"
         >
-          <svg width="22" height="22" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <svg width="17" height="17" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <linearGradient id="wdrop-grad" x1="0.35" y1="0" x2="0.65" y2="1">
                 <stop offset="0%" stopColor="#93C5FD" />
@@ -211,56 +250,13 @@ function WaterBar({ pct, displayCurrent, displayGoal, onAdd, onRemove, unit }: {
               </linearGradient>
             </defs>
             <path d="M12 3C11.4 3 5 11 5 15.5a7 7 0 0 0 14 0C19 11 12.6 3 12 3z" fill="url(#wdrop-grad)" />
-            <ellipse cx="9.8" cy="13.5" rx="1.3" ry="2.2" fill="rgba(255,255,255,0.38)" transform="rotate(-20 9.8 13.5)" />
+            <ellipse cx="9.8" cy="13.5" rx="1.2" ry="2" fill="rgba(255,255,255,0.40)" transform="rotate(-20 9.8 13.5)" />
           </svg>
         </button>
-
-        {/* Horizontal bar */}
-        <div className="relative flex-1 h-6 overflow-hidden rounded-full bg-primary/[0.07]">
-          {fillPct > 0 && (
-            <div
-              className="absolute left-0 top-0 h-full overflow-hidden rounded-full transition-[width] duration-700 ease-out"
-              style={{ width: `${fillPct}%` }}
-            >
-              {/* Water gradient — lighter top (surface), deeper bottom (depth) */}
-              <div
-                className="absolute inset-0"
-                style={{
-                  background: done
-                    ? "linear-gradient(180deg, rgba(110,231,183,0.85) 0%, rgba(16,185,129,0.95) 100%)"
-                    : "linear-gradient(180deg, rgba(163,210,255,0.85) 0%, rgba(59,111,212,0.92) 100%)",
-                }}
-              />
-              {/* Shimmer sweep — light catching the water surface */}
-              <div
-                className="absolute inset-0 animate-shimmer-sweep"
-                style={{
-                  background: "linear-gradient(90deg, transparent 20%, rgba(255,255,255,0.5) 50%, transparent 80%)",
-                  opacity: 0.35,
-                }}
-              />
-              {/* Subtle wave at leading edge */}
-              {fillPct < 98 && (
-                <svg
-                  className="absolute right-0 top-0 h-full"
-                  width="10"
-                  viewBox="0 0 10 24"
-                  preserveAspectRatio="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M5 0 C7 4, 3 8, 5 12 C7 16, 3 20, 5 24 L10 24 L10 0 Z"
-                    fill={done ? "rgba(16,185,129,0.92)" : "rgba(59,111,212,0.92)"}
-                  />
-                </svg>
-              )}
-            </div>
-          )}
-        </div>
       </div>
 
       {/* Caption + undo */}
-      <div className="mt-1.5 flex items-center justify-between pl-[60px]">
+      <div className="mt-1.5 flex items-center justify-between">
         <p className="text-[10px] text-muted/50">
           Each tap adds {unit === "oz" ? "3.5 oz" : "100 ml"}
         </p>

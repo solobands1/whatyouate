@@ -63,6 +63,11 @@ const config: Config = {
           "0%": { transform: "translateX(0) translateZ(0) scaleY(1)" },
           "50%": { transform: "translateX(-25%) translateZ(0) scaleY(0.85)" },
           "100%": { transform: "translateX(-50%) translateZ(0) scaleY(1)" }
+        },
+        "ripple-x": {
+          "0%":   { transform: "translateX(0px)" },
+          "50%":  { transform: "translateX(2px)" },
+          "100%": { transform: "translateX(0px)" }
         }
       },
       animation: {
@@ -72,7 +77,8 @@ const config: Config = {
         "fade-slide-up": "fade-slide-up 0.35s ease-out",
         "shimmer-sweep": "shimmer-sweep 10s linear infinite",
         "nav-tap": "nav-tap 0.22s ease-out",
-        wave: "wave 2.5s linear infinite"
+        wave: "wave 2.5s linear infinite",
+        "ripple-x": "ripple-x 1.4s ease-in-out infinite"
       }
     }
   },
