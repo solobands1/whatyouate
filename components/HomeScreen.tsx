@@ -181,10 +181,12 @@ function WaterBar({ pct, displayCurrent, displayGoal }: {
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
-      const t = setTimeout(() => setAnimatedPct(fillPct), 120);
-      return () => clearTimeout(t);
+      // Double rAF: first frame renders width=0, second triggers the 3s transition
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => setAnimatedPct(fillPct));
+      });
     } else {
-      setFillDuration("700ms");
+      setFillDuration("2000ms");
       setAnimatedPct(fillPct);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -207,35 +209,37 @@ function WaterBar({ pct, displayCurrent, displayGoal }: {
         </svg>
         {/* Horizontal bar */}
         <div className="relative flex-1 h-[13px] overflow-hidden rounded-full bg-primary/[0.06]">
-          {animatedPct > 0 && (
-            <div
-              className="absolute left-0 top-0 h-full transition-[width] ease-out"
-              style={{ width: `${animatedPct}%`, transitionDuration: fillDuration }}
-            >
-              <div
-                className="absolute inset-0"
-                style={{
-                  background: done
-                    ? "linear-gradient(180deg, rgba(134,239,172,0.48) 0%, rgba(52,211,153,0.58) 100%)"
-                    : "linear-gradient(180deg, rgba(196,228,255,0.52) 0%, rgba(111,168,255,0.62) 100%)",
-                }}
-              />
-              {animatedPct < 99 && (
-                <div className="absolute right-0 top-0 h-full animate-ripple-x" style={{ width: 22 }}>
-                  <svg width="22" height="100%" viewBox="0 0 22 13" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-                    <path
-                      d="M2 0 C5 2.5, 0 5, 2 7.5 C5 10, 0 12, 2 13 L14 13 C12 12, 17 10, 14 7.5 C11 5, 18 2.5, 14 0 Z"
-                      fill={done ? "rgba(167,243,208,0.38)" : "rgba(196,228,255,0.38)"}
-                    />
-                    <path
-                      d="M14 0 C18 2.5, 11 5, 14 7.5 C17 10, 12 12, 14 13 L22 13 L22 0 Z"
-                      fill={done ? "rgba(52,211,153,0.58)" : "rgba(111,168,255,0.62)"}
-                    />
-                  </svg>
-                </div>
-              )}
-            </div>
-          )}
+          <div
+            className="absolute left-0 top-0 h-full transition-[width] ease-out"
+            style={{ width: `${animatedPct}%`, transitionDuration: fillDuration }}
+          >
+            {fillPct > 0 && (
+              <>
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background: done
+                      ? "linear-gradient(180deg, rgba(134,239,172,0.48) 0%, rgba(52,211,153,0.58) 100%)"
+                      : "linear-gradient(180deg, rgba(196,228,255,0.52) 0%, rgba(111,168,255,0.62) 100%)",
+                  }}
+                />
+                {animatedPct < 99 && (
+                  <div className="absolute right-0 top-0 h-full animate-ripple-x" style={{ width: 22 }}>
+                    <svg width="22" height="100%" viewBox="0 0 22 13" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                      <path
+                        d="M2 0 C5 2.5, 0 5, 2 7.5 C5 10, 0 12, 2 13 L14 13 C12 12, 17 10, 14 7.5 C11 5, 18 2.5, 14 0 Z"
+                        fill={done ? "rgba(167,243,208,0.38)" : "rgba(196,228,255,0.38)"}
+                      />
+                      <path
+                        d="M14 0 C18 2.5, 11 5, 14 7.5 C17 10, 12 12, 14 13 L22 13 L22 0 Z"
+                        fill={done ? "rgba(52,211,153,0.58)" : "rgba(111,168,255,0.62)"}
+                      />
+                    </svg>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </div>
       </div>
 
@@ -260,6 +264,13 @@ export default function HomeScreen() {
   const waterUndoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastAddedWaterMlRef = useRef(0);
   const [waterModalOpen, setWaterModalOpen] = useState(false);
+  const waterInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (waterModalOpen && waterInputRef.current) {
+      waterInputRef.current.focus({ preventScroll: true });
+    }
+  }, [waterModalOpen]);
   const [waterInputAmount, setWaterInputAmount] = useState("");
   const [waterInputUnit, setWaterInputUnit] = useState<"ml" | "oz" | "cups" | "L">("ml");
   const [runTour, setRunTour] = useState(false);
@@ -3264,13 +3275,13 @@ export default function HomeScreen() {
             </div>
 
             <input
+              ref={waterInputRef}
               type="number"
               inputMode="decimal"
               value={waterInputAmount}
               onChange={(e) => setWaterInputAmount(e.target.value)}
               placeholder=""
-              autoFocus
-              className="block mx-auto w-[120px] text-center text-3xl font-light text-ink outline-none bg-transparent border border-ink/20 rounded-lg py-2 px-3 mb-5"
+              className="block mx-auto w-[96px] text-center text-3xl font-light text-ink outline-none bg-transparent border border-ink/20 rounded-lg py-1.5 px-2 mb-5"
             />
 
             {/* Unit pills */}
