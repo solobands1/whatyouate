@@ -228,7 +228,7 @@ function WaterBar({ pct, displayCurrent, displayGoal, unit }: {
       </div>
 
       {/* Below bar: label left, progress right — offset to align under bar (not icon) */}
-      <div className="mt-1.5 flex items-center justify-between pl-[20px]">
+      <div className="mt-1.5 flex items-center justify-between pl-[26px]">
         <p className="text-[10px] text-ink/60">Each Tap = {unit === "oz" ? "3.5 oz" : "100 ml"}</p>
         <p className="text-[10px] text-ink/65">
           {displayCurrent} <span className="text-ink/50">/ {displayGoal}</span>
