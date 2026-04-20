@@ -1893,7 +1893,7 @@ export default function HomeScreen() {
                 style={{ animationDelay: "400ms", animationFillMode: "both" }}
               >
                 <p className="text-[11px] uppercase tracking-wide text-ink/70">{welcomeMessage.greeting}</p>
-                <p className="mt-1 text-[9px] font-normal uppercase tracking-wide text-ink/55">{welcomeMessage.sub}</p>
+                <p className="mt-1 text-[9px] font-normal uppercase tracking-wide text-ink/70">{welcomeMessage.sub}</p>
               </div>
             )}
             <div className="text-right">
