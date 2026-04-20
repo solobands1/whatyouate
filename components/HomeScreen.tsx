@@ -1328,9 +1328,9 @@ export default function HomeScreen() {
 
   const welcomeMessage = (() => {
     const hour = new Date().getHours();
-    if (hour < 12) return { greeting: "Good Morning", sub: "Let's make today count!" };
-    if (hour < 17) return { greeting: "Good Afternoon", sub: "Let's log and improve!" };
-    return { greeting: "Good Evening", sub: "Better late than never!" };
+    if (hour < 12) return { greeting: "Good Morning", sub: "Let's make today count" };
+    if (hour < 17) return { greeting: "Good Afternoon", sub: "Let's log and improve" };
+    return { greeting: "Good Evening", sub: "Better late than never" };
   })();
 
   // Streak saver: detect if yesterday was missed but there's still a saveable streak
