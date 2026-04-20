@@ -1436,20 +1436,7 @@ export default function SummaryScreen() {
                     ((nudge.type === "protein_low" || nudge.type === "protein_low_critical") && proTarget > 0 && todayProAvg >= proTarget * 0.85);
                   return (
                     <div className="relative rounded-xl border border-primary/60 bg-primary/5 px-4 py-3 space-y-2.5">
-                      <button
-                        type="button"
-                        aria-label="Dismiss nudge"
-                        className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full text-ink/25 transition hover:text-ink/50 active:opacity-50"
-                        onClick={() => {
-                          const hour = new Date().getHours();
-                          const win = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
-                          localStorage.setItem(`wya_nudge_dismissed_${todayKey()}_${win}`, "1");
-                          setNudgeDismissed(true);
-                        }}
-                      >
-                        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M2 2l8 8M10 2l-8 8"/></svg>
-                      </button>
-                      <p className="text-sm font-medium text-ink/90 pr-5">{nudge.message.replace(/\n+/g, " ")}</p>
+                      <p className="text-sm font-medium text-ink/90">{nudge.message.replace(/\n+/g, " ")}</p>
                       <p className="text-[11px] text-primary/70 font-medium">— Coach</p>
                       {isCaughtUp && (
                         <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-600">
