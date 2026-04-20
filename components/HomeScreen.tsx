@@ -180,7 +180,7 @@ function WaterBar({ pct, displayCurrent, displayGoal, unit }: {
     <div className="mt-1 px-4">
       {/* Drop icon + bar row */}
       <div className="flex items-center gap-2">
-        <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="shrink-0">
+        <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="shrink-0">
           <defs>
             <linearGradient id="wbar-drop" x1="0.35" y1="0" x2="0.65" y2="1">
               <stop offset="0%" stopColor="#93C5FD" />
@@ -2023,7 +2023,7 @@ export default function HomeScreen() {
           </div>
         </div>
 
-        <Card className="mt-7">
+        <Card className="mt-4">
           <div className="flex items-start justify-between">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Recent</p>
             <div className="flex items-center gap-2">
