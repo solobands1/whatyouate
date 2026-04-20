@@ -177,46 +177,60 @@ function WaterBar({ pct, displayCurrent, displayGoal, unit }: {
   const fillPct = Math.max(0, Math.min(100, pct));
 
   return (
-    <div className="mt-2 px-4">
-      {/* Horizontal bar */}
-      <div className="relative h-[13px] overflow-hidden rounded-full bg-primary/[0.06]">
-        {fillPct > 0 && (
-          <div
-            className="absolute left-0 top-0 h-full transition-[width] duration-700 ease-out"
-            style={{ width: `${fillPct}%` }}
-          >
+    <div className="mt-1 px-4">
+      {/* Drop icon + bar row */}
+      <div className="flex items-center gap-2">
+        <svg width="12" height="12" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="shrink-0">
+          <defs>
+            <linearGradient id="wbar-drop" x1="0.35" y1="0" x2="0.65" y2="1">
+              <stop offset="0%" stopColor="#93C5FD" />
+              <stop offset="45%" stopColor="#6FA8FF" />
+              <stop offset="100%" stopColor="#3B6FD4" />
+            </linearGradient>
+          </defs>
+          <path d="M12 3C11.4 3 5 11 5 15.5a7 7 0 0 0 14 0C19 11 12.6 3 12 3z" fill={done ? "rgba(52,211,153,0.75)" : "url(#wbar-drop)"} />
+          <ellipse cx="9.8" cy="13.5" rx="1.2" ry="2" fill="rgba(255,255,255,0.40)" transform="rotate(-20 9.8 13.5)" />
+        </svg>
+        {/* Horizontal bar */}
+        <div className="relative flex-1 h-[13px] overflow-hidden rounded-full bg-primary/[0.06]">
+          {fillPct > 0 && (
             <div
-              className="absolute inset-0"
-              style={{
-                background: done
-                  ? "linear-gradient(180deg, rgba(134,239,172,0.48) 0%, rgba(52,211,153,0.58) 100%)"
-                  : "linear-gradient(180deg, rgba(196,228,255,0.52) 0%, rgba(111,168,255,0.62) 100%)",
-              }}
-            />
-            <div
-              className="absolute inset-0 animate-shimmer-sweep"
-              style={{
-                background: "linear-gradient(90deg, transparent 20%, rgba(255,255,255,0.6) 50%, transparent 80%)",
-                opacity: 0.42,
-                animationDuration: "24s",
-              }}
-            />
-            {fillPct < 99 && (
-              <div className="absolute right-0 top-0 h-full animate-ripple-x" style={{ width: 10 }}>
-                <svg width="10" height="100%" viewBox="0 0 10 13" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-                  <path
-                    d="M5 0 C8 2.5, 2 5, 5 7.5 C8 10, 2 12, 5 13 L10 13 L10 0 Z"
-                    fill={done ? "rgba(52,211,153,0.58)" : "rgba(111,168,255,0.62)"}
-                  />
-                </svg>
-              </div>
-            )}
-          </div>
-        )}
+              className="absolute left-0 top-0 h-full transition-[width] duration-700 ease-out"
+              style={{ width: `${fillPct}%` }}
+            >
+              <div
+                className="absolute inset-0"
+                style={{
+                  background: done
+                    ? "linear-gradient(180deg, rgba(134,239,172,0.48) 0%, rgba(52,211,153,0.58) 100%)"
+                    : "linear-gradient(180deg, rgba(196,228,255,0.52) 0%, rgba(111,168,255,0.62) 100%)",
+                }}
+              />
+              <div
+                className="absolute inset-0 animate-shimmer-sweep"
+                style={{
+                  background: "linear-gradient(90deg, transparent 20%, rgba(255,255,255,0.6) 50%, transparent 80%)",
+                  opacity: 0.42,
+                  animationDuration: "24s",
+                }}
+              />
+              {fillPct < 99 && (
+                <div className="absolute right-0 top-0 h-full animate-ripple-x" style={{ width: 10 }}>
+                  <svg width="10" height="100%" viewBox="0 0 10 13" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                      d="M5 0 C8 2.5, 2 5, 5 7.5 C8 10, 2 12, 5 13 L10 13 L10 0 Z"
+                      fill={done ? "rgba(52,211,153,0.58)" : "rgba(111,168,255,0.62)"}
+                    />
+                  </svg>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Below bar: label left, progress right */}
-      <div className="mt-1.5 flex items-center justify-between">
+      {/* Below bar: label left, progress right — offset to align under bar (not icon) */}
+      <div className="mt-1.5 flex items-center justify-between pl-[20px]">
         <p className="text-[10px] text-ink/45">Each Tap = {unit === "oz" ? "3.5 oz" : "100 ml"}</p>
         <p className="text-[10px] text-ink/50">
           {displayCurrent} <span className="text-ink/35">/ {displayGoal}</span>
@@ -1982,36 +1996,25 @@ export default function HomeScreen() {
               </button>
             </div>
             {waterData && waterTick >= 0 && (
-              <div className="flex flex-col items-center gap-0.5">
-                <div className="flex w-[44%] rounded-xl shadow-[0_4px_12px_rgba(15,23,42,0.08),0_0_8px_rgba(111,168,255,0.12)] overflow-hidden">
-                  <button
-                    type="button"
-                    className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-ink/10 bg-white px-3 py-1.5 text-xs font-normal text-ink/60 transition-all duration-150 hover:bg-ink/5 active:scale-[0.96] active:bg-primary/10"
-                    onClick={waterData.add}
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <defs>
-                        <linearGradient id="wbtn-drop" x1="0.35" y1="0" x2="0.65" y2="1">
-                          <stop offset="0%" stopColor="#93C5FD" />
-                          <stop offset="45%" stopColor="#6FA8FF" />
-                          <stop offset="100%" stopColor="#3B6FD4" />
-                        </linearGradient>
-                      </defs>
-                      <path d="M12 3C11.4 3 5 11 5 15.5a7 7 0 0 0 14 0C19 11 12.6 3 12 3z" fill="url(#wbtn-drop)" />
-                      <ellipse cx="9.8" cy="13.5" rx="1.2" ry="2" fill="rgba(255,255,255,0.40)" transform="rotate(-20 9.8 13.5)" />
-                    </svg>
-                    <span>Water</span>
-                  </button>
-                </div>
-                {waterData.pct > 0 && (
-                  <button
-                    type="button"
-                    onClick={waterData.remove}
-                    className="text-[10px] text-ink/40 underline underline-offset-2 transition active:opacity-60"
-                  >
-                    Undo Tap
-                  </button>
-                )}
+              <div className="flex w-[56%] rounded-xl shadow-[0_4px_12px_rgba(15,23,42,0.08),0_0_8px_rgba(111,168,255,0.12)] overflow-hidden">
+                <button
+                  type="button"
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-ink/10 bg-white px-3 py-1 text-xs font-normal text-ink/60 transition-all duration-150 hover:bg-ink/5 active:scale-[0.96] active:bg-primary/10"
+                  onClick={waterData.add}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                      <linearGradient id="wbtn-drop" x1="0.35" y1="0" x2="0.65" y2="1">
+                        <stop offset="0%" stopColor="#93C5FD" />
+                        <stop offset="45%" stopColor="#6FA8FF" />
+                        <stop offset="100%" stopColor="#3B6FD4" />
+                      </linearGradient>
+                    </defs>
+                    <path d="M12 3C11.4 3 5 11 5 15.5a7 7 0 0 0 14 0C19 11 12.6 3 12 3z" fill="url(#wbtn-drop)" />
+                    <ellipse cx="9.8" cy="13.5" rx="1.2" ry="2" fill="rgba(255,255,255,0.40)" transform="rotate(-20 9.8 13.5)" />
+                  </svg>
+                  <span>Water</span>
+                </button>
               </div>
             )}
             {workout.activeWorkout && (
