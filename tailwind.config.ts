@@ -68,6 +68,10 @@ const config: Config = {
           "0%":   { transform: "translateX(0px)" },
           "50%":  { transform: "translateX(2px)" },
           "100%": { transform: "translateX(0px)" }
+        },
+        "water-flow": {
+          "0%, 100%": { opacity: "1" },
+          "50%":      { opacity: "0.78" }
         }
       },
       animation: {
@@ -78,7 +82,8 @@ const config: Config = {
         "shimmer-sweep": "shimmer-sweep 10s linear infinite",
         "nav-tap": "nav-tap 0.22s ease-out",
         wave: "wave 2.5s linear infinite",
-        "ripple-x": "ripple-x 2.8s ease-in-out infinite"
+        "ripple-x": "ripple-x 2.8s ease-in-out infinite",
+        "water-flow": "water-flow 5s ease-in-out infinite"
       }
     }
   },
