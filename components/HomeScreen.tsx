@@ -2011,9 +2011,9 @@ export default function HomeScreen() {
                   <svg width="12" height="12" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <defs>
                       <linearGradient id="wbtn-drop" x1="0.35" y1="0" x2="0.65" y2="1">
-                        <stop offset="0%" stopColor="#93C5FD" />
-                        <stop offset="45%" stopColor="#6FA8FF" />
-                        <stop offset="100%" stopColor="#3B6FD4" />
+                        <stop offset="0%" stopColor="#BAD8FF" />
+                        <stop offset="45%" stopColor="#93C5FD" />
+                        <stop offset="100%" stopColor="#6FA8FF" />
                       </linearGradient>
                     </defs>
                     <path d="M12 3C11.4 3 5 11 5 15.5a7 7 0 0 0 14 0C19 11 12.6 3 12 3z" fill="url(#wbtn-drop)" />
