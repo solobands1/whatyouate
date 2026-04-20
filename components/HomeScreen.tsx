@@ -3275,6 +3275,7 @@ export default function HomeScreen() {
                 <button
                   key={u}
                   type="button"
+                  onPointerDown={(e) => e.preventDefault()}
                   onClick={() => setWaterInputUnit(u)}
                   className={`px-4 py-1.5 rounded-full text-sm border transition-all ${
                     waterInputUnit === u
