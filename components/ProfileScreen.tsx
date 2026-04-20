@@ -1080,7 +1080,7 @@ export default function ProfileScreen() {
                     </div>
                   </div>
                   <p className="mt-3 text-[11px] text-ink/60">
-                    A water tracker will appear on your home screen. Each tap adds {waterUnit === "oz" ? "3.5 oz" : "100 ml"}.
+                    A water tracker will appear on your home screen.{" "}Each tap adds <span className="whitespace-nowrap">{waterUnit === "oz" ? "3.5 oz" : "100 ml"}.</span>
                   </p>
                 </div>
               );
