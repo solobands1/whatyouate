@@ -162,11 +162,25 @@ export default function SummaryScreen() {
     if (!raw) return null;
     try { return JSON.parse(raw); } catch { return null; }
   };
-  // Show "New" if this nudge hasn't been seen yet — cleared on mount
+
+  const getAiWhy = (nudgeType: string): string | null => {
+    if (typeof window === "undefined") return null;
+    const hour = new Date().getHours();
+    const win = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
+    return localStorage.getItem(`wya_ai_nudge_${todayKey()}_${win}_${nudgeType}_why`);
+  };
+
+  const getAiAction = (nudgeType: string): string | null => {
+    if (typeof window === "undefined") return null;
+    const hour = new Date().getHours();
+    const win = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
+    return localStorage.getItem(`wya_ai_nudge_${todayKey()}_${win}_${nudgeType}_action`);
+  };
+  // Show "New" only when a new SMART nudge was generated (separate from computed nudge bell)
   const [nudgeCardIsNew] = useState(() => {
     try {
-      const nudgeTs = parseInt(localStorage.getItem("wya_nudge_ts") ?? "0");
-      const seenTs = parseInt(localStorage.getItem("wya_nudge_seen_ts") ?? "0");
+      const nudgeTs = parseInt(localStorage.getItem("wya_smart_nudge_ts") ?? "0");
+      const seenTs = parseInt(localStorage.getItem("wya_smart_nudge_seen_ts") ?? "0");
       return nudgeTs > seenTs;
     } catch { return false; }
   });
@@ -175,6 +189,8 @@ export default function SummaryScreen() {
   useEffect(() => {
     mountedRef.current = true;
     localStorage.setItem("wya_nudge_seen_ts", Date.now().toString());
+    // Mark smart nudge as seen (uses separate key so computed nudge bell doesn't cause false "New")
+    localStorage.setItem("wya_smart_nudge_seen_ts", localStorage.getItem("wya_smart_nudge_ts") ?? Date.now().toString());
     window.dispatchEvent(new Event("wya_nudge_update"));
     return () => {
       mountedRef.current = false;
@@ -713,6 +729,9 @@ export default function SummaryScreen() {
           if (nudge.suggestions?.length) {
             localStorage.setItem(`wya_ai_nudge_${windowKey}_${nudge.type}_suggestions`, JSON.stringify(nudge.suggestions.slice(0, 3)));
           }
+          if (nudge.action) localStorage.setItem(`wya_ai_nudge_${windowKey}_${nudge.type}_action`, nudge.action);
+          if (nudge.why) localStorage.setItem(`wya_ai_nudge_${windowKey}_${nudge.type}_why`, nudge.why);
+          localStorage.setItem("wya_smart_nudge_ts", Date.now().toString());
           // Save macro snapshot so staleness can be detected on next render
           localStorage.setItem(snapshotKey, JSON.stringify({ cal: currentCals, prot: currentProt }));
           smartNudgeFetchedRef.current.add(windowKey);
@@ -1417,8 +1436,8 @@ export default function SummaryScreen() {
                 (() => {
                   const nudge = smartNudge;
                   const goal = profile?.goalDirection ?? "maintain";
-                  const why = getNudgeWhy(nudge.type, goal);
-                  const action = nudge.action ?? getNudgeAction(nudge.type, goal);
+                  const why = getAiWhy(nudge.type) ?? getNudgeWhy(nudge.type, goal);
+                  const action = nudge.action ?? getAiAction(nudge.type) ?? getNudgeAction(nudge.type, goal);
                   const behavioralChips = getNudgeBehavioralChips(nudge.type, goal);
                   const showFoodChips = nudge.type !== "workout_missing" && nudge.type !== "calorie_high" && nudge.type !== "on_track" && suggestions.length > 0;
                   const showChips = behavioralChips.length > 0 || showFoodChips;

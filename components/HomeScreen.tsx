@@ -613,7 +613,10 @@ export default function HomeScreen() {
   };
 
   const handleFoodPhotoClick = () => {
-    foodInputRef.current?.click();
+    if (foodInputRef.current) {
+      foodInputRef.current.setAttribute("capture", "environment");
+      foodInputRef.current.click();
+    }
   };
 
   const handleFoodFileSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -1084,7 +1087,8 @@ export default function HomeScreen() {
     const win = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
     const todayStr = todayKey();
     const windowKey = `${todayStr}_${win}`;
-    if (nudgePrefetchedRef.current.has(windowKey)) return;
+    const prefetchedStorageKey = `wya_nudge_prefetched_${windowKey}`;
+    if (nudgePrefetchedRef.current.has(windowKey) || localStorage.getItem(prefetchedStorageKey)) return;
 
     const existing = nudges.find((n) => {
       if (!n.created_at) return false;
@@ -1093,7 +1097,7 @@ export default function HomeScreen() {
       const h = d.getHours();
       return (h < 12 ? "morning" : h < 17 ? "afternoon" : "evening") === win;
     });
-    if (existing) { nudgePrefetchedRef.current.add(windowKey); return; }
+    if (existing) { nudgePrefetchedRef.current.add(windowKey); localStorage.setItem(prefetchedStorageKey, "1"); return; }
 
     // Race condition guard: claim the inflight lock; SummaryScreen will skip if we're in-flight
     const inflightKey = `wya_nudge_inflight_${windowKey}`;
@@ -1104,6 +1108,7 @@ export default function HomeScreen() {
     }
     localStorage.setItem(inflightKey, Date.now().toString());
     nudgePrefetchedRef.current.add(windowKey);
+    localStorage.setItem(prefetchedStorageKey, "1");
 
     const recentFoodsForNudge = (() => {
       const seen = new Set<string>();
@@ -1149,6 +1154,8 @@ export default function HomeScreen() {
         if (nudge.suggestions?.length) {
           localStorage.setItem(`wya_ai_nudge_${windowKey}_${nudge.type}_suggestions`, JSON.stringify(nudge.suggestions.slice(0, 3)));
         }
+        if (nudge.action) localStorage.setItem(`wya_ai_nudge_${windowKey}_${nudge.type}_action`, nudge.action);
+        if (nudge.why) localStorage.setItem(`wya_ai_nudge_${windowKey}_${nudge.type}_why`, nudge.why);
         localStorage.setItem(`wya_nudge_snapshot_${windowKey}`, JSON.stringify({
           cal: Math.round((ctx.todayCalories ?? 0)),
           prot: Math.round((ctx.todayProtein ?? 0)),
@@ -1156,7 +1163,8 @@ export default function HomeScreen() {
         await addNudge(user.id, nudge.type, nudge.message).catch(() => {});
         pruneNudges(user.id).catch(() => {});
         notifyNudgesUpdated();
-        // Light the bell
+        // Light the bell and mark a new smart nudge
+        localStorage.setItem("wya_smart_nudge_ts", Date.now().toString());
         const seenTs = parseInt(localStorage.getItem("wya_nudge_seen_ts") ?? "0");
         const existingNudgeTs = parseInt(localStorage.getItem("wya_nudge_ts") ?? "0");
         if (existingNudgeTs <= seenTs) {
@@ -1955,7 +1963,6 @@ export default function HomeScreen() {
             ref={foodInputRef}
             type="file"
             accept="image/*"
-            capture="environment"
             className="sr-only"
             onChange={handleFoodFileSelected}
           />
