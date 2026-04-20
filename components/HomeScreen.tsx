@@ -3236,15 +3236,28 @@ export default function HomeScreen() {
       {/* Water input modal */}
       {waterModalOpen && waterData && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center"
+          className="fixed inset-0 z-50 flex items-center justify-center px-5"
           style={{ background: "rgba(0,0,0,0.35)" }}
           onClick={() => setWaterModalOpen(false)}
         >
           <div
-            className="w-full max-w-sm rounded-t-2xl bg-white px-5 pt-6 pb-10 shadow-xl"
+            className="w-full max-w-sm rounded-2xl bg-white px-5 pt-6 pb-8 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <p className="text-center text-base font-semibold text-ink mb-5">Add Water</p>
+            <div className="flex items-center justify-center gap-2 mb-5">
+              <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="wmodal-drop" x1="0.35" y1="0" x2="0.65" y2="1">
+                    <stop offset="0%" stopColor="#BAD8FF" />
+                    <stop offset="45%" stopColor="#93C5FD" />
+                    <stop offset="100%" stopColor="#6FA8FF" />
+                  </linearGradient>
+                </defs>
+                <path d="M12 3C11.4 3 5 11 5 15.5a7 7 0 0 0 14 0C19 11 12.6 3 12 3z" fill="url(#wmodal-drop)" />
+                <ellipse cx="9.8" cy="13.5" rx="1.2" ry="2" fill="rgba(255,255,255,0.40)" transform="rotate(-20 9.8 13.5)" />
+              </svg>
+              <p className="text-base font-semibold text-ink">Add Water</p>
+            </div>
 
             <input
               type="number"
@@ -3258,7 +3271,7 @@ export default function HomeScreen() {
 
             {/* Unit pills */}
             <div className="flex justify-center gap-2 mb-6">
-              {(["ml", "oz", "cups", "L"] as const).map((u) => (
+              {(["ml", "L", "cups", "oz"] as const).map((u) => (
                 <button
                   key={u}
                   type="button"
@@ -3269,7 +3282,7 @@ export default function HomeScreen() {
                       : "bg-white text-ink/55 border-ink/15 hover:border-ink/30"
                   }`}
                 >
-                  {u}
+                  {u === "L" ? "Litres" : u}
                 </button>
               ))}
             </div>
