@@ -3,3 +3,5 @@
 node_modules/
 .DS_Store
 .vercel
+ios/App/App.xcodeproj/xcuserdata/
+ios/App/App.xcworkspace/xcuserdata/
