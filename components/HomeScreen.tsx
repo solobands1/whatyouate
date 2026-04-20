@@ -3251,9 +3251,9 @@ export default function HomeScreen() {
       {/* Water input modal */}
       {waterModalOpen && waterData && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center px-5"
+          className="fixed inset-0 z-50 flex items-start justify-center px-5 pt-16"
           style={{ background: "rgba(0,0,0,0.35)" }}
-          onClick={() => setWaterModalOpen(false)}
+          onClick={() => { setWaterModalOpen(false); window.scrollTo(0, 0); }}
         >
           <div
             className="w-full max-w-sm rounded-2xl bg-white px-5 pt-6 pb-8 shadow-xl"
@@ -3313,6 +3313,7 @@ export default function HomeScreen() {
                 waterData.addAmount(ml);
                 setWaterModalOpen(false);
                 setWaterInputAmount("");
+                window.scrollTo(0, 0);
                 if (waterUndoTimerRef.current) clearTimeout(waterUndoTimerRef.current);
                 setShowWaterUndo(true);
                 waterUndoTimerRef.current = setTimeout(() => setShowWaterUndo(false), 3000);
@@ -3323,7 +3324,7 @@ export default function HomeScreen() {
             </button>
             <button
               type="button"
-              onClick={() => setWaterModalOpen(false)}
+              onClick={() => { setWaterModalOpen(false); window.scrollTo(0, 0); }}
               className="mt-2 w-full py-2 text-center text-sm text-ink/40"
             >
               Cancel
