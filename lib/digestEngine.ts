@@ -1098,7 +1098,7 @@ export function buildSmartNudgeContext(
 
   let waterIntake: SmartNudgeContext["waterIntake"];
   if (profile.trackWater && waterConsumedMl !== undefined && profile.weight) {
-    const goalMl = Math.min(3500, Math.max(1500, Math.round(profile.weight * 35)));
+    const goalMl = Math.min(3500, Math.max(1500, Math.round(profile.weight * 35 / 100) * 100));
     waterIntake = {
       consumedMl: waterConsumedMl,
       goalMl,

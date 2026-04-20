@@ -984,7 +984,7 @@ export default function ProfileScreen() {
                 const lb = parseInteger(weight) ?? 0;
                 return lb > 0 ? Math.round((lb / 2.20462) * 10) / 10 : null;
               })();
-              const recommendedGoalMl = weightKg ? Math.min(3500, Math.max(1500, Math.round(weightKg * 35))) : 2500;
+              const recommendedGoalMl = weightKg ? Math.min(3500, Math.max(1500, Math.round(weightKg * 35 / 100) * 100)) : 2500;
               const activeGoalMl = customWaterGoalMl ?? recommendedGoalMl;
               const isRecommended = customWaterGoalMl === null;
               const displayGoal = waterUnit === "oz"

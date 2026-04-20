@@ -183,49 +183,50 @@ function WaterBar({ pct, displayCurrent, displayGoal, onAdd, onRemove, unit }: {
       {/* Label row */}
       <div className="mb-2 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Water</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-ink/50">Water</p>
           {done && (
             <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-600">Goal reached!</span>
           )}
         </div>
-        <p className="text-[11px] text-muted/60">
-          {displayCurrent} <span className="text-muted/40">/ {displayGoal}</span>
+        <p className="text-[11px] text-ink/50">
+          {displayCurrent} <span className="text-ink/35">/ {displayGoal}</span>
         </p>
       </div>
 
       {/* Bar + button row — bar left, button right */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2.5">
         {/* Horizontal bar */}
-        <div className="relative flex-1 h-[18px] overflow-hidden rounded-full bg-primary/[0.06]">
+        <div className="relative flex-1 h-[13px] overflow-hidden rounded-full bg-primary/[0.06]">
           {fillPct > 0 && (
             <div
               className="absolute left-0 top-0 h-full transition-[width] duration-700 ease-out"
               style={{ width: `${fillPct}%` }}
             >
-              {/* Transparent water fill — soft light blue, slightly see-through */}
+              {/* Transparent water fill */}
               <div
                 className="absolute inset-0"
                 style={{
                   background: done
-                    ? "linear-gradient(180deg, rgba(134,239,172,0.55) 0%, rgba(52,211,153,0.65) 100%)"
-                    : "linear-gradient(180deg, rgba(186,222,255,0.55) 0%, rgba(111,168,255,0.68) 100%)",
+                    ? "linear-gradient(180deg, rgba(134,239,172,0.48) 0%, rgba(52,211,153,0.58) 100%)"
+                    : "linear-gradient(180deg, rgba(196,228,255,0.52) 0%, rgba(111,168,255,0.62) 100%)",
                 }}
               />
-              {/* Moving shimmer — light rippling across the surface */}
+              {/* Slow flowing shimmer */}
               <div
                 className="absolute inset-0 animate-shimmer-sweep"
                 style={{
-                  background: "linear-gradient(90deg, transparent 15%, rgba(255,255,255,0.55) 50%, transparent 85%)",
-                  opacity: 0.5,
+                  background: "linear-gradient(90deg, transparent 20%, rgba(255,255,255,0.6) 50%, transparent 80%)",
+                  opacity: 0.45,
+                  animationDuration: "18s",
                 }}
               />
               {/* Rippling leading edge */}
               {fillPct < 99 && (
-                <div className="absolute right-0 top-0 h-full animate-ripple-x" style={{ width: 12 }}>
-                  <svg width="12" height="100%" viewBox="0 0 12 18" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                <div className="absolute right-0 top-0 h-full animate-ripple-x" style={{ width: 10 }}>
+                  <svg width="10" height="100%" viewBox="0 0 10 13" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
                     <path
-                      d="M6 0 C9 3, 3 6, 6 9 C9 12, 3 15, 6 18 L12 18 L12 0 Z"
-                      fill={done ? "rgba(52,211,153,0.65)" : "rgba(111,168,255,0.68)"}
+                      d="M5 0 C8 2.5, 2 5, 5 7.5 C8 10, 2 12, 5 13 L10 13 L10 0 Z"
+                      fill={done ? "rgba(52,211,153,0.58)" : "rgba(111,168,255,0.62)"}
                     />
                   </svg>
                 </div>
@@ -234,14 +235,14 @@ function WaterBar({ pct, displayCurrent, displayGoal, onAdd, onRemove, unit }: {
           )}
         </div>
 
-        {/* Add button — blue ring, white bg, gradient drop, no glow */}
+        {/* Add button — light blue ring, white bg, gradient drop */}
         <button
           type="button"
           onClick={onAdd}
           aria-label="Add water"
-          className="shrink-0 flex h-9 w-9 items-center justify-center rounded-full border-2 border-primary bg-white transition active:scale-90 active:opacity-80"
+          className="shrink-0 flex h-7 w-7 items-center justify-center rounded-full border border-primary/50 bg-white transition active:scale-90 active:opacity-80"
         >
-          <svg width="17" height="17" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <svg width="13" height="13" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <linearGradient id="wdrop-grad" x1="0.35" y1="0" x2="0.65" y2="1">
                 <stop offset="0%" stopColor="#93C5FD" />
@@ -257,16 +258,16 @@ function WaterBar({ pct, displayCurrent, displayGoal, onAdd, onRemove, unit }: {
 
       {/* Caption + undo */}
       <div className="mt-1.5 flex items-center justify-between">
-        <p className="text-[10px] text-muted/50">
+        <p className="text-[10px] text-ink/45">
           Each tap adds {unit === "oz" ? "3.5 oz" : "100 ml"}
         </p>
         {pct > 0 && (
           <button
             type="button"
             onClick={onRemove}
-            className="text-[10px] text-muted/45 underline underline-offset-2 transition active:opacity-60"
+            className="text-[10px] text-ink/50 underline underline-offset-2 transition active:opacity-60"
           >
-            Undo tap
+            Undo Tap
           </button>
         )}
       </div>
@@ -1930,7 +1931,7 @@ export default function HomeScreen() {
         {profile?.trackWater && user && waterTick >= 0 && (() => {
           const WATER_KEY = `wya_water_${user.id}_${todayKey()}`;
           const stepMl = 100;
-          const recommendedGoalMl = profile.weight ? Math.min(3500, Math.max(1500, Math.round(profile.weight * 35))) : 2500;
+          const recommendedGoalMl = profile.weight ? Math.min(3500, Math.max(1500, Math.round(profile.weight * 35 / 100) * 100)) : 2500;
           const customGoalMl = (() => { try { const v = parseInt(localStorage.getItem(`wya_water_goal_ml_${user.id}`) ?? "", 10); return isNaN(v) ? null : v; } catch { return null; } })();
           const goalMl = customGoalMl ?? recommendedGoalMl;
           const waterMl = (() => { try { return Math.max(0, parseInt(localStorage.getItem(WATER_KEY) ?? "0", 10) || 0); } catch { return 0; } })();

@@ -78,7 +78,7 @@ const config: Config = {
         "shimmer-sweep": "shimmer-sweep 10s linear infinite",
         "nav-tap": "nav-tap 0.22s ease-out",
         wave: "wave 2.5s linear infinite",
-        "ripple-x": "ripple-x 1.4s ease-in-out infinite"
+        "ripple-x": "ripple-x 2.8s ease-in-out infinite"
       }
     }
   },
