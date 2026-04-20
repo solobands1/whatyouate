@@ -176,59 +176,104 @@ function WaterBar({ pct, displayCurrent, displayGoal, onAdd, onRemove, unit }: {
   unit: "ml" | "oz";
 }) {
   const done = pct >= 100;
+  const fillPct = Math.max(0, Math.min(100, pct));
+
   return (
-    <div className="mt-3 overflow-hidden rounded-2xl border border-primary/20 bg-white shadow-sm">
-      <div className="relative h-14 overflow-hidden bg-primary/5">
-        {/* Wave fill */}
-        <div
-          className="absolute bottom-0 left-0 w-full transition-all duration-700 ease-out"
-          style={{ height: `${pct}%` }}
-        >
-          {/* Wave SVG */}
-          <div className="absolute -top-3 left-0 w-[200%] animate-wave">
-            <svg viewBox="0 0 1200 20" preserveAspectRatio="none" className="w-full h-4">
-              <path
-                d="M0,10 C150,20 350,0 600,10 C850,20 1050,0 1200,10 L1200,20 L0,20 Z"
-                fill={done ? "rgba(16,185,129,0.35)" : "rgba(111,168,255,0.35)"}
-              />
-            </svg>
-          </div>
-          <div className="absolute top-3 left-0 right-0 bottom-0" style={{ background: done ? "rgba(16,185,129,0.18)" : "rgba(111,168,255,0.18)" }} />
+    <div className="mt-4">
+      {/* Label row */}
+      <div className="mb-2 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Water</p>
+          {done && (
+            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-600">Goal reached!</span>
+          )}
         </div>
-        {/* Text overlay */}
-        <div className="absolute inset-0 flex items-center justify-between px-4">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-ink/50">Water</p>
-            <p className="text-sm font-semibold text-ink/80">
-              {displayCurrent} <span className="text-[10px] font-normal text-muted/60">/ {displayGoal}</span>
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              className="flex h-7 w-7 items-center justify-center rounded-full border border-ink/10 bg-white/80 text-ink/60 transition active:scale-90 active:opacity-60"
-              onClick={onRemove}
-              aria-label="Remove water"
+        <p className="text-[11px] text-muted/60">
+          {displayCurrent} <span className="text-muted/40">/ {displayGoal}</span>
+        </p>
+      </div>
+
+      {/* Button + bar row */}
+      <div className="flex items-center gap-3">
+        {/* Add button — blue ring, white bg, gradient drop */}
+        <button
+          type="button"
+          onClick={onAdd}
+          aria-label="Add water"
+          className="shrink-0 flex h-12 w-12 items-center justify-center rounded-full border-[2.5px] border-primary bg-white shadow-[0_2px_12px_rgba(111,168,255,0.35)] transition active:scale-90 active:shadow-sm"
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="wdrop-grad" x1="0.35" y1="0" x2="0.65" y2="1">
+                <stop offset="0%" stopColor="#93C5FD" />
+                <stop offset="45%" stopColor="#6FA8FF" />
+                <stop offset="100%" stopColor="#3B6FD4" />
+              </linearGradient>
+            </defs>
+            <path d="M12 3C11.4 3 5 11 5 15.5a7 7 0 0 0 14 0C19 11 12.6 3 12 3z" fill="url(#wdrop-grad)" />
+            <ellipse cx="9.8" cy="13.5" rx="1.3" ry="2.2" fill="rgba(255,255,255,0.38)" transform="rotate(-20 9.8 13.5)" />
+          </svg>
+        </button>
+
+        {/* Horizontal bar */}
+        <div className="relative flex-1 h-6 overflow-hidden rounded-full bg-primary/[0.07]">
+          {fillPct > 0 && (
+            <div
+              className="absolute left-0 top-0 h-full overflow-hidden rounded-full transition-[width] duration-700 ease-out"
+              style={{ width: `${fillPct}%` }}
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M5 12h14"/></svg>
-            </button>
-            <button
-              type="button"
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white shadow-sm transition active:scale-90 active:opacity-80"
-              onClick={onAdd}
-              aria-label="Add water"
-            >
-              {/* Water drop */}
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2C12 2 5 10 5 15a7 7 0 0 0 14 0c0-5-7-13-7-13z"/>
-              </svg>
-            </button>
-          </div>
+              {/* Water gradient — lighter top (surface), deeper bottom (depth) */}
+              <div
+                className="absolute inset-0"
+                style={{
+                  background: done
+                    ? "linear-gradient(180deg, rgba(110,231,183,0.85) 0%, rgba(16,185,129,0.95) 100%)"
+                    : "linear-gradient(180deg, rgba(163,210,255,0.85) 0%, rgba(59,111,212,0.92) 100%)",
+                }}
+              />
+              {/* Shimmer sweep — light catching the water surface */}
+              <div
+                className="absolute inset-0 animate-shimmer-sweep"
+                style={{
+                  background: "linear-gradient(90deg, transparent 20%, rgba(255,255,255,0.5) 50%, transparent 80%)",
+                  opacity: 0.35,
+                }}
+              />
+              {/* Subtle wave at leading edge */}
+              {fillPct < 98 && (
+                <svg
+                  className="absolute right-0 top-0 h-full"
+                  width="10"
+                  viewBox="0 0 10 24"
+                  preserveAspectRatio="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M5 0 C7 4, 3 8, 5 12 C7 16, 3 20, 5 24 L10 24 L10 0 Z"
+                    fill={done ? "rgba(16,185,129,0.92)" : "rgba(59,111,212,0.92)"}
+                  />
+                </svg>
+              )}
+            </div>
+          )}
         </div>
       </div>
-      <p className="px-4 py-1.5 text-center text-[10px] text-muted/50">
-        {done ? "Goal reached!" : `Each tap adds ${unit === "oz" ? "3.4 oz" : "100 ml"} · tap − to undo`}
-      </p>
+
+      {/* Caption + undo */}
+      <div className="mt-1.5 flex items-center justify-between pl-[60px]">
+        <p className="text-[10px] text-muted/50">
+          Each tap adds {unit === "oz" ? "3.5 oz" : "100 ml"}
+        </p>
+        {pct > 0 && (
+          <button
+            type="button"
+            onClick={onRemove}
+            className="text-[10px] text-muted/45 underline underline-offset-2 transition active:opacity-60"
+          >
+            Undo tap
+          </button>
+        )}
+      </div>
     </div>
   );
 }
