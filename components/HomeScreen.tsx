@@ -175,15 +175,19 @@ function WaterBar({ pct, displayCurrent, displayGoal }: {
   const done = pct >= 100;
   const fillPct = Math.max(0, Math.min(100, pct));
   const [animatedPct, setAnimatedPct] = useState(0);
+  const [fillDuration, setFillDuration] = useState("3000ms");
+  const isFirstRender = useRef(true);
 
   useEffect(() => {
-    const t = setTimeout(() => setAnimatedPct(fillPct), 120);
-    return () => clearTimeout(t);
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      const t = setTimeout(() => setAnimatedPct(fillPct), 120);
+      return () => clearTimeout(t);
+    } else {
+      setFillDuration("700ms");
+      setAnimatedPct(fillPct);
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    setAnimatedPct(fillPct);
   }, [fillPct]);
 
   return (
@@ -205,8 +209,8 @@ function WaterBar({ pct, displayCurrent, displayGoal }: {
         <div className="relative flex-1 h-[13px] overflow-hidden rounded-full bg-primary/[0.06]">
           {animatedPct > 0 && (
             <div
-              className="absolute left-0 top-0 h-full transition-[width] duration-[3000ms] ease-out"
-              style={{ width: `${animatedPct}%` }}
+              className="absolute left-0 top-0 h-full transition-[width] ease-out"
+              style={{ width: `${animatedPct}%`, transitionDuration: fillDuration }}
             >
               <div
                 className="absolute inset-0"
@@ -3266,7 +3270,7 @@ export default function HomeScreen() {
               onChange={(e) => setWaterInputAmount(e.target.value)}
               placeholder=""
               autoFocus
-              className="block mx-auto w-[160px] text-center text-4xl font-light text-ink outline-none bg-transparent border border-ink/20 rounded-xl py-3 px-4 mb-5"
+              className="block mx-auto w-[120px] text-center text-3xl font-light text-ink outline-none bg-transparent border border-ink/20 rounded-lg py-2 px-3 mb-5"
             />
 
             {/* Unit pills */}
