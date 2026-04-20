@@ -188,7 +188,7 @@ function WaterBar({ pct, displayCurrent, displayGoal, unit }: {
               <stop offset="100%" stopColor="#6FA8FF" />
             </linearGradient>
           </defs>
-          <path d="M12 3C11.4 3 5 11 5 15.5a7 7 0 0 0 14 0C19 11 12.6 3 12 3z" fill={done ? "rgba(52,211,153,0.75)" : "url(#wbar-drop)"} />
+          <path d="M12 3C11.4 3 5 11 5 15.5a7 7 0 0 0 14 0C19 11 12.6 3 12 3z" fill="url(#wbar-drop)" />
           <ellipse cx="9.8" cy="13.5" rx="1.2" ry="2" fill="rgba(255,255,255,0.40)" transform="rotate(-20 9.8 13.5)" />
         </svg>
         {/* Horizontal bar */}
