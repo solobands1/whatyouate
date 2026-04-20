@@ -2042,7 +2042,7 @@ export default function HomeScreen() {
           </div>
         </div>
 
-        <Card className="mt-4">
+        <Card className="mt-2">
           <div className="flex items-start justify-between">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Recent</p>
             <div className="flex items-center gap-2">
