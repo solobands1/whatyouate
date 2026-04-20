@@ -3264,9 +3264,9 @@ export default function HomeScreen() {
               inputMode="decimal"
               value={waterInputAmount}
               onChange={(e) => setWaterInputAmount(e.target.value)}
-              placeholder="0"
+              placeholder=""
               autoFocus
-              className="w-full text-center text-4xl font-light text-ink outline-none bg-transparent mb-5"
+              className="block mx-auto w-[160px] text-center text-4xl font-light text-ink outline-none bg-transparent border border-ink/20 rounded-xl py-3 px-4 mb-5"
             />
 
             {/* Unit pills */}
