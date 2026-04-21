@@ -167,11 +167,10 @@ function ManualDateRow({ manualDate, setManualDate }: { manualDate: string; setM
   );
 }
 
-function WaterBar({ pct, displayCurrent, displayGoal, exceeded }: {
+function WaterBar({ pct, displayCurrent, displayGoal }: {
   pct: number;
   displayCurrent: string;
   displayGoal: string;
-  exceeded: boolean;
 }) {
   const fillPct = Math.max(0, Math.min(100, pct));
   const [animatedPct, setAnimatedPct] = useState(0);
@@ -242,8 +241,7 @@ function WaterBar({ pct, displayCurrent, displayGoal, exceeded }: {
       {/* Progress numbers below bar */}
       <div className="mt-1.5 flex items-center justify-end pl-[26px]">
         <p className="text-[10px] text-ink/65">
-          <span className={exceeded ? "text-emerald-500 font-medium" : ""}>{displayCurrent}</span>
-          {" "}<span className="text-ink/50">/ {displayGoal}</span>
+          {displayCurrent} <span className="text-ink/50">/ {displayGoal}</span>
         </p>
       </div>
     </div>
@@ -259,7 +257,7 @@ export default function HomeScreen() {
   const [waterTick, setWaterTick] = useState(0);
   const [showWaterUndo, setShowWaterUndo] = useState(false);
   const waterUndoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastAddedWaterMlRef = useRef(0);
+  const lastAddedWaterMlRef = useRef<number[]>([]);
   const [waterModalOpen, setWaterModalOpen] = useState(false);
   const waterInputRef = useRef<HTMLInputElement>(null);
 
@@ -1472,12 +1470,12 @@ export default function HomeScreen() {
     const addAmount = (ml: number) => {
       const newMl = waterMl + ml;
       try { localStorage.setItem(WATER_KEY, String(newMl)); } catch {}
-      lastAddedWaterMlRef.current = ml;
+      lastAddedWaterMlRef.current.push(ml);
       setWaterTick((t) => t + 1);
       upsertWaterLog(user.id, todayKey(), newMl).catch(() => {});
     };
     const remove = () => {
-      const toRemove = lastAddedWaterMlRef.current > 0 ? lastAddedWaterMlRef.current : 100;
+      const toRemove = lastAddedWaterMlRef.current.pop() ?? 100;
       const newMl = Math.max(0, waterMl - toRemove);
       try { localStorage.setItem(WATER_KEY, String(newMl)); } catch {}
       setWaterTick((t) => t + 1);
@@ -1977,7 +1975,6 @@ export default function HomeScreen() {
             pct={waterData.pct}
             displayCurrent={waterData.displayCurrent}
             displayGoal={waterData.displayGoal}
-            exceeded={waterData.waterMl > waterData.goalMl}
           />
         )}
 
