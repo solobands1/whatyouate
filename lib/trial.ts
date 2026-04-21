@@ -4,6 +4,7 @@ import type { MealLog } from "./types";
 const UNLIMITED_USER_IDS = new Set([
   "4ef35614-32ec-4a17-b410-f4c31437c1bc", // Dillon
   "b2d6d7a6-a147-4dfb-9750-375d070cccbf", // Andrea
+  "973c0886-cd6f-4813-8a3c-4ded80bfa09c", // Apple review demo
 ]);
 
 const TRIAL_DAYS = 7;
