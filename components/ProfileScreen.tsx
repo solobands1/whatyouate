@@ -1414,22 +1414,14 @@ export default function ProfileScreen() {
           <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-lg">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-sm font-semibold text-ink">Goal direction</p>
+                <p className="text-sm font-semibold text-ink">Goal Direction</p>
                 <p className="mt-2 text-sm text-muted/70">
-                  This sets a gentle direction for your ranges and nudges. It’s not a strict plan, just
-                  a soft bias based on what you want. Everything is tuned to help improve nutrients and
-                  how you feel over time while moving toward your direction.
+                  Sets a soft bias for your calorie and protein ranges. Not a strict plan — just a direction.
                 </p>
-                <div className="mt-3 space-y-2 text-xs text-muted/70">
-                  <p>
-                    <span className="font-semibold text-ink/70">Gain weight:</span> nudge intake and protein upward over time to support steady growth.
-                  </p>
-                  <p>
-                    <span className="font-semibold text-ink/70">Stay steady:</span> keep intake close to your current pattern with gentle nudges for balance.
-                  </p>
-                  <p>
-                    <span className="font-semibold text-ink/70">Lose weight:</span> nudge intake slightly lower over time while keeping protein steady.
-                  </p>
+                <div className="mt-3 space-y-1.5 text-xs text-muted/70">
+                  <p><span className="font-semibold text-ink/70">Gain:</span> nudges intake and protein up.</p>
+                  <p><span className="font-semibold text-ink/70">Stay steady:</span> keeps intake balanced.</p>
+                  <p><span className="font-semibold text-ink/70">Lose:</span> nudges intake slightly lower.</p>
                 </div>
               </div>
               <button
@@ -1449,7 +1441,7 @@ export default function ProfileScreen() {
           <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-lg">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-sm font-semibold text-ink">Anything else?</p>
+                <p className="text-sm font-semibold text-ink">Anything Else?</p>
                 <p className="mt-2 text-sm text-muted/70">
                   Use this to share anything that doesn't fit the other fields, like a specific focus area, a health condition, or how you typically eat. It helps keep nudges more aligned with your life.
                 </p>

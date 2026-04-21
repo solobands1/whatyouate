@@ -61,7 +61,7 @@ const NUTRIENT_INFO: Record<string, string | string[]> = {
   "Vitamin E": "A fat-soluble antioxidant that protects cells from damage and supports immune function. Deficiency is rare but more common with very low-fat diets. Best sources are sunflower seeds, almonds, wheat germ, and avocado.",
   Copper: "Works with iron to form red blood cells and supports bone, immune, and nerve health. Deficiency can mimic iron deficiency anemia. Shellfish, liver, dark chocolate, nuts, and seeds are the best sources.",
   "Vitamin B6": "Involved in protein metabolism, neurotransmitter production (serotonin, dopamine), and immune function. Low levels can affect mood and energy. Found in poultry, fish, potatoes, bananas, and chickpeas. Chickpeas are one of the richest plant sources.",
-  "Energy Check-ins": "Each dot's position shows the time of day you logged your energy, PM towards the top and AM towards the bottom. No entry assumes average energy.\n\nThis helps you spot low or high energy patterns and relate them to foods you ate to improve energy based on your food intake.",
+  "Energy Check-Ins": "Each dot's position shows the time of day you logged your energy, PM towards the top and AM towards the bottom. No entry assumes average energy.\n\nThis helps you spot low or high energy patterns and relate them to foods you ate to improve energy based on your food intake.",
 };
 
 
@@ -683,7 +683,7 @@ export default function InsightsScreen() {
                 <button
                   type="button"
                   className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-ink/10 text-[10px] font-semibold text-ink/60"
-                  onClick={() => setActiveNutrient("Energy Check-ins")}
+                  onClick={() => setActiveNutrient("Energy Check-Ins")}
                   aria-label="About energy check-ins"
                 >
                   i

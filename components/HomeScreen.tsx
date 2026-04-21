@@ -167,10 +167,11 @@ function ManualDateRow({ manualDate, setManualDate }: { manualDate: string; setM
   );
 }
 
-function WaterBar({ pct, displayCurrent, displayGoal }: {
+function WaterBar({ pct, displayCurrent, displayGoal, exceeded }: {
   pct: number;
   displayCurrent: string;
   displayGoal: string;
+  exceeded: boolean;
 }) {
   const done = pct >= 100;
   const fillPct = Math.max(0, Math.min(100, pct));
@@ -246,7 +247,8 @@ function WaterBar({ pct, displayCurrent, displayGoal }: {
       {/* Progress numbers below bar */}
       <div className="mt-1.5 flex items-center justify-end pl-[26px]">
         <p className="text-[10px] text-ink/65">
-          {displayCurrent} <span className="text-ink/50">/ {displayGoal}</span>
+          <span className={exceeded ? "text-emerald-500 font-medium" : ""}>{displayCurrent}</span>
+          {" "}<span className="text-ink/50">/ {displayGoal}</span>
         </p>
       </div>
     </div>
@@ -1980,6 +1982,7 @@ export default function HomeScreen() {
             pct={waterData.pct}
             displayCurrent={waterData.displayCurrent}
             displayGoal={waterData.displayGoal}
+            exceeded={waterData.waterMl > waterData.goalMl}
           />
         )}
 
