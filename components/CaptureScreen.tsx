@@ -306,7 +306,7 @@ export default function CaptureScreen() {
         {preview && (
           <div className="flex flex-col items-center justify-center flex-1 px-6 py-10 gap-6">
             {/* Photo card with blue border */}
-            <div className="relative w-full max-w-sm rounded-2xl border-2 border-primary/60 overflow-hidden shadow-[0_0_24px_rgba(111,168,255,0.18)]">
+            <div className="relative w-full max-w-sm rounded-2xl border-2 border-primary/60 overflow-hidden shadow-[0_0_24px_rgba(111,168,255,0.18)] -mt-10">
               <img src={preview} alt="Preview" className="w-full object-cover" />
               {/* Checkmark overlay */}
               <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-[1px]">
