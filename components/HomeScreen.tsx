@@ -506,6 +506,7 @@ export default function HomeScreen() {
         meals.setMeals((prev) => prev.filter((m) => m.id !== id));
         meals.setEditingMeal(null);
         setEditRecents(false);
+        notifyMealsUpdated();
         // If the deleted meal was a supplement entry, keep the daily guard set
         // so auto-log does not re-add them. The user explicitly removed it.
       } else {
