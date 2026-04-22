@@ -243,23 +243,12 @@ export function computeGentleTargets(meals: MealLog[], profile?: UserProfile) {
   return { calories: suggestedCalories, protein: proteinTarget ? Math.round(proteinTarget) : Math.round(avgLoggedProtein), isEstimate: false };
 }
 
-const BURN_KCAL_PER_MIN: Record<string, number> = { low: 4, medium: 7, high: 10 };
 
 function adjustTargetsForWorkouts(
   targets: { calories: number; protein: number; isEstimate?: boolean } | null,
   workouts: WorkoutSession[]
 ) {
   if (!targets || workouts.length === 0) return targets;
-
-  // Same-day burn: add estimated kcal burned by workouts logged today
-  const todayDayKey = dayKeyFromTs(Date.now());
-  const sameDayBurn = workouts
-    .filter((w) => dayKeyFromTs(w.endTs ?? w.startTs) === todayDayKey)
-    .reduce((sum, w) => {
-      const mins = w.durationMin ?? 0;
-      const rate = BURN_KCAL_PER_MIN[w.intensity ?? "medium"] ?? 7;
-      return sum + mins * rate;
-    }, 0);
 
   // Weekly volume adjustment: only kicks in at >= 3 workouts in 7 days
   const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
@@ -274,10 +263,10 @@ function adjustTargetsForWorkouts(
     if (intensityScore > 0) weeklyFactor = intensityScore >= 4 ? 0.08 : 0.04;
   }
 
-  if (!weeklyFactor && !sameDayBurn) return targets;
+  if (!weeklyFactor) return targets;
   return {
     ...targets,
-    calories: Math.round(targets.calories * (1 + weeklyFactor) + sameDayBurn),
+    calories: Math.round(targets.calories * (1 + weeklyFactor)),
     protein: Math.round(targets.protein * (1 + weeklyFactor * 0.6))
   };
 }
