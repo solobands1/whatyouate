@@ -959,8 +959,11 @@ export default function ProfileScreen() {
         <Card className="mt-4 border border-primary/40">
           {/* Water Tracking */}
           <div className="border-b border-ink/5 pb-5 mb-5">
-            <div className="flex items-center justify-between">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-ink/70">Track Water Intake</p>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-ink/70">Track Water Intake</p>
+                <p className="mt-0.5 text-[11px] text-muted/60">When on, a water tracker appears on the home screen to log your daily intake.</p>
+              </div>
               <div className="inline-flex rounded-full border border-ink/10 bg-ink/5 p-0.5 text-[10px]">
                 {(["Yes", "No"] as const).map((opt) => {
                   const isOn = opt === "Yes";
