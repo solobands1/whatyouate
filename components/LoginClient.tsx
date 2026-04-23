@@ -181,7 +181,7 @@ export default function LoginClient() {
               className="w-full rounded-xl border border-ink/10 py-3.5 text-sm font-semibold text-ink/70 transition active:opacity-60"
               onClick={() => { setMode("signup"); setStatus(""); }}
             >
-              Create account
+              Create Account
             </button>
             <button
               type="button"

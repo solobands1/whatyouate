@@ -1963,7 +1963,7 @@ export default function HomeScreen() {
             className="mt-2 flex items-center gap-1 text-left text-xs text-muted/70 transition active:opacity-60"
             onClick={() => setShowTargetInfo((v) => !v)}
           >
-            <span>Suggested range<span className="text-muted/65">{!loadingData && mealCount === 0 && !profile ? " (preview)" : ""}</span>: {gentleTargetsDisplay.calories} kcal · {gentleTargetsDisplay.protein} g protein</span>
+            <span>Suggested Range<span className="text-muted/65">{!loadingData && mealCount === 0 && !profile ? " (preview)" : ""}</span>: {gentleTargetsDisplay.calories} kcal · {gentleTargetsDisplay.protein} g protein</span>
             <span className="inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border border-muted/40 text-[8px] text-muted/65">i</span>
           </button>
           {showTargetInfo && (
@@ -2770,7 +2770,7 @@ export default function HomeScreen() {
       {workout.showManualWorkoutModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
           <div className="w-full max-w-sm rounded-xl bg-white p-5 shadow-xl">
-            <h2 className="text-base font-semibold text-ink">Add activity</h2>
+            <h2 className="text-base font-semibold text-ink">Add Activity</h2>
             <p className="mt-1 text-sm text-muted/70">Log an activity you already completed.</p>
 
             <div className="mt-4 space-y-4">

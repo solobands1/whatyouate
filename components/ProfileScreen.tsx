@@ -1496,7 +1496,7 @@ export default function ProfileScreen() {
       {showFeedback && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
           <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
-            <h2 className="text-base font-semibold text-ink">Send feedback</h2>
+            <h2 className="text-base font-semibold text-ink">Send Feedback</h2>
             <p className="mt-2 text-sm text-muted/70">
               Share what feels off, what you want improved, or any ideas for new features.
             </p>
