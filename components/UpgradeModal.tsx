@@ -46,7 +46,10 @@ export default function UpgradeModal() {
   useEffect(() => {
     if (!open || !isNative) return;
     getOfferings().then((offering) => {
-      if (!offering) return;
+      if (!offering) {
+        setError("Couldn't load products. Please close and try again.");
+        return;
+      }
       const pkgs = offering.availablePackages;
       const monthly = pkgs.find(
         (p) => p.product.identifier === "com.dillonpoulin.whatyouate.monthly"
@@ -55,7 +58,9 @@ export default function UpgradeModal() {
         (p) => p.product.identifier === "com.dillonpoulin.whatyouate.yearly"
       ) ?? null;
       setPackages({ monthly, yearly });
-    }).catch(() => {});
+    }).catch(() => {
+      setError("Couldn't load products. Please close and try again.");
+    });
   }, [open, isNative]);
 
   if (!open) return null;

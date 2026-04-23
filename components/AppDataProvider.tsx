@@ -10,6 +10,7 @@ import { computeStreakFromMeals } from "../lib/digestEngine";
 import { MEALS_UPDATED_EVENT, NUDGES_UPDATED_EVENT, PROFILE_UPDATED_EVENT, WORKOUTS_UPDATED_EVENT, notifyMealsFailed } from "../lib/dataEvents";
 import { safeFallbackAnalysis } from "../lib/ai/schema";
 import { seedTextCacheFromMeals, migrateTextCacheKeys } from "../lib/foodCache";
+import { initializePurchases } from "../lib/purchases";
 
 // Module-level flag so AuthGate can check data has loaded at least once
 // (survives client-side navigation, resets on full page reload)
@@ -186,6 +187,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     load(user.id, true);
     loadNudges(user.id);
+    initializePurchases(user.id).catch(() => {});
   }, [user, load, loadNudges]);
 
   useEffect(() => {
