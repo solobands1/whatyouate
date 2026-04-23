@@ -3279,7 +3279,7 @@ export default function HomeScreen() {
       {/* Water input modal */}
       {waterModalOpen && waterData && (
         <div
-          className="fixed inset-0 z-50 flex items-start justify-center px-5 pt-16"
+          className="fixed inset-0 z-50 flex items-start justify-center px-5 pt-28"
           style={{ background: "rgba(0,0,0,0.35)" }}
           onClick={() => { setWaterModalOpen(false); window.scrollTo(0, 0); }}
         >

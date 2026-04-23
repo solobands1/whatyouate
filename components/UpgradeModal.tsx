@@ -134,22 +134,22 @@ export default function UpgradeModal() {
           </button>
         </div>
 
-        <div className="flex flex-col items-center px-6 pb-8 pt-2">
+        <div className="flex flex-col items-center px-6 pb-5 pt-1">
           {/* Icon */}
-          <div className="h-16 w-16 overflow-hidden rounded-2xl border border-ink/10 shadow-sm">
+          <div className="h-14 w-14 overflow-hidden rounded-2xl border border-ink/10 shadow-sm">
             <img src="/icon-512.png" alt="WhatYouAte" className="h-full w-full object-cover" />
           </div>
 
           {/* Headline */}
-          <h1 className="mt-5 text-center text-2xl font-semibold text-ink">
+          <h1 className="mt-3 text-center text-xl font-semibold text-ink">
             Unlock Your Patterns
           </h1>
-          <p className="mt-2 max-w-xs text-center text-sm text-muted/70">
+          <p className="mt-1.5 max-w-xs text-center text-sm text-muted/70">
             Unlock your personalized nudges, micronutrient patterns, and weekly insights.
           </p>
 
           {/* What's included */}
-          <div className="mt-6 w-full rounded-2xl border border-ink/8 bg-white px-5 py-4 space-y-2.5">
+          <div className="mt-4 w-full rounded-2xl border border-ink/8 bg-white px-5 py-3 space-y-2">
             {[
               "Daily AI-powered nudges",
               "Micronutrient pattern tracking",
@@ -172,7 +172,7 @@ export default function UpgradeModal() {
           </div>
 
           {/* Plan toggle */}
-          <div className="mt-6 w-full">
+          <div className="mt-4 w-full">
             <div className="flex gap-3">
               <button
                 type="button"
@@ -230,7 +230,7 @@ export default function UpgradeModal() {
           </div>
 
           {/* CTA */}
-          <div className="mt-6 w-full space-y-3">
+          <div className="mt-4 w-full space-y-2.5">
             <div className="relative min-h-[44px]">
               {coachState === "thinking" && (
                 <div
