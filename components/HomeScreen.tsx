@@ -1963,7 +1963,7 @@ export default function HomeScreen() {
             className="mt-2 flex items-center gap-1 text-left text-xs text-muted/70 transition active:opacity-60"
             onClick={() => setShowTargetInfo((v) => !v)}
           >
-            <span>Suggested Range<span className="text-muted/65">{!loadingData && mealCount === 0 && !profile ? " (preview)" : ""}</span>: {gentleTargetsDisplay.calories} kcal · {gentleTargetsDisplay.protein} g protein</span>
+            <span>Target Range<span className="text-muted/65">{!loadingData && mealCount === 0 && !profile ? " (preview)" : ""}</span>: {gentleTargetsDisplay.calories} kcal · {gentleTargetsDisplay.protein} g protein</span>
             <span className="inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border border-muted/40 text-[8px] text-muted/65">i</span>
           </button>
           {showTargetInfo && (
