@@ -61,7 +61,7 @@ async function analyzeWithOpenAI(imageBase64: string, model: string, apiKey: str
             ]
           }
         ],
-        temperature: 0.2,
+        temperature: 0,
         max_tokens: 1200
       })
     });
@@ -108,7 +108,7 @@ async function analyzeWithAnthropic(imageBase64: string, model: string, apiKey: 
       body: JSON.stringify({
         model,
         max_tokens: 1200,
-        temperature: 0.2,
+        temperature: 0,
         system: FOOD_ANALYSIS_PROMPT,
         messages: [{ role: "user", content }]
       })
@@ -517,7 +517,7 @@ async function analyzeTextOnly(textDescription: string, provider: string, openai
         signal: controller.signal,
         headers: { "Content-Type": "application/json", "x-api-key": anthropicKey, "anthropic-version": "2023-06-01" },
         body: JSON.stringify({
-          model, max_tokens: 2048, temperature: 0.2,
+          model, max_tokens: 2048, temperature: 0,
           system: TEXT_ANALYSIS_PROMPT,
           messages: [{ role: "user", content: userPrompt }]
         })
@@ -537,7 +537,7 @@ async function analyzeTextOnly(textDescription: string, provider: string, openai
             { role: "system", content: TEXT_ANALYSIS_PROMPT },
             { role: "user", content: userPrompt }
           ],
-          temperature: 0.2, max_tokens: 1024
+          temperature: 0, max_tokens: 1024
         })
       });
       if (!response.ok) throw new Error("OpenAI text analysis failed");

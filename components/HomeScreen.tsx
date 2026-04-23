@@ -314,6 +314,7 @@ export default function HomeScreen() {
   const [visibleRecentCount, setVisibleRecentCount] = useState(6);
   const [visibleGroupCount, setVisibleGroupCount] = useState(3);
   const [barsReady, setBarsReady] = useState(false);
+  const barsEverShownRef = useRef(false);
   const [pendingQuickConfirmId, setPendingQuickConfirmId] = useState<string | null>(null);
   const [quickConfirmMeal, setQuickConfirmMeal] = useState<MealLog | null>(null);
   const [quickConfirmName, setQuickConfirmName] = useState("");
@@ -488,8 +489,14 @@ export default function HomeScreen() {
   }, [ctxWorkouts]);
 
   useEffect(() => {
-    if (loadingData) { setBarsReady(false); return; }
-    const t = setTimeout(() => setBarsReady(true), 60);
+    if (loadingData) {
+      if (!barsEverShownRef.current) setBarsReady(false);
+      return;
+    }
+    const t = setTimeout(() => {
+      barsEverShownRef.current = true;
+      setBarsReady(true);
+    }, 60);
     return () => clearTimeout(t);
   }, [loadingData]);
 
@@ -2773,7 +2780,7 @@ export default function HomeScreen() {
                 </p>
                 <input
                   type="date"
-                  className="mt-2 w-auto rounded-lg border border-ink/10 bg-white px-3 py-1.5 text-xs text-ink/80"
+                  className="mt-2 w-full rounded-lg border border-ink/10 bg-white px-3 py-2.5 text-sm text-ink/80"
                   value={workout.manualDate}
                   max={(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; })()}
                   onChange={(e) => workout.setManualDate(e.target.value)}
@@ -3112,7 +3119,7 @@ export default function HomeScreen() {
                   type="date"
                   value={editFeelDate}
                   onChange={(e) => setEditFeelDate(e.target.value)}
-                  className="w-full min-w-0 rounded-lg border border-ink/10 bg-white px-1 py-0.5 text-[9px] text-ink/70"
+                  className="w-full min-w-0 rounded-lg border border-ink/10 bg-white px-2 py-1.5 text-[9px] text-ink/70"
                 />
               </div>
               <div className="min-w-0 flex-1">
@@ -3121,7 +3128,7 @@ export default function HomeScreen() {
                   type="time"
                   value={editFeelTime}
                   onChange={(e) => setEditFeelTime(e.target.value)}
-                  className="w-full min-w-0 rounded-lg border border-ink/10 bg-white px-1 py-0.5 text-[9px] text-ink/70"
+                  className="w-full min-w-0 rounded-lg border border-ink/10 bg-white px-2 py-1.5 text-[9px] text-ink/70"
                 />
               </div>
             </div>
