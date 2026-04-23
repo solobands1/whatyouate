@@ -828,6 +828,7 @@ export default function InsightsScreen() {
           <div className="mt-4 space-y-2 border-t border-ink/5 pt-4">
             <p className="text-xs text-muted/70">Each bar shows how much of your daily recommended amount you're getting. The darker segment is from food, the lighter is from supplements.</p>
             <p className="text-xs text-muted/70">Aim to build up the nutrients that are low. Logging more meals and adding supplements with doses will fill in the picture over time.</p>
+            <p className="text-xs text-muted/50">RDA = Recommended Dietary Allowance — the daily amount of a nutrient considered sufficient for most healthy people.</p>
           </div>
         </Card>
       </div>

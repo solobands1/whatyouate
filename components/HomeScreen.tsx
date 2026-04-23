@@ -500,7 +500,17 @@ export default function HomeScreen() {
     return () => clearTimeout(t);
   }, [loadingData]);
 
-
+  // Auto-close edit panels after 1 minute of inactivity
+  useEffect(() => {
+    const anyOpen = !!(meals.editingMeal || workout.editingWorkout || editingFeelLog);
+    if (!anyOpen) return;
+    const t = setTimeout(() => {
+      meals.setEditingMeal(null);
+      workout.setEditingWorkout(null);
+      setEditingFeelLog(null);
+    }, 60_000);
+    return () => clearTimeout(t);
+  }, [meals.editingMeal, workout.editingWorkout, editingFeelLog]);
 
   const handleConfirmDelete = async () => {
     if (!pendingDelete || !user) return;

@@ -69,6 +69,22 @@ export default function BottomNav({ current }: { current: "home" | "summary" | "
     router.prefetch("/summary/insights");
   }, [router]);
 
+  // Navigate to Home when app resumes from background
+  useEffect(() => {
+    if (current === "home") return;
+    let wasHidden = false;
+    const handler = () => {
+      if (document.visibilityState === "hidden") {
+        wasHidden = true;
+      } else if (document.visibilityState === "visible" && wasHidden) {
+        wasHidden = false;
+        router.push("/");
+      }
+    };
+    document.addEventListener("visibilitychange", handler);
+    return () => document.removeEventListener("visibilitychange", handler);
+  }, [current, router]);
+
   const icons: Record<string, JSX.Element> = {
     home: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
