@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "./AuthProvider";
@@ -270,9 +271,9 @@ export default function LoginClient() {
               </button>
               <p className="text-center text-[11px] text-muted/40 leading-relaxed">
                 By creating an account you agree to our{" "}
-                <a href="/privacy" className="underline underline-offset-2">
+                <Link href="/privacy" className="underline underline-offset-2">
                   Privacy Policy and Terms of Use
-                </a>
+                </Link>
               </p>
             </div>
           </>

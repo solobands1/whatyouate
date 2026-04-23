@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import Joyride, { STATUS, CallBackProps, type Step } from "react-joyride";
 import { notifyProfileUpdated } from "../lib/dataEvents";
@@ -1352,9 +1353,9 @@ export default function ProfileScreen() {
             </div>
           )}
           <p className="mt-5 text-center text-[11px] text-muted/65">
-            <a href="/privacy" className="underline underline-offset-2 hover:text-muted/75">
+            <Link href="/privacy" className="underline underline-offset-2 hover:text-muted/75">
               Privacy Policy and Terms of Use
-            </a>
+            </Link>
           </p>
         </div>
       </div>
