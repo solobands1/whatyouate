@@ -78,9 +78,9 @@ export default function BottomNav({ current }: { current: "home" | "summary" | "
     ),
     summary: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="12" width="4" height="9" rx="1" />
-        <rect x="10" y="7" width="4" height="14" rx="1" />
-        <rect x="17" y="3" width="4" height="18" rx="1" />
+        <path d="M15 14c.2-1 .7-1.7 1.5-2.5C17.5 10.5 18 9.4 18 8a6 6 0 0 0-12 0c0 1.4.5 2.5 1.5 3.5.8.8 1.3 1.5 1.5 2.5" />
+        <path d="M9 18h6" />
+        <path d="M10 22h4" />
       </svg>
     ),
     patterns: (

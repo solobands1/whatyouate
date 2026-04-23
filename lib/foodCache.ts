@@ -410,5 +410,5 @@ export function getQuickAddFromMeals(meals: Array<{
 
   return Array.from(seen.values())
     .sort((a, b) => b.logCount - a.logCount || b.savedAt - a.savedAt)
-    .slice(0, 15);
+    .slice(0, 18);
 }

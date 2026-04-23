@@ -152,7 +152,7 @@ function ManualDateRow({ manualDate, setManualDate }: { manualDate: string; setM
         <rect x="3" y="4" width="18" height="18" rx="2" />
         <path d="M16 2v4M8 2v4M3 10h18" />
       </svg>
-      <span className={`text-[11px] select-none ${isToday ? "text-ink/45" : "font-medium text-primary/80"}`}>
+      <span className={`text-[11px] select-none ${isToday ? "text-ink/65" : "font-medium text-primary"}`}>
         {isToday ? "Today" : formatManualDate(manualDate)}
       </span>
       <input
@@ -195,7 +195,7 @@ function WaterBar({ pct, displayCurrent, displayGoal }: {
     <div className="mt-1 px-4">
       {/* Drop icon + bar row */}
       <div className="flex items-center gap-2">
-        <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="shrink-0">
+        <svg width="22" height="22" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="shrink-0">
           <defs>
             <linearGradient id="wbar-drop" x1="0.35" y1="0" x2="0.65" y2="1">
               <stop offset="0%" stopColor="#BAD8FF" />
@@ -2319,7 +2319,7 @@ export default function HomeScreen() {
                         autoFocus
                         onKeyDown={(e) => { if (e.key === "Enter") meals.analyzeManualText(); }}
                       />
-                      <p className="mt-1.5 text-[11px] text-muted/70">Tip: use your keyboard's mic to speak your meal.</p>
+                      <p className="mt-1.5 text-[11px] text-ink/55">Tip: use your keyboard's mic to speak your meal.</p>
                     </div>
                     <div className="mt-3">
                       <ManualDateRow manualDate={meals.manualDate} setManualDate={meals.setManualDate} />
@@ -2780,7 +2780,7 @@ export default function HomeScreen() {
                 </p>
                 <input
                   type="date"
-                  className="mt-2 w-full rounded-lg border border-ink/10 bg-white px-3 py-2.5 text-sm text-ink/80"
+                  className="mt-2 w-full rounded-lg border border-ink/10 bg-white px-2.5 py-1.5 text-xs text-ink/80"
                   value={workout.manualDate}
                   max={(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; })()}
                   onChange={(e) => workout.setManualDate(e.target.value)}
@@ -3119,7 +3119,7 @@ export default function HomeScreen() {
                   type="date"
                   value={editFeelDate}
                   onChange={(e) => setEditFeelDate(e.target.value)}
-                  className="w-full min-w-0 rounded-lg border border-ink/10 bg-white px-2 py-1.5 text-[9px] text-ink/70"
+                  className="w-full min-w-0 rounded-lg border border-ink/20 bg-white px-2 py-1.5 text-[9px] text-ink/80"
                 />
               </div>
               <div className="min-w-0 flex-1">
@@ -3128,7 +3128,7 @@ export default function HomeScreen() {
                   type="time"
                   value={editFeelTime}
                   onChange={(e) => setEditFeelTime(e.target.value)}
-                  className="w-full min-w-0 rounded-lg border border-ink/10 bg-white px-2 py-1.5 text-[9px] text-ink/70"
+                  className="w-full min-w-0 rounded-lg border border-ink/20 bg-white px-2 py-1.5 text-[9px] text-ink/80"
                 />
               </div>
             </div>
