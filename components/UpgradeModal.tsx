@@ -142,7 +142,7 @@ export default function UpgradeModal() {
         <div className="flex flex-col items-center px-6 pb-5 pt-1">
           {/* Icon */}
           <div className="h-14 w-14 overflow-hidden rounded-2xl border border-ink/10 shadow-sm">
-            <img src="/icon-512.png" alt="WhatYouAte" className="h-full w-full object-cover" />
+            <img src="/icon.svg" alt="WhatYouAte" className="h-full w-full object-cover" />
           </div>
 
           {/* Headline */}

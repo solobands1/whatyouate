@@ -132,7 +132,7 @@ export default function LoginClient() {
         {(mode === "signin" || mode === "forgot") && (
           <div className="flex flex-col items-center mb-10">
             <div className="h-16 w-16 overflow-hidden rounded-2xl border border-ink/10 shadow-sm mb-4">
-              <img src="/icon-512.png" alt="WhatYouAte" className="h-full w-full object-cover" />
+              <img src="/icon.svg" alt="WhatYouAte" className="h-full w-full object-cover" />
             </div>
             <h1 className="text-2xl font-semibold tracking-tight text-ink">
               WhatYouAt<span className="relative inline-block">e
