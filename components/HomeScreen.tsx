@@ -2336,7 +2336,7 @@ export default function HomeScreen() {
                           <line x1="12" y1="19" x2="12" y2="22" />
                           <line x1="9" y1="22" x2="15" y2="22" />
                         </svg>
-                        <p className="text-[11px] text-ink/55">Tap your keyboard microphone to speak your meal.</p>
+                        <p className="text-[11px] text-ink/55">Tap your keyboard microphone to speak your meal</p>
                       </div>
                     </div>
                     <div className="mt-3">
