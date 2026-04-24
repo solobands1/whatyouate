@@ -1,4 +1,5 @@
 export const dynamic = "force-static";
+import Link from "next/link";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -17,7 +18,7 @@ export default function PrivacyPage() {
   return (
     <div className="min-h-screen bg-surface">
       <div className="mx-auto max-w-md px-6 pb-20 pt-14">
-        <a
+        <Link
           href="/"
           className="mb-8 inline-flex items-center gap-1.5 text-xs text-muted/60 hover:text-ink/60 transition-colors"
         >
@@ -25,7 +26,7 @@ export default function PrivacyPage() {
             <path d="M10 12L6 8l4-4" />
           </svg>
           Back
-        </a>
+        </Link>
 
         <h1 className="text-2xl font-semibold text-ink">Privacy Policy and Terms of Use</h1>
         <p className="mt-1 text-xs text-muted/60">Effective date: April 24, 2026. Governing law: Province of Ontario, Canada.</p>
@@ -63,7 +64,7 @@ export default function PrivacyPage() {
 
           <Section title="3. Assumption of Risk">
             <p>
-              You acknowledge and accept that: (a) AI-generated nutrition data is an estimate and may be materially incorrect; (b) the App does not account for allergies, intolerances, medications, or medical conditions unless explicitly entered by you, and even then provides no clinical guarantee; (c) any decisions you make regarding your diet, exercise, or health based on App outputs are made at your sole risk and discretion.
+              You acknowledge and accept that: (a) AI-generated nutrition data is an estimate and may be materially incorrect; (b) the App does not verify that any food is free from allergens, intolerances, or contraindications — dietary restrictions you enter are used for general context only and do not constitute an allergen safety guarantee; (c) the App does not account for your medications, medical conditions, or clinical history; and (d) any decisions you make regarding your diet, exercise, or health based on App outputs are made at your sole risk and discretion.
             </p>
             <p>
               By using the App you voluntarily assume all risks associated with reliance on the App and its outputs.
@@ -109,19 +110,25 @@ export default function PrivacyPage() {
             </p>
           </Section>
 
-          <Section title="9. Subscriptions and Billing">
+          <Section title="9. Intellectual Property">
+            <p>
+              The App and all content, features, design, trademarks, and technology within it are owned by or licensed to WhatYouAte and are protected by applicable intellectual property laws. You are granted a limited, non-exclusive, non-transferable, revocable licence to use the App solely for your personal, non-commercial purposes in accordance with these terms. No other rights are granted. You may not copy, modify, distribute, sell, or create derivative works from any part of the App without prior written consent.
+            </p>
+          </Section>
+
+          <Section title="10. Subscriptions and Billing">
             <p>
               Paid subscriptions are billed in advance on a recurring basis through Apple's App Store. All billing, payment processing, and subscription management is handled by Apple and is subject to Apple's Terms of Service. You may cancel at any time through your device's App Store subscription settings. Cancellation takes effect at the end of the current billing period. Refunds are governed by Apple's refund policy and are not provided by WhatYouAte directly, except where required by applicable law.
             </p>
           </Section>
 
-          <Section title="10. Termination">
+          <Section title="11. Termination">
             <p>
               WhatYouAte may suspend or terminate your access at any time for violation of these terms or for any other reason, with or without notice. You may terminate your account at any time using the "Delete account" option in your Profile.
             </p>
           </Section>
 
-          <Section title="11. Governing Law and Jurisdiction">
+          <Section title="12. Governing Law and Jurisdiction">
             <p>
               These terms and any dispute arising from your use of the App shall be governed exclusively by the laws of Canada and the laws of the Province of Ontario applicable therein, without regard to conflicts of law principles. You irrevocably submit to the exclusive jurisdiction of the courts of the Province of Ontario for the resolution of any such dispute.
             </p>
@@ -130,19 +137,19 @@ export default function PrivacyPage() {
             </p>
           </Section>
 
-          <Section title="12. Severability">
+          <Section title="13. Severability">
             <p>
               If any provision of these terms is found to be unlawful, void, or unenforceable, that provision shall be deemed severable and shall not affect the validity or enforceability of the remaining provisions, which shall continue in full force and effect.
             </p>
           </Section>
 
-          <Section title="13. Entire Agreement">
+          <Section title="14. Entire Agreement">
             <p>
               These terms, together with the Privacy Policy below, constitute the entire agreement between you and WhatYouAte with respect to your use of the App and supersede all prior agreements, representations, and understandings. No waiver of any term shall be deemed a further or continuing waiver of that or any other term.
             </p>
           </Section>
 
-          <Section title="14. Changes to Terms">
+          <Section title="15. Changes to Terms">
             <p>
               WhatYouAte reserves the right to modify these terms at any time. Material changes will be communicated in the App. Continued use of the App after changes are posted constitutes acceptance of the revised terms.
             </p>
@@ -154,7 +161,7 @@ export default function PrivacyPage() {
         <p className="mt-12 text-[10px] font-bold uppercase tracking-widest text-muted/40">Privacy Policy</p>
         <div className="mt-4 space-y-6">
 
-          <Section title="15. Information We Collect">
+          <Section title="16. Information We Collect">
             <H3>Account information</H3>
             <p>When you create an account we collect your email address and, optionally, your first and last name.</p>
             <H3>Profile information</H3>
@@ -165,18 +172,18 @@ export default function PrivacyPage() {
             <p>We may collect basic technical information such as device type, operating system version, and crash logs solely for the purpose of maintaining app stability.</p>
           </Section>
 
-          <Section title="16. Meal Photos">
+          <Section title="17. Meal Photos">
             <p>
-              Photos you capture are transmitted over an encrypted connection to our AI analysis providers (Anthropic and/or OpenAI) for the purpose of identifying food items and estimating nutritional content. Photos are not permanently stored on WhatYouAte's servers. They are processed and discarded after analysis is complete. A compressed thumbnail may be stored in our database linked to your food log entry.
+              Photos you capture are transmitted over an encrypted connection to our AI analysis providers (Anthropic and/or OpenAI) for the purpose of identifying food items and estimating nutritional content. Original full-resolution photos are not retained after analysis is complete. A compressed thumbnail is stored in our database linked to your food log entry for display purposes and is deleted when you delete the associated meal or your account.
             </p>
           </Section>
 
-          <Section title="17. How We Use Your Information">
+          <Section title="18. How We Use Your Information">
             <p>We use your information to: (a) operate and improve the App; (b) generate personalized nutrition estimates, nudges, and insights; (c) calculate progress toward your stated health goals; (d) process subscription payments; (e) communicate service-related information to you; and (f) comply with legal obligations.</p>
             <p>We do not sell your personal information to third parties. We do not use your personal information for advertising purposes.</p>
           </Section>
 
-          <Section title="18. Third-Party Service Providers">
+          <Section title="19. Third-Party Service Providers">
             <p>We share data with the following processors only to the extent necessary to operate the App:</p>
             <ul className="mt-1.5 space-y-1.5 list-disc list-inside">
               <li><span className="font-medium text-ink/80">Supabase</span>: secure database hosting and user authentication.</li>
@@ -189,19 +196,19 @@ export default function PrivacyPage() {
             <p className="mt-2">Each provider operates under its own privacy policy and data processing agreements. WhatYouAte is not responsible for the data practices of these third parties beyond the contractual safeguards in place.</p>
           </Section>
 
-          <Section title="19. Data Retention and Deletion">
+          <Section title="20. Data Retention and Deletion">
             <p>
               We retain your data for as long as your account is active. You may delete your account and all associated data at any time using the "Delete account" option in your Profile. Upon deletion, your personal data is removed from our systems within a reasonable period, except where retention is required by law.
             </p>
           </Section>
 
-          <Section title="20. Security">
+          <Section title="21. Security">
             <p>
               We use industry-standard security measures including encryption in transit (TLS) and encryption at rest to protect your data. No method of transmission over the internet is 100% secure. While we take reasonable steps to protect your information, we cannot guarantee absolute security.
             </p>
           </Section>
 
-          <Section title="21. Your Rights">
+          <Section title="22. Your Rights">
             <p>
               Depending on your location, you may have rights including: the right to access your personal data; the right to correct inaccurate data; the right to request deletion; the right to data portability; and the right to withdraw consent.
             </p>
@@ -210,25 +217,25 @@ export default function PrivacyPage() {
             </p>
           </Section>
 
-          <Section title="22. International Users">
+          <Section title="23. International Users">
             <p>
               WhatYouAte is operated from Canada. If you access the App from outside Canada, your information may be transferred to and processed in Canada. By using the App, you consent to this transfer. We take steps to ensure that data transferred internationally receives an adequate level of protection.
             </p>
           </Section>
 
-          <Section title="23. Cookies and Local Storage">
+          <Section title="24. Cookies and Local Storage">
             <p>
               The App uses browser local storage to save preferences and cached data on your device. This data does not leave your device except as described in this policy. We do not use third-party tracking cookies or advertising trackers.
             </p>
           </Section>
 
-          <Section title="24. Changes to This Policy">
+          <Section title="25. Changes to This Policy">
             <p>
               We may update this policy as the App evolves. Material changes will be communicated within the App. The effective date at the top of this page reflects the most recent revision. Continued use of the App after changes are posted constitutes acceptance of the revised policy.
             </p>
           </Section>
 
-          <Section title="25. Contact">
+          <Section title="26. Contact">
             <p>
               For privacy inquiries, data requests, or any questions about these terms, contact us at:{" "}
               <a href="mailto:hello@whatyouate.app" className="text-primary underline-offset-2 hover:underline">
