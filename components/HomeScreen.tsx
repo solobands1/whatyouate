@@ -207,7 +207,7 @@ function WaterBar({ pct, displayCurrent, displayGoal }: {
           <ellipse cx="9.8" cy="13.5" rx="1.2" ry="2" fill="rgba(255,255,255,0.40)" transform="rotate(-20 9.8 13.5)" />
         </svg>
         {/* Horizontal bar */}
-        <div className="relative flex-1 h-[13px] overflow-hidden rounded-full bg-primary/[0.06] border border-primary/25">
+        <div className="relative flex-1 h-[13px] overflow-hidden rounded-full bg-primary/[0.06] border border-primary/15">
           <div
             className="absolute left-0 top-0 h-full transition-[width] ease-out"
             style={{ width: `${animatedPct}%`, transitionDuration: fillDuration }}
