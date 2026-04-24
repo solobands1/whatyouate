@@ -553,6 +553,17 @@ export default function SummaryScreen() {
 
   const summaryTourSteps: Step[] = [
     {
+      target: String.raw`[data-tour="summary-header"]`,
+      placement: "bottom" as const,
+      disableBeacon: true,
+      content: (
+        <div>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Welcome to Insights</p>
+          <p>Here you'll see today's nutrition totals, your week at a glance, and a personal message from your AI coach based on what you've actually been eating.</p>
+        </div>
+      ),
+    },
+    {
       target: String.raw`[data-tour="summary-today"]`,
       placement: "auto" as const,
       disableBeacon: true,
@@ -1129,8 +1140,8 @@ export default function SummaryScreen() {
         showSkipButton
         hideCloseButton
         disableOverlayClose
-        scrollToFirstStep
-        scrollOffset={80}
+        disableScrolling
+        spotlightPadding={20}
         callback={handleSummaryTour}
         locale={{
           skip: "Skip",

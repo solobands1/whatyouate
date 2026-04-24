@@ -535,8 +535,7 @@ export default function InsightsScreen() {
         showSkipButton
         hideCloseButton
         disableOverlayClose
-        scrollToFirstStep
-        scrollOffset={80}
+        disableScrolling
         callback={handleInsightsTour}
         locale={{
           skip: "Skip",

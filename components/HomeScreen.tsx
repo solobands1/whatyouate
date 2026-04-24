@@ -1416,6 +1416,17 @@ export default function HomeScreen() {
       ),
     },
     {
+      target: '[data-tour="water-bar"]',
+      placement: "auto" as const,
+      disableBeacon: true,
+      content: (
+        <div>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Log Your Water Intake</p>
+          <p>Tap the water bar to log how much water you've had today. Staying hydrated affects your energy, focus, and recovery.</p>
+        </div>
+      ),
+    },
+    {
       target: '[data-tour="workout-buttons"]',
       placement: "auto" as const,
       disableBeacon: true,
@@ -1435,16 +1446,6 @@ export default function HomeScreen() {
           <p style={{ fontWeight: 600, marginBottom: 10 }}>Check In On Your Energy</p>
           <p>The high and low energy buttons let you check in on how you're feeling throughout the day.</p>
           <p style={{ marginTop: 10 }}>This will come in handy later.</p>
-        </div>
-      ),
-    },
-    {
-      target: '[data-tour="nav-summary"]',
-      placement: "top" as const,
-      disableBeacon: true,
-      content: (
-        <div>
-          <p>That's where you'll see today's nutrition totals, your week at a glance, and a personal message from your AI coach based on what you've actually been eating.</p>
         </div>
       ),
     },
@@ -1476,6 +1477,9 @@ export default function HomeScreen() {
   };
 
   const waterData = (() => {
+    if (isDemoMode) {
+      return { waterMl: 850, goalMl: 2000, displayGoal: "2000 ml", displayCurrent: "850 ml", pct: 43, addAmount: (_ml: number) => {}, remove: () => {}, unit: "ml" as const };
+    }
     if (!profile?.trackWater || !user) return null;
     const WATER_KEY = `wya_water_${user.id}_${todayKey()}`;
     const recommendedGoalMl = profile.weight ? Math.min(3500, Math.max(1500, Math.round(profile.weight * 35 / 100) * 100)) : 2500;
@@ -1512,8 +1516,7 @@ export default function HomeScreen() {
           showSkipButton
           hideCloseButton
           disableOverlayClose
-          scrollToFirstStep
-          scrollOffset={80}
+          disableScrolling
           callback={handleTourCallback}
           locale={{
             skip: "Skip",
@@ -1988,13 +1991,15 @@ export default function HomeScreen() {
         </Card>
 
         {/* Water bar — waterTick forces re-render on tap */}
-        {waterData && waterTick >= 0 && (
-          <WaterBar
-            pct={waterData.pct}
-            displayCurrent={waterData.displayCurrent}
-            displayGoal={waterData.displayGoal}
-          />
-        )}
+        <div data-tour="water-bar">
+          {waterData && waterTick >= 0 && (
+            <WaterBar
+              pct={waterData.pct}
+              displayCurrent={waterData.displayCurrent}
+              displayGoal={waterData.displayGoal}
+            />
+          )}
+        </div>
 
         <div className="mt-2 flex flex-col gap-1.5">
           <div className="flex flex-col items-center gap-1.5 mt-5" data-tour="food-action">
