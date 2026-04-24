@@ -160,7 +160,7 @@ input, textarea, select {
 }
 
 .animate-streak-pulse {
-  animation: streakPulse 0.8s ease-in-out 3;
+  animation: streakPulse 0.8s ease-in-out 5;
 }
 
 @keyframes pulseSoftNeutral {
