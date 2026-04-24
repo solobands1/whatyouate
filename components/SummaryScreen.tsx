@@ -1165,7 +1165,7 @@ export default function SummaryScreen() {
         }}
       />
       <div className="mx-auto flex min-h-screen max-w-md flex-col px-5 pb-24 safe-top">
-        <header className="mb-6" data-tour="summary-header">
+        <header className={`${!isDemoMode && dayCount < 14 ? "mb-3" : "mb-6"}`} data-tour="summary-header">
           <h1 className="text-2xl font-semibold text-ink">Insights</h1>
           <p className="mt-1 text-sm text-muted/70">Daily snapshot and weekly insights at a glance</p>
         </header>
