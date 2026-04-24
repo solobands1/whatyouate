@@ -335,7 +335,7 @@ export async function POST(req: Request) {
     if (body.mode === "smart") {
       const prompt = buildSmartPrompt(body);
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8_000);
+      const timeoutId = setTimeout(() => controller.abort(), 12_000);
       try {
         const response = await fetch(ANTHROPIC_URL, {
           method: "POST",
@@ -344,13 +344,12 @@ export async function POST(req: Request) {
             "Content-Type": "application/json",
             "x-api-key": apiKey,
             "anthropic-version": "2023-06-01",
-            "anthropic-beta": "prompt-caching-2024-07-31",
           },
           body: JSON.stringify({
             model: "claude-sonnet-4-6",
-            max_tokens: 280,
+            max_tokens: 400,
             temperature: 0.7,
-            system: [{ type: "text", text: SMART_NUDGE_SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
+            system: SMART_NUDGE_SYSTEM_PROMPT,
             messages: [{ role: "user", content: prompt }],
           }),
         });
