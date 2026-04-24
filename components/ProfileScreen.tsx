@@ -1255,15 +1255,16 @@ export default function ProfileScreen() {
         <Card className="mt-6">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Account</p>
           <button
-            className="mt-3 w-full rounded-xl bg-ink/5 px-4 py-2.5 text-xs font-semibold text-ink/80 transition active:opacity-60 disabled:opacity-50"
+            className="mt-3 w-full rounded-xl border border-ink/10 bg-ink/5 px-4 py-3 text-sm font-semibold text-ink/70 transition active:opacity-60 active:scale-[0.98] disabled:opacity-50"
             onClick={handleSignOut}
             disabled={signingOut}
           >
             {signingOut ? "Signing out…" : "Log Out"}
           </button>
+          <div className="mt-5 border-t border-ink/8" />
           <button
             type="button"
-            className="mt-2 w-full rounded-xl bg-ink/5 px-4 py-2.5 text-xs font-semibold text-ink/80 transition active:opacity-60"
+            className="mt-5 w-full rounded-xl border border-ink/10 bg-ink/5 px-4 py-3 text-sm font-semibold text-ink/70 transition active:opacity-60 active:scale-[0.98]"
             onClick={() => {
               if (!user) return;
               localStorage.removeItem(`wya_walkthrough_${user.id}`);
