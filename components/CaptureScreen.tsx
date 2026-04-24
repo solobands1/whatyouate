@@ -304,7 +304,7 @@ export default function CaptureScreen() {
         )}
 
         {preview && (
-          <div className="flex flex-col items-center justify-center flex-1 px-6 py-10 gap-6">
+          <div className="flex flex-col items-center justify-center flex-1 px-6 py-6 gap-6">
             {/* Photo card with blue border */}
             <div className="relative w-full max-w-sm rounded-2xl border-2 border-primary/60 overflow-hidden shadow-[0_0_24px_rgba(111,168,255,0.18)] -mt-10">
               <img src={preview} alt="Preview" className="w-full object-cover" />
@@ -325,8 +325,8 @@ export default function CaptureScreen() {
             </div>
 
             {/* Text below card */}
-            <div className="flex flex-col items-center gap-1 animate-fadeIn mt-6">
-              <p className="text-lg font-semibold text-ink">Image Captured</p>
+            <div className="flex flex-col items-center gap-1 animate-fadeIn mt-10">
+              <p className="text-xl font-semibold text-ink">Image Captured</p>
               {saveError ? (
                 <div className="mt-2 flex flex-col items-center gap-2">
                   <p className="text-sm text-muted/70">Something went wrong. Please try again.</p>
@@ -366,7 +366,7 @@ export default function CaptureScreen() {
                   </button>
                 </div>
               ) : (
-                <p className="text-sm text-muted/70">Adding to Your Day</p>
+                <p className="text-base text-muted/70">Adding to Your Day</p>
               )}
             </div>
           </div>
