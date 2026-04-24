@@ -1230,7 +1230,7 @@ export default function ProfileScreen() {
           </label>
         </Card>
 
-        <Card className="mt-4">
+        <Card className="mt-7">
           <div>
           {(() => {
             const missingWeight = !weight || weight === "0";
