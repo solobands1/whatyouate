@@ -325,8 +325,8 @@ export default function CaptureScreen() {
             </div>
 
             {/* Text below card */}
-            <div className="flex flex-col items-center gap-1 animate-fadeIn mt-10">
-              <p className="text-xl font-semibold text-ink">Image Captured</p>
+            <div className="flex flex-col items-center gap-1 animate-fadeIn mt-14">
+              <p className="text-xl font-semibold text-ink/70">Image Captured</p>
               {saveError ? (
                 <div className="mt-2 flex flex-col items-center gap-2">
                   <p className="text-sm text-muted/70">Something went wrong. Please try again.</p>
