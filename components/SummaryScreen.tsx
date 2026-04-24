@@ -1624,7 +1624,7 @@ export default function SummaryScreen() {
               <div className="flex flex-col items-center gap-4 text-center">
                 <WyaaAvatar size={72} />
                 <div>
-                  <p className="text-base font-semibold text-ink">I&apos;m your AI Nutrition Coach</p>
+                  <p className="text-base font-semibold text-ink">I&apos;m Your AI Nutrition Coach</p>
                   <p className="mt-2.5 text-sm leading-relaxed text-muted/80">
                     I read your logs and send you honest, specific nudges throughout the day based on what you&apos;ve actually eaten and what you&apos;re working toward.
                   </p>

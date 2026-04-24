@@ -1586,7 +1586,7 @@ export default function HomeScreen() {
       {workout.showStartWorkoutModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
           <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
-            <h2 className="text-base font-semibold text-ink">Log an activity</h2>
+            <h2 className="text-base font-semibold text-ink">Log An Activity</h2>
             {workout.activeWorkout ? (
               <>
                 <p className="mt-2 text-sm text-muted/70">An activity is already in progress.</p>
@@ -1640,7 +1640,7 @@ export default function HomeScreen() {
       {workout.showEndWorkoutModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
           <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
-            <h2 className="text-base font-semibold text-ink">End activity</h2>
+            <h2 className="text-base font-semibold text-ink">End Activity</h2>
             <p className="mt-2 text-sm text-muted/70">
               {workout.activeWorkout ? "Confirm your activity details." : "No active activity in progress."}
             </p>
@@ -1709,7 +1709,7 @@ export default function HomeScreen() {
                   className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
                   onClick={workout.handleEndWorkout}
                 >
-                  {workout.isEndingWorkout ? "Ending…" : "End activity"}
+                  {workout.isEndingWorkout ? "Ending…" : "End Activity"}
                 </button>
               )}
             </div>
@@ -2292,7 +2292,7 @@ export default function HomeScreen() {
           <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
             {pendingDelete?.type === "meal" ? (
               <>
-                <h3 className="text-base font-semibold text-ink">Delete meal</h3>
+                <h3 className="text-base font-semibold text-ink">Delete Meal</h3>
                 <p className="mt-2 text-sm text-muted/70">
                   Are you sure you want to delete this meal?
                 </p>
@@ -2329,7 +2329,15 @@ export default function HomeScreen() {
                         autoFocus
                         onKeyDown={(e) => { if (e.key === "Enter") meals.analyzeManualText(); }}
                       />
-                      <p className="mt-1.5 text-[11px] text-ink/55">Tip: use your keyboard's mic to speak your meal.</p>
+                      <div className="mt-1.5 flex items-center gap-1.5">
+                        <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 shrink-0 text-ink/50" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="9" y="2" width="6" height="11" rx="3" />
+                          <path d="M5 10a7 7 0 0 0 14 0" />
+                          <line x1="12" y1="19" x2="12" y2="22" />
+                          <line x1="9" y1="22" x2="15" y2="22" />
+                        </svg>
+                        <p className="text-[11px] text-ink/55">Tap your keyboard microphone to speak your meal.</p>
+                      </div>
                     </div>
                     <div className="mt-3">
                       <ManualDateRow manualDate={meals.manualDate} setManualDate={meals.setManualDate} />
@@ -2630,7 +2638,7 @@ export default function HomeScreen() {
           <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
             {pendingDelete?.type === "workout" ? (
               <>
-                <h2 className="text-base font-semibold text-ink">Delete activity</h2>
+                <h2 className="text-base font-semibold text-ink">Delete Activity</h2>
                 <p className="mt-2 text-sm text-muted/70">
                   Are you sure you want to delete this activity?
                 </p>
@@ -2654,7 +2662,7 @@ export default function HomeScreen() {
               </>
             ) : (
               <>
-                <h2 className="text-base font-semibold text-ink">Edit activity</h2>
+                <h2 className="text-base font-semibold text-ink">Edit Activity</h2>
                 <p className="mt-2 text-sm text-muted/70">Update your activity details.</p>
 
                 <div className="mt-4 space-y-4">
@@ -3298,7 +3306,7 @@ export default function HomeScreen() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-center gap-2 mb-5">
-              <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <svg width="22" height="22" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <defs>
                   <linearGradient id="wmodal-drop" x1="0.35" y1="0" x2="0.65" y2="1">
                     <stop offset="0%" stopColor="#BAD8FF" />

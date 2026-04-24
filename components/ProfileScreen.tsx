@@ -1274,7 +1274,7 @@ export default function ProfileScreen() {
             onClick={handleSignOut}
             disabled={signingOut}
           >
-            {signingOut ? "Signing out…" : "Log out"}
+            {signingOut ? "Signing out…" : "Log Out"}
           </button>
         </Card>
 
@@ -1304,7 +1304,7 @@ export default function ProfileScreen() {
             <div className="fixed inset-0 z-50 flex items-end justify-center px-4 pb-6 sm:items-center sm:pb-0" onClick={() => setShowClearConfirm(false)}>
               <div className="absolute inset-0 bg-black/30" />
               <div className="relative w-full max-w-sm rounded-2xl bg-surface p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
-                <h2 className="text-base font-semibold text-ink">Clear all data?</h2>
+                <h2 className="text-base font-semibold text-ink">Clear All Data?</h2>
                 <p className="mt-1.5 text-sm text-muted/60">This will remove all your meals, profile, and history. This cannot be undone.</p>
                 <div className="mt-5 flex gap-3">
                   <button
@@ -1331,7 +1331,7 @@ export default function ProfileScreen() {
             <div className="fixed inset-0 z-50 flex items-end justify-center px-4 pb-6 sm:items-center sm:pb-0" onClick={() => setShowDeleteConfirm(false)}>
               <div className="absolute inset-0 bg-black/30" />
               <div className="relative w-full max-w-sm rounded-2xl bg-surface p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
-                <h2 className="text-base font-semibold text-ink">Delete account?</h2>
+                <h2 className="text-base font-semibold text-ink">Delete Account?</h2>
                 <p className="mt-1.5 text-sm text-muted/60">Your account and all data will be permanently deleted. This cannot be undone.</p>
                 <div className="mt-5 flex gap-3">
                   <button
@@ -1365,7 +1365,7 @@ export default function ProfileScreen() {
       {editingName && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
           <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-lg">
-            <p className="text-sm font-semibold text-ink">Edit name</p>
+            <p className="text-sm font-semibold text-ink">Edit Name</p>
             <div className="mt-3 grid grid-cols-2 gap-3">
               <label className="text-[11px] text-muted/70">
                 First name

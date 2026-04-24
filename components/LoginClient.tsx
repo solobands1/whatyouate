@@ -97,7 +97,7 @@ export default function LoginClient() {
     router.replace("/");
   };
 
-  const inputClass = "w-full rounded-xl border border-ink/10 bg-white px-4 py-3 text-sm text-ink placeholder:text-muted/40 focus:outline-none focus:ring-1 focus:ring-primary/30";
+  const inputClass = "w-full rounded-xl border border-ink/10 bg-white px-4 py-3 text-sm text-ink placeholder:text-muted/55 focus:outline-none focus:ring-1 focus:ring-primary/30";
 
   const EyeToggle = () => (
     <button
@@ -209,7 +209,7 @@ export default function LoginClient() {
                 Back
               </button>
               <div>
-                <h2 className="text-xl font-semibold text-ink">Create account</h2>
+                <h2 className="text-xl font-semibold text-ink">Create Account</h2>
                 <p className="mt-1 text-sm text-muted/60">Start Your Free Trial!</p>
               </div>
             </div>
