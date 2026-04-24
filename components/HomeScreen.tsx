@@ -334,6 +334,7 @@ export default function HomeScreen() {
   const [quickAddAdding, setQuickAddAdding] = useState(false);
   const [quickAddDate, setQuickAddDate] = useState(todayDateStr);
   const [streakSaverDismissed, setStreakSaverDismissed] = useState(false);
+  const [streakSaverMode, setStreakSaverMode] = useState(false);
   const [recentlyLogged, setRecentlyLogged] = useState(false);
   const [streakBouncing, setStreakBouncing] = useState(false);
   const mountTimeRef = useRef<number>(Date.now());
@@ -1913,13 +1914,14 @@ export default function HomeScreen() {
                     <div className="flex items-center gap-1.5">
                       <button
                         type="button"
-                        className="text-[11px] font-medium text-primary/70 underline underline-offset-2 transition active:opacity-60"
+                        className="rounded-full bg-primary/10 px-3 py-1 text-[11px] font-semibold text-primary/80 transition active:opacity-60 active:scale-95"
                         onClick={() => {
+                          setStreakSaverMode(true);
                           meals.openManualMealEntry();
                           meals.setManualDate(streakSaverInfo.yesterdayStr);
                         }}
                       >
-                        Log yesterday to save your streak!
+                        Save Streak
                       </button>
                       <button
                         type="button"
@@ -2333,7 +2335,12 @@ export default function HomeScreen() {
               </>
             ) : !meals.editingMeal.id ? (
               <>
-                <h2 className="text-base font-semibold text-ink">Add Food</h2>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-base font-semibold text-ink">Add Food</h2>
+                  {streakSaverMode && (
+                    <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary/80">Yesterday</span>
+                  )}
+                </div>
                 {!meals.manualResult ? (
                   <>
                     <div className="mt-4">
@@ -2366,7 +2373,7 @@ export default function HomeScreen() {
                       <button
                         type="button"
                         className="rounded-xl border border-ink/10 bg-white px-3 py-2 text-xs font-semibold text-ink/70 transition hover:bg-ink/5"
-                        onClick={() => { meals.setEditingMeal(null); setEditRecents(false); }}
+                        onClick={() => { meals.setEditingMeal(null); setEditRecents(false); setStreakSaverMode(false); }}
                       >
                         Cancel
                       </button>
@@ -2419,7 +2426,7 @@ export default function HomeScreen() {
                         <button
                           type="button"
                           className="rounded-xl border border-ink/10 bg-white px-3 py-2 text-xs font-semibold text-ink/70 transition hover:bg-ink/5"
-                          onClick={() => { meals.setEditingMeal(null); setEditRecents(false); }}
+                          onClick={() => { meals.setEditingMeal(null); setEditRecents(false); setStreakSaverMode(false); }}
                         >
                           Cancel
                         </button>
@@ -2524,7 +2531,7 @@ export default function HomeScreen() {
                     <button
                       type="button"
                       className="rounded-xl border border-ink/10 bg-white px-3 py-2 text-xs font-semibold text-ink/70 transition hover:bg-ink/5"
-                      onClick={() => { meals.setEditingMeal(null); setEditRecents(false); }}
+                      onClick={() => { meals.setEditingMeal(null); setEditRecents(false); setStreakSaverMode(false); }}
                     >
                       Cancel
                     </button>
