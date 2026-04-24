@@ -471,7 +471,7 @@ export default function InsightsScreen() {
             </div>
           </div>
           <p style={{ marginTop: 16 }}>The dot's position on the chart shows the time of day it was logged.</p>
-          <p style={{ marginTop: 8, fontSize: 12 }}>Look for patterns: when do you feel low energy, and what did you eat before?</p>
+          <p style={{ marginTop: 16, fontSize: 12 }}>Look For Patterns: When do you feel low energy, and what did you eat before?</p>
         </div>
       ),
     },
