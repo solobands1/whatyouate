@@ -1289,7 +1289,7 @@ export default function SummaryScreen() {
           <div className="mt-3 h-px w-full bg-ink/5" />
         </Card>
 
-        <Card className="mt-6" data-tour="summary-week">
+        <Card className="mt-6 relative" data-tour="summary-week">
           <div data-tour="summary-week-inner" className="pointer-events-none absolute inset-x-0 top-0 h-20" />
           <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">This week</p>
 
@@ -1346,7 +1346,7 @@ export default function SummaryScreen() {
         </Card>
 
         <Card className={`relative mt-6${nudgeCardIsNew && smartNudge ? " ring-1 ring-primary/20" : ""}`} data-tour="nudges-card">
-          <div data-tour="nudges-inner" className="pointer-events-none absolute inset-x-4 -top-4 bottom-2" />
+          <div data-tour="nudges-inner" className="pointer-events-none absolute inset-x-1 -top-4 bottom-2" />
           {/* Wyaa floating on top-right corner */}
           <div className="absolute -top-5 -right-1 z-10">
             <WyaaAvatar

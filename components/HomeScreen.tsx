@@ -1421,8 +1421,19 @@ export default function HomeScreen() {
       disableBeacon: true,
       content: (
         <div>
-          <p style={{ fontWeight: 600, marginBottom: 10 }}>Log Your Water Intake</p>
-          <p>Tap the water button to log how much water you've had today. Staying hydrated affects your energy, focus, and recovery.</p>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Your Water Intake</p>
+          <p>This tracks how much water you've had today relative to your daily goal.</p>
+        </div>
+      ),
+    },
+    {
+      target: '[data-tour="water-button"]',
+      placement: "top" as const,
+      disableBeacon: true,
+      content: (
+        <div>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Log Your Water</p>
+          <p>Tap this button to log water. Staying hydrated affects your energy, focus, and recovery.</p>
         </div>
       ),
     },
@@ -2073,7 +2084,7 @@ export default function HomeScreen() {
               </button>
             </div>
             {waterData && waterTick >= 0 && (
-              <div className="relative">
+              <div className="relative" data-tour="water-button">
                 <div className="flex rounded-xl shadow-[0_4px_12px_rgba(15,23,42,0.08),0_0_8px_rgba(111,168,255,0.12)] overflow-hidden">
                   <button
                     type="button"

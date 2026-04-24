@@ -459,15 +459,15 @@ export default function InsightsScreen() {
           <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ display: "inline-block", width: 10, height: 10, borderRadius: "50%", background: "#3B82F6", flexShrink: 0 }} />
-              <span>High Energy logged</span>
+              <span>High Energy Logged</span>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ display: "inline-block", width: 10, height: 10, borderRadius: "50%", background: "#93C5FD", flexShrink: 0 }} />
-              <span>Low Energy logged</span>
+              <span>Low Energy Logged</span>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ display: "inline-block", width: 10, height: 2, background: "#9CA3AF", flexShrink: 0 }} />
-              <span>No check-in — average assumed</span>
+              <span style={{ display: "inline-block", width: 2, height: 16, background: "#9CA3AF", flexShrink: 0, borderRadius: 1 }} />
+              <span>No Check-In = Average Energy Assumed</span>
             </div>
           </div>
           <p style={{ marginTop: 10 }}>The dot's position on the chart shows the time of day it was logged.</p>
