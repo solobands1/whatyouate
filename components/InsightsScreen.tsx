@@ -456,7 +456,7 @@ export default function InsightsScreen() {
         <div>
           <p style={{ fontWeight: 600, marginBottom: 10 }}>Your Energy Chart</p>
           <p>This shows when you logged your energy throughout the day.</p>
-          <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 5 }}>
+          <div style={{ marginTop: 22, display: "flex", flexDirection: "column", gap: 5 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ display: "inline-block", width: 10, height: 10, borderRadius: "50%", background: "#3B82F6", flexShrink: 0 }} />
               <span style={{ fontSize: 12 }}>= High Energy Logged</span>
@@ -470,7 +470,7 @@ export default function InsightsScreen() {
               <span style={{ fontSize: 12 }}>No Check-In = Average Energy Assumed</span>
             </div>
           </div>
-          <p style={{ marginTop: 16 }}>The dot's position on the chart shows the time of day it was logged.</p>
+          <p style={{ marginTop: 22 }}>The dot's position on the chart shows the time of day it was logged.</p>
           <p style={{ marginTop: 16, fontSize: 12 }}>Look For Patterns: When do you feel low energy, and what did you eat before?</p>
         </div>
       ),
