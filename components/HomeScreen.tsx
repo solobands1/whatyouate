@@ -335,6 +335,7 @@ export default function HomeScreen() {
   const [quickAddDate, setQuickAddDate] = useState(todayDateStr);
   const [streakSaverDismissed, setStreakSaverDismissed] = useState(false);
   const [streakSaverMode, setStreakSaverMode] = useState(false);
+  const [streakButtonPulsing, setStreakButtonPulsing] = useState(false);
   const [recentlyLogged, setRecentlyLogged] = useState(false);
   const [streakBouncing, setStreakBouncing] = useState(false);
   const mountTimeRef = useRef<number>(Date.now());
@@ -1399,6 +1400,17 @@ export default function HomeScreen() {
     const yStr = `${yest.getFullYear()}-${String(yest.getMonth() + 1).padStart(2, "0")}-${String(yest.getDate()).padStart(2, "0")}`;
     return { savedStreak, yesterdayStr: yStr };
   })();
+
+  useEffect(() => {
+    if (!streakSaverInfo) return;
+    setStreakButtonPulsing(false);
+    const t = requestAnimationFrame(() => {
+      requestAnimationFrame(() => setStreakButtonPulsing(true));
+    });
+    const off = setTimeout(() => setStreakButtonPulsing(false), 0.8 * 5 * 1000 + 100);
+    return () => { cancelAnimationFrame(t); clearTimeout(off); };
+  }, [!!streakSaverInfo]);
+
   const calMid = (homeMarkers.todayTotals.calories_min + homeMarkers.todayTotals.calories_max) / 2;
   const protMid = (homeMarkers.todayTotals.protein_g_min + homeMarkers.todayTotals.protein_g_max) / 2;
   const calPct = Math.min(100, Math.round((calMid / gentleTargetsDisplay.calories) * 100));
@@ -1913,7 +1925,7 @@ export default function HomeScreen() {
                   {streakSaverInfo && (
                     <button
                       type="button"
-                      className="rounded-full bg-primary px-3 py-1 text-[11px] font-semibold text-white shadow-sm transition active:opacity-80 active:scale-95 animate-streak-pulse"
+                      className={`rounded-full bg-primary px-3 py-1 text-[11px] font-semibold text-white shadow-sm transition active:opacity-80 active:scale-95${streakButtonPulsing ? " animate-streak-pulse" : ""}`}
                       onClick={() => {
                         setStreakSaverMode(true);
                         meals.openManualMealEntry();
