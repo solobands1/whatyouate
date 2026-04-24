@@ -576,7 +576,7 @@ export default function SummaryScreen() {
       ),
     },
     {
-      target: String.raw`[data-tour="summary-week-inner"]`,
+      target: String.raw`[data-tour="summary-week"]`,
       placement: "auto" as const,
       disableBeacon: true,
       content: (
@@ -1289,8 +1289,7 @@ export default function SummaryScreen() {
           <div className="mt-3 h-px w-full bg-ink/5" />
         </Card>
 
-        <Card className="mt-6 relative" data-tour="summary-week">
-          <div data-tour="summary-week-inner" className="pointer-events-none absolute inset-x-0 top-0 h-20" />
+        <Card className="mt-6" data-tour="summary-week">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">This week</p>
 
           {/* 7-day dot strip */}
