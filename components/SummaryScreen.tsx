@@ -723,7 +723,7 @@ export default function SummaryScreen() {
     const timeoutId = setTimeout(() => {
       controller.abort();
       setSmartNudge(visibleNotes.length > 0 ? { message: visibleNotes[0].message, type: visibleNotes[0].type } : null);
-    }, 12000);
+    }, 8000);
 
     fetch("/api/nudge", {
       method: "POST",
@@ -754,7 +754,7 @@ export default function SummaryScreen() {
             pruneNudges(user.id).catch(() => {});
           }
         } else {
-          setSmartNudge(null);
+          setSmartNudge(visibleNotes.length > 0 ? { message: visibleNotes[0].message, type: visibleNotes[0].type } : null);
         }
       })
       .catch(() => {
@@ -1404,14 +1404,28 @@ export default function SummaryScreen() {
                 );
               })()}
               {smartNudge === undefined ? (
-                /* Loading state — blue card matching nudge style */
-                <div className="rounded-xl border border-primary/35 bg-primary/5 px-4 py-3 flex items-center gap-2.5">
-                  <span className="relative flex h-2 w-2 shrink-0">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
-                    <span className="relative inline-flex h-2 w-2 rounded-full bg-primary/80" />
-                  </span>
-                  <p className="text-sm text-primary/70 font-medium">Coach is thinking…</p>
-                </div>
+                visibleNotes.length > 0 ? (
+                  /* Show computed nudge immediately while AI personalises */
+                  <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
+                    <p className="text-sm font-medium text-ink/85">{visibleNotes[0].message}</p>
+                    <div className="mt-2 flex items-center gap-1.5">
+                      <span className="relative flex h-1.5 w-1.5 shrink-0">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-40" />
+                        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary/60" />
+                      </span>
+                      <p className="text-[10px] text-primary/50">Personalizing…</p>
+                    </div>
+                  </div>
+                ) : (
+                  /* No computed nudge yet — show spinner */
+                  <div className="rounded-xl border border-primary/35 bg-primary/5 px-4 py-3 flex items-center gap-2.5">
+                    <span className="relative flex h-2 w-2 shrink-0">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-primary/80" />
+                    </span>
+                    <p className="text-sm text-primary/70 font-medium">Coach is thinking…</p>
+                  </div>
+                )
               ) : smartNudge && trial.isFree && !isDemoMode ? (
                 /* Expired trial — show teaser with blur */
                 <div className="relative overflow-hidden rounded-xl border border-primary/30 bg-primary/5 px-4 py-3">
