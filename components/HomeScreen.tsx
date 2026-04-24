@@ -1911,32 +1911,17 @@ export default function HomeScreen() {
                     {atRisk && <span className="text-[11px] text-primary/70 font-medium">Log to save</span>}
                   </div>
                   {streakSaverInfo && (
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        className="rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-[11px] font-semibold text-primary/80 transition active:opacity-60 active:scale-95 animate-streak-pulse"
-                        onClick={() => {
-                          setStreakSaverMode(true);
-                          meals.openManualMealEntry();
-                          meals.setManualDate(streakSaverInfo.yesterdayStr);
-                        }}
-                      >
-                        Save Streak
-                      </button>
-                      <button
-                        type="button"
-                        className="text-ink/50 transition active:opacity-60"
-                        onClick={() => {
-                          if (user) localStorage.setItem(`wya_streak_saver_dismissed_${user.id}_${todayKey()}`, "true");
-                          setStreakSaverDismissed(true);
-                        }}
-                        aria-label="Dismiss"
-                      >
-                        <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                          <path d="M4 4l8 8M12 4l-8 8" />
-                        </svg>
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      className="rounded-full bg-primary px-3 py-1 text-[11px] font-semibold text-white shadow-sm transition active:opacity-80 active:scale-95 animate-streak-pulse"
+                      onClick={() => {
+                        setStreakSaverMode(true);
+                        meals.openManualMealEntry();
+                        meals.setManualDate(streakSaverInfo.yesterdayStr);
+                      }}
+                    >
+                      Save Streak
+                    </button>
                   )}
                 </div>
               );
