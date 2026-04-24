@@ -47,12 +47,12 @@ export default function UpgradeModal() {
     if (!open || !isNative) return;
     getOfferings().then((offering) => {
       if (!offering) {
-        setError("No offerings found. Check RC dashboard.");
+        setError("Couldn't load products. Please try again.");
         return;
       }
       const pkgs = offering.availablePackages;
       if (pkgs.length === 0) {
-        setError(`Offering found but no packages. Offering: ${offering.identifier}`);
+        setError("Couldn't load products. Please try again.");
         return;
       }
       const monthly = pkgs.find(
@@ -62,13 +62,12 @@ export default function UpgradeModal() {
         (p) => p.product.identifier === "com.dillonpoulin.whatyouate.yearly"
       ) ?? null;
       if (!monthly && !yearly) {
-        setError(`Packages found but IDs don't match. Got: ${pkgs.map(p => p.product.identifier).join(", ")}`);
+        setError("Couldn't load products. Please try again.");
         return;
       }
       setPackages({ monthly, yearly });
-    }).catch((e: unknown) => {
-      const msg = e instanceof Error ? e.message : String(e);
-      setError(`RC error: ${msg}`);
+    }).catch(() => {
+      setError("Couldn't load products. Please try again.");
     });
   }, [open, isNative]);
 
