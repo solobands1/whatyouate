@@ -207,7 +207,7 @@ function WaterBar({ pct, displayCurrent, displayGoal }: {
           <ellipse cx="9.8" cy="13.5" rx="1.2" ry="2" fill="rgba(255,255,255,0.40)" transform="rotate(-20 9.8 13.5)" />
         </svg>
         {/* Horizontal bar */}
-        <div className="relative flex-1 h-[13px] overflow-hidden rounded-full bg-primary/[0.06]">
+        <div className="relative flex-1 h-[13px] overflow-hidden rounded-full bg-primary/[0.06] border border-primary/25">
           <div
             className="absolute left-0 top-0 h-full transition-[width] ease-out"
             style={{ width: `${animatedPct}%`, transitionDuration: fillDuration }}
@@ -1914,7 +1914,7 @@ export default function HomeScreen() {
                     <div className="flex items-center gap-1.5">
                       <button
                         type="button"
-                        className="rounded-full bg-primary/10 px-3 py-1 text-[11px] font-semibold text-primary/80 transition active:opacity-60 active:scale-95"
+                        className="rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-[11px] font-semibold text-primary/80 transition active:opacity-60 active:scale-95 animate-streak-pulse"
                         onClick={() => {
                           setStreakSaverMode(true);
                           meals.openManualMealEntry();
