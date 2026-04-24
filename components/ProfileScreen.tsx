@@ -1255,8 +1255,15 @@ export default function ProfileScreen() {
         <Card className="mt-6">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Account</p>
           <button
+            className="mt-3 w-full rounded-xl bg-ink/5 px-4 py-2.5 text-xs font-semibold text-ink/80 transition active:opacity-60 disabled:opacity-50"
+            onClick={handleSignOut}
+            disabled={signingOut}
+          >
+            {signingOut ? "Signing out…" : "Log Out"}
+          </button>
+          <button
             type="button"
-            className="mt-3 w-full rounded-xl bg-ink/5 px-4 py-2.5 text-xs font-semibold text-ink/80 transition active:opacity-60"
+            className="mt-2 w-full rounded-xl bg-ink/5 px-4 py-2.5 text-xs font-semibold text-ink/80 transition active:opacity-60"
             onClick={() => {
               if (!user) return;
               localStorage.removeItem(`wya_walkthrough_${user.id}`);
@@ -1268,13 +1275,6 @@ export default function ProfileScreen() {
             }}
           >
             Replay Walkthrough
-          </button>
-          <button
-            className="mt-2 w-full rounded-xl bg-ink/5 px-4 py-2.5 text-xs font-semibold text-ink/80 transition active:opacity-60 disabled:opacity-50"
-            onClick={handleSignOut}
-            disabled={signingOut}
-          >
-            {signingOut ? "Signing out…" : "Log Out"}
           </button>
         </Card>
 
