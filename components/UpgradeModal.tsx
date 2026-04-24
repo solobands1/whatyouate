@@ -47,19 +47,28 @@ export default function UpgradeModal() {
     if (!open || !isNative) return;
     getOfferings().then((offering) => {
       if (!offering) {
-        setError("Couldn't load products. Please close and try again.");
+        setError("No offerings found. Check RC dashboard.");
         return;
       }
       const pkgs = offering.availablePackages;
+      if (pkgs.length === 0) {
+        setError(`Offering found but no packages. Offering: ${offering.identifier}`);
+        return;
+      }
       const monthly = pkgs.find(
         (p) => p.product.identifier === "com.dillonpoulin.whatyouate.monthly"
       ) ?? null;
       const yearly = pkgs.find(
         (p) => p.product.identifier === "com.dillonpoulin.whatyouate.yearly"
       ) ?? null;
+      if (!monthly && !yearly) {
+        setError(`Packages found but IDs don't match. Got: ${pkgs.map(p => p.product.identifier).join(", ")}`);
+        return;
+      }
       setPackages({ monthly, yearly });
-    }).catch(() => {
-      setError("Couldn't load products. Please close and try again.");
+    }).catch((e: unknown) => {
+      const msg = e instanceof Error ? e.message : String(e);
+      setError(`RC error: ${msg}`);
     });
   }, [open, isNative]);
 
