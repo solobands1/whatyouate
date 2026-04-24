@@ -239,7 +239,7 @@ export default function CaptureScreen() {
       <div
         className={
           preview
-            ? "flex h-screen w-screen flex-col items-center justify-center bg-surface"
+            ? "flex h-screen w-screen flex-col items-center justify-center bg-surface border-[6px] border-primary/40"
             : "mx-auto flex min-h-screen max-w-md flex-col px-5 pb-20 safe-top"
         }
       >
