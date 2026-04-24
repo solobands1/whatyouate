@@ -2322,7 +2322,7 @@ export default function HomeScreen() {
               <>
                 <div className="flex items-center justify-between">
                   <h2 className="text-base font-semibold text-ink">Add Food</h2>
-                  {streakSaverMode && (
+                  {streakSaverMode && meals.manualDate === streakSaverInfo?.yesterdayStr && (
                     <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary/80">Yesterday</span>
                   )}
                 </div>
