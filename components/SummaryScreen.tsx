@@ -558,8 +558,8 @@ export default function SummaryScreen() {
       disableBeacon: true,
       content: (
         <div>
-          <p style={{ fontWeight: 600, marginBottom: 10 }}>Welcome to Insights</p>
-          <p>Here you'll see today's nutrition totals, your week at a glance, and a personal message from your AI coach based on what you've actually been eating.</p>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Welcome To Insights</p>
+          <p>Here you'll see today's nutrition totals, your week at a glance, and personal messages from your AI coach.</p>
         </div>
       ),
     },
@@ -576,7 +576,7 @@ export default function SummaryScreen() {
       ),
     },
     {
-      target: String.raw`[data-tour="summary-week"]`,
+      target: String.raw`[data-tour="summary-week-inner"]`,
       placement: "auto" as const,
       disableBeacon: true,
       content: (
@@ -588,7 +588,7 @@ export default function SummaryScreen() {
       ),
     },
     {
-      target: String.raw`[data-tour="nudges-card"]`,
+      target: String.raw`[data-tour="nudges-inner"]`,
       placement: "top" as const,
       disableBeacon: true,
       content: (
@@ -1140,8 +1140,8 @@ export default function SummaryScreen() {
         showSkipButton
         hideCloseButton
         disableOverlayClose
-        disableScrolling
-        spotlightPadding={20}
+        scrollToFirstStep
+        scrollOffset={80}
         callback={handleSummaryTour}
         locale={{
           skip: "Skip",
@@ -1290,6 +1290,7 @@ export default function SummaryScreen() {
         </Card>
 
         <Card className="mt-6" data-tour="summary-week">
+          <div data-tour="summary-week-inner" className="pointer-events-none absolute inset-x-0 top-0 h-20" />
           <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">This week</p>
 
           {/* 7-day dot strip */}
@@ -1345,6 +1346,7 @@ export default function SummaryScreen() {
         </Card>
 
         <Card className={`relative mt-6${nudgeCardIsNew && smartNudge ? " ring-1 ring-primary/20" : ""}`} data-tour="nudges-card">
+          <div data-tour="nudges-inner" className="pointer-events-none absolute inset-x-4 -top-4 bottom-2" />
           {/* Wyaa floating on top-right corner */}
           <div className="absolute -top-5 -right-1 z-10">
             <WyaaAvatar

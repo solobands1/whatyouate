@@ -455,9 +455,23 @@ export default function InsightsScreen() {
       content: (
         <div>
           <p style={{ fontWeight: 600, marginBottom: 10 }}>Your Energy Chart</p>
-          <p>This shows when you logged High Energy or Low Energy.</p>
-          <p style={{ marginTop: 10 }}>Its position tells you the time of day. Days with no energy log show the grey line, which is your baseline.</p>
-          <p style={{ marginTop: 10 }}>Look for patterns: When do you feel low energy, and what did you eat before that happened?</p>
+          <p>This shows when you logged your energy throughout the day.</p>
+          <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ display: "inline-block", width: 10, height: 10, borderRadius: "50%", background: "#3B82F6", flexShrink: 0 }} />
+              <span>High Energy logged</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ display: "inline-block", width: 10, height: 10, borderRadius: "50%", background: "#93C5FD", flexShrink: 0 }} />
+              <span>Low Energy logged</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ display: "inline-block", width: 10, height: 2, background: "#9CA3AF", flexShrink: 0 }} />
+              <span>No check-in — average assumed</span>
+            </div>
+          </div>
+          <p style={{ marginTop: 10 }}>The dot's position on the chart shows the time of day it was logged.</p>
+          <p style={{ marginTop: 8 }}>Look for patterns: when do you feel low energy, and what did you eat before?</p>
         </div>
       ),
     },
@@ -535,7 +549,8 @@ export default function InsightsScreen() {
         showSkipButton
         hideCloseButton
         disableOverlayClose
-        disableScrolling
+        scrollToFirstStep
+        scrollOffset={80}
         callback={handleInsightsTour}
         locale={{
           skip: "Skip",

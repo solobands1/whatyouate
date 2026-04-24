@@ -1411,18 +1411,18 @@ export default function HomeScreen() {
       content: (
         <div>
           <p style={{ fontWeight: 600, marginBottom: 10 }}>Logging Your Food Is Easy</p>
-          <p>Take a photo, scan a barcode, type it manually, or tap quick add to re-log something you've had before.</p>
+          <p>Take a photo, scan a barcode, type it manually, or tap "quick add" to re-log something you've had before.</p>
         </div>
       ),
     },
     {
       target: '[data-tour="water-bar"]',
-      placement: "auto" as const,
+      placement: "bottom" as const,
       disableBeacon: true,
       content: (
         <div>
           <p style={{ fontWeight: 600, marginBottom: 10 }}>Log Your Water Intake</p>
-          <p>Tap the water bar to log how much water you've had today. Staying hydrated affects your energy, focus, and recovery.</p>
+          <p>Tap the water button to log how much water you've had today. Staying hydrated affects your energy, focus, and recovery.</p>
         </div>
       ),
     },
@@ -1516,7 +1516,8 @@ export default function HomeScreen() {
           showSkipButton
           hideCloseButton
           disableOverlayClose
-          disableScrolling
+          scrollToFirstStep
+          scrollOffset={80}
           callback={handleTourCallback}
           locale={{
             skip: "Skip",
