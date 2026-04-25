@@ -1796,6 +1796,12 @@ export default function HomeScreen() {
                 BETA
               </span>
             </div>
+            <div className="flex items-center gap-2">
+            {showStatsBanner && (
+              <Link href="/profile" className="text-[11px] font-medium text-primary/70">
+                Fill Out Profile
+              </Link>
+            )}
             <Link
               href="/profile"
               data-tour="nav-profile"
@@ -1829,6 +1835,7 @@ export default function HomeScreen() {
                 </span>
               )}
             </Link>
+            </div>
           </div>
           <p className="mt-1 pl-0.5 text-[13px] text-muted/70">Eat Confidently | Feel Better</p>
           {!loadingData && mealCount === 0 && !isDemoMode && (
@@ -1861,18 +1868,7 @@ export default function HomeScreen() {
                       <span className="text-[12px] font-medium text-ink/60">
                         Free Trial · Day {trial.currentDay} of 7
                       </span>
-                      <div className="flex items-center gap-2">
-                        {showStatsBanner && (
-                          <Link
-                            href="/profile"
-                            onClick={(e) => e.stopPropagation()}
-                            className="text-[11px] font-medium text-primary/70"
-                          >
-                            Fill Out Profile
-                          </Link>
-                        )}
-                        <span className="text-[11px] text-primary/70 font-medium">See plans</span>
-                      </div>
+                      <span className="text-[11px] text-primary/70 font-medium">See plans</span>
                     </div>
                     <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-ink/10">
                       <div
@@ -1892,18 +1888,7 @@ export default function HomeScreen() {
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-[12px] font-medium text-ink/60">Free Trial Ended</span>
-                      <div className="flex items-center gap-2">
-                        {showStatsBanner && (
-                          <Link
-                            href="/profile"
-                            onClick={(e) => e.stopPropagation()}
-                            className="text-[11px] font-medium text-primary/70"
-                          >
-                            Fill Out Profile
-                          </Link>
-                        )}
-                        <span className="text-[11px] text-primary font-semibold">Upgrade Now →</span>
-                      </div>
+                      <span className="text-[11px] text-primary font-semibold">Upgrade Now →</span>
                     </div>
                   </button>
                 </div>
