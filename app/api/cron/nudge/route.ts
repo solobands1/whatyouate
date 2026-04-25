@@ -46,7 +46,7 @@ function mapWorkoutRow(row: Record<string, unknown>): WorkoutSession {
     endTs: coerce(row.end_ts),
     durationMin: Number.isFinite(Number(row.duration_min)) ? Number(row.duration_min) : undefined,
     workoutTypes: Array.isArray(row.workout_types) ? (row.workout_types as string[]) : undefined,
-    intensity: (row.intensity as string) ?? undefined,
+    intensity: ((row.intensity as string) ?? undefined) as WorkoutSession["intensity"],
   };
 }
 
