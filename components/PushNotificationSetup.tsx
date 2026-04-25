@@ -5,6 +5,8 @@ import { Capacitor } from "@capacitor/core";
 import { useAuth } from "./AuthProvider";
 
 const PERMISSION_ASKED_KEY = "wya_push_permission_asked";
+const DECLINED_AT_KEY = "wya_push_declined_at";
+const REDECLINE_DAYS = 3;
 
 function BellIcon() {
   return (
@@ -26,25 +28,36 @@ export default function PushNotificationSetup() {
 
     initialized.current = true;
 
-    const alreadyAsked = localStorage.getItem(PERMISSION_ASKED_KEY);
-    if (alreadyAsked) {
-      initPush(user.id);
-    } else {
+    const asked = localStorage.getItem(PERMISSION_ASKED_KEY);
+    const declinedAt = localStorage.getItem(DECLINED_AT_KEY);
+
+    // Always try to register if permissions are already granted (e.g. enabled via Settings)
+    if (asked === "1" || asked === "declined") {
+      initPush(user.id, /* silentIfNotGranted */ true);
+    }
+
+    // Decide whether to show the pre-prompt banner
+    const declinedRecently = declinedAt
+      ? Date.now() - Number(declinedAt) < REDECLINE_DAYS * 24 * 60 * 60 * 1000
+      : false;
+
+    if (!asked || (asked === "declined" && !declinedRecently)) {
       const t = setTimeout(() => {
         const walkthroughActive = localStorage.getItem(`wya_walkthrough_active_${user.id}`) === "true";
         if (!walkthroughActive) setShowPrePrompt(true);
-      }, 3000);
+      }, 5000);
       return () => clearTimeout(t);
     }
   }, [user]);
 
-  async function initPush(userId: string) {
+  async function initPush(userId: string, silentIfNotGranted = false) {
     try {
       const { PushNotifications } = await import("@capacitor/push-notifications");
 
       const permStatus = await PushNotifications.checkPermissions();
 
       if (permStatus.receive === "prompt" || permStatus.receive === "prompt-with-rationale") {
+        if (silentIfNotGranted) return;
         const result = await PushNotifications.requestPermissions();
         if (result.receive !== "granted") return;
       } else if (permStatus.receive !== "granted") {
@@ -79,12 +92,14 @@ export default function PushNotificationSetup() {
 
   function handleAllow() {
     localStorage.setItem(PERMISSION_ASKED_KEY, "1");
+    localStorage.removeItem(DECLINED_AT_KEY);
     setShowPrePrompt(false);
     if (user) initPush(user.id);
   }
 
   function handleDecline() {
     localStorage.setItem(PERMISSION_ASKED_KEY, "declined");
+    localStorage.setItem(DECLINED_AT_KEY, String(Date.now()));
     setShowPrePrompt(false);
   }
 
