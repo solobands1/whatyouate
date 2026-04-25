@@ -1851,17 +1851,28 @@ export default function HomeScreen() {
           return (
             <>
               {!isDemoMode && trial.isTrialActive && (
-                <div className="mt-2 flex gap-2">
+                <div className="mt-2">
                   <button
                     type="button"
                     onClick={openUpgradeModal}
-                    className={`${showStatsBanner ? "flex-1" : "w-full"} rounded-xl border border-primary/15 bg-primary/[0.08] px-4 py-2.5 text-left transition active:opacity-70`}
+                    className="w-full rounded-xl border border-primary/15 bg-primary/[0.08] px-4 py-2.5 text-left transition active:opacity-70"
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-[12px] font-medium text-ink/60">
                         Free Trial · Day {trial.currentDay} of 7
                       </span>
-                      <span className="text-[11px] text-primary/70 font-medium">See plans</span>
+                      <div className="flex items-center gap-2">
+                        {showStatsBanner && (
+                          <Link
+                            href="/profile"
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-[11px] font-medium text-primary/70"
+                          >
+                            Fill Out Profile
+                          </Link>
+                        )}
+                        <span className="text-[11px] text-primary/70 font-medium">See plans</span>
+                      </div>
                     </div>
                     <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-ink/10">
                       <div
@@ -1870,40 +1881,31 @@ export default function HomeScreen() {
                       />
                     </div>
                   </button>
-                  {showStatsBanner && (
-                    <Link
-                      href="/profile"
-                      className="flex w-12 shrink-0 flex-col items-center justify-center rounded-xl bg-primary py-2.5 text-center text-[10px] font-semibold leading-tight text-white transition active:opacity-70"
-                    >
-                      <span>Fill</span>
-                      <span>Out</span>
-                      <span>Profile</span>
-                    </Link>
-                  )}
                 </div>
               )}
               {!isDemoMode && trial.isFree && (
-                <div className="mt-2 flex gap-2">
+                <div className="mt-2">
                   <button
                     type="button"
                     onClick={openUpgradeModal}
-                    className={`${showStatsBanner ? "flex-1" : "w-full"} rounded-xl border border-primary/25 bg-primary/10 px-4 py-2.5 text-left transition active:opacity-70`}
+                    className="w-full rounded-xl border border-primary/25 bg-primary/10 px-4 py-2.5 text-left transition active:opacity-70"
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-[12px] font-medium text-ink/60">Free Trial Ended</span>
-                      <span className="text-[11px] text-primary font-semibold">Upgrade Now →</span>
+                      <div className="flex items-center gap-2">
+                        {showStatsBanner && (
+                          <Link
+                            href="/profile"
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-[11px] font-medium text-primary/70"
+                          >
+                            Fill Out Profile
+                          </Link>
+                        )}
+                        <span className="text-[11px] text-primary font-semibold">Upgrade Now →</span>
+                      </div>
                     </div>
                   </button>
-                  {showStatsBanner && (
-                    <Link
-                      href="/profile"
-                      className="flex w-12 shrink-0 flex-col items-center justify-center rounded-xl bg-primary py-2.5 text-center text-[10px] font-semibold leading-tight text-white transition active:opacity-70"
-                    >
-                      <span>Fill</span>
-                      <span>Out</span>
-                      <span>Profile</span>
-                    </Link>
-                  )}
                 </div>
               )}
               {!isDemoMode && !trial.isTrialActive && !trial.isFree && showStatsBanner && (
