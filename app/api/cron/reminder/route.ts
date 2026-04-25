@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { sendPush } from "@/lib/apns";
+import { sendPush } from "../../../../lib/apns";
 
 export const maxDuration = 60;
 

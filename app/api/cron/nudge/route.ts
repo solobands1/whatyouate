@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { buildSmartNudgeContext } from "@/lib/digestEngine";
-import { buildSmartPrompt, SMART_NUDGE_SYSTEM_PROMPT } from "@/app/api/nudge/route";
-import { sendPush } from "@/lib/apns";
-import type { MealLog, WorkoutSession, UserProfile } from "@/lib/types";
+import { buildSmartNudgeContext } from "../../../../lib/digestEngine";
+import { buildSmartPrompt, SMART_NUDGE_SYSTEM_PROMPT } from "../../../../lib/nudgeGen";
+import { sendPush } from "../../../../lib/apns";
+import type { MealLog, WorkoutSession, UserProfile } from "../../../../lib/types";
 
 export const maxDuration = 300;
 
