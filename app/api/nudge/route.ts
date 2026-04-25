@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { SMART_NUDGE_SYSTEM_PROMPT, buildSmartPrompt } from "../../lib/nudgeGen";
+import { SMART_NUDGE_SYSTEM_PROMPT, buildSmartPrompt } from "../../../lib/nudgeGen";
 
 export const maxDuration = 30;
 
