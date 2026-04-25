@@ -1383,7 +1383,7 @@ export default function SummaryScreen() {
             </div>
           ) : mealCount < 5 ? (
             <div className="mt-3 space-y-1">
-              <p className="text-sm text-ink/70">Getting started — log {5 - mealCount} more meal{5 - mealCount !== 1 ? "s" : ""} and I’ll have my first read on your patterns.</p>
+              <p className="text-sm text-ink/70">Getting Started — Log {5 - mealCount} more meal{5 - mealCount !== 1 ? "s" : ""} and I’ll have my first read on your patterns.</p>
               <div className="mt-2 flex gap-1">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <div key={i} className={`h-1.5 flex-1 rounded-full ${i < mealCount ? "bg-primary/60" : "bg-ink/10"}`} />

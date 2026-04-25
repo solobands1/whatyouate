@@ -580,7 +580,7 @@ export default function InsightsScreen() {
             <p className="mt-1 text-sm text-muted/70">Longer-term trends from your logged meals</p>
             {!hasEnoughData && !isDemoMode && (
               <div className="mt-2 inline-flex items-center rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-[11px] text-primary/80">
-                Log meals across 5 days to unlock real data
+                Log Meals Across 5 Days To Unlock Real Data
               </div>
             )}
           </div>

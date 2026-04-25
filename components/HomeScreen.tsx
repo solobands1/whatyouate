@@ -1855,7 +1855,7 @@ export default function HomeScreen() {
                   <button
                     type="button"
                     onClick={openUpgradeModal}
-                    className={`${showStatsBanner ? "flex-[2]" : "w-full"} rounded-xl border border-primary/15 bg-primary/[0.08] px-4 py-2.5 text-left transition active:opacity-70`}
+                    className={`${showStatsBanner ? "flex-[4]" : "w-full"} rounded-xl border border-primary/15 bg-primary/[0.08] px-4 py-2.5 text-left transition active:opacity-70`}
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-[12px] font-medium text-ink/60">
@@ -1873,7 +1873,7 @@ export default function HomeScreen() {
                   {showStatsBanner && (
                     <Link
                       href="/profile"
-                      className="flex flex-1 items-center justify-center rounded-xl border border-primary/15 bg-primary/[0.06] px-3 py-2.5 text-center text-[11px] font-semibold text-primary transition active:opacity-70"
+                      className="flex flex-1 items-center justify-center rounded-xl bg-primary px-3 py-2.5 text-center text-[11px] font-semibold text-white transition active:opacity-70"
                     >
                       Fill Out Profile
                     </Link>
@@ -1885,7 +1885,7 @@ export default function HomeScreen() {
                   <button
                     type="button"
                     onClick={openUpgradeModal}
-                    className={`${showStatsBanner ? "flex-[2]" : "w-full"} rounded-xl border border-primary/25 bg-primary/10 px-4 py-2.5 text-left transition active:opacity-70`}
+                    className={`${showStatsBanner ? "flex-[4]" : "w-full"} rounded-xl border border-primary/25 bg-primary/10 px-4 py-2.5 text-left transition active:opacity-70`}
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-[12px] font-medium text-ink/60">Free Trial Ended</span>
@@ -1895,7 +1895,7 @@ export default function HomeScreen() {
                   {showStatsBanner && (
                     <Link
                       href="/profile"
-                      className="flex flex-1 items-center justify-center rounded-xl border border-primary/15 bg-primary/[0.06] px-3 py-2.5 text-center text-[11px] font-semibold text-primary transition active:opacity-70"
+                      className="flex flex-1 items-center justify-center rounded-xl bg-primary px-3 py-2.5 text-center text-[11px] font-semibold text-white transition active:opacity-70"
                     >
                       Fill Out Profile
                     </Link>
