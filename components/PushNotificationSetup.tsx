@@ -114,7 +114,7 @@ export default function PushNotificationSetup() {
         <div className="flex-1 min-w-0">
           <p className="text-[15px] font-semibold text-ink leading-snug">Turn On Notifications</p>
           <p className="mt-0.5 text-[13px] leading-relaxed text-ink/55">
-            Get personalized nudges from your coach delivered when they matter most.
+            Get personalized nudges from your coach delivered when they matter most
           </p>
         </div>
       </div>
