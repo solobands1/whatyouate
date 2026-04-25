@@ -30,7 +30,10 @@ export default function PushNotificationSetup() {
     if (alreadyAsked) {
       initPush(user.id);
     } else {
-      const t = setTimeout(() => setShowPrePrompt(true), 3000);
+      const t = setTimeout(() => {
+        const walkthroughActive = localStorage.getItem(`wya_walkthrough_active_${user.id}`) === "true";
+        if (!walkthroughActive) setShowPrePrompt(true);
+      }, 3000);
       return () => clearTimeout(t);
     }
   }, [user]);
