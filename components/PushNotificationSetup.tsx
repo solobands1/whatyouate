@@ -106,7 +106,7 @@ export default function PushNotificationSetup() {
   if (!showPrePrompt) return null;
 
   return (
-    <div className="fixed inset-x-0 top-0 z-50 animate-slide-down px-3 pt-12 max-w-screen overflow-hidden">
+    <div className="fixed inset-x-0 top-0 z-50 animate-slide-down mx-auto max-w-md px-3 pt-12">
       <div className="rounded-2xl bg-white/70 backdrop-blur-xl shadow-lg border border-white/50 px-5 py-4">
         <div className="flex items-start gap-3">
           <div className="mt-0.5 text-primary shrink-0">
