@@ -106,14 +106,14 @@ export default function PushNotificationSetup() {
   if (!showPrePrompt) return null;
 
   return (
-    <div className="fixed inset-x-0 top-0 z-50 animate-slide-down px-3 pt-12">
-      <div className="rounded-2xl bg-white/85 backdrop-blur-md shadow-lg border border-white/60 px-5 py-4">
+    <div className="fixed inset-x-0 top-0 z-50 animate-slide-down px-3 pt-12 max-w-screen overflow-hidden">
+      <div className="rounded-2xl bg-white/70 backdrop-blur-xl shadow-lg border border-white/50 px-5 py-4">
         <div className="flex items-start gap-3">
           <div className="mt-0.5 text-primary shrink-0">
             <BellIcon />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[15px] font-semibold text-ink leading-snug">Stay On Track</p>
+            <p className="text-[15px] font-semibold text-ink leading-snug">Turn On Notifications</p>
             <p className="mt-0.5 text-[13px] leading-relaxed text-ink/55">
               Get personalized nudges from your coach delivered when they matter most.
             </p>
