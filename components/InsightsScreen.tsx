@@ -629,7 +629,7 @@ export default function InsightsScreen() {
               Suggested range: {gentleTargetsDisplay.calories} kcal · {Math.round(gentleTargetsDisplay.calories * 0.50 / 4)}g carbs · {Math.round(gentleTargetsDisplay.calories * 0.30 / 9)}g fat · {gentleTargetsDisplay.protein}g protein
             </p>
           ) : (
-            <p className="mt-2 text-xs text-muted/70">Complete your profile for a personalized range</p>
+            <p className="mt-2 text-xs text-muted/70">Complete Your Profile For A Personalized Range</p>
           )}
         </Card>
 

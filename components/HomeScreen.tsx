@@ -2013,7 +2013,7 @@ export default function HomeScreen() {
                 ? "Based on your recent intake pattern, adjusted for your goal."
                 : profile?.weight && profile?.activityLevel
                 ? "Based on your weight, activity level, and goal."
-                : "Standard estimate · complete your profile to personalize."}
+                : "Standard Estimate · Complete Your Profile To Personalize."}
             </p>
           )}
         </Card>

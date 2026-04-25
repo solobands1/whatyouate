@@ -1275,7 +1275,7 @@ export default function SummaryScreen() {
               <span>Suggested range: {gentleTargetsDisplay.calories} kcal · {Math.round(gentleTargetsDisplay.calories * 0.50 / 4)}g carbs · {Math.round(gentleTargetsDisplay.calories * 0.30 / 9)}g fat · {gentleTargetsDisplay.protein}g protein</span>
             </button>
           ) : (
-            <p className="mt-2 text-xs text-muted/70">Complete your profile for a personalized range</p>
+            <p className="mt-2 text-xs text-muted/70">Complete Your Profile For A Personalized Range</p>
           )}
           {showTargetInfo && (
             <p className="mt-1 text-[10px] text-muted/65">
@@ -1283,7 +1283,7 @@ export default function SummaryScreen() {
                 ? "Based on your recent intake pattern, adjusted for your goal."
                 : profile?.weight && profile?.activityLevel
                 ? "Based on your weight, activity level, and goal."
-                : "Standard estimate. Complete your profile to personalize."}
+                : "Standard Estimate. Complete Your Profile To Personalize."}
             </p>
           )}
           <div className="mt-3 h-px w-full bg-ink/5" />
