@@ -1298,6 +1298,15 @@ export default function ProfileScreen() {
             >
               Delete Account
             </button>
+            <button
+              className="w-full py-2 text-[11px] text-ink/25 active:opacity-60"
+              onClick={() => {
+                localStorage.removeItem("wya_push_permission_asked");
+                alert("Push prompt reset. Restart the app to see it again.");
+              }}
+            >
+              Reset Notification Prompt
+            </button>
           </div>
 
           {/* Clear data confirm */}
