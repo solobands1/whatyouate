@@ -1851,7 +1851,7 @@ export default function HomeScreen() {
           return (
             <>
               {!isDemoMode && trial.isTrialActive && (
-                <div className="mt-4 flex gap-2">
+                <div className="mt-2 flex gap-2">
                   <button
                     type="button"
                     onClick={openUpgradeModal}
@@ -1903,7 +1903,7 @@ export default function HomeScreen() {
                 </div>
               )}
               {!isDemoMode && !trial.isTrialActive && !trial.isFree && showStatsBanner && (
-                <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-primary/15 bg-primary/[0.06] px-4 py-2.5">
+                <div className="mt-2 flex items-center justify-between gap-3 rounded-xl border border-primary/15 bg-primary/[0.06] px-4 py-2.5">
                   <p className="text-[12px] text-ink/60">Fill Out Your Profile For Better Results</p>
                   <Link href="/profile" className="shrink-0 text-[11px] font-semibold text-primary">
                     Set up →
