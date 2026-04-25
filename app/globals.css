@@ -13,6 +13,13 @@ body {
 
 * {
   -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+input, textarea {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 a, button, [role="button"], input[type="submit"], input[type="button"] {
