@@ -1346,7 +1346,6 @@ export default function SummaryScreen() {
 
         <Card className={`relative mt-6${nudgeCardIsNew && smartNudge ? " ring-1 ring-primary/20" : ""}`} data-tour="nudges-card">
           <div data-tour="nudges-inner" className="pointer-events-none absolute inset-x-1 -top-4 bottom-2" />
-          {/* Wyaa floating on top-right corner */}
           <div className="absolute -top-5 -right-1 z-10">
             <WyaaAvatar
               isNew={nudgeCardIsNew && !!smartNudge}
@@ -1360,6 +1359,7 @@ export default function SummaryScreen() {
               <span className="animate-card-fade inline-flex items-center rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold text-primary">New</span>
             )}
           </div>
+
           {isDemoMode ? (
             <div className="mt-4 space-y-2.5">
               <div className="flex items-center justify-between">
@@ -1368,9 +1368,11 @@ export default function SummaryScreen() {
               </div>
               <div className="rounded-xl border border-primary/60 bg-primary/5 px-4 py-3 space-y-2.5">
                 <p className="text-sm font-medium text-ink/90">{DEMO_NUDGE}</p>
+                <p className="text-[11px] text-primary/70 font-medium">— Coach</p>
                 <div className="flex flex-wrap gap-1.5">
-                  <span className="rounded-full border border-ink/15 px-2.5 py-0.5 text-[11px] font-medium text-ink/55">Why?</span>
-                  <span className="rounded-full border border-ink/15 px-2.5 py-0.5 text-[11px] font-medium text-ink/55">What to do?</span>
+                  {["Chicken Breast", "Greek Yogurt", "Mixed Nuts"].map((food) => (
+                    <span key={food} className="rounded-full border border-ink/10 bg-white px-2.5 py-0.5 text-[11px] text-ink/60">+ {food}</span>
+                  ))}
                 </div>
               </div>
             </div>
@@ -1390,11 +1392,10 @@ export default function SummaryScreen() {
             </div>
           ) : (
             <div className="mt-4 space-y-3">
-              {/* Today’s nudge — labeled by time window */}
               {(() => {
                 const hr = new Date().getHours();
                 const windowLabel = hr < 12 ? "This Morning" : hr < 17 ? "This Afternoon" : "This Evening";
-                const nudgeTs = smartNudge && smartNudge !== undefined && (smartNudge as any).generatedAt ? new Date((smartNudge as any).generatedAt) : null;
+                const nudgeTs = smartNudge && (smartNudge as { generatedAt?: string }).generatedAt ? new Date((smartNudge as { generatedAt: string }).generatedAt) : null;
                 const nudgeTimeLabel = nudgeTs ? nudgeTs.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }).toLowerCase() : null;
                 return (
                   <div className="flex items-center justify-between">
@@ -1403,8 +1404,8 @@ export default function SummaryScreen() {
                   </div>
                 );
               })()}
+
               {smartNudge === undefined ? (
-                /* Loading state — blue card matching nudge style */
                 <div className="rounded-xl border border-primary/35 bg-primary/5 px-4 py-3 flex items-center gap-2.5">
                   <span className="relative flex h-2 w-2 shrink-0">
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
@@ -1413,17 +1414,12 @@ export default function SummaryScreen() {
                   <p className="text-sm text-primary/70 font-medium">Coach is thinking…</p>
                 </div>
               ) : smartNudge && trial.isFree && !isDemoMode ? (
-                /* Expired trial — show teaser with blur */
                 <div className="relative overflow-hidden rounded-xl border border-primary/30 bg-primary/5 px-4 py-3">
                   <p className="text-sm font-medium text-ink/90 line-clamp-1">
                     {smartNudge.message.slice(0, 48)}{smartNudge.message.length > 48 ? "..." : ""}
                   </p>
                   <div className="absolute inset-0 flex flex-col items-center justify-center bg-surface/80 backdrop-blur-[3px]">
-                    <button
-                      type="button"
-                      onClick={openUpgradeModal}
-                      className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition active:opacity-80"
-                    >
+                    <button type="button" onClick={openUpgradeModal} className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition active:opacity-80">
                       Unlock To Read
                     </button>
                   </div>
@@ -1447,17 +1443,6 @@ export default function SummaryScreen() {
               ) : smartNudge ? (
                 (() => {
                   const nudge = smartNudge;
-                  const goal = profile?.goalDirection ?? "maintain";
-                  const why = getAiWhy(nudge.type) ?? getNudgeWhy(nudge.type, goal);
-                  const action = nudge.action ?? getAiAction(nudge.type) ?? getNudgeAction(nudge.type, goal);
-                  const behavioralChips = getNudgeBehavioralChips(nudge.type, goal);
-                  const showFoodChips = nudge.type !== "workout_missing" && nudge.type !== "calorie_high" && nudge.type !== "on_track" && suggestions.length > 0;
-                  const showChips = behavioralChips.length > 0 || showFoodChips;
-                  // Stale nudge check — show caught-up note if user has since hit target
-                  const nudgeTs = nudge.generatedAt ? new Date(nudge.generatedAt) : null;
-                  const nudgeTimeLabel = nudgeTs
-                    ? nudgeTs.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }).toLowerCase()
-                    : null;
                   const todayCalAvg = (summaryMarkers.todayTotals.calories_min + summaryMarkers.todayTotals.calories_max) / 2;
                   const todayProAvg = (summaryMarkers.todayTotals.protein_g_min + summaryMarkers.todayTotals.protein_g_max) / 2;
                   const calTarget = summaryMarkers.gentleTargets?.calories ?? 0;
@@ -1465,8 +1450,12 @@ export default function SummaryScreen() {
                   const isCaughtUp =
                     (nudge.type === "calorie_low" && calTarget > 0 && todayCalAvg >= calTarget * 0.9) ||
                     ((nudge.type === "protein_low" || nudge.type === "protein_low_critical") && proTarget > 0 && todayProAvg >= proTarget * 0.85);
+                  const noSuggestionTypes = ["workout_missing", "calorie_high", "on_track", "win", "momentum", "pattern", "variety", "check_in"];
+                  const foodSuggestions = !noSuggestionTypes.includes(nudge.type)
+                    ? (getAiSuggestions(nudge.type) ?? suggestions.slice(0, 3))
+                    : [];
                   return (
-                    <div className="relative rounded-xl border border-primary/60 bg-primary/5 px-4 py-3 space-y-2.5">
+                    <div className="rounded-xl border border-primary/60 bg-primary/5 px-4 py-3 space-y-2.5">
                       <p className="text-sm font-medium text-ink/90">{nudge.message.replace(/\n+/g, " ")}</p>
                       <p className="text-[11px] text-primary/70 font-medium">— Coach</p>
                       {isCaughtUp && (
@@ -1475,91 +1464,41 @@ export default function SummaryScreen() {
                           Caught up since then
                         </span>
                       )}
-                      {(why || action || showChips) && (
+                      {foodSuggestions.length > 0 && (
                         <div className="flex flex-wrap gap-1.5">
-                          {why && (
-                            <button
-                              type="button"
-                              className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-medium transition active:opacity-60 ${nudgeExpanded[nudge.type] === "why" ? "border-primary/40 bg-primary/10 text-primary/80" : "border-ink/15 text-ink/55"}`}
-                              onClick={() => setNudgeExpanded((prev) => ({ ...prev, [nudge.type]: prev[nudge.type] === "why" ? null : "why" }))}
-                            >
-                              {nudge.type === "on_track" ? "Keep it up" : "Why?"}
-                              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: nudgeExpanded[nudge.type] === "why" ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}><path d="M2 4l4 4 4-4"/></svg>
-                            </button>
-                          )}
-                          {(action || showChips) && (
-                            <button
-                              type="button"
-                              className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-medium transition active:opacity-60 ${nudgeExpanded[nudge.type] === "what" ? "border-primary/40 bg-primary/10 text-primary/80" : "border-ink/15 text-ink/55"}`}
-                              onClick={() => setNudgeExpanded((prev) => ({ ...prev, [nudge.type]: prev[nudge.type] === "what" ? null : "what" }))}
-                            >
-                              What to do?
-                              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: nudgeExpanded[nudge.type] === "what" ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}><path d="M2 4l4 4 4-4"/></svg>
-                            </button>
-                          )}
-                        </div>
-                      )}
-                      {nudgeExpanded[nudge.type] === "why" && why && (
-                        <div className="space-y-1">
-                          {why.split(" • ").map((part, i) => (
-                            <p key={i} className="text-xs text-ink/70">{part.trim()}</p>
+                          {foodSuggestions.map((food) => (
+                            <span key={food} className="rounded-full border border-ink/10 bg-white px-2.5 py-0.5 text-[11px] text-ink/60">
+                              + {food}
+                            </span>
                           ))}
                         </div>
                       )}
-                      {nudgeExpanded[nudge.type] === "what" && (action || showChips) && (
-                        <div className="space-y-2">
-                          {action && (
-                            <div className="space-y-1">
-                              {action.split(" • ").map((part, i) => (
-                                <p key={i} className="text-xs text-ink/70">{part.trim()}</p>
-                              ))}
-                            </div>
-                          )}
-                          {showChips && (
-                            <div className="space-y-1.5">
-                              {behavioralChips.length > 0 && (
-                                <div className="flex flex-wrap gap-1.5">
-                                  {behavioralChips.map((chip) => (
-                                    <span
-                                      key={chip}
-                                      className="rounded-full border border-primary/25 bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary/80"
-                                    >
-                                      {chip}
-                                    </span>
-                                  ))}
-                                </div>
-                              )}
-                              {showFoodChips && (
-                                <div className="flex flex-wrap gap-1.5">
-                                  {(getAiSuggestions(nudge.type) ?? suggestions.slice(0, 3)).map((food) => (
-                                    <span
-                                      key={food}
-                                      className="rounded-full border border-ink/10 bg-white px-2.5 py-0.5 text-[11px] text-ink/60"
-                                    >
-                                      {food}
-                                    </span>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      )}
+                      <div className="flex justify-end pt-0.5">
+                        <button
+                          type="button"
+                          className="text-[11px] text-ink/30 transition active:opacity-50"
+                          onClick={() => {
+                            const hour = new Date().getHours();
+                            const win = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
+                            localStorage.setItem(`wya_nudge_dismissed_${todayKey()}_${win}`, "1");
+                            setNudgeDismissed(true);
+                          }}
+                        >
+                          Dismiss
+                        </button>
+                      </div>
                     </div>
                   );
                 })()
               ) : (
                 <div className="rounded-xl border border-primary/60 bg-primary/5 px-4 py-3">
-                  <p className="text-sm text-ink/50">Nothing to say yet. Keep logging and when something useful comes up, it'll appear here.</p>
+                  <p className="text-sm text-ink/50">Nothing to say yet. Keep logging and when something useful comes up, it’ll appear here.</p>
                 </div>
               )}
-              {/* Past nudges — hidden for expired free users */}
+
+              {/* Past nudges */}
               {trial.isFree && historyGroups.length > 0 && (
-                <button
-                  type="button"
-                  onClick={openUpgradeModal}
-                  className="mt-1 w-full rounded-lg bg-ink/5 px-3 py-2.5 text-left transition active:opacity-70"
-                >
+                <button type="button" onClick={openUpgradeModal} className="mt-1 w-full rounded-lg bg-ink/5 px-3 py-2.5 text-left transition active:opacity-70">
                   <p className="text-xs text-ink/50">
                     {historyGroups.reduce((n, g) => n + g.items.length, 0)} previous nudges are locked{" "}
                     <span className="font-semibold text-primary/70">Upgrade To Read</span>
@@ -1569,48 +1508,15 @@ export default function SummaryScreen() {
               {!trial.isFree && historyGroups.slice(0, visibleNudgeGroupCount).map((group) => (
                 <div key={group.label} className="space-y-1.5">
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/65">{group.label}</p>
-                  {group.items.map((nudge) => {
-                    const histType = getHistoryNudgeType(nudge.message);
-                    const histWhy = histType ? getNudgeWhy(histType, profile?.goalDirection ?? "maintain") : null;
-                    const histAction = histType ? getNudgeAction(histType, profile?.goalDirection ?? "maintain") : null;
-                    const histKey = nudge.id ?? nudge.message;
-                    const isExpanded = expandedHistoryNudge === histKey;
-                    return (
-                      <div
-                        key={histKey}
-                        className={`rounded-lg px-3 py-2 text-xs transition-colors ${isExpanded ? "bg-ink/[0.07] border border-ink/15 text-ink/80" : "bg-ink/5 text-ink/60"} ${histWhy ? "cursor-pointer active:opacity-70" : ""}`}
-                        onClick={histWhy ? () => setExpandedHistoryNudge(isExpanded ? null : histKey) : undefined}
-                      >
-                        <p>{nudge.message.replace(/ • /g, ". ").replace(/\.{2,}$/g, "")}</p>
-                        {isExpanded && (histWhy || histAction) && (
-                          <div className="mt-2 space-y-2 border-t border-ink/10 pt-2">
-                            {histWhy && (
-                              <div>
-                                <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted/60">Why?</p>
-                                {histWhy.split(" • ").map((part, i) => (
-                                  <p key={i} className="text-ink/55">{part.trim()}</p>
-                                ))}
-                              </div>
-                            )}
-                            {histAction && (
-                              <div>
-                                <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted/60">What to do?</p>
-                                <p className="text-ink/55">{histAction}</p>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                  {group.items.map((nudge) => (
+                    <div key={nudge.id ?? nudge.message} className="rounded-lg bg-ink/5 px-3 py-2 text-xs text-ink/60">
+                      <p>{nudge.message.replace(/ • /g, ". ").replace(/\.{2,}$/g, "")}</p>
+                    </div>
+                  ))}
                 </div>
               ))}
               {!trial.isFree && visibleNudgeGroupCount < historyGroups.length && (
-                <button
-                  type="button"
-                  className="mt-1 text-[11px] font-semibold text-ink/50 underline transition active:opacity-50"
-                  onClick={() => setVisibleNudgeGroupCount((prev) => prev + 3)}
-                >
+                <button type="button" className="mt-1 text-[11px] font-semibold text-ink/50 underline transition active:opacity-50" onClick={() => setVisibleNudgeGroupCount((prev) => prev + 3)}>
                   Show more
                 </button>
               )}
