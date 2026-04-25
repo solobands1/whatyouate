@@ -53,6 +53,8 @@
 	<string>WhatYouAte accesses your photo library so you can log meals from existing photos.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>WhatYouAte saves food photos to your library for your meal history.</string>
+	<key>NSUserNotificationUsageDescription</key>
+	<string>WhatYouAte sends daily coach nudges and logging reminders to help you stay consistent.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 </dict>

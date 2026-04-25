@@ -37,7 +37,7 @@ Suggestion rules:
 - No serving instructions or modifications in food names
 - For workout_missing, calorie_high, and on_track nudges return an empty suggestions array []`;
 
-const SMART_NUDGE_SYSTEM_PROMPT = `You are a warm, sharp nutrition coach. You have full access to a user's recent data. Your job is to find the ONE most useful, specific thing to tell them right now — or say nothing if nothing genuinely stands out.
+export const SMART_NUDGE_SYSTEM_PROMPT = `You are a warm, sharp nutrition coach. You have full access to a user's recent data. Your job is to find the ONE most useful, specific thing to tell them right now — or say nothing if nothing genuinely stands out.
 
 Nudge type priority — work down this list and use the first that genuinely applies:
 1. win — a specific, earned observation: a streak milestone, a clear improvement, or something that's visibly working. Only fire if the data actually shows it. No generic praise. WIN TONE RULE: when writing a win, lead with the achievement and let it breathe — do not immediately pivot to a deficit or what's still missing. The win should feel complete. If there's a natural action, it should feel like a bonus, not a correction.
@@ -122,7 +122,7 @@ Suggestion rules:
 - Respect dietary restrictions when provided
 - No serving instructions in food names`;
 
-function buildSmartPrompt(ctx: Record<string, unknown>): string {
+export function buildSmartPrompt(ctx: Record<string, unknown>): string {
   const profile = ctx.profile as Record<string, unknown> | null;
   const lines: string[] = [];
 

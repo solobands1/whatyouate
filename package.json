@@ -11,10 +11,12 @@
   "dependencies": {
     "@capacitor/core": "^8.3.0",
     "@capacitor/ios": "^8.3.0",
+    "@capacitor/push-notifications": "^8.0.3",
     "@revenuecat/purchases-capacitor": "^13.0.0",
     "@supabase/supabase-js": "^2.45.4",
     "html5-qrcode": "^2.3.8",
     "idb": "^8.0.1",
+    "jose": "^6.2.2",
     "next": "14.2.35",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
