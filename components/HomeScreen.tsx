@@ -1855,7 +1855,7 @@ export default function HomeScreen() {
                   <button
                     type="button"
                     onClick={openUpgradeModal}
-                    className={`${showStatsBanner ? "flex-[4]" : "w-full"} rounded-xl border border-primary/15 bg-primary/[0.08] px-4 py-2.5 text-left transition active:opacity-70`}
+                    className={`${showStatsBanner ? "flex-1" : "w-full"} rounded-xl border border-primary/15 bg-primary/[0.08] px-4 py-2.5 text-left transition active:opacity-70`}
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-[12px] font-medium text-ink/60">
@@ -1873,9 +1873,11 @@ export default function HomeScreen() {
                   {showStatsBanner && (
                     <Link
                       href="/profile"
-                      className="flex flex-1 items-center justify-center rounded-xl bg-primary px-3 py-2.5 text-center text-[11px] font-semibold text-white transition active:opacity-70"
+                      className="flex w-12 shrink-0 flex-col items-center justify-center rounded-xl bg-primary py-2.5 text-center text-[10px] font-semibold leading-tight text-white transition active:opacity-70"
                     >
-                      Fill Out Profile
+                      <span>Fill</span>
+                      <span>Out</span>
+                      <span>Profile</span>
                     </Link>
                   )}
                 </div>
@@ -1885,7 +1887,7 @@ export default function HomeScreen() {
                   <button
                     type="button"
                     onClick={openUpgradeModal}
-                    className={`${showStatsBanner ? "flex-[4]" : "w-full"} rounded-xl border border-primary/25 bg-primary/10 px-4 py-2.5 text-left transition active:opacity-70`}
+                    className={`${showStatsBanner ? "flex-1" : "w-full"} rounded-xl border border-primary/25 bg-primary/10 px-4 py-2.5 text-left transition active:opacity-70`}
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-[12px] font-medium text-ink/60">Free Trial Ended</span>
@@ -1895,9 +1897,11 @@ export default function HomeScreen() {
                   {showStatsBanner && (
                     <Link
                       href="/profile"
-                      className="flex flex-1 items-center justify-center rounded-xl bg-primary px-3 py-2.5 text-center text-[11px] font-semibold text-white transition active:opacity-70"
+                      className="flex w-12 shrink-0 flex-col items-center justify-center rounded-xl bg-primary py-2.5 text-center text-[10px] font-semibold leading-tight text-white transition active:opacity-70"
                     >
-                      Fill Out Profile
+                      <span>Fill</span>
+                      <span>Out</span>
+                      <span>Profile</span>
                     </Link>
                   )}
                 </div>
