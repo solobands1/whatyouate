@@ -29,7 +29,7 @@ function mapMealRow(row: Record<string, unknown>): MealLog | null {
   return {
     id: String(row.id),
     ts,
-    analysisJson: analysis as MealLog["analysisJson"],
+    analysisJson: analysis as unknown as MealLog["analysisJson"],
     status: (row.status as string) ?? "done",
   };
 }
