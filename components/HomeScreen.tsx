@@ -1842,50 +1842,77 @@ export default function HomeScreen() {
           )}
         </header>
 
-        {/* Trial progress / expired banner */}
-        {!isDemoMode && trial.isTrialActive && (
-          <button
-            type="button"
-            onClick={openUpgradeModal}
-            className="mt-4 w-full rounded-xl border border-primary/15 bg-primary/[0.08] px-4 py-2.5 text-left transition active:opacity-70"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-[12px] font-medium text-ink/60">
-                Free Trial · Day {trial.currentDay} of 7
-              </span>
-              <span className="text-[11px] text-primary/70 font-medium">See plans</span>
-            </div>
-            <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-ink/10">
-              <div
-                className="h-full rounded-full bg-primary/50 transition-all"
-                style={{ width: `${(trial.currentDay / 7) * 100}%` }}
-              />
-            </div>
-          </button>
-        )}
-        {!isDemoMode && trial.isFree && (
-          <button
-            type="button"
-            onClick={openUpgradeModal}
-            className="mt-2 w-full rounded-xl border border-primary/25 bg-primary/10 px-4 py-2.5 text-left transition active:opacity-70"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-[12px] font-medium text-ink/60">Free Trial Ended</span>
-              <span className="text-[11px] text-primary font-semibold">Upgrade Now →</span>
-            </div>
-          </button>
-        )}
+        {/* Trial progress / expired banner + optional profile nudge */}
+        {(() => {
+          const showStatsBanner = !loadingData && !isDemoMode
+            && displayMeals.filter((m) => m.analysisJson?.source !== "supplement").length >= 1
+            && (!profile || (profile.height === null && profile.weight === null && profile.age === null));
 
-        {!loadingData && !isDemoMode && displayMeals.filter((m) => m.analysisJson?.source !== "supplement").length >= 1 && (!profile || (profile.height === null && profile.weight === null && profile.age === null)) && (
-          <Card className="mt-4 border border-primary/20 bg-primary/5">
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-sm text-ink/80">Add your stats for a personalized calorie and protein target.</p>
-              <Link href="/profile" className="shrink-0 text-xs font-semibold text-primary underline">
-                Set up
-              </Link>
-            </div>
-          </Card>
-        )}
+          return (
+            <>
+              {!isDemoMode && trial.isTrialActive && (
+                <div className="mt-4 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={openUpgradeModal}
+                    className={`${showStatsBanner ? "flex-[2]" : "w-full"} rounded-xl border border-primary/15 bg-primary/[0.08] px-4 py-2.5 text-left transition active:opacity-70`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[12px] font-medium text-ink/60">
+                        Free Trial · Day {trial.currentDay} of 7
+                      </span>
+                      <span className="text-[11px] text-primary/70 font-medium">See plans</span>
+                    </div>
+                    <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-ink/10">
+                      <div
+                        className="h-full rounded-full bg-primary/50 transition-all"
+                        style={{ width: `${(trial.currentDay / 7) * 100}%` }}
+                      />
+                    </div>
+                  </button>
+                  {showStatsBanner && (
+                    <Link
+                      href="/profile"
+                      className="flex flex-1 items-center justify-center rounded-xl border border-primary/15 bg-primary/[0.06] px-3 py-2.5 text-center text-[11px] font-semibold text-primary transition active:opacity-70"
+                    >
+                      Fill Out Profile
+                    </Link>
+                  )}
+                </div>
+              )}
+              {!isDemoMode && trial.isFree && (
+                <div className="mt-2 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={openUpgradeModal}
+                    className={`${showStatsBanner ? "flex-[2]" : "w-full"} rounded-xl border border-primary/25 bg-primary/10 px-4 py-2.5 text-left transition active:opacity-70`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[12px] font-medium text-ink/60">Free Trial Ended</span>
+                      <span className="text-[11px] text-primary font-semibold">Upgrade Now →</span>
+                    </div>
+                  </button>
+                  {showStatsBanner && (
+                    <Link
+                      href="/profile"
+                      className="flex flex-1 items-center justify-center rounded-xl border border-primary/15 bg-primary/[0.06] px-3 py-2.5 text-center text-[11px] font-semibold text-primary transition active:opacity-70"
+                    >
+                      Fill Out Profile
+                    </Link>
+                  )}
+                </div>
+              )}
+              {!isDemoMode && !trial.isTrialActive && !trial.isFree && showStatsBanner && (
+                <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-primary/15 bg-primary/[0.06] px-4 py-2.5">
+                  <p className="text-[12px] text-ink/60">Fill Out Your Profile For Better Results</p>
+                  <Link href="/profile" className="shrink-0 text-[11px] font-semibold text-primary">
+                    Set up →
+                  </Link>
+                </div>
+              )}
+            </>
+          );
+        })()}
 
 
         <Card className="mt-4">
