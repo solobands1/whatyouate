@@ -86,7 +86,8 @@ function MacroRing({
   const STROKE = 7;
   const C = 2 * Math.PI * R;
   const ARC = 0.75 * C; // 270° worth of circumference
-  const progress = target && value > 0 ? Math.min(1, value / target) : 0;
+  const rawProgress = target && target > 0 && value > 0 ? value / target : 0;
+  const progress = Number.isFinite(rawProgress) ? Math.min(1, rawProgress) : 0;
   const offset = ARC * (1 - (animate ? progress : 0));
   const displayVal = value > 0 ? `${value}${unit}` : "—";
   return (
@@ -1218,7 +1219,7 @@ export default function SummaryScreen() {
               label="Calories"
               value={isDemoMode ? 1840 : Math.round((summaryMarkers.todayTotals.calories_min + summaryMarkers.todayTotals.calories_max) / 2)}
               unit=""
-              target={isDemoMode ? 2300 : (summaryMarkers.gentleTargets?.calories ?? null)}
+              target={isDemoMode ? 2300 : (summaryMarkers.gentleTargets?.calories ?? 2300)}
               animate={hydrated}
             />
             {/* Carbs + Fats locked for expired users */}
@@ -1246,14 +1247,14 @@ export default function SummaryScreen() {
                   label="Carbs"
                   value={isDemoMode ? 180 : Math.round((summaryMarkers.todayTotals.carbs_g_min + summaryMarkers.todayTotals.carbs_g_max) / 2)}
                   unit="g"
-                  target={isDemoMode ? 288 : (summaryMarkers.gentleTargets?.calories ? Math.round(summaryMarkers.gentleTargets.calories * 0.50 / 4) : null)}
+                  target={isDemoMode ? 288 : Math.round((summaryMarkers.gentleTargets?.calories ?? 2300) * 0.50 / 4)}
                   animate={hydrated}
                 />
                 <MacroRing
                   label="Fats"
                   value={isDemoMode ? 62 : Math.round((summaryMarkers.todayTotals.fat_g_min + summaryMarkers.todayTotals.fat_g_max) / 2)}
                   unit="g"
-                  target={isDemoMode ? 77 : (summaryMarkers.gentleTargets?.calories ? Math.round(summaryMarkers.gentleTargets.calories * 0.30 / 9) : null)}
+                  target={isDemoMode ? 77 : Math.round((summaryMarkers.gentleTargets?.calories ?? 2300) * 0.30 / 9)}
                   animate={hydrated}
                 />
               </>
@@ -1262,7 +1263,7 @@ export default function SummaryScreen() {
               label="Protein"
               value={isDemoMode ? 148 : Math.round((summaryMarkers.todayTotals.protein_g_min + summaryMarkers.todayTotals.protein_g_max) / 2)}
               unit="g"
-              target={isDemoMode ? 125 : (summaryMarkers.gentleTargets?.protein ?? null)}
+              target={isDemoMode ? 125 : (summaryMarkers.gentleTargets?.protein ?? 125)}
               animate={hydrated}
             />
           </div>

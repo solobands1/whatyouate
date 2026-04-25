@@ -106,33 +106,31 @@ export default function PushNotificationSetup() {
   if (!showPrePrompt) return null;
 
   return (
-    <div className="fixed inset-x-0 top-0 z-50 animate-slide-down mx-auto max-w-md px-3 pt-12">
-      <div className="rounded-2xl bg-white/70 backdrop-blur-xl shadow-lg border border-white/50 px-5 py-4">
-        <div className="flex items-start gap-3">
-          <div className="mt-0.5 text-primary shrink-0">
-            <BellIcon />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[15px] font-semibold text-ink leading-snug">Turn On Notifications</p>
-            <p className="mt-0.5 text-[13px] leading-relaxed text-ink/55">
-              Get personalized nudges from your coach delivered when they matter most.
-            </p>
-          </div>
+    <div className="fixed inset-x-0 top-0 z-50 animate-slide-down mx-auto max-w-md bg-white/60 backdrop-blur-xl border-b border-white/40 px-5 pb-4 safe-top">
+      <div className="flex items-start gap-3">
+        <div className="mt-0.5 text-primary shrink-0">
+          <BellIcon />
         </div>
-        <div className="mt-4 flex gap-2">
-          <button
-            onClick={handleDecline}
-            className="flex-1 rounded-xl border border-ink/10 py-2 text-[13px] font-medium text-ink/50 active:opacity-60"
-          >
-            Not Now
-          </button>
-          <button
-            onClick={handleAllow}
-            className="flex-[2] rounded-xl bg-primary py-2 text-[13px] font-semibold text-white active:opacity-80"
-          >
-            Turn On
-          </button>
+        <div className="flex-1 min-w-0">
+          <p className="text-[15px] font-semibold text-ink leading-snug">Turn On Notifications</p>
+          <p className="mt-0.5 text-[13px] leading-relaxed text-ink/55">
+            Get personalized nudges from your coach delivered when they matter most.
+          </p>
         </div>
+      </div>
+      <div className="mt-4 flex gap-2">
+        <button
+          onClick={handleDecline}
+          className="flex-1 rounded-xl border border-ink/10 py-2 text-[13px] font-medium text-ink/50 active:opacity-60"
+        >
+          Not Now
+        </button>
+        <button
+          onClick={handleAllow}
+          className="flex-[2] rounded-xl bg-primary py-2 text-[13px] font-semibold text-white active:opacity-80"
+        >
+          Turn On
+        </button>
       </div>
     </div>
   );
