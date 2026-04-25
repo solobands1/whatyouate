@@ -1415,6 +1415,9 @@ export default function HomeScreen() {
   const protMid = (homeMarkers.todayTotals.protein_g_min + homeMarkers.todayTotals.protein_g_max) / 2;
   const calPct = Math.min(100, Math.round((calMid / gentleTargetsDisplay.calories) * 100));
   const protPct = Math.min(100, Math.round((protMid / gentleTargetsDisplay.protein) * 100));
+  const showStatsBanner = !loadingData && !isDemoMode
+    && displayMeals.filter((m) => m.analysisJson?.source !== "supplement").length >= 1
+    && (!profile || (profile.height === null && profile.weight === null && profile.age === null));
 
   const steps = [
     {
@@ -1851,10 +1854,6 @@ export default function HomeScreen() {
 
         {/* Trial progress / expired banner + optional profile nudge */}
         {(() => {
-          const showStatsBanner = !loadingData && !isDemoMode
-            && displayMeals.filter((m) => m.analysisJson?.source !== "supplement").length >= 1
-            && (!profile || (profile.height === null && profile.weight === null && profile.age === null));
-
           return (
             <>
               {!isDemoMode && trial.isTrialActive && (
