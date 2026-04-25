@@ -83,7 +83,7 @@ export default function ProfileScreen() {
   const [showFeedbackToast, setShowFeedbackToast] = useState(false);
   const [showSavedToast, setShowSavedToast] = useState(false);
   const [editingName, setEditingName] = useState(false);
-  const [trackWater, setTrackWater] = useState(false);
+  const [trackWater, setTrackWater] = useState(true);
   const [waterUnit, setWaterUnit] = useState<"ml" | "oz">("ml");
   const [customWaterGoalMl, setCustomWaterGoalMl] = useState<number | null>(null);
   const [editingWaterGoal, setEditingWaterGoal] = useState(false);
@@ -1209,7 +1209,7 @@ export default function ProfileScreen() {
                 </select>
                 <button
                   type="button"
-                  className="rounded-xl bg-ink/5 px-4 py-2 text-sm font-semibold text-ink/80 transition hover:bg-ink/10"
+                  className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90 active:opacity-80"
                   onClick={() => {
                     const name = newSuppInput.trim();
                     if (!name) return;
@@ -1230,7 +1230,7 @@ export default function ProfileScreen() {
           </label>
         </Card>
 
-        <Card className="mt-7">
+        <Card className="mt-10">
           <div>
           {(() => {
             const missingWeight = !weight || weight === "0";

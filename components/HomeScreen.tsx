@@ -1851,7 +1851,7 @@ export default function HomeScreen() {
           >
             <div className="flex items-center justify-between">
               <span className="text-[12px] font-medium text-ink/60">
-                Free trial · Day {trial.currentDay} of 7
+                Free Trial · Day {trial.currentDay} of 7
               </span>
               <span className="text-[11px] text-primary/70 font-medium">See plans</span>
             </div>
