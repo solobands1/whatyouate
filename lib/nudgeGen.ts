@@ -197,6 +197,11 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
     lines.push(`Recent nudges shown (don't repeat these angles):\n${recent.map((n) => `  - "${n}"`).join("\n")}`);
   }
 
+  const blockedTypes = ctx.blockedNudgeTypes as string[] | undefined;
+  if (blockedTypes?.length) {
+    lines.push(`BLOCKED TYPES (do not use these — fatigue rule enforced): ${blockedTypes.join(", ")}`);
+  }
+
   const feelCorrelations = ctx.feelLogCorrelations as Array<{
     dayKey: string; dayOfWeek: string; tag: string; logHour: number;
     calories: number; protein: number; carbs: number; fat: number;

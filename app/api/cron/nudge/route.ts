@@ -210,14 +210,27 @@ export async function GET(req: Request) {
         : undefined;
       const recentFoods = extractRecentFoods(meals);
 
+      // Programmatic fatigue check — enforced in code, not just in the prompt
+      const recentTypes = (nudgesRes.data ?? []).slice(0, 3).map((n: { type: string }) => n.type);
+      const proteinCount = recentTypes.filter((t) => t === "protein_low" || t === "protein_low_critical").length;
+      const deficitSet = new Set(["protein_low", "protein_low_critical", "calorie_low", "fat_low", "micronutrient"]);
+      const allDeficits = recentTypes.length >= 3 && recentTypes.every((t) => deficitSet.has(t));
+      const blockedNudgeTypes: string[] = [];
+      if (proteinCount >= 2) blockedNudgeTypes.push("protein_low");
+      if (allDeficits) blockedNudgeTypes.push(...Array.from(deficitSet));
+
       const ctx = buildSmartNudgeContext(
         meals, workouts, profile, recentFoods, recentNudgeMessages,
         recentFeelLogs, lastNudgeRecord, weightRes.data ?? []
       ) as unknown as Record<string, unknown>;
       ctx.timeOfDay = window;
+      if (blockedNudgeTypes.length) ctx.blockedNudgeTypes = blockedNudgeTypes;
 
       const nudge = await generateNudge(ctx);
       if (!nudge?.message) continue;
+
+      // Hard-enforce fatigue — discard even if Claude ignored the blocked types instruction
+      if (blockedNudgeTypes.includes(nudge.type)) continue;
 
       await supabase.from("nudges").insert({
         user_id: userId,
