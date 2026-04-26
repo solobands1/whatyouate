@@ -47,14 +47,20 @@ export function summarizeWeek(meals: MealLog[], days = 7) {
   return result;
 }
 
-/** Like summarizeWeek but only includes days that have at least one logged meal.
- *  Use this for averages so empty (un-logged) days don't deflate the numbers.
- *  Pass excludeToday=true when computing historical averages (e.g. nudges) so
- *  a partially-logged day doesn't skew the result. */
+/** Like summarizeWeek but only includes days with 2+ non-supplement meals logged.
+ *  Using 2+ meals as the threshold ensures averages reflect real eating days,
+ *  not days where only a snack or single item was logged.
+ *  Pass excludeToday=true when computing historical averages (e.g. nudges). */
 export function summarizeLoggedDays(meals: MealLog[], days = 7, excludeToday = false) {
   const today = excludeToday ? todayKey() : null;
+  const mealCountByDay = new Map<string, number>();
+  for (const m of meals) {
+    if (m.analysisJson?.source === "supplement" || m.status === "failed") continue;
+    const key = dayKeyFromTs(m.ts);
+    mealCountByDay.set(key, (mealCountByDay.get(key) ?? 0) + 1);
+  }
   return summarizeWeek(meals, days).filter(
-    (d) => (!today || d.dateKey !== today) && (d.totals.calories_max > 0 || d.totals.protein_g_max > 0)
+    (d) => (!today || d.dateKey !== today) && (mealCountByDay.get(d.dateKey) ?? 0) >= 2
   );
 }
 
