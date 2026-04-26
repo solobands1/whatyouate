@@ -68,13 +68,19 @@ export default function PushNotificationSetup() {
 
       PushNotifications.addListener("registration", async (token) => {
         try {
-          await fetch("/api/push/register", {
+          const res = await fetch("/api/push/register", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ userId, token: token.value }),
           });
-        } catch {
-          // Silently fail — token will be registered next launch
+          if (!res.ok) {
+            const body = await res.text();
+            console.error("[push] Token registration failed:", res.status, body);
+          } else {
+            console.log("[push] Token registered successfully");
+          }
+        } catch (err) {
+          console.error("[push] Token registration error:", err);
         }
       });
 
