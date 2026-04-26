@@ -116,9 +116,16 @@ function extractRecentFoods(meals: MealLog[]): string[] {
   return foods;
 }
 
+const VALID_NUDGE_TYPES = new Set([
+  "win","momentum","pattern","meal_timing","food_insight","variety",
+  "rest_day_fuel","workout_recovery","protein_low_critical","protein_low",
+  "calorie_low","calorie_high","workout_missing","micronutrient","fat_low",
+  "on_track","check_in","workout_fuel_low","training_fuel_low",
+]);
+
 async function generateNudge(ctx: Record<string, unknown>): Promise<{ message: string; type: string; suggestions: string[] } | null> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return null;
+  if (!apiKey) { console.error("[cron/nudge] ANTHROPIC_API_KEY not set"); return null; }
   const prompt = buildSmartPrompt(ctx);
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 25_000);
@@ -139,14 +146,31 @@ async function generateNudge(ctx: Record<string, unknown>): Promise<{ message: s
         messages: [{ role: "user", content: prompt }],
       }),
     });
-    if (!response.ok) return null;
+    if (!response.ok) {
+      console.error(`[cron/nudge] Anthropic API error: ${response.status} ${response.statusText}`);
+      return null;
+    }
     const result = await response.json();
     const raw = (result.content?.[0]?.text ?? "").trim();
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return null;
-    const parsed = JSON.parse(jsonMatch[0]);
-    if (!parsed.message) return null;
-    return parsed;
+    if (!jsonMatch) { console.error("[cron/nudge] No JSON in Claude response:", raw.slice(0, 200)); return null; }
+    let parsed: Record<string, unknown>;
+    try {
+      parsed = JSON.parse(jsonMatch[0]);
+    } catch (e) {
+      console.error("[cron/nudge] JSON parse failed:", jsonMatch[0].slice(0, 200), e);
+      return null;
+    }
+    if (!parsed.message || typeof parsed.message !== "string") return null;
+    if (parsed.message.length > 500) { console.error("[cron/nudge] Message too long:", parsed.message.length); return null; }
+    if (!parsed.type || !VALID_NUDGE_TYPES.has(parsed.type as string)) {
+      console.error("[cron/nudge] Invalid nudge type:", parsed.type);
+      return null;
+    }
+    return parsed as { message: string; type: string; suggestions: string[] };
+  } catch (err) {
+    console.error("[cron/nudge] generateNudge error:", err);
+    return null;
   } finally {
     clearTimeout(timeoutId);
   }
