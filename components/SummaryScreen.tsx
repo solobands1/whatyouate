@@ -156,8 +156,8 @@ export default function SummaryScreen() {
   const [expandedHistoryNudge, setExpandedHistoryNudge] = useState<string | null>(null);
   const getAiSuggestions = (nudgeType: string): string[] | null => {
     if (typeof window === "undefined") return null;
-    const hour = new Date().getHours();
-    const win = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
+    const hour = new Date().getUTCHours();
+    const win = hour < 16 ? "morning" : hour < 21 ? "afternoon" : "evening";
     const raw = localStorage.getItem(`wya_ai_nudge_${todayKey()}_${win}_${nudgeType}_suggestions`)
       ?? localStorage.getItem(`wya_ai_nudge_${todayKey()}_${nudgeType}_suggestions`); // legacy fallback
     if (!raw) return null;
@@ -166,15 +166,15 @@ export default function SummaryScreen() {
 
   const getAiWhy = (nudgeType: string): string | null => {
     if (typeof window === "undefined") return null;
-    const hour = new Date().getHours();
-    const win = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
+    const hour = new Date().getUTCHours();
+    const win = hour < 16 ? "morning" : hour < 21 ? "afternoon" : "evening";
     return localStorage.getItem(`wya_ai_nudge_${todayKey()}_${win}_${nudgeType}_why`);
   };
 
   const getAiAction = (nudgeType: string): string | null => {
     if (typeof window === "undefined") return null;
-    const hour = new Date().getHours();
-    const win = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
+    const hour = new Date().getUTCHours();
+    const win = hour < 16 ? "morning" : hour < 21 ? "afternoon" : "evening";
     return localStorage.getItem(`wya_ai_nudge_${todayKey()}_${win}_${nudgeType}_action`);
   };
   // Show "New" only when a new SMART nudge was generated (separate from computed nudge bell)
@@ -456,8 +456,8 @@ export default function SummaryScreen() {
   const [showTodayInfo, setShowTodayInfo] = useState(false);
   const [nudgeDismissed, setNudgeDismissed] = useState(() => {
     try {
-      const hour = new Date().getHours();
-      const win = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
+      const hour = new Date().getUTCHours();
+      const win = hour < 16 ? "morning" : hour < 21 ? "afternoon" : "evening";
       return localStorage.getItem(`wya_nudge_dismissed_${todayKey()}_${win}`) === "1";
     } catch { return false; }
   });
@@ -476,8 +476,8 @@ export default function SummaryScreen() {
     const seenKeys = new Set<string>();
     const items: Array<{ id?: string; message: string; created_at?: string; isNew?: boolean }> = [];
     const todayDateKey = todayKey();
-    const currentHour = new Date().getHours();
-    const currentWindowStr = currentHour < 12 ? "morning" : currentHour < 17 ? "afternoon" : "evening";
+    const currentHour = new Date().getUTCHours();
+    const currentWindowStr = currentHour < 16 ? "morning" : currentHour < 21 ? "afternoon" : "evening";
     nudges
       .slice()
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
@@ -543,8 +543,8 @@ export default function SummaryScreen() {
   }, [uniqueNudges]);
 
   const currentWindowLabel = (() => {
-    const hr = new Date().getHours();
-    return hr < 12 ? "Morning" : hr < 17 ? "Afternoon" : "Evening";
+    const hr = new Date().getUTCHours();
+    return hr < 16 ? "Morning" : hr < 21 ? "Afternoon" : "Evening";
   })();
 
   const historyGroups = useMemo(
@@ -661,37 +661,23 @@ export default function SummaryScreen() {
       return;
     }
 
-    const hour = new Date().getHours();
-    const win = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
+    // Use UTC window to match cron's getTimeWindow() logic
+    const utcHour = new Date().getUTCHours();
+    const win = utcHour < 16 ? "morning" : utcHour < 21 ? "afternoon" : "evening";
     const todayStr = todayKey();
     const windowKey = `${todayStr}_${win}`;
 
     if (smartNudgeFetchedRef.current.has(windowKey)) return;
 
-    // Staleness check: if macros have drifted >15% since last nudge generation, refetch
-    const snapshotKey = `wya_nudge_snapshot_${windowKey}`;
-    const currentCals = Math.round((summaryMarkers.todayTotals.calories_min + summaryMarkers.todayTotals.calories_max) / 2);
-    const currentProt = Math.round((summaryMarkers.todayTotals.protein_g_min + summaryMarkers.todayTotals.protein_g_max) / 2);
-    const savedSnapshot = typeof window !== "undefined" ? localStorage.getItem(snapshotKey) : null;
-    let isStale = false;
-    if (savedSnapshot) {
-      try {
-        const { cal, prot } = JSON.parse(savedSnapshot);
-        const calDrift = cal > 0 ? Math.abs(currentCals - cal) / cal : 0;
-        const protDrift = prot > 0 ? Math.abs(currentProt - prot) / prot : 0;
-        isStale = calDrift > 0.15 || protDrift > 0.15;
-      } catch { /* ignore */ }
-    }
-
-    // Use saved DB nudge if one exists for this window and data isn't stale — no API call needed
+    // Use saved DB nudge if one exists for this window — no API call needed
     const existing = nudges.find((n) => {
       if (!n.created_at) return false;
       const d = new Date(n.created_at);
       if (todayKey(d) !== todayStr) return false;
-      const h = d.getHours();
-      return (h < 12 ? "morning" : h < 17 ? "afternoon" : "evening") === win;
+      const h = d.getUTCHours();
+      return (h < 16 ? "morning" : h < 21 ? "afternoon" : "evening") === win;
     });
-    if (existing && !isStale) {
+    if (existing) {
       smartNudgeFetchedRef.current.add(windowKey);
       setSmartNudge({ message: existing.message, type: existing.type as NudgeType, generatedAt: existing.created_at ?? new Date().toISOString() });
       return;
@@ -744,8 +730,6 @@ export default function SummaryScreen() {
           if (nudge.action) localStorage.setItem(`wya_ai_nudge_${windowKey}_${nudge.type}_action`, nudge.action);
           if (nudge.why) localStorage.setItem(`wya_ai_nudge_${windowKey}_${nudge.type}_why`, nudge.why);
           localStorage.setItem("wya_smart_nudge_ts", Date.now().toString());
-          // Save macro snapshot so staleness can be detected on next render
-          localStorage.setItem(snapshotKey, JSON.stringify({ cal: currentCals, prot: currentProt }));
           smartNudgeFetchedRef.current.add(windowKey);
           setSmartNudge({ message: nudge.message, type: nudge.type, action: nudge.action, suggestions: nudge.suggestions, generatedAt: new Date().toISOString() });
           if (user) {
@@ -1394,8 +1378,8 @@ export default function SummaryScreen() {
           ) : (
             <div className="mt-4 space-y-3">
               {(() => {
-                const hr = new Date().getHours();
-                const windowLabel = hr < 12 ? "This Morning" : hr < 17 ? "This Afternoon" : "This Evening";
+                const hr = new Date().getUTCHours();
+                const windowLabel = hr < 16 ? "This Morning" : hr < 21 ? "This Afternoon" : "This Evening";
                 const nudgeTs = smartNudge && (smartNudge as { generatedAt?: string }).generatedAt ? new Date((smartNudge as { generatedAt: string }).generatedAt) : null;
                 const nudgeTimeLabel = nudgeTs ? nudgeTs.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }).toLowerCase() : null;
                 return (
@@ -1432,8 +1416,8 @@ export default function SummaryScreen() {
                     type="button"
                     className="text-[11px] font-semibold text-primary/60 transition active:opacity-50"
                     onClick={() => {
-                      const hour = new Date().getHours();
-                      const win = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
+                      const hour = new Date().getUTCHours();
+                      const win = hour < 16 ? "morning" : hour < 21 ? "afternoon" : "evening";
                       localStorage.removeItem(`wya_nudge_dismissed_${todayKey()}_${win}`);
                       setNudgeDismissed(false);
                     }}
@@ -1479,8 +1463,8 @@ export default function SummaryScreen() {
                           type="button"
                           className="text-[11px] text-ink/30 transition active:opacity-50"
                           onClick={() => {
-                            const hour = new Date().getHours();
-                            const win = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
+                            const hour = new Date().getUTCHours();
+                            const win = hour < 16 ? "morning" : hour < 21 ? "afternoon" : "evening";
                             localStorage.setItem(`wya_nudge_dismissed_${todayKey()}_${win}`, "1");
                             setNudgeDismissed(true);
                           }}

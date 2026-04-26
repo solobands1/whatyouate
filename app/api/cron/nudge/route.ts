@@ -263,6 +263,9 @@ export async function GET(req: Request) {
         created_at: nowISO,
       });
 
+      // Wait 2 minutes so the nudge is in DB before the push arrives
+      await new Promise((resolve) => setTimeout(resolve, 2 * 60 * 1000));
+
       const userTokens = tokens.filter((t: { user_id: string }) => t.user_id === userId);
       for (const t of userTokens as Array<{ token: string }>) {
         const ok = await sendPush(t.token, {
