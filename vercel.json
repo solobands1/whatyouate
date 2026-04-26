@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/nudge",
-      "schedule": "0 13 * * *"
+      "schedule": "0 14 * * *"
     },
     {
       "path": "/api/cron/nudge",
