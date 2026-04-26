@@ -613,6 +613,16 @@ export default function ProfileScreen() {
               <span className="text-[10px] text-muted/60">Share a quick suggestion</span>
             </div>
           </div>
+          {(() => {
+            const missingWeight = !weight || weight === "0";
+            const missingHeight = units === "metric" ? (!heightCm || heightCm === "0") : (!heightFt || heightFt === "0");
+            const missingDob = !dobYear || !dobMonth || !dobDay;
+            return (missingWeight || missingHeight || missingDob) ? (
+              <p className="mt-3 text-center text-[12px] font-semibold text-primary">
+                Fill Out Profile For Best Results
+              </p>
+            ) : null;
+          })()}
           {loadError && <p className="mt-2 text-xs text-muted/70">{loadError}</p>}
         </header>
 
@@ -1232,15 +1242,6 @@ export default function ProfileScreen() {
 
         <Card className="mt-10">
           <div>
-          {(() => {
-            const missingWeight = !weight || weight === "0";
-            const missingHeight = units === "metric" ? (!heightCm || heightCm === "0") : (!heightFt || heightFt === "0");
-            const missingDob = !dobYear || !dobMonth || !dobDay;
-            const missing = [missingWeight && "weight", missingHeight && "height", missingDob && "date of birth"].filter(Boolean);
-            return missing.length > 0 ? (
-              <p className="mb-3 text-[11px] text-muted/60">Add your {missing.join(", ")} for personalised nudges and targets.</p>
-            ) : null;
-          })()}
           <button
             className="w-full rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] ring-1 ring-white/40 transition-colors hover:bg-primary/90 active:scale-[0.98] disabled:opacity-50"
             onClick={handleSave}
