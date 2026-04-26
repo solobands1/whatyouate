@@ -219,6 +219,7 @@ export async function getProfile(userId: string): Promise<UserProfile | null> {
     streakLastDate: data.streak_last_date ?? "",
     trackWater: data.track_water ?? false,
     waterUnit: (data.water_unit === "oz" ? "oz" : "ml") as "ml" | "oz",
+    timezoneOffsetMinutes: data.timezone_offset_minutes ?? null,
   };
   profileCache.set(userId, { data: profile, ts: Date.now() });
   return profile;
@@ -249,12 +250,24 @@ export async function saveProfile(userId: string, profile: UserProfile) {
     daily_supplements: (profile.dailySupplements ?? []).map((e) => typeof e === "string" ? e : JSON.stringify(e)),
     track_water: profile.trackWater ?? false,
     water_unit: profile.waterUnit ?? "ml",
+    timezone_offset_minutes: profile.timezoneOffsetMinutes ?? null,
     updated_at: new Date().toISOString()
   };
   const { error } = await supabase.from("profiles").upsert(payload, { onConflict: "user_id" });
   if (error) throw error;
   profileCache.delete(userId);
   return { success: true };
+}
+
+export async function saveTimezoneOffset(userId: string, offsetMinutes: number): Promise<void> {
+  if (useMemory) return;
+  try {
+    await supabase.from("profiles").upsert(
+      { user_id: userId, timezone_offset_minutes: offsetMinutes },
+      { onConflict: "user_id" }
+    );
+    profileCache.delete(userId);
+  } catch { /* non-critical */ }
 }
 
 export function clearProfileCache(userId: string) {
@@ -673,7 +686,7 @@ export async function getActiveWorkout(userId: string) {
   return mapWorkout(data[0]);
 }
 
-export async function addNudge(userId: string, type: string, message: string) {
+export async function addNudge(userId: string, type: string, message: string, why?: string | null, action?: string | null) {
   if (useMemory) {
     ensureLocalLoaded();
     const nudge: NudgeRecord = {
@@ -688,11 +701,9 @@ export async function addNudge(userId: string, type: string, message: string) {
     return nudge;
   }
 
-  const payload = {
-    user_id: userId,
-    type,
-    message
-  };
+  const payload: Record<string, unknown> = { user_id: userId, type, message };
+  if (why != null) payload.why = why;
+  if (action != null) payload.action = action;
   const { data, error } = await supabase.from("nudges").insert(payload).select("*").single();
   if (error) handleSupabaseError("nudges", error);
   return data;

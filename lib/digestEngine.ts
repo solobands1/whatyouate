@@ -844,8 +844,18 @@ export function buildSmartNudgeContext(
   recentFeelLogs: Array<{ ts: number; tag: string }> = [],
   lastNudgeRecord?: { type: string; message: string; created_at: string },
   rawWeightLogs?: Array<{ weight_kg: number; logged_at: string }>,
-  waterConsumedMl?: number
+  waterConsumedMl?: number,
+  timezoneOffsetMinutes?: number
 ): SmartNudgeContext {
+  // Convert a UTC timestamp to the user's local hour.
+  // offsetMinutes = getTimezoneOffset() — positive west of UTC (ET=300, PT=480).
+  // Falls back to JS local time when offset is unknown (client-side calls).
+  const tsToLocalHour = (ts: number): number => {
+    if (timezoneOffsetMinutes !== undefined) {
+      return new Date(ts - timezoneOffsetMinutes * 60 * 1000).getUTCHours();
+    }
+    return new Date(ts).getHours();
+  };
   const todayTotals = summarizeDay(meals);
   const todayCalories = Math.round((todayTotals.calories_min + todayTotals.calories_max) / 2);
   const todayProtein = Math.round((todayTotals.protein_g_min + todayTotals.protein_g_max) / 2);
@@ -923,10 +933,10 @@ export function buildSmartNudgeContext(
     const date = new Date(d.dateKey + "T12:00:00");
     const dayMeals = (mealsByDayMap.get(d.dateKey) ?? []).sort((a, b) => a.ts - b.ts);
     const mealCount = dayMeals.length;
-    const firstMealHour = mealCount > 0 ? new Date(dayMeals[0].ts).getHours() : undefined;
-    const lastMealHour = mealCount > 0 ? new Date(dayMeals[mealCount - 1].ts).getHours() : undefined;
+    const firstMealHour = mealCount > 0 ? tsToLocalHour(dayMeals[0].ts) : undefined;
+    const lastMealHour = mealCount > 0 ? tsToLocalHour(dayMeals[mealCount - 1].ts) : undefined;
     const calAM = dayMeals
-      .filter((m) => new Date(m.ts).getHours() < 12)
+      .filter((m) => tsToLocalHour(m.ts) < 12)
       .reduce((sum, m) => sum + ((m.analysisJson?.estimated_ranges?.calories_min ?? 0) + (m.analysisJson?.estimated_ranges?.calories_max ?? 0)) / 2, 0);
     const pctCaloriesAM = cal > 0 ? Math.round((calAM / cal) * 100) : undefined;
     return {
@@ -948,8 +958,10 @@ export function buildSmartNudgeContext(
     };
   });
 
-  const hour = new Date().getHours();
-  const timeOfDay = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
+  const nowLocalHour = timezoneOffsetMinutes !== undefined
+    ? new Date(Date.now() - timezoneOffsetMinutes * 60 * 1000).getUTCHours()
+    : new Date().getHours();
+  const timeOfDay = nowLocalHour < 12 ? "morning" : nowLocalHour < 17 ? "afternoon" : "evening";
 
   const targetCalories = targets?.calories ?? null;
   const targetProtein = targets?.protein ?? null;
@@ -968,10 +980,13 @@ export function buildSmartNudgeContext(
   ).sort((a, b) => a.ts - b.ts);
 
   const formatMealTime = (ts: number) => {
-    const d = new Date(ts);
-    const h = d.getHours() % 12 || 12;
-    const m = String(d.getMinutes()).padStart(2, "0");
-    const period = d.getHours() < 12 ? "am" : "pm";
+    const localHour = tsToLocalHour(ts);
+    const localMin = timezoneOffsetMinutes !== undefined
+      ? new Date(ts - timezoneOffsetMinutes * 60 * 1000).getUTCMinutes()
+      : new Date(ts).getMinutes();
+    const h = localHour % 12 || 12;
+    const m = String(localMin).padStart(2, "0");
+    const period = localHour < 12 ? "am" : "pm";
     return `${h}:${m}${period}`;
   };
 
@@ -1009,12 +1024,12 @@ export function buildSmartNudgeContext(
       const totalCarbs = dayMeals.reduce((s, m) => s + ((m.analysisJson?.estimated_ranges?.carbs_g_min ?? 0) + (m.analysisJson?.estimated_ranges?.carbs_g_max ?? 0)) / 2, 0);
       const totalFat = dayMeals.reduce((s, m) => s + ((m.analysisJson?.estimated_ranges?.fat_g_min ?? 0) + (m.analysisJson?.estimated_ranges?.fat_g_max ?? 0)) / 2, 0);
       const sorted = [...dayMeals].sort((a, b) => a.ts - b.ts);
-      const firstMealHour = sorted.length > 0 ? new Date(sorted[0].ts).getHours() : undefined;
+      const firstMealHour = sorted.length > 0 ? tsToLocalHour(sorted[0].ts) : undefined;
       return {
         dayKey: fDayKey,
         dayOfWeek: DOW[fDate.getDay()],
         tag: f.tag,
-        logHour: fDate.getHours(),
+        logHour: tsToLocalHour(f.ts),
         calories: Math.round(totalCal),
         protein: Math.round(totalProt),
         carbs: Math.round(totalCarbs),
@@ -1035,7 +1050,7 @@ export function buildSmartNudgeContext(
   pastMeals.forEach((m) => {
     const key = dayKeyFromTs(m.ts);
     if (!mealsByDay.has(key)) mealsByDay.set(key, []);
-    mealsByDay.get(key)!.push(new Date(m.ts).getHours());
+    mealsByDay.get(key)!.push(tsToLocalHour(m.ts));
   });
   const recentDays = [...mealsByDay.keys()].sort().slice(-14);
   recentDays.forEach((key) => {

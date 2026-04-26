@@ -123,7 +123,7 @@ const VALID_NUDGE_TYPES = new Set([
   "on_track","check_in","workout_fuel_low","training_fuel_low",
 ]);
 
-async function generateNudge(ctx: Record<string, unknown>): Promise<{ message: string; type: string; suggestions: string[] } | null> {
+async function generateNudge(ctx: Record<string, unknown>): Promise<{ message: string; type: string; why?: string; action?: string; suggestions: string[] } | null> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) { console.error("[cron/nudge] ANTHROPIC_API_KEY not set"); return null; }
   const prompt = buildSmartPrompt(ctx);
@@ -167,7 +167,15 @@ async function generateNudge(ctx: Record<string, unknown>): Promise<{ message: s
       console.error("[cron/nudge] Invalid nudge type:", parsed.type);
       return null;
     }
-    return parsed as { message: string; type: string; suggestions: string[] };
+
+    // Post-generation cleanup: strip em-dashes, trim to 70 words
+    parsed.message = (parsed.message as string).replace(/\s*—\s*/g, " ").replace(/\s+/g, " ").trim();
+    const words = (parsed.message as string).split(/\s+/);
+    if (words.length > 70) {
+      parsed.message = words.slice(0, 70).join(" ").replace(/[,;]$/, "") + ".";
+    }
+
+    return parsed as { message: string; type: string; why?: string; action?: string; suggestions: string[] };
   } catch (err) {
     console.error("[cron/nudge] generateNudge error:", err);
     return null;
@@ -198,6 +206,9 @@ export async function GET(req: Request) {
   let processed = 0;
   let sent = 0;
 
+  // Phase 1: generate nudges + save to DB for all users (no sleep between users)
+  const pendingPushes: Array<{ userId: string; message: string }> = [];
+
   for (const userId of userIds) {
     try {
       const { data: recentNudgeCheck } = await supabase
@@ -215,7 +226,7 @@ export async function GET(req: Request) {
         supabase.from("meals").select("*").eq("user_id", userId).gte("created_at", sixtyDaysAgo).order("ts", { ascending: false }),
         supabase.from("workouts").select("*").eq("user_id", userId).gte("created_at", sixtyDaysAgo),
         supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle(),
-        supabase.from("nudges").select("type, message, created_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(5),
+        supabase.from("nudges").select("type, message, created_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(10),
         supabase.from("feel_logs").select("ts, tag").eq("user_id", userId).order("ts", { ascending: false }).limit(10),
         supabase.from("weight_logs").select("weight_kg, logged_at").eq("user_id", userId).order("logged_at", { ascending: false }).limit(20),
       ]);
@@ -243,42 +254,70 @@ export async function GET(req: Request) {
       if (proteinCount >= 2) blockedNudgeTypes.push("protein_low");
       if (allDeficits) blockedNudgeTypes.push(...Array.from(deficitSet));
 
+      // Hard water-fatigue block — if last 2 nudges both referenced water, block water-adjacent angles
+      const last2Types = (nudgesRes.data ?? []).slice(0, 2).map((n: { type: string; message: string }) => n.message?.toLowerCase() ?? "");
+      const waterCount = last2Types.filter((m) => m.includes("water") || m.includes("hydrat")).length;
+      if (waterCount >= 2) blockedNudgeTypes.push("check_in"); // water check-ins are the main water vector
+
+      const timezoneOffset = (profileRes.data as Record<string, unknown>).timezone_offset_minutes as number | undefined;
       const ctx = buildSmartNudgeContext(
         meals, workouts, profile, recentFoods, recentNudgeMessages,
-        recentFeelLogs, lastNudgeRecord, weightRes.data ?? []
+        recentFeelLogs, lastNudgeRecord, weightRes.data ?? [], undefined, timezoneOffset
       ) as unknown as Record<string, unknown>;
-      ctx.timeOfDay = window;
-      if (blockedNudgeTypes.length) ctx.blockedNudgeTypes = blockedNudgeTypes;
+
+      // Cron nudges are durable pattern insights — strip real-time today fields
+      // that will be stale or incomplete at cron fire time
+      delete ctx.todayCalories;
+      delete ctx.todayProtein;
+      delete ctx.todayFat;
+      delete ctx.todayCarbs;
+      delete ctx.todayMeals;
+      delete ctx.remainingCalories;
+      delete ctx.remainingProtein;
+      delete ctx.followThrough;
+      delete ctx.timeOfDay; // replaced by nudgeIntentWindow below
+
+      ctx.nudgeIntentWindow = window;
+
+      // Always block real-time nudge types from cron — these require current-day data
+      const CRON_BLOCKED_TYPES = ["check_in", "meal_timing", "calorie_low", "protein_low", "workout_fuel_low"];
+      const allBlockedTypes = [...new Set([...blockedNudgeTypes, ...CRON_BLOCKED_TYPES])];
+      ctx.blockedNudgeTypes = allBlockedTypes;
 
       const nudge = await generateNudge(ctx);
       if (!nudge?.message) continue;
 
       // Hard-enforce fatigue — discard even if Claude ignored the blocked types instruction
-      if (blockedNudgeTypes.includes(nudge.type)) continue;
+      if (allBlockedTypes.includes(nudge.type)) continue;
 
       await supabase.from("nudges").insert({
         user_id: userId,
         type: nudge.type,
         message: nudge.message,
+        why: nudge.why ?? null,
+        action: nudge.action ?? null,
         created_at: nowISO,
       });
 
-      // Wait 2 minutes so the nudge is in DB before the push arrives
-      await new Promise((resolve) => setTimeout(resolve, 2 * 60 * 1000));
-
-      const userTokens = tokens.filter((t: { user_id: string }) => t.user_id === userId);
-      for (const t of userTokens as Array<{ token: string }>) {
-        const ok = await sendPush(t.token, {
-          title: "Coach",
-          body: nudge.message,
-          data: { screen: "summary" },
-          badge: 1,
-        });
-        if (ok) sent++;
-      }
+      pendingPushes.push({ userId, message: nudge.message });
       processed++;
     } catch (err) {
       console.error(`[cron/nudge] error for user ${userId}:`, err);
+    }
+  }
+
+  // Phase 2: all nudges are in DB — now send all pushes
+  // Nudge is already persisted so the app will find it immediately on open
+  for (const { userId, message } of pendingPushes) {
+    const userTokens = tokens.filter((t: { user_id: string }) => t.user_id === userId);
+    for (const t of userTokens as Array<{ token: string }>) {
+      const ok = await sendPush(t.token, {
+        title: "Coach",
+        body: message,
+        data: { screen: "summary" },
+        badge: 1,
+      });
+      if (ok) sent++;
     }
   }
 

@@ -42,7 +42,7 @@ Rules:
 - No em dashes (—) — rewrite as a full sentence instead. For example: 'protein cleared 140g for a total of 161g that day' not 'protein cleared 140g — 161g total'. End with a period.
 - No clichés: forbidden: "crush it", "you've got this", "fresh start", "stay on track", "hit your goal", "keep it up", "build muscle", "well done", "great job", "amazing", "nice work"
 - Don't repeat the same angle as recent nudges — avoid the same type AND the same thematic angle under a different type
-- If timeOfDay is "morning": frame as intention. If "afternoon": note there's still time. If "evening": brief and reflective.
+- If timeOfDay is "morning": frame as intention. If "afternoon": note there's still time. If "evening": brief and reflective. If nudgeIntentWindow is provided instead of timeOfDay, treat it the same way for framing — but only when "Today so far" data is present. If no today data is present, skip time-specific framing entirely.
 - MEAL TIMING AWARENESS: If "Meals logged today" and "Last meal logged at" are provided, use them to infer what meal is next. If it's afternoon and the last meal was before 11am with only 1 meal logged, the user likely hasn't had lunch yet — reference lunch, not dinner. If 2+ meals are logged by afternoon, dinner framing is appropriate. Never assume what meal comes next based on time alone — always cross-reference with what's actually been logged.
 - HYDRATION: If "Water today" is provided and the user is under 50% of their goal by afternoon or evening, you may briefly note it when it adds genuine insight (e.g., energy or recovery context). Never make hydration the sole focus of a nudge unless everything else looks fine. Keep it to one clause, not a standalone message.
 - WEIGHT TREND: If "Weight trend" is provided, you may reference it when genuinely relevant — e.g. confirming progress matches their calorie goal, or noting that weight is climbing alongside a calorie surplus. Keep it brief and only surface it when it adds real insight. Never make weight the focus of a nudge unprompted.
@@ -129,37 +129,49 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
     });
   }
 
-  const todayCal = ctx.todayCalories as number;
-  const todayPro = ctx.todayProtein as number;
-  const todayFat = ctx.todayFat as number;
-  const todayCarbs = ctx.todayCarbs as number;
-  const remCal = ctx.remainingCalories as number | null;
-  const remPro = ctx.remainingProtein as number | null;
+  const nudgeIntentWindow = ctx.nudgeIntentWindow as string | undefined;
+  const timeOfDay = ctx.timeOfDay as string | undefined;
+  const activeWindow = nudgeIntentWindow ?? timeOfDay;
+
+  // Real-time today fields — stripped for cron nudges (durable patterns only)
+  const hasTodayData = ctx.todayCalories !== undefined;
+  const todayCal = ctx.todayCalories as number | undefined;
+  const todayPro = ctx.todayProtein as number | undefined;
+  const todayFat = ctx.todayFat as number | undefined;
+  const todayCarbs = ctx.todayCarbs as number | undefined;
+  const remCal = ctx.remainingCalories as number | null | undefined;
+  const remPro = ctx.remainingProtein as number | null | undefined;
   const todayMeals = ctx.todayMeals as Array<{ name: string; time: string; calories: number; protein: number }> | undefined;
   const lastMealTime = ctx.lastMealTime as string | null | undefined;
   const mealsLoggedToday = ctx.mealsLoggedToday as number | undefined ?? 0;
 
-  if (todayCal > 0 || todayPro > 0) {
-    lines.push(`Today so far (${ctx.timeOfDay}): ${todayCal} kcal / ${todayPro}g protein / ${todayFat}g fat / ${todayCarbs}g carbs`);
-    if (remCal !== null || remPro !== null) {
-      const parts = [];
-      if (remCal !== null) parts.push(`${remCal} kcal remaining to target`);
-      if (remPro !== null) parts.push(`${remPro}g protein remaining to target`);
-      lines.push(`Still needed today: ${parts.join(" | ")}`);
+  if (hasTodayData) {
+    if ((todayCal ?? 0) > 0 || (todayPro ?? 0) > 0) {
+      lines.push(`Today so far (${activeWindow}): ${todayCal} kcal / ${todayPro}g protein / ${todayFat}g fat / ${todayCarbs}g carbs`);
+      if (remCal != null || remPro != null) {
+        const parts = [];
+        if (remCal != null) parts.push(`${remCal} kcal remaining to target`);
+        if (remPro != null) parts.push(`${remPro}g protein remaining to target`);
+        lines.push(`Still needed today: ${parts.join(" | ")}`);
+      }
+      if (todayMeals?.length) {
+        const mealStr = todayMeals.map((m) => `${m.time} ${m.name} (~${m.calories} kcal, ${m.protein}g protein)`).join(", ");
+        lines.push(`Meals logged today: ${mealStr}`);
+        if (lastMealTime) lines.push(`Last meal logged at: ${lastMealTime}. Meals logged today: ${mealsLoggedToday}`);
+      }
+    } else {
+      lines.push(`Today so far (${activeWindow}): nothing logged yet`);
+      if (remCal != null || remPro != null) {
+        const parts = [];
+        if (remCal != null) parts.push(`${remCal} kcal calories target`);
+        if (remPro != null) parts.push(`${remPro}g protein target`);
+        lines.push(`Full targets for today: ${parts.join(" | ")}`);
+      }
     }
-    if (todayMeals?.length) {
-      const mealStr = todayMeals.map((m) => `${m.time} ${m.name} (~${m.calories} kcal, ${m.protein}g protein)`).join(", ");
-      lines.push(`Meals logged today: ${mealStr}`);
-      if (lastMealTime) lines.push(`Last meal logged at: ${lastMealTime}. Meals logged today: ${mealsLoggedToday}`);
-    }
-  } else {
-    lines.push(`Today so far (${ctx.timeOfDay}): nothing logged yet`);
-    if (remCal !== null || remPro !== null) {
-      const parts = [];
-      if (remCal !== null) parts.push(`${remCal} kcal calories target`);
-      if (remPro !== null) parts.push(`${remPro}g protein target`);
-      lines.push(`Full targets for today: ${parts.join(" | ")}`);
-    }
+  }
+
+  if (nudgeIntentWindow) {
+    lines.push(`\nFRAMING NOTE: This is a scheduled nudge delivered to the user's device. Write it as a durable insight the user will read at any point in the day — not a real-time check-in about the current moment. Avoid "right now", "this morning", "tonight", or time-of-day references. Focus on patterns, trends, and actionable insights from the historical data.`);
   }
 
   const streak = ctx.streak as number | undefined;
@@ -195,6 +207,16 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
   const recent = ctx.recentNudges as string[] | undefined;
   if (recent?.length) {
     lines.push(`Recent nudges shown (don't repeat these angles):\n${recent.map((n) => `  - "${n}"`).join("\n")}`);
+    // Derive a thematic summary so Claude can see macro-level repetition
+    const typeCounts = new Map<string, number>();
+    recent.forEach((n) => {
+      const type = n.split(":")[0]?.trim();
+      if (type) typeCounts.set(type, (typeCounts.get(type) ?? 0) + 1);
+    });
+    const repeated = [...typeCounts.entries()].filter(([, c]) => c >= 2).map(([t, c]) => `${t} (${c}x)`);
+    if (repeated.length) {
+      lines.push(`Thematic repetition in recent history (avoid these angles entirely): ${repeated.join(", ")}`);
+    }
   }
 
   const blockedTypes = ctx.blockedNudgeTypes as string[] | undefined;
@@ -263,7 +285,10 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
   }
 
   const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  lines.push(`\nToday is ${DOW[new Date().getDay()]}. Time of day: ${ctx.timeOfDay}`);
+  const windowLine = nudgeIntentWindow
+    ? `Intent window (when this nudge was generated): ${nudgeIntentWindow}`
+    : `Time of day: ${activeWindow}`;
+  lines.push(`\nToday is ${DOW[new Date().getDay()]}. ${windowLine}`);
   lines.push(`\nAnalyze the data above. What is the single most useful, specific thing to tell this person right now? If nothing meaningful stands out, return null.`);
 
   return lines.join("\n");

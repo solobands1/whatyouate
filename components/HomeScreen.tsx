@@ -14,6 +14,7 @@ import {
   notifyWorkoutsUpdated
 } from "../lib/dataEvents";
 import { formatApprox, formatDateShort, todayKey, dayKeyFromTs } from "../lib/utils";
+import { tryLockNudgeWindow, unlockNudgeWindow } from "../lib/nudgeLock";
 import { supabase } from "../lib/supabaseClient";
 import "../lib/mealQueue";
 import BarcodeScannerOverlay from "./BarcodeScannerOverlay";
@@ -1119,8 +1120,9 @@ export default function HomeScreen() {
     if (displayMeals.filter((m) => (m as any).analysisJson?.source !== "supplement").length < 5) return;
     if (trial.isFree) return;
 
-    const hour = new Date().getHours();
-    const win = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
+    // Use UTC window to match cron's getTimeWindow() and SummaryScreen logic
+    const utcHour = new Date().getUTCHours();
+    const win = utcHour < 16 ? "morning" : utcHour < 21 ? "afternoon" : "evening";
     const todayStr = todayKey();
     const windowKey = `${todayStr}_${win}`;
     const prefetchedStorageKey = `wya_nudge_prefetched_${windowKey}`;
@@ -1130,19 +1132,16 @@ export default function HomeScreen() {
       if (!n.created_at) return false;
       const d = new Date(n.created_at);
       if (todayKey(d) !== todayStr) return false;
-      const h = d.getHours();
-      return (h < 12 ? "morning" : h < 17 ? "afternoon" : "evening") === win;
+      const h = d.getUTCHours();
+      return (h < 16 ? "morning" : h < 21 ? "afternoon" : "evening") === win;
     });
     if (existing) { nudgePrefetchedRef.current.add(windowKey); localStorage.setItem(prefetchedStorageKey, "1"); return; }
 
-    // Race condition guard: claim the inflight lock; SummaryScreen will skip if we're in-flight
-    const inflightKey = `wya_nudge_inflight_${windowKey}`;
-    const inflightTs = parseInt(localStorage.getItem(inflightKey) ?? "0");
-    if (inflightTs && Date.now() - inflightTs < 30_000) {
+    // Atomic module-level lock — prevents race with SummaryScreen
+    if (!tryLockNudgeWindow(windowKey)) {
       nudgePrefetchedRef.current.add(windowKey);
       return;
     }
-    localStorage.setItem(inflightKey, Date.now().toString());
     nudgePrefetchedRef.current.add(windowKey);
     localStorage.setItem(prefetchedStorageKey, "1");
 
@@ -1183,20 +1182,11 @@ export default function HomeScreen() {
       body: JSON.stringify({ mode: "smart", ...ctx }),
     })
       .then(async (res) => {
-        localStorage.removeItem(inflightKey);
+        unlockNudgeWindow(windowKey);
         if (!res.ok) return;
         const { nudge } = await res.json();
         if (!nudge?.message) return;
-        if (nudge.suggestions?.length) {
-          localStorage.setItem(`wya_ai_nudge_${windowKey}_${nudge.type}_suggestions`, JSON.stringify(nudge.suggestions.slice(0, 3)));
-        }
-        if (nudge.action) localStorage.setItem(`wya_ai_nudge_${windowKey}_${nudge.type}_action`, nudge.action);
-        if (nudge.why) localStorage.setItem(`wya_ai_nudge_${windowKey}_${nudge.type}_why`, nudge.why);
-        localStorage.setItem(`wya_nudge_snapshot_${windowKey}`, JSON.stringify({
-          cal: Math.round((ctx.todayCalories ?? 0)),
-          prot: Math.round((ctx.todayProtein ?? 0)),
-        }));
-        await addNudge(user.id, nudge.type, nudge.message).catch(() => {});
+        await addNudge(user.id, nudge.type, nudge.message, nudge.why ?? null, nudge.action ?? null).catch(() => {});
         pruneNudges(user.id).catch(() => {});
         notifyNudgesUpdated();
         // Light the bell and mark a new smart nudge
@@ -1208,7 +1198,7 @@ export default function HomeScreen() {
           window.dispatchEvent(new Event("wya_nudge_update"));
         }
       })
-      .catch(() => { localStorage.removeItem(inflightKey); });
+      .catch(() => { unlockNudgeWindow(windowKey); });
   }, [profile, nudgesLoaded, nudges, user, displayMeals, displayWorkouts, ctxFeelLogs, trial.isFree]);
 
   const homeMarkers = useMemo(

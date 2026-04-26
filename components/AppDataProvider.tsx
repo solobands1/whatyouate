@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import type { MealLog, UserProfile, WorkoutSession } from "../lib/types";
 import { useAuth } from "./AuthProvider";
-import { getProfile, listMeals, listWorkouts, listNudges, getFeelLogs, getWeightLogs, updateMeal, saveStreak } from "../lib/supabaseDb";
+import { getProfile, listMeals, listWorkouts, listNudges, getFeelLogs, getWeightLogs, updateMeal, saveStreak, saveTimezoneOffset } from "../lib/supabaseDb";
 import type { FeelLog, WeightLog } from "../lib/supabaseDb";
 import { dayKeyFromTs, todayKey } from "../lib/utils";
 import { computeStreakFromMeals } from "../lib/digestEngine";
@@ -41,7 +41,7 @@ function pruneNudgeSnapshots() {
   }
 }
 
-export type NudgeRow = { id: string; type?: string; message: string; created_at: string };
+export type NudgeRow = { id: string; type?: string; message: string; created_at: string; why?: string | null; action?: string | null };
 export type { WeightLog };
 
 type AppDataContextValue = {
@@ -164,6 +164,13 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
+      // Silently capture timezone offset — used server-side by cron for accurate meal time display
+      const currentOffset = new Date().getTimezoneOffset();
+      if (resolvedProfile && resolvedProfile.timezoneOffsetMinutes !== currentOffset) {
+        resolvedProfile = { ...resolvedProfile, timezoneOffsetMinutes: currentOffset };
+        saveTimezoneOffset(userId, currentOffset).catch(() => {});
+      }
+
       setProfile(resolvedProfile);
       setMeals(finalMeals);
       setWorkouts(workoutsData);
@@ -199,11 +206,20 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     window.addEventListener(WORKOUTS_UPDATED_EVENT, handler);
     window.addEventListener(PROFILE_UPDATED_EVENT, handler);
     window.addEventListener(NUDGES_UPDATED_EVENT, nudgeHandler);
+
+    // Reload nudges when app returns to foreground (e.g. after tapping a push notification)
+    // visibilitychange fires reliably in Capacitor WKWebView on iOS background/foreground
+    const visibilityHandler = () => {
+      if (document.visibilityState === "visible") loadNudges(user.id);
+    };
+    document.addEventListener("visibilitychange", visibilityHandler);
+
     return () => {
       window.removeEventListener(MEALS_UPDATED_EVENT, handler);
       window.removeEventListener(WORKOUTS_UPDATED_EVENT, handler);
       window.removeEventListener(PROFILE_UPDATED_EVENT, handler);
       window.removeEventListener(NUDGES_UPDATED_EVENT, nudgeHandler);
+      document.removeEventListener("visibilitychange", visibilityHandler);
     };
   }, [user, load, loadNudges]);
 

@@ -46,6 +46,7 @@ export interface UserProfile {
   streakLastDate?: string; // YYYY-MM-DD
   trackWater?: boolean;
   waterUnit?: "ml" | "oz";
+  timezoneOffsetMinutes?: number | null; // JS getTimezoneOffset() value — positive = west of UTC (e.g. ET=300, PT=480)
 }
 
 export interface MicronutrientAmount {
