@@ -203,7 +203,7 @@ export async function GET(req: Request) {
 
       const workouts = (workoutsRes.data ?? []).map(mapWorkoutRow);
       const profile = mapProfileRow(profileRes.data as Record<string, unknown>);
-      const recentNudgeMessages = (nudgesRes.data ?? []).map((n: { message: string }) => n.message);
+      const recentNudgeMessages = (nudgesRes.data ?? []).map((n: { type: string; message: string }) => `${n.type}: ${n.message}`);
       const recentFeelLogs = (feelRes.data ?? []).map((r: { ts: number; tag: string }) => ({ ts: r.ts * 1000, tag: r.tag }));
       const lastNudgeRecord = nudgesRes.data?.[0]
         ? { type: (nudgesRes.data[0] as { type: string }).type, message: (nudgesRes.data[0] as { message: string }).message, created_at: (nudgesRes.data[0] as { created_at: string }).created_at }
