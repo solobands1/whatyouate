@@ -280,7 +280,7 @@ export async function GET(req: Request) {
       ctx.nudgeIntentWindow = window;
 
       // Always block real-time nudge types from cron — these require current-day data
-      const CRON_BLOCKED_TYPES = ["check_in", "meal_timing", "calorie_low", "protein_low", "workout_fuel_low"];
+      const CRON_BLOCKED_TYPES = ["check_in", "meal_timing", "workout_fuel_low"];
       const allBlockedTypes = [...new Set([...blockedNudgeTypes, ...CRON_BLOCKED_TYPES])];
       ctx.blockedNudgeTypes = allBlockedTypes;
 
