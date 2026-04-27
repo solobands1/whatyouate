@@ -1335,12 +1335,15 @@ export default function SummaryScreen() {
                   );
                 })()
               ) : (
-                <div className="rounded-xl border border-ink/10 bg-ink/3 px-4 py-3 flex items-center gap-3">
-                  <span className="relative flex h-2 w-2 shrink-0">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-40" />
-                    <span className="relative inline-flex h-2 w-2 rounded-full bg-primary/60" />
-                  </span>
-                  <p className="text-sm text-ink/45">No nudge yet — coach is watching your patterns.</p>
+                <div className="rounded-xl border border-primary/60 bg-primary/5 px-4 py-3 space-y-2.5">
+                  <p className="text-sm font-medium text-ink/90">No Nudge Yet</p>
+                  <div className="flex items-center gap-2">
+                    <span className="relative flex h-2 w-2 shrink-0">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-primary/80" />
+                    </span>
+                    <p className="text-[11px] text-primary/70 font-medium">Coach is watching your patterns</p>
+                  </div>
                 </div>
               )}
 
