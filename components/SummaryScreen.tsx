@@ -9,7 +9,10 @@ import Card from "./Card";
 import { useAuth } from "./AuthProvider";
 import { useAppData } from "./AppDataProvider";
 import type { FeelLog } from "../lib/supabaseDb";
-import { computeSummaryMarkers, type ComputedNudge, type NudgeType } from "../lib/digestEngine";
+import { computeSummaryMarkers, buildSmartNudgeContext, type ComputedNudge, type NudgeType } from "../lib/digestEngine";
+import { tryLockNudgeWindow, unlockNudgeWindow } from "../lib/nudgeLock";
+import { addNudge } from "../lib/supabaseDb";
+import { notifyNudgesUpdated } from "../lib/dataEvents";
 import { useTrialStatus } from "../hooks/useTrialStatus";
 import { openUpgradeModal } from "./UpgradeModal";
 import WyaaAvatar from "./WyaaAvatar";
@@ -128,7 +131,7 @@ const DEMO_NUDGE = "Your protein has been strong this week, but your last two da
 export default function SummaryScreen() {
   const router = useRouter();
   const { user, loading } = useAuth();
-  const { profile, meals, workouts, nudges, nudgesLoaded, feelLogs: recentFeelLogs, loading: loadingData } = useAppData();
+  const { profile, meals, workouts, nudges, nudgesLoaded, feelLogs: recentFeelLogs, weightLogs, loading: loadingData } = useAppData();
   const trial = useTrialStatus();
   const [hydrated, setHydrated] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
@@ -594,15 +597,16 @@ export default function SummaryScreen() {
 
 
 
-  // Smart nudge — DB-only. Reads current window's nudge from DB reactively.
-  // Cron and HomeScreen prefetch write to DB; this effect picks it up whenever nudges changes.
+  // Smart nudge — reads current window nudge from DB, and generates on-demand if none exists.
+  const nudgeGenAttemptedWindowRef = useRef("");
   useEffect(() => {
-    if (!nudgesLoaded) return;
+    if (!nudgesLoaded || !user || !profile) return;
     if (meals.length < 5) { setSmartNudge(null); return; }
 
     const utcHour = new Date().getUTCHours();
     const win = utcHour < 16 ? "morning" : utcHour < 21 ? "afternoon" : "evening";
     const todayStr = todayKey();
+    const windowKey = `${todayStr}_${win}`;
 
     const currentWindowNudge = nudges.find((n) => {
       if (!n.created_at) return false;
@@ -613,12 +617,76 @@ export default function SummaryScreen() {
     });
     if (currentWindowNudge) {
       setSmartNudge({ message: currentWindowNudge.message, type: currentWindowNudge.type as NudgeType, action: currentWindowNudge.action ?? undefined, generatedAt: currentWindowNudge.created_at });
+      nudgeGenAttemptedWindowRef.current = ""; // reset so next window can generate
       return;
     }
 
-    // No nudge for this window yet — placeholder state
-    setSmartNudge(null);
-  }, [nudgesLoaded, meals.length, nudges]);
+    // Already attempted for this window — show placeholder
+    if (nudgeGenAttemptedWindowRef.current === windowKey) {
+      setSmartNudge(null);
+      return;
+    }
+
+    // Another component (HomeScreen prefetch) is generating — keep loading state
+    if (!tryLockNudgeWindow(windowKey)) return;
+
+    // We got the lock — generate on-demand from SummaryScreen
+    nudgeGenAttemptedWindowRef.current = windowKey;
+
+    const recentFoods = (() => {
+      const seen = new Set<string>();
+      const foods: string[] = [];
+      const cutoff = Date.now() - 4 * 24 * 60 * 60 * 1000;
+      meals
+        .filter((m) => m.ts >= cutoff && m.analysisJson?.source !== "supplement" && m.status !== "failed")
+        .sort((a, b) => b.ts - a.ts)
+        .forEach((meal) => {
+          const items = [
+            meal.analysisJson?.name,
+            ...((meal.analysisJson?.detected_items ?? []) as Array<{ name: string }>).map((i) => i.name),
+          ].filter(Boolean) as string[];
+          items.forEach((name) => {
+            const key = name.toLowerCase();
+            if (!seen.has(key)) { seen.add(key); foods.push(name); }
+          });
+        });
+      return foods.slice(0, 20);
+    })();
+
+    const recentNudgeMessages = nudges.slice(0, 7).map((n) => n.type ? `${n.type}: ${n.message}` : n.message);
+    const lastNudgeRaw = nudges.length > 0 ? nudges[0] : undefined;
+    const lastNudgeRecord = lastNudgeRaw?.type && lastNudgeRaw.created_at
+      ? { type: lastNudgeRaw.type, message: lastNudgeRaw.message, created_at: lastNudgeRaw.created_at }
+      : undefined;
+
+    const ctx = buildSmartNudgeContext(
+      meals, workouts, profile, recentFoods, recentNudgeMessages,
+      recentFeelLogs, lastNudgeRecord, weightLogs ?? [],
+    );
+
+    fetch("/api/nudge", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mode: "smart", ...ctx }),
+    })
+      .then(async (res) => {
+        unlockNudgeWindow(windowKey);
+        if (!res.ok) { setSmartNudge(null); return; }
+        const { nudge } = await res.json();
+        if (!nudge?.message) { setSmartNudge(null); return; }
+        try {
+          await addNudge(user.id, nudge.type, nudge.message, nudge.why ?? null, nudge.action ?? null);
+          notifyNudgesUpdated(); // re-triggers this effect → finds nudge in DB → displays it
+        } catch {
+          // DB save failed — show nudge directly without persisting
+          setSmartNudge({ message: nudge.message, type: nudge.type as NudgeType, action: nudge.action ?? undefined, generatedAt: new Date().toISOString() });
+        }
+      })
+      .catch(() => {
+        unlockNudgeWindow(windowKey);
+        setSmartNudge(null);
+      });
+  }, [nudgesLoaded, meals.length, nudges, user, profile, workouts, recentFeelLogs, weightLogs]);
 
   const isVegan = profile?.dietaryRestrictions?.includes("Vegan") ?? false;
   const isVegetarian = isVegan || (profile?.dietaryRestrictions?.includes("Vegetarian") ?? false);

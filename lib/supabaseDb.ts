@@ -701,7 +701,7 @@ export async function addNudge(userId: string, type: string, message: string, wh
     return nudge;
   }
 
-  const payload: Record<string, unknown> = { user_id: userId, type, message };
+  const payload: Record<string, unknown> = { user_id: userId, type, message, created_at: new Date().toISOString() };
   if (why != null) payload.why = why;
   if (action != null) payload.action = action;
   const { data, error } = await supabase.from("nudges").insert(payload).select("*").single();

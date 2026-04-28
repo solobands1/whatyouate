@@ -1113,7 +1113,7 @@ export default function HomeScreen() {
   }, [user, homeNotifyNotes]);
 
   // Background nudge pre-fetch — runs on home screen so nudge is ready before user opens Summary.
-  // Follows the same DB-first logic as SummaryScreen: if a nudge exists for this window, skip.
+  // SummaryScreen has its own fallback generation, so this is a best-effort speed optimization.
   const nudgePrefetchedRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     if (!profile || !nudgesLoaded || !user) return;
@@ -1126,8 +1126,11 @@ export default function HomeScreen() {
     const todayStr = todayKey();
     const windowKey = `${todayStr}_${win}`;
     const prefetchedStorageKey = `wya_nudge_prefetched_${windowKey}`;
-    if (nudgePrefetchedRef.current.has(windowKey) || localStorage.getItem(prefetchedStorageKey)) return;
 
+    // Fast-exit if already handled this session
+    if (nudgePrefetchedRef.current.has(windowKey)) return;
+
+    // Check DB first — if a nudge already exists for this window, we're done
     const existing = nudges.find((n) => {
       if (!n.created_at) return false;
       const d = new Date(n.created_at);
@@ -1137,14 +1140,17 @@ export default function HomeScreen() {
     });
     if (existing) { nudgePrefetchedRef.current.add(windowKey); localStorage.setItem(prefetchedStorageKey, "1"); return; }
 
-    // Atomic module-level lock — prevents race with SummaryScreen
+    // If localStorage says done but DB has nothing, previous insert failed silently — clear and retry
+    if (localStorage.getItem(prefetchedStorageKey)) {
+      localStorage.removeItem(prefetchedStorageKey);
+    }
+
+    // Atomic module-level lock — prevents race with SummaryScreen's on-demand generator
     if (!tryLockNudgeWindow(windowKey)) {
       nudgePrefetchedRef.current.add(windowKey);
       return;
     }
     nudgePrefetchedRef.current.add(windowKey);
-    // Note: prefetchedStorageKey is only written to localStorage after a nudge is
-    // successfully saved — if the API call fails, the next app open will retry.
 
     const recentFoodsForNudge = (() => {
       const seen = new Set<string>();
@@ -1187,17 +1193,21 @@ export default function HomeScreen() {
         if (!res.ok) return;
         const { nudge } = await res.json();
         if (!nudge?.message) return;
-        await addNudge(user.id, nudge.type, nudge.message, nudge.why ?? null, nudge.action ?? null).catch(() => {});
-        localStorage.setItem(prefetchedStorageKey, "1");
-        pruneNudges(user.id).catch(() => {});
-        notifyNudgesUpdated();
-        // Light the bell and mark a new smart nudge
-        localStorage.setItem("wya_smart_nudge_ts", Date.now().toString());
-        const seenTs = parseInt(localStorage.getItem("wya_nudge_seen_ts") ?? "0");
-        const existingNudgeTs = parseInt(localStorage.getItem("wya_nudge_ts") ?? "0");
-        if (existingNudgeTs <= seenTs) {
-          localStorage.setItem("wya_nudge_ts", Date.now().toString());
-          window.dispatchEvent(new Event("wya_nudge_update"));
+        try {
+          await addNudge(user.id, nudge.type, nudge.message, nudge.why ?? null, nudge.action ?? null);
+          localStorage.setItem(prefetchedStorageKey, "1");
+          pruneNudges(user.id).catch(() => {});
+          notifyNudgesUpdated();
+          // Light the bell and mark a new smart nudge
+          localStorage.setItem("wya_smart_nudge_ts", Date.now().toString());
+          const seenTs = parseInt(localStorage.getItem("wya_nudge_seen_ts") ?? "0");
+          const existingNudgeTs = parseInt(localStorage.getItem("wya_nudge_ts") ?? "0");
+          if (existingNudgeTs <= seenTs) {
+            localStorage.setItem("wya_nudge_ts", Date.now().toString());
+            window.dispatchEvent(new Event("wya_nudge_update"));
+          }
+        } catch {
+          // addNudge failed — don't set localStorage so next session retries
         }
       })
       .catch(() => { unlockNudgeWindow(windowKey); });
