@@ -203,13 +203,15 @@ export async function GET(req: Request) {
   const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
   const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
 
-  const { data: tokens } = await supabase
-    .from("push_tokens")
-    .select("user_id, token")
-    .eq("platform", "ios");
-  if (!tokens?.length) return NextResponse.json({ ok: true, processed: 0 });
+  // Fetch all users and tokens in parallel — nudge generation is not gated on push token existence
+  const [{ data: profileRows }, { data: tokens }] = await Promise.all([
+    supabase.from("profiles").select("user_id"),
+    supabase.from("push_tokens").select("user_id, token").eq("platform", "ios"),
+  ]);
 
-  const userIds = [...new Set(tokens.map((t: { user_id: string }) => t.user_id))];
+  if (!profileRows?.length) return NextResponse.json({ ok: true, processed: 0 });
+
+  const userIds = [...new Set(profileRows.map((p: { user_id: string }) => p.user_id))];
   let processed = 0;
   let sent = 0;
 
@@ -317,7 +319,7 @@ export async function GET(req: Request) {
   // Phase 2: all nudges are in DB — now send all pushes
   // Nudge is already persisted so the app will find it immediately on open
   for (const { userId, message } of pendingPushes) {
-    const userTokens = tokens.filter((t: { user_id: string }) => t.user_id === userId);
+    const userTokens = (tokens ?? []).filter((t: { user_id: string }) => t.user_id === userId);
     for (const t of userTokens as Array<{ token: string }>) {
       const ok = await sendPush(t.token, {
         title: "Coach",

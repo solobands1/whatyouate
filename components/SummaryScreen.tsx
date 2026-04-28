@@ -9,9 +9,7 @@ import Card from "./Card";
 import { useAuth } from "./AuthProvider";
 import { useAppData } from "./AppDataProvider";
 import type { FeelLog } from "../lib/supabaseDb";
-import { computeSummaryMarkers, buildSmartNudgeContext, type ComputedNudge, type NudgeType } from "../lib/digestEngine";
-import { addNudge } from "../lib/supabaseDb";
-import { notifyNudgesUpdated } from "../lib/dataEvents";
+import { computeSummaryMarkers, type ComputedNudge, type NudgeType } from "../lib/digestEngine";
 import { useTrialStatus } from "../hooks/useTrialStatus";
 import { openUpgradeModal } from "./UpgradeModal";
 import WyaaAvatar from "./WyaaAvatar";
@@ -130,7 +128,7 @@ const DEMO_NUDGE = "Your protein has been strong this week, but your last two da
 export default function SummaryScreen() {
   const router = useRouter();
   const { user, loading } = useAuth();
-  const { profile, meals, workouts, nudges, nudgesLoaded, feelLogs: recentFeelLogs, weightLogs, loading: loadingData } = useAppData();
+  const { profile, meals, workouts, nudges, nudgesLoaded, feelLogs: recentFeelLogs, loading: loadingData } = useAppData();
   const trial = useTrialStatus();
   const [hydrated, setHydrated] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
@@ -151,8 +149,8 @@ export default function SummaryScreen() {
   const [runSummaryTour, setRunSummaryTour] = useState(false);
   const [visibleNudgeGroupCount, setVisibleNudgeGroupCount] = useState(3);
   const [nudgeExpanded, setNudgeExpanded] = useState<Record<string, "why" | "what" | null>>({});
-  // { message, type, suggestions } from smart AI call, or null if no nudge for this window, or undefined while loading
-  const [smartNudge, setSmartNudge] = useState<{ message: string; type: NudgeType; action?: string; suggestions?: string[]; generatedAt?: string } | null | undefined>(undefined);
+  // Current-window nudge from DB, or null if none exists yet
+  const [smartNudge, setSmartNudge] = useState<{ message: string; type: NudgeType; action?: string; suggestions?: string[]; generatedAt?: string } | null>(null);
   // Show "New" only when a new SMART nudge was generated (separate from computed nudge bell)
   const [nudgeCardIsNew] = useState(() => {
     try {
@@ -596,18 +594,14 @@ export default function SummaryScreen() {
 
 
 
-  // Smart nudge — reads current window nudge from DB, generates on-demand if none exists.
-  // Does NOT coordinate with HomeScreen's prefetch lock — it generates independently.
-  // If both fire simultaneously the second addNudge just creates a duplicate that prune cleans up.
-  const nudgeGenAttemptedWindowRef = useRef("");
+  // Read current-window nudge from DB only — nudges are generated exclusively by cron
   useEffect(() => {
-    if (!nudgesLoaded || !user || !profile) return;
+    if (!nudgesLoaded) return;
     if (meals.length < 5) { setSmartNudge(null); return; }
 
     const utcHour = new Date().getUTCHours();
     const win = utcHour < 16 ? "morning" : utcHour < 21 ? "afternoon" : "evening";
     const todayStr = todayKey();
-    const windowKey = `${todayStr}_${win}`;
 
     const currentWindowNudge = nudges.find((n) => {
       if (!n.created_at) return false;
@@ -616,71 +610,13 @@ export default function SummaryScreen() {
       const h = d.getUTCHours();
       return (h < 16 ? "morning" : h < 21 ? "afternoon" : "evening") === win;
     });
-    if (currentWindowNudge) {
-      setSmartNudge({ message: currentWindowNudge.message, type: currentWindowNudge.type as NudgeType, action: currentWindowNudge.action ?? undefined, generatedAt: currentWindowNudge.created_at });
-      nudgeGenAttemptedWindowRef.current = ""; // reset so next window can generate
-      return;
-    }
 
-    // Already attempted for this window this session — show placeholder
-    if (nudgeGenAttemptedWindowRef.current === windowKey) {
-      setSmartNudge(null);
-      return;
-    }
-
-    // Mark as attempted and generate on-demand (keep undefined = "Coach is thinking…")
-    nudgeGenAttemptedWindowRef.current = windowKey;
-
-    const recentFoods = (() => {
-      const seen = new Set<string>();
-      const foods: string[] = [];
-      const cutoff = Date.now() - 4 * 24 * 60 * 60 * 1000;
-      meals
-        .filter((m) => m.ts >= cutoff && m.analysisJson?.source !== "supplement" && m.status !== "failed")
-        .sort((a, b) => b.ts - a.ts)
-        .forEach((meal) => {
-          const items = [
-            meal.analysisJson?.name,
-            ...((meal.analysisJson?.detected_items ?? []) as Array<{ name: string }>).map((i) => i.name),
-          ].filter(Boolean) as string[];
-          items.forEach((name) => {
-            const key = name.toLowerCase();
-            if (!seen.has(key)) { seen.add(key); foods.push(name); }
-          });
-        });
-      return foods.slice(0, 20);
-    })();
-
-    const recentNudgeMessages = nudges.slice(0, 7).map((n) => n.type ? `${n.type}: ${n.message}` : n.message);
-    const lastNudgeRaw = nudges.length > 0 ? nudges[0] : undefined;
-    const lastNudgeRecord = lastNudgeRaw?.type && lastNudgeRaw.created_at
-      ? { type: lastNudgeRaw.type, message: lastNudgeRaw.message, created_at: lastNudgeRaw.created_at }
-      : undefined;
-
-    const ctx = buildSmartNudgeContext(
-      meals, workouts, profile, recentFoods, recentNudgeMessages,
-      recentFeelLogs, lastNudgeRecord, weightLogs ?? [],
+    setSmartNudge(
+      currentWindowNudge
+        ? { message: currentWindowNudge.message, type: currentWindowNudge.type as NudgeType, action: currentWindowNudge.action ?? undefined, generatedAt: currentWindowNudge.created_at }
+        : null
     );
-
-    fetch("/api/nudge", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mode: "smart", ...ctx }),
-    })
-      .then(async (res) => {
-        if (!res.ok) { setSmartNudge(null); return; }
-        const { nudge } = await res.json();
-        if (!nudge?.message) { setSmartNudge(null); return; }
-        try {
-          await addNudge(user.id, nudge.type, nudge.message, nudge.why ?? null, nudge.action ?? null);
-          notifyNudgesUpdated(); // re-triggers this effect → finds nudge in DB → displays it
-        } catch {
-          // DB save failed — show nudge directly without persisting
-          setSmartNudge({ message: nudge.message, type: nudge.type as NudgeType, action: nudge.action ?? undefined, generatedAt: new Date().toISOString() });
-        }
-      })
-      .catch(() => { setSmartNudge(null); });
-  }, [nudgesLoaded, meals.length, nudges, user, profile, workouts, recentFeelLogs, weightLogs]);
+  }, [nudgesLoaded, nudges, meals.length]);
 
   const isVegan = profile?.dietaryRestrictions?.includes("Vegan") ?? false;
   const isVegetarian = isVegan || (profile?.dietaryRestrictions?.includes("Vegetarian") ?? false);
@@ -1311,15 +1247,7 @@ export default function SummaryScreen() {
                 );
               })()}
 
-              {smartNudge === undefined ? (
-                <div className="rounded-xl border border-primary/35 bg-primary/5 px-4 py-3 flex items-center gap-2.5">
-                  <span className="relative flex h-2 w-2 shrink-0">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
-                    <span className="relative inline-flex h-2 w-2 rounded-full bg-primary/80" />
-                  </span>
-                  <p className="text-sm text-primary/70 font-medium">Coach is thinking…</p>
-                </div>
-              ) : smartNudge && trial.isFree && !isDemoMode ? (
+              {smartNudge && trial.isFree && !isDemoMode ? (
                 <div className="relative overflow-hidden rounded-xl border border-primary/30 bg-primary/5 px-4 py-3">
                   <p className="text-sm font-medium text-ink/90 line-clamp-1">
                     {smartNudge.message.slice(0, 48)}{smartNudge.message.length > 48 ? "..." : ""}
