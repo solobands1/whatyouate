@@ -10,7 +10,6 @@ import { useAuth } from "./AuthProvider";
 import { useAppData } from "./AppDataProvider";
 import type { FeelLog } from "../lib/supabaseDb";
 import { computeSummaryMarkers, buildSmartNudgeContext, type ComputedNudge, type NudgeType } from "../lib/digestEngine";
-import { tryLockNudgeWindow, unlockNudgeWindow } from "../lib/nudgeLock";
 import { addNudge } from "../lib/supabaseDb";
 import { notifyNudgesUpdated } from "../lib/dataEvents";
 import { useTrialStatus } from "../hooks/useTrialStatus";
@@ -597,7 +596,9 @@ export default function SummaryScreen() {
 
 
 
-  // Smart nudge — reads current window nudge from DB, and generates on-demand if none exists.
+  // Smart nudge — reads current window nudge from DB, generates on-demand if none exists.
+  // Does NOT coordinate with HomeScreen's prefetch lock — it generates independently.
+  // If both fire simultaneously the second addNudge just creates a duplicate that prune cleans up.
   const nudgeGenAttemptedWindowRef = useRef("");
   useEffect(() => {
     if (!nudgesLoaded || !user || !profile) return;
@@ -621,16 +622,13 @@ export default function SummaryScreen() {
       return;
     }
 
-    // Already attempted for this window — show placeholder
+    // Already attempted for this window this session — show placeholder
     if (nudgeGenAttemptedWindowRef.current === windowKey) {
       setSmartNudge(null);
       return;
     }
 
-    // Another component (HomeScreen prefetch) is generating — keep loading state
-    if (!tryLockNudgeWindow(windowKey)) return;
-
-    // We got the lock — generate on-demand from SummaryScreen
+    // Mark as attempted and generate on-demand (keep undefined = "Coach is thinking…")
     nudgeGenAttemptedWindowRef.current = windowKey;
 
     const recentFoods = (() => {
@@ -670,7 +668,6 @@ export default function SummaryScreen() {
       body: JSON.stringify({ mode: "smart", ...ctx }),
     })
       .then(async (res) => {
-        unlockNudgeWindow(windowKey);
         if (!res.ok) { setSmartNudge(null); return; }
         const { nudge } = await res.json();
         if (!nudge?.message) { setSmartNudge(null); return; }
@@ -682,10 +679,7 @@ export default function SummaryScreen() {
           setSmartNudge({ message: nudge.message, type: nudge.type as NudgeType, action: nudge.action ?? undefined, generatedAt: new Date().toISOString() });
         }
       })
-      .catch(() => {
-        unlockNudgeWindow(windowKey);
-        setSmartNudge(null);
-      });
+      .catch(() => { setSmartNudge(null); });
   }, [nudgesLoaded, meals.length, nudges, user, profile, workouts, recentFeelLogs, weightLogs]);
 
   const isVegan = profile?.dietaryRestrictions?.includes("Vegan") ?? false;
