@@ -73,7 +73,14 @@ function mapProfileRow(data: Record<string, unknown>): UserProfile {
   };
 }
 
+const UNLIMITED_USER_IDS = new Set([
+  "4ef35614-32ec-4a17-b410-f4c31437c1bc", // Dillon
+  "b2d6d7a6-a147-4dfb-9750-375d070cccbf", // Andrea
+  "973c0886-cd6f-4813-8a3c-4ded80bfa09c", // Apple review demo
+]);
+
 async function checkProEntitlement(userId: string): Promise<boolean> {
+  if (UNLIMITED_USER_IDS.has(userId)) return true;
   try {
     const res = await fetch(
       `https://api.revenuecat.com/v1/subscribers/${encodeURIComponent(userId)}`,

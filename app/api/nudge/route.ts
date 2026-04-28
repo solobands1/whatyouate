@@ -70,7 +70,7 @@ export async function POST(req: Request) {
     if (body.mode === "smart") {
       const prompt = buildSmartPrompt(body);
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 12_000);
+      const timeoutId = setTimeout(() => controller.abort(), 25_000);
       try {
         const response = await fetch(ANTHROPIC_URL, {
           method: "POST",

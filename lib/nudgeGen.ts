@@ -171,7 +171,7 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
   }
 
   if (nudgeIntentWindow) {
-    lines.push(`\nFRAMING NOTE: This is a scheduled nudge delivered to the user's device. Write it as a durable insight the user will read at any point in the day — not a real-time check-in about the current moment. Avoid "right now", "this morning", "tonight", or time-of-day references. Focus on patterns, trends, and actionable insights from the historical data.`);
+    lines.push(`\nFRAMING NOTE: This is a scheduled nudge delivered to the user's device. Write it as a durable insight the user will read at any point in the day — not a real-time check-in about the current moment. Avoid "right now", "this morning", "tonight", or time-of-day references. Focus on patterns, trends, and actionable insights from the historical data. IMPORTANT: With multiple days of logged data available, there is ALWAYS something worth surfacing — a pattern, a win, a trend, a food insight. Returning null is not appropriate when historical data is present. Pick the single most useful angle and write it.`);
   }
 
   const streak = ctx.streak as number | undefined;
@@ -289,7 +289,11 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
     ? `Intent window (when this nudge was generated): ${nudgeIntentWindow}`
     : `Time of day: ${activeWindow}`;
   lines.push(`\nToday is ${DOW[new Date().getDay()]}. ${windowLine}`);
-  lines.push(`\nAnalyze the data above. What is the single most useful, specific thing to tell this person right now? If nothing meaningful stands out, return null.`);
+  if (nudgeIntentWindow && !hasTodayData) {
+    lines.push(`\nAnalyze the historical data above. What is the single most useful, specific pattern, trend, or insight for this person? You MUST find something — with days of logged data, there is always a meaningful observation. Do NOT return null when historical data is present.`);
+  } else {
+    lines.push(`\nAnalyze the data above. What is the single most useful, specific thing to tell this person right now? If nothing meaningful stands out, return null.`);
+  }
 
   return lines.join("\n");
 }
