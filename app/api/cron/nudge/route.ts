@@ -279,16 +279,17 @@ export async function GET(req: Request) {
 
       ctx.nudgeIntentWindow = window;
 
-      // Always block real-time nudge types from cron — these require current-day data
-      const CRON_BLOCKED_TYPES = ["check_in", "meal_timing", "workout_fuel_low"];
-      const allBlockedTypes = [...new Set([...blockedNudgeTypes, ...CRON_BLOCKED_TYPES])];
-      ctx.blockedNudgeTypes = allBlockedTypes;
+      // Hard-blocked: types that require real-time today data the cron doesn't have
+      const CRON_HARD_BLOCKED = new Set(["check_in", "meal_timing"]);
+      // Soft-blocked: passed to Claude as guidance but not hard-enforced in code
+      const softBlocked = [...new Set([...blockedNudgeTypes, "workout_fuel_low"])];
+      ctx.blockedNudgeTypes = [...CRON_HARD_BLOCKED, ...softBlocked];
 
       const nudge = await generateNudge(ctx);
       if (!nudge?.message) continue;
 
-      // Hard-enforce fatigue — discard even if Claude ignored the blocked types instruction
-      if (allBlockedTypes.includes(nudge.type)) continue;
+      // Hard-enforce only truly real-time types — fatigue suppression is handled by the prompt
+      if (CRON_HARD_BLOCKED.has(nudge.type)) continue;
 
       await supabase.from("nudges").insert({
         user_id: userId,

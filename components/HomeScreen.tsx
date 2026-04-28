@@ -1143,7 +1143,8 @@ export default function HomeScreen() {
       return;
     }
     nudgePrefetchedRef.current.add(windowKey);
-    localStorage.setItem(prefetchedStorageKey, "1");
+    // Note: prefetchedStorageKey is only written to localStorage after a nudge is
+    // successfully saved — if the API call fails, the next app open will retry.
 
     const recentFoodsForNudge = (() => {
       const seen = new Set<string>();
@@ -1187,6 +1188,7 @@ export default function HomeScreen() {
         const { nudge } = await res.json();
         if (!nudge?.message) return;
         await addNudge(user.id, nudge.type, nudge.message, nudge.why ?? null, nudge.action ?? null).catch(() => {});
+        localStorage.setItem(prefetchedStorageKey, "1");
         pruneNudges(user.id).catch(() => {});
         notifyNudgesUpdated();
         // Light the bell and mark a new smart nudge
