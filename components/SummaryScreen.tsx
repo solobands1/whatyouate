@@ -1340,7 +1340,7 @@ export default function SummaryScreen() {
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
                     <span className="relative inline-flex h-2 w-2 rounded-full bg-primary/80" />
                   </span>
-                  <p className="text-sm font-medium text-primary/70">Monitoring Your Patterns</p>
+                  <p className="text-[13px] font-medium text-primary/70">Monitoring Your Patterns</p>
                 </div>
               )}
 
