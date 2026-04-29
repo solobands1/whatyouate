@@ -55,18 +55,27 @@ export default function PushNotificationSetup() {
       const { PushNotifications } = await import("@capacitor/push-notifications");
 
       const permStatus = await PushNotifications.checkPermissions();
+      console.log("[push] permission status:", permStatus.receive);
 
       if (permStatus.receive === "prompt" || permStatus.receive === "prompt-with-rationale") {
-        if (silentIfNotGranted) return;
+        if (silentIfNotGranted) {
+          console.log("[push] not yet granted, skipping silent registration");
+          return;
+        }
         const result = await PushNotifications.requestPermissions();
+        console.log("[push] requestPermissions result:", result.receive);
         if (result.receive !== "granted") return;
       } else if (permStatus.receive !== "granted") {
+        console.log("[push] permission denied or unknown, aborting registration");
         return;
       }
+
+      console.log("[push] permission granted, registering...");
 
       // Listeners must be added before register() — the token event can fire
       // immediately after register() and would be missed if added after.
       PushNotifications.addListener("registration", async (token) => {
+        console.log("[push] got token:", token.value.slice(0, 12) + "...");
         try {
           const res = await fetch("/api/push/register", {
             method: "POST",
@@ -85,7 +94,7 @@ export default function PushNotificationSetup() {
       });
 
       PushNotifications.addListener("registrationError", (err) => {
-        console.error("[push] Registration error:", err);
+        console.error("[push] Registration error:", JSON.stringify(err));
       });
 
       PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
@@ -97,8 +106,9 @@ export default function PushNotificationSetup() {
       });
 
       await PushNotifications.register();
-    } catch {
-      // Plugin not available (simulator / web)
+      console.log("[push] register() called");
+    } catch (err) {
+      console.error("[push] initPush error:", err);
     }
   }
 
