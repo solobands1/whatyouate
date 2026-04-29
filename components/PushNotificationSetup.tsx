@@ -64,8 +64,8 @@ export default function PushNotificationSetup() {
         return;
       }
 
-      await PushNotifications.register();
-
+      // Listeners must be added before register() — the token event can fire
+      // immediately after register() and would be missed if added after.
       PushNotifications.addListener("registration", async (token) => {
         try {
           const res = await fetch("/api/push/register", {
@@ -84,6 +84,10 @@ export default function PushNotificationSetup() {
         }
       });
 
+      PushNotifications.addListener("registrationError", (err) => {
+        console.error("[push] Registration error:", err);
+      });
+
       PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
         const screen = action.notification.data?.screen;
         if (screen === "summary") {
@@ -91,6 +95,8 @@ export default function PushNotificationSetup() {
           window.dispatchEvent(new CustomEvent("navigate", { detail: { screen: "summary" } }));
         }
       });
+
+      await PushNotifications.register();
     } catch {
       // Plugin not available (simulator / web)
     }

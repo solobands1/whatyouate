@@ -452,7 +452,9 @@ export default function SummaryScreen() {
         if (currentWindowNudge?.id && nudge.id === currentWindowNudge.id) return;
         // Filter out retired nudge types that may still exist in DB history
         if (nudge.message.includes("you're just") && nudge.message.includes("away from your")) return;
-        const nudgeHour = new Date(nudge.created_at).getHours();
+        const nudgeDate = new Date(nudge.created_at);
+        const nudgeDayKey = todayKey(nudgeDate);
+        const nudgeHour = nudgeDate.getHours();
         const nudgeWindow = nudgeHour < 12 ? "morning" : nudgeHour < 17 ? "afternoon" : "evening";
         // One nudge per window per day — most recent wins (sorted desc above)
         const key = `${nudgeDayKey}:${nudgeWindow}`;
