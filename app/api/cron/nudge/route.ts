@@ -200,7 +200,7 @@ export async function GET(req: Request) {
   const supabase = adminClient();
   const window = getTimeWindow();
   const nowISO = new Date().toISOString();
-  const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
+  const fourHoursAgo = new Date(Date.now() - 2.5 * 60 * 60 * 1000).toISOString();
   const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
 
   // Fetch all users and tokens in parallel — nudge generation is not gated on push token existence

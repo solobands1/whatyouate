@@ -14,14 +14,11 @@ import {
   notifyWorkoutsUpdated
 } from "../lib/dataEvents";
 import { formatApprox, formatDateShort, todayKey, dayKeyFromTs } from "../lib/utils";
-import { tryLockNudgeWindow, unlockNudgeWindow } from "../lib/nudgeLock";
 import { supabase } from "../lib/supabaseClient";
 import "../lib/mealQueue";
 import BarcodeScannerOverlay from "./BarcodeScannerOverlay";
 import { getFoodCacheEntry, setFoodCacheEntry, deleteFoodCacheEntry, deleteFoodTextEntry, incrementFoodCacheLogCount, incrementFoodTextLogCount, getQuickAddFromMeals, addQuickAddRemoved, getDailySupplements, setDailySupplements, hasDailySuppsLoggedToday, markDailySuppsLoggedToday, type QuickAddItem } from "../lib/foodCache";
-import { addFeelLog, deleteFeelLog, updateFeelLog, addNudge, pruneNudges, fetchWaterLogs, upsertWaterLog, type FeelLog } from "../lib/supabaseDb";
-import { buildSmartNudgeContext } from "../lib/digestEngine";
-import { notifyNudgesUpdated } from "../lib/dataEvents";
+import { addFeelLog, deleteFeelLog, updateFeelLog, fetchWaterLogs, upsertWaterLog, type FeelLog } from "../lib/supabaseDb";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
 import { useAuth } from "./AuthProvider";
@@ -252,7 +249,7 @@ function WaterBar({ pct, displayCurrent, displayGoal }: {
 export default function HomeScreen() {
   const router = useRouter();
   const { user, loading } = useAuth();
-  const { profile: ctxProfile, meals: ctxMeals, workouts: ctxWorkouts, feelLogs: ctxFeelLogs, nudges, nudgesLoaded, weightLogs, loading: dataLoading, reload } = useAppData();
+  const { profile: ctxProfile, meals: ctxMeals, workouts: ctxWorkouts, feelLogs: ctxFeelLogs, loading: dataLoading, reload } = useAppData();
 
   const [profile, setProfile] = useState<UserProfile | undefined>(undefined);
   const [waterTick, setWaterTick] = useState(0);
@@ -350,7 +347,6 @@ export default function HomeScreen() {
   const mountedRef = useRef(true);
   const recentSentinelRef = useRef<HTMLDivElement | null>(null);
   const realtimeRefreshRef = useRef<number | null>(null);
-  const nudgesLoadedRef = useRef(false);
   const savedThisSessionRef = useRef<Set<string>>(new Set());
   const dailySuppsAttemptedRef = useRef(false);
 
@@ -1112,106 +1108,6 @@ export default function HomeScreen() {
     }
   }, [user, homeNotifyNotes]);
 
-  // Background nudge pre-fetch — runs on home screen so nudge is ready before user opens Summary.
-  // SummaryScreen has its own fallback generation, so this is a best-effort speed optimization.
-  const nudgePrefetchedRef = useRef<Set<string>>(new Set());
-  useEffect(() => {
-    if (!profile || !nudgesLoaded || !user) return;
-    if (displayMeals.filter((m) => (m as any).analysisJson?.source !== "supplement").length < 5) return;
-    if (trial.isFree) return;
-
-    // Use UTC window to match cron's getTimeWindow() and SummaryScreen logic
-    const utcHour = new Date().getUTCHours();
-    const win = utcHour < 16 ? "morning" : utcHour < 21 ? "afternoon" : "evening";
-    const todayStr = todayKey();
-    const windowKey = `${todayStr}_${win}`;
-    const prefetchedStorageKey = `wya_nudge_prefetched_${windowKey}`;
-
-    // Fast-exit if already handled this session
-    if (nudgePrefetchedRef.current.has(windowKey)) return;
-
-    // Check DB first — if a nudge already exists for this window, we're done
-    const existing = nudges.find((n) => {
-      if (!n.created_at) return false;
-      const d = new Date(n.created_at);
-      if (todayKey(d) !== todayStr) return false;
-      const h = d.getUTCHours();
-      return (h < 16 ? "morning" : h < 21 ? "afternoon" : "evening") === win;
-    });
-    if (existing) { nudgePrefetchedRef.current.add(windowKey); localStorage.setItem(prefetchedStorageKey, "1"); return; }
-
-    // If localStorage says done but DB has nothing, previous insert failed silently — clear and retry
-    if (localStorage.getItem(prefetchedStorageKey)) {
-      localStorage.removeItem(prefetchedStorageKey);
-    }
-
-    // Atomic module-level lock — prevents race with SummaryScreen's on-demand generator
-    if (!tryLockNudgeWindow(windowKey)) {
-      nudgePrefetchedRef.current.add(windowKey);
-      return;
-    }
-    nudgePrefetchedRef.current.add(windowKey);
-
-    const recentFoodsForNudge = (() => {
-      const seen = new Set<string>();
-      const foods: string[] = [];
-      const threeDaysAgo = Date.now() - 4 * 24 * 60 * 60 * 1000;
-      const todayK = todayKey();
-      displayMeals
-        .slice().sort((a, b) => b.ts - a.ts)
-        .filter((m) => m.ts >= threeDaysAgo && todayKey(new Date(m.ts)) !== todayK && (m as any).analysisJson?.source !== "supplement" && m.status !== "failed")
-        .forEach((meal) => {
-          const items = [
-            (meal as any).analysisJson?.name,
-            ...((meal as any).analysisJson?.detected_items ?? []).map((i: any) => i.name),
-          ].filter(Boolean) as string[];
-          items.forEach((name) => {
-            const key = name.toLowerCase();
-            if (!seen.has(key)) { seen.add(key); foods.push(name); }
-          });
-        });
-      return foods.slice(0, 20);
-    })();
-
-    const recentNudgeMessages = nudges.slice(0, 7).map((n) => n.type ? `${n.type}: ${n.message}` : n.message);
-    const lastNudgeRaw = nudges.length > 0 ? nudges[0] : undefined;
-    const lastNudgeRecord = lastNudgeRaw?.type && lastNudgeRaw.created_at
-      ? { type: lastNudgeRaw.type, message: lastNudgeRaw.message, created_at: lastNudgeRaw.created_at }
-      : undefined;
-    const waterConsumedMl = profile.trackWater && user
-      ? (() => { try { return Math.max(0, parseInt(localStorage.getItem(`wya_water_${user.id}_${todayKey()}`) ?? "0", 10) || 0); } catch { return 0; } })()
-      : undefined;
-    const ctx = buildSmartNudgeContext(displayMeals as any, displayWorkouts, profile, recentFoodsForNudge, recentNudgeMessages, ctxFeelLogs, lastNudgeRecord, weightLogs, waterConsumedMl);
-
-    fetch("/api/nudge", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mode: "smart", ...ctx }),
-    })
-      .then(async (res) => {
-        unlockNudgeWindow(windowKey);
-        if (!res.ok) return;
-        const { nudge } = await res.json();
-        if (!nudge?.message) return;
-        try {
-          await addNudge(user.id, nudge.type, nudge.message, nudge.why ?? null, nudge.action ?? null);
-          localStorage.setItem(prefetchedStorageKey, "1");
-          pruneNudges(user.id).catch(() => {});
-          notifyNudgesUpdated();
-          // Light the bell and mark a new smart nudge
-          localStorage.setItem("wya_smart_nudge_ts", Date.now().toString());
-          const seenTs = parseInt(localStorage.getItem("wya_nudge_seen_ts") ?? "0");
-          const existingNudgeTs = parseInt(localStorage.getItem("wya_nudge_ts") ?? "0");
-          if (existingNudgeTs <= seenTs) {
-            localStorage.setItem("wya_nudge_ts", Date.now().toString());
-            window.dispatchEvent(new Event("wya_nudge_update"));
-          }
-        } catch {
-          // addNudge failed — don't set localStorage so next session retries
-        }
-      })
-      .catch(() => { unlockNudgeWindow(windowKey); });
-  }, [profile, nudgesLoaded, nudges, user, displayMeals, displayWorkouts, ctxFeelLogs, trial.isFree]);
 
   const homeMarkers = useMemo(
     () => computeHomeMarkers(displayMeals, displayWorkouts, profile),
