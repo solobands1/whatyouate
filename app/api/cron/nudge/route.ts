@@ -274,31 +274,38 @@ export async function GET(req: Request) {
         recentFeelLogs, lastNudgeRecord, weightRes.data ?? [], undefined, timezoneOffset
       ) as unknown as Record<string, unknown>;
 
-      // Cron nudges are durable pattern insights — strip real-time today fields
-      // that will be stale or incomplete at cron fire time
-      delete ctx.todayCalories;
-      delete ctx.todayProtein;
-      delete ctx.todayFat;
-      delete ctx.todayCarbs;
-      delete ctx.todayMeals;
-      delete ctx.remainingCalories;
-      delete ctx.remainingProtein;
-      delete ctx.followThrough;
-      delete ctx.timeOfDay; // replaced by nudgeIntentWindow below
+      const isEvening = window === "evening";
+      delete ctx.timeOfDay; // replaced by nudgeIntentWindow
 
-      ctx.nudgeIntentWindow = window;
-
-      // Hard-blocked: types that require real-time today data the cron doesn't have
-      const CRON_HARD_BLOCKED = new Set(["check_in", "meal_timing"]);
-      // Soft-blocked: passed to Claude as guidance but not hard-enforced in code
-      const softBlocked = [...new Set([...blockedNudgeTypes, "workout_fuel_low"])];
-      ctx.blockedNudgeTypes = [...CRON_HARD_BLOCKED, ...softBlocked];
+      if (isEvening) {
+        // Evening nudge has today's actual data — keep it for a reflective day recap
+        // followThrough is especially useful: did they act on the morning nudge?
+        ctx.nudgeIntentWindow = "evening";
+        const EVENING_HARD_BLOCKED = new Set(["meal_timing"]);
+        const softBlocked = [...new Set([...blockedNudgeTypes])];
+        ctx.blockedNudgeTypes = [...EVENING_HARD_BLOCKED, ...softBlocked];
+      } else {
+        // Morning nudge: today's data is empty/stale — strip it, focus on patterns
+        delete ctx.todayCalories;
+        delete ctx.todayProtein;
+        delete ctx.todayFat;
+        delete ctx.todayCarbs;
+        delete ctx.todayMeals;
+        delete ctx.remainingCalories;
+        delete ctx.remainingProtein;
+        delete ctx.followThrough;
+        ctx.nudgeIntentWindow = "morning";
+        const MORNING_HARD_BLOCKED = new Set(["check_in", "meal_timing"]);
+        const softBlocked = [...new Set([...blockedNudgeTypes, "workout_fuel_low"])];
+        ctx.blockedNudgeTypes = [...MORNING_HARD_BLOCKED, ...softBlocked];
+      }
 
       const nudge = await generateNudge(ctx);
       if (!nudge?.message) continue;
 
       // Hard-enforce only truly real-time types — fatigue suppression is handled by the prompt
-      if (CRON_HARD_BLOCKED.has(nudge.type)) continue;
+      if (nudge.type === "meal_timing") continue;
+      if (!isEvening && nudge.type === "check_in") continue;
 
       await supabase.from("nudges").insert({
         user_id: userId,

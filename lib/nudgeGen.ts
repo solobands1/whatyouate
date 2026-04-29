@@ -170,8 +170,10 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
     }
   }
 
-  if (nudgeIntentWindow) {
-    lines.push(`\nFRAMING NOTE: This is a scheduled nudge delivered to the user's device. Write it as a durable insight the user will read at any point in the day — not a real-time check-in about the current moment. Avoid "right now", "this morning", "tonight", or time-of-day references. Focus on patterns, trends, and actionable insights from the historical data. IMPORTANT: With multiple days of logged data available, there is ALWAYS something worth surfacing — a pattern, a win, a trend, a food insight. Returning null is not appropriate when historical data is present. Pick the single most useful angle and write it.`);
+  if (nudgeIntentWindow === "morning") {
+    lines.push(`\nFRAMING NOTE: This is a morning nudge delivered before the user has logged their day. Write it as a durable pattern insight they will read at any point in the morning — not a real-time check-in. Focus on multi-day patterns, trends, and what to aim for today based on history. Avoid "right now" or specific time-of-day references. IMPORTANT: With multiple days of logged data available, there is ALWAYS something worth surfacing. Do not return null.`);
+  } else if (nudgeIntentWindow === "evening") {
+    lines.push(`\nFRAMING NOTE: This is an evening nudge. Today's actual food data is available above — use it. Write a brief, specific, reflective observation about how the day went: what worked, what fell short, or what to carry into tomorrow. You can reference "today", "this evening", or specific foods logged. Keep it warm and forward-looking. IMPORTANT: With both today's data and historical patterns available, there is always something worth saying. Do not return null.`);
   }
 
   const streak = ctx.streak as number | undefined;
@@ -289,8 +291,10 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
     ? `Intent window (when this nudge was generated): ${nudgeIntentWindow}`
     : `Time of day: ${activeWindow}`;
   lines.push(`\nToday is ${DOW[new Date().getDay()]}. ${windowLine}`);
-  if (nudgeIntentWindow && !hasTodayData) {
-    lines.push(`\nAnalyze the historical data above. What is the single most useful, specific pattern, trend, or insight for this person? You MUST find something — with days of logged data, there is always a meaningful observation. Do NOT return null when historical data is present.`);
+  if (nudgeIntentWindow === "morning") {
+    lines.push(`\nAnalyze the historical data above. What is the single most useful pattern, trend, or insight to set this person up for today? You MUST find something — with days of logged data, there is always a meaningful observation. Do NOT return null.`);
+  } else if (nudgeIntentWindow === "evening") {
+    lines.push(`\nAnalyze both today's data and the historical patterns above. What is the single most useful, specific observation about how today went or what to carry forward? You MUST find something. Do NOT return null.`);
   } else {
     lines.push(`\nAnalyze the data above. What is the single most useful, specific thing to tell this person right now? If nothing meaningful stands out, return null.`);
   }
