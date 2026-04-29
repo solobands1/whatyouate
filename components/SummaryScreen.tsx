@@ -441,24 +441,15 @@ export default function SummaryScreen() {
   }, [user]);
 
   const uniqueNudges = useMemo(() => {
-    // Dedup by day+window+message. Today's current-window nudge is shown in the card above,
-    // so skip it here. Earlier windows from today still appear in history.
+    // Dedup by day+window. The active nudge is shown in the card above — skip it here.
     const seenKeys = new Set<string>();
     const items: Array<{ id?: string; message: string; created_at?: string; isNew?: boolean }> = [];
-    const todayDateKey = todayKey();
-    const currentHour = new Date().getUTCHours();
-    const currentWindowStr = currentHour < 16 ? "morning" : currentHour < 21 ? "afternoon" : "evening";
     nudges
       .slice()
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .forEach((nudge) => {
-        const nudgeDayKey = todayKey(new Date(nudge.created_at));
-        if (nudgeDayKey === todayDateKey) {
-          // Skip only the current time window — earlier windows show in history
-          const nudgeHour = new Date(nudge.created_at).getHours();
-          const nudgeWindow = nudgeHour < 12 ? "morning" : nudgeHour < 17 ? "afternoon" : "evening";
-          if (nudgeWindow === currentWindowStr) return;
-        }
+        // Skip whichever nudge is currently shown in the main card
+        if (currentWindowNudge?.id && nudge.id === currentWindowNudge.id) return;
         // Filter out retired nudge types that may still exist in DB history
         if (nudge.message.includes("you're just") && nudge.message.includes("away from your")) return;
         const nudgeHour = new Date(nudge.created_at).getHours();
@@ -512,15 +503,7 @@ export default function SummaryScreen() {
     return groups;
   }, [uniqueNudges]);
 
-  const currentWindowLabel = (() => {
-    const hr = new Date().getUTCHours();
-    return hr < 16 ? "Morning" : hr < 21 ? "Afternoon" : "Evening";
-  })();
-
-  const historyGroups = useMemo(
-    () => groupedNudges.filter((g) => g.label !== currentWindowLabel),
-    [groupedNudges, currentWindowLabel]
-  );
+  const historyGroups = groupedNudges;
 
   const summaryTourSteps: Step[] = [
     {
@@ -594,29 +577,31 @@ export default function SummaryScreen() {
 
 
 
-  // Read current-window nudge from DB only — nudges are generated exclusively by cron
-  useEffect(() => {
-    if (!nudgesLoaded) return;
-    if (meals.length < 5) { setSmartNudge(null); return; }
-
-    const utcHour = new Date().getUTCHours();
-    const win = utcHour < 16 ? "morning" : utcHour < 21 ? "afternoon" : "evening";
+  // The active nudge is the most recent one if it was created today (local),
+  // or yesterday (local) before 2am — it stays visible until the next cron fires or until 2am overnight.
+  const currentWindowNudge = useMemo(() => {
+    if (!nudgesLoaded || meals.length < 5) return null;
+    const now = new Date();
+    const localHour = now.getHours();
     const todayStr = todayKey();
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = todayKey(yesterday);
+    const mostRecent = nudges[0];
+    if (!mostRecent?.created_at) return null;
+    const nudgeLocalDate = todayKey(new Date(mostRecent.created_at));
+    if (nudgeLocalDate === todayStr) return mostRecent;
+    if (nudgeLocalDate === yesterdayStr && localHour < 2) return mostRecent;
+    return null;
+  }, [nudgesLoaded, nudges, meals.length]);
 
-    const currentWindowNudge = nudges.find((n) => {
-      if (!n.created_at) return false;
-      const d = new Date(n.created_at);
-      if (todayKey(d) !== todayStr) return false;
-      const h = d.getUTCHours();
-      return (h < 16 ? "morning" : h < 21 ? "afternoon" : "evening") === win;
-    });
-
+  useEffect(() => {
     setSmartNudge(
       currentWindowNudge
         ? { message: currentWindowNudge.message, type: currentWindowNudge.type as NudgeType, action: currentWindowNudge.action ?? undefined, generatedAt: currentWindowNudge.created_at }
         : null
     );
-  }, [nudgesLoaded, nudges, meals.length]);
+  }, [currentWindowNudge]);
 
   const isVegan = profile?.dietaryRestrictions?.includes("Vegan") ?? false;
   const isVegetarian = isVegan || (profile?.dietaryRestrictions?.includes("Vegetarian") ?? false);
@@ -1235,9 +1220,9 @@ export default function SummaryScreen() {
           ) : (
             <div className="mt-4 space-y-3">
               {(() => {
-                const hr = new Date().getUTCHours();
-                const windowLabel = hr < 16 ? "This Morning" : hr < 21 ? "This Afternoon" : "This Evening";
-                const nudgeTs = smartNudge && (smartNudge as { generatedAt?: string }).generatedAt ? new Date((smartNudge as { generatedAt: string }).generatedAt) : null;
+                const nudgeTs = smartNudge?.generatedAt ? new Date(smartNudge.generatedAt) : null;
+                const nudgeLocalHr = nudgeTs ? nudgeTs.getHours() : new Date().getHours();
+                const windowLabel = nudgeLocalHr < 12 ? "This Morning" : nudgeLocalHr < 17 ? "This Afternoon" : "This Evening";
                 const nudgeTimeLabel = nudgeTs ? nudgeTs.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }).toLowerCase() : null;
                 return (
                   <div className="flex items-center justify-between">
