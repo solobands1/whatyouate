@@ -31,10 +31,10 @@ export default function PushNotificationSetup() {
     const asked = localStorage.getItem(PERMISSION_ASKED_KEY);
     const declinedAt = localStorage.getItem(DECLINED_AT_KEY);
 
-    // Always try to register if permissions are already granted (e.g. enabled via Settings)
-    if (asked === "1" || asked === "declined") {
-      initPush(user.id, /* silentIfNotGranted */ true);
-    }
+    // Always attempt silent registration — covers users who enabled via iOS Settings
+    // without going through the in-app banner. silentIfNotGranted means it's a no-op
+    // if permissions haven't been granted yet.
+    initPush(user.id, /* silentIfNotGranted */ true);
 
     // Decide whether to show the pre-prompt banner
     const declinedRecently = declinedAt
