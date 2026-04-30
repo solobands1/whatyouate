@@ -49,7 +49,7 @@ export async function sendPush(deviceToken: string, payload: PushPayload): Promi
 
   return new Promise<boolean>((resolve) => {
     const client = http2.connect(host);
-    client.on("error", () => resolve(false));
+    client.on("error", (err) => { console.error("[APNs] connection error:", err.message); resolve(false); });
 
     const req = client.request({
       ":method": "POST",
@@ -76,7 +76,8 @@ export async function sendPush(deviceToken: string, payload: PushPayload): Promi
       }
       resolve(status === 200);
     });
-    req.on("error", () => {
+    req.on("error", (err) => {
+      console.error("[APNs] request error:", err.message);
       client.close();
       resolve(false);
     });
