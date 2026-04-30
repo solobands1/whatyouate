@@ -77,6 +77,8 @@ export default function PushNotificationSetup() {
           });
           if (!res.ok) {
             console.error("[push] Token registration failed:", res.status, await res.text());
+          } else {
+            localStorage.setItem("wya_push_token", token.value);
           }
         } catch (err) {
           console.error("[push] Token registration error:", err);
