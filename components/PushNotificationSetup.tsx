@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Capacitor } from "@capacitor/core";
 import { useAuth } from "./AuthProvider";
 
@@ -19,6 +20,7 @@ function BellIcon() {
 
 export default function PushNotificationSetup() {
   const { user } = useAuth();
+  const router = useRouter();
   const [showPrePrompt, setShowPrePrompt] = useState(false);
   const initialized = useRef(false);
 
@@ -88,8 +90,7 @@ export default function PushNotificationSetup() {
       PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
         const screen = action.notification.data?.screen;
         if (screen === "summary") {
-          window.location.hash = "#/summary";
-          window.dispatchEvent(new CustomEvent("navigate", { detail: { screen: "summary" } }));
+          router.push("/summary");
         }
       });
 
