@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { sendPush } from "../../../../lib/apns";
+import { sendPush, getLastError } from "../../../../lib/apns";
 
 export async function POST(req: Request) {
   const { token, secret } = await req.json();
@@ -15,5 +15,5 @@ export async function POST(req: Request) {
     badge: 1,
   });
 
-  return NextResponse.json({ ok });
+  return NextResponse.json({ ok, lastError: getLastError() });
 }
