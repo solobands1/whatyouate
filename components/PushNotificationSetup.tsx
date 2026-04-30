@@ -56,6 +56,7 @@ export default function PushNotificationSetup() {
 
       const permStatus = await PushNotifications.checkPermissions();
       console.log("[push] permission status:", permStatus.receive);
+      fetch("/api/push/diag", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ step: "checkPermissions", status: permStatus.receive, userId }) }).catch(() => {});
 
       if (permStatus.receive === "prompt" || permStatus.receive === "prompt-with-rationale") {
         if (silentIfNotGranted) {
@@ -76,6 +77,7 @@ export default function PushNotificationSetup() {
       // immediately after register() and would be missed if added after.
       PushNotifications.addListener("registration", async (token) => {
         console.log("[push] got token:", token.value.slice(0, 12) + "...");
+        fetch("/api/push/diag", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ step: "registration", tokenPrefix: token.value.slice(0, 12), userId }) }).catch(() => {});
         try {
           const res = await fetch("/api/push/register", {
             method: "POST",
@@ -95,6 +97,7 @@ export default function PushNotificationSetup() {
 
       PushNotifications.addListener("registrationError", (err) => {
         console.error("[push] Registration error:", JSON.stringify(err));
+        fetch("/api/push/diag", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ step: "registrationError", error: JSON.stringify(err), userId }) }).catch(() => {});
       });
 
       PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
