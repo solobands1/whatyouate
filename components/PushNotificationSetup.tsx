@@ -108,10 +108,13 @@ export default function PushNotificationSetup() {
         }
       });
 
+      fetch("/api/push/diag", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ step: "beforeRegister", userId }) }).catch(() => {});
       await PushNotifications.register();
+      fetch("/api/push/diag", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ step: "afterRegister", userId }) }).catch(() => {});
       console.log("[push] register() called");
     } catch (err) {
       console.error("[push] initPush error:", err);
+      fetch("/api/push/diag", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ step: "caughtError", error: String(err), userId }) }).catch(() => {});
     }
   }
 
