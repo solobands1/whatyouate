@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { sendPush, getLastError } from "../../../../lib/apns";
+import { sendPush } from "../../../../lib/apns";
 
 export async function POST(req: Request) {
   const { token, secret } = await req.json();
@@ -15,15 +15,5 @@ export async function POST(req: Request) {
     badge: 1,
   });
 
-  const rawKey = (process.env.APNS_KEY ?? "").replace(/\\n/g, "\n").trim();
-  return NextResponse.json({
-    ok,
-    lastError: getLastError(),
-    keyId: process.env.APNS_KEY_ID,
-    teamId: process.env.APNS_TEAM_ID,
-    sandbox: process.env.APNS_SANDBOX,
-    keyLen: rawKey.length,
-    keyStart: rawKey.slice(0, 40),
-    keyEnd: rawKey.slice(-30),
-  });
+  return NextResponse.json({ ok });
 }

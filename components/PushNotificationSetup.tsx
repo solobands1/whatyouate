@@ -55,29 +55,18 @@ export default function PushNotificationSetup() {
       const { PushNotifications } = await import("@capacitor/push-notifications");
 
       const permStatus = await PushNotifications.checkPermissions();
-      console.log("[push] permission status:", permStatus.receive);
-      fetch("/api/push/diag", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ step: "checkPermissions", status: permStatus.receive, userId }) }).catch(() => {});
 
       if (permStatus.receive === "prompt" || permStatus.receive === "prompt-with-rationale") {
-        if (silentIfNotGranted) {
-          console.log("[push] not yet granted, skipping silent registration");
-          return;
-        }
+        if (silentIfNotGranted) return;
         const result = await PushNotifications.requestPermissions();
-        console.log("[push] requestPermissions result:", result.receive);
         if (result.receive !== "granted") return;
       } else if (permStatus.receive !== "granted") {
-        console.log("[push] permission denied or unknown, aborting registration");
         return;
       }
-
-      console.log("[push] permission granted, registering...");
 
       // Listeners must be added before register() — the token event can fire
       // immediately after register() and would be missed if added after.
       PushNotifications.addListener("registration", async (token) => {
-        console.log("[push] got token:", token.value.slice(0, 12) + "...");
-        fetch("/api/push/diag", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ step: "registration", tokenPrefix: token.value.slice(0, 12), userId }) }).catch(() => {});
         try {
           const res = await fetch("/api/push/register", {
             method: "POST",
@@ -85,10 +74,7 @@ export default function PushNotificationSetup() {
             body: JSON.stringify({ userId, token: token.value }),
           });
           if (!res.ok) {
-            const body = await res.text();
-            console.error("[push] Token registration failed:", res.status, body);
-          } else {
-            console.log("[push] Token registered successfully");
+            console.error("[push] Token registration failed:", res.status, await res.text());
           }
         } catch (err) {
           console.error("[push] Token registration error:", err);
@@ -97,7 +83,6 @@ export default function PushNotificationSetup() {
 
       PushNotifications.addListener("registrationError", (err) => {
         console.error("[push] Registration error:", JSON.stringify(err));
-        fetch("/api/push/diag", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ step: "registrationError", error: JSON.stringify(err), userId }) }).catch(() => {});
       });
 
       PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
@@ -108,13 +93,9 @@ export default function PushNotificationSetup() {
         }
       });
 
-      fetch("/api/push/diag", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ step: "beforeRegister", userId }) }).catch(() => {});
       await PushNotifications.register();
-      fetch("/api/push/diag", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ step: "afterRegister", userId }) }).catch(() => {});
-      console.log("[push] register() called");
     } catch (err) {
       console.error("[push] initPush error:", err);
-      fetch("/api/push/diag", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ step: "caughtError", error: String(err), userId }) }).catch(() => {});
     }
   }
 
