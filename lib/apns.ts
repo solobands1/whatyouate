@@ -19,8 +19,8 @@ async function getJwt(): Promise<string> {
   console.log("[APNs] keyId:", process.env.APNS_KEY_ID, "teamId:", process.env.APNS_TEAM_ID, "keyLen:", rawKey.length, "keyStart:", rawKey.slice(0, 27));
   const privateKey = await importPKCS8(rawKey, "ES256");
   const token = await new SignJWT({})
-    .setProtectedHeader({ alg: "ES256", kid: process.env.APNS_KEY_ID! })
-    .setIssuer(process.env.APNS_TEAM_ID!)
+    .setProtectedHeader({ alg: "ES256", kid: process.env.APNS_KEY_ID!.trim() })
+    .setIssuer(process.env.APNS_TEAM_ID!.trim())
     .setIssuedAt()
     .sign(privateKey);
   cachedJwt = { token, issuedAt: now };
