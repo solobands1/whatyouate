@@ -440,6 +440,32 @@ export default function SummaryScreen() {
     setNudgeViewCount(current);
   }, [user]);
 
+  // The active nudge is the most recent one if it was created today (local),
+  // or yesterday (local) before 2am — it stays visible until the next cron fires or until 2am overnight.
+  const currentWindowNudge = useMemo(() => {
+    if (!nudgesLoaded || meals.length < 5) return null;
+    const now = new Date();
+    const localHour = now.getHours();
+    const todayStr = todayKey();
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = todayKey(yesterday);
+    const mostRecent = nudges[0];
+    if (!mostRecent?.created_at) return null;
+    const nudgeLocalDate = todayKey(new Date(mostRecent.created_at));
+    if (nudgeLocalDate === todayStr) return mostRecent;
+    if (nudgeLocalDate === yesterdayStr && localHour < 2) return mostRecent;
+    return null;
+  }, [nudgesLoaded, nudges, meals.length]);
+
+  useEffect(() => {
+    setSmartNudge(
+      currentWindowNudge
+        ? { message: currentWindowNudge.message, type: currentWindowNudge.type as NudgeType, action: currentWindowNudge.action ?? undefined, generatedAt: currentWindowNudge.created_at }
+        : null
+    );
+  }, [currentWindowNudge]);
+
   const uniqueNudges = useMemo(() => {
     // Dedup by day+window. The active nudge is shown in the card above — skip it here.
     const seenKeys = new Set<string>();
@@ -475,7 +501,7 @@ export default function SummaryScreen() {
       items.push({ message: note });
     });
     return items;
-  }, [nudges, nutrientNotes, nudgeViewCount]);
+  }, [nudges, nutrientNotes, nudgeViewCount, currentWindowNudge]);
 
   const groupedNudges = useMemo(() => {
     const groups: Array<{ label: string; items: typeof uniqueNudges }> = [];
@@ -578,32 +604,6 @@ export default function SummaryScreen() {
 
 
 
-
-  // The active nudge is the most recent one if it was created today (local),
-  // or yesterday (local) before 2am — it stays visible until the next cron fires or until 2am overnight.
-  const currentWindowNudge = useMemo(() => {
-    if (!nudgesLoaded || meals.length < 5) return null;
-    const now = new Date();
-    const localHour = now.getHours();
-    const todayStr = todayKey();
-    const yesterday = new Date(now);
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = todayKey(yesterday);
-    const mostRecent = nudges[0];
-    if (!mostRecent?.created_at) return null;
-    const nudgeLocalDate = todayKey(new Date(mostRecent.created_at));
-    if (nudgeLocalDate === todayStr) return mostRecent;
-    if (nudgeLocalDate === yesterdayStr && localHour < 2) return mostRecent;
-    return null;
-  }, [nudgesLoaded, nudges, meals.length]);
-
-  useEffect(() => {
-    setSmartNudge(
-      currentWindowNudge
-        ? { message: currentWindowNudge.message, type: currentWindowNudge.type as NudgeType, action: currentWindowNudge.action ?? undefined, generatedAt: currentWindowNudge.created_at }
-        : null
-    );
-  }, [currentWindowNudge]);
 
   const isVegan = profile?.dietaryRestrictions?.includes("Vegan") ?? false;
   const isVegetarian = isVegan || (profile?.dietaryRestrictions?.includes("Vegetarian") ?? false);
