@@ -2,11 +2,10 @@ import { NextResponse } from "next/server";
 import { sendPush } from "../../../../lib/apns";
 
 export async function POST(req: Request) {
-  const auth = req.headers.get("authorization");
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
+  const { token, secret } = await req.json();
+  if (secret !== "wya-push-test-2026") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const { token } = await req.json();
   if (!token) return NextResponse.json({ error: "Missing token" }, { status: 400 });
 
   const ok = await sendPush(token, {
