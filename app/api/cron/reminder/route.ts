@@ -126,7 +126,7 @@ export async function GET(req: Request) {
       const userTokens = (tokens as Array<{ user_id: string; token: string }>).filter((t) => t.user_id === userId);
       for (const t of userTokens) {
         const ok = await sendPush(t.token, {
-          title: "Coach",
+          title: "WhatYouAte • Coach",
           body: message,
           data: { screen: "home" },
           badge: 1,
