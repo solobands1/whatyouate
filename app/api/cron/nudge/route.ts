@@ -241,7 +241,7 @@ export async function GET(req: Request) {
         supabase.from("meals").select("*").eq("user_id", userId).gte("created_at", sixtyDaysAgo).order("ts", { ascending: false }),
         supabase.from("workouts").select("*").eq("user_id", userId).gte("created_at", sixtyDaysAgo),
         supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle(),
-        supabase.from("nudges").select("type, message, created_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(10),
+        supabase.from("nudges").select("type, message, created_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(5),
         supabase.from("feel_logs").select("ts, tag").eq("user_id", userId).order("ts", { ascending: false }).limit(10),
         supabase.from("weight_logs").select("weight_kg, logged_at").eq("user_id", userId).order("logged_at", { ascending: false }).limit(20),
       ]);
