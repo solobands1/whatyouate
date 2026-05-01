@@ -16,7 +16,8 @@ VOICE:
 
 THEMATIC BLOCKING — read before picking a type:
 - Look at the recent nudge history. Identify the core theme of each recent nudge (protein composition, calorie volume, streak/consistency, meal timing, food variety, energy correlation, workout recovery, etc.).
-- If the same theme appears in 2 or more of the last 3 nudges — regardless of the type label used — that theme is BLOCKED. Do not write about it under any type label.
+- IMMEDIATE REPEAT RULE: The theme of the most recent nudge (position 0 in nudge history) is ALWAYS blocked for the current nudge, regardless of how many times it appeared. One nudge per theme per cycle.
+- REPEAT BLOCK RULE: If the same theme appears in 2 or more of the last 3 nudges — regardless of the type label used — that theme is BLOCKED. Do not write about it under any type label.
 - Example: if recent nudges were win (about protein composition) and pattern (about protein composition), the protein-composition theme is blocked even for food_insight or meal_timing.
 - When a theme is blocked, skip down the priority list until you find a genuinely different angle. If no good angle exists, return null rather than repeating a blocked theme.
 
@@ -57,7 +58,7 @@ Rules:
 - Calendar week rule: "this week" means Monday through today. Days before this Monday are "last week" or "in the last 7 days." Use todayDayOfWeek to determine where Monday falls.
 - When referencing a specific past day by name (e.g. "Friday"), only do so if it was yesterday or the day before. Older patterns use "earlier this week" or "your protein tends to drop mid-week."
 - CRITICAL: Never reference today's day of week as a missing or absent data point in the history. Today's data is in the "Today so far" section — the previous days history simply doesn't include today because it hasn't ended yet.
-- No em dashes (—) — rewrite as a full sentence instead. End with a period.
+- CRITICAL: Never use em dashes (— or —) anywhere in any field. They render as garbage in push notifications. Rewrite the clause as a separate sentence or use a comma instead.
 - No clichés: forbidden: "crush it", "you've got this", "fresh start", "stay on track", "hit your goal", "keep it up", "build muscle", "well done", "great job", "amazing", "nice work"
 - If timeOfDay is "morning": frame as intention. If "afternoon": note there's still time. If "evening": brief and reflective. If nudgeIntentWindow is provided instead of timeOfDay, treat it the same way for framing — but only when "Today so far" data is present. If no today data is present, skip time-specific framing entirely.
 - MEAL TIMING AWARENESS: If "Meals logged today" and "Last meal logged at" are provided, use them to infer what meal is next. If it's afternoon and the last meal was before 11am with only 1 meal logged, the user likely hasn't had lunch yet — reference lunch, not dinner. If 2+ meals are logged by afternoon, dinner framing is appropriate. Never assume what meal comes next based on time alone — always cross-reference with what's actually been logged.
@@ -219,7 +220,7 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
   if (priorWeeks?.length) {
     lines.push(`Prior weeks (avg per logged day | days logged):`);
     priorWeeks.forEach((w) => {
-      lines.push(`  ${w.weekLabel}: ${w.avgCalories} kcal / ${w.avgProtein}g protein / ${w.avgCarbs}g carbs / ${w.avgFat}g fat — ${w.daysLogged} days logged`);
+      lines.push(`  ${w.weekLabel}: ${w.avgCalories} kcal / ${w.avgProtein}g protein / ${w.avgCarbs}g carbs / ${w.avgFat}g fat | ${w.daysLogged} days logged`);
     });
   }
 
@@ -254,7 +255,7 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
     feelCorrelations.forEach((c) => {
       const firstMeal = c.firstMealHour != null ? ` | first meal ${fmt(c.firstMealHour)}` : "";
       const wk = c.hadWorkout ? " | workout day" : "";
-      lines.push(`  ${c.dayOfWeek} ${fmt(c.logHour)} — ${c.tag.replace(/_/g, " ")} | ${c.calories} kcal / ${c.protein}g protein / ${c.mealCount} meal${c.mealCount !== 1 ? "s" : ""}${firstMeal}${wk}`);
+      lines.push(`  ${c.dayOfWeek} ${fmt(c.logHour)}: ${c.tag.replace(/_/g, " ")} | ${c.calories} kcal / ${c.protein}g protein / ${c.mealCount} meal${c.mealCount !== 1 ? "s" : ""}${firstMeal}${wk}`);
     });
   } else {
     const feelLogs = ctx.recentFeelLogs as Array<{ ts: number; tag: string }> | undefined;
@@ -288,7 +289,7 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
   if (wt) {
     const dir = wt.changeKg < 0 ? "down" : wt.changeKg > 0 ? "up" : "stable";
     const absKg = Math.abs(wt.changeKg);
-    lines.push(`Weight trend (${wt.entryCount} weigh-ins over ${wt.daysSinceFirst} days): ${dir} ${absKg}kg — started at ${wt.startKg}kg, now ${wt.currentKg}kg`);
+    lines.push(`Weight trend (${wt.entryCount} weigh-ins over ${wt.daysSinceFirst} days): ${dir} ${absKg}kg | started at ${wt.startKg}kg, now ${wt.currentKg}kg`);
   }
 
   const ft = ctx.followThrough as { nudgeType: string; nudgeMessage: string; minutesSinceNudge: number; mealsLoggedSince: number; caloriesSince: number; proteinSince: number } | undefined;
@@ -317,4 +318,22 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
   }
 
   return lines.join("\n");
+}
+
+// Strip em dashes and en dashes from generated nudge text — they render as garbage in push notifications.
+function stripDashes(text: string): string {
+  return text
+    .replace(/—/g, ",")   // em dash → comma
+    .replace(/–/g, ",")   // en dash → comma
+    .replace(/--/g, ",");      // double hyphen → comma
+}
+
+export function sanitizeNudgeFields<T extends Record<string, unknown>>(nudge: T): T {
+  const out = { ...nudge };
+  for (const key of ["message", "why", "action"] as const) {
+    if (typeof out[key] === "string") {
+      (out as Record<string, unknown>)[key] = stripDashes(out[key] as string);
+    }
+  }
+  return out;
 }

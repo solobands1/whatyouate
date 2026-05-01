@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { buildSmartNudgeContext } from "../../../../lib/digestEngine";
-import { buildSmartPrompt, SMART_NUDGE_SYSTEM_PROMPT } from "../../../../lib/nudgeGen";
+import { buildSmartPrompt, sanitizeNudgeFields, SMART_NUDGE_SYSTEM_PROMPT } from "../../../../lib/nudgeGen";
 import { sendPush } from "../../../../lib/apns";
 import type { MealLog, WorkoutSession, UserProfile } from "../../../../lib/types";
 
@@ -181,7 +181,7 @@ async function generateNudge(ctx: Record<string, unknown>): Promise<{ message: s
       parsed.message = words.slice(0, 70).join(" ").replace(/[,;]$/, "") + ".";
     }
 
-    return parsed as { message: string; type: string; why?: string; action?: string; suggestions: string[] };
+    return sanitizeNudgeFields(parsed) as { message: string; type: string; why?: string; action?: string; suggestions: string[] };
   } catch (err) {
     console.error("[cron/nudge] generateNudge error:", err);
     return null;

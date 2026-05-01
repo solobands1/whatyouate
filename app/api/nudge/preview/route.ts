@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { buildSmartNudgeContext } from "../../../../lib/digestEngine";
-import { buildSmartPrompt, SMART_NUDGE_SYSTEM_PROMPT } from "../../../../lib/nudgeGen";
+import { buildSmartPrompt, sanitizeNudgeFields, SMART_NUDGE_SYSTEM_PROMPT } from "../../../../lib/nudgeGen";
 import type { MealLog, WorkoutSession, UserProfile } from "../../../../lib/types";
 
 export const maxDuration = 60;
@@ -117,7 +117,7 @@ async function generateNudge(ctx: Record<string, unknown>): Promise<{ message: s
     if (!jsonMatch) return { error: `no json in response: ${raw.slice(0, 200)}` };
     const parsed = JSON.parse(jsonMatch[0]);
     if (!parsed.message) return { error: `null message: ${JSON.stringify(parsed)}` };
-    return parsed as { message: string; type: string; why?: string; action?: string };
+    return sanitizeNudgeFields(parsed) as { message: string; type: string; why?: string; action?: string };
   } catch (e: unknown) {
     return { error: String(e) };
   } finally {
