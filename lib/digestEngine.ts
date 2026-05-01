@@ -1,6 +1,6 @@
 import type { ActivityLevel, MealLog, Units, UserProfile, WorkoutSession } from "./types";
 import { summarizeDay, summarizeLoggedDays, summarizeWeek, summarizeWorkoutsWeek } from "./summary";
-import { dayKeyFromTs } from "./utils";
+import { dayKeyFromTs, localDayKeyFromTs, localTodayKey } from "./utils";
 import { buildNutrientNotes, buildSuggestions, type SuggestionSignal } from "./recommendations";
 
 export type NudgeType =
@@ -856,7 +856,12 @@ export function buildSmartNudgeContext(
     }
     return new Date(ts).getHours();
   };
-  const todayTotals = summarizeDay(meals);
+  // Day-key helpers that respect the user's local timezone (avoids UTC midnight misattribution).
+  const localDayKey = (ts: number) =>
+    timezoneOffsetMinutes !== undefined ? localDayKeyFromTs(ts, timezoneOffsetMinutes) : dayKeyFromTs(ts);
+  const todayKeyLocal = timezoneOffsetMinutes !== undefined ? localTodayKey(timezoneOffsetMinutes) : dayKeyFromTs(Date.now());
+
+  const todayTotals = summarizeDay(meals, todayKeyLocal, timezoneOffsetMinutes);
   const todayCalories = Math.round((todayTotals.calories_min + todayTotals.calories_max) / 2);
   const todayProtein = Math.round((todayTotals.protein_g_min + todayTotals.protein_g_max) / 2);
   const todayFat = Math.round((todayTotals.fat_g_min + todayTotals.fat_g_max) / 2);
@@ -870,7 +875,7 @@ export function buildSmartNudgeContext(
   workouts
     .filter((w) => w.endTs != null && (w.endTs ?? w.startTs) >= cutoff)
     .forEach((w) => {
-      const key = dayKeyFromTs(w.endTs ?? w.startTs);
+      const key = localDayKey(w.endTs ?? w.startTs);
       const mins = w.durationMin ?? 0;
       const intensity = w.intensity ?? "medium";
       const existing = workoutsByDay.get(key);
@@ -880,9 +885,9 @@ export function buildSmartNudgeContext(
     });
 
   const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  const todayKeyStr = dayKeyFromTs(Date.now());
+  const todayKeyStr = todayKeyLocal;
   // Fetch 8 days so after filtering today we always have 7 full days of history
-  const allDays = summarizeWeek(meals, 8).filter((d) => d.dateKey !== todayKeyStr);
+  const allDays = summarizeWeek(meals, 8, timezoneOffsetMinutes).filter((d) => d.dateKey !== todayKeyStr);
 
   // Build prior weeks summary (weeks 1-3 before current week) for longitudinal pattern detection
   const priorWeeks: WeekSummary[] = [];
@@ -893,7 +898,7 @@ export function buildSmartNudgeContext(
       (m) => m.ts >= weekStart && m.ts < weekEnd && m.status !== "failed" && m.analysisJson?.source !== "supplement"
     );
     if (weekMeals.length === 0) continue;
-    const daysInWeek = new Set(weekMeals.map((m) => dayKeyFromTs(m.ts))).size;
+    const daysInWeek = new Set(weekMeals.map((m) => localDayKey(m.ts))).size;
     const totals = weekMeals.reduce(
       (acc, m) => {
         const r = m.analysisJson?.estimated_ranges;
@@ -919,9 +924,9 @@ export function buildSmartNudgeContext(
   // Index past meals by day for timing enrichment
   const mealsByDayMap = new Map<string, MealLog[]>();
   meals.filter(
-    (m) => m.status !== "failed" && m.analysisJson?.source !== "supplement" && dayKeyFromTs(m.ts) !== todayKeyStr
+    (m) => m.status !== "failed" && m.analysisJson?.source !== "supplement" && localDayKey(m.ts) !== todayKeyStr
   ).forEach((m) => {
-    const key = dayKeyFromTs(m.ts);
+    const key = localDayKey(m.ts);
     if (!mealsByDayMap.has(key)) mealsByDayMap.set(key, []);
     mealsByDayMap.get(key)!.push(m);
   });
@@ -968,7 +973,7 @@ export function buildSmartNudgeContext(
   const remainingCalories = targetCalories !== null ? Math.max(0, targetCalories - todayCalories) : null;
   const remainingProtein = targetProtein !== null ? Math.max(0, targetProtein - todayProtein) : null;
 
-  const todayK = dayKeyFromTs(Date.now());
+  const todayK = todayKeyLocal;
   const todayHasWorkout = workoutsByDay.has(todayK);
   // Prefer persisted streak from profile — it's accurate beyond the meal fetch window.
   // Re-computing from meals can undercount when fetch limit cuts off early days.
@@ -976,7 +981,7 @@ export function buildSmartNudgeContext(
 
   // Build today's meal list with timestamps for meal-timing awareness
   const todayMealsFull = meals.filter(
-    (m) => dayKeyFromTs(m.ts) === todayKeyStr && m.status !== "failed" && m.analysisJson?.source !== "supplement"
+    (m) => localDayKey(m.ts) === todayKeyStr && m.status !== "failed" && m.analysisJson?.source !== "supplement"
   ).sort((a, b) => a.ts - b.ts);
 
   const formatMealTime = (ts: number) => {
@@ -1010,12 +1015,12 @@ export function buildSmartNudgeContext(
 
   // Correlate feel logs with what was eaten on those days
   const workoutDayKeys = new Set(
-    workouts.filter((w) => w.endTs != null).map((w) => dayKeyFromTs(w.endTs ?? w.startTs))
+    workouts.filter((w) => w.endTs != null).map((w) => localDayKey(w.endTs ?? w.startTs))
   );
   const feelLogCorrelations: FeelLogCorrelation[] = recentFeelLogs
     .slice(0, 14)
     .map((f) => {
-      const fDayKey = dayKeyFromTs(f.ts);
+      const fDayKey = localDayKey(f.ts);
       const fDate = new Date(f.ts);
       const dayMeals = mealsByDayMap.get(fDayKey) ?? [];
       const mealCount = dayMeals.length;
@@ -1044,11 +1049,11 @@ export function buildSmartNudgeContext(
   // Compute typical first-log hour from last 14 days (median) to detect late loggers
   const firstLogHours: number[] = [];
   const pastMeals = meals.filter(
-    (m) => m.ts < Date.now() && dayKeyFromTs(m.ts) !== todayKeyStr && m.status !== "failed" && m.analysisJson?.source !== "supplement"
+    (m) => m.ts < Date.now() && localDayKey(m.ts) !== todayKeyStr && m.status !== "failed" && m.analysisJson?.source !== "supplement"
   );
   const mealsByDay = new Map<string, number[]>();
   pastMeals.forEach((m) => {
-    const key = dayKeyFromTs(m.ts);
+    const key = localDayKey(m.ts);
     if (!mealsByDay.has(key)) mealsByDay.set(key, []);
     mealsByDay.get(key)!.push(tsToLocalHour(m.ts));
   });

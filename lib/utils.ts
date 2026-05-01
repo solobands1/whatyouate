@@ -23,6 +23,20 @@ export function dayKeyFromTs(ts: number) {
   return todayKey(new Date(ts));
 }
 
+// Returns YYYY-MM-DD in the user's local timezone.
+// offsetMinutes = getTimezoneOffset() — positive = west of UTC (ET=240/300, PT=420/480).
+export function localDayKeyFromTs(ts: number, offsetMinutes: number): string {
+  const d = new Date(ts - offsetMinutes * 60 * 1000);
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+export function localTodayKey(offsetMinutes: number): string {
+  return localDayKeyFromTs(Date.now(), offsetMinutes);
+}
+
 export function clampNumber(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }

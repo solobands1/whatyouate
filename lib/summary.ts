@@ -1,9 +1,13 @@
 import type { DailyRange, MealLog, WorkoutSession } from "./types";
-import { dayKeyFromTs, todayKey } from "./utils";
+import { dayKeyFromTs, localDayKeyFromTs, localTodayKey, todayKey } from "./utils";
 
-export function summarizeDay(meals: MealLog[], dateKey = todayKey()): DailyRange {
+export function summarizeDay(meals: MealLog[], dateKey?: string, offsetMinutes?: number): DailyRange {
+  const getKey = offsetMinutes !== undefined
+    ? (ts: number) => localDayKeyFromTs(ts, offsetMinutes)
+    : dayKeyFromTs;
+  const key = dateKey ?? (offsetMinutes !== undefined ? localTodayKey(offsetMinutes) : todayKey());
   const totals = meals
-    .filter((meal) => dayKeyFromTs(meal.ts) === dateKey && meal.status !== "processing" && meal.status !== "failed")
+    .filter((meal) => getKey(meal.ts) === key && meal.status !== "processing" && meal.status !== "failed")
     .reduce(
       (acc, meal) => {
         const ranges = meal.analysisJson.estimated_ranges;
@@ -36,13 +40,18 @@ export function summarizeDay(meals: MealLog[], dateKey = todayKey()): DailyRange
   return totals;
 }
 
-export function summarizeWeek(meals: MealLog[], days = 7) {
+export function summarizeWeek(meals: MealLog[], days = 7, offsetMinutes?: number) {
   const result: Array<{ dateKey: string; totals: DailyRange }> = [];
   for (let i = days - 1; i >= 0; i -= 1) {
-    const date = new Date();
-    date.setDate(date.getDate() - i);
-    const key = todayKey(date);
-    result.push({ dateKey: key, totals: summarizeDay(meals, key) });
+    let key: string;
+    if (offsetMinutes !== undefined) {
+      key = localDayKeyFromTs(Date.now() - i * 24 * 60 * 60 * 1000, offsetMinutes);
+    } else {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      key = todayKey(date);
+    }
+    result.push({ dateKey: key, totals: summarizeDay(meals, key, offsetMinutes) });
   }
   return result;
 }
