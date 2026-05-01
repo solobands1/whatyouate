@@ -87,9 +87,9 @@ function extractRecentFoods(meals: MealLog[]): string[] {
   return foods;
 }
 
-async function generateNudge(ctx: Record<string, unknown>) {
+async function generateNudge(ctx: Record<string, unknown>): Promise<{ message: string; type: string; why?: string; action?: string } | { error: string }> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return null;
+  if (!apiKey) return { error: "no api key" };
   const prompt = buildSmartPrompt(ctx);
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 55_000);
@@ -110,14 +110,16 @@ async function generateNudge(ctx: Record<string, unknown>) {
         messages: [{ role: "user", content: prompt }],
       }),
     });
-    if (!response.ok) return null;
+    if (!response.ok) return { error: `anthropic ${response.status}: ${await response.text()}` };
     const result = await response.json();
     const raw = (result.content?.[0]?.text ?? "").trim();
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return null;
+    if (!jsonMatch) return { error: `no json in response: ${raw.slice(0, 200)}` };
     const parsed = JSON.parse(jsonMatch[0]);
-    if (!parsed.message) return null;
+    if (!parsed.message) return { error: `null message: ${JSON.stringify(parsed)}` };
     return parsed as { message: string; type: string; why?: string; action?: string };
+  } catch (e: unknown) {
+    return { error: String(e) };
   } finally {
     clearTimeout(timeoutId);
   }
@@ -194,7 +196,7 @@ export async function GET(req: Request) {
   }
 
   const nudge = await generateNudge(ctx);
-  if (!nudge) return NextResponse.json({ message: null, debug: { meals: meals.length, profile: !!profileRes.data } });
+  if ("error" in nudge) return NextResponse.json({ message: null, debug: { meals: meals.length, error: nudge.error } });
 
   return NextResponse.json({
     window: windowParam,
