@@ -179,7 +179,7 @@ export async function GET(req: Request) {
 
   if (isEvening) {
     ctx.nudgeIntentWindow = "evening";
-    ctx.blockedNudgeTypes = [..."meal_timing", ...blockedNudgeTypes];
+    ctx.blockedNudgeTypes = ["meal_timing", ...blockedNudgeTypes];
   } else {
     delete ctx.todayCalories;
     delete ctx.todayProtein;
@@ -194,7 +194,7 @@ export async function GET(req: Request) {
   }
 
   const nudge = await generateNudge(ctx);
-  if (!nudge) return NextResponse.json({ message: null });
+  if (!nudge) return NextResponse.json({ message: null, debug: { meals: meals.length, profile: !!profileRes.data } });
 
   return NextResponse.json({
     window: windowParam,
