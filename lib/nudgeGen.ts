@@ -125,7 +125,7 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
 
   const last7 = ctx.last7Days as Array<Record<string, unknown>> | undefined;
   if (last7?.length) {
-    lines.push(`Previous days, excluding today (day | date | kcal | protein | carbs | fat | meals | timing | workout). Days marked "no log" were not logged:`);
+    lines.push(`Previous days, excluding today (day | date | kcal | protein | carbs | fat | meals count + first@HH last@HH + % cals before noon | workout). Days marked "no log" were not logged:`);
     last7.forEach((d) => {
       const types = (d.workoutTypes as string[] | undefined)?.join(", ");
       const wk = d.hasWorkout ? ` | workout ${d.workoutMinutes ?? "?"}min ${d.workoutIntensity ?? ""}${types ? ` [${types}]` : ""}` : "";
@@ -139,7 +139,7 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
         const pctAM = d.pctCaloriesAM as number | undefined;
         const fmt = (h: number) => { const hh = h % 12 || 12; return `${hh}${h < 12 ? "am" : "pm"}`; };
         const timing = mealCount != null
-          ? ` | ${mealCount} meal${mealCount !== 1 ? "s" : ""}${firstH != null && lastH != null ? ` (${fmt(firstH)}–${fmt(lastH)})` : ""}${pctAM != null ? ` ${pctAM}% cals before noon` : ""}`
+          ? ` | ${mealCount} meal${mealCount !== 1 ? "s" : ""}${firstH != null ? ` first@${fmt(firstH)}` : ""}${lastH != null ? ` last@${fmt(lastH)}` : ""}${pctAM != null ? ` ${pctAM}% cals before noon` : ""}`
           : "";
         lines.push(`  ${d.dayOfWeek} ${d.dateKey}: ${d.calories} kcal / ${d.protein}g protein / ${d.carbs}g carbs / ${d.fat}g fat${timing}${wk}`);
       }
@@ -190,7 +190,7 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
   if (nudgeIntentWindow === "morning") {
     lines.push(`\nFRAMING NOTE: This is a morning nudge delivered before the user has logged their day. Write it as a durable pattern insight they will read at any point in the morning — not a real-time check-in. Focus on multi-day patterns, trends, and what to aim for today based on history. Avoid "right now" or specific time-of-day references. IMPORTANT: With multiple days of logged data available, there is ALWAYS something worth surfacing. Do not return null.`);
   } else if (nudgeIntentWindow === "evening") {
-    lines.push(`\nFRAMING NOTE: This is an evening nudge. Today's actual food data is available above — use it. Write a brief, specific, reflective observation about how the day went: what worked, what fell short, or what to carry into tomorrow. You can reference "today", "this evening", or specific foods logged. Keep it warm and forward-looking. IMPORTANT: With both today's data and historical patterns available, there is always something worth saying. Do not return null.`);
+    lines.push(`\nFRAMING NOTE: This is an evening nudge. Today's actual food data is available above — use it. Write a brief, specific, reflective observation about how the day went: what worked, what fell short. If there is a clear nutrient gap still open tonight, name one specific food they could eat RIGHT NOW to close some of it — make that the action. Then share what to carry into tomorrow. Keep it warm and forward-looking. IMPORTANT: With both today's data and historical patterns available, there is always something worth saying. Do not return null.`);
   }
 
   const streak = ctx.streak as number | undefined;
