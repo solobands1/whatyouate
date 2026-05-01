@@ -14,11 +14,10 @@ function adminClient() {
   );
 }
 
-function getTimeWindow(): "morning" | "afternoon" | "evening" {
-  const hour = new Date().getUTCHours();
-  if (hour < 16) return "morning";
-  if (hour < 21) return "afternoon";
-  return "evening";
+function getUserLocalHour(timezoneOffsetMinutes: number | undefined): number {
+  const utcMinutes = new Date().getUTCHours() * 60 + new Date().getUTCMinutes();
+  const offset = timezoneOffsetMinutes ?? 0;
+  return Math.floor(((utcMinutes - offset) + 1440) % 1440 / 60);
 }
 
 function mapMealRow(row: Record<string, unknown>): MealLog | null {
@@ -198,20 +197,21 @@ export async function GET(req: Request) {
   }
 
   const supabase = adminClient();
-  const window = getTimeWindow();
   const nowISO = new Date().toISOString();
   const fourHoursAgo = new Date(Date.now() - 2.5 * 60 * 60 * 1000).toISOString();
   const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
 
   // Fetch all users and tokens in parallel — nudge generation is not gated on push token existence
   const [{ data: profileRows }, { data: tokens }] = await Promise.all([
-    supabase.from("profiles").select("user_id"),
+    supabase.from("profiles").select("user_id, timezone_offset_minutes"),
     supabase.from("push_tokens").select("user_id, token").eq("platform", "ios"),
   ]);
 
   if (!profileRows?.length) return NextResponse.json({ ok: true, processed: 0 });
 
-  const userIds = [...new Set(profileRows.map((p: { user_id: string }) => p.user_id))];
+  const profiles = profileRows as Array<{ user_id: string; timezone_offset_minutes?: number }>;
+  const timezoneByUser = new Map(profiles.map((p) => [p.user_id, p.timezone_offset_minutes]));
+  const userIds = [...new Set(profiles.map((p) => p.user_id))];
   let processed = 0;
   let sent = 0;
 
@@ -220,6 +220,12 @@ export async function GET(req: Request) {
 
   for (const userId of userIds) {
     try {
+      const tzOffset = timezoneByUser.get(userId);
+      const localHour = getUserLocalHour(tzOffset);
+      const isMorningWindow = localHour === 7;
+      const isEveningWindow = localHour === 19;
+      if (!isMorningWindow && !isEveningWindow) continue;
+
       const { data: recentNudgeCheck } = await supabase
         .from("nudges")
         .select("id")
@@ -274,7 +280,7 @@ export async function GET(req: Request) {
         recentFeelLogs, lastNudgeRecord, weightRes.data ?? [], undefined, timezoneOffset
       ) as unknown as Record<string, unknown>;
 
-      const isEvening = window === "evening";
+      const isEvening = isEveningWindow;
       delete ctx.timeOfDay; // replaced by nudgeIntentWindow
 
       if (isEvening) {
@@ -338,5 +344,5 @@ export async function GET(req: Request) {
     }
   }
 
-  return NextResponse.json({ ok: true, processed, sent, window });
+  return NextResponse.json({ ok: true, processed, sent });
 }
