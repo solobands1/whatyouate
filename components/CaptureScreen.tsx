@@ -52,6 +52,8 @@ export default function CaptureScreen() {
   const [mealTime, setMealTime] = useState(nowTimeString);
   const [saveError, setSaveError] = useState(false);
   const [confirmingTime, setConfirmingTime] = useState(false);
+  const [analyzed, setAnalyzed] = useState(false);
+  const [hint, setHint] = useState("");
 
   useEffect(() => {
     if (loading) return;
@@ -87,13 +89,7 @@ export default function CaptureScreen() {
     }
   }, [file]);
 
-  useEffect(() => {
-    if (!file || !user) return;
-    if (analyzeStartedRef.current) return;
-    analyzeStartedRef.current = true;
-    sessionStorage.removeItem("wya_pending_capture");
-    handleAnalyze(file).catch(() => {});
-  }, [file, user]);
+  // Analysis is now triggered by the Analyze button, not automatically on file select.
 
   useEffect(() => {
     return () => {
@@ -145,7 +141,7 @@ export default function CaptureScreen() {
     return dataUrl;
   };
 
-  const handleAnalyze = async (selected: File) => {
+  const handleAnalyze = async (selected: File, hintText?: string) => {
     if (!user) return;
     const [resized, thumb] = await Promise.all([
       buildResizedDataUrl(selected),
@@ -166,11 +162,19 @@ export default function CaptureScreen() {
     setPendingMealId(pendingMeal.id);
     setMealTime(nowTimeString());
     notifyMealsUpdated();
-    enqueueMeal(pendingMeal.id, resized, user.id);
+    enqueueMeal(pendingMeal.id, resized, user.id, hintText || undefined);
     if (redirectRef.current) window.clearTimeout(redirectRef.current);
     redirectRef.current = window.setTimeout(() => {
       if (!showTimePickerRef.current) router.push("/");
     }, 3200);
+  };
+
+  const handleAnalyzeTap = () => {
+    if (!file || analyzeStartedRef.current) return;
+    analyzeStartedRef.current = true;
+    setAnalyzed(true);
+    sessionStorage.removeItem("wya_pending_capture");
+    handleAnalyze(file, hint.trim() || undefined).catch(() => {});
   };
 
   const handleChangeTime = () => {
@@ -303,12 +307,40 @@ export default function CaptureScreen() {
           </div>
         )}
 
-        {preview && (
-          <div className="flex flex-col items-center justify-center flex-1 px-6 py-6 gap-6">
-            {/* Photo card with blue border */}
+        {preview && !analyzed && (
+          <div className="flex flex-col items-center justify-center flex-1 px-6 py-6 gap-5">
+            {/* Photo card — no checkmark yet */}
             <div className="relative w-full max-w-sm rounded-2xl border-2 border-primary/60 overflow-hidden shadow-[0_0_24px_rgba(111,168,255,0.18)] -mt-10">
               <img src={preview} alt="Preview" className="w-full object-cover" />
-              {/* Checkmark overlay */}
+            </div>
+
+            {/* Hint field */}
+            <div className="w-full max-w-sm">
+              <input
+                type="text"
+                value={hint}
+                onChange={(e) => setHint(e.target.value)}
+                placeholder="Add a hint if the AI might get it wrong — e.g. homemade dishes, unusual angles, or foods that look similar to something else (optional)"
+                className="w-full rounded-xl border border-ink/10 bg-white px-4 py-3 text-sm text-ink/80 placeholder:text-ink/35 focus:outline-none focus:ring-1 focus:ring-primary/30"
+              />
+            </div>
+
+            {/* Analyze button */}
+            <button
+              type="button"
+              className="w-full max-w-sm rounded-xl bg-primary py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] transition hover:bg-primary/90 active:scale-[0.98]"
+              onClick={handleAnalyzeTap}
+            >
+              Analyze
+            </button>
+          </div>
+        )}
+
+        {preview && analyzed && (
+          <div className="flex flex-col items-center justify-center flex-1 px-6 py-6 gap-6">
+            {/* Photo card with checkmark overlay */}
+            <div className="relative w-full max-w-sm rounded-2xl border-2 border-primary/60 overflow-hidden shadow-[0_0_24px_rgba(111,168,255,0.18)] -mt-10">
+              <img src={preview} alt="Preview" className="w-full object-cover" />
               <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-[1px]">
                 <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary shadow-xl animate-circleImpact">
                   <svg

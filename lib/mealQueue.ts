@@ -7,6 +7,7 @@ type MealJob = {
   mealId: string;
   imageBase64: string;
   userId?: string;
+  hint?: string;
   attempts?: number;
 };
 
@@ -39,7 +40,8 @@ async function processNext() {
         body: JSON.stringify({
           imageBase64: job.imageBase64,
           mealId: job.mealId,
-          userId: job.userId
+          userId: job.userId,
+          ...(job.hint ? { hints: job.hint } : {}),
         })
       });
     } finally {
@@ -96,8 +98,8 @@ async function processNext() {
   processNext();
 }
 
-export function enqueueMeal(mealId: string, imageBase64: string, userId?: string) {
-  queue.push({ mealId, imageBase64, userId });
+export function enqueueMeal(mealId: string, imageBase64: string, userId?: string, hint?: string) {
+  queue.push({ mealId, imageBase64, userId, hint });
 
   if (!isProcessing) {
     processNext();
