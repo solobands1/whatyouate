@@ -379,78 +379,88 @@ export default function HomeScreen() {
     setShowQuickAdd(true);
   };
 
-  const handleQuickAddConfirm = async () => {
-    if (!user) return;
+  const handleQuickAddConfirm = () => {
+    if (!user || quickAddAdding) return;
     const selected = Object.entries(quickAddSelected);
     if (!selected.length) return;
     setQuickAddAdding(true);
-    try {
-      const newMeals: typeof meals.meals = [];
-      for (const [key, portion] of selected) {
-        const item = quickAddItems.find((i) => i.key === key);
-        if (!item) continue;
-        const multiplier = portion === "small" ? 0.7 : portion === "large" ? 1.4 : 1;
-        const scale = (v: number) => Math.round(v * multiplier);
-        let ranges: {
-          calories_min: number; calories_max: number;
-          protein_g_min: number; protein_g_max: number;
-          carbs_g_min: number; carbs_g_max: number;
-          fat_g_min: number; fat_g_max: number;
+
+    // Build all meal data synchronously — no DB calls yet
+    const pendingItems: Array<{ item: QuickAddItem; analysis: any }> = [];
+    for (const [key, portion] of selected) {
+      const item = quickAddItems.find((i) => i.key === key);
+      if (!item) continue;
+      const multiplier = portion === "small" ? 0.7 : portion === "large" ? 1.4 : 1;
+      const scale = (v: number) => Math.round(v * multiplier);
+      let ranges: {
+        calories_min: number; calories_max: number;
+        protein_g_min: number; protein_g_max: number;
+        carbs_g_min: number; carbs_g_max: number;
+        fat_g_min: number; fat_g_max: number;
+      };
+      if (item.type === "text" && item.ranges) {
+        const r = item.ranges;
+        ranges = {
+          calories_min: scale(r.calories_min), calories_max: scale(r.calories_max),
+          protein_g_min: scale(r.protein_g_min), protein_g_max: scale(r.protein_g_max),
+          carbs_g_min: scale(r.carbs_g_min), carbs_g_max: scale(r.carbs_g_max),
+          fat_g_min: scale(r.fat_g_min), fat_g_max: scale(r.fat_g_max),
         };
-        if (item.type === "text" && item.ranges) {
-          const r = item.ranges;
-          ranges = {
-            calories_min: scale(r.calories_min), calories_max: scale(r.calories_max),
-            protein_g_min: scale(r.protein_g_min), protein_g_max: scale(r.protein_g_max),
-            carbs_g_min: scale(r.carbs_g_min), carbs_g_max: scale(r.carbs_g_max),
-            fat_g_min: scale(r.fat_g_min), fat_g_max: scale(r.fat_g_max),
-          };
-        } else {
-          const cal = scale(item.calories ?? 0);
-          const prot = scale(item.protein ?? 0);
-          const carbs = scale(item.carbs ?? 0);
-          const fat = scale(item.fat ?? 0);
-          ranges = {
-            calories_min: cal, calories_max: cal,
-            protein_g_min: prot, protein_g_max: prot,
-            carbs_g_min: carbs, carbs_g_max: carbs,
-            fat_g_min: fat, fat_g_max: fat,
-          };
-        }
-        const analysis = {
-          name: item.name,
-          detected_items: [{ name: item.name, confidence_0_1: 1 }],
-          estimated_ranges: ranges,
-          micronutrient_signals: item.micronutrient_signals ?? [],
-          confidence_overall_0_1: 1,
-          precision_mode_available: false,
-        } as any;
-        const created = await addMeal(user.id, analysis);
-        if (created?.id) {
-          await updateMeal(created.id, analysis, { userCorrection: item.name }, user.id);
-          if (quickAddDate !== todayDateStr()) {
-            const d = new Date(quickAddDate + "T12:00:00");
-            if (d.getTime() < Date.now()) await updateMealTs(created.id, d.getTime()).catch(() => {});
-          }
-          newMeals.push({ ...created, analysisJson: analysis, status: "done" as const });
-          if (item.type === "text") {
-            incrementFoodTextLogCount(item.key);
-          } else if (item.barcode) {
-            incrementFoodCacheLogCount(item.barcode);
-          }
-        }
+      } else {
+        const cal = scale(item.calories ?? 0);
+        const prot = scale(item.protein ?? 0);
+        const carbs = scale(item.carbs ?? 0);
+        const fat = scale(item.fat ?? 0);
+        ranges = {
+          calories_min: cal, calories_max: cal,
+          protein_g_min: prot, protein_g_max: prot,
+          carbs_g_min: carbs, carbs_g_max: carbs,
+          fat_g_min: fat, fat_g_max: fat,
+        };
       }
-      if (newMeals.length > 0) {
-        meals.setMeals((prev) => [...newMeals, ...prev]);
-        notifyMealsUpdated();
-      }
-      setShowQuickAdd(false);
-      setQuickAddSelected({});
-    } catch (err) {
-      console.error("[quick add] failed:", err);
-    } finally {
-      setQuickAddAdding(false);
+      const analysis = {
+        name: item.name,
+        detected_items: [{ name: item.name, confidence_0_1: 1 }],
+        estimated_ranges: ranges,
+        micronutrient_signals: item.micronutrient_signals ?? [],
+        confidence_overall_0_1: 1,
+        precision_mode_available: false,
+      } as any;
+      pendingItems.push({ item, analysis });
     }
+
+    if (!pendingItems.length) { setQuickAddAdding(false); return; }
+
+    // Optimistically add pills and close the modal immediately
+    const now = Date.now();
+    const optimisticMeals = pendingItems.map(({ analysis }, i) => ({
+      id: `optimistic-${now}-${i}`,
+      ts: now - i,
+      analysisJson: analysis,
+      status: "done" as const,
+    }));
+    meals.setMeals((prev) => [...optimisticMeals, ...prev]);
+    setShowQuickAdd(false);
+    setQuickAddSelected({});
+    setQuickAddAdding(false);
+
+    // Write to DB in parallel — fire and forget
+    const capturedDate = quickAddDate;
+    Promise.all(
+      pendingItems.map(async ({ item, analysis }) => {
+        const created = await addMeal(user.id, analysis);
+        if (!created?.id) return;
+        await updateMeal(created.id, analysis, { userCorrection: item.name }, user.id);
+        if (capturedDate !== todayDateStr()) {
+          const d = new Date(capturedDate + "T12:00:00");
+          if (d.getTime() < Date.now()) await updateMealTs(created.id, d.getTime()).catch(() => {});
+        }
+        if (item.type === "text") incrementFoodTextLogCount(item.key);
+        else if (item.barcode) incrementFoodCacheLogCount(item.barcode);
+      })
+    )
+      .then(() => notifyMealsUpdated())
+      .catch((err) => console.error("[quick add] background write failed:", err));
   };
 
   const handleRemoveQuickAddItem = (item: QuickAddItem) => {
