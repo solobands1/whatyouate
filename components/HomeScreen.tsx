@@ -17,7 +17,7 @@ import { formatApprox, formatDateShort, todayKey, dayKeyFromTs } from "../lib/ut
 import { supabase } from "../lib/supabaseClient";
 import "../lib/mealQueue";
 import BarcodeScannerOverlay from "./BarcodeScannerOverlay";
-import { getFoodCacheEntry, setFoodCacheEntry, deleteFoodCacheEntry, deleteFoodTextEntry, incrementFoodCacheLogCount, incrementFoodTextLogCount, getQuickAddFromMeals, addQuickAddRemoved, getDailySupplements, setDailySupplements, hasDailySuppsLoggedToday, markDailySuppsLoggedToday, type QuickAddItem } from "../lib/foodCache";
+import { getFoodCacheEntry, setFoodCacheEntry, deleteFoodCacheEntry, deleteFoodTextEntry, incrementFoodCacheLogCount, incrementFoodTextLogCount, getQuickAddFromMeals, addQuickAddRemoved, getDailySupplements, setDailySupplements, hasDailySuppsLoggedToday, markDailySuppsLoggedToday, clearDailySuppsLoggedToday, type QuickAddItem } from "../lib/foodCache";
 import { addFeelLog, deleteFeelLog, updateFeelLog, fetchWaterLogs, upsertWaterLog, type FeelLog } from "../lib/supabaseDb";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
@@ -928,6 +928,9 @@ export default function HomeScreen() {
         confidence_overall_0_1: 1,
         precision_mode_available: false,
       };
+      // Mark optimistically before async ops — prevents duplicate if component
+      // remounts while awaits are in flight. Cleared only if addMeal itself fails.
+      markDailySuppsLoggedToday(user.id);
       try {
         const created = await addMeal(user.id, analysis);
         if (created?.id) {
@@ -936,13 +939,12 @@ export default function HomeScreen() {
           const midnight = new Date();
           midnight.setHours(0, 1, 0, 0);
           await updateMealTs(created.id, midnight.getTime());
-          // Only mark as logged after confirmed DB save
-          markDailySuppsLoggedToday(user.id);
+          notifyMealsUpdated();
         }
       } catch {
-        // silently fail — supplements are non-critical; flag not set so next load retries
+        // addMeal failed — clear flag so it retries on next load
+        clearDailySuppsLoggedToday(user.id);
       }
-      notifyMealsUpdated();
     })();
   }, [user, loadingData, ctxMeals]);
 
