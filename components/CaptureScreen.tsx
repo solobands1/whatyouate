@@ -337,7 +337,7 @@ export default function CaptureScreen() {
                 type="text"
                 value={hint}
                 onChange={(e) => setHint(e.target.value)}
-                placeholder="Ex. Vegetarian, turkey sandwich"
+                placeholder="e.g. Vegetarian, Turkey Sandwich"
                 className="w-full rounded-xl border border-ink/10 bg-white px-4 py-3 text-sm text-ink/80 placeholder:text-ink/35 focus:outline-none focus:ring-1 focus:ring-primary/30"
               />
               <p className="mt-2 text-xs text-muted/60 px-1">Help your food get properly identified with a hint</p>
