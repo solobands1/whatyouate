@@ -308,9 +308,9 @@ export default function CaptureScreen() {
         )}
 
         {preview && !analyzed && (
-          <div className="flex flex-col flex-1 items-center px-6 pt-4 pb-6">
+          <div className="flex flex-col flex-1 items-center px-6 pt-10 pb-8">
             {/* Cancel button top left */}
-            <div className="w-full max-w-sm mb-4">
+            <div className="w-full max-w-sm mb-5">
               <button
                 type="button"
                 className="text-sm text-ink/50 underline"
@@ -331,26 +331,26 @@ export default function CaptureScreen() {
               <img src={preview} alt="Preview" className="w-full object-cover" />
             </div>
 
-            {/* Hint field + helper text */}
-            <div className="w-full max-w-sm mt-5">
-              <input
-                type="text"
-                value={hint}
-                onChange={(e) => setHint(e.target.value)}
-                placeholder="e.g. Vegetarian, Turkey Sandwich"
-                className="w-full rounded-xl border border-ink/10 bg-white px-4 py-3 text-sm text-ink/80 placeholder:text-ink/35 focus:outline-none focus:ring-1 focus:ring-primary/30"
-              />
-              <p className="mt-2 text-xs text-muted/60 px-1">Help your food get properly identified with a hint</p>
+            {/* Hint field + helper text + Analyze button — grouped together below photo */}
+            <div className="w-full max-w-sm mt-6 flex flex-col gap-4">
+              <div>
+                <input
+                  type="text"
+                  value={hint}
+                  onChange={(e) => setHint(e.target.value)}
+                  placeholder="e.g. Vegetarian, Turkey Sandwich"
+                  className="w-full rounded-xl border border-primary/40 bg-white px-4 py-3 text-sm text-ink/80 placeholder:text-ink/35 focus:outline-none focus:ring-1 focus:ring-primary/50"
+                />
+                <p className="mt-2 text-xs text-ink/50 px-1">Help your food get properly identified with a hint</p>
+              </div>
+              <button
+                type="button"
+                className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] transition hover:bg-primary/90 active:scale-[0.98]"
+                onClick={handleAnalyzeTap}
+              >
+                Analyze
+              </button>
             </div>
-
-            {/* Analyze button — pushed to bottom so it sits just above the keyboard */}
-            <button
-              type="button"
-              className="mt-auto w-full max-w-sm rounded-xl bg-primary py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] transition hover:bg-primary/90 active:scale-[0.98]"
-              onClick={handleAnalyzeTap}
-            >
-              Analyze
-            </button>
           </div>
         )}
 
