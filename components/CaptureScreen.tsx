@@ -308,27 +308,45 @@ export default function CaptureScreen() {
         )}
 
         {preview && !analyzed && (
-          <div className="flex flex-col items-center justify-center flex-1 px-6 py-6 gap-5">
+          <div className="flex flex-col flex-1 items-center px-6 pt-4 pb-6">
+            {/* Cancel button top left */}
+            <div className="w-full max-w-sm mb-4">
+              <button
+                type="button"
+                className="text-sm text-ink/50 underline"
+                onClick={() => {
+                  setFile(null);
+                  setHint("");
+                  setAnalyzed(false);
+                  analyzeStartedRef.current = false;
+                  router.push("/");
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+
             {/* Photo card — no checkmark yet */}
-            <div className="relative w-full max-w-sm rounded-2xl border-2 border-primary/60 overflow-hidden shadow-[0_0_24px_rgba(111,168,255,0.18)] -mt-10">
+            <div className="relative w-full max-w-sm rounded-2xl border-2 border-primary/60 overflow-hidden shadow-[0_0_24px_rgba(111,168,255,0.18)]">
               <img src={preview} alt="Preview" className="w-full object-cover" />
             </div>
 
-            {/* Hint field */}
-            <div className="w-full max-w-sm">
+            {/* Hint field + helper text */}
+            <div className="w-full max-w-sm mt-5">
               <input
                 type="text"
                 value={hint}
                 onChange={(e) => setHint(e.target.value)}
-                placeholder="Add a hint if the AI might get it wrong — e.g. homemade dishes, unusual angles, or foods that look similar to something else (optional)"
+                placeholder="Ex. Vegetarian, turkey sandwich"
                 className="w-full rounded-xl border border-ink/10 bg-white px-4 py-3 text-sm text-ink/80 placeholder:text-ink/35 focus:outline-none focus:ring-1 focus:ring-primary/30"
               />
+              <p className="mt-2 text-xs text-muted/60 px-1">Help your food get properly identified with a hint</p>
             </div>
 
-            {/* Analyze button */}
+            {/* Analyze button — pushed to bottom so it sits just above the keyboard */}
             <button
               type="button"
-              className="w-full max-w-sm rounded-xl bg-primary py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] transition hover:bg-primary/90 active:scale-[0.98]"
+              className="mt-auto w-full max-w-sm rounded-xl bg-primary py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] transition hover:bg-primary/90 active:scale-[0.98]"
               onClick={handleAnalyzeTap}
             >
               Analyze
