@@ -46,6 +46,8 @@ export default function CaptureScreen() {
   const [cameraMode, setCameraMode] = useState<"idle" | "live" | "file">("idle");
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const topPanelRef = useRef<HTMLDivElement | null>(null);
+  const bottomPanelRef = useRef<HTMLDivElement | null>(null);
   const [pendingMealId, setPendingMealId] = useState<string | null>(null);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [mealDate, setMealDate] = useState(todayDateString);
@@ -112,6 +114,26 @@ export default function CaptureScreen() {
       videoRef.current?.play().catch(() => {});
     };
   }, [cameraMode]);
+
+  // Two-panel keyboard handling: bottom panel floats above keyboard, top panel fills above it
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const BOTTOM_H = 176;
+    const update = () => {
+      const kh = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      if (topPanelRef.current) topPanelRef.current.style.bottom = `${BOTTOM_H + kh}px`;
+      if (bottomPanelRef.current) bottomPanelRef.current.style.bottom = `${kh}px`;
+    };
+    update();
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => {
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+    };
+  }, []);
 
   const buildResizedDataUrl = async (selected: File) => {
     const imageUrl = URL.createObjectURL(selected);
@@ -308,50 +330,62 @@ export default function CaptureScreen() {
         )}
 
         {preview && !analyzed && (
-          <div className="flex flex-col flex-1 items-center px-6 pt-10 pb-8">
-            {/* Cancel button top left */}
-            <div className="w-full max-w-sm mb-5">
-              <button
-                type="button"
-                className="text-sm text-ink/50 underline"
-                onClick={() => {
-                  setFile(null);
-                  setHint("");
-                  setAnalyzed(false);
-                  analyzeStartedRef.current = false;
-                  router.push("/");
-                }}
-              >
-                Cancel
-              </button>
-            </div>
-
-            {/* Photo card — no checkmark yet */}
-            <div className="relative w-full max-w-sm rounded-2xl border-2 border-primary/60 overflow-hidden shadow-[0_0_24px_rgba(111,168,255,0.18)]">
-              <img src={preview} alt="Preview" className="w-full object-cover" />
-            </div>
-
-            {/* Hint field + helper text + Analyze button — grouped together below photo */}
-            <div className="w-full max-w-sm mt-6 flex flex-col gap-4">
-              <div>
-                <input
-                  type="text"
-                  value={hint}
-                  onChange={(e) => setHint(e.target.value)}
-                  placeholder="e.g. Vegetarian, Turkey Sandwich"
-                  className="w-full rounded-xl border border-primary/40 bg-white px-4 py-3 text-sm text-ink/80 placeholder:text-ink/35 focus:outline-none focus:ring-1 focus:ring-primary/50"
-                />
-                <p className="mt-2 text-xs text-ink/50 px-1">Help your food get properly identified with a hint</p>
+          <>
+            {/* Top panel: cancel + photo — bottom edge adjusts when keyboard opens */}
+            <div
+              ref={topPanelRef}
+              className="fixed left-0 right-0 top-0 flex flex-col bg-surface"
+              style={{ bottom: "176px", paddingTop: "calc(env(safe-area-inset-top, 0px) + 20px)" }}
+            >
+              <div className="px-6 pb-3 w-full max-w-sm mx-auto">
+                <button
+                  type="button"
+                  className="text-sm text-ink/50 underline"
+                  onClick={() => {
+                    setFile(null);
+                    setHint("");
+                    setAnalyzed(false);
+                    analyzeStartedRef.current = false;
+                    router.push("/");
+                  }}
+                >
+                  Cancel
+                </button>
               </div>
-              <button
-                type="button"
-                className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] transition hover:bg-primary/90 active:scale-[0.98]"
-                onClick={handleAnalyzeTap}
-              >
-                Analyze
-              </button>
+              <div className="flex-1 px-6 min-h-0 overflow-hidden pb-3">
+                <div className="relative h-full max-w-sm mx-auto rounded-2xl border-2 border-primary/60 overflow-hidden shadow-[0_0_24px_rgba(111,168,255,0.18)]">
+                  <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+                </div>
+              </div>
             </div>
-          </div>
+
+            {/* Bottom panel: hint + Analyze — floats above keyboard */}
+            <div
+              ref={bottomPanelRef}
+              className="fixed left-0 right-0 bg-surface px-6 pt-4"
+              style={{ bottom: "0px", height: "176px", paddingBottom: "max(env(safe-area-inset-bottom, 0px), 16px)" }}
+            >
+              <div className="max-w-sm mx-auto flex flex-col gap-3">
+                <div>
+                  <input
+                    type="text"
+                    value={hint}
+                    onChange={(e) => setHint(e.target.value)}
+                    placeholder="e.g. Vegetarian, Turkey Sandwich"
+                    className="w-full rounded-xl border border-primary/40 bg-white px-4 py-3 text-sm text-ink/80 placeholder:text-ink/35 focus:outline-none focus:ring-1 focus:ring-primary/50"
+                  />
+                  <p className="mt-1.5 text-xs text-ink/40 px-1">Help your food get properly identified with a hint</p>
+                </div>
+                <button
+                  type="button"
+                  className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] transition hover:bg-primary/90 active:scale-[0.98]"
+                  onClick={handleAnalyzeTap}
+                >
+                  Analyze
+                </button>
+              </div>
+            </div>
+          </>
         )}
 
         {preview && analyzed && (
