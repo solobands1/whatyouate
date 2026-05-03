@@ -114,7 +114,7 @@ export default function CaptureScreen() {
     };
   }, [cameraMode]);
 
-  // Slide the whole layout up as a unit when keyboard opens, back down when it closes
+  // Shrink container to visible viewport when keyboard opens — photo absorbs the change
   useEffect(() => {
     if (typeof window === "undefined") return;
     const vv = window.visualViewport;
@@ -122,8 +122,8 @@ export default function CaptureScreen() {
     const update = () => {
       const el = captureContainerRef.current;
       if (!el) return;
-      const kh = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
-      el.style.transform = kh > 0 ? `translateY(-${kh}px)` : "";
+      el.style.height = `${vv.height}px`;
+      el.style.top = `${vv.offsetTop}px`;
     };
     update();
     vv.addEventListener("resize", update);
@@ -332,7 +332,7 @@ export default function CaptureScreen() {
           <div
             ref={captureContainerRef}
             className="fixed left-0 right-0 top-0 flex flex-col bg-surface"
-            style={{ height: "100dvh", paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)", transition: "transform 0.25s ease-out" }}
+            style={{ height: "100dvh", paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)", transition: "height 0.25s ease-out, top 0.25s ease-out" }}
           >
             {/* Cancel */}
             <div className="px-6 pb-3 flex-shrink-0 w-full max-w-sm mx-auto">
@@ -353,8 +353,8 @@ export default function CaptureScreen() {
 
             {/* Photo fills middle */}
             <div className="flex-1 px-6 min-h-0 overflow-hidden pb-3">
-              <div className="relative h-full max-w-sm mx-auto rounded-2xl border-2 border-primary/60 overflow-hidden shadow-[0_0_24px_rgba(111,168,255,0.18)]">
-                <img src={preview} alt="Preview" className="w-full h-full object-cover object-top" />
+              <div className="relative h-full max-w-sm mx-auto rounded-2xl border-2 border-primary/60 overflow-hidden shadow-[0_0_24px_rgba(111,168,255,0.18)] bg-black">
+                <img src={preview} alt="Preview" className="w-full h-full object-contain" />
               </div>
             </div>
 
