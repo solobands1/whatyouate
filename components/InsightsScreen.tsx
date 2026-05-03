@@ -626,7 +626,7 @@ export default function InsightsScreen() {
           </div>
           {gentleTargetsDisplay ? (
             <p className="mt-4 text-xs text-muted/70">
-              Suggested range: {gentleTargetsDisplay.calories} kcal · {Math.round(gentleTargetsDisplay.calories * 0.50 / 4)}g carbs · {Math.round(gentleTargetsDisplay.calories * 0.30 / 9)}g fat · {gentleTargetsDisplay.protein}g protein
+              Suggested range: {gentleTargetsDisplay.calories} kcal · {gentleTargetsDisplay.carbs}g carbs · {gentleTargetsDisplay.fat}g fat · {gentleTargetsDisplay.protein}g protein
             </p>
           ) : (
             <p className="mt-2 text-xs text-muted/70">Complete Your Profile For A Personalized Range</p>

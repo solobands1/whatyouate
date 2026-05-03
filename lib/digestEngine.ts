@@ -217,9 +217,13 @@ export function computeGentleTargets(meals: MealLog[], profile?: UserProfile) {
   if (dayCount < 5 || mealCount < 10) {
     const maintenance = estimateMaintenance(profile);
     if (!maintenance) return null;
-    const suggestedCalories = Math.round(maintenance * (1 + calNudge));
-    const proteinTarget = weight ? Math.round(weight * proteinTargetPerKg(profile)) : Math.round(suggestedCalories * 0.15 / 4);
-    return { calories: suggestedCalories, protein: proteinTarget, isEstimate: true };
+    const rawCalories = Math.round(maintenance * (1 + calNudge));
+    const rawProtein = weight ? Math.round(weight * proteinTargetPerKg(profile)) : Math.round(rawCalories * 0.15 / 4);
+    const calories = Math.round(rawCalories / 50) * 50;
+    const protein = Math.round(rawProtein / 5) * 5;
+    const fat = Math.round(calories * 0.30 / 9);
+    const carbs = Math.round((calories - protein * 4 - fat * 9) / 4);
+    return { calories, protein, fat, carbs, isEstimate: true };
   }
 
   // Established path: anchor calories to TDEE to prevent targets from drifting down
@@ -236,17 +240,20 @@ export function computeGentleTargets(meals: MealLog[], profile?: UserProfile) {
   if (!avgLoggedCalories && !avgLoggedProtein) return null;
 
   const maintenance = estimateMaintenance(profile);
-  const suggestedCalories = maintenance
+  const rawCalories = maintenance
     ? Math.round(maintenance * (1 + calNudge))
     : Math.max(0, Math.round(avgLoggedCalories * (1 + calNudge)));
-  const proteinTarget = weight ? weight * proteinTargetPerKg(profile) : 0;
-
-  return { calories: suggestedCalories, protein: proteinTarget ? Math.round(proteinTarget) : Math.round(avgLoggedProtein), isEstimate: false };
+  const rawProtein = weight ? weight * proteinTargetPerKg(profile) : 0;
+  const calories = Math.round(rawCalories / 50) * 50;
+  const protein = Math.round((rawProtein ? rawProtein : avgLoggedProtein) / 5) * 5;
+  const fat = Math.round(calories * 0.30 / 9);
+  const carbs = Math.round((calories - protein * 4 - fat * 9) / 4);
+  return { calories, protein, fat, carbs, isEstimate: false };
 }
 
 
 function adjustTargetsForWorkouts(
-  targets: { calories: number; protein: number; isEstimate?: boolean } | null,
+  targets: { calories: number; protein: number; fat: number; carbs: number; isEstimate?: boolean } | null,
   workouts: WorkoutSession[]
 ) {
   if (!targets || workouts.length === 0) return targets;
@@ -265,11 +272,11 @@ function adjustTargetsForWorkouts(
   }
 
   if (!weeklyFactor) return targets;
-  return {
-    ...targets,
-    calories: Math.round(targets.calories * (1 + weeklyFactor)),
-    protein: Math.round(targets.protein * (1 + weeklyFactor * 0.6))
-  };
+  const calories = Math.round(targets.calories * (1 + weeklyFactor));
+  const protein = Math.round(targets.protein * (1 + weeklyFactor * 0.6));
+  const fat = Math.round(calories * 0.30 / 9);
+  const carbs = Math.round((calories - protein * 4 - fat * 9) / 4);
+  return { ...targets, calories, protein, fat, carbs };
 }
 
 export function computeRecent(meals: MealLog[], workouts: WorkoutSession[]) {

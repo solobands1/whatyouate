@@ -202,7 +202,7 @@ export default function SummaryScreen() {
   );
   const dayCount = summaryMarkers.dayCount;
   const mealCount = summaryMarkers.mealCount;
-  const gentleTargetsDisplay = summaryMarkers.gentleTargets ?? { calories: 2300, protein: 125 };
+  const gentleTargetsDisplay = summaryMarkers.gentleTargets ?? { calories: 2300, protein: 125, fat: 77, carbs: 277 };
   const workoutSummary = summaryMarkers.workoutSummary;
   const avgWeekCalories = summaryMarkers.avgWeekCalories;
   const avgWeekProtein = summaryMarkers.avgWeekProtein;
@@ -1075,14 +1075,14 @@ export default function SummaryScreen() {
                   label="Carbs"
                   value={isDemoMode ? 180 : Math.round((summaryMarkers.todayTotals.carbs_g_min + summaryMarkers.todayTotals.carbs_g_max) / 2)}
                   unit="g"
-                  target={isDemoMode ? 288 : Math.round((summaryMarkers.gentleTargets?.calories ?? 2300) * 0.50 / 4)}
+                  target={isDemoMode ? 288 : (summaryMarkers.gentleTargets?.carbs ?? null)}
                   animate={hydrated}
                 />
                 <MacroRing
                   label="Fats"
                   value={isDemoMode ? 62 : Math.round((summaryMarkers.todayTotals.fat_g_min + summaryMarkers.todayTotals.fat_g_max) / 2)}
                   unit="g"
-                  target={isDemoMode ? 77 : Math.round((summaryMarkers.gentleTargets?.calories ?? 2300) * 0.30 / 9)}
+                  target={isDemoMode ? 77 : (summaryMarkers.gentleTargets?.fat ?? null)}
                   animate={hydrated}
                 />
               </>
@@ -1101,7 +1101,7 @@ export default function SummaryScreen() {
               className="mt-4 flex items-center gap-1 text-left text-xs text-muted/70"
               onClick={() => setShowTargetInfo((v) => !v)}
             >
-              <span>Suggested range: {gentleTargetsDisplay.calories} kcal · {Math.round(gentleTargetsDisplay.calories * 0.50 / 4)}g carbs · {Math.round(gentleTargetsDisplay.calories * 0.30 / 9)}g fat · {gentleTargetsDisplay.protein}g protein</span>
+              <span>Suggested range: {gentleTargetsDisplay.calories} kcal · {gentleTargetsDisplay.carbs}g carbs · {gentleTargetsDisplay.fat}g fat · {gentleTargetsDisplay.protein}g protein</span>
             </button>
           ) : (
             <p className="mt-2 text-xs text-muted/70">Complete Your Profile For A Personalized Range</p>
