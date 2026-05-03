@@ -868,22 +868,23 @@ export default function ProfileScreen() {
             </p>
             <div className="mt-2 grid grid-cols-2 gap-2">
               {([
-                { value: "sedentary", label: "Not Very Active" },
-                { value: "lightly_active", label: "Lightly Active" },
-                { value: "moderately_active", label: "Moderately Active" },
-                { value: "very_active", label: "Very Active" }
+                { value: "sedentary", label: "Not Very Active", description: "Desk job, minimal movement" },
+                { value: "lightly_active", label: "Lightly Active", description: "Daily walks, errands, housework" },
+                { value: "moderately_active", label: "Moderately Active", description: "Exercise 3–4x/week" },
+                { value: "very_active", label: "Very Active", description: "Training most days or physical job" }
               ] as const).map((option) => (
                 <button
                   key={option.value}
                   type="button"
-                  className={`rounded-xl border px-3 py-1.5 text-xs font-medium transition ${
+                  className={`rounded-xl border px-3 py-2.5 text-left transition ${
                     activityLevel === option.value
                       ? "border-primary/60 bg-primary/10 text-ink/80"
                       : "border-ink/10 text-muted/65"
                   }`}
                   onClick={() => setActivityLevel(option.value)}
                 >
-                  {option.label}
+                  <span className="block text-xs font-medium">{option.label}</span>
+                  <span className={`block text-[10px] mt-0.5 ${activityLevel === option.value ? "text-ink/50" : "text-muted/45"}`}>{option.description}</span>
                 </button>
               ))}
             </div>

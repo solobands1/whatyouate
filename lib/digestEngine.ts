@@ -155,9 +155,9 @@ function avgRangeMidpoint(mins: number[], maxes: number[]) {
 
 const ACTIVITY_MULTIPLIERS: Record<ActivityLevel, number> = {
   sedentary: 1.2,
-  lightly_active: 1.375,
-  moderately_active: 1.55,
-  very_active: 1.725,
+  lightly_active: 1.3,
+  moderately_active: 1.5,
+  very_active: 1.7,
 };
 
 const PROTEIN_PER_KG: Record<ActivityLevel, number> = {
@@ -199,7 +199,7 @@ export function estimateMaintenance(profile: UserProfile): number | null {
     const femaleBmr = 10 * weight + 6.25 * height - 5 * age - 161;
     bmr = (maleBmr + femaleBmr) / 2;
   }
-  const multiplier = activityLevel ? (ACTIVITY_MULTIPLIERS[activityLevel] ?? 1.375) : 1.375;
+  const multiplier = activityLevel ? (ACTIVITY_MULTIPLIERS[activityLevel] ?? 1.3) : 1.3;
   return Math.round(bmr * multiplier);
 }
 
