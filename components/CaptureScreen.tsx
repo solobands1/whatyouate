@@ -6,6 +6,7 @@ import { fileToThumbnailDataUrl } from "../lib/utils";
 import { safeFallbackAnalysis } from "../lib/ai/schema";
 import { notifyMealsUpdated } from "../lib/dataEvents";
 import { useAuth } from "./AuthProvider";
+import { useAppData } from "./AppDataProvider";
 import { addMeal, updateMealTs, uploadMealThumbnail, updateMealImageUrl } from "../lib/supabaseDb";
 import { enqueueMeal } from "../lib/mealQueue";
 
@@ -37,6 +38,7 @@ function dateTimeToTs(dateStr: string, timeStr: string): number {
 export default function CaptureScreen() {
   const router = useRouter();
   const { user, loading } = useAuth();
+  const { setMeals } = useAppData();
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -182,6 +184,7 @@ export default function CaptureScreen() {
     });
     setPendingMealId(pendingMeal.id);
     setMealTime(nowTimeString());
+    setMeals((prev) => [{ ...pendingMeal, analysisJson: placeholder, status: "processing" as const }, ...prev]);
     notifyMealsUpdated();
     enqueueMeal(pendingMeal.id, resized, user.id, hintText || undefined);
     if (redirectRef.current) window.clearTimeout(redirectRef.current);

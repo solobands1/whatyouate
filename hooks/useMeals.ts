@@ -141,48 +141,54 @@ export function useMeals(
 
   const confirmManualMeal = async () => {
     if (!user || !manualResult) return;
-    setUpdatingMeal(true);
+
+    const multiplier = manualPortion === "small" ? 0.7 : manualPortion === "large" ? 1.4 : 1;
+    const scale = (v: number) => Math.round(v * multiplier);
+    const r = manualResult.estimated_ranges;
+    const scaledAnalysis = {
+      ...manualResult,
+      estimated_ranges: {
+        calories_min: scale(r.calories_min), calories_max: scale(r.calories_max),
+        protein_g_min: scale(r.protein_g_min), protein_g_max: scale(r.protein_g_max),
+        carbs_g_min: scale(r.carbs_g_min), carbs_g_max: scale(r.carbs_g_max),
+        fat_g_min: scale(r.fat_g_min), fat_g_max: scale(r.fat_g_max),
+      }
+    };
+
+    // Optimistic update — show pill immediately before any DB calls
+    const optimisticId = `optimistic-manual-${Date.now()}`;
+    const capturedName = manualResult.name;
+    setMeals((prev) => [{ id: optimisticId, ts: Date.now(), analysisJson: scaledAnalysis as any, userCorrection: capturedName, status: "done" as const }, ...prev]);
+    setManualText("");
+    setManualResult(null);
+    setManualPortion("medium");
+    setEditingMeal(null);
+    setEditRecents(false);
+
+    // DB writes in background
+    const normalizedInput = normalizeFoodKey(manualText.trim());
+    const capturedDate = manualDate;
     try {
-      const multiplier = manualPortion === "small" ? 0.7 : manualPortion === "large" ? 1.4 : 1;
-      const scale = (v: number) => Math.round(v * multiplier);
-      const r = manualResult.estimated_ranges;
-      const scaledAnalysis = {
-        ...manualResult,
-        estimated_ranges: {
-          calories_min: scale(r.calories_min), calories_max: scale(r.calories_max),
-          protein_g_min: scale(r.protein_g_min), protein_g_max: scale(r.protein_g_max),
-          carbs_g_min: scale(r.carbs_g_min), carbs_g_max: scale(r.carbs_g_max),
-          fat_g_min: scale(r.fat_g_min), fat_g_max: scale(r.fat_g_max),
-        }
-      };
+      setUpdatingMeal(true);
       const created = await addMeal(user.id, scaledAnalysis as any);
       const today = new Date();
       const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-      if (manualDate !== todayStr) {
-        const d = new Date(manualDate + "T12:00:00");
-        if (d.getTime() < Date.now()) {
-          await updateMealTs(created.id, d.getTime()).catch(() => {});
-        }
+      if (capturedDate !== todayStr) {
+        const d = new Date(capturedDate + "T12:00:00");
+        if (d.getTime() < Date.now()) await updateMealTs(created.id, d.getTime()).catch(() => {});
       }
-      await updateMeal(created.id, scaledAnalysis as any, { userCorrection: manualResult.name }, user.id);
-      // Fire OFF enrichment in background — no Claude call, just database lookup
+      await updateMeal(created.id, scaledAnalysis as any, { userCorrection: capturedName }, user.id);
       fetch("/api/analyze-food", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mealId: created.id, existingAnalysis: manualResult, userId: user.id })
+        body: JSON.stringify({ mealId: created.id, existingAnalysis: scaledAnalysis, userId: user.id })
       }).catch(() => {});
-      // Increment frequency so this food rises in Quick Add
-      const normalizedInput = normalizeFoodKey(manualText.trim());
       incrementFoodTextLogCount(normalizedInput);
-      // Optimistic local update — add the new meal to state immediately
-      setMeals((prev) => [{ ...created, analysisJson: scaledAnalysis as any, userCorrection: manualResult.name, status: "done" as const }, ...prev]);
-      setManualText("");
-      setManualResult(null);
-      setManualPortion("medium");
-      setEditingMeal(null);
-      setEditRecents(false);
+      // Replace optimistic pill with real DB record
+      setMeals((prev) => prev.map((m) => m.id === optimisticId ? { ...created, analysisJson: scaledAnalysis as any, userCorrection: capturedName, status: "done" as const } : m));
     } catch (err) {
       console.error("Manual meal save failed", err);
+      setMeals((prev) => prev.filter((m) => m.id !== optimisticId));
     } finally {
       setUpdatingMeal(false);
     }

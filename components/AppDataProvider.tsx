@@ -89,6 +89,17 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const loadMealsOnly = useCallback(async (userId: string) => {
+    try {
+      const mealsData = await listMeals(userId, 400);
+      if (!mountedRef.current) return;
+      seedTextCacheFromMeals(mealsData);
+      setMeals(mealsData);
+    } catch {
+      // silently fail
+    }
+  }, []);
+
   const load = useCallback(async (userId: string, isInitial = false) => {
     try {
       const [profileData, mealsData, workoutsData, feelLogsData, weightLogsData] = await Promise.all([
@@ -200,7 +211,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!user) return;
     // Background refresh — no loading spinner, just update state silently
-    const handler = () => load(user.id, false);
+    const handler = () => loadMealsOnly(user.id);
     const nudgeHandler = () => loadNudges(user.id);
     window.addEventListener(MEALS_UPDATED_EVENT, handler);
     window.addEventListener(WORKOUTS_UPDATED_EVENT, handler);
