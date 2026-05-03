@@ -8,8 +8,7 @@ import { notifyProfileUpdated } from "../lib/dataEvents";
 import type { ActivityLevel, GoalDirection, SupplementEntry, SupplementNutrient, Units, UserProfile } from "../lib/types";
 import { suppLabel, suppName } from "../lib/types";
 import { matchSupplementNutrients, NUTRIENT_UNITS, NUTRIENT_DISPLAY_NAMES } from "../lib/rda";
-import { clearAllData, getProfile, saveProfile, saveDailySupplements, clearProfileCache, addWeightLog, getWeightLogs, LOCAL_MODE } from "../lib/supabaseDb";
-import type { WeightLog } from "../lib/supabaseDb";
+import { clearAllData, saveProfile, saveDailySupplements, clearProfileCache, addWeightLog, LOCAL_MODE } from "../lib/supabaseDb";
 import { getDailySupplements, setDailySupplements, clearDailySuppsLoggedToday, clearAllFoodCaches } from "../lib/foodCache";
 import { clearMealsCache } from "../lib/supabaseDb";
 import { notifyMealsUpdated } from "../lib/dataEvents";
@@ -17,6 +16,7 @@ import { supabase } from "../lib/supabaseClient";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
 import { useAuth } from "./AuthProvider";
+import { useAppData } from "./AppDataProvider";
 
 function calculateAgeFromDob(dobStr: string): number | null {
   if (!dobStr) return null;
@@ -39,10 +39,11 @@ export default function ProfileScreen() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading, signOut } = useAuth();
+  const { profile: contextProfile, weightLogs, setWeightLogs, loading: dataLoading } = useAppData();
   const profileExistsRef = useRef(false);
+  const hasInitializedRef = useRef(false);
   const initialWeightKgRef = useRef<number | null>(null);
   const [mounted, setMounted] = useState(false);
-  const [weightLogs, setWeightLogs] = useState<WeightLog[]>([]);
   const [showWeightHistory, setShowWeightHistory] = useState(false);
 
   const [firstName, setFirstName] = useState("");
@@ -125,98 +126,93 @@ export default function ProfileScreen() {
   }, [loading, user, router]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || dataLoading || hasInitializedRef.current) return;
+    hasInitializedRef.current = true;
     setLoadError(null);
+
     const walkthroughKey = `wya_walkthrough_profile_${user.id}`;
     if (localStorage.getItem(walkthroughKey)) {
       window.setTimeout(() => setRunProfileTour(true), 150);
     }
-    getWeightLogs(user.id).then(setWeightLogs).catch(() => {});
-    getProfile(user.id)
-      .then((data) => {
-        if (data) {
-          profileExistsRef.current = true;
-          initialWeightKgRef.current = data.weight ?? null;
-          const meta = (user as { user_metadata?: Record<string, string> }).user_metadata ?? {};
-          setFirstName(data.firstName || meta.first_name || "");
-          setLastName(data.lastName || meta.last_name || "");
-          setSex(data.sex ?? "prefer_not");
-          setGoalDirection(data.goalDirection ?? "maintain");
-          setBodyPriority(data.bodyPriority ?? "");
-          setFreeformFocus(data.freeformFocus ?? "");
-          setActivityLevel(data.activityLevel ?? "");
-          setDietaryRestrictions(data.dietaryRestrictions ?? []);
-          setUnits(data.units ?? "imperial");
 
-          if ((data.units ?? "imperial") === "imperial") {
-            const cm = data.height ?? null;
-            if (cm != null) {
-              const inchesTotal = cm / 2.54;
-              const ft = Math.floor(inchesTotal / 12);
-              const inch = Math.round(inchesTotal % 12);
-              setHeightFt(String(ft));
-              setHeightIn(String(inch));
-              setHeightCm("");
-            } else {
-              setHeightFt("");
-              setHeightIn("");
-              setHeightCm("");
-            }
+    const data = contextProfile;
+    if (data) {
+      profileExistsRef.current = true;
+      initialWeightKgRef.current = data.weight ?? null;
+      const meta = (user as { user_metadata?: Record<string, string> }).user_metadata ?? {};
+      setFirstName(data.firstName || meta.first_name || "");
+      setLastName(data.lastName || meta.last_name || "");
+      setSex(data.sex ?? "prefer_not");
+      setGoalDirection(data.goalDirection ?? "maintain");
+      setBodyPriority(data.bodyPriority ?? "");
+      setFreeformFocus(data.freeformFocus ?? "");
+      setActivityLevel(data.activityLevel ?? "");
+      setDietaryRestrictions(data.dietaryRestrictions ?? []);
+      setUnits(data.units ?? "imperial");
 
-            const kg = data.weight ?? null;
-            if (kg != null) {
-              const lb = Math.round(kg * 2.20462 * 10) / 10;
-              setWeight(String(Math.round(lb)));
-            } else {
-              setWeight("");
-            }
-          } else {
-            setHeightCm(data.height != null ? String(data.height) : "");
-            setHeightFt("");
-            setHeightIn("");
-            setWeight(data.weight != null ? String(data.weight) : "");
-          }
-
-          if (data.dateOfBirth) {
-            const parts = data.dateOfBirth.split("-");
-            if (parts.length === 3) {
-              setDobYear(parts[0]);
-              setDobMonth(String(parseInt(parts[1], 10)));
-              setDobDay(String(parseInt(parts[2], 10)));
-            }
-          }
-
-          setTrackWater(data.trackWater ?? false);
-          setWaterUnit(data.waterUnit ?? "ml");
-          const storedGoal = typeof window !== "undefined" ? localStorage.getItem(`wya_water_goal_ml_${user.id}`) : null;
-          if (storedGoal) setCustomWaterGoalMl(parseInt(storedGoal, 10));
-
-          // Seed localStorage from Supabase so supplements survive cache clears
-          const supps = data.dailySupplements ?? [];
-          setDailySupplements(user.id, supps);
-          setDailySupplementsState(supps);
+      if ((data.units ?? "imperial") === "imperial") {
+        const cm = data.height ?? null;
+        if (cm != null) {
+          const inchesTotal = cm / 2.54;
+          const ft = Math.floor(inchesTotal / 12);
+          const inch = Math.round(inchesTotal % 12);
+          setHeightFt(String(ft));
+          setHeightIn(String(inch));
+          setHeightCm("");
         } else {
-          profileExistsRef.current = false;
-          const meta = (user as { user_metadata?: Record<string, string> }).user_metadata ?? {};
-          setFirstName(meta.first_name ?? "");
-          setLastName(meta.last_name ?? "");
-          setDailySupplementsState(getDailySupplements(user.id));
-          const savedDob = localStorage.getItem(`wya_dob_${user.id}`);
-          if (savedDob) {
-            const parts = savedDob.split("-");
-            if (parts.length === 3) {
-              setDobYear(parts[0]);
-              setDobMonth(String(parseInt(parts[1], 10)));
-              setDobDay(String(parseInt(parts[2], 10)));
-            }
-          }
+          setHeightFt("");
+          setHeightIn("");
+          setHeightCm("");
         }
-      })
-      .catch(() => {
-        setLoadError("Couldn’t load profile.");
-        setDailySupplementsState(getDailySupplements(user.id));
-      });
-  }, [user]);
+
+        const kg = data.weight ?? null;
+        if (kg != null) {
+          const lb = Math.round(kg * 2.20462 * 10) / 10;
+          setWeight(String(Math.round(lb)));
+        } else {
+          setWeight("");
+        }
+      } else {
+        setHeightCm(data.height != null ? String(data.height) : "");
+        setHeightFt("");
+        setHeightIn("");
+        setWeight(data.weight != null ? String(data.weight) : "");
+      }
+
+      if (data.dateOfBirth) {
+        const parts = data.dateOfBirth.split("-");
+        if (parts.length === 3) {
+          setDobYear(parts[0]);
+          setDobMonth(String(parseInt(parts[1], 10)));
+          setDobDay(String(parseInt(parts[2], 10)));
+        }
+      }
+
+      setTrackWater(data.trackWater ?? false);
+      setWaterUnit(data.waterUnit ?? "ml");
+      const storedGoal = typeof window !== "undefined" ? localStorage.getItem(`wya_water_goal_ml_${user.id}`) : null;
+      if (storedGoal) setCustomWaterGoalMl(parseInt(storedGoal, 10));
+
+      const supps = data.dailySupplements ?? [];
+      setDailySupplements(user.id, supps);
+      setDailySupplementsState(supps);
+    } else {
+      profileExistsRef.current = false;
+      const meta = (user as { user_metadata?: Record<string, string> }).user_metadata ?? {};
+      setFirstName(meta.first_name ?? "");
+      setLastName(meta.last_name ?? "");
+      setDailySupplementsState(getDailySupplements(user.id));
+      const savedDob = localStorage.getItem(`wya_dob_${user.id}`);
+      if (savedDob) {
+        const parts = savedDob.split("-");
+        if (parts.length === 3) {
+          setDobYear(parts[0]);
+          setDobMonth(String(parseInt(parts[1], 10)));
+          setDobDay(String(parseInt(parts[2], 10)));
+        }
+      }
+    }
+  }, [user, dataLoading, contextProfile]);
 
   useEffect(() => {
     if (!user) return;

@@ -56,6 +56,7 @@ type AppDataContextValue = {
   setMeals: React.Dispatch<React.SetStateAction<MealLog[]>>;
   setWorkouts: React.Dispatch<React.SetStateAction<WorkoutSession[]>>;
   setProfile: React.Dispatch<React.SetStateAction<UserProfile | null>>;
+  setWeightLogs: React.Dispatch<React.SetStateAction<WeightLog[]>>;
   reload: () => void;
 };
 
@@ -211,11 +212,12 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!user) return;
     // Background refresh — no loading spinner, just update state silently
-    const handler = () => loadMealsOnly(user.id);
+    const mealsHandler = () => loadMealsOnly(user.id);
+    const fullReloadHandler = () => load(user.id, false);
     const nudgeHandler = () => loadNudges(user.id);
-    window.addEventListener(MEALS_UPDATED_EVENT, handler);
-    window.addEventListener(WORKOUTS_UPDATED_EVENT, handler);
-    window.addEventListener(PROFILE_UPDATED_EVENT, handler);
+    window.addEventListener(MEALS_UPDATED_EVENT, mealsHandler);
+    window.addEventListener(WORKOUTS_UPDATED_EVENT, fullReloadHandler);
+    window.addEventListener(PROFILE_UPDATED_EVENT, fullReloadHandler);
     window.addEventListener(NUDGES_UPDATED_EVENT, nudgeHandler);
 
     // Reload nudges when app returns to foreground (e.g. after tapping a push notification)
@@ -226,13 +228,13 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     document.addEventListener("visibilitychange", visibilityHandler);
 
     return () => {
-      window.removeEventListener(MEALS_UPDATED_EVENT, handler);
-      window.removeEventListener(WORKOUTS_UPDATED_EVENT, handler);
-      window.removeEventListener(PROFILE_UPDATED_EVENT, handler);
+      window.removeEventListener(MEALS_UPDATED_EVENT, mealsHandler);
+      window.removeEventListener(WORKOUTS_UPDATED_EVENT, fullReloadHandler);
+      window.removeEventListener(PROFILE_UPDATED_EVENT, fullReloadHandler);
       window.removeEventListener(NUDGES_UPDATED_EVENT, nudgeHandler);
       document.removeEventListener("visibilitychange", visibilityHandler);
     };
-  }, [user, load, loadNudges]);
+  }, [user, load, loadMealsOnly, loadNudges]);
 
   const reload = useCallback(() => {
     if (user) load(user.id, false);
@@ -240,7 +242,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AppDataContext.Provider
-      value={{ profile, meals, workouts, nudges, nudgesLoaded, feelLogs, weightLogs, loading, setMeals, setWorkouts, setProfile, reload }}
+      value={{ profile, meals, workouts, nudges, nudgesLoaded, feelLogs, weightLogs, loading, setMeals, setWorkouts, setProfile, setWeightLogs, reload }}
     >
       {children}
     </AppDataContext.Provider>
