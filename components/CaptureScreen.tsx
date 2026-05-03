@@ -352,11 +352,8 @@ export default function CaptureScreen() {
                   Cancel
                 </button>
               </div>
-              <div className="flex-1 px-6 min-h-0 pb-3 flex items-start">
-                <div
-                  className="relative w-full max-w-sm mx-auto rounded-2xl border-2 border-primary/60 overflow-hidden shadow-[0_0_24px_rgba(111,168,255,0.18)]"
-                  style={{ height: "min(430px, 100%)" }}
-                >
+              <div className="flex-1 px-6 min-h-0 overflow-hidden pb-3">
+                <div className="relative h-full max-w-sm mx-auto rounded-2xl border-2 border-primary/60 overflow-hidden shadow-[0_0_24px_rgba(111,168,255,0.18)]">
                   <img src={preview} alt="Preview" className="w-full h-full object-cover object-top" />
                 </div>
               </div>
