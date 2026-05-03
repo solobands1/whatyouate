@@ -305,10 +305,11 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
   }
 
   const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const todayDayOfWeek = (ctx.todayDayOfWeek as string | undefined) ?? DOW[new Date().getDay()];
   const windowLine = nudgeIntentWindow
     ? `Intent window (when this nudge was generated): ${nudgeIntentWindow}`
     : `Time of day: ${activeWindow}`;
-  lines.push(`\nToday is ${DOW[new Date().getDay()]}. ${windowLine}`);
+  lines.push(`\nToday is ${todayDayOfWeek}. ${windowLine}`);
   if (nudgeIntentWindow === "morning") {
     lines.push(`\nAnalyze the historical data above. What is the single most useful pattern, trend, or insight to set this person up for today? You MUST find something — with days of logged data, there is always a meaningful observation. Do NOT return null.`);
   } else if (nudgeIntentWindow === "evening") {

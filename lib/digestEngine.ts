@@ -104,6 +104,7 @@ export interface SmartNudgeContext {
   followThrough?: NudgeFollowThrough;
   weightTrend?: WeightTrend;
   waterIntake?: { consumedMl: number; goalMl: number; pct: number };
+  todayDayOfWeek: string;
 }
 
 export interface NudgeData {
@@ -1143,5 +1144,6 @@ export function buildSmartNudgeContext(
     followThrough,
     weightTrend,
     waterIntake,
+    todayDayOfWeek: DOW[new Date(todayKeyLocal + "T12:00:00Z").getUTCDay()],
   };
 }
