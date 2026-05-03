@@ -353,15 +353,15 @@ export default function CaptureScreen() {
 
             {/* Photo fills middle */}
             <div className="flex-1 px-6 min-h-0 overflow-hidden pb-3">
-              <div className="relative h-full max-w-sm mx-auto rounded-2xl border-2 border-primary/60 overflow-hidden shadow-[0_0_24px_rgba(111,168,255,0.18)] bg-black">
-                <img src={preview} alt="Preview" className="w-full h-full object-contain" />
+              <div className="relative h-full max-w-sm mx-auto rounded-2xl border-2 border-primary/60 overflow-hidden shadow-[0_0_24px_rgba(111,168,255,0.18)]">
+                <img src={preview} alt="Preview" className="w-full h-full object-cover" />
               </div>
             </div>
 
             {/* Hint + Analyze anchored to bottom */}
             <div
               className="flex-shrink-0 px-6 pt-4"
-              style={{ paddingBottom: "max(env(safe-area-inset-bottom, 0px), 20px)" }}
+              style={{ paddingBottom: "max(calc(env(safe-area-inset-bottom, 0px) + 12px), 32px)" }}
             >
               <div className="max-w-sm mx-auto flex flex-col gap-3">
                 <div>
