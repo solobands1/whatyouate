@@ -46,8 +46,7 @@ export default function CaptureScreen() {
   const [cameraMode, setCameraMode] = useState<"idle" | "live" | "file">("idle");
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const topPanelRef = useRef<HTMLDivElement | null>(null);
-  const bottomPanelRef = useRef<HTMLDivElement | null>(null);
+  const captureContainerRef = useRef<HTMLDivElement | null>(null);
   const [pendingMealId, setPendingMealId] = useState<string | null>(null);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [mealDate, setMealDate] = useState(todayDateString);
@@ -115,16 +114,16 @@ export default function CaptureScreen() {
     };
   }, [cameraMode]);
 
-  // Two-panel keyboard handling: bottom panel floats above keyboard, top panel fills above it
+  // Slide the whole layout up as a unit when keyboard opens, back down when it closes
   useEffect(() => {
     if (typeof window === "undefined") return;
     const vv = window.visualViewport;
     if (!vv) return;
-    const BOTTOM_H = 210;
     const update = () => {
+      const el = captureContainerRef.current;
+      if (!el) return;
       const kh = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
-      if (topPanelRef.current) topPanelRef.current.style.bottom = `${BOTTOM_H + kh}px`;
-      if (bottomPanelRef.current) bottomPanelRef.current.style.bottom = `${kh}px`;
+      el.style.transform = kh > 0 ? `translateY(-${kh}px)` : "";
     };
     update();
     vv.addEventListener("resize", update);
@@ -330,40 +329,39 @@ export default function CaptureScreen() {
         )}
 
         {preview && !analyzed && (
-          <>
-            {/* Top panel: cancel + photo — bottom edge adjusts when keyboard opens */}
-            <div
-              ref={topPanelRef}
-              className="fixed left-0 right-0 top-0 flex flex-col bg-surface"
-              style={{ bottom: "210px", paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)" }}
-            >
-              <div className="px-6 pb-3 w-full max-w-sm mx-auto">
-                <button
-                  type="button"
-                  className="text-sm text-ink/50 underline"
-                  onClick={() => {
-                    setFile(null);
-                    setHint("");
-                    setAnalyzed(false);
-                    analyzeStartedRef.current = false;
-                    router.push("/");
-                  }}
-                >
-                  Cancel
-                </button>
-              </div>
-              <div className="flex-1 px-6 min-h-0 overflow-hidden pb-3">
-                <div className="relative h-full max-w-sm mx-auto rounded-2xl border-2 border-primary/60 overflow-hidden shadow-[0_0_24px_rgba(111,168,255,0.18)]">
-                  <img src={preview} alt="Preview" className="w-full h-full object-cover object-top" />
-                </div>
+          <div
+            ref={captureContainerRef}
+            className="fixed left-0 right-0 top-0 flex flex-col bg-surface"
+            style={{ height: "100dvh", paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)", transition: "transform 0.25s ease-out" }}
+          >
+            {/* Cancel */}
+            <div className="px-6 pb-3 flex-shrink-0 w-full max-w-sm mx-auto">
+              <button
+                type="button"
+                className="text-sm text-ink/50 underline"
+                onClick={() => {
+                  setFile(null);
+                  setHint("");
+                  setAnalyzed(false);
+                  analyzeStartedRef.current = false;
+                  router.push("/");
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+
+            {/* Photo fills middle */}
+            <div className="flex-1 px-6 min-h-0 overflow-hidden pb-3">
+              <div className="relative h-full max-w-sm mx-auto rounded-2xl border-2 border-primary/60 overflow-hidden shadow-[0_0_24px_rgba(111,168,255,0.18)]">
+                <img src={preview} alt="Preview" className="w-full h-full object-cover object-top" />
               </div>
             </div>
 
-            {/* Bottom panel: hint + Analyze — floats above keyboard */}
+            {/* Hint + Analyze anchored to bottom */}
             <div
-              ref={bottomPanelRef}
-              className="fixed left-0 right-0 bg-surface px-6 pt-4"
-              style={{ bottom: "0px", height: "210px", paddingBottom: "max(env(safe-area-inset-bottom, 0px), 16px)" }}
+              className="flex-shrink-0 px-6 pt-4"
+              style={{ paddingBottom: "max(env(safe-area-inset-bottom, 0px), 20px)" }}
             >
               <div className="max-w-sm mx-auto flex flex-col gap-3">
                 <div>
@@ -385,7 +383,7 @@ export default function CaptureScreen() {
                 </button>
               </div>
             </div>
-          </>
+          </div>
         )}
 
         {preview && analyzed && (
