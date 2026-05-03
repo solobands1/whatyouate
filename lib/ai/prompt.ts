@@ -124,7 +124,7 @@ CONFIDENCE
 
 ADDITIONAL CONTEXT
 - If a packaging image is provided, use it to infer brand or serving size.
-- If clarification hints are provided, treat them as constraints.
+- If clarification hints are provided, use them to refine what you see in the photo — do not ignore the image. The hint corrects or clarifies the protein, preparation, or variety (e.g. "turkey" on a taco photo means ground turkey tacos, not a replacement for the whole meal). Synthesize the hint with the visual: keep all visible components (toppings, sides, bread, etc.) and let the hint sharpen the name and macros.
 `;
 
 export const TEXT_ANALYSIS_PROMPT = `You are a calm, non-judgmental food nutrition estimator.
