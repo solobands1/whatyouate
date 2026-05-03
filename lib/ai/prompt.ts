@@ -66,8 +66,6 @@ DETECTED ITEMS
 MACRONUTRIENT CALCULATION
 - Derive calorie and macro ranges from typical portion weights × nutrition density per 100g.
 - Do not guess calories directly without weight reasoning.
-- DEFAULT TO CONSERVATIVE PORTIONS: When portion size cannot be clearly determined from the image, assume a standard home-cooked single serving — NOT a restaurant portion. Restaurant portions are typically 1.5–2× larger than home servings; only estimate at restaurant scale when the context clearly indicates a restaurant setting (packaging, restaurant-style plating, etc.).
-- If you are uncertain whether an estimate is accurate, err on the lower side of a plausible range rather than the higher side.
 - For simple whole foods (fruit, eggs, plain yogurt, rice, bread, common meats):
   - Keep ranges tight (typically within ±15–20%).
 - For mixed or complex meals:
@@ -190,7 +188,6 @@ DETECTED ITEMS
 
 MACRONUTRIENT CALCULATION
 - Derive calorie and macro ranges from typical portion weights × nutrition density per 100g.
-- DEFAULT TO CONSERVATIVE PORTIONS: When no size is specified, assume a standard home-cooked single serving. Do not default to restaurant-sized portions. If you are uncertain, err on the lower side of a plausible range rather than the higher side.
 - For simple whole foods (fruit, eggs, plain yogurt, rice, bread, common meats):
   - Keep ranges tight (typically within ±15–20%).
 - For mixed or complex meals, or vague descriptions:
