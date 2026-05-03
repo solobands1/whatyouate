@@ -120,7 +120,7 @@ export default function CaptureScreen() {
     if (typeof window === "undefined") return;
     const vv = window.visualViewport;
     if (!vv) return;
-    const BOTTOM_H = 176;
+    const BOTTOM_H = 210;
     const update = () => {
       const kh = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
       if (topPanelRef.current) topPanelRef.current.style.bottom = `${BOTTOM_H + kh}px`;
@@ -335,7 +335,7 @@ export default function CaptureScreen() {
             <div
               ref={topPanelRef}
               className="fixed left-0 right-0 top-0 flex flex-col bg-surface"
-              style={{ bottom: "176px", paddingTop: "calc(env(safe-area-inset-top, 0px) + 20px)" }}
+              style={{ bottom: "210px", paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)" }}
             >
               <div className="px-6 pb-3 w-full max-w-sm mx-auto">
                 <button
@@ -352,9 +352,12 @@ export default function CaptureScreen() {
                   Cancel
                 </button>
               </div>
-              <div className="flex-1 px-6 min-h-0 overflow-hidden pb-3">
-                <div className="relative h-full max-w-sm mx-auto rounded-2xl border-2 border-primary/60 overflow-hidden shadow-[0_0_24px_rgba(111,168,255,0.18)]">
-                  <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+              <div className="flex-1 px-6 min-h-0 pb-3 flex items-start">
+                <div
+                  className="relative w-full max-w-sm mx-auto rounded-2xl border-2 border-primary/60 overflow-hidden shadow-[0_0_24px_rgba(111,168,255,0.18)]"
+                  style={{ height: "min(430px, 100%)" }}
+                >
+                  <img src={preview} alt="Preview" className="w-full h-full object-cover object-top" />
                 </div>
               </div>
             </div>
@@ -363,7 +366,7 @@ export default function CaptureScreen() {
             <div
               ref={bottomPanelRef}
               className="fixed left-0 right-0 bg-surface px-6 pt-4"
-              style={{ bottom: "0px", height: "176px", paddingBottom: "max(env(safe-area-inset-bottom, 0px), 16px)" }}
+              style={{ bottom: "0px", height: "210px", paddingBottom: "max(env(safe-area-inset-bottom, 0px), 16px)" }}
             >
               <div className="max-w-sm mx-auto flex flex-col gap-3">
                 <div>
@@ -371,7 +374,7 @@ export default function CaptureScreen() {
                     type="text"
                     value={hint}
                     onChange={(e) => setHint(e.target.value)}
-                    placeholder="e.g. Vegetarian, Turkey Sandwich"
+                    placeholder="e.g. Veggie Burger, Turkey Sandwich"
                     className="w-full rounded-xl border border-primary/40 bg-white px-4 py-3 text-sm text-ink/80 placeholder:text-ink/35 focus:outline-none focus:ring-1 focus:ring-primary/50"
                   />
                   <p className="mt-1.5 text-xs text-ink/40 px-1">Help your food get properly identified with a hint</p>
