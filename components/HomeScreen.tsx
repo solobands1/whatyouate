@@ -421,6 +421,7 @@ export default function HomeScreen() {
           fat_g_min: fat, fat_g_max: fat,
         };
       }
+      const originalRanges = item.type === "text" && item.ranges ? item.ranges : ranges;
       const analysis = {
         name: item.name,
         detected_items: [{ name: item.name, confidence_0_1: 1 }],
@@ -428,6 +429,8 @@ export default function HomeScreen() {
         micronutrient_signals: item.micronutrient_signals ?? [],
         confidence_overall_0_1: 1,
         precision_mode_available: false,
+        portion,
+        original_ranges: originalRanges,
       } as any;
       pendingItems.push({ item, analysis });
     }
@@ -587,6 +590,8 @@ export default function HomeScreen() {
             carbs_g_min: scale(r.carbs_g_min), carbs_g_max: scale(r.carbs_g_max),
             fat_g_min: scale(r.fat_g_min), fat_g_max: scale(r.fat_g_max),
           },
+          portion: quickConfirmPortion,
+          original_ranges: quickConfirmMeal.analysisJson.original_ranges ?? r,
         };
         await updateMeal(quickConfirmMeal.id, updatedAnalysis as any, { userCorrection: quickConfirmName }, user?.id);
         await meals.load(user.id);
@@ -638,12 +643,12 @@ export default function HomeScreen() {
     setEditPortion(portion);
     const multiplier = portion === "small" ? 0.7 : portion === "large" ? 1.4 : 1;
     const m = meals.editingMeal;
-    const r = m.analysisJson.estimated_ranges;
+    const r = m.analysisJson.original_ranges ?? m.analysisJson.estimated_ranges;
     const base = {
-      calories: m.calories ?? Math.round((r.calories_min + r.calories_max) / 2),
-      protein: m.protein ?? Math.round((r.protein_g_min + r.protein_g_max) / 2),
-      carbs: m.carbs ?? Math.round((r.carbs_g_min + r.carbs_g_max) / 2),
-      fat: m.fat ?? Math.round((r.fat_g_min + r.fat_g_max) / 2),
+      calories: Math.round((r.calories_min + r.calories_max) / 2),
+      protein: Math.round((r.protein_g_min + r.protein_g_max) / 2),
+      carbs: Math.round((r.carbs_g_min + r.carbs_g_max) / 2),
+      fat: Math.round((r.fat_g_min + r.fat_g_max) / 2),
     };
     meals.setEditForm({
       ...meals.editForm,
@@ -1001,7 +1006,7 @@ export default function HomeScreen() {
   }, [pendingQuickConfirmId, meals.meals]);
 
   useEffect(() => {
-    if (meals.editingMeal?.id) setEditPortion("medium");
+    if (meals.editingMeal?.id) setEditPortion(meals.editingMeal.analysisJson.portion ?? "medium");
   }, [meals.editingMeal?.id]);
 
   useEffect(() => {

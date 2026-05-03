@@ -152,7 +152,9 @@ export function useMeals(
         protein_g_min: scale(r.protein_g_min), protein_g_max: scale(r.protein_g_max),
         carbs_g_min: scale(r.carbs_g_min), carbs_g_max: scale(r.carbs_g_max),
         fat_g_min: scale(r.fat_g_min), fat_g_max: scale(r.fat_g_max),
-      }
+      },
+      portion: manualPortion,
+      original_ranges: r,
     };
 
     // Optimistic update — show pill immediately before any DB calls

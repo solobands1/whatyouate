@@ -86,6 +86,13 @@ export interface MealAnalysis {
   precision_mode_available: boolean;
   optional_quick_confirm_options?: string[];
   source?: "supplement";
+  portion?: "small" | "medium" | "large";
+  original_ranges?: {
+    calories_min: number; calories_max: number;
+    protein_g_min: number; protein_g_max: number;
+    carbs_g_min: number; carbs_g_max: number;
+    fat_g_min: number; fat_g_max: number;
+  };
 }
 
 export interface MealLog {
