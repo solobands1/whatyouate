@@ -361,7 +361,7 @@ export default function CaptureScreen() {
             {/* Hint + Analyze anchored to bottom */}
             <div
               className="flex-shrink-0 px-6 pt-4"
-              style={{ paddingBottom: "max(calc(env(safe-area-inset-bottom, 0px) + 12px), 32px)" }}
+              style={{ paddingBottom: "max(calc(env(safe-area-inset-bottom, 0px) + 20px), 44px)" }}
             >
               <div className="max-w-sm mx-auto flex flex-col gap-3">
                 <div>
