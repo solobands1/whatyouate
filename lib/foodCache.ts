@@ -375,7 +375,7 @@ export function getQuickAddFromMeals(meals: Array<{
     estimated_ranges: FoodTextCacheEntry["ranges"];
     micronutrient_signals?: FoodTextCacheEntry["micronutrient_signals"];
   };
-}>): QuickAddItem[] {
+}>): { frequent: QuickAddItem[]; recent: QuickAddItem[] } {
   const removed = getQuickAddRemoved();
   const seen = new Map<string, QuickAddItem>();
 
@@ -408,7 +408,16 @@ export function getQuickAddFromMeals(meals: Array<{
     }
   }
 
-  return Array.from(seen.values())
+  const all = Array.from(seen.values());
+  const frequent = [...all]
     .sort((a, b) => b.logCount - a.logCount || b.savedAt - a.savedAt)
-    .slice(0, 18);
+    .slice(0, 15);
+
+  const frequentKeys = new Set(frequent.map((f) => f.key));
+  const recent = all
+    .filter((item) => !frequentKeys.has(item.key))
+    .sort((a, b) => b.savedAt - a.savedAt)
+    .slice(0, 5);
+
+  return { frequent, recent };
 }
