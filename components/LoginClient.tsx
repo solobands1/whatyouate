@@ -17,7 +17,7 @@ export default function LoginClient() {
     verifyPasswordOtp,
     updatePassword
   } = useAuth();
-  const [mode, setMode] = useState<"signin" | "signup" | "forgot" | "reset">("signin");
+  const [mode, setMode] = useState<"signin" | "signup" | "forgot" | "reset" | "confirm">("signin");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -65,6 +65,11 @@ export default function LoginClient() {
     if (result.error) {
       setStatus(result.error);
       setSubmitting(false);
+      return;
+    }
+    if (result.needsConfirmation) {
+      setSubmitting(false);
+      setMode("confirm");
       return;
     }
     setStatus("");
@@ -277,6 +282,30 @@ export default function LoginClient() {
               </p>
             </div>
           </>
+        )}
+
+        {/* Email confirmation required */}
+        {mode === "confirm" && (
+          <div className="flex flex-col items-center text-center gap-5">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+              <svg className="h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-ink">Check your email</h2>
+              <p className="mt-2 text-sm text-muted/60 leading-relaxed">
+                We sent a confirmation link to <span className="font-medium text-ink/80">{email}</span>. Click it to activate your account, then sign in.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="w-full rounded-xl bg-primary py-3.5 text-sm font-semibold text-white transition active:opacity-80"
+              onClick={() => { setMode("signin"); setStatus(""); }}
+            >
+              Back to sign in
+            </button>
+          </div>
         )}
 
         {/* Forgot password */}

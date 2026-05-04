@@ -70,3 +70,7 @@ export async function restorePurchases() {
   const { customerInfo } = await mod.Purchases.restorePurchases();
   return customerInfo;
 }
+
+export function resetPurchases(): void {
+  _initialized = false;
+}

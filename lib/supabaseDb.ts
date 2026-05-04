@@ -274,20 +274,24 @@ export function clearProfileCache(userId: string) {
   profileCache.delete(userId);
 }
 
+const waterLogsCache = new Map<string, Record<string, number>>();
+
 export async function fetchWaterLogs(userId: string): Promise<Record<string, number>> {
   if (useMemory) return {};
   try {
     const { data } = await supabase.from("profiles").select("water_logs_json").eq("user_id", userId).single();
-    return (data?.water_logs_json as Record<string, number>) ?? {};
+    const logs = (data?.water_logs_json as Record<string, number>) ?? {};
+    waterLogsCache.set(userId, logs);
+    return logs;
   } catch { return {}; }
 }
 
 export async function upsertWaterLog(userId: string, dayKey: string, ml: number): Promise<void> {
   if (useMemory) return;
   try {
-    const { data } = await supabase.from("profiles").select("water_logs_json").eq("user_id", userId).single();
-    const current = (data?.water_logs_json as Record<string, number>) ?? {};
+    const current = waterLogsCache.get(userId) ?? {};
     const updated = { ...current, [dayKey]: ml };
+    waterLogsCache.set(userId, updated);
     await supabase.from("profiles").upsert(
       { user_id: userId, water_logs_json: updated, updated_at: new Date().toISOString() },
       { onConflict: "user_id" }

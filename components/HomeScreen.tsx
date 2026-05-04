@@ -291,6 +291,8 @@ export default function HomeScreen() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [barcodeOpen, setBarcodeOpen] = useState(false);
   const [barcodeNotFound, setBarcodeNotFound] = useState(false);
+  const [barcodeNotFoundText, setBarcodeNotFoundText] = useState("");
+  const [barcodeNotFoundAnalyzing, setBarcodeNotFoundAnalyzing] = useState(false);
   const [barcodeSuccess, setBarcodeSuccess] = useState(false);
   const [barcodeLookingUp, setBarcodeLookingUp] = useState(false);
   const [barcodeProduct, setBarcodeProduct] = useState<{
@@ -350,6 +352,7 @@ export default function HomeScreen() {
   const realtimeRefreshRef = useRef<number | null>(null);
   const savedThisSessionRef = useRef<Set<string>>(new Set());
   const dailySuppsAttemptedRef = useRef(false);
+  const promptedStaleRef = useRef<Set<string>>(new Set());
 
   const onError = useCallback((msg: string) => setLoadError(msg), []);
 
@@ -564,23 +567,39 @@ export default function HomeScreen() {
     const nameChanged = quickConfirmName.trim().toLowerCase() !== quickConfirmOriginalName.trim().toLowerCase();
     try {
       if (nameChanged && quickConfirmName.trim()) {
-        // Re-analyze with the corrected name — macros will update in DB
+        // Re-analyze using the original photo + corrected name as a hint so the AI
+        // has visual context. Falls back to text-only if the thumbnail isn't available.
+        let imageBase64: string | undefined;
+        if (quickConfirmMeal.imageThumb) {
+          try {
+            const imgRes = await fetch(quickConfirmMeal.imageThumb);
+            const blob = await imgRes.blob();
+            imageBase64 = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result as string);
+              reader.onerror = reject;
+              reader.readAsDataURL(blob);
+            });
+          } catch {
+            imageBase64 = undefined;
+          }
+        }
         await fetch("/api/analyze-food", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            textDescription: quickConfirmName.trim(),
-            mealId: quickConfirmMeal.id,
-            userId: user.id,
-          }),
+          body: JSON.stringify(
+            imageBase64
+              ? { imageBase64, hints: quickConfirmName.trim(), mealId: quickConfirmMeal.id, userId: user.id }
+              : { textDescription: quickConfirmName.trim(), mealId: quickConfirmMeal.id, userId: user.id }
+          ),
         });
         clearMealsCache(user.id);
         notifyMealsUpdated();
       } else {
-        // Name unchanged — just apply portion scaling
+        // Name unchanged — apply portion scaling to original photo-derived ranges
         const multiplier = quickConfirmPortion === "small" ? 0.7 : quickConfirmPortion === "large" ? 1.4 : 1;
         const scale = (v: number) => Math.round(v * multiplier);
-        const r = quickConfirmMeal.analysisJson.estimated_ranges;
+        const r = quickConfirmMeal.analysisJson.original_ranges ?? quickConfirmMeal.analysisJson.estimated_ranges;
         const updatedAnalysis = {
           ...quickConfirmMeal.analysisJson,
           name: quickConfirmName,
@@ -591,7 +610,7 @@ export default function HomeScreen() {
             fat_g_min: scale(r.fat_g_min), fat_g_max: scale(r.fat_g_max),
           },
           portion: quickConfirmPortion,
-          original_ranges: quickConfirmMeal.analysisJson.original_ranges ?? r,
+          original_ranges: r,
         };
         await updateMeal(quickConfirmMeal.id, updatedAnalysis as any, { userCorrection: quickConfirmName }, user?.id);
         await meals.load(user.id);
@@ -812,6 +831,32 @@ export default function HomeScreen() {
       console.error("[barcode] save failed:", err);
     } finally {
       setIsAddingBarcode(false);
+    }
+  };
+
+  const handleBarcodeNotFoundSubmit = async () => {
+    if (!barcodeNotFoundText.trim() || !user || barcodeNotFoundAnalyzing) return;
+    setBarcodeNotFoundAnalyzing(true);
+    try {
+      const created = await addMeal(user.id, safeFallbackAnalysis());
+      if (!created?.id) throw new Error("Failed to create meal");
+      const res = await fetch("/api/analyze-food", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ textDescription: barcodeNotFoundText.trim(), mealId: created.id, userId: user.id }),
+      });
+      if (!res.ok) throw new Error("Analysis failed");
+      clearMealsCache(user.id);
+      notifyMealsUpdated();
+      setBarcodeNotFound(false);
+      setBarcodeNotFoundText("");
+      setBarcodeOpen(false);
+      setBarcodeSuccess(true);
+      setTimeout(() => setBarcodeSuccess(false), 1500);
+    } catch {
+      setLoadError("Something went wrong. Try again.");
+    } finally {
+      setBarcodeNotFoundAnalyzing(false);
     }
   };
 
@@ -1062,6 +1107,20 @@ export default function HomeScreen() {
     return () => window.clearTimeout(timer);
   }, [meals.meals, reload]);
 
+  // On load, surface the recovery modal for any meal stuck in "processing" from a prior session.
+  // Chains naturally: when failedMealPrompt is dismissed/submitted, the effect re-runs
+  // and picks up the next stale meal.
+  useEffect(() => {
+    if (loadingData || failedMealPrompt || isDemoMode) return;
+    const STALE_MS = 2 * 60 * 1000;
+    const stale = meals.meals.find(
+      (m) => m.status === "processing" && Date.now() - m.ts > STALE_MS && !promptedStaleRef.current.has(m.id)
+    );
+    if (!stale) return;
+    promptedStaleRef.current.add(stale.id);
+    setFailedMealText("");
+    setFailedMealPrompt({ mealId: stale.id, thumb: stale.imageThumb ?? undefined });
+  }, [meals.meals, loadingData, failedMealPrompt, isDemoMode]);
 
   useEffect(() => {
     if (!user) return;
@@ -1336,7 +1395,7 @@ export default function HomeScreen() {
   const protPct = Math.min(100, Math.round((protMid / gentleTargetsDisplay.protein) * 100));
   const showStatsBanner = !loadingData && !isDemoMode
     && displayMeals.filter((m) => m.analysisJson?.source !== "supplement").length >= 1
-    && (!profile || (profile.height === null && profile.weight === null && profile.age === null));
+    && (!profile || profile.height === null || profile.weight === null || profile.age === null);
 
   const steps = [
     {
@@ -2109,10 +2168,16 @@ export default function HomeScreen() {
                     {group.meals.map((meal) => {
                       const idx = pillIdx++;
                       const isShimmer = meal.status === "processing" && Date.now() - meal.ts < 90_000;
+                      const isStaleOrFailed = (meal.status === "processing" && Date.now() - meal.ts >= 90_000) || meal.status === "failed";
                       return (
                       <div
                         key={`${meal.id}-${meal.calories}-${meal.protein}`}
                         onClick={() => {
+                          if (isStaleOrFailed) {
+                            setFailedMealText("");
+                            setFailedMealPrompt({ mealId: meal.id, thumb: meal.imageThumb ?? undefined });
+                            return;
+                          }
                           if (!editRecents) return;
                           if (meal.analysisJson?.source === "supplement") {
                             setPendingDelete({ type: "meal", id: meal.id });
@@ -2120,7 +2185,7 @@ export default function HomeScreen() {
                             meals.openMealEditor(meal);
                           }
                         }}
-                        className={`inline-flex w-full items-start justify-between rounded-full border border-primary/25 px-3 py-1.5 text-xs text-ink/80 ${editRecents ? "cursor-pointer animate-wiggle bg-primary/10" : (isShimmer ? "animate-shimmer" : "animate-pill-in bg-primary/10")}`}
+                        className={`inline-flex w-full items-start justify-between rounded-full border border-primary/25 px-3 py-1.5 text-xs text-ink/80 ${editRecents ? "cursor-pointer animate-wiggle bg-primary/10" : isStaleOrFailed ? "cursor-pointer animate-pill-in bg-red-50 border-red-200/60" : (isShimmer ? "animate-shimmer" : "animate-pill-in bg-primary/10")}`}
                         style={{
                           ...(isShimmer ? { background: "linear-gradient(90deg, #eff6ff 0%, #dbeafe 40%, #eff6ff 60%, #eff6ff 100%)", backgroundSize: "200% 100%" } : {}),
                           ...(!editRecents && !isShimmer ? { animationDelay: `${idx * 35}ms` } : {})
@@ -3011,21 +3076,31 @@ export default function HomeScreen() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
           <div className="w-full max-w-sm rounded-xl bg-white p-5 shadow-xl">
             <p className="text-sm font-semibold text-ink">Product not found</p>
-            <p className="mt-1 text-xs text-muted/70">This barcode isn&apos;t in our database. Try adding the meal manually.</p>
-            <div className="mt-4 flex gap-2 justify-end">
+            <p className="mt-1 text-xs text-muted/60">This barcode isn&apos;t in our database. Describe what it is and we&apos;ll estimate the nutrition.</p>
+            <input
+              type="text"
+              className="mt-3 w-full rounded-xl border border-ink/10 bg-ink/[0.03] px-3 py-2.5 text-sm text-ink placeholder:text-muted/45 focus:outline-none focus:ring-1 focus:ring-primary/30"
+              placeholder="e.g. Greek yogurt, protein bar…"
+              value={barcodeNotFoundText}
+              onChange={(e) => setBarcodeNotFoundText(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter" && barcodeNotFoundText.trim()) handleBarcodeNotFoundSubmit(); }}
+              autoFocus
+            />
+            <div className="mt-3 flex gap-2 justify-end">
               <button
                 type="button"
-                className="rounded-xl border border-ink/10 bg-white px-4 py-2 text-xs font-semibold text-ink/70 transition hover:bg-ink/5"
-                onClick={() => setBarcodeNotFound(false)}
+                className="rounded-xl border border-ink/10 bg-white px-4 py-2 text-xs font-semibold text-ink/70 transition active:opacity-60"
+                onClick={() => { setBarcodeNotFound(false); setBarcodeNotFoundText(""); }}
               >
-                Dismiss
+                Cancel
               </button>
               <button
                 type="button"
-                className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90"
-                onClick={() => { setBarcodeNotFound(false); meals.openManualMealEntry(); }}
+                className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition active:opacity-80 disabled:opacity-40"
+                onClick={handleBarcodeNotFoundSubmit}
+                disabled={barcodeNotFoundAnalyzing || !barcodeNotFoundText.trim()}
               >
-                Add Manually
+                {barcodeNotFoundAnalyzing ? "Adding…" : "Add"}
               </button>
             </div>
           </div>

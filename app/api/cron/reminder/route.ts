@@ -85,12 +85,11 @@ export async function GET(req: Request) {
       const isPro = await checkProEntitlement(userId);
       if (!isPro) continue;
 
-      // Skip if we already sent a reminder in the last 8 hours
+      // Skip if any nudge (smart or reminder) was sent in the last 8 hours
       const { data: recentReminder } = await supabase
         .from("nudges")
         .select("id")
         .eq("user_id", userId)
-        .eq("type", "reminder")
         .gte("created_at", eightHoursAgo)
         .limit(1);
       if (recentReminder?.length) continue;

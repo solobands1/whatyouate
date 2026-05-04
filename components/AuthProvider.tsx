@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabaseClient";
+import { resetPurchases } from "../lib/purchases";
 
 type AuthContextValue = {
   user: User | null;
@@ -14,7 +15,7 @@ type AuthContextValue = {
     email: string,
     password: string,
     profile?: { firstName?: string; lastName?: string }
-  ) => Promise<{ error?: string }>;
+  ) => Promise<{ error?: string; needsConfirmation?: boolean }>;
   sendPasswordReset: (email: string) => Promise<{ error?: string }>;
   sendPasswordOtp: (email: string) => Promise<{ error?: string }>;
   verifyPasswordOtp: (email: string, token: string) => Promise<{ error?: string }>;
@@ -80,6 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }).catch(() => {});
         localStorage.removeItem("wya_push_token");
       }
+      resetPurchases();
       await supabase.auth.signOut();
       setUser(null);
       setSession(null);
@@ -103,11 +105,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       });
       if (error) return { error: error.message };
-      if (data.user) {
-        setUser(data.user);
-      }
       if (data.session) {
         setSession(data.session);
+        setUser(data.user);
+      } else if (data.user) {
+        return { needsConfirmation: true };
       }
       return {};
     },

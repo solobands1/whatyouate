@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { buildSmartNudgeContext } from "../../../../lib/digestEngine";
 import { buildSmartPrompt, sanitizeNudgeFields, SMART_NUDGE_SYSTEM_PROMPT } from "../../../../lib/nudgeGen";
 import { sendPush } from "../../../../lib/apns";
-import type { MealLog, WorkoutSession, UserProfile } from "../../../../lib/types";
+import type { MealLog, WorkoutSession, UserProfile, SupplementEntry } from "../../../../lib/types";
 
 export const maxDuration = 300;
 
@@ -64,7 +64,17 @@ function mapProfileRow(data: Record<string, unknown>): UserProfile {
     activityLevel: (data.activity_level as UserProfile["activityLevel"]) ?? undefined,
     dietaryRestrictions: Array.isArray(data.dietary_restrictions) ? (data.dietary_restrictions as string[]) : [],
     units: ((data.units as "imperial" | "metric") ?? "imperial"),
-    dailySupplements: [],
+    dailySupplements: Array.isArray(data.daily_supplements)
+      ? (data.daily_supplements as unknown[]).map((s): SupplementEntry => {
+          if (typeof s === "string") {
+            try {
+              const p = JSON.parse(s);
+              if (p && typeof p === "object" && typeof p.name === "string") return p as SupplementEntry;
+            } catch {}
+          }
+          return s as SupplementEntry;
+        })
+      : [],
     streak: (data.streak as number) ?? 0,
     streakLastDate: (data.streak_last_date as string) ?? "",
     trackWater: (data.track_water as boolean) ?? false,
@@ -198,7 +208,7 @@ export async function GET(req: Request) {
 
   const supabase = adminClient();
   const nowISO = new Date().toISOString();
-  const fourHoursAgo = new Date(Date.now() - 2.5 * 60 * 60 * 1000).toISOString();
+  const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
   const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
 
   // Fetch all users and tokens in parallel — nudge generation is not gated on push token existence
