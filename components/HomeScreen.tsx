@@ -353,6 +353,7 @@ export default function HomeScreen() {
   const savedThisSessionRef = useRef<Set<string>>(new Set());
   const dailySuppsAttemptedRef = useRef(false);
   const promptedStaleRef = useRef<Set<string>>(new Set());
+  const recentQuickAddRef = useRef<number>(0);
 
   const onError = useCallback((msg: string) => setLoadError(msg), []);
 
@@ -442,6 +443,7 @@ export default function HomeScreen() {
 
     // Optimistically add pills and close the modal immediately
     const now = Date.now();
+    recentQuickAddRef.current = now;
     const optimisticMeals = pendingItems.map(({ analysis }, i) => ({
       id: `optimistic-${now}-${i}`,
       ts: now - i,
@@ -2169,6 +2171,9 @@ export default function HomeScreen() {
                       const idx = pillIdx++;
                       const isShimmer = meal.status === "processing" && Date.now() - meal.ts < 90_000;
                       const isStaleOrFailed = (meal.status === "processing" && Date.now() - meal.ts >= 90_000) || meal.status === "failed";
+                      const isRecentQuickAdd = recentQuickAddRef.current > 0
+                        && Date.now() - recentQuickAddRef.current < 15_000
+                        && Math.abs(meal.ts - recentQuickAddRef.current) < 10_000;
                       return (
                       <div
                         key={`${meal.id}-${meal.calories}-${meal.protein}`}
@@ -2185,7 +2190,7 @@ export default function HomeScreen() {
                             meals.openMealEditor(meal);
                           }
                         }}
-                        className={`inline-flex w-full items-start justify-between rounded-full border border-primary/25 px-3 py-1.5 text-xs text-ink/80 ${editRecents ? "cursor-pointer animate-wiggle bg-primary/10" : isStaleOrFailed ? "cursor-pointer animate-pill-in bg-red-50 border-red-200/60" : (isShimmer ? "animate-shimmer" : "animate-pill-in bg-primary/10")}`}
+                        className={`inline-flex w-full items-start justify-between rounded-full border border-primary/25 px-3 py-1.5 text-xs text-ink/80 ${editRecents ? "cursor-pointer animate-wiggle bg-primary/10" : isStaleOrFailed ? "cursor-pointer animate-pill-in bg-red-50 border-red-200/60" : (isShimmer ? "animate-shimmer" : isRecentQuickAdd ? "bg-primary/10" : "animate-pill-in bg-primary/10")}`}
                         style={{
                           ...(isShimmer ? { background: "linear-gradient(90deg, #eff6ff 0%, #dbeafe 40%, #eff6ff 60%, #eff6ff 100%)", backgroundSize: "200% 100%" } : {}),
                           ...(!editRecents && !isShimmer ? { animationDelay: `${idx * 35}ms` } : {})

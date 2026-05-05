@@ -880,7 +880,7 @@ export default function ProfileScreen() {
                   onClick={() => setActivityLevel(option.value)}
                 >
                   <span className="block text-xs font-medium">{option.label}</span>
-                  <span className={`block text-[10px] mt-0.5 ${activityLevel === option.value ? "text-ink/50" : "text-muted/45"}`}>{option.description}</span>
+                  <span className={`block text-[10px] mt-0.5 ${activityLevel === option.value ? "text-ink/65" : "text-muted/60"}`}>{option.description}</span>
                 </button>
               ))}
             </div>
