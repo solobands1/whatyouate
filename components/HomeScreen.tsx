@@ -354,6 +354,7 @@ export default function HomeScreen() {
   const dailySuppsAttemptedRef = useRef(false);
   const promptedStaleRef = useRef<Set<string>>(new Set());
   const recentQuickAddRef = useRef<number>(0);
+  const quickAddBouncedRef = useRef(false);
 
   const onError = useCallback((msg: string) => setLoadError(msg), []);
 
@@ -444,6 +445,7 @@ export default function HomeScreen() {
     // Optimistically add pills and close the modal immediately
     const now = Date.now();
     recentQuickAddRef.current = now;
+    quickAddBouncedRef.current = false;
     const optimisticMeals = pendingItems.map(({ analysis }, i) => ({
       id: `optimistic-${now}-${i}`,
       ts: now - i,
@@ -927,6 +929,12 @@ export default function HomeScreen() {
         m.ts >= mountTimeRef.current
     );
     if (hasNewMeal) {
+      // Suppress the second trigger caused by DB data replacing the optimistic meal.
+      // recentQuickAddRef is set when quick add fires; quickAddBouncedRef tracks whether
+      // we've already bounced once for this quick add session (within 15s window).
+      const isRecentQuickAdd = recentQuickAddRef.current > 0 && Date.now() - recentQuickAddRef.current < 15_000;
+      if (isRecentQuickAdd && quickAddBouncedRef.current) return;
+      if (isRecentQuickAdd) quickAddBouncedRef.current = true;
       setRecentlyLogged(true);
       if (logFlashTimerRef.current) clearTimeout(logFlashTimerRef.current);
       logFlashTimerRef.current = setTimeout(() => setRecentlyLogged(false), 2200);
