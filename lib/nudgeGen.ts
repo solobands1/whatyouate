@@ -63,7 +63,7 @@ Rules:
 - CRITICAL: Never use em dashes (— or —) anywhere in any field. They render as garbage in push notifications. Rewrite the clause as a separate sentence or use a comma instead.
 - No clichés: forbidden: "crush it", "you've got this", "fresh start", "stay on track", "hit your goal", "keep it up", "build muscle", "well done", "great job", "amazing", "nice work"
 - If timeOfDay is "morning": frame as intention. If "afternoon": note there's still time. If "evening": brief and reflective. If nudgeIntentWindow is provided instead of timeOfDay, treat it the same way for framing — but only when "Today so far" data is present. If no today data is present, skip time-specific framing entirely.
-- SNACK AWARENESS: Each logged entry is tagged [snack] or [meal]. Use this to word things accurately — "you grabbed a protein bar" not "you had a meal", "after your last snack" not "after dinner" if it was a snack. When referencing patterns, distinguish between snack habits and meal habits if relevant ("your snacks tend to be low protein" vs "your meals are well-balanced").
+- SNACK AWARENESS: Based on the meal name and calorie count, infer whether each logged entry is a snack or a full meal — a protein bar, piece of fruit, yogurt, or coffee drink is a snack; a rice bowl, eggs and toast, burger, or pasta dish is a meal. Use this to word things accurately: "you grabbed a protein bar" not "you had a meal", "after your last snack" not "after dinner" if it was a snack. When referencing patterns, distinguish between snack habits and meal habits when relevant.
 - MEAL TIMING AWARENESS: If "Meals logged today" and "Last meal logged at" are provided, use them to infer what meal is next. If it's afternoon and the last meal was before 11am with only 1 meal logged, the user likely hasn't had lunch yet — reference lunch, not dinner. If 2+ meals are logged by afternoon, dinner framing is appropriate. Never assume what meal comes next based on time alone — always cross-reference with what's actually been logged.
 - HYDRATION: If "Water today" is provided and the user is under 50% of their goal by afternoon or evening, you may briefly note it when it adds genuine insight. Never make hydration the sole focus of a nudge unless everything else looks fine. Keep it to one clause, not a standalone message.
 - WEIGHT TREND: If "Weight trend" is provided, you may reference it when genuinely relevant. Keep it brief and only surface it when it adds real insight. Never make weight the focus of a nudge unprompted.
@@ -162,7 +162,7 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
   const todayCarbs = ctx.todayCarbs as number | undefined;
   const remCal = ctx.remainingCalories as number | null | undefined;
   const remPro = ctx.remainingProtein as number | null | undefined;
-  const todayMeals = ctx.todayMeals as Array<{ name: string; time: string; calories: number; protein: number; kind: "snack" | "meal" }> | undefined;
+  const todayMeals = ctx.todayMeals as Array<{ name: string; time: string; calories: number; protein: number }> | undefined;
   const lastMealTime = ctx.lastMealTime as string | null | undefined;
   const mealsLoggedToday = ctx.mealsLoggedToday as number | undefined ?? 0;
 
@@ -176,7 +176,7 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
         lines.push(`Still needed today: ${parts.join(" | ")}`);
       }
       if (todayMeals?.length) {
-        const mealStr = todayMeals.map((m) => `${m.time} [${m.kind}] ${m.name} (~${m.calories} kcal, ${m.protein}g protein)`).join(", ");
+        const mealStr = todayMeals.map((m) => `${m.time} ${m.name} (~${m.calories} kcal, ${m.protein}g protein)`).join(", ");
         lines.push(`Meals logged today: ${mealStr}`);
         if (lastMealTime) lines.push(`Last meal logged at: ${lastMealTime}. Meals logged today: ${mealsLoggedToday}`);
       }

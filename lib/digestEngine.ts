@@ -48,7 +48,6 @@ export interface TodayMealEntry {
   time: string; // e.g. "8:45am"
   calories: number;
   protein: number;
-  kind: "snack" | "meal";
 }
 
 export interface WeekSummary {
@@ -1004,16 +1003,12 @@ export function buildSmartNudgeContext(
     return `${h}:${m}${period}`;
   };
 
-  const todayMeals: TodayMealEntry[] = todayMealsFull.map((m) => {
-    const calories = Math.round(((m.analysisJson?.estimated_ranges?.calories_min ?? 0) + (m.analysisJson?.estimated_ranges?.calories_max ?? 0)) / 2);
-    return {
-      name: m.analysisJson?.name ?? m.analysisJson?.detected_items?.[0]?.name ?? "Meal",
-      time: formatMealTime(m.ts),
-      calories,
-      protein: Math.round(((m.analysisJson?.estimated_ranges?.protein_g_min ?? 0) + (m.analysisJson?.estimated_ranges?.protein_g_max ?? 0)) / 2),
-      kind: calories < 250 ? "snack" : "meal",
-    };
-  });
+  const todayMeals: TodayMealEntry[] = todayMealsFull.map((m) => ({
+    name: m.analysisJson?.name ?? m.analysisJson?.detected_items?.[0]?.name ?? "Meal",
+    time: formatMealTime(m.ts),
+    calories: Math.round(((m.analysisJson?.estimated_ranges?.calories_min ?? 0) + (m.analysisJson?.estimated_ranges?.calories_max ?? 0)) / 2),
+    protein: Math.round(((m.analysisJson?.estimated_ranges?.protein_g_min ?? 0) + (m.analysisJson?.estimated_ranges?.protein_g_max ?? 0)) / 2),
+  }));
 
   const lastMealTime = todayMealsFull.length > 0 ? formatMealTime(todayMealsFull[todayMealsFull.length - 1].ts) : null;
   const mealsLoggedToday = todayMealsFull.length;
