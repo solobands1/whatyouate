@@ -788,7 +788,8 @@ export default function InsightsScreen() {
                 <div key={category.label}>
                   <div className="flex items-center gap-2 mb-2.5">
                     <p className="text-[10px] uppercase tracking-wider text-muted/70 shrink-0">{category.label}</p>
-                    <div className="flex-1 h-px bg-muted/70" />
+                    <div className="flex-1 h-px bg-muted/40" />
+                    <div className="w-24 shrink-0" />
                   </div>
                   <div className="space-y-4">
                     {catNutrients.map((pattern) => {
