@@ -89,12 +89,14 @@ action field rules:
 - No clichés, no em dashes
 
 Suggestion rules:
-- Use "Recent eating pattern" to understand the user's diet and preferences — suggest foods that complement what they're already eating, pair well with it, or introduce similar options they haven't tried. Do NOT just avoid those foods — use them as context to make suggestions feel relevant and natural, not random.
+- Use "Recent eating pattern" to understand the user's diet and preferences — suggest foods or meals that complement what they're already eating, pair well with it, or introduce variety they haven't tried recently. Do NOT just avoid those foods — use them as context to make suggestions feel relevant and natural, not random.
 - Do NOT suggest anything in "Already eaten today" — they've had it. Do not suggest anything in "User's daily supplements" — they already take those.
+- CRITICAL: Do NOT repeat anything listed under "Recently suggested" — if a food or meal appears there, pick something different. The goal is variety across nudges.
+- Whole meals are encouraged when they tell a clearer story than a single ingredient — "chicken rice bowl" is more useful than just "chicken". Mix single foods and whole meals as appropriate.
 - For micronutrient nudges: identify the exact deficient nutrient from the nudge message and suggest foods that are specifically high in that nutrient AND fit the user's eating style (e.g., calcium → dairy, leafy greens, almonds, sardines; iron → red meat, lentils, spinach, tofu; vitamin D → fatty fish, fortified foods, egg yolks; magnesium → pumpkin seeds, dark chocolate, black beans; zinc → oysters, beef, pumpkin seeds). The suggestions must directly target the nutrient gap.
-- Suggestions must match the nudge type: protein nudges → protein-rich foods that complement their current meals, calorie nudges → energy-dense additions, fat nudges → healthy-fat options, variety nudges → foods with different nutrient profiles.
+- Suggestions must match the nudge type: protein nudges → protein-rich options, calorie nudges → energy-dense additions, fat nudges → healthy-fat options, variety nudges → foods with different nutrient profiles.
 - If the nudge type is win, momentum, pattern, meal_timing (general), variety, workout_missing, calorie_high, on_track, or check_in — use [].
-- 3 simple food names — or [] per the rule above
+- 1-3 foods or meals — or [] per the rule above
 - CRITICAL: Match time of day strictly:
   - morning (before 12pm) → breakfast foods only (eggs, oats, yogurt, smoothie ingredients, etc.)
   - afternoon 12–5pm → lunch or snack foods (wraps, salads, rice bowls, protein bars, fruit, etc.)
@@ -102,7 +104,7 @@ Suggestion rules:
   - EXCEPTION: if "Meals logged today" shows 0 meals and it's afternoon, or if the nudge references a skipped first meal or morning, suggest breakfast-appropriate foods (eggs, oats, yogurt, etc.) regardless of time window — the user hasn't eaten yet
   - If the nudge message itself references a specific meal (e.g. "first meal", "breakfast", "lunch", "dinner"), suggestions must match that meal, not the generic time window
 - Respect dietary restrictions when provided
-- No serving instructions in food names`;
+- No serving sizes or cooking instructions in suggestion names`;
 
 export function buildSmartPrompt(ctx: Record<string, unknown>): string {
   const profile = ctx.profile as Record<string, unknown> | null;
@@ -217,6 +219,11 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
   const dailySupps = ctx.dailySupplements as string[] | undefined;
   if (dailySupps?.length) {
     lines.push(`User's daily supplements (already covered — never suggest): ${dailySupps.join(", ")}`);
+  }
+
+  const recentSuggestedFoods = ctx.recentSuggestedFoods as string[] | undefined;
+  if (recentSuggestedFoods?.length) {
+    lines.push(`Recently suggested (do not repeat any of these): ${recentSuggestedFoods.join(", ")}`);
   }
 
   const priorWeeks = ctx.priorWeeks as Array<{ weekLabel: string; daysLogged: number; avgCalories: number; avgProtein: number; avgCarbs: number; avgFat: number }> | undefined;

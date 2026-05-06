@@ -145,7 +145,7 @@ export async function GET(req: Request) {
     supabase.from("meals").select("*").eq("user_id", userId).gte("created_at", sixtyDaysAgo).order("ts", { ascending: false }),
     supabase.from("workouts").select("*").eq("user_id", userId).gte("created_at", sixtyDaysAgo),
     supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle(),
-    supabase.from("nudges").select("type, message, created_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(5),
+    supabase.from("nudges").select("type, message, created_at, suggestions").eq("user_id", userId).order("created_at", { ascending: false }).limit(5),
     supabase.from("feel_logs").select("ts, tag").eq("user_id", userId).order("ts", { ascending: false }).limit(10),
     supabase.from("weight_logs").select("weight_kg, logged_at").eq("user_id", userId).order("logged_at", { ascending: false }).limit(20),
   ]);
@@ -157,6 +157,7 @@ export async function GET(req: Request) {
   const profile = mapProfileRow(profileRes.data as Record<string, unknown>);
   const recentFoods = extractRecentFoods(meals);
   const recentNudgeMessages = (nudgesRes.data ?? []).map((n: { type: string; message: string }) => `${n.type}: ${n.message}`);
+  const recentSuggestedFoods = [...new Set((nudgesRes.data ?? []).flatMap((n: { suggestions?: string[] }) => n.suggestions ?? []))];
   const recentFeelLogs = (feelRes.data ?? []).map((r: { ts: number; tag: string }) => ({ ts: r.ts * 1000, tag: r.tag }));
   const lastNudgeRecord = nudgesRes.data?.[0]
     ? { type: (nudgesRes.data[0] as { type: string }).type, message: (nudgesRes.data[0] as { message: string }).message, created_at: (nudgesRes.data[0] as { created_at: string }).created_at }
@@ -167,6 +168,7 @@ export async function GET(req: Request) {
     meals, workouts, profile, recentFoods, recentNudgeMessages,
     recentFeelLogs, lastNudgeRecord, weightRes.data ?? [], undefined, timezoneOffset
   ) as unknown as Record<string, unknown>;
+  if (recentSuggestedFoods.length) ctx.recentSuggestedFoods = recentSuggestedFoods;
 
   const isEvening = windowParam === "evening";
   delete ctx.timeOfDay;
