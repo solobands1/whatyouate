@@ -88,8 +88,8 @@ WHEN A NUTRITION LABEL IMAGE IS PROVIDED
 - If uncertain between two values, prefer the lower value unless clearly contradicted by the label.
 
 MICRONUTRIENT AMOUNTS
-- Estimate amounts only for these 10 nutrients: Iron, B12, Magnesium, Zinc, Vitamin D, Calcium, Omega-3, Vitamin C, Potassium, Fiber.
-- Use these units: Iron mg, B12 mcg, Magnesium mg, Zinc mg, Vitamin D IU, Calcium mg, Omega-3 mg, Vitamin C mg, Potassium mg, Fiber g.
+- Estimate amounts only for these 13 nutrients: Iron, B12, Magnesium, Zinc, Vitamin D, Calcium, Omega-3, Vitamin C, Potassium, Fiber, Folate, Vitamin A, Vitamin B6.
+- Use these units: Iron mg, B12 mcg, Magnesium mg, Zinc mg, Vitamin D IU, Calcium mg, Omega-3 mg, Vitamin C mg, Potassium mg, Fiber g, Folate mcg, Vitamin A mcg, Vitamin B6 mg.
 - Only include a nutrient if the food is a meaningful source of it. Omit nutrients where the amount would be negligible or unknown.
 - First estimate portion weight in grams from visual cues (plate size, food density, typical serving), then multiply by nutrient density per 100g from standard food databases.
 - Provide realistic ranges (min/max). For well-known foods keep ranges tight (±20%). For mixed meals widen proportionally.
@@ -104,13 +104,14 @@ MICRONUTRIENTS
   - Fatty fish (salmon, sardines, mackerel, tuna): Omega-3, B12, Vitamin D
   - Eggs: B12, Vitamin D, Choline (tag as Iron if yolks are prominent)
   - Red meat (beef, lamb, bison, steak): Iron, Zinc, B12
-  - Poultry (chicken, turkey, duck): B12, Zinc, Iron
+  - Poultry (chicken, turkey, duck): B12, Zinc, Iron, Vitamin B6
   - Leafy greens (spinach, kale, arugula, chard): Iron, Magnesium, Vitamin K, Folate
-  - Legumes (lentils, chickpeas, black beans, edamame): Iron, Magnesium, Folate, Fiber
+  - Legumes (lentils, chickpeas, black beans, edamame): Iron, Magnesium, Folate, Fiber, Vitamin B6
   - Dairy (milk, yogurt, cheese): Calcium, B12
   - Nuts and seeds (almonds, walnuts, pumpkin seeds): Magnesium, Zinc, Vitamin E
   - Whole grains (oats, brown rice, quinoa, whole wheat): Magnesium, Fiber
-  - Orange/yellow vegetables (sweet potato, carrots, squash): Vitamin A, Potassium
+  - Orange/yellow vegetables (sweet potato, carrots, squash): Vitamin A, Potassium, Vitamin B6
+  - Bananas: Potassium, Vitamin B6
   - Citrus fruit, bell peppers, broccoli, strawberries: Vitamin C
   - Avocado: Potassium, Folate
   - Shellfish (oysters, shrimp, clams): Zinc, Iron, B12
@@ -195,8 +196,8 @@ MACRONUTRIENT CALCULATION
 - Protein ranges should be proportionally consistent with food type and weight.
 
 MICRONUTRIENT AMOUNTS
-- Estimate amounts only for these 10 nutrients: Iron, B12, Magnesium, Zinc, Vitamin D, Calcium, Omega-3, Vitamin C, Potassium, Fiber.
-- Use these units: Iron mg, B12 mcg, Magnesium mg, Zinc mg, Vitamin D IU, Calcium mg, Omega-3 mg, Vitamin C mg, Potassium mg, Fiber g.
+- Estimate amounts only for these 13 nutrients: Iron, B12, Magnesium, Zinc, Vitamin D, Calcium, Omega-3, Vitamin C, Potassium, Fiber, Folate, Vitamin A, Vitamin B6.
+- Use these units: Iron mg, B12 mcg, Magnesium mg, Zinc mg, Vitamin D IU, Calcium mg, Omega-3 mg, Vitamin C mg, Potassium mg, Fiber g, Folate mcg, Vitamin A mcg, Vitamin B6 mg.
 - Only include a nutrient if the ingredient is a meaningful source. Omit negligible or unknown amounts.
 - First estimate portion weight in grams from the description (use typical serving sizes when unspecified), then multiply by nutrient density per 100g from standard food databases.
 - Provide realistic ranges (min/max). For specific named foods keep ranges tight (±20%). For vague descriptions widen proportionally.
@@ -211,13 +212,14 @@ MICRONUTRIENTS
   - Fatty fish (salmon, sardines, mackerel, tuna): Omega-3, B12, Vitamin D
   - Eggs: B12, Vitamin D
   - Red meat (beef, lamb, bison, steak): Iron, Zinc, B12
-  - Poultry (chicken, turkey): B12, Zinc, Iron
+  - Poultry (chicken, turkey): B12, Zinc, Iron, Vitamin B6
   - Leafy greens (spinach, kale, arugula, chard): Iron, Magnesium, Vitamin K, Folate
-  - Legumes (lentils, chickpeas, black beans, edamame): Iron, Magnesium, Folate, Fiber
+  - Legumes (lentils, chickpeas, black beans, edamame): Iron, Magnesium, Folate, Fiber, Vitamin B6
   - Dairy (milk, yogurt, cheese): Calcium, B12
   - Nuts and seeds (almonds, walnuts, pumpkin seeds): Magnesium, Zinc, Vitamin E
   - Whole grains (oats, brown rice, quinoa, whole wheat): Magnesium, Fiber
-  - Orange/yellow vegetables (sweet potato, carrots, squash): Vitamin A, Potassium
+  - Orange/yellow vegetables (sweet potato, carrots, squash): Vitamin A, Potassium, Vitamin B6
+  - Bananas: Potassium, Vitamin B6
   - Citrus fruit, bell peppers, broccoli, strawberries: Vitamin C
   - Avocado: Potassium, Folate
   - Shellfish (oysters, shrimp, clams): Zinc, Iron, B12

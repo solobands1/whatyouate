@@ -4,13 +4,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Joyride, { CallBackProps, STATUS, type Step } from "react-joyride";
 import { useRouter } from "next/navigation";
 import { summarizeLoggedDays, summarizeWeek } from "../lib/summary";
-import { computeGentleTargets, normalizeWeightToKg, proteinTargetPerKg } from "../lib/digestEngine";
+import { computeGentleTargets } from "../lib/digestEngine";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
 import { useAuth } from "./AuthProvider";
 import { useAppData } from "./AppDataProvider";
 import { dayKeyFromTs } from "../lib/utils";
-import { getRda, supplementToNutrient } from "../lib/rda";
+import { getRda, supplementToNutrient, canonicalNutrient } from "../lib/rda";
 import { suppName } from "../lib/types";
 import { useTrialStatus } from "../hooks/useTrialStatus";
 import { openUpgradeModal } from "./UpgradeModal";
@@ -19,16 +19,21 @@ import { hasEnoughDataForPatterns, countLoggedDays } from "../lib/trial";
 import type { FeelLog } from "../lib/supabaseDb";
 
 const INSIGHT_NUTRIENTS = [
-  "Iron",
-  "B12",
-  "Magnesium",
-  "Zinc",
-  "Vitamin D",
-  "Calcium",
-  "Omega-3",
-  "Vitamin C",
-  "Potassium",
-  "Fiber"
+  // Energy & Focus
+  "Iron", "B12", "Magnesium", "B6", "Folate",
+  // Mood & Recovery
+  "Vitamin D", "Omega-3",
+  // Immunity & Body
+  "Vitamin C", "Zinc", "Vitamin A",
+  // Foundation
+  "Calcium", "Potassium", "Fiber",
+];
+
+const NUTRIENT_CATEGORIES: { label: string; nutrients: string[] }[] = [
+  { label: "Energy & Focus",  nutrients: ["Iron", "B12", "Magnesium", "B6", "Folate"] },
+  { label: "Mood & Recovery", nutrients: ["Vitamin D", "Omega-3"] },
+  { label: "Immunity & Body", nutrients: ["Vitamin C", "Zinc", "Vitamin A"] },
+  { label: "Foundation",      nutrients: ["Calcium", "Potassium", "Fiber"] },
 ];
 
 function avgRangeMidpoint(mins: number[], maxes: number[]) {
@@ -60,7 +65,7 @@ const NUTRIENT_INFO: Record<string, string | string[]> = {
   Sodium: "Necessary for fluid balance and nerve signaling, but most people already get more than enough. It tends to be higher with processed, packaged, and restaurant foods. Worth noticing if it's consistently elevated.",
   "Vitamin E": "A fat-soluble antioxidant that protects cells from damage and supports immune function. Deficiency is rare but more common with very low-fat diets. Best sources are sunflower seeds, almonds, wheat germ, and avocado.",
   Copper: "Works with iron to form red blood cells and supports bone, immune, and nerve health. Deficiency can mimic iron deficiency anemia. Shellfish, liver, dark chocolate, nuts, and seeds are the best sources.",
-  "Vitamin B6": "Involved in protein metabolism, neurotransmitter production (serotonin, dopamine), and immune function. Low levels can affect mood and energy. Found in poultry, fish, potatoes, bananas, and chickpeas. Chickpeas are one of the richest plant sources.",
+  "B6": "Involved in protein metabolism, neurotransmitter production (serotonin, dopamine), and immune function. Low levels can affect mood and energy. Found in poultry, fish, potatoes, bananas, and chickpeas. Chickpeas are one of the richest plant sources.",
   "Energy Check-Ins": "Each dot's position shows the time of day you logged your energy, PM towards the top and AM towards the bottom. No entry assumes average energy.\n\nThis helps you spot low or high energy patterns and relate them to foods you ate to improve energy based on your food intake.",
 };
 
@@ -174,31 +179,6 @@ export default function InsightsScreen() {
     return avgRangeMidpoint(mins, maxes);
   }, [weekSummary]);
 
-  const proteinPattern = useMemo(() => {
-    if (profile?.weight) {
-      const weightKg = normalizeWeightToKg(profile.weight, profile.units);
-      const target = weightKg * proteinTargetPerKg(profile);
-      if (avgProtein < target * 0.6) return "Low protein appearance";
-      if (avgProtein < target * 0.9) return "Moderate protein pattern";
-      return "Strong protein pattern";
-    }
-    if (avgProtein < 60) return "Low protein appearance";
-    if (avgProtein < 100) return "Moderate protein pattern";
-    return "Strong protein pattern";
-  }, [avgProtein, profile]);
-
-  const energyPattern = useMemo(() => {
-    if (avgCalories < 1600) return "Light intake pattern";
-    if (avgCalories < 2400) return "Moderate intake pattern";
-    return "High intake pattern";
-  }, [avgCalories]);
-
-  const fatPattern = useMemo(() => {
-    if (avgFat < 45) return "Lower fat appearance";
-    if (avgFat < 80) return "Moderate fat pattern";
-    return "Higher fat appearance";
-  }, [avgFat]);
-
   const micronutrientPatterns = useMemo(() => {
     const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
     const recentMeals = meals.filter((meal) => meal.ts > cutoff);
@@ -225,7 +205,8 @@ export default function InsightsScreen() {
 
       if (amounts?.length) {
         for (const a of amounts) {
-          const key = a.nutrient.toLowerCase();
+          const raw = a.nutrient.toLowerCase();
+          const key = canonicalNutrient(raw) ?? raw;
           const midpoint = (a.amount_min + a.amount_max) / 2;
           amountTotalsByNutrient.set(key, (amountTotalsByNutrient.get(key) ?? 0) + midpoint);
           amountMealCountByNutrient.set(key, (amountMealCountByNutrient.get(key) ?? 0) + 1);
@@ -417,23 +398,23 @@ export default function InsightsScreen() {
   const displayAvgProtein = hasEnoughData ? `${avgProtein}g` : isDemoMode ? "148g" : "—";
   const displayAvgCarbs = hasEnoughData ? `${avgCarbs}g` : isDemoMode ? "180g" : "—";
   const displayAvgFat = hasEnoughData ? `${avgFat}g` : isDemoMode ? "62g" : "—";
-  const displayEnergyPattern = hasEnoughData ? energyPattern : "Moderate intake pattern";
-  const displayProteinPattern = hasEnoughData ? proteinPattern : "Moderate protein pattern";
-  const displayFatPattern = hasEnoughData ? fatPattern : "Moderate fat pattern";
 
   const displayMicronutrients = hasEnoughData
     ? micronutrientPatterns
     : [
-        { name: "Iron",      label: "Sometimes detected",  foodPct: 38, suppPct: 0,  hasSupplement: false, overRda: false },
-        { name: "B12",       label: "Well covered",        foodPct: 62, suppPct: 18, hasSupplement: true,  overRda: false },
-        { name: "Magnesium", label: "Rarely detected",     foodPct: 12, suppPct: 0,  hasSupplement: false, overRda: false },
-        { name: "Zinc",      label: "Building pattern",    foodPct: 50, suppPct: 0,  hasSupplement: false, overRda: false },
-        { name: "Vitamin D", label: "Well covered",        foodPct: 45, suppPct: 40, hasSupplement: true,  overRda: false },
-        { name: "Calcium",   label: "Frequently detected", foodPct: 74, suppPct: 0,  hasSupplement: false, overRda: false },
-        { name: "Omega-3",   label: "Rarely detected",     foodPct: 8,  suppPct: 0,  hasSupplement: false, overRda: false },
-        { name: "Vitamin C", label: "Frequently detected", foodPct: 80, suppPct: 0,  hasSupplement: false, overRda: false },
-        { name: "Potassium", label: "Sometimes detected",  foodPct: 32, suppPct: 0,  hasSupplement: false, overRda: false },
-        { name: "Fiber",     label: "Building pattern",    foodPct: 48, suppPct: 0,  hasSupplement: false, overRda: false },
+        { name: "Iron",      label: "Sometimes detected",  foodPct: 38, suppPct: 0,  hasSupplement: false, overRda: false, usingAmounts: false },
+        { name: "B12",       label: "Well covered",        foodPct: 62, suppPct: 18, hasSupplement: true,  overRda: false, usingAmounts: false },
+        { name: "Magnesium", label: "Rarely detected",     foodPct: 12, suppPct: 0,  hasSupplement: false, overRda: false, usingAmounts: false },
+        { name: "B6",        label: "Sometimes detected",  foodPct: 40, suppPct: 0,  hasSupplement: false, overRda: false, usingAmounts: false },
+        { name: "Folate",    label: "Rarely detected",     foodPct: 18, suppPct: 0,  hasSupplement: false, overRda: false, usingAmounts: false },
+        { name: "Vitamin D", label: "Well covered",        foodPct: 45, suppPct: 40, hasSupplement: true,  overRda: false, usingAmounts: false },
+        { name: "Omega-3",   label: "Rarely detected",     foodPct: 8,  suppPct: 0,  hasSupplement: false, overRda: false, usingAmounts: false },
+        { name: "Vitamin C", label: "Frequently detected", foodPct: 80, suppPct: 0,  hasSupplement: false, overRda: false, usingAmounts: false },
+        { name: "Zinc",      label: "Building pattern",    foodPct: 50, suppPct: 0,  hasSupplement: false, overRda: false, usingAmounts: false },
+        { name: "Vitamin A", label: "Building pattern",    foodPct: 44, suppPct: 0,  hasSupplement: false, overRda: false, usingAmounts: false },
+        { name: "Calcium",   label: "Frequently detected", foodPct: 74, suppPct: 0,  hasSupplement: false, overRda: false, usingAmounts: false },
+        { name: "Potassium", label: "Sometimes detected",  foodPct: 32, suppPct: 0,  hasSupplement: false, overRda: false, usingAmounts: false },
+        { name: "Fiber",     label: "Building pattern",    foodPct: 48, suppPct: 0,  hasSupplement: false, overRda: false, usingAmounts: false },
       ];
 
   const insightsTourSteps = [
@@ -800,44 +781,56 @@ export default function InsightsScreen() {
               </div>
             </div>
           </div>
-          <div className="mt-4 space-y-4">
-            {displayMicronutrients.map((pattern, index) => (
-              <div key={pattern.name} data-tour={index < 2 ? "insights-micro" : undefined}>
-                <div className="flex items-center justify-between">
-                  <p className="text-sm text-ink/80">{pattern.name}</p>
-                  <button
-                    type="button"
-                    className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-ink/10 text-[10px] font-semibold text-ink/60"
-                    onClick={() => setActiveNutrient(pattern.name)}
-                    aria-label={`About ${pattern.name}`}
-                    data-tour={index === 0 ? "insights-i-icon" : undefined}
-                  >
-                    i
-                  </button>
+          <div className="mt-4 space-y-5">
+            {NUTRIENT_CATEGORIES.map((category) => {
+              const catNutrients = displayMicronutrients.filter((p) => category.nutrients.includes(p.name));
+              return (
+                <div key={category.label}>
+                  <p className="mb-2.5 text-[10px] uppercase tracking-wider text-muted/45">{category.label}</p>
+                  <div className="space-y-4">
+                    {catNutrients.map((pattern) => {
+                      const globalIdx = displayMicronutrients.findIndex((p) => p.name === pattern.name);
+                      const isFirst = globalIdx === 0;
+                      return (
+                        <div key={pattern.name} data-tour={isFirst ? "insights-micro" : undefined}>
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm text-ink/80">{pattern.name}</p>
+                            <button
+                              type="button"
+                              className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-ink/10 text-[10px] font-semibold text-ink/60"
+                              onClick={() => setActiveNutrient(pattern.name)}
+                              aria-label={`About ${pattern.name}`}
+                              data-tour={isFirst ? "insights-i-icon" : undefined}
+                            >
+                              i
+                            </button>
+                          </div>
+                          <div className="mt-2 h-2 rounded-full bg-ink/5 flex overflow-hidden isolate">
+                            <div
+                              className="h-full shrink-0 bg-primary/70"
+                              style={{
+                                width: barsReady ? `${pattern.foodPct}%` : "0%",
+                                transition: `width 600ms cubic-bezier(0.22,1,0.36,1) ${globalIdx * 55}ms`,
+                              }}
+                            />
+                            {pattern.hasSupplement && (
+                              <div
+                                className="h-full shrink-0 bg-primary/35"
+                                style={{
+                                  width: barsReady ? `${pattern.suppPct}%` : "0%",
+                                  transition: `width 600ms cubic-bezier(0.22,1,0.36,1) ${globalIdx * 55}ms`,
+                                }}
+                              />
+                            )}
+                          </div>
+                          <p className="mt-1 text-[11px] text-muted/70">{pattern.label}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-                <div className="mt-2 h-2 rounded-full bg-ink/5 flex overflow-hidden isolate">
-                  {/* Food segment — darker */}
-                  <div
-                    className="h-full shrink-0 bg-primary/70"
-                    style={{
-                      width: barsReady ? `${pattern.foodPct}%` : "0%",
-                      transition: `width 600ms cubic-bezier(0.22,1,0.36,1) ${index * 55}ms`,
-                    }}
-                  />
-                  {/* Supplement segment — lighter, only shown when dose data exists */}
-                  {pattern.hasSupplement && (
-                    <div
-                      className="h-full shrink-0 bg-primary/35"
-                      style={{
-                        width: barsReady ? `${pattern.suppPct}%` : "0%",
-                        transition: `width 600ms cubic-bezier(0.22,1,0.36,1) ${index * 55}ms`,
-                      }}
-                    />
-                  )}
-                </div>
-                <p className="mt-1 text-[11px] text-muted/70">{pattern.label}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
           <div className="mt-4 space-y-2 border-t border-ink/5 pt-4">
             <p className="text-xs text-muted/70">Each bar shows how much of your daily recommended amount you're getting. The darker segment is from food, the lighter is from supplements.</p>

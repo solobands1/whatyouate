@@ -21,6 +21,9 @@ export const NUTRIENT_UNITS: Record<string, string> = {
   "vitamin c": "mg",
   potassium: "mg",
   fiber: "g",
+  folate: "mcg",
+  "vitamin a": "mcg",
+  b6: "mg",
 };
 
 // Aliases so "Vitamin D" / "vitamin d" / "vitd" all resolve to the canonical key
@@ -50,6 +53,15 @@ export const NUTRIENT_ALIASES: Record<string, string> = {
   psyllium: "fiber",
   metamucil: "fiber",
   inulin: "fiber",
+  folate: "folate",
+  "folic acid": "folate",
+  "vitamin b9": "folate",
+  "vitamin a": "vitamin a",
+  retinol: "vitamin a",
+  "beta-carotene": "vitamin a",
+  b6: "b6",
+  "vitamin b6": "b6",
+  pyridoxine: "b6",
 };
 
 /**
@@ -73,6 +85,9 @@ export const NUTRIENT_DISPLAY_NAMES: Record<string, string> = {
   "vitamin c": "Vitamin C",
   potassium: "Potassium",
   fiber: "Fiber",
+  folate: "Folate",
+  "vitamin a": "Vitamin A",
+  b6: "B6",
 };
 
 /**
@@ -90,9 +105,12 @@ export const SUPPLEMENT_KEYWORD_MAP: Array<{ keywords: string[]; nutrients: stri
   { keywords: ["fish oil", "omega-3", "omega 3", "omega3", "dha", "epa", "krill"],    nutrients: ["omega-3"] },
   { keywords: ["potassium"],                                                            nutrients: ["potassium"] },
   { keywords: ["fiber", "fibre", "psyllium", "metamucil", "inulin"],                   nutrients: ["fiber"] },
+  { keywords: ["folate", "folic acid", "vitamin b9"],                                  nutrients: ["folate"] },
+  { keywords: ["vitamin a", "retinol", "beta-carotene", "betacarotene"],               nutrients: ["vitamin a"] },
+  { keywords: ["vitamin b6", "pyridoxine", "b6"],                                      nutrients: ["b6"] },
   {
     keywords: ["multivitamin", "multi vitamin", "multi-vitamin"],
-    nutrients: ["vitamin c", "vitamin d", "b12", "iron", "zinc", "magnesium", "calcium"],
+    nutrients: ["vitamin c", "vitamin d", "b12", "iron", "zinc", "magnesium", "calcium", "folate", "vitamin a", "b6"],
   },
 ];
 
@@ -141,6 +159,9 @@ const RDA_TABLE: RdaTable = {
         "vitamin c": 75,
         potassium: 4700,
         fiber: 31,
+        folate: 400,
+        "vitamin a": 900,
+        b6: 1.2,
       },
     },
     {
@@ -157,6 +178,9 @@ const RDA_TABLE: RdaTable = {
         "vitamin c": 90,
         potassium: 3400,
         fiber: 38,
+        folate: 400,
+        "vitamin a": 900,
+        b6: 1.3,
       },
     },
     {
@@ -173,6 +197,9 @@ const RDA_TABLE: RdaTable = {
         "vitamin c": 90,
         potassium: 3400,
         fiber: 30,
+        folate: 400,
+        "vitamin a": 900,
+        b6: 1.7,
       },
     },
   ],
@@ -191,6 +218,9 @@ const RDA_TABLE: RdaTable = {
         "vitamin c": 65,
         potassium: 4700,
         fiber: 26,
+        folate: 400,
+        "vitamin a": 700,
+        b6: 1.2,
       },
     },
     {
@@ -207,6 +237,9 @@ const RDA_TABLE: RdaTable = {
         "vitamin c": 75,
         potassium: 2600,
         fiber: 25,
+        folate: 400,
+        "vitamin a": 700,
+        b6: 1.3,
       },
     },
     {
@@ -223,6 +256,9 @@ const RDA_TABLE: RdaTable = {
         "vitamin c": 75,
         potassium: 2600,
         fiber: 21,
+        folate: 400,
+        "vitamin a": 700,
+        b6: 1.5,
       },
     },
   ],
