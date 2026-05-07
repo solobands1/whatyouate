@@ -181,6 +181,7 @@ export async function GET(req: Request) {
   if (proteinCount >= 2) blockedNudgeTypes.push("protein_low");
   if (allDeficits) blockedNudgeTypes.push(...Array.from(deficitSet));
 
+  const sparseLogs = (ctx.daysSinceLastLog as number | undefined ?? 0) >= 3;
   if (isEvening) {
     ctx.nudgeIntentWindow = "evening";
     ctx.blockedNudgeTypes = ["meal_timing", ...blockedNudgeTypes];
@@ -194,7 +195,11 @@ export async function GET(req: Request) {
     delete ctx.remainingProtein;
     delete ctx.followThrough;
     ctx.nudgeIntentWindow = "morning";
-    ctx.blockedNudgeTypes = ["check_in", "meal_timing", "workout_fuel_low", ...blockedNudgeTypes];
+    // Allow check_in in morning when user hasn't logged in 3+ days
+    const morningBlocked = sparseLogs
+      ? ["meal_timing", "workout_fuel_low", ...blockedNudgeTypes]
+      : ["check_in", "meal_timing", "workout_fuel_low", ...blockedNudgeTypes];
+    ctx.blockedNudgeTypes = morningBlocked;
   }
 
   const nudge = await generateNudge(ctx);

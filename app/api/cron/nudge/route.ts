@@ -313,17 +313,20 @@ export async function GET(req: Request) {
         delete ctx.remainingProtein;
         delete ctx.followThrough;
         ctx.nudgeIntentWindow = "morning";
-        const MORNING_HARD_BLOCKED = new Set(["check_in", "meal_timing"]);
+        // Allow check_in when user hasn't logged in 3+ days — re-engagement > insight
+        const sparseLogs = (ctx.daysSinceLastLog as number | undefined ?? 0) >= 3;
+        const MORNING_HARD_BLOCKED = sparseLogs ? new Set(["meal_timing"]) : new Set(["check_in", "meal_timing"]);
         const softBlocked = [...new Set([...blockedNudgeTypes, "workout_fuel_low"])];
         ctx.blockedNudgeTypes = [...MORNING_HARD_BLOCKED, ...softBlocked];
       }
 
+      const sparseLogs = (ctx.daysSinceLastLog as number | undefined ?? 0) >= 3;
       const nudge = await generateNudge(ctx);
       if (!nudge?.message) continue;
 
       // Hard-enforce only truly real-time types — fatigue suppression is handled by the prompt
       if (nudge.type === "meal_timing") continue;
-      if (!isEvening && nudge.type === "check_in") continue;
+      if (!isEvening && nudge.type === "check_in" && !sparseLogs) continue;
 
       await supabase.from("nudges").insert({
         user_id: userId,

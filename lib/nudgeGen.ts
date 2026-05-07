@@ -64,6 +64,7 @@ Rules:
 - No clichés: forbidden: "crush it", "you've got this", "fresh start", "stay on track", "hit your goal", "keep it up", "build muscle", "well done", "great job", "amazing", "nice work"
 - If timeOfDay is "morning": frame as intention. If "afternoon": note there's still time. If "evening": brief and reflective. If nudgeIntentWindow is provided instead of timeOfDay, treat it the same way for framing — but only when "Today so far" data is present. If no today data is present, skip time-specific framing entirely.
 - SNACK AWARENESS: Based on the meal name and calorie count, infer whether each logged entry is a snack or a full meal — a protein bar, piece of fruit, yogurt, or coffee drink is a snack; a rice bowl, eggs and toast, burger, or pasta dish is a meal. Use this to word things accurately: "you grabbed a protein bar" not "you had a meal", "after your last snack" not "after dinner" if it was a snack. When referencing patterns, distinguish between snack habits and meal habits when relevant.
+- SPARSE LOGGING RULE: If "Days since last log" is provided and is 3 or more, the user has gone quiet. Do NOT analyze or reference specific foods, meals, or patterns from any day that far back. The only useful nudge is re-engagement. Use check_in type. Write one warm sentence inviting them to log today — not what they ate before, not what they're missing, just a low-pressure opening. If daysSinceLastLog is 5 or more, acknowledge the gap briefly and frame today as a fresh start without using the word "streak."
 - MEAL TIMING AWARENESS: If "Meals logged today" and "Last meal logged at" are provided, use them to infer what meal is next. If it's afternoon and the last meal was before 11am with only 1 meal logged, the user likely hasn't had lunch yet — reference lunch, not dinner. If 2+ meals are logged by afternoon, dinner framing is appropriate. Never assume what meal comes next based on time alone — always cross-reference with what's actually been logged.
 - HYDRATION: If "Water today" is provided and the user is under 50% of their goal by afternoon or evening, you may briefly note it when it adds genuine insight. Never make hydration the sole focus of a nudge unless everything else looks fine. Keep it to one clause, not a standalone message.
 - WEIGHT TREND: If "Weight trend" is provided, you may reference it when genuinely relevant. Keep it brief and only surface it when it adds real insight. Never make weight the focus of a nudge unprompted.
@@ -197,6 +198,11 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
     lines.push(`\nFRAMING NOTE: This is a morning nudge delivered before the user has logged their day. Write it as a durable pattern insight they will read at any point in the morning — not a real-time check-in. Focus on multi-day patterns, trends, and what to aim for today based on history. Avoid "right now" or specific time-of-day references. IMPORTANT: With multiple days of logged data available, there is ALWAYS something worth surfacing. Do not return null.`);
   } else if (nudgeIntentWindow === "evening") {
     lines.push(`\nFRAMING NOTE: This is an evening nudge. Today's actual food data is available above — use it. Write a brief, specific, reflective observation about how the day went: what worked, what fell short. If there is a clear nutrient gap still open tonight, name one specific food they could eat RIGHT NOW to close some of it — make that the action. Then share what to carry into tomorrow. Keep it warm and forward-looking. IMPORTANT: With both today's data and historical patterns available, there is always something worth saying. Do not return null.`);
+  }
+
+  const daysSinceLastLog = ctx.daysSinceLastLog as number | undefined;
+  if (daysSinceLastLog !== undefined && daysSinceLastLog >= 2) {
+    lines.push(`Days since last log: ${daysSinceLastLog}`);
   }
 
   const streak = ctx.streak as number | undefined;

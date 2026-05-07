@@ -105,6 +105,7 @@ export interface SmartNudgeContext {
   weightTrend?: WeightTrend;
   waterIntake?: { consumedMl: number; goalMl: number; pct: number };
   todayDayOfWeek: string;
+  daysSinceLastLog?: number;
 }
 
 export interface NudgeData {
@@ -1021,11 +1022,17 @@ export function buildSmartNudgeContext(
     typeof s === "string" ? s : s.dose != null && s.unit ? `${s.name} ${s.dose}${s.unit}` : s.name
   );
 
+  // Only surface feel log data if the user has checked in within the last 5 days.
+  // Stale feel logs cause the AI to repeat energy-pattern nudges indefinitely.
+  const FEEL_FRESH_CUTOFF_MS = 5 * 24 * 60 * 60 * 1000;
+  const hasFreshFeelLog = recentFeelLogs.some((f) => f.ts > Date.now() - FEEL_FRESH_CUTOFF_MS);
+  const activeFeelLogs = hasFreshFeelLog ? recentFeelLogs : [];
+
   // Correlate feel logs with what was eaten on those days
   const workoutDayKeys = new Set(
     workouts.filter((w) => w.endTs != null).map((w) => localDayKey(w.endTs ?? w.startTs))
   );
-  const feelLogCorrelations: FeelLogCorrelation[] = recentFeelLogs
+  const feelLogCorrelations: FeelLogCorrelation[] = activeFeelLogs
     .slice(0, 14)
     .map((f) => {
       const fDayKey = localDayKey(f.ts);
@@ -1113,6 +1120,20 @@ export function buildSmartNudgeContext(
     };
   }
 
+  // How many calendar days since the user last logged a real meal
+  let daysSinceLastLog: number | undefined;
+  const foodMeals = meals.filter(
+    (m) => m.status !== "failed" && m.analysisJson?.source !== "supplement"
+  );
+  if (foodMeals.length > 0) {
+    const lastLogTs = Math.max(...foodMeals.map((m) => m.ts));
+    const lastLogDayKey = localDayKey(lastLogTs);
+    const msPerDay = 24 * 60 * 60 * 1000;
+    const d1 = new Date(lastLogDayKey + "T12:00:00Z").getTime();
+    const d2 = new Date(todayKeyLocal + "T12:00:00Z").getTime();
+    daysSinceLastLog = Math.max(0, Math.round((d2 - d1) / msPerDay));
+  }
+
   let waterIntake: SmartNudgeContext["waterIntake"];
   if (profile.trackWater && waterConsumedMl !== undefined && profile.weight) {
     const goalMl = Math.min(3500, Math.max(1500, Math.round(profile.weight * 35 / 100) * 100));
@@ -1142,7 +1163,7 @@ export function buildSmartNudgeContext(
     recentNudges,
     streak,
     todayHasWorkout,
-    recentFeelLogs,
+    recentFeelLogs: activeFeelLogs,
     todayMeals,
     lastMealTime,
     mealsLoggedToday,
@@ -1152,5 +1173,6 @@ export function buildSmartNudgeContext(
     weightTrend,
     waterIntake,
     todayDayOfWeek: DOW[new Date(todayKeyLocal + "T12:00:00Z").getUTCDay()],
+    daysSinceLastLog,
   };
 }
