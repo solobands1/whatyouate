@@ -282,16 +282,6 @@ export default function HomeScreen() {
     }).catch(() => {});
   }, [user?.id, profile?.trackWater]);
 
-  useEffect(() => {
-    if (!user) return;
-    try { if (localStorage.getItem(`wya_stats_banner_dismissed_${user.id}`) === "1") setStatsBannerDismissed(true); } catch {}
-  }, [user?.id]);
-
-  const dismissStatsBanner = () => {
-    setStatsBannerDismissed(true);
-    try { if (user) localStorage.setItem(`wya_stats_banner_dismissed_${user.id}`, "1"); } catch {}
-  };
-
   const [waterInputAmount, setWaterInputAmount] = useState("");
   const [waterInputUnit, setWaterInputUnit] = useState<"ml" | "oz" | "cups" | "L">("ml");
   const [runTour, setRunTour] = useState(false);
@@ -366,8 +356,6 @@ export default function HomeScreen() {
   const promptedStaleRef = useRef<Set<string>>(new Set());
   const recentQuickAddRef = useRef<number>(0);
   const quickAddBouncedRef = useRef(false);
-  const [statsBannerDismissed, setStatsBannerDismissed] = useState(false);
-
   const onError = useCallback((msg: string) => setLoadError(msg), []);
 
   const workout = useWorkout(user, onError, setEditRecents, []);
@@ -1421,7 +1409,7 @@ export default function HomeScreen() {
   const protMid = (homeMarkers.todayTotals.protein_g_min + homeMarkers.todayTotals.protein_g_max) / 2;
   const calPct = Math.min(100, Math.round((calMid / gentleTargetsDisplay.calories) * 100));
   const protPct = Math.min(100, Math.round((protMid / gentleTargetsDisplay.protein) * 100));
-  const showStatsBanner = !loadingData && !isDemoMode && !statsBannerDismissed
+  const showStatsBanner = !loadingData && !isDemoMode
     && displayMeals.filter((m) => m.analysisJson?.source !== "supplement").length >= 1
     && (!profile || profile.height === null || profile.weight === null || profile.age === null);
 
@@ -1901,16 +1889,9 @@ export default function HomeScreen() {
               {!isDemoMode && !trial.isTrialActive && !trial.isFree && showStatsBanner && (
                 <div className="mt-2 flex items-center justify-between gap-3 rounded-xl border border-primary/15 bg-primary/[0.06] px-4 py-2.5">
                   <p className="text-[12px] text-ink/60">Fill Out Your Profile For Better Results</p>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Link href="/profile" className="text-[11px] font-semibold text-primary">
-                      Set up →
-                    </Link>
-                    <button type="button" onClick={dismissStatsBanner} className="flex items-center justify-center text-ink/30 hover:text-ink/50 transition-colors">
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                      </svg>
-                    </button>
-                  </div>
+                  <Link href="/profile" className="shrink-0 text-[11px] font-semibold text-primary">
+                    Set up →
+                  </Link>
                 </div>
               )}
             </>
