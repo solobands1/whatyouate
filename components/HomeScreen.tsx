@@ -652,13 +652,18 @@ export default function HomeScreen() {
     }
   };
 
-  const handleFailedMealDismiss = () => {
+  const handleFailedMealDismiss = async () => {
     if (!failedMealPrompt || !user) { setFailedMealPrompt(null); return; }
-    updateMeal(failedMealPrompt.mealId, safeFallbackAnalysis(), undefined, user.id, "failed").catch(() => {}).finally(() => {
+    const mealId = failedMealPrompt.mealId;
+    setFailedMealPrompt(null);
+    try {
+      await deleteMeal(mealId, user.id);
+      meals.setMeals((prev) => prev.filter((m) => m.id !== mealId));
       clearMealsCache(user.id);
       notifyMealsUpdated();
-    });
-    setFailedMealPrompt(null);
+    } catch {
+      // silent — meal may already be gone
+    }
   };
 
   const applyEditPortion = (portion: "small" | "medium" | "large") => {
@@ -2198,7 +2203,7 @@ export default function HomeScreen() {
                             meals.openMealEditor(meal);
                           }
                         }}
-                        className={`inline-flex w-full items-start justify-between rounded-full border border-primary/25 px-3 py-1.5 text-xs text-ink/80 ${editRecents ? "cursor-pointer animate-wiggle bg-primary/10" : isStaleOrFailed ? "cursor-pointer animate-pill-in bg-red-50 border-red-200/60" : (isShimmer ? "animate-shimmer" : isRecentQuickAdd ? "bg-primary/10" : "animate-pill-in bg-primary/10")}`}
+                        className={`inline-flex w-full items-start justify-between rounded-full border border-primary/25 px-3 py-1.5 text-xs text-ink/80 ${editRecents ? "cursor-pointer animate-wiggle bg-primary/10" : isStaleOrFailed ? "cursor-pointer animate-pill-in bg-ink/5 border-ink/10" : (isShimmer ? "animate-shimmer" : isRecentQuickAdd ? "bg-primary/10" : "animate-pill-in bg-primary/10")}`}
                         style={{
                           ...(isShimmer ? { background: "linear-gradient(90deg, #eff6ff 0%, #dbeafe 40%, #eff6ff 60%, #eff6ff 100%)", backgroundSize: "200% 100%" } : {}),
                           ...(!editRecents && !isShimmer ? { animationDelay: `${idx * 35}ms` } : {})
@@ -2206,9 +2211,9 @@ export default function HomeScreen() {
                       >
                         <span className="flex flex-col">
                           {meal.status === "processing" ? (
-                            isShimmer ? "Analyzing Food…" : "Analysis failed · edit manually"
+                            isShimmer ? "Analyzing Food…" : "Couldn't Analyze"
                           ) : meal.status === "failed" ? (
-                            "Analysis failed · edit manually"
+                            "Couldn't Analyze"
                           ) : (
                             <>
                               <span>
