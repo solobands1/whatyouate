@@ -289,6 +289,7 @@ export async function fetchWaterLogs(userId: string): Promise<Record<string, num
 export async function upsertWaterLog(userId: string, dayKey: string, ml: number): Promise<void> {
   if (useMemory) return;
   try {
+    if (!waterLogsCache.has(userId)) await fetchWaterLogs(userId);
     const current = waterLogsCache.get(userId) ?? {};
     const updated = { ...current, [dayKey]: ml };
     waterLogsCache.set(userId, updated);
