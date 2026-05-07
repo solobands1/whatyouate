@@ -293,6 +293,7 @@ export async function GET(req: Request) {
       if (recentSuggestedFoods.length) ctx.recentSuggestedFoods = recentSuggestedFoods;
 
       const isEvening = isEveningWindow;
+      const sparseLogs = (ctx.daysSinceLastLog as number | undefined ?? 0) >= 3;
       delete ctx.timeOfDay; // replaced by nudgeIntentWindow
 
       if (isEvening) {
@@ -314,13 +315,11 @@ export async function GET(req: Request) {
         delete ctx.followThrough;
         ctx.nudgeIntentWindow = "morning";
         // Allow check_in when user hasn't logged in 3+ days — re-engagement > insight
-        const sparseLogs = (ctx.daysSinceLastLog as number | undefined ?? 0) >= 3;
         const MORNING_HARD_BLOCKED = sparseLogs ? new Set(["meal_timing"]) : new Set(["check_in", "meal_timing"]);
         const softBlocked = [...new Set([...blockedNudgeTypes, "workout_fuel_low"])];
         ctx.blockedNudgeTypes = [...MORNING_HARD_BLOCKED, ...softBlocked];
       }
 
-      const sparseLogs = (ctx.daysSinceLastLog as number | undefined ?? 0) >= 3;
       const nudge = await generateNudge(ctx);
       if (!nudge?.message) continue;
 
