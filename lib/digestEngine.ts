@@ -9,7 +9,8 @@ export type NudgeType =
   | "workout_missing" | "workout_fuel_low" | "training_fuel_low"
   | "micronutrient" | "fat_low" | "on_track"
   | "win" | "momentum" | "pattern" | "meal_timing" | "food_insight"
-  | "variety" | "rest_day_fuel" | "workout_recovery" | "check_in";
+  | "variety" | "rest_day_fuel" | "workout_recovery" | "check_in"
+  | "weekly_summary";
 
 export interface DailyNudgeSnapshot {
   dateKey: string;

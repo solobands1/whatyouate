@@ -482,8 +482,11 @@ export default function SummaryScreen() {
         const nudgeDayKey = todayKey(nudgeDate);
         const nudgeHour = nudgeDate.getHours();
         const nudgeWindow = nudgeHour < 12 ? "morning" : nudgeHour < 17 ? "afternoon" : "evening";
-        // One nudge per window per day — most recent wins (sorted desc above)
-        const key = `${nudgeDayKey}:${nudgeWindow}`;
+        const isWeeklySummary = (nudge as Record<string, unknown>).type === "weekly_summary";
+        // Weekly summaries get their own week-based key so they don't displace the morning nudge
+        const sundayDate = new Date(nudgeDate);
+        sundayDate.setDate(sundayDate.getDate() - sundayDate.getDay());
+        const key = isWeeklySummary ? `weekly_summary:${todayKey(sundayDate)}` : `${nudgeDayKey}:${nudgeWindow}`;
         if (seenKeys.has(key)) return;
         seenKeys.add(key);
         items.push({
@@ -1224,7 +1227,7 @@ export default function SummaryScreen() {
               {(() => {
                 const nudgeTs = smartNudge?.generatedAt ? new Date(smartNudge.generatedAt) : null;
                 const nudgeLocalHr = nudgeTs ? nudgeTs.getHours() : new Date().getHours();
-                const windowLabel = nudgeLocalHr < 12 ? "This Morning" : nudgeLocalHr < 17 ? "This Afternoon" : "This Evening";
+                const windowLabel = smartNudge?.type === "weekly_summary" ? "Week Recap" : nudgeLocalHr < 12 ? "This Morning" : nudgeLocalHr < 17 ? "This Afternoon" : "This Evening";
                 const nudgeTimeLabel = nudgeTs ? nudgeTs.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }).toLowerCase() : null;
                 return (
                   <div className="flex items-center justify-between">
@@ -1271,7 +1274,7 @@ export default function SummaryScreen() {
                   const isCaughtUp =
                     (nudge.type === "calorie_low" && calTarget > 0 && todayCalAvg >= calTarget * 0.9) ||
                     ((nudge.type === "protein_low" || nudge.type === "protein_low_critical") && proTarget > 0 && todayProAvg >= proTarget * 0.85);
-                  const noSuggestionTypes = ["workout_missing", "calorie_high", "on_track", "win", "momentum", "pattern", "variety", "check_in"];
+                  const noSuggestionTypes = ["workout_missing", "calorie_high", "on_track", "win", "momentum", "pattern", "variety", "check_in", "weekly_summary"];
                   const foodSuggestions = !noSuggestionTypes.includes(nudge.type)
                     ? suggestions.slice(0, 3)
                     : [];

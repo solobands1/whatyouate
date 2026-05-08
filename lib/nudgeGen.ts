@@ -354,3 +354,79 @@ export function sanitizeNudgeFields<T extends Record<string, unknown>>(nudge: T)
   }
   return out;
 }
+
+export const WEEKLY_SUMMARY_SYSTEM_PROMPT = `CRITICAL: Respond ONLY with valid JSON. No analysis, no reasoning, no text outside the JSON object.
+
+You are a personal nutrition coach writing a short Sunday recap for someone who's been logging their food. This is their weekly letter — warm, reflective, and specific to their actual week. Not a report. Not a list. A paragraph that makes them feel seen and understood.
+
+VOICE:
+- Warm and reflective. Like a coach who's been paying close attention.
+- Three natural beats woven into one paragraph: (1) acknowledge the week's consistency or effort, (2) one standout pattern or observation from the data, (3) one gentle thing to carry into the coming week.
+- Never open with "This week" or "You've". Start with the food, a day, the pattern, or what you noticed.
+- Sound like a person, not a report. Specific to the actual numbers, not generic advice.
+- 100–120 words, written as a single flowing paragraph. No line breaks or newlines.
+- No food suggestions — this is a reflection, not a prescription.
+- No clichés: "crush it", "you've got this", "fresh start", "amazing", "great job", "keep it up"
+- CRITICAL: Never use em dashes (— or —). Use commas or rewrite as separate sentences.
+- No percentages like "X% of calories". Say "most days", "the one strong day", "almost every time" instead.
+
+Return ONLY valid JSON:
+{"message": "..."}`;
+
+export function buildWeeklySummaryPrompt(ctx: Record<string, unknown>): string {
+  const lines: string[] = [];
+
+  const profile = ctx.profile as { firstName?: string; goalDirection?: string; freeformFocus?: string } | undefined;
+  if (profile?.firstName) lines.push(`User: ${profile.firstName}`);
+  if (profile?.goalDirection) lines.push(`Goal direction: ${profile.goalDirection}`);
+  if (profile?.freeformFocus) lines.push(`Personal focus: ${profile.freeformFocus}`);
+
+  const last7 = ctx.last7Days as Array<{ dayOfWeek: string; logged: boolean; calories: number; protein: number; hasWorkout: boolean }> | undefined;
+  if (last7?.length) {
+    const logged = last7.filter((d) => d.logged);
+    lines.push(`\nThis week (${logged.length} of 7 days logged):`);
+    for (const d of last7) {
+      if (d.logged) {
+        lines.push(`  ${d.dayOfWeek}: ${d.calories} kcal | ${d.protein}g protein${d.hasWorkout ? " | workout" : ""}`);
+      } else {
+        lines.push(`  ${d.dayOfWeek}: (not logged)`);
+      }
+    }
+    if (logged.length > 0) {
+      const avgCal = Math.round(logged.reduce((s, d) => s + d.calories, 0) / logged.length);
+      const avgPro = Math.round(logged.reduce((s, d) => s + d.protein, 0) / logged.length);
+      lines.push(`  Logged-day averages: ${avgCal} kcal | ${avgPro}g protein`);
+    }
+  }
+
+  const streak = ctx.streak as number | undefined;
+  if (streak != null && streak > 0) {
+    lines.push(`Current streak: ${streak} day${streak !== 1 ? "s" : ""}`);
+  }
+
+  const priorWeeks = ctx.priorWeeks as Array<{ weekLabel: string; daysLogged: number; avgCalories: number; avgProtein: number }> | undefined;
+  if (priorWeeks?.length) {
+    lines.push(`\nPrior weeks:`);
+    for (const w of priorWeeks.slice(0, 3)) {
+      lines.push(`  ${w.weekLabel}: ${w.daysLogged}/7 days logged | avg ${w.avgCalories} kcal | avg ${w.avgProtein}g protein`);
+    }
+  }
+
+  const feels = ctx.feelLogCorrelations as Array<{ dayOfWeek: string; tag: string; calories: number; protein: number; mealCount: number }> | undefined;
+  if (feels?.length) {
+    lines.push(`\nEnergy check-ins this week:`);
+    for (const f of feels.slice(0, 5)) {
+      lines.push(`  ${f.dayOfWeek}: ${f.tag} | ${f.calories} kcal | ${f.protein}g protein | ${f.mealCount} log${f.mealCount !== 1 ? "s" : ""}`);
+    }
+  }
+
+  const wt = ctx.weightTrend as { currentKg: number; changeKg: number; entryCount: number; daysSinceFirst: number } | undefined;
+  if (wt && wt.entryCount >= 2) {
+    const dir = wt.changeKg < 0 ? "down" : wt.changeKg > 0 ? "up" : "stable";
+    lines.push(`\nWeight trend: ${dir} ${Math.abs(wt.changeKg).toFixed(1)}kg over ${wt.daysSinceFirst} days (${wt.entryCount} weigh-ins)`);
+  }
+
+  lines.push(`\nWrite a warm, reflective 100-120 word Sunday recap as one flowing paragraph. Three beats woven naturally together: acknowledge their consistency or effort, surface one standout pattern or observation, leave them with one thing to carry into the coming week. No food suggestions. No lists.`);
+
+  return lines.join("\n");
+}
