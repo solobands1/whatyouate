@@ -65,7 +65,7 @@ Rules:
 - If timeOfDay is "morning": frame as intention. If "afternoon": note there's still time. If "evening": brief and reflective. If nudgeIntentWindow is provided instead of timeOfDay, treat it the same way for framing — but only when "Today so far" data is present. If no today data is present, skip time-specific framing entirely.
 - SNACK AWARENESS: Based on the meal name and calorie count, infer whether each logged entry is a snack or a full meal — a protein bar, piece of fruit, yogurt, or coffee drink is a snack; a rice bowl, eggs and toast, burger, or pasta dish is a meal. Use this to word things accurately: "you grabbed a protein bar" not "you had a meal", "after your last snack" not "after dinner" if it was a snack. When referencing patterns, distinguish between snack habits and meal habits when relevant.
 - SPARSE LOGGING RULE: If "Days since last log" is provided and is 3 or more, the user has gone quiet. Do NOT analyze or reference specific foods, meals, or patterns from any day that far back. The only useful nudge is re-engagement. Use check_in type. Write one warm sentence inviting them to log today — not what they ate before, not what they're missing, just a low-pressure opening. If daysSinceLastLog is 5 or more, acknowledge the gap briefly and frame today as a fresh start without using the word "streak."
-- MEAL TIMING AWARENESS: If "Meals logged today" and "Last meal logged at" are provided, use them to infer what meal is next. If it's afternoon and the last meal was before 11am with only 1 meal logged, the user likely hasn't had lunch yet — reference lunch, not dinner. If 2+ meals are logged by afternoon, dinner framing is appropriate. Never assume what meal comes next based on time alone — always cross-reference with what's actually been logged.
+- MEAL TIMING AWARENESS: If "Food logged today" and "Last log at" are provided, use them to infer what meal is next. If it's afternoon and the last log was before 11am with only 1 log, the user likely hasn't had lunch yet — reference lunch, not dinner. If 2+ logs by afternoon, dinner framing is appropriate. Never assume what meal comes next based on time alone — always cross-reference with what's actually been logged. Remember that not every log is a meal — a protein bar or piece of fruit is a snack, not a meal.
 - HYDRATION: If "Water today" is provided and the user is under 50% of their goal by afternoon or evening, you may briefly note it when it adds genuine insight. Never make hydration the sole focus of a nudge unless everything else looks fine. Keep it to one clause, not a standalone message.
 - WEIGHT TREND: If "Weight trend" is provided, you may reference it when genuinely relevant. Keep it brief and only surface it when it adds real insight. Never make weight the focus of a nudge unprompted.
 - FOLLOW-THROUGH: If "Last nudge" and "Logged since then" are provided, use them. If the user logged meaningful food since the last nudge, you may briefly acknowledge it when relevant. If nothing was logged since, the previous situation is still live — reference it or pivot to a fresh angle. Never repeat the same message verbatim.
@@ -102,7 +102,7 @@ Suggestion rules:
   - morning (before 12pm) → breakfast foods only (eggs, oats, yogurt, smoothie ingredients, etc.)
   - afternoon 12–5pm → lunch or snack foods (wraps, salads, rice bowls, protein bars, fruit, etc.)
   - evening (after 5pm) → dinner foods (fish, meat, roasted veg, legumes, etc.)
-  - EXCEPTION: if "Meals logged today" shows 0 meals and it's afternoon, or if the nudge references a skipped first meal or morning, suggest breakfast-appropriate foods (eggs, oats, yogurt, etc.) regardless of time window — the user hasn't eaten yet
+  - EXCEPTION: if "Logs today" shows 0 and it's afternoon, or if the nudge references a skipped first meal or morning, suggest breakfast-appropriate foods (eggs, oats, yogurt, etc.) regardless of time window — the user hasn't eaten yet
   - If the nudge message itself references a specific meal (e.g. "first meal", "breakfast", "lunch", "dinner"), suggestions must match that meal, not the generic time window
 - Respect dietary restrictions when provided
 - No serving sizes or cooking instructions in suggestion names`;
@@ -132,7 +132,7 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
 
   const last7 = ctx.last7Days as Array<Record<string, unknown>> | undefined;
   if (last7?.length) {
-    lines.push(`Previous days, excluding today (day | date | kcal | protein | carbs | fat | meals count + first@HH last@HH + % cals before noon | workout). Days marked "no log" were not logged:`);
+    lines.push(`Previous days, excluding today (day | date | kcal | protein | carbs | fat | log count + first@HH last@HH + % cals before noon | workout). Days marked "no log" were not logged:`);
     last7.forEach((d) => {
       const types = (d.workoutTypes as string[] | undefined)?.join(", ");
       const wk = d.hasWorkout ? ` | workout ${d.workoutMinutes ?? "?"}min ${d.workoutIntensity ?? ""}${types ? ` [${types}]` : ""}` : "";
@@ -146,7 +146,7 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
         const pctAM = d.pctCaloriesAM as number | undefined;
         const fmt = (h: number) => { const hh = h % 12 || 12; return `${hh}${h < 12 ? "am" : "pm"}`; };
         const timing = mealCount != null
-          ? ` | ${mealCount} meal${mealCount !== 1 ? "s" : ""}${firstH != null ? ` first@${fmt(firstH)}` : ""}${lastH != null ? ` last@${fmt(lastH)}` : ""}${pctAM != null ? ` ${pctAM}% cals before noon` : ""}`
+          ? ` | ${mealCount} log${mealCount !== 1 ? "s" : ""}${firstH != null ? ` first@${fmt(firstH)}` : ""}${lastH != null ? ` last@${fmt(lastH)}` : ""}${pctAM != null ? ` ${pctAM}% cals before noon` : ""}`
           : "";
         lines.push(`  ${d.dayOfWeek} ${d.dateKey}: ${d.calories} kcal / ${d.protein}g protein / ${d.carbs}g carbs / ${d.fat}g fat${timing}${wk}`);
       }
@@ -180,8 +180,8 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
       }
       if (todayMeals?.length) {
         const mealStr = todayMeals.map((m) => `${m.time} ${m.name} (~${m.calories} kcal, ${m.protein}g protein)`).join(", ");
-        lines.push(`Meals logged today: ${mealStr}`);
-        if (lastMealTime) lines.push(`Last meal logged at: ${lastMealTime}. Meals logged today: ${mealsLoggedToday}`);
+        lines.push(`Food logged today: ${mealStr}`);
+        if (lastMealTime) lines.push(`Last log at: ${lastMealTime}. Logs today: ${mealsLoggedToday}`);
       }
     } else {
       lines.push(`Today so far (${activeWindow}): nothing logged yet`);
