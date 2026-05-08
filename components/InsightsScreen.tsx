@@ -786,7 +786,13 @@ export default function InsightsScreen() {
               const catNutrients = displayMicronutrients.filter((p) => category.nutrients.includes(p.name));
               return (
                 <div key={category.label} className={catIdx > 0 ? "mt-8" : ""}>
-                  {catIdx > 0 && <div className="h-[1.5px] bg-muted/30 mb-3" />}
+                  {catIdx > 0 && (
+                    <div className="relative flex items-center -mx-4 mb-3">
+                      <div className="w-[1.5px] h-[5px] bg-muted/30" />
+                      <div className="flex-1 h-[1.5px] bg-muted/30" />
+                      <div className="w-[1.5px] h-[5px] bg-muted/30" />
+                    </div>
+                  )}
                   <p className="text-[11px] uppercase tracking-wider text-ink/45 mb-3">{category.label}</p>
                   <div className="space-y-4">
                     {catNutrients.map((pattern) => {
