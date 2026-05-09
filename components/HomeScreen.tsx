@@ -1127,7 +1127,7 @@ export default function HomeScreen() {
   // Chains naturally: when failedMealPrompt is dismissed/submitted, the effect re-runs
   // and picks up the next stale meal.
   useEffect(() => {
-    if (loadingData || failedMealPrompt || isDemoMode) return;
+    if (loadingData || failedMealPrompt || isDemoMode || runTour) return;
     const STALE_MS = 2 * 60 * 1000;
     const stale = meals.meals.find(
       (m) => m.status === "processing" && Date.now() - m.ts > STALE_MS && !promptedStaleRef.current.has(m.id)
@@ -1136,7 +1136,7 @@ export default function HomeScreen() {
     promptedStaleRef.current.add(stale.id);
     setFailedMealText("");
     setFailedMealPrompt({ mealId: stale.id, thumb: stale.imageThumb ?? undefined });
-  }, [meals.meals, loadingData, failedMealPrompt, isDemoMode]);
+  }, [meals.meals, loadingData, failedMealPrompt, isDemoMode, runTour]);
 
   useEffect(() => {
     if (!user) return;
