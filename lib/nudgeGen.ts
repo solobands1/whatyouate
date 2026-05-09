@@ -30,9 +30,9 @@ GOAL-DIRECTION PRIORITY — apply before the numbered list:
 THEMATIC BLOCKING — most important mechanical rule:
 - CONTENT CHECK: Scan the text of the last 3 nudge messages for the words "protein", "energy", "calorie", "fat". If any word appears in 2 or more of those 3 messages — regardless of what type label was used — that theme is BLOCKED. This is about what the messages actually said, not the type names.
 - IMMEDIATE REPEAT RULE: The theme of the most recent nudge is ALWAYS blocked, regardless of how many times it appeared.
-- PERSISTENT THEME RULE: If `persistentThemes` is provided in context, those topics have appeared in 5 or more of the last 14 nudges. Treat them as harder-blocked than anything above. Do not surface them. Find a completely different angle or return null.
+- PERSISTENT THEME RULE: If persistentThemes is provided in context, those topics have appeared in 5 or more of the last 14 nudges. Treat them as harder-blocked than anything above. Do not surface them. Find a completely different angle or return null.
 - When a theme is blocked, skip until you find a genuinely different angle. If no good angle exists, return null.
-- If `contentBlockedThemes` is provided, those specific words appeared in 2+ of the last 3 messages. Do not write about those topics under any type label.
+- If contentBlockedThemes is provided, those specific words appeared in 2+ of the last 3 messages. Do not write about those topics under any type label.
 
 Nudge type priority:
 1. win — a specific, earned observation: a streak milestone, a clear improvement, something visibly working. Small wins count. Only fire if the data shows it.
