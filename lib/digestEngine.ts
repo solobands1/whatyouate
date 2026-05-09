@@ -10,6 +10,7 @@ export type NudgeType =
   | "micronutrient" | "fat_low" | "on_track"
   | "win" | "momentum" | "pattern" | "meal_timing" | "food_insight"
   | "variety" | "rest_day_fuel" | "workout_recovery" | "check_in"
+  | "habit" | "best_day" | "discovery"
   | "weekly_summary";
 
 export interface DailyNudgeSnapshot {
