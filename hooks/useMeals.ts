@@ -211,7 +211,7 @@ export function useMeals(
     setEditingMeal(meal);
   };
 
-  const handleUpdateMeal = async () => {
+  const handleUpdateMeal = async (portion?: "small" | "medium" | "large") => {
     if (!editingMeal || !user) return;
     try {
       setUpdatingMeal(true);
@@ -238,6 +238,8 @@ export function useMeals(
         ...(editingMeal.analysisJson as any),
         name: editForm.name,
         estimated_ranges: ranges,
+        original_ranges: (editingMeal.analysisJson as any).original_ranges ?? editingMeal.analysisJson.estimated_ranges,
+        portion: portion ?? "medium",
       };
 
       await updateMeal(editingMeal.id, updatedAnalysis as any, { userCorrection: editForm.name }, user?.id);
