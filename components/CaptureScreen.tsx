@@ -57,6 +57,16 @@ export default function CaptureScreen() {
   const [confirmingTime, setConfirmingTime] = useState(false);
   const [analyzed, setAnalyzed] = useState(false);
   const [hint, setHint] = useState("");
+  const [imgAspect, setImgAspect] = useState<number | null>(null);
+  const [kbOpen, setKbOpen] = useState(false);
+
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const onResize = () => setKbOpen(window.innerHeight - vv.height > 150);
+    vv.addEventListener("resize", onResize);
+    return () => vv.removeEventListener("resize", onResize);
+  }, []);
 
   useEffect(() => {
     if (loading) return;
@@ -356,14 +366,25 @@ export default function CaptureScreen() {
 
             {/* Photo + hint centered in remaining space */}
             <div className="flex-1 min-h-0 flex flex-col px-6">
-              <div className="relative mt-6 max-h-[55dvh] w-full max-w-sm mx-auto rounded-2xl border-2 border-primary/60 overflow-hidden shadow-[0_0_24px_rgba(111,168,255,0.18)]">
-                <img src={preview} alt="Preview" className="w-full object-cover" />
+              <div
+                className="relative mt-6 w-full max-w-sm mx-auto rounded-2xl border-2 border-primary/60 overflow-hidden shadow-[0_0_24px_rgba(111,168,255,0.18)]"
+                style={{ maxHeight: "55dvh", ...(imgAspect ? { aspectRatio: imgAspect } : {}) }}
+              >
+                <img
+                  src={preview}
+                  alt="Preview"
+                  className="w-full h-full object-cover"
+                  onLoad={(e) => {
+                    const { naturalWidth: w, naturalHeight: h } = e.currentTarget;
+                    if (w && h) setImgAspect(w / h);
+                  }}
+                />
               </div>
 
-              {/* Hint centered between photo bottom and screen bottom */}
+              {/* Hint — centered when keyboard hidden, pinned near keyboard when open */}
               <div
-                className="flex-1 flex items-center"
-                style={{ paddingBottom: "max(calc(env(safe-area-inset-bottom, 0px) + 20px), 44px)" }}
+                className={`flex-1 flex ${kbOpen ? "items-end" : "items-center"}`}
+                style={{ paddingBottom: kbOpen ? "12px" : "max(calc(env(safe-area-inset-bottom, 0px) + 20px), 44px)" }}
               >
                 <div className="max-w-sm mx-auto w-full flex flex-col gap-3">
                   <div>
