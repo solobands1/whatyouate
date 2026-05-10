@@ -2450,23 +2450,14 @@ export default function HomeScreen() {
                       >
                         Try again
                       </button>
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          className="rounded-xl border border-ink/10 bg-white px-3 py-2 text-xs font-semibold text-ink/70 transition hover:bg-ink/5"
-                          onClick={() => { meals.setEditingMeal(null); setEditRecents(false); setStreakSaverMode(false); }}
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          type="button"
-                          className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
-                          onClick={meals.confirmManualMeal}
-                          disabled={meals.updatingMeal}
-                        >
-                          {meals.updatingMeal ? "Adding…" : "Add"}
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
+                        onClick={meals.confirmManualMeal}
+                        disabled={meals.updatingMeal}
+                      >
+                        {meals.updatingMeal ? "Adding…" : "Add"}
+                      </button>
                     </div>
                   </>
                 )}
