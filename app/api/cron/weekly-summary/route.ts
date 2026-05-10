@@ -20,6 +20,13 @@ function getUserLocalHour(timezoneOffsetMinutes: number | undefined): number {
   return Math.floor(((utcMinutes - offset) + 1440) % 1440 / 60);
 }
 
+function getUserLocalDayOfWeek(timezoneOffsetMinutes: number | undefined): number {
+  const now = new Date();
+  const utcTotalMinutes = now.getUTCDay() * 1440 + now.getUTCHours() * 60 + now.getUTCMinutes();
+  const localTotalMinutes = utcTotalMinutes - (timezoneOffsetMinutes ?? 0);
+  return Math.floor(((localTotalMinutes % (7 * 1440)) + 7 * 1440) % (7 * 1440) / 1440);
+}
+
 function mapMealRow(row: Record<string, unknown>): MealLog | null {
   const analysis = row.analysis_json as Record<string, unknown> | null;
   if (!analysis?.estimated_ranges) return null;
@@ -198,7 +205,8 @@ export async function GET(req: Request) {
     try {
       const tzOffset = timezoneByUser.get(userId);
       const localHour = getUserLocalHour(tzOffset);
-      if (localHour !== 10) continue;
+      const localDayOfWeek = getUserLocalDayOfWeek(tzOffset);
+      if (localDayOfWeek !== 0 || localHour !== 10) continue; // Sundays at 10am only
 
       // Only send once per week — check for existing weekly_summary in past 7 days
       const { data: existingWeeklySummary } = await supabase
