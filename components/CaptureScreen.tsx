@@ -373,7 +373,7 @@ export default function CaptureScreen() {
                   src={preview}
                   alt="Preview"
                   className="block"
-                  style={{ maxWidth: "calc(100vw - 48px)", maxHeight: "55dvh", transition: "max-height 0.25s ease-out" }}
+                  style={{ maxWidth: "calc(100vw - 48px)", maxHeight: kbOpen ? "44dvh" : "55dvh", transition: "max-height 0.25s ease-out" }}
                 />
               </div>
 
