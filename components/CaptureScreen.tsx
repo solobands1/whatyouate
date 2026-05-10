@@ -368,12 +368,15 @@ export default function CaptureScreen() {
 
             {/* Photo + hint centered in remaining space */}
             <div className="flex-1 min-h-0 flex flex-col px-6">
-              <div className="relative mt-6 mx-auto rounded-2xl border-2 border-primary/60 overflow-hidden shadow-[0_0_24px_rgba(111,168,255,0.18)]">
+              <div
+                className="relative mt-6 mx-auto rounded-2xl border-2 border-primary/60 overflow-hidden shadow-[0_0_24px_rgba(111,168,255,0.18)]"
+                style={{ marginBottom: kbOpen ? "12px" : "0px", transition: "margin-bottom 0.25s ease-out" }}
+              >
                 <img
                   src={preview}
                   alt="Preview"
                   className="block"
-                  style={{ maxWidth: "calc(100vw - 48px)", maxHeight: kbOpen ? "44dvh" : "55dvh", transition: "max-height 0.25s ease-out" }}
+                  style={{ maxWidth: "calc(100vw - 48px)", maxHeight: "55dvh", transition: "max-height 0.25s ease-out" }}
                 />
               </div>
 
