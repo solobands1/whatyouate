@@ -391,7 +391,7 @@ export default function CaptureScreen() {
                       placeholder="e.g. Veggie Burger, Turkey Sandwich"
                       className="w-full rounded-xl border border-primary/40 bg-white px-4 py-3 text-sm text-ink/80 placeholder:text-ink/35 focus:outline-none focus:ring-1 focus:ring-primary/50"
                     />
-                    <p className="mt-1.5 text-xs text-ink/40 px-1">Help your food get properly identified with a hint</p>
+                    <p className="mt-1.5 text-xs text-ink/40 text-center tracking-wide uppercase">Help your food get properly identified with a hint</p>
                   </div>
                   <button
                     type="button"
