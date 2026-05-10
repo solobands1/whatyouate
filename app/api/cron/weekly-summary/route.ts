@@ -152,11 +152,11 @@ async function generateWeeklySummary(ctx: Record<string, unknown>): Promise<{ me
     }
     if (!parsed.message || typeof parsed.message !== "string") return null;
 
-    // Strip em-dashes and trim to 120 words
+    // Strip em-dashes and trim to 80 words
     parsed.message = (parsed.message as string).replace(/\s*—\s*/g, " ").replace(/\s+/g, " ").trim();
     const words = (parsed.message as string).split(/\s+/);
-    if (words.length > 120) {
-      parsed.message = words.slice(0, 120).join(" ").replace(/[,;]$/, "") + ".";
+    if (words.length > 80) {
+      parsed.message = words.slice(0, 80).join(" ").replace(/[,;]$/, "") + ".";
     }
 
     return sanitizeNudgeFields(parsed) as { message: string };
