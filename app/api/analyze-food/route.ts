@@ -54,10 +54,10 @@ async function analyzeWithOpenAI(imageBase64: string, model: string, apiKey: str
           {
             role: "user",
             content: [
-              { type: "text", text: "Analyze this food photo and respond with JSON only." },
-              ...(hints ? [{ type: "text", text: `Clarification: ${hints}.` }] : []),
+              ...(hints ? [{ type: "text", text: `The person eating this says: "${hints}". Treat this as authoritative about what the food is — the item types, proteins, varieties, and counts. Use the photo to estimate portion sizes and identify any visible additions not mentioned in the hint.` }] : []),
               { type: "image_url", image_url: { url: imageBase64 } },
-              ...(packaging ? [{ type: "image_url", image_url: { url: packaging } }] : [])
+              ...(packaging ? [{ type: "image_url", image_url: { url: packaging } }] : []),
+              { type: "text", text: "Analyze this food photo and respond with JSON only." }
             ]
           }
         ],
@@ -84,16 +84,15 @@ async function analyzeWithOpenAI(imageBase64: string, model: string, apiKey: str
 }
 
 async function analyzeWithAnthropic(imageBase64: string, model: string, apiKey: string, hints?: string, packaging?: string) {
-  const content: any[] = [
-    { type: "text", text: "Analyze this food photo and respond with JSON only." }
-  ];
+  const content: any[] = [];
   if (hints) {
-    content.push({ type: "text", text: `Clarification: ${hints}.` });
+    content.push({ type: "text", text: `The person eating this says: "${hints}". Treat this as authoritative about what the food is — the item types, proteins, varieties, and counts. Use the photo to estimate portion sizes and identify any visible additions not mentioned in the hint.` });
   }
   content.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: imageBase64.split(",")[1] ?? "" } });
   if (packaging) {
     content.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: packaging.split(",")[1] ?? "" } });
   }
+  content.push({ type: "text", text: "Analyze this food photo and respond with JSON only." });
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 25_000);
   try {

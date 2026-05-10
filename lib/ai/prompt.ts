@@ -125,7 +125,11 @@ CONFIDENCE
 
 ADDITIONAL CONTEXT
 - If a packaging image is provided, use it to infer brand or serving size.
-- If clarification hints are provided, use them to refine what you see in the photo — do not ignore the image. The hint corrects or clarifies the protein, preparation, or variety (e.g. "turkey" on a taco photo means ground turkey tacos, not a replacement for the whole meal). Synthesize the hint with the visual: keep all visible components (toppings, sides, bread, etc.) and let the hint sharpen the name and macros.
+- If the user has identified what the meal is, treat it as ground truth about food identity. The photo confirms portion sizes and shows visible additions not mentioned. Apply the hint based on its format:
+  - Protein or variety only (e.g. "chicken", "birria beef"): apply to the item(s) visible in the photo — update the name and recalculate macros for that protein type.
+  - Item counts + types (e.g. "one chicken, one chorizo, one birria"): treat each as a distinct item. Estimate the portion weight for each individually based on typical size, calculate macros for each, then sum them for the total.
+  - Full description (e.g. "grilled salmon no sauce, steamed broccoli on the side"): trust the description as ground truth. Use the photo only to confirm portion sizes.
+  - Never add items not visible in the photo AND not mentioned. Never contradict what the user stated.
 `;
 
 export const TEXT_ANALYSIS_PROMPT = `You are a calm, non-judgmental food nutrition estimator.
