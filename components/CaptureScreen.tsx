@@ -356,7 +356,7 @@ export default function CaptureScreen() {
 
             {/* Photo + hint centered in remaining space */}
             <div className="flex-1 min-h-0 flex flex-col px-6">
-              <div className="relative max-h-[55dvh] w-full max-w-sm mx-auto rounded-2xl border-2 border-primary/60 overflow-hidden shadow-[0_0_24px_rgba(111,168,255,0.18)]">
+              <div className="relative mt-6 max-h-[55dvh] w-full max-w-sm mx-auto rounded-2xl border-2 border-primary/60 overflow-hidden shadow-[0_0_24px_rgba(111,168,255,0.18)]">
                 <img src={preview} alt="Preview" className="w-full object-cover" />
               </div>
 
