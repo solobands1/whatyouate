@@ -354,36 +354,36 @@ export default function CaptureScreen() {
               </button>
             </div>
 
-            {/* Photo fills middle */}
-            <div className="flex-1 px-6 min-h-0 overflow-hidden pb-3">
-              <div className="relative max-h-[55dvh] max-w-sm mx-auto rounded-2xl border-2 border-primary/60 overflow-hidden shadow-[0_0_24px_rgba(111,168,255,0.18)]">
+            {/* Photo + hint centered in remaining space */}
+            <div className="flex-1 min-h-0 flex flex-col px-6">
+              <div className="relative max-h-[55dvh] w-full max-w-sm mx-auto rounded-2xl border-2 border-primary/60 overflow-hidden shadow-[0_0_24px_rgba(111,168,255,0.18)]">
                 <img src={preview} alt="Preview" className="w-full object-cover" />
               </div>
-            </div>
 
-            {/* Hint + Analyze anchored to bottom */}
-            <div
-              className="flex-shrink-0 px-6 pt-4"
-              style={{ paddingBottom: "max(calc(env(safe-area-inset-bottom, 0px) + 20px), 44px)" }}
-            >
-              <div className="max-w-sm mx-auto flex flex-col gap-3">
-                <div>
-                  <input
-                    type="text"
-                    value={hint}
-                    onChange={(e) => setHint(e.target.value)}
-                    placeholder="e.g. Veggie Burger, Turkey Sandwich"
-                    className="w-full rounded-xl border border-primary/40 bg-white px-4 py-3 text-sm text-ink/80 placeholder:text-ink/35 focus:outline-none focus:ring-1 focus:ring-primary/50"
-                  />
-                  <p className="mt-1.5 text-xs text-ink/40 px-1">Help your food get properly identified with a hint</p>
+              {/* Hint centered between photo bottom and screen bottom */}
+              <div
+                className="flex-1 flex items-center"
+                style={{ paddingBottom: "max(calc(env(safe-area-inset-bottom, 0px) + 20px), 44px)" }}
+              >
+                <div className="max-w-sm mx-auto w-full flex flex-col gap-3">
+                  <div>
+                    <input
+                      type="text"
+                      value={hint}
+                      onChange={(e) => setHint(e.target.value)}
+                      placeholder="e.g. Veggie Burger, Turkey Sandwich"
+                      className="w-full rounded-xl border border-primary/40 bg-white px-4 py-3 text-sm text-ink/80 placeholder:text-ink/35 focus:outline-none focus:ring-1 focus:ring-primary/50"
+                    />
+                    <p className="mt-1.5 text-xs text-ink/40 px-1">Help your food get properly identified with a hint</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] transition hover:bg-primary/90 active:scale-[0.98]"
+                    onClick={handleAnalyzeTap}
+                  >
+                    Analyze
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] transition hover:bg-primary/90 active:scale-[0.98]"
-                  onClick={handleAnalyzeTap}
-                >
-                  Analyze
-                </button>
               </div>
             </div>
           </div>
