@@ -329,11 +329,12 @@ export async function GET(req: Request) {
       if (waterCount >= 2) blockedNudgeTypes.push("check_in");
 
       // Content-level theme scan — block repeated topics regardless of type label
-      const THEME_KEYWORDS = ["protein", "energy", "calorie", "fat", "water", "hydrat"];
-      const last3Messages = (nudgesRes.data ?? []).slice(0, 3).map((n: { message: string }) => n.message?.toLowerCase() ?? "");
+      // Day names included so a single day (e.g. "Saturday") can't dominate consecutive nudges
+      const THEME_KEYWORDS = ["protein", "energy", "calorie", "fat", "water", "hydrat", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+      const last5Messages = (nudgesRes.data ?? []).slice(0, 5).map((n: { message: string }) => n.message?.toLowerCase() ?? "");
       const contentBlockedThemes: string[] = [];
       for (const keyword of THEME_KEYWORDS) {
-        const count = last3Messages.filter((m: string) => m.includes(keyword)).length;
+        const count = last5Messages.filter((m: string) => m.includes(keyword)).length;
         if (count >= 2) contentBlockedThemes.push(keyword);
       }
 
@@ -392,6 +393,25 @@ export async function GET(req: Request) {
       // Hard-enforce only truly real-time types
       if (nudge?.type === "meal_timing") nudge = null;
       if (nudge && !isEvening && nudge.type === "check_in" && !sparseLogs) nudge = null;
+
+      // Hard-enforce content blocking — AI sometimes ignores prompt instructions when data is compelling
+      if (nudge?.message) {
+        const msgLower = nudge.message.toLowerCase();
+        const allBlocked = [...new Set([...contentBlockedThemes, ...persistentThemes])];
+        if (allBlocked.some((t) => msgLower.includes(t))) nudge = null;
+      }
+
+      // Hard-enforce win/momentum/best_day — reject if deficit or correction language is present
+      if (nudge && ["win", "momentum", "best_day"].includes(nudge.type)) {
+        const msgLower = nudge.message.toLowerCase();
+        if (/\b(but|still|however|though|remaining|short|gap)\b|protein.{0,10}(low|still|gap)|calorie.{0,10}(low|short|remaining)/.test(msgLower)) nudge = null;
+      }
+
+      // Prevent consecutive streak openers (e.g. "54 days..." two nudges in a row)
+      if (nudge?.message) {
+        const lastMsg = ((nudgesRes.data as Array<{ message: string }> | null)?.[0]?.message ?? "").toLowerCase();
+        if (/^\d+\s+days?\b/i.test(nudge.message) && /^\d+\s+days?\b/i.test(lastMsg)) nudge = null;
+      }
 
       // Discovery fallback — when nothing meaningful to say, send something warm or curious
       if (!nudge?.message) {
