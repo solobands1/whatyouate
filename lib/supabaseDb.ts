@@ -355,7 +355,7 @@ export async function updateMealImageUrl(mealId: string, userId: string, imageUr
   }
 }
 
-export async function addMeal(userId: string, analysis: MealAnalysis, imageOptional?: string, corrections?: any) {
+export async function addMeal(userId: string, analysis: MealAnalysis, imageOptional?: string, corrections?: any, initialStatus: "processing" | "done" = "processing") {
   if (useMemory) {
     ensureLocalLoaded();
     const meal: MealLog = {
@@ -382,7 +382,7 @@ export async function addMeal(userId: string, analysis: MealAnalysis, imageOptio
     protein: approxFromRange(ranges.protein_g_min, ranges.protein_g_max),
     carbs: approxFromRange(ranges.carbs_g_min, ranges.carbs_g_max),
     fat: approxFromRange(ranges.fat_g_min, ranges.fat_g_max),
-    status: "processing"
+    status: initialStatus
   };
   const { data, error } = await supabase.from("meals").insert(payload).select("*").single();
   if (error) {

@@ -1002,9 +1002,11 @@ export default function HomeScreen() {
       // remounts while awaits are in flight. Cleared only if addMeal itself fails.
       markDailySuppsLoggedToday(user.id);
       try {
-        const created = await addMeal(user.id, analysis);
+        // Insert directly as "done" — supplements are static, no AI analysis needed.
+        // Avoids the addMeal("processing") → updateMeal("done") two-step that could
+        // leave the meal stuck in "processing" and trigger the failed-analysis recovery.
+        const created = await addMeal(user.id, analysis, undefined, undefined, "done");
         if (created?.id) {
-          await updateMeal(created.id, analysis, undefined, user.id);
           // Stamp to 12:01am today so it anchors to the start of the day
           const midnight = new Date();
           midnight.setHours(0, 1, 0, 0);
