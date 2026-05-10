@@ -373,14 +373,14 @@ export default function CaptureScreen() {
                   src={preview}
                   alt="Preview"
                   className="block"
-                  style={{ maxWidth: "calc(100vw - 48px)", maxHeight: "55dvh" }}
+                  style={{ maxWidth: "calc(100vw - 48px)", maxHeight: "55dvh", transition: "max-height 0.25s ease-out" }}
                 />
               </div>
 
               {/* Hint — centered when keyboard hidden, pinned near keyboard when open */}
               <div
                 className="flex-1 flex items-center"
-                style={{ paddingBottom: kbOpen ? "0px" : "max(calc(env(safe-area-inset-bottom, 0px) + 20px), 44px)" }}
+                style={{ paddingBottom: kbOpen ? "0px" : "max(calc(env(safe-area-inset-bottom, 0px) + 20px), 44px)", transition: "padding-bottom 0.25s ease-out" }}
               >
                 <div className="max-w-sm mx-auto w-full flex flex-col gap-3">
                   <div>
