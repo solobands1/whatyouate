@@ -221,12 +221,15 @@ export async function GET(req: Request) {
       const isPro = await checkProEntitlement(userId);
       if (!isPro) continue;
 
-      const [mealsRes, workoutsRes, profileRes, feelRes, weightRes] = await Promise.all([
+      const sevenDaysAgoDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      const [mealsRes, workoutsRes, profileRes, feelRes, weightRes, stepsRes, sleepRes] = await Promise.all([
         supabase.from("meals").select("*").eq("user_id", userId).gte("created_at", sixtyDaysAgo).order("ts", { ascending: false }),
         supabase.from("workouts").select("*").eq("user_id", userId).gte("created_at", sixtyDaysAgo),
         supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle(),
         supabase.from("feel_logs").select("ts, tag").eq("user_id", userId).order("ts", { ascending: false }).limit(10),
         supabase.from("weight_logs").select("weight_kg, logged_at").eq("user_id", userId).order("logged_at", { ascending: false }).limit(20),
+        supabase.from("step_logs").select("date, steps").eq("user_id", userId).gte("date", sevenDaysAgoDate),
+        supabase.from("sleep_logs").select("date, hours").eq("user_id", userId).gte("date", sevenDaysAgoDate).order("date", { ascending: false }),
       ]);
 
       if (!profileRes.data) continue;
@@ -254,6 +257,17 @@ export async function GET(req: Request) {
         meals, workouts, profile, [], [],
         recentFeelLogs, undefined, weightRes.data ?? [], undefined, timezoneOffset
       ) as unknown as Record<string, unknown>;
+
+      const stepLogs = (stepsRes.data ?? []) as Array<{ date: string; steps: number }>;
+      if (stepLogs.length > 0) {
+        ctx.avgDailySteps = Math.round(stepLogs.reduce((s, r) => s + r.steps, 0) / stepLogs.length);
+        ctx.activeDaysThisWeek = stepLogs.filter((r) => r.steps >= 5000).length;
+      }
+      const sleepLogs = (sleepRes.data ?? []) as Array<{ date: string; hours: number }>;
+      if (sleepLogs.length > 0) {
+        ctx.avgSleepHours = Math.round(sleepLogs.reduce((s, r) => s + r.hours, 0) / sleepLogs.length * 10) / 10;
+        ctx.shortNightsThisWeek = sleepLogs.filter((r) => r.hours < 6).length;
+      }
 
       const nudge = await generateWeeklySummary(ctx);
       if (!nudge?.message) continue;

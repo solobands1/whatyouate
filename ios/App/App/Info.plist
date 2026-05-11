@@ -53,5 +53,9 @@
 	<string>WhatYouAte sends daily coach nudges and logging reminders to help you stay consistent.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>NSHealthShareUsageDescription</key>
+	<string>WhatYouAte reads health data to provide better nutrition insights.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>WhatYouAte writes your meal nutrition data to Apple Health.</string>
 </dict>
 </plist>

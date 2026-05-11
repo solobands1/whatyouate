@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { buildSmartNudgeContext } from "../../../../lib/digestEngine";
-import { buildSmartPrompt, buildDiscoveryPrompt, sanitizeNudgeFields, SMART_NUDGE_SYSTEM_PROMPT, DISCOVERY_SYSTEM_PROMPT } from "../../../../lib/nudgeGen";
+import { buildSmartPrompt, sanitizeNudgeFields, SMART_NUDGE_SYSTEM_PROMPT } from "../../../../lib/nudgeGen";
 import { sendPush } from "../../../../lib/apns";
 import type { MealLog, WorkoutSession, UserProfile, SupplementEntry } from "../../../../lib/types";
 
@@ -200,48 +200,6 @@ async function generateNudge(ctx: Record<string, unknown>): Promise<{ message: s
   }
 }
 
-async function generateDiscovery(ctx: Record<string, unknown>): Promise<{ message: string; type: string } | null> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return null;
-  const prompt = buildDiscoveryPrompt(ctx);
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 20_000);
-  try {
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      signal: controller.signal,
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-6",
-        max_tokens: 150,
-        temperature: 0.9,
-        system: DISCOVERY_SYSTEM_PROMPT,
-        messages: [{ role: "user", content: prompt }],
-      }),
-    });
-    if (!response.ok) return null;
-    const result = await response.json();
-    const raw = (result.content?.[0]?.text ?? "").trim();
-    const jsonMatch = raw.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return null;
-    let parsed: Record<string, unknown>;
-    try { parsed = JSON.parse(jsonMatch[0]); } catch { return null; }
-    if (!parsed.message || typeof parsed.message !== "string") return null;
-    parsed.message = (parsed.message as string).replace(/\s*—\s*/g, " ").replace(/\s+/g, " ").trim();
-    const words = (parsed.message as string).split(/\s+/);
-    if (words.length > 50) parsed.message = words.slice(0, 50).join(" ").replace(/[,;]$/, "") + ".";
-    return sanitizeNudgeFields(parsed) as { message: string; type: string };
-  } catch (err) {
-    console.error("[cron/nudge] generateDiscovery error:", err);
-    return null;
-  } finally {
-    clearTimeout(timeoutId);
-  }
-}
 
 export async function GET(req: Request) {
   const auth = req.headers.get("authorization");
@@ -290,13 +248,16 @@ export async function GET(req: Request) {
       const isPro = await checkProEntitlement(userId);
       if (!isPro) continue;
 
-      const [mealsRes, workoutsRes, profileRes, nudgesRes, feelRes, weightRes] = await Promise.all([
+      const sevenDaysAgoDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      const [mealsRes, workoutsRes, profileRes, nudgesRes, feelRes, weightRes, stepsRes, sleepRes] = await Promise.all([
         supabase.from("meals").select("*").eq("user_id", userId).gte("created_at", sixtyDaysAgo).order("ts", { ascending: false }),
         supabase.from("workouts").select("*").eq("user_id", userId).gte("created_at", sixtyDaysAgo),
         supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle(),
         supabase.from("nudges").select("type, message, created_at, suggestions").eq("user_id", userId).order("created_at", { ascending: false }).limit(14),
         supabase.from("feel_logs").select("ts, tag").eq("user_id", userId).order("ts", { ascending: false }).limit(10),
         supabase.from("weight_logs").select("weight_kg, logged_at").eq("user_id", userId).order("logged_at", { ascending: false }).limit(20),
+        supabase.from("step_logs").select("date, steps").eq("user_id", userId).gte("date", sevenDaysAgoDate),
+        supabase.from("sleep_logs").select("date, hours").eq("user_id", userId).gte("date", sevenDaysAgoDate).order("date", { ascending: false }),
       ]);
 
       if (!profileRes.data) continue;
@@ -328,24 +289,6 @@ export async function GET(req: Request) {
       const waterCount = last2Messages.filter((m: string) => m.includes("water") || m.includes("hydrat")).length;
       if (waterCount >= 2) blockedNudgeTypes.push("check_in");
 
-      // Content-level theme scan — block repeated topics regardless of type label
-      // Day names included so a single day (e.g. "Saturday") can't dominate consecutive nudges
-      const THEME_KEYWORDS = ["protein", "energy", "calorie", "fat", "water", "hydrat", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
-      const last5Messages = (nudgesRes.data ?? []).slice(0, 5).map((n: { message: string }) => n.message?.toLowerCase() ?? "");
-      const contentBlockedThemes: string[] = [];
-      for (const keyword of THEME_KEYWORDS) {
-        const count = last5Messages.filter((m: string) => m.includes(keyword)).length;
-        if (count >= 2) contentBlockedThemes.push(keyword);
-      }
-
-      // Persistent theme injection — topics appearing in 5+ of last 14 nudges
-      const allMessages = (nudgesRes.data ?? []).map((n: { message: string }) => n.message?.toLowerCase() ?? "");
-      const persistentThemes: string[] = [];
-      for (const keyword of THEME_KEYWORDS) {
-        const count = allMessages.filter((m: string) => m.includes(keyword)).length;
-        if (count >= 5) persistentThemes.push(keyword);
-      }
-
       const timezoneOffset = (profileRes.data as Record<string, unknown>).timezone_offset_minutes as number | undefined;
 
       // Feel log staleness gate — strip energy correlations if most recent feel log is older than 5 days
@@ -357,8 +300,23 @@ export async function GET(req: Request) {
         freshFeelLogs, lastNudgeRecord, weightRes.data ?? [], undefined, timezoneOffset
       ) as unknown as Record<string, unknown>;
       if (recentSuggestedFoods.length) ctx.recentSuggestedFoods = recentSuggestedFoods;
-      if (contentBlockedThemes.length) ctx.contentBlockedThemes = contentBlockedThemes;
-      if (persistentThemes.length) ctx.persistentThemes = persistentThemes;
+
+      const stepLogs = (stepsRes.data ?? []) as Array<{ date: string; steps: number }>;
+      if (stepLogs.length > 0) {
+        const avgDailySteps = Math.round(stepLogs.reduce((s, r) => s + r.steps, 0) / stepLogs.length);
+        const activeDays = stepLogs.filter((r) => r.steps >= 5000).length;
+        ctx.avgDailySteps = avgDailySteps;
+        ctx.activeDaysThisWeek = activeDays;
+      }
+
+      const sleepLogs = (sleepRes.data ?? []) as Array<{ date: string; hours: number }>;
+      if (sleepLogs.length > 0) {
+        const avgSleepHours = Math.round(sleepLogs.reduce((s, r) => s + r.hours, 0) / sleepLogs.length * 10) / 10;
+        const shortNights = sleepLogs.filter((r) => r.hours < 6).length;
+        ctx.avgSleepHours = avgSleepHours;
+        if (shortNights > 0) ctx.shortNightsThisWeek = shortNights;
+        if (sleepLogs[0]) ctx.lastNightSleepHours = sleepLogs[0].hours;
+      }
 
       const isEvening = isEveningWindow;
       const sparseLogs = (ctx.daysSinceLastLog as number | undefined ?? 0) >= 3;
@@ -394,13 +352,6 @@ export async function GET(req: Request) {
       if (nudge?.type === "meal_timing") nudge = null;
       if (nudge && !isEvening && nudge.type === "check_in" && !sparseLogs) nudge = null;
 
-      // Hard-enforce content blocking — AI sometimes ignores prompt instructions when data is compelling
-      if (nudge?.message) {
-        const msgLower = nudge.message.toLowerCase();
-        const allBlocked = [...new Set([...contentBlockedThemes, ...persistentThemes])];
-        if (allBlocked.some((t) => msgLower.includes(t))) nudge = null;
-      }
-
       // Hard-enforce win/momentum/best_day — reject if deficit or correction language is present
       if (nudge && ["win", "momentum", "best_day"].includes(nudge.type)) {
         const msgLower = nudge.message.toLowerCase();
@@ -413,23 +364,7 @@ export async function GET(req: Request) {
         if (/^\d+\s+days?\b/i.test(nudge.message) && /^\d+\s+days?\b/i.test(lastMsg)) nudge = null;
       }
 
-      // Discovery fallback — when nothing meaningful to say, send something warm or curious
-      if (!nudge?.message) {
-        const discovery = await generateDiscovery(ctx);
-        if (!discovery?.message) continue;
-        await supabase.from("nudges").insert({
-          user_id: userId,
-          type: "discovery",
-          message: discovery.message,
-          why: null,
-          action: null,
-          suggestions: null,
-          created_at: nowISO,
-        });
-        pendingPushes.push({ userId, message: discovery.message });
-        processed++;
-        continue;
-      }
+      if (!nudge?.message) continue;
 
       await supabase.from("nudges").insert({
         user_id: userId,

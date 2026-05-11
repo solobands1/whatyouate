@@ -82,6 +82,8 @@ Rules:
 - MEAL TIMING AWARENESS: cross-reference last log time and count before inferring what meal comes next. Not every log is a meal.
 - HYDRATION: note water only as a clause when genuinely relevant, never the sole focus.
 - WEIGHT TREND: reference only when it adds real insight, never as the focus.
+- ACTIVITY CONTEXT: If avgDailySteps or activeDaysThisWeek is present, use it only to inform activity-aware framing — tone, rest_day_fuel, workout_recovery, and pattern observations. Do NOT use steps to adjust calorie targets, suggest eating more, or calculate burn. High steps (8,000+) signals an active week. Low steps (<4,000) signals a rest pattern. Mention it naturally: "you've been moving a lot this week" or "looks like a quieter week on movement." Never lead with step counts as the main message.
+- SLEEP CONTEXT: If avgSleepHours, shortNightsThisWeek, or lastNightSleepHours is present, use it only for recovery and behavioral framing. Under 6 hours is short. Under 7 is below average. Do NOT use sleep data to adjust calorie targets or recommend eating more. Use it to explain cravings, energy patterns, or recovery naturally — "a few short nights this week tend to drive stronger cravings" or "when sleep is off, hunger signals can feel louder." Only surface sleep when it adds genuine insight and connects to something else in the data. Never lead with sleep as the main observation on its own.
 - FOLLOW-THROUGH: if last nudge and logged-since are provided, use them. Never repeat the same message verbatim.
 - If nothing meaningful stands out, return null.
 
@@ -111,39 +113,6 @@ Suggestion rules:
 - Match time of day strictly: morning → breakfast foods, afternoon → lunch/snack, evening → dinner.
 - EXCEPTION: if nothing logged yet and it's afternoon, suggest breakfast foods.
 - Respect dietary restrictions. No serving sizes or cooking instructions.`;
-
-export const DISCOVERY_SYSTEM_PROMPT = `CRITICAL: Respond ONLY with valid JSON. No analysis, no reasoning, no text outside the JSON object.
-
-You are writing a short, warm message for someone who has been logging their food. This is not a coaching nudge. There is no deficit to address, no pattern to fix. It's just something worth saying — either because they deserve to hear it, or because something about food or nutrition is genuinely interesting.
-
-Two options — pick whichever feels more honest given the user's context:
-
-OPTION A — Encouragement: If the user has a meaningful logging streak or has been showing up consistently, write something that makes the number or the habit feel real. Not generic praise. Something specific. "53 days is where it stops feeling like a challenge and starts feeling like just who you are." Or for quieter consistency: "Showing up when it doesn't feel like a big deal is actually the version that matters most."
-
-OPTION B — Food curiosity: A genuinely interesting food, nutrition, or body science fact loosely tied to the user's goal or recent eating. Not a tip. Not advice. Something they might not know that makes food feel a little more interesting. Specific and surprising, not textbook.
-
-VOICE:
-- Warm. Conversational. Like a text from someone who was thinking about you.
-- Fragments and hedges are fine. Varied rhythm. No clinical language.
-- 2 sentences max, 50 words max.
-- No calls to action. No directives. No deficit mentions.
-- No clichés: "crush it", "you've got this", "amazing", "great job", "keep it up"
-- No em dashes (— or —). Use commas or separate sentences.
-
-Return ONLY valid JSON:
-{"message": "...", "type": "discovery", "why": "", "action": "", "suggestions": []}`;
-
-export function buildDiscoveryPrompt(ctx: Record<string, unknown>): string {
-  const lines: string[] = [];
-  const profile = ctx.profile as Record<string, unknown> | null;
-  if (profile?.goalDirection) lines.push(`Goal: ${profile.goalDirection}`);
-  const streak = ctx.streak as number | undefined;
-  if (streak && streak > 1) lines.push(`Logging streak: ${streak} days`);
-  const foods = ctx.recentFoods as string[] | undefined;
-  if (foods?.length) lines.push(`Recent foods: ${foods.slice(0, 8).join(", ")}`);
-  lines.push(`\nWrite something warm and genuine — either a brief encouragement tied to their consistency, or an interesting food/nutrition fact connected to their goal or eating pattern.`);
-  return lines.join("\n");
-}
 
 export function buildSmartPrompt(ctx: Record<string, unknown>): string {
   const profile = ctx.profile as Record<string, unknown> | null;
@@ -375,9 +344,9 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
     : `Time of day: ${activeWindow}`;
   lines.push(`\nToday is ${todayDayOfWeek}. ${windowLine}`);
   if (nudgeIntentWindow === "morning") {
-    lines.push(`\nAnalyze the historical data above. What is the single most useful pattern, trend, or insight to set this person up for today? You MUST find something — with days of logged data, there is always a meaningful observation. Do NOT return null.`);
+    lines.push(`\nAnalyze the historical data above. What is the single most useful pattern, trend, or insight to set this person up for today? If nothing genuinely stands out in the data, return null.`);
   } else if (nudgeIntentWindow === "evening") {
-    lines.push(`\nAnalyze both today's data and the historical patterns above. What is the single most useful, specific observation about how today went or what to carry forward? You MUST find something. Do NOT return null.`);
+    lines.push(`\nAnalyze both today's data and the historical patterns above. What is the single most useful, specific observation about how today went or what to carry forward? If nothing genuinely stands out, return null.`);
   } else {
     lines.push(`\nAnalyze the data above. What is the single most useful, specific thing to tell this person right now? If nothing meaningful stands out, return null.`);
   }
@@ -422,6 +391,7 @@ RULES:
 - No clichés: "crush it", "you've got this", "fresh start", "amazing", "great job", "keep it up"
 - CRITICAL: Never use em dashes (— or —). Use commas or rewrite as separate sentences.
 - No percentages. Say "most days", "the one strong day", "almost every time" instead.
+- ACTIVITY AND SLEEP: If activity or sleep data is present, weave it in naturally only when it adds genuine insight — "an active week" or "a few short nights" as supporting color, never as the main beat. Never use steps or sleep to adjust calorie framing or suggest eating more.
 
 Return ONLY valid JSON:
 {"message": "..."}`;
@@ -479,7 +449,20 @@ export function buildWeeklySummaryPrompt(ctx: Record<string, unknown>): string {
     lines.push(`\nWeight trend: ${dir} ${Math.abs(wt.changeKg).toFixed(1)}kg over ${wt.daysSinceFirst} days (${wt.entryCount} weigh-ins)`);
   }
 
-  lines.push(`\nWrite a warm, reflective 100-120 word Sunday recap as one flowing paragraph. Three beats woven naturally together: acknowledge their consistency or effort, surface one standout pattern or observation, leave them with one thing to carry into the coming week. No food suggestions. No lists.`);
+  const avgSteps = ctx.avgDailySteps as number | undefined;
+  const activeDays = ctx.activeDaysThisWeek as number | undefined;
+  if (avgSteps != null) {
+    lines.push(`\nActivity (from Apple Health): avg ${avgSteps.toLocaleString()} steps/day${activeDays != null ? `, ${activeDays} active days (5k+ steps)` : ""}`);
+  }
+
+  const avgSleep = ctx.avgSleepHours as number | undefined;
+  const shortNights = ctx.shortNightsThisWeek as number | undefined;
+  if (avgSleep != null) {
+    lines.push(`Sleep (from Apple Health): avg ${avgSleep}h/night${shortNights ? `, ${shortNights} night${shortNights !== 1 ? "s" : ""} under 6h` : ""}`);
+  }
+
+  lines.push(`\nIMPORTANT: The calorie and protein numbers above are for your analysis only. Never quote any specific calorie or protein number in your message. Use relative language only: "strong day", "below average", "close to target", "more than usual", "the best day of the week".`);
+  lines.push(`\nWrite a warm, reflective Sunday recap. Three beats woven naturally together: acknowledge their consistency or effort, surface one standout pattern or observation, leave them with one thing to carry into the coming week. No food suggestions. No lists.`);
 
   return lines.join("\n");
 }

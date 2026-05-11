@@ -6,6 +6,7 @@ import AuthGate from "./AuthGate";
 import UpgradeModal from "./UpgradeModal";
 import ValueMomentSheet from "./ValueMomentSheet";
 import PushNotificationSetup from "./PushNotificationSetup";
+import HealthKitSetup from "./HealthKitSetup";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -15,6 +16,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         <UpgradeModal />
         <ValueMomentSheet />
         <PushNotificationSetup />
+        <HealthKitSetup />
       </AppDataProvider>
     </AuthProvider>
   );

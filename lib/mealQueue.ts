@@ -74,6 +74,7 @@ async function processNext() {
         detected_product: analysis.detected_product ?? null,
       });
       incrementFoodTextLogCount(normalizedName);
+
     }
 
     clearMealsCache(job.userId);
