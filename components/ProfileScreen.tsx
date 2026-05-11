@@ -1152,8 +1152,8 @@ export default function ProfileScreen() {
               </button>
             )}
             {healthKitShowSettings && healthKitStatus === "not_connected" && (
-              <div className="mt-2 flex items-center gap-2">
-                <p className="text-[11px] text-muted/60">No data found.</p>
+              <div className="mt-2 space-y-1">
+                <p className="text-[11px] text-muted/60">To enable: Settings &gt; Privacy &amp; Security &gt; Health &gt; WhatYouAte</p>
                 <button
                   type="button"
                   className="text-[11px] font-semibold text-primary/80 underline underline-offset-2 active:opacity-60"
