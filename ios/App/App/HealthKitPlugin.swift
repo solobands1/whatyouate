@@ -29,6 +29,15 @@ public class HealthKitPlugin: CAPPlugin {
         }
     }
 
+    @objc func openSettings(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            if let url = URL(string: UIApplication.openSettingsURLString) {
+                UIApplication.shared.open(url)
+            }
+        }
+        call.resolve()
+    }
+
     @objc func syncActivity(_ call: CAPPluginCall) {
         guard HKHealthStore.isHealthDataAvailable() else {
             call.resolve(["steps": [], "workouts": [], "sleep": []])

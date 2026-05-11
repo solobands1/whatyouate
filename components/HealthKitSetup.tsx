@@ -2,15 +2,17 @@
 
 import { useEffect } from "react";
 import { useAuth } from "./AuthProvider";
-import { requestHealthKitPermissions, syncHealthKitActivity } from "../lib/healthKit";
+import { syncHealthKitActivity } from "../lib/healthKit";
 
 export default function HealthKitSetup() {
   const { user } = useAuth();
 
   useEffect(() => {
     if (!user?.id) return;
-    requestHealthKitPermissions().then(() => {
-      syncHealthKitActivity(user.id);
+    syncHealthKitActivity(user.id).then((connected) => {
+      if (connected) {
+        localStorage.setItem(`wya_healthkit_connected_${user.id}`, "true");
+      }
     });
   }, [user?.id]);
 

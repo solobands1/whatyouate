@@ -8,6 +8,7 @@ interface HealthKitPlugin {
     workouts: Array<{ startTs: number; endTs: number; durationMin: number; type: string; activeCalories?: number }>;
     sleep: Array<{ date: string; hours: number }>;
   }>;
+  openSettings(): Promise<void>;
 }
 
 const HealthKit = registerPlugin<HealthKitPlugin>("HealthKit");
@@ -20,7 +21,19 @@ export async function requestHealthKitPermissions(): Promise<void> {
   }
 }
 
-export async function syncHealthKitActivity(userId: string): Promise<void> {
+export async function openHealthKitSettings(): Promise<void> {
+  try {
+    await HealthKit.openSettings();
+  } catch {}
+}
+
+export async function connectHealthKit(userId: string): Promise<boolean> {
+  await requestHealthKitPermissions();
+  return syncHealthKitActivity(userId);
+}
+
+// Returns true if any data came back — used as proxy for "connected and has data"
+export async function syncHealthKitActivity(userId: string): Promise<boolean> {
   try {
     const { steps, workouts, sleep } = await HealthKit.syncActivity();
 
@@ -78,7 +91,9 @@ export async function syncHealthKitActivity(userId: string): Promise<void> {
         );
       }
     }
+
+    return steps.length > 0 || workouts.length > 0 || sleep.length > 0;
   } catch {
-    // silent — never surface HealthKit errors to user
+    return false;
   }
 }

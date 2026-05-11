@@ -13,6 +13,7 @@ import { getDailySupplements, setDailySupplements, clearDailySuppsLoggedToday, c
 import { clearMealsCache } from "../lib/supabaseDb";
 import { notifyMealsUpdated } from "../lib/dataEvents";
 import { supabase } from "../lib/supabaseClient";
+import { connectHealthKit, openHealthKitSettings } from "../lib/healthKit";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
 import { useAuth } from "./AuthProvider";
@@ -103,6 +104,9 @@ export default function ProfileScreen() {
   const [editLastName, setEditLastName] = useState("");
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [healthKitStatus, setHealthKitStatus] = useState<"unknown" | "connected" | "not_connected">("unknown");
+  const [healthKitConnecting, setHealthKitConnecting] = useState(false);
+  const [healthKitShowSettings, setHealthKitShowSettings] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -129,6 +133,9 @@ export default function ProfileScreen() {
     if (!user || dataLoading || hasInitializedRef.current) return;
     hasInitializedRef.current = true;
     setLoadError(null);
+
+    const hkConnected = localStorage.getItem(`wya_healthkit_connected_${user.id}`);
+    setHealthKitStatus(hkConnected === "true" ? "connected" : "not_connected");
 
     const walkthroughKey = `wya_walkthrough_profile_${user.id}`;
     if (localStorage.getItem(walkthroughKey)) {
@@ -315,6 +322,21 @@ export default function ProfileScreen() {
     }
     setFirstName(first.trim());
     setLastName(last.trim());
+  };
+
+  const handleConnectHealthKit = async () => {
+    if (!user) return;
+    setHealthKitConnecting(true);
+    setHealthKitShowSettings(false);
+    const connected = await connectHealthKit(user.id);
+    if (connected) {
+      localStorage.setItem(`wya_healthkit_connected_${user.id}`, "true");
+      setHealthKitStatus("connected");
+    } else {
+      setHealthKitStatus("not_connected");
+      setHealthKitShowSettings(true);
+    }
+    setHealthKitConnecting(false);
   };
 
   const handleSave = async () => {
@@ -1093,6 +1115,54 @@ export default function ProfileScreen() {
                 </div>
               );
             })()}
+          </div>
+
+          {/* Apple Health */}
+          <div className="border-b border-ink/5 pb-5 mb-5">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-ink/70">Apple Health</p>
+                <p className="mt-0.5 text-[11px] text-muted/60">Syncs steps, workouts, and sleep to make your coach smarter.</p>
+              </div>
+              <div className="shrink-0">
+                {healthKitStatus === "connected" ? (
+                  <div className="flex items-center gap-1.5">
+                    <div className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                    <span className="text-[11px] font-semibold text-emerald-600">Connected</span>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    className="rounded-full bg-primary px-3 py-1 text-[11px] font-semibold text-white transition active:opacity-70 disabled:opacity-50"
+                    onClick={handleConnectHealthKit}
+                    disabled={healthKitConnecting || healthKitStatus === "unknown"}
+                  >
+                    {healthKitConnecting ? "Connecting…" : "Connect"}
+                  </button>
+                )}
+              </div>
+            </div>
+            {healthKitStatus === "connected" && (
+              <button
+                type="button"
+                className="mt-2 text-[11px] text-muted/50 underline underline-offset-2 active:opacity-60"
+                onClick={() => openHealthKitSettings()}
+              >
+                Manage in Settings
+              </button>
+            )}
+            {healthKitShowSettings && healthKitStatus === "not_connected" && (
+              <div className="mt-2 flex items-center gap-2">
+                <p className="text-[11px] text-muted/60">No data found.</p>
+                <button
+                  type="button"
+                  className="text-[11px] font-semibold text-primary/80 underline underline-offset-2 active:opacity-60"
+                  onClick={() => openHealthKitSettings()}
+                >
+                  Open Settings
+                </button>
+              </div>
+            )}
           </div>
 
           <label className="block text-xs text-muted/70">
