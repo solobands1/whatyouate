@@ -24,7 +24,12 @@ export async function requestHealthKitPermissions(): Promise<void> {
 export async function openHealthKitSettings(): Promise<void> {
   try {
     await HealthKit.openSettings();
-  } catch {}
+  } catch {
+    // Fallback: open via system URL scheme
+    try {
+      window.open("app-settings:", "_system");
+    } catch {}
+  }
 }
 
 export async function connectHealthKit(userId: string): Promise<boolean> {
