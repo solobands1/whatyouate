@@ -24,7 +24,10 @@ public class HealthKitPlugin: CAPPlugin {
             call.resolve()
             return
         }
-        healthStore.requestAuthorization(toShare: nil, read: readTypes) { _, _ in
+        // toShare must be non-nil to trigger the iOS permission dialog on iOS 13+
+        // We request write for workoutType only to surface the dialog — we never write data
+        let shareTypes: Set<HKSampleType> = [HKObjectType.workoutType()]
+        healthStore.requestAuthorization(toShare: shareTypes, read: readTypes) { _, _ in
             call.resolve()
         }
     }

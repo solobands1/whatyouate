@@ -328,15 +328,7 @@ export default function ProfileScreen() {
     if (!user) return;
     setHealthKitConnecting(true);
     setHealthKitShowSettings(false);
-    let connected = false;
-    let debugMsg = "";
-    try {
-      connected = await connectHealthKit(user.id);
-      debugMsg = connected ? "sync returned data" : "sync returned empty";
-    } catch (err) {
-      debugMsg = `error: ${String(err)}`;
-    }
-    alert(`HealthKit debug: ${debugMsg}`);
+    const connected = await connectHealthKit(user.id);
     if (connected) {
       localStorage.setItem(`wya_healthkit_connected_${user.id}`, "true");
       setHealthKitStatus("connected");
