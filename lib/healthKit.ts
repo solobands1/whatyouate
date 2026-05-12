@@ -33,7 +33,27 @@ export async function openHealthKitSettings(): Promise<void> {
 }
 
 export async function connectHealthKit(userId: string): Promise<boolean> {
-  await requestHealthKitPermissions();
+  let permResult = "ok";
+  try {
+    await HealthKit.requestHealthPermissions();
+  } catch (e: unknown) {
+    permResult = String(e);
+  }
+
+  let syncSteps = "err", syncWorkouts = "err", syncSleep = "err", syncError = "";
+  try {
+    const r = await HealthKit.syncActivity();
+    syncSteps = String(r.steps.length);
+    syncWorkouts = String(r.workouts.length);
+    syncSleep = String(r.sleep.length);
+  } catch (e: unknown) {
+    syncError = String(e);
+  }
+
+  window.alert(
+    `HK debug\nperm: ${permResult}\nsteps: ${syncSteps} workouts: ${syncWorkouts} sleep: ${syncSleep}\n${syncError}`
+  );
+
   return syncHealthKitActivity(userId);
 }
 
