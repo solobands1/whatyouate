@@ -3,7 +3,15 @@ import Capacitor
 import HealthKit
 
 @objc(HealthKitPlugin)
-public class HealthKitPlugin: CAPPlugin {
+public class HealthKitPlugin: CAPPlugin, CAPBridgedPlugin {
+    public let identifier = "HealthKitPlugin"
+    public let jsName = "HealthKit"
+    public let pluginMethods: [CAPPluginMethod] = [
+        CAPPluginMethod(name: "requestHealthPermissions", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "syncActivity", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "openSettings", returnType: CAPPluginReturnPromise),
+    ]
+
     private let healthStore = HKHealthStore()
 
     private var readTypes: Set<HKObjectType> {

@@ -1,0 +1,14 @@
+{
+	"appId": "com.dillonpoulin.whatyouate",
+	"appName": "WhatYouAte",
+	"webDir": "public",
+	"server": {
+		"url": "https://whatyouate.vercel.app",
+		"cleartext": false
+	},
+	"packageClassList": [
+		"PushNotificationsPlugin",
+		"PurchasesPlugin",
+		"HealthKitPlugin"
+	]
+}
