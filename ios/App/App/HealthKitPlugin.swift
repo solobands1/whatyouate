@@ -15,18 +15,34 @@ public class HealthKitPlugin: CAPPlugin {
         if let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) {
             types.insert(sleepType)
         }
+        if let calorieType = HKQuantityType.quantityType(forIdentifier: .dietaryEnergyConsumed) {
+            types.insert(calorieType)
+        }
+        if let proteinType = HKQuantityType.quantityType(forIdentifier: .dietaryProtein) {
+            types.insert(proteinType)
+        }
         types.insert(HKObjectType.workoutType())
         return types
     }
 
-    @objc public override func requestPermissions(_ call: CAPPluginCall) {
+    private var shareTypes: Set<HKSampleType> {
+        guard HKHealthStore.isHealthDataAvailable() else { return [] }
+        var types = Set<HKSampleType>()
+        if let calorieType = HKQuantityType.quantityType(forIdentifier: .dietaryEnergyConsumed) {
+            types.insert(calorieType)
+        }
+        if let proteinType = HKQuantityType.quantityType(forIdentifier: .dietaryProtein) {
+            types.insert(proteinType)
+        }
+        types.insert(HKObjectType.workoutType())
+        return types
+    }
+
+    @objc func requestHealthPermissions(_ call: CAPPluginCall) {
         guard HKHealthStore.isHealthDataAvailable() else {
             call.resolve()
             return
         }
-        // toShare must be non-nil to trigger the iOS permission dialog on iOS 13+
-        // We request write for workoutType only to surface the dialog — we never write data
-        let shareTypes: Set<HKSampleType> = [HKObjectType.workoutType()]
         healthStore.requestAuthorization(toShare: shareTypes, read: readTypes) { _, _ in
             call.resolve()
         }

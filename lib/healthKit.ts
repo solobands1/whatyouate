@@ -2,7 +2,7 @@ import { registerPlugin } from "@capacitor/core";
 import { supabase } from "./supabaseClient";
 
 interface HealthKitPlugin {
-  requestPermissions(): Promise<void>;
+  requestHealthPermissions(): Promise<void>;
   syncActivity(): Promise<{
     steps: Array<{ date: string; steps: number }>;
     workouts: Array<{ startTs: number; endTs: number; durationMin: number; type: string; activeCalories?: number }>;
@@ -15,7 +15,7 @@ const HealthKit = registerPlugin<HealthKitPlugin>("HealthKit");
 
 export async function requestHealthKitPermissions(): Promise<void> {
   try {
-    await HealthKit.requestPermissions();
+    await HealthKit.requestHealthPermissions();
   } catch {
     // silent — HealthKit unavailable or denied
   }
