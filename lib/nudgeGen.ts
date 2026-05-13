@@ -27,12 +27,11 @@ GOAL-DIRECTION PRIORITY — apply before the numbered list:
 - goal "maintain": deficit nudges are almost never right unless remaining is over 50% of target. Wins, streaks, variety, and food curiosity are the whole value. Make them feel good about showing up.
 - goal "balance": consistency and protein quality matter. Mirror maintain tone. Frame around how the body feels and performs, not scale weight.
 
-THEMATIC BLOCKING — most important mechanical rule:
-- CONTENT CHECK: Scan the text of the last 3 nudge messages for the words "protein", "energy", "calorie", "fat". If any word appears in 2 or more of those 3 messages — regardless of what type label was used — that theme is BLOCKED. This is about what the messages actually said, not the type names.
-- IMMEDIATE REPEAT RULE: The theme of the most recent nudge is ALWAYS blocked, regardless of how many times it appeared.
-- PERSISTENT THEME RULE: If persistentThemes is provided in context, those topics have appeared in 5 or more of the last 14 nudges. Treat them as harder-blocked than anything above. Do not surface them. Find a completely different angle or return null.
-- When a theme is blocked, skip until you find a genuinely different angle. If no good angle exists, return null.
-- If contentBlockedThemes is provided, those specific words appeared in 2+ of the last 3 messages. Do not write about those topics under any type label.
+THEME VARIETY — use recent nudge context to vary naturally:
+- Read the last 3 nudge messages to understand what ground has recently been covered. Prefer angles you haven't used recently.
+- The most recent nudge's theme should feel fresh — lean toward something different unless it's clearly the most important thing to address based on today's actual data.
+- If persistentThemes is provided, those topics have appeared in 5+ of the last 14 nudges — find a different angle if one genuinely exists in the data.
+- Theme overlap with recent nudges is never a reason to return null. Return null only when there is truly nothing meaningful to say: the user hasn't logged in several days and there is no data worth responding to.
 
 PRE-CHECK before choosing a type:
 - HABIT GATE: Is there ONE specific behavior repeated 3+ times in the last 3-5 days that wasn't there before? If not, do not choose habit. Seeing multiple different foods (kiwi, pizza, eggs, tacos) is variety, not a habit — choose variety instead.
@@ -264,17 +263,17 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
 
   const blockedTypes = ctx.blockedNudgeTypes as string[] | undefined;
   if (blockedTypes?.length) {
-    lines.push(`BLOCKED TYPES (do not use these — fatigue rule enforced): ${blockedTypes.join(", ")}`);
+    lines.push(`Recently overused types (prefer a different angle if one exists in the data): ${blockedTypes.join(", ")}`);
   }
 
   const contentBlocked = ctx.contentBlockedThemes as string[] | undefined;
   if (contentBlocked?.length) {
-    lines.push(`CONTENT-BLOCKED THEMES (these words appeared in 2+ of the last 3 nudge messages — do not write about these topics under any type label): ${contentBlocked.join(", ")}`);
+    lines.push(`Recently used themes (these words appeared in 2+ of the last 3 nudge messages — prefer a fresh angle, but use your judgment if this is genuinely the most relevant thing today): ${contentBlocked.join(", ")}`);
   }
 
   const persistentThemes = ctx.persistentThemes as string[] | undefined;
   if (persistentThemes?.length) {
-    lines.push(`PERSISTENT THEMES (these topics have appeared in 5+ of the last 14 nudges — harder-blocked, find a completely different angle): ${persistentThemes.join(", ")}`);
+    lines.push(`Overused themes (appeared in 5+ of the last 14 nudges — find a different angle if one exists, but never let this be a reason to return null): ${persistentThemes.join(", ")}`);
   }
 
   const feelCorrelations = ctx.feelLogCorrelations as Array<{
@@ -348,7 +347,7 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
   } else if (nudgeIntentWindow === "evening") {
     lines.push(`\nAnalyze both today's data and the historical patterns above. What is the single most useful, specific observation about how today went or what to carry forward? If nothing genuinely stands out, return null.`);
   } else {
-    lines.push(`\nAnalyze the data above. What is the single most useful, specific thing to tell this person right now? If nothing meaningful stands out, return null.`);
+    lines.push(`\nAnalyze the data above. What is the single most useful, specific thing to tell this person right now? Theme overlap with recent nudges is not a reason to return null — find a fresh angle. Only return null if the user hasn't logged in several days and there is truly nothing in the data worth responding to.`);
   }
 
   return lines.join("\n");
