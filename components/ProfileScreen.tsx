@@ -13,7 +13,7 @@ import { getDailySupplements, setDailySupplements, clearDailySuppsLoggedToday, c
 import { clearMealsCache } from "../lib/supabaseDb";
 import { notifyMealsUpdated } from "../lib/dataEvents";
 import { supabase } from "../lib/supabaseClient";
-import { connectHealthKit, openHealthKitSettings } from "../lib/healthKit";
+import { connectHealthKit } from "../lib/healthKit";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
 import { useAuth } from "./AuthProvider";
@@ -1129,8 +1129,8 @@ export default function ProfileScreen() {
               <div className="shrink-0">
                 {healthKitStatus === "connected" ? (
                   <div className="flex items-center gap-1.5">
-                    <div className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                    <span className="text-[11px] font-semibold text-emerald-600">Connected</span>
+                    <div className="h-1.5 w-1.5 rounded-full bg-blue-400" />
+                    <span className="text-[11px] font-semibold text-blue-600">Connected</span>
                   </div>
                 ) : !healthKitAttempted ? (
                   <button
@@ -1144,15 +1144,6 @@ export default function ProfileScreen() {
                 ) : null}
               </div>
             </div>
-            {healthKitStatus === "connected" && (
-              <button
-                type="button"
-                className="mt-2 text-[11px] text-muted/50 underline underline-offset-2 active:opacity-60"
-                onClick={() => openHealthKitSettings()}
-              >
-                Manage in Settings
-              </button>
-            )}
             {healthKitAttempted && healthKitStatus === "not_connected" && (
               <p className="mt-2 text-[11px] text-muted/60">To enable: Settings → Health → Data Access &amp; Devices → WhatYouAte</p>
             )}
