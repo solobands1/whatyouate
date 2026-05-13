@@ -1129,8 +1129,8 @@ export default function ProfileScreen() {
               <div className="shrink-0">
                 {healthKitStatus === "connected" ? (
                   <div className="flex items-center gap-1.5">
-                    <div className="h-1.5 w-1.5 rounded-full bg-blue-400" />
-                    <span className="text-[11px] font-semibold text-blue-600">Connected</span>
+                    <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                    <span className="text-[11px] font-semibold text-primary">Connected</span>
                   </div>
                 ) : !healthKitAttempted ? (
                   <button
