@@ -106,7 +106,7 @@ export default function ProfileScreen() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [healthKitStatus, setHealthKitStatus] = useState<"unknown" | "connected" | "not_connected">("unknown");
   const [healthKitConnecting, setHealthKitConnecting] = useState(false);
-  const [healthKitShowSettings, setHealthKitShowSettings] = useState(false);
+  const [healthKitAttempted, setHealthKitAttempted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -135,7 +135,9 @@ export default function ProfileScreen() {
     setLoadError(null);
 
     const hkConnected = localStorage.getItem(`wya_healthkit_connected_${user.id}`);
+    const hkAttempted = localStorage.getItem(`wya_healthkit_attempted_${user.id}`);
     setHealthKitStatus(hkConnected === "true" ? "connected" : "not_connected");
+    setHealthKitAttempted(hkAttempted === "true");
 
     const walkthroughKey = `wya_walkthrough_profile_${user.id}`;
     if (localStorage.getItem(walkthroughKey)) {
@@ -327,14 +329,14 @@ export default function ProfileScreen() {
   const handleConnectHealthKit = async () => {
     if (!user) return;
     setHealthKitConnecting(true);
-    setHealthKitShowSettings(false);
+    localStorage.setItem(`wya_healthkit_attempted_${user.id}`, "true");
+    setHealthKitAttempted(true);
     const connected = await connectHealthKit(user.id);
     if (connected) {
       localStorage.setItem(`wya_healthkit_connected_${user.id}`, "true");
       setHealthKitStatus("connected");
     } else {
       setHealthKitStatus("not_connected");
-      setHealthKitShowSettings(true);
     }
     setHealthKitConnecting(false);
   };
@@ -1130,7 +1132,7 @@ export default function ProfileScreen() {
                     <div className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
                     <span className="text-[11px] font-semibold text-emerald-600">Connected</span>
                   </div>
-                ) : (
+                ) : !healthKitAttempted ? (
                   <button
                     type="button"
                     className="rounded-full bg-primary px-3 py-1 text-[11px] font-semibold text-white transition active:opacity-70 disabled:opacity-50"
@@ -1139,7 +1141,7 @@ export default function ProfileScreen() {
                   >
                     {healthKitConnecting ? "Connecting…" : "Connect"}
                   </button>
-                )}
+                ) : null}
               </div>
             </div>
             {healthKitStatus === "connected" && (
@@ -1151,17 +1153,8 @@ export default function ProfileScreen() {
                 Manage in Settings
               </button>
             )}
-            {healthKitShowSettings && healthKitStatus === "not_connected" && (
-              <div className="mt-2 space-y-1">
-                <p className="text-[11px] text-muted/60">To enable: Settings &gt; Health &gt; Data Access &amp; Devices &gt; WhatYouAte</p>
-                <button
-                  type="button"
-                  className="text-[11px] font-semibold text-primary/80 underline underline-offset-2 active:opacity-60"
-                  onClick={() => openHealthKitSettings()}
-                >
-                  Open Settings
-                </button>
-              </div>
+            {healthKitAttempted && healthKitStatus === "not_connected" && (
+              <p className="mt-2 text-[11px] text-muted/60">To enable: Settings → Health → Data Access &amp; Devices → WhatYouAte</p>
             )}
           </div>
 
