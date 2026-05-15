@@ -261,6 +261,11 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
     }
   }
 
+  const hardBlocked = ctx.hardBlockedTypes as string[] | undefined;
+  if (hardBlocked?.length) {
+    lines.push(`NEVER use these types — they are not valid in this context: ${hardBlocked.join(", ")}`);
+  }
+
   const blockedTypes = ctx.blockedNudgeTypes as string[] | undefined;
   if (blockedTypes?.length) {
     lines.push(`Recently overused types (prefer a different angle if one exists in the data): ${blockedTypes.join(", ")}`);

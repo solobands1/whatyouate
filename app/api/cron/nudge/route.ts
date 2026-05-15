@@ -322,13 +322,14 @@ export async function GET(req: Request) {
       const sparseLogs = (ctx.daysSinceLastLog as number | undefined ?? 0) >= 3;
       delete ctx.timeOfDay; // replaced by nudgeIntentWindow
 
+      // meal_timing is never valid in scheduled cron nudges — hard block always
+      ctx.hardBlockedTypes = ["meal_timing"];
+
       if (isEvening) {
         // Evening nudge has today's actual data — keep it for a reflective day recap
         // followThrough is especially useful: did they act on the morning nudge?
         ctx.nudgeIntentWindow = "evening";
-        const EVENING_HARD_BLOCKED = new Set(["meal_timing"]);
-        const softBlocked = [...new Set([...blockedNudgeTypes])];
-        ctx.blockedNudgeTypes = [...EVENING_HARD_BLOCKED, ...softBlocked];
+        ctx.blockedNudgeTypes = [...new Set([...blockedNudgeTypes])];
       } else {
         // Morning nudge: today's data is empty/stale — strip it, focus on patterns
         delete ctx.todayCalories;
@@ -341,15 +342,12 @@ export async function GET(req: Request) {
         delete ctx.followThrough;
         ctx.nudgeIntentWindow = "morning";
         // Allow check_in when user hasn't logged in 3+ days — re-engagement > insight
-        const MORNING_HARD_BLOCKED = sparseLogs ? new Set(["meal_timing"]) : new Set(["check_in", "meal_timing"]);
-        const softBlocked = [...new Set([...blockedNudgeTypes, "workout_fuel_low"])];
-        ctx.blockedNudgeTypes = [...MORNING_HARD_BLOCKED, ...softBlocked];
+        const morningBlocked = sparseLogs ? [] : ["check_in"];
+        ctx.blockedNudgeTypes = [...new Set([...morningBlocked, ...blockedNudgeTypes, "workout_fuel_low"])];
       }
 
       let nudge = await generateNudge(ctx);
 
-      // Hard-enforce only truly real-time types
-      if (nudge?.type === "meal_timing") nudge = null;
       if (nudge && !isEvening && nudge.type === "check_in" && !sparseLogs) nudge = null;
 
       // Hard-enforce win/momentum/best_day — reject if deficit or correction language is present
