@@ -1138,7 +1138,12 @@ export default function ProfileScreen() {
                 <p className="mt-0.5 text-[11px] text-muted/60">Syncs steps, workouts, and sleep to make your coach smarter.</p>
               </div>
               <div className="shrink-0">
-                {healthKitStatus === "connected" ? (
+                {healthKitStatus === "unknown" ? (
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
+                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary/80" />
+                  </span>
+                ) : healthKitStatus === "connected" ? (
                   <div className="flex items-center gap-1.5">
                     <div className="h-1.5 w-1.5 rounded-full bg-primary" />
                     <span className="text-[11px] font-semibold text-primary">Connected</span>
@@ -1146,9 +1151,9 @@ export default function ProfileScreen() {
                 ) : !healthKitAttempted ? (
                   <button
                     type="button"
-                    className="rounded-full bg-primary px-3 py-1 text-[11px] font-semibold text-white transition active:opacity-70 disabled:opacity-50"
+                    className="rounded-full bg-primary px-3 py-1 text-[11px] font-semibold text-white transition active:opacity-70"
                     onClick={handleConnectHealthKit}
-                    disabled={healthKitConnecting || healthKitStatus === "unknown"}
+                    disabled={healthKitConnecting}
                   >
                     {healthKitConnecting ? "Connecting…" : "Connect"}
                   </button>
