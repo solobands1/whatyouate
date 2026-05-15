@@ -657,9 +657,9 @@ export default function HomeScreen() {
     if (!failedMealPrompt || !user) { setFailedMealPrompt(null); return; }
     const mealId = failedMealPrompt.mealId;
     setFailedMealPrompt(null);
+    meals.setMeals((prev) => prev.filter((m) => m.id !== mealId));
     try {
       await deleteMeal(mealId, user.id);
-      meals.setMeals((prev) => prev.filter((m) => m.id !== mealId));
       clearMealsCache(user.id);
       notifyMealsUpdated();
     } catch {

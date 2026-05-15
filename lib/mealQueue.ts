@@ -29,24 +29,16 @@ async function processNext() {
   }
 
   try {
-    const clientController = new AbortController();
-    const clientTimeout = setTimeout(() => clientController.abort(), 20_000);
-    let response: Response;
-    try {
-      response = await fetch("/api/analyze-food", {
-        method: "POST",
-        signal: clientController.signal,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          imageBase64: job.imageBase64,
-          mealId: job.mealId,
-          userId: job.userId,
-          ...(job.hint ? { hints: job.hint } : {}),
-        })
-      });
-    } finally {
-      clearTimeout(clientTimeout);
-    }
+    const response = await fetch("/api/analyze-food", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        imageBase64: job.imageBase64,
+        mealId: job.mealId,
+        userId: job.userId,
+        ...(job.hint ? { hints: job.hint } : {}),
+      })
+    });
 
     if (response.status === 429) {
       window.dispatchEvent(new CustomEvent("meal-analysis-error", { detail: { mealId: job.mealId, rateLimited: true } }));
