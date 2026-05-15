@@ -10,6 +10,7 @@ public class HealthKitPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "requestHealthPermissions", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "syncActivity", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "openSettings", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "checkAuthorizationStatus", returnType: CAPPluginReturnPromise),
     ]
 
     private let healthStore = HKHealthStore()
@@ -63,6 +64,17 @@ public class HealthKitPlugin: CAPPlugin, CAPBridgedPlugin {
             }
         }
         call.resolve()
+    }
+
+    @objc func checkAuthorizationStatus(_ call: CAPPluginCall) {
+        guard HKHealthStore.isHealthDataAvailable() else {
+            call.resolve(["authorized": false])
+            return
+        }
+        let authorized = shareTypes.contains { type in
+            healthStore.authorizationStatus(for: type) == .sharingAuthorized
+        }
+        call.resolve(["authorized": authorized])
     }
 
     @objc func syncActivity(_ call: CAPPluginCall) {

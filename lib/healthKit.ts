@@ -9,6 +9,7 @@ interface HealthKitPlugin {
     sleep: Array<{ date: string; hours: number }>;
   }>;
   openSettings(): Promise<void>;
+  checkAuthorizationStatus(): Promise<{ authorized: boolean }>;
 }
 
 const HealthKit = registerPlugin<HealthKitPlugin>("HealthKit");
@@ -29,6 +30,15 @@ export async function openHealthKitSettings(): Promise<void> {
     try {
       window.open("app-settings:", "_system");
     } catch {}
+  }
+}
+
+export async function checkHealthKitAuthorization(): Promise<boolean> {
+  try {
+    const { authorized } = await HealthKit.checkAuthorizationStatus();
+    return authorized;
+  } catch {
+    return false;
   }
 }
 
