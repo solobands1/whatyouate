@@ -424,13 +424,6 @@ export default function SummaryScreen() {
   const [nudgeViewCount, setNudgeViewCount] = useState(0);
   const [showTargetInfo, setShowTargetInfo] = useState(false);
   const [showTodayInfo, setShowTodayInfo] = useState(false);
-  const [nudgeDismissed, setNudgeDismissed] = useState(() => {
-    try {
-      const hour = new Date().getUTCHours();
-      const win = hour < 16 ? "morning" : hour < 21 ? "afternoon" : "evening";
-      return localStorage.getItem(`wya_nudge_dismissed_${todayKey()}_${win}`) === "1";
-    } catch { return false; }
-  });
 
   useEffect(() => {
     if (!user) return;
@@ -1248,22 +1241,6 @@ export default function SummaryScreen() {
                     </button>
                   </div>
                 </div>
-              ) : nudgeDismissed ? (
-                <div className="rounded-xl border border-ink/10 bg-ink/4 px-4 py-3 flex items-center justify-between gap-3">
-                  <p className="text-sm text-ink/40">Dismissed. Next update at the next time window.</p>
-                  <button
-                    type="button"
-                    className="text-[11px] font-semibold text-primary/60 transition active:opacity-50"
-                    onClick={() => {
-                      const hour = new Date().getUTCHours();
-                      const win = hour < 16 ? "morning" : hour < 21 ? "afternoon" : "evening";
-                      localStorage.removeItem(`wya_nudge_dismissed_${todayKey()}_${win}`);
-                      setNudgeDismissed(false);
-                    }}
-                  >
-                    Undo
-                  </button>
-                </div>
               ) : smartNudge ? (
                 (() => {
                   const nudge = smartNudge;
@@ -1297,20 +1274,6 @@ export default function SummaryScreen() {
                           ))}
                         </div>
                       )}
-                      <div className="flex justify-end pt-0.5">
-                        <button
-                          type="button"
-                          className="text-[11px] text-ink/30 transition active:opacity-50"
-                          onClick={() => {
-                            const hour = new Date().getUTCHours();
-                            const win = hour < 16 ? "morning" : hour < 21 ? "afternoon" : "evening";
-                            localStorage.setItem(`wya_nudge_dismissed_${todayKey()}_${win}`, "1");
-                            setNudgeDismissed(true);
-                          }}
-                        >
-                          Dismiss
-                        </button>
-                      </div>
                     </div>
                   );
                 })()
