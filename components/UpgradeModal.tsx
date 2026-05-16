@@ -74,9 +74,13 @@ export default function UpgradeModal() {
   if (!open) return null;
 
   const monthlyCost = packages.monthly?.product.priceString ?? "$12.99";
-  const yearlyCost = packages.yearly?.product.priceString ?? "$99.99";
-  const yearlyMonthly = packages.yearly ? `${(packages.yearly.product.price / 12).toFixed(2)}` : "8.25";
-  const yearlySavings = Math.round((1 - (packages.yearly?.product.price ?? 99) / ((packages.monthly?.product.price ?? 12.99) * 12)) * 100);
+  const yearlyCost = packages.yearly?.product.priceString ?? "$109.99";
+  const yearlyMonthly = packages.yearly ? `${(packages.yearly.product.price / 12).toFixed(2)}` : "9.17";
+  const yearlySavings = Math.round((1 - (packages.yearly?.product.price ?? 109.99) / ((packages.monthly?.product.price ?? 12.99) * 12)) * 100);
+
+  const selectedPkg = plan === "monthly" ? packages.monthly : packages.yearly;
+  const selectedTrial = selectedPkg?.product.introPrice?.price === 0 ? selectedPkg.product.introPrice : null;
+  const trialDays = selectedTrial?.periodUnit === "DAY" ? selectedTrial.periodNumberOfUnits : selectedTrial ? 7 : null;
 
   const handlePurchase = async () => {
     if (loading) return;
@@ -283,11 +287,13 @@ export default function UpgradeModal() {
                   </svg>
                   Processing…
                 </span>
-              ) : "Unlock"}
+              ) : trialDays ? `Try ${trialDays} Days Free` : "Unlock"}
             </button>
 
             <p className="text-center text-[11px] text-muted/50">
-              Cancel anytime. Subscriptions managed through Apple and can be cancelled in your device settings.
+              {trialDays
+                ? `Try free for ${trialDays} days, then ${monthlyCost}/month. Cancel anytime.`
+                : "Cancel anytime. Subscriptions managed through Apple and can be cancelled in your device settings."}
             </p>
 
             <button
