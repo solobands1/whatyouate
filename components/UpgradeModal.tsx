@@ -159,10 +159,10 @@ export default function UpgradeModal() {
 
           {/* Headline */}
           <h1 className="mt-3 text-center text-xl font-semibold text-ink">
-            Unlock Your Patterns
+            Unlock WhatYouAte Pro
           </h1>
           <p className="mt-1.5 max-w-xs text-center text-sm text-muted/70">
-            Unlock your personalized nudges, micronutrient patterns, and weekly insights.
+            AI photo logging, personalized coaching, and micronutrient insights — all in one place.
           </p>
 
           {/* What's included */}
