@@ -558,6 +558,21 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
 
+    // Daily analysis limit — soft cap at 15 photo/text analyses per user per day
+    if (userId && (imageBase64 || textDescription)) {
+      const todayStart = new Date();
+      todayStart.setUTCHours(0, 0, 0, 0);
+      const { count } = await supabaseServer
+        .from("meals")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .gte("created_at", todayStart.toISOString())
+        .neq("status", "failed");
+      if ((count ?? 0) >= 15) {
+        return NextResponse.json({ error: "Daily limit reached. Resets at midnight." }, { status: 429 });
+      }
+    }
+
     // Enrichment-only path: skip Claude, just run OFF enrichment on an already-analyzed meal
     if (existingAnalysis && mealId && !imageBase64 && !textDescription) {
       const analysis = coerceAnalysis(existingAnalysis);
