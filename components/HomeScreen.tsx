@@ -2029,10 +2029,18 @@ export default function HomeScreen() {
           <div className="flex flex-col items-center gap-1.5 mt-5" data-tour="food-action">
           <button
             type="button"
-            className="block w-full rounded-xl bg-primary px-5 py-4 text-center text-base font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] ring-1 ring-white/40 transition hover:bg-primary/90 active:scale-[0.98]"
-            onClick={handleFoodPhotoClick}
+            className={`relative block w-full rounded-xl bg-primary px-5 py-4 text-center text-base font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] ring-1 ring-white/40 transition hover:bg-primary/90 active:scale-[0.98] ${trial.isFree && !isDemoMode ? "opacity-70" : ""}`}
+            onClick={trial.isFree && !isDemoMode ? openUpgradeModal : handleFoodPhotoClick}
           >
             Take Food Photo
+            {trial.isFree && !isDemoMode && (
+              <span className="absolute right-4 top-1/2 -translate-y-1/2">
+                <svg viewBox="0 0 24 24" className="h-4 w-4 text-white/70" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+              </span>
+            )}
           </button>
 
           <div className="flex w-[92%]">
