@@ -217,7 +217,7 @@ export async function getProfile(userId: string): Promise<UserProfile | null> {
       : [],
     streak: data.streak ?? 0,
     streakLastDate: data.streak_last_date ?? "",
-    trackWater: data.track_water ?? false,
+    trackWater: data.track_water ?? true,
     waterUnit: (data.water_unit === "oz" ? "oz" : "ml") as "ml" | "oz",
     timezoneOffsetMinutes: data.timezone_offset_minutes ?? null,
   };
