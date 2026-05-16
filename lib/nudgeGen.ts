@@ -261,11 +261,6 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
     }
   }
 
-  const hardBlocked = ctx.hardBlockedTypes as string[] | undefined;
-  if (hardBlocked?.length) {
-    lines.push(`NEVER use these types — they are not valid in this context: ${hardBlocked.join(", ")}`);
-  }
-
   const blockedTypes = ctx.blockedNudgeTypes as string[] | undefined;
   if (blockedTypes?.length) {
     lines.push(`Recently overused types (prefer a different angle if one exists in the data): ${blockedTypes.join(", ")}`);
@@ -327,6 +322,21 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
     const dir = wt.changeKg < 0 ? "down" : wt.changeKg > 0 ? "up" : "stable";
     const absKg = Math.abs(wt.changeKg);
     lines.push(`Weight trend (${wt.entryCount} weigh-ins over ${wt.daysSinceFirst} days): ${dir} ${absKg}kg | started at ${wt.startKg}kg, now ${wt.currentKg}kg`);
+  }
+
+  const avgDailySteps = ctx.avgDailySteps as number | undefined;
+  const activeDaysThisWeek = ctx.activeDaysThisWeek as number | undefined;
+  if (avgDailySteps != null) {
+    lines.push(`Activity (from Apple Health): avg ${avgDailySteps.toLocaleString()} steps/day this week${activeDaysThisWeek != null ? `, ${activeDaysThisWeek} active days (5k+ steps)` : ""}`);
+  }
+
+  const avgSleepHours = ctx.avgSleepHours as number | undefined;
+  const shortNightsThisWeek = ctx.shortNightsThisWeek as number | undefined;
+  const lastNightSleepHours = ctx.lastNightSleepHours as number | undefined;
+  if (avgSleepHours != null) {
+    const lastNightStr = lastNightSleepHours != null ? `, last night ${lastNightSleepHours}h` : "";
+    const shortStr = shortNightsThisWeek ? `, ${shortNightsThisWeek} night${shortNightsThisWeek !== 1 ? "s" : ""} under 6h` : "";
+    lines.push(`Sleep (from Apple Health): avg ${avgSleepHours}h/night this week${shortStr}${lastNightStr}`);
   }
 
   const ft = ctx.followThrough as { nudgeType: string; nudgeMessage: string; minutesSinceNudge: number; mealsLoggedSince: number; caloriesSince: number; proteinSince: number } | undefined;
