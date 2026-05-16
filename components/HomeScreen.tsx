@@ -290,6 +290,7 @@ export default function HomeScreen() {
   const [demoData] = useState(() => ({ meals: makeDemoMeals(), workouts: makeDemoWorkouts(), feelLogs: makeDemoFeelLogs() }));
   const loadingData = dataLoading;
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [dailyLimitBanner, setDailyLimitBanner] = useState(false);
   const [barcodeOpen, setBarcodeOpen] = useState(false);
   const [barcodeNotFound, setBarcodeNotFound] = useState(false);
   const [barcodeNotFoundText, setBarcodeNotFoundText] = useState("");
@@ -1034,8 +1035,18 @@ export default function HomeScreen() {
   }, []);
 
   useEffect(() => {
+    if (!dailyLimitBanner) return;
+    const t = setTimeout(() => setDailyLimitBanner(false), 6000);
+    return () => clearTimeout(t);
+  }, [dailyLimitBanner]);
+
+  useEffect(() => {
     const handler = (e: Event) => {
-      const { mealId, rateLimited } = (e as CustomEvent<{ mealId: string; rateLimited: boolean }>).detail ?? {};
+      const { mealId, rateLimited, dailyLimitReached } = (e as CustomEvent<{ mealId: string; rateLimited?: boolean; dailyLimitReached?: boolean }>).detail ?? {};
+      if (dailyLimitReached) {
+        setDailyLimitBanner(true);
+        return;
+      }
       if (rateLimited) {
         setLoadError("Too many requests. Please wait a moment before adding another photo.");
         return;
@@ -1563,6 +1574,35 @@ export default function HomeScreen() {
             }
           }}
         />
+      )}
+      {dailyLimitBanner && (
+        <div className="fixed inset-x-0 top-0 z-50 animate-slide-down mx-auto max-w-md bg-white/60 backdrop-blur-xl border-b border-white/40 px-5 pb-4 safe-top">
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 shrink-0 text-primary">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                <circle cx="12" cy="13" r="4" />
+                <line x1="8" y1="2" x2="16" y2="2" strokeDasharray="2 2" />
+              </svg>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[15px] font-semibold text-ink leading-snug">Daily Photo Limit Reached</p>
+              <p className="mt-0.5 text-[13px] leading-relaxed text-ink/55">
+                Try logging manually instead — your limit resets at midnight.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setDailyLimitBanner(false)}
+              className="mt-0.5 text-ink/30 active:opacity-60"
+              aria-label="Dismiss"
+            >
+              <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M4 4l8 8M12 4l-8 8" />
+              </svg>
+            </button>
+          </div>
+        </div>
       )}
       {showTourGate && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-white/70 backdrop-blur-sm">
