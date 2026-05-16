@@ -65,7 +65,7 @@ export default function ValueMomentSheet() {
           {payload.dayCount} days of data. {payload.mealCount} meals tracked.
         </p>
         <p className="mt-2 text-sm text-muted/70 leading-relaxed">
-          We have spotted patterns in your micronutrients and weekly intake. Unlock Patterns to see where you are doing well and where there might be gaps.
+          We have spotted patterns in your micronutrients and weekly intake. Unlock Pro to see where you are doing well and where there might be gaps.
         </p>
 
         <div className="mt-6 space-y-2.5">
@@ -74,7 +74,7 @@ export default function ValueMomentSheet() {
             onClick={() => { close(); openUpgradeModal(); }}
             className="w-full rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition active:opacity-80"
           >
-            Unlock Patterns
+            Unlock Pro
           </button>
           <button
             type="button"
