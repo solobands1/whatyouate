@@ -1503,7 +1503,7 @@ export default function HomeScreen() {
     if (isDemoMode) {
       return { waterMl: 850, goalMl: 2000, displayGoal: "2000 ml", displayCurrent: "850 ml", pct: 43, addAmount: (_ml: number) => {}, remove: () => {}, unit: "ml" as const };
     }
-    if (!profile?.trackWater || !user) return null;
+    if (!user || (profile !== null && !profile.trackWater)) return null;
     const WATER_KEY = `wya_water_${user.id}_${todayKey()}`;
     const recommendedGoalMl = profile.weight ? Math.min(3500, Math.max(1500, Math.round(profile.weight * 35 / 100) * 100)) : 2500;
     const customGoalMl = (() => { try { const v = parseInt(localStorage.getItem(`wya_water_goal_ml_${user.id}`) ?? "", 10); return isNaN(v) ? null : v; } catch { return null; } })();
