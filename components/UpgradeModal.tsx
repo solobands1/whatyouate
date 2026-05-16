@@ -168,10 +168,10 @@ export default function UpgradeModal() {
           {/* What's included */}
           <div className="mt-4 w-full rounded-2xl border border-ink/8 bg-white px-5 py-3 space-y-2">
             {[
+              "AI-powered food photo logging",
               "Daily AI-powered nudges",
               "Micronutrient pattern tracking",
               "Weekly insights and trends",
-              "Full access to your Patterns history",
             ].map((item, i) => (
               <div
                 key={item}
