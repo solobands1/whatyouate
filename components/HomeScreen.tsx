@@ -1515,7 +1515,7 @@ export default function HomeScreen() {
       return { waterMl: 850, goalMl: 2000, displayGoal: "2000 ml", displayCurrent: "850 ml", pct: 43, addAmount: (_ml: number) => {}, remove: () => {}, unit: "ml" as const };
     }
     if (!user) return null;
-    if (profile !== null && !profile.trackWater) return null;
+    if (profile != null && !profile.trackWater) return null;
     const WATER_KEY = `wya_water_${user.id}_${todayKey()}`;
     const recommendedGoalMl = profile?.weight ? Math.min(3500, Math.max(1500, Math.round(profile.weight * 35 / 100) * 100)) : 2500;
     const customGoalMl = (() => { try { const v = parseInt(localStorage.getItem(`wya_water_goal_ml_${user.id}`) ?? "", 10); return isNaN(v) ? null : v; } catch { return null; } })();
@@ -1538,7 +1538,7 @@ export default function HomeScreen() {
       setWaterTick((t) => t + 1);
       upsertWaterLog(user.id, todayKey(), newMl).catch(() => {});
     };
-    return { waterMl, goalMl, displayGoal, displayCurrent, pct, addAmount, remove, unit: profile.waterUnit ?? "ml" as "ml" | "oz" };
+    return { waterMl, goalMl, displayGoal, displayCurrent, pct, addAmount, remove, unit: (profile?.waterUnit ?? "ml") as "ml" | "oz" };
   })();
 
   return (
@@ -1579,17 +1579,10 @@ export default function HomeScreen() {
       {dailyLimitBanner && (
         <div className="fixed inset-x-0 top-0 z-50 animate-slide-down mx-auto max-w-md bg-white/60 backdrop-blur-xl border-b border-white/40 px-5 pb-4 safe-top">
           <div className="flex items-start gap-3">
-            <div className="mt-0.5 shrink-0 text-primary">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                <circle cx="12" cy="13" r="4" />
-                <line x1="8" y1="2" x2="16" y2="2" strokeDasharray="2 2" />
-              </svg>
-            </div>
             <div className="flex-1 min-w-0">
               <p className="text-[15px] font-semibold text-ink leading-snug">Daily Photo Limit Reached</p>
               <p className="mt-0.5 text-[13px] leading-relaxed text-ink/55">
-                Try logging manually instead — your limit resets at midnight.
+                Try logging manually instead. Your limit resets at midnight.
               </p>
             </div>
             <button
