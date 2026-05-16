@@ -29,20 +29,40 @@ async function processNext() {
   }
 
   try {
-    const response = await fetch("/api/analyze-food", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        imageBase64: job.imageBase64,
-        mealId: job.mealId,
-        userId: job.userId,
-        ...(job.hint ? { hints: job.hint } : {}),
-      })
-    });
+    const clientController = new AbortController();
+    const clientTimeout = setTimeout(() => clientController.abort(), 20_000);
+    let response: Response;
+    try {
+      response = await fetch("/api/analyze-food", {
+        method: "POST",
+        signal: clientController.signal,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          imageBase64: job.imageBase64,
+          mealId: job.mealId,
+          userId: job.userId,
+          ...(job.hint ? { hints: job.hint } : {}),
+        })
+      });
+    } finally {
+      clearTimeout(clientTimeout);
+    }
 
     if (response.status === 429) {
-      window.dispatchEvent(new CustomEvent("meal-analysis-error", { detail: { mealId: job.mealId, rateLimited: true } }));
-      notifyMealsUpdated();
+      let dailyLimitReached = false;
+      try {
+        const body = await response.json();
+        dailyLimitReached = typeof body?.error === "string" && body.error.includes("Daily limit");
+      } catch {}
+      if (dailyLimitReached) {
+        markMealFailed(job.mealId).catch(() => {});
+        clearMealsCache(job.userId);
+        notifyMealsUpdated();
+        window.dispatchEvent(new CustomEvent("meal-analysis-error", { detail: { mealId: job.mealId, dailyLimitReached: true } }));
+      } else {
+        window.dispatchEvent(new CustomEvent("meal-analysis-error", { detail: { mealId: job.mealId, rateLimited: true } }));
+        notifyMealsUpdated();
+      }
       processNext();
       return;
     }
