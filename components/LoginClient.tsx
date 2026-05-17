@@ -166,6 +166,7 @@ export default function LoginClient() {
               <input
                 type={showPassword ? "text" : "password"}
                 autoComplete="current-password"
+                autoCapitalize="none"
                 className={inputClass}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -194,7 +195,7 @@ export default function LoginClient() {
               className="mt-1 text-center text-xs text-muted/50 underline underline-offset-2 transition active:opacity-60"
               onClick={() => { setMode("forgot"); setStatus(""); }}
             >
-              Forgot password?
+              Forgot Password?
             </button>
           </form>
         )}
@@ -247,6 +248,7 @@ export default function LoginClient() {
                 <input
                   type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
+                  autoCapitalize="none"
                   className={inputClass}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -258,6 +260,7 @@ export default function LoginClient() {
                 <input
                   type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
+                  autoCapitalize="none"
                   className={inputClass}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
@@ -303,7 +306,7 @@ export default function LoginClient() {
               className="w-full rounded-xl bg-primary py-3.5 text-sm font-semibold text-white transition active:opacity-80"
               onClick={() => { setMode("signin"); setStatus(""); }}
             >
-              Back to sign in
+              Back To Sign In
             </button>
           </div>
         )}
@@ -326,14 +329,14 @@ export default function LoginClient() {
               onClick={handleSendCode}
               disabled={submitting}
             >
-              {submitting ? "Sending…" : "Send reset code"}
+              {submitting ? "Sending…" : "Send Reset Code"}
             </button>
             <button
               type="button"
               className="w-full rounded-xl border border-ink/10 py-3.5 text-sm font-semibold text-ink/70 transition active:opacity-60"
               onClick={() => { setMode("signin"); setStatus(""); }}
             >
-              Back to sign in
+              Back To Sign In
             </button>
           </div>
         )}
@@ -357,6 +360,7 @@ export default function LoginClient() {
                 <input
                   type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
+                  autoCapitalize="none"
                   className={inputClass}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -368,6 +372,7 @@ export default function LoginClient() {
                 <input
                   type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
+                  autoCapitalize="none"
                   className={inputClass}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
