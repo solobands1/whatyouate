@@ -160,7 +160,11 @@ export function useMeals(
     // Optimistic update — show pill immediately before any DB calls
     const optimisticId = `optimistic-manual-${Date.now()}`;
     const capturedName = manualResult.name;
-    setMeals((prev) => [{ id: optimisticId, ts: Date.now(), analysisJson: scaledAnalysis as any, userCorrection: capturedName, status: "done" as const }, ...prev]);
+    const capturedDate = manualDate;
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+    const optimisticTs = capturedDate !== todayStr ? new Date(capturedDate + "T12:00:00").getTime() : Date.now();
+    setMeals((prev) => [{ id: optimisticId, ts: optimisticTs, analysisJson: scaledAnalysis as any, userCorrection: capturedName, status: "done" as const }, ...prev]);
     setManualText("");
     setManualResult(null);
     setManualPortion("medium");
@@ -169,12 +173,9 @@ export function useMeals(
 
     // DB writes in background
     const normalizedInput = normalizeFoodKey(manualText.trim());
-    const capturedDate = manualDate;
     try {
       setUpdatingMeal(true);
       const created = await addMeal(user.id, scaledAnalysis as any);
-      const today = new Date();
-      const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
       if (capturedDate !== todayStr) {
         const d = new Date(capturedDate + "T12:00:00");
         if (d.getTime() < Date.now()) await updateMealTs(created.id, d.getTime()).catch(() => {});
@@ -186,8 +187,8 @@ export function useMeals(
         body: JSON.stringify({ mealId: created.id, existingAnalysis: scaledAnalysis, userId: user.id })
       }).catch(() => {});
       incrementFoodTextLogCount(normalizedInput);
-      // Replace optimistic pill with real DB record
-      setMeals((prev) => prev.map((m) => m.id === optimisticId ? { ...created, analysisJson: scaledAnalysis as any, userCorrection: capturedName, status: "done" as const } : m));
+      // Replace optimistic pill with real DB record using correct timestamp
+      setMeals((prev) => prev.map((m) => m.id === optimisticId ? { ...created, ts: optimisticTs, analysisJson: scaledAnalysis as any, userCorrection: capturedName, status: "done" as const } : m));
     } catch (err) {
       console.error("Manual meal save failed", err);
       setMeals((prev) => prev.filter((m) => m.id !== optimisticId));
