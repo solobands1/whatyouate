@@ -168,6 +168,10 @@ export default function PrivacyPage() {
             <p>To generate personalized nutrition targets we collect optional profile data including age, sex, height, weight, goal direction, activity level, and dietary restrictions. You may skip or update any of these at any time.</p>
             <H3>Usage data</H3>
             <p>We collect food logs, meal photos (see below), workout logs, supplement entries, and in-app activity to power your insights and nudges.</p>
+            <H3>Apple Health data</H3>
+            <p>With your permission, we read steps and sleep data from Apple Health (HealthKit). This data is transmitted to our servers solely to personalize your AI coach check-in. It is read at the time your daily message is generated and is not stored independently on our servers.</p>
+            <H3>Push notification tokens</H3>
+            <p>We store a push notification token for your device to deliver your daily AI coach check-in and reminders. You can disable notifications at any time in your device settings.</p>
             <H3>Device and technical data</H3>
             <p>We may collect basic technical information such as device type, operating system version, and crash logs solely for the purpose of maintaining app stability.</p>
           </Section>
@@ -179,8 +183,8 @@ export default function PrivacyPage() {
           </Section>
 
           <Section title="18. How We Use Your Information">
-            <p>We use your information to: (a) operate and improve the App; (b) generate personalized nutrition estimates, nudges, and insights; (c) calculate progress toward your stated health goals; (d) process subscription payments; (e) communicate service-related information to you; and (f) comply with legal obligations.</p>
-            <p>We do not sell your personal information to third parties. We do not use your personal information for advertising purposes.</p>
+            <p>We use your information to: (a) operate and improve the App; (b) generate personalized nutrition estimates, nudges, and insights; (c) calculate progress toward your stated health goals; (d) process subscription payments; (e) send you service-related and occasional product communications via email or push notification; and (f) comply with legal obligations.</p>
+            <p>We do not sell your personal information to third parties. We do not use your personal information for third-party advertising purposes.</p>
           </Section>
 
           <Section title="19. Third-Party Service Providers">
