@@ -15,7 +15,7 @@ export function openUpgradeModal() {
 
 export default function UpgradeModal() {
   const [open, setOpen] = useState(false);
-  const [plan, setPlan] = useState<"monthly" | "yearly">("yearly");
+  const [plan, setPlan] = useState<"monthly" | "yearly">("monthly");
   const [loading, setLoading] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -79,9 +79,10 @@ export default function UpgradeModal() {
   const yearlyMonthly = packages.yearly ? `${(packages.yearly.product.price / 12).toFixed(2)}` : "9.17";
   const yearlySavings = Math.round((1 - (packages.yearly?.product.price ?? 109.99) / ((packages.monthly?.product.price ?? 12.99) * 12)) * 100);
 
-  const selectedPkg = plan === "monthly" ? packages.monthly : packages.yearly;
-  const selectedTrial = selectedPkg?.product.introPrice?.price === 0 ? selectedPkg.product.introPrice : null;
-  const trialDays = selectedTrial?.periodUnit === "DAY" ? selectedTrial.periodNumberOfUnits : selectedTrial ? 7 : null;
+  const monthlyTrial = packages.monthly?.product.introPrice?.price === 0 ? packages.monthly.product.introPrice : null;
+  const trialDays = plan === "monthly" && monthlyTrial
+    ? (monthlyTrial.periodUnit === "DAY" ? monthlyTrial.periodNumberOfUnits : 7)
+    : null;
 
   const handlePurchase = async () => {
     if (loading) return;
