@@ -23,6 +23,12 @@ function getRandomReminder(): string {
   return REMINDER_MESSAGES[Math.floor(Math.random() * REMINDER_MESSAGES.length)];
 }
 
+function getUserLocalHour(timezoneOffsetMinutes: number | undefined): number {
+  const offset = timezoneOffsetMinutes ?? 0;
+  const localMs = Date.now() - offset * 60 * 1000;
+  return new Date(localMs).getUTCHours();
+}
+
 async function checkProEntitlement(userId: string): Promise<boolean> {
   try {
     const res = await fetch(
@@ -102,6 +108,10 @@ export async function GET(req: Request) {
         .maybeSingle();
       const offsetMinutes = (profileRow as Record<string, unknown> | null)?.timezone_offset_minutes as number | null | undefined;
       const todayStartISO = userTodayStartISO(offsetMinutes);
+
+      // Only send between 10am and 8pm in the user's local timezone
+      const localHour = getUserLocalHour(offsetMinutes ?? undefined);
+      if (localHour < 10 || localHour >= 20) continue;
 
       // Skip if they've logged a meal today (in their local timezone)
       const { data: todayMeals } = await supabase
