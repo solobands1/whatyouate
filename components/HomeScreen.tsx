@@ -1825,9 +1825,6 @@ export default function HomeScreen() {
                   </span>
                 </span>
               </h1>
-              <span className="inline-flex items-center rounded-full bg-primary/15 px-2 py-0.5 text-[9px] font-semibold text-primary">
-                BETA
-              </span>
             </div>
             <div className="flex items-center gap-2">
             {showStatsBanner && (
