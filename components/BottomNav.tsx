@@ -52,11 +52,11 @@ export default function BottomNav({ current }: { current: "home" | "summary" | "
   }, [current, trial.isFree]);
 
   useEffect(() => {
-    // On Summary page, SummaryScreen sets wya_nudge_seen_ts and dispatches wya_nudge_update
-    // immediately on mount — so skip the initial check here to avoid a false-positive flash.
-    if (current !== "summary") {
-      setHasUnseenNudge(checkUnseen());
+    if (current === "summary") {
+      setHasUnseenNudge(false);
+      return;
     }
+    setHasUnseenNudge(checkUnseen());
     const handler = () => setHasUnseenNudge(checkUnseen());
     window.addEventListener("wya_nudge_update", handler);
     return () => window.removeEventListener("wya_nudge_update", handler);
