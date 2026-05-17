@@ -6,7 +6,7 @@ import type { MealLog, WorkoutSession, UserProfile } from "../../../../lib/types
 
 export const maxDuration = 60;
 
-const PREVIEW_SECRET = "wya-push-test-2026";
+const PREVIEW_SECRET = process.env.WYA_TEST_SECRET ?? "";
 
 function adminClient() {
   return createClient(
@@ -131,7 +131,7 @@ export async function GET(req: Request) {
   const userId = searchParams.get("userId");
   const windowParam = searchParams.get("window") as "morning" | "evening" | null;
 
-  if (secret !== PREVIEW_SECRET) {
+  if (!PREVIEW_SECRET || secret !== PREVIEW_SECRET) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (!userId || !windowParam) {
