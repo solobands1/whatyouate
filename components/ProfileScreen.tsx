@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Joyride, { STATUS, CallBackProps, type Step } from "react-joyride";
 import { notifyProfileUpdated } from "../lib/dataEvents";
 import type { ActivityLevel, GoalDirection, SupplementEntry, SupplementNutrient, Units, UserProfile } from "../lib/types";
@@ -13,7 +13,7 @@ import { getDailySupplements, setDailySupplements, clearDailySuppsLoggedToday, c
 import { clearMealsCache } from "../lib/supabaseDb";
 import { notifyMealsUpdated } from "../lib/dataEvents";
 import { supabase } from "../lib/supabaseClient";
-import { connectHealthKit, checkHealthKitAuthorization } from "../lib/healthKit";
+import { connectHealthKit, openHealthKitSettings } from "../lib/healthKit";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
 import { useAuth } from "./AuthProvider";
@@ -38,7 +38,6 @@ const goals: { value: GoalDirection; label: string }[] = [
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { user, loading, signOut } = useAuth();
   const { profile: contextProfile, weightLogs, setWeightLogs, loading: dataLoading } = useAppData();
   const profileExistsRef = useRef(false);
@@ -106,7 +105,7 @@ export default function ProfileScreen() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [healthKitStatus, setHealthKitStatus] = useState<"unknown" | "connected" | "not_connected">("unknown");
   const [healthKitConnecting, setHealthKitConnecting] = useState(false);
-  const [healthKitAttempted, setHealthKitAttempted] = useState(false);
+  const [healthKitShowSettings, setHealthKitShowSettings] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -135,20 +134,7 @@ export default function ProfileScreen() {
     setLoadError(null);
 
     const hkConnected = localStorage.getItem(`wya_healthkit_connected_${user.id}`);
-    const hkAttempted = localStorage.getItem(`wya_healthkit_attempted_${user.id}`);
-    setHealthKitAttempted(hkAttempted === "true");
-    if (hkConnected === "true") {
-      checkHealthKitAuthorization().then((authorized) => {
-        if (!authorized) {
-          localStorage.removeItem(`wya_healthkit_connected_${user.id}`);
-          setHealthKitStatus("not_connected");
-        } else {
-          setHealthKitStatus("connected");
-        }
-      });
-    } else {
-      setHealthKitStatus("not_connected");
-    }
+    setHealthKitStatus(hkConnected === "true" ? "connected" : "not_connected");
 
     const walkthroughKey = `wya_walkthrough_profile_${user.id}`;
     if (localStorage.getItem(walkthroughKey)) {
@@ -234,19 +220,6 @@ export default function ProfileScreen() {
     }
   }, [user, dataLoading, contextProfile]);
 
-  useEffect(() => {
-    if (!user) return;
-    if (searchParams.get("simulateProfilePrompt") !== "1") return;
-    const updatedKey = `wya_profile_updated_${user.id}`;
-    const openedKey = `wya_profile_prompt_opened_${user.id}`;
-    const lastPromptKey = `wya_profile_prompt_last_${user.id}`;
-    const simulateKey = `wya_profile_prompt_sim_${user.id}`;
-    const ninetyOneDays = 91 * 24 * 60 * 60 * 1000;
-    localStorage.setItem(updatedKey, String(Date.now() - ninetyOneDays));
-    localStorage.removeItem(openedKey);
-    localStorage.removeItem(lastPromptKey);
-    localStorage.setItem(simulateKey, "true");
-  }, [user, searchParams]);
 
   useEffect(() => {
     if (!user) return;
@@ -340,14 +313,14 @@ export default function ProfileScreen() {
   const handleConnectHealthKit = async () => {
     if (!user) return;
     setHealthKitConnecting(true);
-    localStorage.setItem(`wya_healthkit_attempted_${user.id}`, "true");
-    setHealthKitAttempted(true);
+    setHealthKitShowSettings(false);
     const connected = await connectHealthKit(user.id);
     if (connected) {
       localStorage.setItem(`wya_healthkit_connected_${user.id}`, "true");
       setHealthKitStatus("connected");
     } else {
       setHealthKitStatus("not_connected");
+      setHealthKitShowSettings(true);
     }
     setHealthKitConnecting(false);
   };
@@ -550,6 +523,14 @@ export default function ProfileScreen() {
       setStatusWithAutoDismiss("Couldn’t delete account.");
       return;
     }
+    const uid = user.id;
+    [
+      `wya_walkthrough_${uid}`, `wya_walkthrough_active_${uid}`, `wya_walkthrough_stage_${uid}`,
+      `wya_walkthrough_gate_${uid}`, `wya_walkthrough_profile_${uid}`,
+      `wya_profile_updated_${uid}`, `wya_profile_prompt_opened_${uid}`, `wya_profile_prompt_last_${uid}`,
+      `wya_nudge_view_count_${uid}`, `wya_dob_${uid}`, `wya_healthkit_connected_${uid}`,
+      `wya_water_goal_ml_${uid}`, `wya_profile_prompt_sim_${uid}`,
+    ].forEach((k) => localStorage.removeItem(k));
     clearAllFoodCaches();
     sessionStorage.removeItem("_appReady");
     sessionStorage.removeItem("wya_pending_capture");
@@ -1138,30 +1119,43 @@ export default function ProfileScreen() {
                 <p className="mt-0.5 text-[11px] text-muted/60">Syncs steps, workouts, and sleep to make your coach smarter.</p>
               </div>
               <div className="shrink-0">
-                {healthKitStatus === "unknown" ? (
-                  <span className="relative flex h-1.5 w-1.5">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
-                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary/80" />
-                  </span>
-                ) : healthKitStatus === "connected" ? (
+                {healthKitStatus === "connected" ? (
                   <div className="flex items-center gap-1.5">
-                    <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-                    <span className="text-[11px] font-semibold text-primary">Connected</span>
+                    <div className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                    <span className="text-[11px] font-semibold text-emerald-600">Connected</span>
                   </div>
-                ) : !healthKitAttempted ? (
+                ) : (
                   <button
                     type="button"
-                    className="rounded-full bg-primary px-3 py-1 text-[11px] font-semibold text-white transition active:opacity-70"
+                    className="rounded-full bg-primary px-3 py-1 text-[11px] font-semibold text-white transition active:opacity-70 disabled:opacity-50"
                     onClick={handleConnectHealthKit}
-                    disabled={healthKitConnecting}
+                    disabled={healthKitConnecting || healthKitStatus === "unknown"}
                   >
                     {healthKitConnecting ? "Connecting…" : "Connect"}
                   </button>
-                ) : null}
+                )}
               </div>
             </div>
-            {healthKitAttempted && healthKitStatus === "not_connected" && (
-              <p className="mt-2 text-[11px] text-muted/60">To enable: Settings → Health → Data Access &amp; Devices → WhatYouAte</p>
+            {healthKitStatus === "connected" && (
+              <button
+                type="button"
+                className="mt-2 text-[11px] text-muted/50 underline underline-offset-2 active:opacity-60"
+                onClick={() => openHealthKitSettings()}
+              >
+                Manage in Settings
+              </button>
+            )}
+            {healthKitShowSettings && healthKitStatus === "not_connected" && (
+              <div className="mt-2 space-y-1">
+                <p className="text-[11px] text-muted/60">To enable: Settings &gt; Health &gt; Data Access &amp; Devices &gt; WhatYouAte</p>
+                <button
+                  type="button"
+                  className="text-[11px] font-semibold text-primary/80 underline underline-offset-2 active:opacity-60"
+                  onClick={() => openHealthKitSettings()}
+                >
+                  Open Settings
+                </button>
+              </div>
             )}
           </div>
 
