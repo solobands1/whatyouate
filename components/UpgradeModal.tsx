@@ -19,6 +19,7 @@ export default function UpgradeModal() {
   const [loading, setLoading] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
   const [packages, setPackages] = useState<{ monthly: PurchasesPackage | null; yearly: PurchasesPackage | null }>({ monthly: null, yearly: null });
   const [coachState, setCoachState] = useState<"thinking" | "message" | null>(null);
   const [poppedPlan, setPoppedPlan] = useState<"monthly" | "yearly" | null>(null);
@@ -101,7 +102,8 @@ export default function UpgradeModal() {
       const customerInfo = await purchasePackage(pkg);
       if (customerInfo.entitlements.active["pro"]) {
         window.dispatchEvent(new CustomEvent("wya_purchase_complete"));
-        setOpen(false);
+        setSuccess(true);
+        setTimeout(() => { setOpen(false); setSuccess(false); }, 2000);
       } else {
         setError("Purchase completed but entitlement not found. Try restoring.");
       }
@@ -154,7 +156,7 @@ export default function UpgradeModal() {
         <div className="flex flex-col items-center px-6 pb-5 pt-1">
           {/* Icon */}
           <div className="h-14 w-14 overflow-hidden rounded-2xl border border-ink/10 shadow-sm">
-            <img src="/icon.svg" alt="WhatYouAte" className="h-full w-full object-cover" />
+            <img src="/icon-512.png" alt="WhatYouAte" className="h-full w-full object-cover" />
           </div>
 
           {/* Headline */}
@@ -287,12 +289,12 @@ export default function UpgradeModal() {
                   </svg>
                   Processing…
                 </span>
-              ) : trialDays ? `Try ${trialDays} Days Free` : "Unlock"}
+              ) : success ? "Welcome to Pro!" : trialDays ? `Try ${trialDays} Days Free` : "Unlock"}
             </button>
 
             <p className="text-center text-[11px] text-muted/50">
               {trialDays
-                ? `Try free for ${trialDays} days, then ${monthlyCost}/month. Cancel anytime.`
+                ? `Try free for ${trialDays} days, then ${plan === "yearly" ? `${yearlyCost}/year` : `${monthlyCost}/month`}. Cancel anytime.`
                 : "Cancel anytime. Subscriptions managed through Apple and can be cancelled in your device settings."}
             </p>
 
