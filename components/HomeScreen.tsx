@@ -464,23 +464,32 @@ export default function HomeScreen() {
     setQuickAddAdding(false);
     quickAddConfirmingRef.current = false;
 
-    // Write to DB in parallel — fire and forget
+    // Write to DB — each item independent so one failure doesn't block others
     const capturedDate = quickAddDate;
-    Promise.all(
-      pendingItems.map(async ({ item, analysis }) => {
-        const created = await addMeal(user.id, analysis);
-        if (!created?.id) return;
-        await updateMeal(created.id, analysis, { userCorrection: item.name }, user.id);
-        if (capturedDate !== todayDateStr()) {
-          const d = new Date(capturedDate + "T12:00:00");
-          if (d.getTime() < Date.now()) await updateMealTs(created.id, d.getTime()).catch(() => {});
-        }
-        if (item.type === "text") incrementFoodTextLogCount(item.key);
-        else if (item.barcode) incrementFoodCacheLogCount(item.barcode);
-      })
-    )
-      .then(() => notifyMealsUpdated())
-      .catch((err) => console.error("[quick add] background write failed:", err));
+    (async () => {
+      const results = await Promise.allSettled(
+        pendingItems.map(async ({ item, analysis }) => {
+          const created = await addMeal(user.id, analysis);
+          if (!created?.id) throw new Error(`addMeal failed for ${item.name}`);
+          await updateMeal(created.id, analysis, { userCorrection: item.name }, user.id);
+          if (capturedDate !== todayDateStr()) {
+            const d = new Date(capturedDate + "T12:00:00");
+            if (d.getTime() < Date.now()) await updateMealTs(created.id, d.getTime()).catch(() => {});
+          }
+          if (item.type === "text") incrementFoodTextLogCount(item.key);
+          else if (item.barcode) incrementFoodCacheLogCount(item.barcode);
+        })
+      );
+      // Remove optimistic pills for any writes that failed
+      const failedIds = results
+        .map((r, i) => r.status === "rejected" ? `optimistic-${now}-${i}` : null)
+        .filter((id): id is string => id !== null);
+      if (failedIds.length > 0) {
+        meals.setMeals((prev) => prev.filter((m) => !failedIds.includes(m.id)));
+        console.error("[quick add] some writes failed:", failedIds.length);
+      }
+      notifyMealsUpdated();
+    })();
   };
 
   const handleRemoveQuickAddItem = (item: QuickAddItem) => {
