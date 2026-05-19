@@ -328,6 +328,7 @@ export default function HomeScreen() {
   const [showProfileBell, setShowProfileBell] = useState(false);
   const [failedMealNotice, setFailedMealNotice] = useState(false);
   const [quickConfirming, setQuickConfirming] = useState(false);
+  const [reanalyzingMealIds, setReanalyzingMealIds] = useState<Set<string>>(new Set());
   const [editPortion, setEditPortion] = useState<"small" | "medium" | "large">("medium");
   const [showTargetInfo, setShowTargetInfo] = useState(false);
   const [showQuickAdd, setShowQuickAdd] = useState(false);
@@ -357,6 +358,7 @@ export default function HomeScreen() {
   const promptedStaleRef = useRef<Set<string>>(new Set());
   const recentQuickAddRef = useRef<number>(0);
   const quickAddBouncedRef = useRef(false);
+  const quickAddConfirmingRef = useRef(false);
   const onError = useCallback((msg: string) => setLoadError(msg), []);
 
   const workout = useWorkout(user, onError, setEditRecents, []);
@@ -380,6 +382,7 @@ export default function HomeScreen() {
   };
 
   const handleOpenQuickAdd = () => {
+    quickAddConfirmingRef.current = false;
     const { frequent, recent } = getQuickAddFromMeals(meals.meals);
     setQuickAddItems(frequent);
     setQuickAddRecentItems(recent);
@@ -389,7 +392,8 @@ export default function HomeScreen() {
   };
 
   const handleQuickAddConfirm = () => {
-    if (!user || quickAddAdding) return;
+    if (!user || quickAddAdding || quickAddConfirmingRef.current) return;
+    quickAddConfirmingRef.current = true;
     const selected = Object.entries(quickAddSelected);
     if (!selected.length) return;
     setQuickAddAdding(true);
@@ -458,6 +462,7 @@ export default function HomeScreen() {
     setShowQuickAdd(false);
     setQuickAddSelected({});
     setQuickAddAdding(false);
+    quickAddConfirmingRef.current = false;
 
     // Write to DB in parallel — fire and forget
     const capturedDate = quickAddDate;
@@ -569,16 +574,23 @@ export default function HomeScreen() {
 
   const handleQuickConfirm = async () => {
     if (!quickConfirmMeal || !user) return;
-    setQuickConfirming(true);
     const nameChanged = quickConfirmName.trim().toLowerCase() !== quickConfirmOriginalName.trim().toLowerCase();
-    try {
-      if (nameChanged && quickConfirmName.trim()) {
-        // Re-analyze using the original photo + corrected name as a hint so the AI
-        // has visual context. Falls back to text-only if the thumbnail isn't available.
+
+    if (nameChanged && quickConfirmName.trim()) {
+      // Close immediately and show analyzing shimmer while re-analysis runs in background
+      const mealId = quickConfirmMeal.id;
+      const imageThumb = quickConfirmMeal.imageThumb;
+      const newName = quickConfirmName.trim();
+      const capturedUserId = user.id;
+
+      setReanalyzingMealIds((prev) => new Set([...prev, mealId]));
+      setQuickConfirmMeal(null);
+
+      (async () => {
         let imageBase64: string | undefined;
-        if (quickConfirmMeal.imageThumb) {
+        if (imageThumb) {
           try {
-            const imgRes = await fetch(quickConfirmMeal.imageThumb);
+            const imgRes = await fetch(imageThumb);
             const blob = await imgRes.blob();
             imageBase64 = await new Promise<string>((resolve, reject) => {
               const reader = new FileReader();
@@ -590,37 +602,47 @@ export default function HomeScreen() {
             imageBase64 = undefined;
           }
         }
-        await fetch("/api/analyze-food", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(
-            imageBase64
-              ? { imageBase64, hints: quickConfirmName.trim(), mealId: quickConfirmMeal.id, userId: user.id }
-              : { textDescription: quickConfirmName.trim(), mealId: quickConfirmMeal.id, userId: user.id }
-          ),
-        });
-        clearMealsCache(user.id);
-        notifyMealsUpdated();
-      } else {
-        // Name unchanged — apply portion scaling to original photo-derived ranges
-        const multiplier = quickConfirmPortion === "small" ? 0.7 : quickConfirmPortion === "large" ? 1.4 : 1;
-        const scale = (v: number) => Math.round(v * multiplier);
-        const r = quickConfirmMeal.analysisJson.original_ranges ?? quickConfirmMeal.analysisJson.estimated_ranges;
-        const updatedAnalysis = {
-          ...quickConfirmMeal.analysisJson,
-          name: quickConfirmName,
-          estimated_ranges: {
-            calories_min: scale(r.calories_min), calories_max: scale(r.calories_max),
-            protein_g_min: scale(r.protein_g_min), protein_g_max: scale(r.protein_g_max),
-            carbs_g_min: scale(r.carbs_g_min), carbs_g_max: scale(r.carbs_g_max),
-            fat_g_min: scale(r.fat_g_min), fat_g_max: scale(r.fat_g_max),
-          },
-          portion: quickConfirmPortion,
-          original_ranges: r,
-        };
-        await updateMeal(quickConfirmMeal.id, updatedAnalysis as any, { userCorrection: quickConfirmName }, user?.id);
-        await meals.load(user.id);
-      }
+        try {
+          await fetch("/api/analyze-food", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(
+              imageBase64
+                ? { imageBase64, hints: newName, mealId, userId: capturedUserId }
+                : { textDescription: newName, mealId, userId: capturedUserId }
+            ),
+          });
+          clearMealsCache(capturedUserId);
+          notifyMealsUpdated();
+        } catch (err) {
+          console.error("Re-analyze failed", err);
+        } finally {
+          setReanalyzingMealIds((prev) => { const next = new Set(prev); next.delete(mealId); return next; });
+        }
+      })();
+      return;
+    }
+
+    // Name unchanged — apply portion scaling synchronously
+    setQuickConfirming(true);
+    try {
+      const multiplier = quickConfirmPortion === "small" ? 0.7 : quickConfirmPortion === "large" ? 1.4 : 1;
+      const scale = (v: number) => Math.round(v * multiplier);
+      const r = quickConfirmMeal.analysisJson.original_ranges ?? quickConfirmMeal.analysisJson.estimated_ranges;
+      const updatedAnalysis = {
+        ...quickConfirmMeal.analysisJson,
+        name: quickConfirmName,
+        estimated_ranges: {
+          calories_min: scale(r.calories_min), calories_max: scale(r.calories_max),
+          protein_g_min: scale(r.protein_g_min), protein_g_max: scale(r.protein_g_max),
+          carbs_g_min: scale(r.carbs_g_min), carbs_g_max: scale(r.carbs_g_max),
+          fat_g_min: scale(r.fat_g_min), fat_g_max: scale(r.fat_g_max),
+        },
+        portion: quickConfirmPortion,
+        original_ranges: r,
+      };
+      await updateMeal(quickConfirmMeal.id, updatedAnalysis as any, { userCorrection: quickConfirmName }, user?.id);
+      await meals.load(user.id);
       setQuickConfirmMeal(null);
     } catch (err) {
       console.error("Quick confirm failed", err);
@@ -2224,8 +2246,9 @@ export default function HomeScreen() {
                   <div className="col-span-2 space-y-2">
                     {group.meals.map((meal) => {
                       const idx = pillIdx++;
-                      const isShimmer = meal.status === "processing" && Date.now() - meal.ts < 90_000;
-                      const isStaleOrFailed = (meal.status === "processing" && Date.now() - meal.ts >= 90_000) || meal.status === "failed";
+                      const isReanalyzing = reanalyzingMealIds.has(meal.id);
+                      const isShimmer = isReanalyzing || (meal.status === "processing" && Date.now() - meal.ts < 90_000);
+                      const isStaleOrFailed = !isReanalyzing && ((meal.status === "processing" && Date.now() - meal.ts >= 90_000) || meal.status === "failed");
                       const isRecentQuickAdd = recentQuickAddRef.current > 0
                         && Math.abs(meal.ts - recentQuickAddRef.current) < 30_000;
                       return (
@@ -2251,7 +2274,7 @@ export default function HomeScreen() {
                         }}
                       >
                         <span className="flex flex-col">
-                          {meal.status === "processing" ? (
+                          {meal.status === "processing" || isReanalyzing ? (
                             isShimmer ? "Analyzing Food…" : (
                               <span className="flex items-center gap-1.5 text-ink/50">
                                 <svg className="h-3 w-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
