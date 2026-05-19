@@ -1253,7 +1253,7 @@ export default function SummaryScreen() {
                     ((nudge.type === "protein_low" || nudge.type === "protein_low_critical") && proTarget > 0 && todayProAvg >= proTarget * 0.85);
                   const noSuggestionTypes = ["workout_missing", "calorie_high", "on_track", "win", "best_day", "momentum", "habit", "pattern", "variety", "check_in", "discovery", "weekly_summary"];
                   const foodSuggestions = !noSuggestionTypes.includes(nudge.type)
-                    ? (nudge.suggestions?.length ? nudge.suggestions : suggestions).slice(0, 3)
+                    ? (nudge.suggestions ?? []).slice(0, 3)
                     : [];
                   return (
                     <div className="rounded-xl border border-primary/60 bg-primary/5 px-4 py-3 space-y-2.5">
