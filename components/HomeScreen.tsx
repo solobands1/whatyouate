@@ -321,6 +321,7 @@ export default function HomeScreen() {
   const [quickConfirmMeal, setQuickConfirmMeal] = useState<MealLog | null>(null);
   const [quickConfirmName, setQuickConfirmName] = useState("");
   const [quickConfirmOriginalName, setQuickConfirmOriginalName] = useState("");
+  const [editOriginalName, setEditOriginalName] = useState("");
   const [quickConfirmPortion, setQuickConfirmPortion] = useState<"small" | "medium" | "large">("medium");
   const [failedMealPrompt, setFailedMealPrompt] = useState<{ mealId: string; thumb?: string } | null>(null);
   const [failedMealText, setFailedMealText] = useState("");
@@ -658,6 +659,50 @@ export default function HomeScreen() {
     } finally {
       setQuickConfirming(false);
     }
+  };
+
+  const handleEditReanalyze = () => {
+    if (!meals.editingMeal || !user) return;
+    const mealId = meals.editingMeal.id;
+    const imageThumb = meals.editingMeal.imageThumb;
+    const newName = meals.editForm.name.trim();
+    const capturedUserId = user.id;
+    setReanalyzingMealIds((prev) => new Set([...prev, mealId]));
+    meals.setEditingMeal(null);
+    (async () => {
+      let imageBase64: string | undefined;
+      if (imageThumb) {
+        try {
+          const imgRes = await fetch(imageThumb);
+          const blob = await imgRes.blob();
+          imageBase64 = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+        } catch {
+          imageBase64 = undefined;
+        }
+      }
+      try {
+        await fetch("/api/analyze-food", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(
+            imageBase64
+              ? { imageBase64, hints: newName, mealId, userId: capturedUserId }
+              : { textDescription: newName, mealId, userId: capturedUserId }
+          ),
+        });
+        clearMealsCache(capturedUserId);
+        notifyMealsUpdated();
+      } catch (err) {
+        console.error("Re-analyze failed", err);
+      } finally {
+        setReanalyzingMealIds((prev) => { const next = new Set(prev); next.delete(mealId); return next; });
+      }
+    })();
   };
 
   const handleFailedMealSubmit = async () => {
@@ -1111,7 +1156,14 @@ export default function HomeScreen() {
   }, [pendingQuickConfirmId, meals.meals]);
 
   useEffect(() => {
-    if (meals.editingMeal?.id) setEditPortion(meals.editingMeal.analysisJson.portion ?? "medium");
+    if (meals.editingMeal?.id) {
+      setEditPortion(meals.editingMeal.analysisJson.portion ?? "medium");
+      setEditOriginalName(
+        meals.editingMeal.analysisJson?.name ??
+        meals.editingMeal.analysisJson?.detected_items?.[0]?.name ??
+        "Meal"
+      );
+    }
   }, [meals.editingMeal?.id]);
 
   useEffect(() => {
@@ -2627,6 +2679,16 @@ export default function HomeScreen() {
                     >
                       Cancel
                     </button>
+                    {meals.editForm.name.trim().toLowerCase() !== editOriginalName.trim().toLowerCase() && (
+                      <button
+                        type="button"
+                        className="rounded-xl border border-ink/10 bg-white px-3 py-2 text-xs font-semibold text-ink/70 transition hover:bg-ink/5 disabled:opacity-50"
+                        onClick={handleEditReanalyze}
+                        disabled={meals.updatingMeal}
+                      >
+                        Re-analyze
+                      </button>
+                    )}
                     <button
                       type="button"
                       className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
