@@ -623,7 +623,7 @@ export default function HomeScreen() {
             ),
           });
           clearMealsCache(capturedUserId);
-          notifyMealsUpdated();
+          await meals.load(capturedUserId);
         } catch (err) {
           console.error("Re-analyze failed", err);
         } finally {
@@ -696,7 +696,7 @@ export default function HomeScreen() {
           ),
         });
         clearMealsCache(capturedUserId);
-        notifyMealsUpdated();
+        await meals.load(capturedUserId);
       } catch (err) {
         console.error("Re-analyze failed", err);
       } finally {
