@@ -2682,11 +2682,11 @@ export default function HomeScreen() {
                     {meals.editForm.name.trim().toLowerCase() !== editOriginalName.trim().toLowerCase() && (
                       <button
                         type="button"
-                        className="rounded-xl border border-ink/10 bg-white px-3 py-2 text-xs font-semibold text-ink/70 transition hover:bg-ink/5 disabled:opacity-50"
+                        className="rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
                         onClick={handleEditReanalyze}
                         disabled={meals.updatingMeal}
                       >
-                        Re-analyze
+                        Re-Analyze
                       </button>
                     )}
                     <button
