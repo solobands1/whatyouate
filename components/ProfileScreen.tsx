@@ -1882,7 +1882,7 @@ export default function ProfileScreen() {
       {showReviewFeedback && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
           <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
-            <h2 className="text-base font-semibold text-ink">Tell us what's going on</h2>
+            <h2 className="text-base font-semibold text-ink">Tell Us What's Going On</h2>
             <p className="mt-2 text-sm text-muted/70">
               We're sorry to hear that. Share what feels off and we'll do our best to make it better.
             </p>
