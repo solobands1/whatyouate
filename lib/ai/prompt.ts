@@ -62,6 +62,12 @@ DETECTED ITEMS
 - Avoid returning a generic name like "Meal" unless the content is truly unclear.
 - If the item appears to be a packaged bar (protein bar, granola bar, candy bar), prefer a bar label
   and do not classify it as soups/stews (e.g., pho) unless clearly visible.
+- When two visually similar ingredients are plausible, prefer the one that is statistically more common for that dish type:
+  - Pizza toppings: "pepperoni" over "salami" for small round cured meat slices; "mozzarella" over "provolone" for melted white cheese.
+  - Burger patty: "beef" over "bison" or "lamb" unless context suggests otherwise.
+  - Stir-fry protein: "chicken" over "tofu" unless the texture is clearly firm/white block.
+  - Sandwich bread: "whole wheat" over "rye" unless the bread is clearly dark and dense.
+  - Default to the most common real-world version of a dish unless visual evidence clearly points to a less common variant.
 
 MACRONUTRIENT CALCULATION
 - Derive calorie and macro ranges from typical portion weights × nutrition density per 100g.

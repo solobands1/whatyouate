@@ -417,7 +417,7 @@ export function getQuickAddFromMeals(meals: Array<{
   const recent = all
     .filter((item) => !frequentKeys.has(item.key))
     .sort((a, b) => b.savedAt - a.savedAt)
-    .slice(0, 5);
+    .slice(0, 10);
 
   return { frequent, recent };
 }
