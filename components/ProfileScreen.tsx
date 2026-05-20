@@ -1891,7 +1891,7 @@ export default function ProfileScreen() {
                 <img src="/icon-512.png" alt="WhatYouAte" className="h-full w-full object-cover" />
               </div>
               <h2 className="text-lg font-semibold text-ink">Are you enjoying WhatYouAte?</h2>
-              <p className="mt-1.5 text-sm text-muted/70">We appreciate you and can't wait to hear how you're doing!</p>
+              <p className="mt-1.5 text-sm text-muted/70">We'd love to know how it's going for you.</p>
               <div className="mt-5 flex w-full flex-col gap-2.5">
                 <button
                   type="button"
