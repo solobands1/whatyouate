@@ -8,7 +8,7 @@
 	},
 	"packageClassList": [
 		"PushNotificationsPlugin",
-		"PurchasesPlugin",
-		"HealthKitPlugin"
+		"AppReviewPlugin",
+		"PurchasesPlugin"
 	]
 }
