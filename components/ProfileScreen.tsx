@@ -45,6 +45,9 @@ export default function ProfileScreen() {
   const initialWeightKgRef = useRef<number | null>(null);
   const [mounted, setMounted] = useState(false);
   const [showWeightHistory, setShowWeightHistory] = useState(false);
+  const [showReviewPrompt, setShowReviewPrompt] = useState(false);
+  const profileTapCount = useRef(0);
+  const profileTapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -286,6 +289,16 @@ export default function ProfileScreen() {
     if (!finished || !user) return;
     localStorage.removeItem(`wya_walkthrough_profile_${user.id}`);
     setRunProfileTour(false);
+  };
+
+  const handleProfileTitleTap = () => {
+    profileTapCount.current += 1;
+    if (profileTapTimer.current) clearTimeout(profileTapTimer.current);
+    profileTapTimer.current = setTimeout(() => { profileTapCount.current = 0; }, 600);
+    if (profileTapCount.current >= 3) {
+      profileTapCount.current = 0;
+      setShowReviewPrompt(true);
+    }
   };
 
   const parseInteger = (value: string) => {
@@ -591,7 +604,7 @@ export default function ProfileScreen() {
           </button>
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-2xl font-semibold text-ink">Profile</h1>
+              <h1 className="text-2xl font-semibold text-ink" onClick={handleProfileTitleTap}>Profile</h1>
               <div className="mt-1 flex items-center gap-1.5">
                 <p className="text-sm text-muted/70">
                   {[firstName, lastName].filter(Boolean).join(" ") || "Set name"}
@@ -1857,6 +1870,45 @@ export default function ProfileScreen() {
             >
               Update Weight
             </button>
+          </div>
+        </div>
+      )}
+
+      {showReviewPrompt && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/30 px-4 pb-8">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+            <button
+              type="button"
+              className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-full bg-ink/8 text-ink/40"
+              onClick={() => setShowReviewPrompt(false)}
+            >
+              <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M4 4l8 8M12 4l-8 8" />
+              </svg>
+            </button>
+            <div className="flex flex-col items-center text-center">
+              <div className="mb-3 h-12 w-12 overflow-hidden rounded-2xl border border-ink/10 shadow-sm">
+                <img src="/icon-512.png" alt="WhatYouAte" className="h-full w-full object-cover" />
+              </div>
+              <h2 className="text-lg font-semibold text-ink">Are you enjoying WhatYouAte?</h2>
+              <p className="mt-1.5 text-sm text-muted/70">We appreciate you and can't wait to hear how you're doing!</p>
+              <div className="mt-5 flex w-full flex-col gap-2.5">
+                <button
+                  type="button"
+                  className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-white transition active:opacity-80"
+                  onClick={() => setShowReviewPrompt(false)}
+                >
+                  ⭐ Yes, I love it!
+                </button>
+                <button
+                  type="button"
+                  className="w-full rounded-xl border border-ink/10 bg-white py-3 text-sm font-semibold text-ink/70 transition active:opacity-80"
+                  onClick={() => setShowReviewPrompt(false)}
+                >
+                  Not really
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
