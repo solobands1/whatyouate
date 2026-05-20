@@ -1875,8 +1875,8 @@ export default function ProfileScreen() {
       )}
 
       {showReviewPrompt && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/30 px-4 pb-8">
-          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
+          <div className="relative w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
             <button
               type="button"
               className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-full bg-ink/8 text-ink/40"
@@ -1887,7 +1887,7 @@ export default function ProfileScreen() {
               </svg>
             </button>
             <div className="flex flex-col items-center text-center">
-              <div className="mb-3 h-12 w-12 overflow-hidden rounded-2xl border border-ink/10 shadow-sm">
+              <div className="mb-3 h-12 w-12 overflow-hidden rounded-[14px] border border-ink/10 shadow-sm">
                 <img src="/icon-512.png" alt="WhatYouAte" className="h-full w-full object-cover" />
               </div>
               <h2 className="text-lg font-semibold text-ink">Are you enjoying WhatYouAte?</h2>
@@ -1898,7 +1898,7 @@ export default function ProfileScreen() {
                   className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-white transition active:opacity-80"
                   onClick={() => setShowReviewPrompt(false)}
                 >
-                  ⭐ Yes, I love it!
+                  Yes, I love it!
                 </button>
                 <button
                   type="button"
