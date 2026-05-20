@@ -12,6 +12,7 @@
     "@capacitor/core": "^8.3.0",
     "@capacitor/ios": "^8.3.0",
     "@capacitor/push-notifications": "^8.0.3",
+    "@capawesome/capacitor-app-review": "^8.0.1",
     "@revenuecat/purchases-capacitor": "^13.0.0",
     "@supabase/supabase-js": "^2.45.4",
     "html5-qrcode": "^2.3.8",

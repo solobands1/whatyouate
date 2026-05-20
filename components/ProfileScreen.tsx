@@ -14,6 +14,7 @@ import { clearMealsCache } from "../lib/supabaseDb";
 import { notifyMealsUpdated } from "../lib/dataEvents";
 import { supabase } from "../lib/supabaseClient";
 import { connectHealthKit, openHealthKitSettings } from "../lib/healthKit";
+import { AppReview } from "@capawesome/capacitor-app-review";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
 import { useAuth } from "./AuthProvider";
@@ -46,6 +47,10 @@ export default function ProfileScreen() {
   const [mounted, setMounted] = useState(false);
   const [showWeightHistory, setShowWeightHistory] = useState(false);
   const [showReviewPrompt, setShowReviewPrompt] = useState(false);
+  const [showReviewFeedback, setShowReviewFeedback] = useState(false);
+  const [reviewFeedbackText, setReviewFeedbackText] = useState("");
+  const [reviewFeedbackStatus, setReviewFeedbackStatus] = useState<"idle" | "sending" | "sent">("idle");
+  const [reviewFeedbackError, setReviewFeedbackError] = useState<string | null>(null);
   const profileTapCount = useRef(0);
   const profileTapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -1874,6 +1879,77 @@ export default function ProfileScreen() {
         </div>
       )}
 
+      {showReviewFeedback && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
+          <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
+            <h2 className="text-base font-semibold text-ink">Tell us what's going on</h2>
+            <p className="mt-2 text-sm text-muted/70">
+              We're sorry to hear that. Share what feels off and we'll do our best to make it better.
+            </p>
+            <textarea
+              className="mt-4 h-28 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm text-ink/90"
+              placeholder="What could we improve?"
+              value={reviewFeedbackText}
+              onChange={(e) => setReviewFeedbackText(e.target.value)}
+            />
+            {reviewFeedbackError && <p className="mt-2 text-xs text-muted/70">{reviewFeedbackError}</p>}
+            <div className="mt-4 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                className="rounded-xl border border-ink/10 bg-white px-3 py-2 text-xs font-semibold text-ink/70 transition hover:bg-ink/5"
+                onClick={() => {
+                  setShowReviewFeedback(false);
+                  setReviewFeedbackText("");
+                  setReviewFeedbackStatus("idle");
+                  setReviewFeedbackError(null);
+                }}
+                disabled={reviewFeedbackStatus === "sending"}
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90"
+                disabled={reviewFeedbackStatus === "sending" || reviewFeedbackText.trim().length === 0}
+                onClick={async () => {
+                  if (!user) return;
+                  setReviewFeedbackStatus("sending");
+                  setReviewFeedbackError(null);
+                  try {
+                    const res = await fetch("/api/feedback", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        message: reviewFeedbackText.trim(),
+                        userId: user.id,
+                        email: user.email ?? null,
+                        name: [firstName, lastName].filter(Boolean).join(" ")
+                      })
+                    });
+                    if (!res.ok) {
+                      const data = await res.json().catch(() => ({}));
+                      setReviewFeedbackError(data?.error ?? "Failed to send feedback");
+                      setReviewFeedbackStatus("idle");
+                      return;
+                    }
+                    setReviewFeedbackStatus("sent");
+                    setShowReviewFeedback(false);
+                    setReviewFeedbackText("");
+                    setShowFeedbackToast(true);
+                    setTimeout(() => setShowFeedbackToast(false), 1800);
+                  } catch {
+                    setReviewFeedbackError("Failed to send feedback");
+                    setReviewFeedbackStatus("idle");
+                  }
+                }}
+              >
+                {reviewFeedbackStatus === "sending" ? "Submitting…" : "Submit"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showReviewPrompt && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
           <div className="relative w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
@@ -1896,14 +1972,20 @@ export default function ProfileScreen() {
                 <button
                   type="button"
                   className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-white transition active:opacity-80"
-                  onClick={() => setShowReviewPrompt(false)}
+                  onClick={async () => {
+                    setShowReviewPrompt(false);
+                    try { await AppReview.requestReview(); } catch { /* no-op on web */ }
+                  }}
                 >
                   Yes, I love it!
                 </button>
                 <button
                   type="button"
                   className="w-full rounded-xl border border-ink/10 bg-white py-3 text-sm font-semibold text-ink/70 transition active:opacity-80"
-                  onClick={() => setShowReviewPrompt(false)}
+                  onClick={() => {
+                    setShowReviewPrompt(false);
+                    setShowReviewFeedback(true);
+                  }}
                 >
                   Not really
                 </button>
