@@ -277,7 +277,7 @@ export async function GET(req: Request) {
 
       // Programmatic fatigue check — enforced in code, not just in the prompt
       const recentTypes = (nudgesRes.data ?? []).slice(0, 3).map((n: { type: string }) => n.type);
-      const proteinCount = recentTypes.filter((t) => t === "protein_low" || t === "protein_low_critical").length;
+      const proteinCount = recentTypes.filter((t) => t === "protein_low" || t === "protein_low_critical" || t === "deficit").length;
       const deficitSet = new Set(["protein_low", "protein_low_critical", "calorie_low", "fat_low", "micronutrient"]);
       const allDeficits = recentTypes.length >= 3 && recentTypes.every((t) => deficitSet.has(t));
       const blockedNudgeTypes: string[] = [];
