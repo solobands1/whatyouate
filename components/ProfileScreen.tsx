@@ -1442,10 +1442,14 @@ export default function ProfileScreen() {
               </div>
             </div>
           )}
-          <p className="mt-5 text-center text-[11px] text-muted/65">
-            <Link href="/privacy" className="underline underline-offset-2 hover:text-muted/75">
-              Privacy Policy and Terms of Use
-            </Link>
+          <p className="mt-5 text-center text-[11px] text-muted/65 flex items-center justify-center gap-3">
+            <a href="https://whatyouate.app/privacy" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-muted/75">
+              Privacy Policy
+            </a>
+            <span>·</span>
+            <a href="https://whatyouate.app/terms" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-muted/75">
+              Terms of Use
+            </a>
           </p>
         </div>
       </div>
