@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { PurchasesPackage } from "@revenuecat/purchases-capacitor";
 import { getOfferings, purchasePackage, restorePurchases } from "../lib/purchases";
 import { Capacitor } from "@capacitor/core";
+import { setPendingReviewFlag, isPromptDone } from "../lib/reviewPrompt";
 
 export const UPGRADE_EVENT = "wya_show_upgrade";
 
@@ -103,6 +104,7 @@ export default function UpgradeModal() {
       const customerInfo = await purchasePackage(pkg);
       if (customerInfo.entitlements.active["pro"]) {
         window.dispatchEvent(new CustomEvent("wya_purchase_complete"));
+        if (!isPromptDone("p2")) setPendingReviewFlag("upgrade", "p2");
         setSuccess(true);
         setTimeout(() => { setOpen(false); setSuccess(false); }, 2000);
       } else {

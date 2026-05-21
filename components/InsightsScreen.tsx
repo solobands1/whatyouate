@@ -16,6 +16,8 @@ import { useTrialStatus } from "../hooks/useTrialStatus";
 import { openUpgradeModal } from "./UpgradeModal";
 import { triggerValueMoment } from "./ValueMomentSheet";
 import { hasEnoughDataForPatterns, countLoggedDays } from "../lib/trial";
+import { checkAndSetMilestoneFlag, getPendingReviewFlag, canShowReviewPrompt } from "../lib/reviewPrompt";
+import { openReviewPrompt } from "./ReviewPromptModal";
 import type { FeelLog } from "../lib/supabaseDb";
 
 const INSIGHT_NUTRIENTS = [
@@ -151,6 +153,17 @@ export default function InsightsScreen() {
       triggerValueMoment({ mealCount: realMeals.length, dayCount: countLoggedDays(meals) });
     }
   }, [loadingData, meals, trial.isPro, trial.isFree]);
+
+  // Review prompt: check milestones and show after 3s dwell if a flag is pending
+  useEffect(() => {
+    if (loadingData) return;
+    checkAndSetMilestoneFlag(meals);
+    const flag = getPendingReviewFlag();
+    if (!flag) return;
+    if (!canShowReviewPrompt(flag.type === "upgrade")) return;
+    const timer = setTimeout(() => openReviewPrompt(flag.key), 3000);
+    return () => clearTimeout(timer);
+  }, [loadingData, meals]);
 
   // Only average over days that were actually logged — gaps and missed days don't deflate the numbers
   const weekSummary = useMemo(() => summarizeLoggedDays(meals, 14), [meals]);

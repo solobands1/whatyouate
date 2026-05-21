@@ -14,7 +14,7 @@ import { clearMealsCache } from "../lib/supabaseDb";
 import { notifyMealsUpdated } from "../lib/dataEvents";
 import { supabase } from "../lib/supabaseClient";
 import { connectHealthKit, openHealthKitSettings } from "../lib/healthKit";
-import { AppReview } from "@capawesome/capacitor-app-review";
+import { openReviewPrompt } from "./ReviewPromptModal";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
 import { useAuth } from "./AuthProvider";
@@ -46,11 +46,6 @@ export default function ProfileScreen() {
   const initialWeightKgRef = useRef<number | null>(null);
   const [mounted, setMounted] = useState(false);
   const [showWeightHistory, setShowWeightHistory] = useState(false);
-  const [showReviewPrompt, setShowReviewPrompt] = useState(false);
-  const [showReviewFeedback, setShowReviewFeedback] = useState(false);
-  const [reviewFeedbackText, setReviewFeedbackText] = useState("");
-  const [reviewFeedbackStatus, setReviewFeedbackStatus] = useState<"idle" | "sending" | "sent">("idle");
-  const [reviewFeedbackError, setReviewFeedbackError] = useState<string | null>(null);
   const profileTapCount = useRef(0);
   const profileTapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -302,7 +297,7 @@ export default function ProfileScreen() {
     profileTapTimer.current = setTimeout(() => { profileTapCount.current = 0; }, 600);
     if (profileTapCount.current >= 3) {
       profileTapCount.current = 0;
-      setShowReviewPrompt(true);
+      openReviewPrompt(null);
     }
   };
 
@@ -1883,121 +1878,6 @@ export default function ProfileScreen() {
         </div>
       )}
 
-      {showReviewFeedback && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
-          <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
-            <h2 className="text-base font-semibold text-ink">Tell Us What's Going On</h2>
-            <p className="mt-2 text-sm text-muted/70">
-              We're sorry to hear that. Share what feels off and we'll do our best to make it better.
-            </p>
-            <textarea
-              className="mt-4 h-28 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm text-ink/90"
-              placeholder="What could we improve?"
-              value={reviewFeedbackText}
-              onChange={(e) => setReviewFeedbackText(e.target.value)}
-            />
-            {reviewFeedbackError && <p className="mt-2 text-xs text-muted/70">{reviewFeedbackError}</p>}
-            <div className="mt-4 flex items-center justify-end gap-2">
-              <button
-                type="button"
-                className="rounded-xl border border-ink/10 bg-white px-3 py-2 text-xs font-semibold text-ink/70 transition hover:bg-ink/5"
-                onClick={() => {
-                  setShowReviewFeedback(false);
-                  setReviewFeedbackText("");
-                  setReviewFeedbackStatus("idle");
-                  setReviewFeedbackError(null);
-                }}
-                disabled={reviewFeedbackStatus === "sending"}
-              >
-                Close
-              </button>
-              <button
-                type="button"
-                className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90"
-                disabled={reviewFeedbackStatus === "sending" || reviewFeedbackText.trim().length === 0}
-                onClick={async () => {
-                  if (!user) return;
-                  setReviewFeedbackStatus("sending");
-                  setReviewFeedbackError(null);
-                  try {
-                    const res = await fetch("/api/feedback", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        message: reviewFeedbackText.trim(),
-                        userId: user.id,
-                        email: user.email ?? null,
-                        name: [firstName, lastName].filter(Boolean).join(" ")
-                      })
-                    });
-                    if (!res.ok) {
-                      const data = await res.json().catch(() => ({}));
-                      setReviewFeedbackError(data?.error ?? "Failed to send feedback");
-                      setReviewFeedbackStatus("idle");
-                      return;
-                    }
-                    setReviewFeedbackStatus("sent");
-                    setShowReviewFeedback(false);
-                    setReviewFeedbackText("");
-                    setShowFeedbackToast(true);
-                    setTimeout(() => setShowFeedbackToast(false), 1800);
-                  } catch {
-                    setReviewFeedbackError("Failed to send feedback");
-                    setReviewFeedbackStatus("idle");
-                  }
-                }}
-              >
-                {reviewFeedbackStatus === "sending" ? "Submitting…" : "Submit"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showReviewPrompt && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
-          <div className="relative w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
-            <button
-              type="button"
-              className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-full bg-ink/8 text-ink/40"
-              onClick={() => setShowReviewPrompt(false)}
-            >
-              <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <path d="M4 4l8 8M12 4l-8 8" />
-              </svg>
-            </button>
-            <div className="flex flex-col items-center text-center">
-              <div className="mb-3 h-12 w-12 overflow-hidden rounded-[14px] border border-ink/10 shadow-sm">
-                <img src="/icon-512.png" alt="WhatYouAte" className="h-full w-full object-cover" />
-              </div>
-              <h2 className="text-lg font-semibold text-ink">Are you enjoying WhatYouAte?</h2>
-              <p className="mt-1.5 text-sm text-muted/70">We'd love to know how it's going for you.</p>
-              <div className="mt-5 flex w-full flex-col gap-2.5">
-                <button
-                  type="button"
-                  className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-white transition active:opacity-80"
-                  onClick={async () => {
-                    setShowReviewPrompt(false);
-                    try { await AppReview.requestReview(); } catch { /* no-op on web */ }
-                  }}
-                >
-                  Yes, I love it!
-                </button>
-                <button
-                  type="button"
-                  className="w-full rounded-xl border border-ink/10 bg-white py-3 text-sm font-semibold text-ink/70 transition active:opacity-80"
-                  onClick={() => {
-                    setShowReviewPrompt(false);
-                    setShowReviewFeedback(true);
-                  }}
-                >
-                  Not really
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

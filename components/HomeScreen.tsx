@@ -34,6 +34,8 @@ import {
 import { computeHomeMarkers, computeNudges, computeRecent } from "../lib/digestEngine";
 import { useTrialStatus } from "../hooks/useTrialStatus";
 import { openUpgradeModal } from "./UpgradeModal";
+import { getPendingReviewFlag, canShowReviewPrompt, checkAndSetMilestoneFlag } from "../lib/reviewPrompt";
+import { openReviewPrompt } from "./ReviewPromptModal";
 import { safeFallbackAnalysis } from "../lib/ai/schema";
 import { useWorkout, WORKOUT_TYPE_OPTIONS } from "../hooks/useWorkout";
 import { useMeals } from "../hooks/useMeals";
@@ -290,6 +292,19 @@ export default function HomeScreen() {
   const [demoData] = useState(() => ({ meals: makeDemoMeals(), workouts: makeDemoWorkouts(), feelLogs: makeDemoFeelLogs() }));
   const loadingData = dataLoading;
   const [loadError, setLoadError] = useState<string | null>(null);
+
+  // Fallback: if a review flag has been pending for 7+ days without an Insights visit, show on Home
+  useEffect(() => {
+    if (loadingData) return;
+    checkAndSetMilestoneFlag(ctxMeals);
+    const flag = getPendingReviewFlag();
+    if (!flag) return;
+    const sevenDays = 7 * 24 * 60 * 60 * 1000;
+    if (Date.now() - flag.setTs < sevenDays) return;
+    if (!canShowReviewPrompt(flag.type === "upgrade")) return;
+    const timer = setTimeout(() => openReviewPrompt(flag.key), 3000);
+    return () => clearTimeout(timer);
+  }, [loadingData, ctxMeals]);
   const [dailyLimitBanner, setDailyLimitBanner] = useState(false);
   const [barcodeOpen, setBarcodeOpen] = useState(false);
   const [barcodeNotFound, setBarcodeNotFound] = useState(false);
