@@ -108,6 +108,12 @@ export interface SmartNudgeContext {
   waterIntake?: { consumedMl: number; goalMl: number; pct: number };
   todayDayOfWeek: string;
   daysSinceLastLog?: number;
+  micronutrientWeeklySummary?: Array<{
+    nutrient: string;
+    unit: string;
+    totalMidpoint: number;
+    topSources: string[];
+  }>;
 }
 
 export interface NudgeData {
@@ -1122,6 +1128,34 @@ export function buildSmartNudgeContext(
     };
   }
 
+  // Aggregate micronutrient amounts across last 7 days of meals
+  const sevenDaysCutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const recentMealsForMicro = meals.filter(
+    (m) => m.ts >= sevenDaysCutoff && m.status !== "failed" && m.analysisJson?.source !== "supplement"
+  );
+  const microMap = new Map<string, { unit: string; total: number; sources: Map<string, number> }>();
+  recentMealsForMicro.forEach((meal) => {
+    const amounts = meal.analysisJson?.micronutrient_amounts ?? [];
+    const mealName = meal.analysisJson?.name ?? meal.analysisJson?.detected_items?.[0]?.name ?? "meal";
+    amounts.forEach(({ nutrient, amount_min, amount_max, unit }) => {
+      const mid = (amount_min + amount_max) / 2;
+      if (!microMap.has(nutrient)) microMap.set(nutrient, { unit, total: 0, sources: new Map() });
+      const entry = microMap.get(nutrient)!;
+      entry.total += mid;
+      entry.sources.set(mealName, (entry.sources.get(mealName) ?? 0) + mid);
+    });
+  });
+  const micronutrientWeeklySummary = [...microMap.entries()]
+    .filter(([, v]) => v.total > 0)
+    .map(([nutrient, { unit, total, sources }]) => {
+      const topSources = [...sources.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([name]) => name);
+      return { nutrient, unit, totalMidpoint: Math.round(total * 10) / 10, topSources };
+    })
+    .sort((a, b) => b.totalMidpoint - a.totalMidpoint);
+
   // How many calendar days since the user last logged a real meal
   let daysSinceLastLog: number | undefined;
   const foodMeals = meals.filter(
@@ -1176,5 +1210,6 @@ export function buildSmartNudgeContext(
     waterIntake,
     todayDayOfWeek: DOW[new Date(todayKeyLocal + "T12:00:00Z").getUTCDay()],
     daysSinceLastLog,
+    micronutrientWeeklySummary,
   };
 }

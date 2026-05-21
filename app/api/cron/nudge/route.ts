@@ -281,7 +281,8 @@ export async function GET(req: Request) {
       const deficitSet = new Set(["protein_low", "protein_low_critical", "calorie_low", "fat_low", "micronutrient"]);
       const allDeficits = recentTypes.length >= 3 && recentTypes.every((t) => deficitSet.has(t));
       const blockedNudgeTypes: string[] = [];
-      if (proteinCount >= 2) blockedNudgeTypes.push("protein_low");
+      if (proteinCount >= 1) blockedNudgeTypes.push("protein_low");
+      if (proteinCount >= 2) blockedNudgeTypes.push("protein_low_critical");
       if (allDeficits) blockedNudgeTypes.push(...Array.from(deficitSet));
 
       // Hard water-fatigue block — if last 2 nudges both referenced water, block water-adjacent angles
