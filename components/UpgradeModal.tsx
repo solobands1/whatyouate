@@ -310,7 +310,7 @@ export default function UpgradeModal() {
 
             <div className="flex items-center justify-center gap-4">
               <a
-                href="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/"
+                href="https://whatyouate.app/terms"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-[11px] text-muted/40 underline underline-offset-2"
@@ -318,7 +318,7 @@ export default function UpgradeModal() {
                 Terms of Use
               </a>
               <a
-                href="https://minimul.app/privacy"
+                href="https://whatyouate.app/privacy"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-[11px] text-muted/40 underline underline-offset-2"
