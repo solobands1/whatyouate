@@ -307,6 +307,25 @@ export default function UpgradeModal() {
             >
               {restoring ? "Restoring…" : "Restore Purchase"}
             </button>
+
+            <div className="flex items-center justify-center gap-4">
+              <a
+                href="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[11px] text-muted/40 underline underline-offset-2"
+              >
+                Terms of Use
+              </a>
+              <a
+                href="https://minimul.app/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[11px] text-muted/40 underline underline-offset-2"
+              >
+                Privacy Policy
+              </a>
+            </div>
           </div>
         </div>
       </div>
