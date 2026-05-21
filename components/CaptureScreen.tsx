@@ -471,7 +471,12 @@ export default function CaptureScreen() {
                   </button>
                 </div>
               ) : (
-                <p className="text-base text-muted/70">Adding to Your Day</p>
+                <div className="flex flex-col items-center gap-3">
+                  <p className="text-base text-muted/70">Adding To Your Day</p>
+                  <svg className="animate-spin text-primary/40" width="18" height="18" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="40 20" />
+                  </svg>
+                </div>
               )}
             </div>
           </div>
