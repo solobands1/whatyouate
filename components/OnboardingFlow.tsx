@@ -137,7 +137,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
           </p>
           <button
             type="button"
-            className="mt-14 w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80"
+            className="mt-14 w-1/2 rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80"
             onClick={() => setShowIntro(false)}
           >
             Get Started!
