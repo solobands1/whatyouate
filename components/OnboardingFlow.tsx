@@ -193,9 +193,9 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
           <div className="flex flex-1 flex-col">
             <p className="pt-5 text-[11px] uppercase tracking-widest text-muted/50">Step 1 of 6</p>
             <div className="mt-[16vh]">
-              <h1 className="text-2xl font-semibold text-ink">When Were You Born?</h1>
-              <p className="mt-2 text-sm text-muted/60">We use this to calibrate your calorie and nutrition targets.</p>
-              <div className="mt-8 flex gap-2">
+              <h1 className="text-2xl font-semibold text-ink text-center">When Were You Born?</h1>
+              <p className="mt-2 text-sm text-muted/60 text-center">We use this to calibrate your calorie and nutrition targets</p>
+              <div className="mt-8 flex justify-center gap-2">
                 <select
                   className={`w-[120px] ${selectCls}`}
                   value={dobMonth}
@@ -218,7 +218,14 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
                 <select
                   className={`w-[90px] ${selectCls}`}
                   value={dobYear}
-                  onChange={(e) => { setDobYear(e.target.value); setDobDay(""); }}
+                  onChange={(e) => {
+                    const newYear = e.target.value;
+                    setDobYear(newYear);
+                    if (dobMonth && dobDay && newYear) {
+                      const maxDays = new Date(Number(newYear), Number(dobMonth), 0).getDate();
+                      if (Number(dobDay) > maxDays) setDobDay("");
+                    }
+                  }}
                 >
                   <option value="">Year</option>
                   {Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - 13 - i).map((y) => (
@@ -246,8 +253,8 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
           <div className="flex flex-1 flex-col">
             <p className="pt-5 text-[11px] uppercase tracking-widest text-muted/50">Step 2 of 6</p>
             <div className="mt-[12vh]">
-              <h1 className="text-2xl font-semibold text-ink">What's Your Biological Sex?</h1>
-              <p className="mt-2 text-sm text-muted/60">We use this to calibrate your nutritional targets accurately.</p>
+              <h1 className="text-2xl font-semibold text-ink text-center">What's Your Biological Sex?</h1>
+              <p className="mt-2 text-sm text-muted/60 text-center">We use this to calibrate your nutritional targets accurately</p>
               <div className="mt-8 flex flex-col gap-3">
                 {(["male","female","prefer_not"] as const).map((v) => (
                   <button
@@ -280,8 +287,8 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
           <div className="flex flex-1 flex-col">
             <p className="pt-5 text-[11px] uppercase tracking-widest text-muted/50">Step 3 of 6</p>
             <div className="mt-[12vh]">
-              <h1 className="text-2xl font-semibold text-ink">Height & Weight</h1>
-              <p className="mt-2 text-sm text-muted/60">We use this to calculate your personal calorie targets.</p>
+              <h1 className="text-2xl font-semibold text-ink text-center">Height & Weight</h1>
+              <p className="mt-2 text-sm text-muted/60 text-center">We use this to calculate your personal calorie targets</p>
               <div className="mt-8 space-y-6">
                 <div>
                   <p className="mb-2 text-xs font-medium text-muted/60">Height</p>
@@ -345,8 +352,8 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
           <div className="flex flex-1 flex-col">
             <p className="pt-5 text-[11px] uppercase tracking-widest text-muted/50">Step 4 of 6</p>
             <div className="mt-[12vh]">
-              <h1 className="text-2xl font-semibold text-ink">What's Your Goal?</h1>
-              <p className="mt-2 text-sm text-muted/60">This helps us understand what you're working toward.</p>
+              <h1 className="text-2xl font-semibold text-ink text-center">What's Your Goal?</h1>
+              <p className="mt-2 text-sm text-muted/60 text-center">This helps us understand what you're working toward</p>
               <div className="mt-8 flex flex-col gap-3">
                 {GOALS.map((g) => (
                   <button
@@ -382,8 +389,8 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
           <div className="flex flex-1 flex-col">
             <p className="pt-5 text-[11px] uppercase tracking-widest text-muted/50">Step 5 of 6</p>
             <div className="mt-[12vh]">
-              <h1 className="text-2xl font-semibold text-ink">How Active Are You?</h1>
-              <p className="mt-2 text-sm text-muted/60">We use this to estimate how many calories you need each day.</p>
+              <h1 className="text-2xl font-semibold text-ink text-center">How Active Are You?</h1>
+              <p className="mt-2 text-sm text-muted/60 text-center">We use this to estimate how many calories you need each day</p>
               <div className="mt-8 flex flex-col gap-3">
                 {ACTIVITY_LEVELS.map((a) => (
                   <button
@@ -420,9 +427,9 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
           <div className="flex flex-1 flex-col">
             <p className="pt-5 text-[11px] uppercase tracking-widest text-muted/50">Step 6 of 6</p>
             <div className="mt-[12vh]">
-              <h1 className="text-2xl font-semibold text-ink">Any Foods You Avoid?</h1>
-              <p className="mt-2 text-sm text-muted/60">We'll make sure your coach never suggests these. Tap all that apply.</p>
-              <div className="mt-12 flex flex-wrap gap-2">
+              <h1 className="text-2xl font-semibold text-ink text-center">Any Foods You Avoid?</h1>
+              <p className="mt-2 text-sm text-muted/60 text-center">We'll make sure your coach never suggests these — tap all that apply</p>
+              <div className="mt-12 flex flex-wrap justify-center gap-2">
                 {DIETARY_OPTIONS.map((d) => {
                   const active = dietaryRestrictions.includes(d);
                   return (
