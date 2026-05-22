@@ -133,10 +133,8 @@ function extractRecentFoods(meals: MealLog[]): string[] {
 }
 
 const VALID_NUDGE_TYPES = new Set([
-  "win","best_day","momentum","habit","pattern","meal_timing","food_insight","variety",
-  "rest_day_fuel","workout_recovery","protein_low_critical","protein_low",
-  "calorie_low","calorie_high","workout_missing","micronutrient","fat_low",
-  "on_track","check_in","workout_fuel_low","training_fuel_low","discovery",
+  "encouragement","food_win","micronutrient_win","micronutrient_low",
+  "streak","pattern","honest","deficit","check_in",
 ]);
 
 async function generateNudge(ctx: Record<string, unknown>): Promise<{ message: string; type: string; why?: string; action?: string; suggestions: string[] } | null> {
@@ -350,12 +348,6 @@ export async function GET(req: Request) {
       let nudge = await generateNudge(ctx);
 
       if (nudge && !isEvening && nudge.type === "check_in" && !sparseLogs) nudge = null;
-
-      // Hard-enforce win/momentum/best_day — reject if deficit or correction language is present
-      if (nudge && ["win", "momentum", "best_day"].includes(nudge.type)) {
-        const msgLower = nudge.message.toLowerCase();
-        if (/\b(but|still|however|though|remaining|short|gap)\b|protein.{0,10}(low|still|gap)|calorie.{0,10}(low|short|remaining)/.test(msgLower)) nudge = null;
-      }
 
       // Prevent consecutive streak openers (e.g. "54 days..." two nudges in a row)
       if (nudge?.message) {

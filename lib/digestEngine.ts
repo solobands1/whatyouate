@@ -4,14 +4,17 @@ import { dayKeyFromTs, localDayKeyFromTs, localTodayKey } from "./utils";
 import { buildNutrientNotes, buildSuggestions, type SuggestionSignal } from "./recommendations";
 
 export type NudgeType =
+  | "encouragement" | "food_win" | "micronutrient_win" | "micronutrient_low"
+  | "streak" | "pattern" | "honest" | "deficit" | "check_in"
+  | "weekly_summary"
+  // legacy types that may still exist in DB history
   | "calorie_low" | "calorie_high"
   | "protein_low_critical" | "protein_low"
   | "workout_missing" | "workout_fuel_low" | "training_fuel_low"
   | "micronutrient" | "fat_low" | "on_track"
-  | "win" | "momentum" | "pattern" | "meal_timing" | "food_insight"
-  | "variety" | "rest_day_fuel" | "workout_recovery" | "check_in"
-  | "habit" | "best_day" | "discovery"
-  | "weekly_summary";
+  | "win" | "momentum" | "meal_timing" | "food_insight"
+  | "variety" | "rest_day_fuel" | "workout_recovery"
+  | "habit" | "best_day" | "discovery";
 
 export interface DailyNudgeSnapshot {
   dateKey: string;

@@ -1251,7 +1251,7 @@ export default function SummaryScreen() {
                   const isCaughtUp =
                     (nudge.type === "calorie_low" && calTarget > 0 && todayCalAvg >= calTarget * 0.9) ||
                     ((nudge.type === "protein_low" || nudge.type === "protein_low_critical") && proTarget > 0 && todayProAvg >= proTarget * 0.85);
-                  const noSuggestionTypes = ["workout_missing", "calorie_high", "on_track", "win", "best_day", "momentum", "habit", "pattern", "variety", "check_in", "discovery", "weekly_summary"];
+                  const noSuggestionTypes = ["workout_missing", "calorie_high", "on_track", "win", "best_day", "momentum", "habit", "pattern", "variety", "check_in", "discovery", "weekly_summary", "encouragement", "food_win", "micronutrient_win", "streak", "honest"];
                   const foodSuggestions = !noSuggestionTypes.includes(nudge.type)
                     ? (nudge.suggestions ?? []).slice(0, 3)
                     : [];
