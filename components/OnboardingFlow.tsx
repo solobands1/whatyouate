@@ -128,9 +128,9 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
           <div className="mb-5 h-16 w-16 overflow-hidden rounded-[18px] border border-ink/10 shadow-md">
             <img src="/icon-512.png" alt="WhatYouAte" className="h-full w-full object-cover" />
           </div>
-          <h1 className="text-xl font-semibold text-ink">Before We Dive In</h1>
+          <h1 className="text-xl font-semibold text-ink">Welcome to WhatYouAte!</h1>
           <p className="mt-4 text-sm leading-relaxed text-muted/65">
-            We need just 60 seconds to set up your profile. We use this to calculate your personal calorie targets, personalize your insights, and make sure every nudge is actually about you.
+            Before we dive in, let's get you set up. Everything you fill out helps us personalize your experience and make sure your coach is tailored to you.
           </p>
           <p className="mt-3 text-sm leading-relaxed text-muted/65">
             You can update any of this anytime from your profile.
@@ -140,7 +140,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
             className="mt-14 w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80"
             onClick={() => setShowIntro(false)}
           >
-            Get Started
+            Get Started!
           </button>
         </div>
       </div>
