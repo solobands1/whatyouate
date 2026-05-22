@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { clearProfileCache } from "../lib/supabaseDb";
 import { notifyProfileUpdated } from "../lib/dataEvents";
@@ -13,9 +13,9 @@ const DIETARY_OPTIONS = [
 ];
 
 const GOALS: { value: GoalDirection; label: string; sub: string }[] = [
-  { value: "lose",     label: "Lose Weight",  sub: "Calorie awareness and deficit" },
-  { value: "maintain", label: "Stay Steady",  sub: "Balanced nutrition and patterns" },
-  { value: "gain",     label: "Gain Weight",  sub: "Fueling growth and performance" },
+  { value: "lose",     label: "Lose Weight",  sub: "We'll focus on calorie awareness and building a healthy deficit." },
+  { value: "maintain", label: "Stay Steady",  sub: "We'll help you stay balanced and spot patterns over time." },
+  { value: "gain",     label: "Gain Weight",  sub: "We'll focus on fueling your growth and performance." },
 ];
 
 const ACTIVITY_LEVELS: { value: ActivityLevel; label: string; sub: string }[] = [
@@ -48,8 +48,6 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
   const [saving, setSaving] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
   const [animStep, setAnimStep] = useState(0);
-  const [fadeOut, setFadeOut] = useState(false);
-
   const [dobMonth, setDobMonth] = useState("");
   const [dobDay, setDobDay] = useState("");
   const [dobYear, setDobYear] = useState("");
@@ -61,17 +59,14 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
   const [activityLevel, setActivityLevel] = useState<ActivityLevel | "">("");
   const [dietaryRestrictions, setDietaryRestrictions] = useState<string[]>([]);
 
-  const handleDone = useCallback(() => onComplete(), [onComplete]);
-
   useEffect(() => {
     if (!showWelcome) return;
     const t1 = setTimeout(() => setAnimStep(1), 80);
     const t2 = setTimeout(() => setAnimStep(2), 450);
     const t3 = setTimeout(() => setAnimStep(3), 820);
-    const t4 = setTimeout(() => setFadeOut(true), 2200);
-    const t5 = setTimeout(() => handleDone(), 2700);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); clearTimeout(t5); };
-  }, [showWelcome, handleDone]);
+    const t4 = setTimeout(() => setAnimStep(4), 1200);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
+  }, [showWelcome]);
 
   const handleSaveAndFinish = async () => {
     setSaving(true);
@@ -116,33 +111,31 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
   const canContinueHeight = (heightFt || heightIn) && weight;
   const progress = (step / 6) * 100;
 
-  const transition = (show: boolean) => ({
+  const animStyle = (show: boolean) => ({
     opacity: show ? 1 : 0,
     transform: show ? "translateY(0)" : "translateY(-14px)",
     transition: "opacity 0.45s ease, transform 0.45s ease",
   });
 
+  // Intro screen
   if (showIntro) {
     return (
-      <div className="fixed inset-0 z-50 flex flex-col bg-white safe-top">
-        <div className="flex flex-1 flex-col items-center justify-center px-8 text-center">
-          <div className="mb-6 h-16 w-16 overflow-hidden rounded-[18px] border border-ink/10 shadow-md">
+      <div className="fixed inset-0 z-50 flex flex-col bg-white safe-top px-6">
+        <div className="flex flex-1 flex-col items-center text-center pt-[13vh]">
+          <div className="mb-5 h-16 w-16 overflow-hidden rounded-[18px] border border-ink/10 shadow-md">
             <img src="/icon-512.png" alt="WhatYouAte" className="h-full w-full object-cover" />
           </div>
-          <h1 className="text-2xl font-semibold text-ink">
-            Before we dive in
-          </h1>
+          <p className="text-3xl font-bold text-ink">Hey!</p>
+          <h1 className="mt-2 text-xl font-semibold text-ink">Before We Dive In</h1>
           <p className="mt-4 text-sm leading-relaxed text-muted/65">
-            Take 60 seconds to set up your profile. Your coach uses this to calculate personal calorie targets, personalize your insights, and make sure every nudge is relevant to you specifically.
+            We need just 60 seconds to set up your profile. We use this to calculate your personal calorie targets, personalize your insights, and make sure every nudge is actually about you.
           </p>
           <p className="mt-3 text-sm leading-relaxed text-muted/65">
-            You can update any of this later from your profile.
+            You can update any of this anytime from your profile.
           </p>
-        </div>
-        <div className="px-6 pb-12">
           <button
             type="button"
-            className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80"
+            className="mt-10 w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80"
             onClick={() => setShowIntro(false)}
           >
             Get Started
@@ -152,53 +145,59 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
     );
   }
 
+  // Welcome animation
   if (showWelcome) {
     return (
-      <div
-        className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white"
-        style={{ opacity: fadeOut ? 0 : 1, transition: "opacity 0.5s ease" }}
-      >
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white">
         <div className="flex flex-col items-center gap-5 text-center px-8">
-          <div style={transition(animStep >= 1)}>
+          <div style={animStyle(animStep >= 1)}>
             <div className="h-16 w-16 overflow-hidden rounded-[18px] border border-ink/10 shadow-md">
               <img src="/icon-512.png" alt="WhatYouAte" className="h-full w-full object-cover" />
             </div>
           </div>
-          <div style={transition(animStep >= 2)}>
+          <div style={animStyle(animStep >= 2)}>
             <p className="text-2xl font-semibold text-ink">
               Welcome{firstName ? `, ${firstName}` : ""}!
             </p>
           </div>
-          <div style={transition(animStep >= 3)}>
-            <p className="text-sm text-muted/65">
-              Your profile is set. Let's take a look around.
-            </p>
+          <div style={animStyle(animStep >= 3)}>
+            <p className="text-sm text-muted/65">Your profile is set. Let's take a look around.</p>
+          </div>
+          <div style={animStyle(animStep >= 4)} className="w-full pt-2">
+            <button
+              type="button"
+              className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80"
+              onClick={onComplete}
+            >
+              Let's Go
+            </button>
           </div>
         </div>
       </div>
     );
   }
 
+  // Shared select style
+  const selectCls = "rounded-xl border border-ink/10 bg-surface px-2 py-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/30";
+
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-white safe-top">
+      {/* Progress bar */}
       <div className="h-1 w-full bg-ink/8">
-        <div
-          className="h-full bg-primary transition-all duration-500"
-          style={{ width: `${progress}%` }}
-        />
+        <div className="h-full bg-primary transition-all duration-500" style={{ width: `${progress}%` }} />
       </div>
 
-      <div className="flex flex-1 flex-col px-6 pt-8 pb-10 overflow-y-auto">
+      <div className="flex flex-1 flex-col px-6 overflow-y-auto">
 
         {/* Step 0: Date of birth */}
         {step === 0 && (
-          <div className="flex flex-1 flex-col">
+          <div className="flex flex-1 flex-col pt-[12vh]">
             <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 1 of 6</p>
-            <h1 className="mt-3 text-2xl font-semibold text-ink">When were you born?</h1>
-            <p className="mt-2 text-sm text-muted/60">Used to calibrate your calorie and nutrition targets.</p>
+            <h1 className="mt-3 text-2xl font-semibold text-ink">When Were You Born?</h1>
+            <p className="mt-2 text-sm text-muted/60">We use this to calibrate your calorie and nutrition targets.</p>
             <div className="mt-8 flex gap-2">
               <select
-                className="flex-1 rounded-xl border border-ink/10 bg-surface px-3 py-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className={`w-[120px] ${selectCls}`}
                 value={dobMonth}
                 onChange={(e) => { setDobMonth(e.target.value); setDobDay(""); }}
               >
@@ -206,7 +205,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
                 {MONTHS.map((m, i) => <option key={i} value={String(i + 1)}>{m}</option>)}
               </select>
               <select
-                className="w-[72px] rounded-xl border border-ink/10 bg-surface px-2 py-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className={`w-[72px] ${selectCls}`}
                 value={dobDay}
                 onChange={(e) => setDobDay(e.target.value)}
               >
@@ -217,7 +216,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
                 )}
               </select>
               <select
-                className="w-[90px] rounded-xl border border-ink/10 bg-surface px-2 py-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className={`w-[90px] ${selectCls}`}
                 value={dobYear}
                 onChange={(e) => { setDobYear(e.target.value); setDobDay(""); }}
               >
@@ -227,7 +226,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
                 ))}
               </select>
             </div>
-            <div className="mt-auto pt-8 space-y-3">
+            <div className="mt-10 space-y-3">
               <button
                 type="button"
                 className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80 disabled:opacity-40"
@@ -245,10 +244,10 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
 
         {/* Step 1: Sex */}
         {step === 1 && (
-          <div className="flex flex-1 flex-col">
+          <div className="flex flex-1 flex-col pt-[12vh]">
             <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 2 of 6</p>
-            <h1 className="mt-3 text-2xl font-semibold text-ink">What's your biological sex?</h1>
-            <p className="mt-2 text-sm text-muted/60">Helps calibrate your nutritional targets.</p>
+            <h1 className="mt-3 text-2xl font-semibold text-ink">What's Your Biological Sex?</h1>
+            <p className="mt-2 text-sm text-muted/60">We use this to calibrate your nutritional targets accurately.</p>
             <div className="mt-8 flex flex-col gap-3">
               {(["male","female","prefer_not"] as const).map((v) => (
                 <button
@@ -259,11 +258,11 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
                   }`}
                   onClick={() => setSex(v)}
                 >
-                  {v === "male" ? "Male" : v === "female" ? "Female" : "Prefer not to say"}
+                  {v === "male" ? "Male" : v === "female" ? "Female" : "Prefer Not To Say"}
                 </button>
               ))}
             </div>
-            <div className="mt-auto pt-8">
+            <div className="mt-10">
               <button
                 type="button"
                 className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80"
@@ -277,10 +276,10 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
 
         {/* Step 2: Height + Weight */}
         {step === 2 && (
-          <div className="flex flex-1 flex-col">
+          <div className="flex flex-1 flex-col pt-[12vh]">
             <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 3 of 6</p>
-            <h1 className="mt-3 text-2xl font-semibold text-ink">Height & weight</h1>
-            <p className="mt-2 text-sm text-muted/60">Used to calculate your personal calorie targets.</p>
+            <h1 className="mt-3 text-2xl font-semibold text-ink">Height & Weight</h1>
+            <p className="mt-2 text-sm text-muted/60">We use this to calculate your personal calorie targets.</p>
             <div className="mt-8 space-y-6">
               <div>
                 <p className="mb-2 text-xs font-medium text-muted/60">Height</p>
@@ -324,7 +323,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
                 </div>
               </div>
             </div>
-            <div className="mt-auto pt-8 space-y-3">
+            <div className="mt-10 space-y-3">
               <button
                 type="button"
                 className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80 disabled:opacity-40"
@@ -342,10 +341,10 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
 
         {/* Step 3: Goal */}
         {step === 3 && (
-          <div className="flex flex-1 flex-col">
+          <div className="flex flex-1 flex-col pt-[12vh]">
             <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 4 of 6</p>
-            <h1 className="mt-3 text-2xl font-semibold text-ink">What's your goal?</h1>
-            <p className="mt-2 text-sm text-muted/60">This shapes how your coach reads your data.</p>
+            <h1 className="mt-3 text-2xl font-semibold text-ink">What's Your Goal?</h1>
+            <p className="mt-2 text-sm text-muted/60">This helps us understand what you're working toward.</p>
             <div className="mt-8 flex flex-col gap-3">
               {GOALS.map((g) => (
                 <button
@@ -363,7 +362,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
                 </button>
               ))}
             </div>
-            <div className="mt-auto pt-8">
+            <div className="mt-10">
               <button
                 type="button"
                 className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80"
@@ -377,10 +376,10 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
 
         {/* Step 4: Activity level */}
         {step === 4 && (
-          <div className="flex flex-1 flex-col">
+          <div className="flex flex-1 flex-col pt-[12vh]">
             <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 5 of 6</p>
-            <h1 className="mt-3 text-2xl font-semibold text-ink">How active are you?</h1>
-            <p className="mt-2 text-sm text-muted/60">Used to estimate your daily calorie needs.</p>
+            <h1 className="mt-3 text-2xl font-semibold text-ink">How Active Are You?</h1>
+            <p className="mt-2 text-sm text-muted/60">We use this to estimate how many calories you need each day.</p>
             <div className="mt-8 flex flex-col gap-3">
               {ACTIVITY_LEVELS.map((a) => (
                 <button
@@ -398,7 +397,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
                 </button>
               ))}
             </div>
-            <div className="mt-auto pt-8">
+            <div className="mt-10">
               <button
                 type="button"
                 className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80 disabled:opacity-40"
@@ -413,10 +412,10 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
 
         {/* Step 5: Dietary restrictions */}
         {step === 5 && (
-          <div className="flex flex-1 flex-col">
+          <div className="flex flex-1 flex-col pt-[12vh]">
             <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 6 of 6</p>
-            <h1 className="mt-3 text-2xl font-semibold text-ink">Any foods you avoid?</h1>
-            <p className="mt-2 text-sm text-muted/60">Your coach won't suggest these. Select all that apply.</p>
+            <h1 className="mt-3 text-2xl font-semibold text-ink">Any Foods You Avoid?</h1>
+            <p className="mt-2 text-sm text-muted/60">We'll make sure your coach never suggests these. Tap all that apply.</p>
             <div className="mt-8 flex flex-wrap gap-2">
               {DIETARY_OPTIONS.map((d) => {
                 const active = dietaryRestrictions.includes(d);
@@ -438,7 +437,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
                 );
               })}
             </div>
-            <div className="mt-auto pt-8 space-y-3">
+            <div className="mt-10 space-y-3">
               <button
                 type="button"
                 className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80 disabled:opacity-50"

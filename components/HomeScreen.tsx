@@ -290,6 +290,7 @@ export default function HomeScreen() {
   const [runTour, setRunTour] = useState(false);
   const [showTourGate, setShowTourGate] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [gateOverlay, setGateOverlay] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [demoData] = useState(() => ({ meals: makeDemoMeals(), workouts: makeDemoWorkouts(), feelLogs: makeDemoFeelLogs() }));
   const loadingData = dataLoading;
@@ -1715,11 +1716,14 @@ export default function HomeScreen() {
           onComplete={() => {
             localStorage.setItem(`wya_onboarding_done_${user.id}`, "true");
             localStorage.setItem(`wya_walkthrough_gate_${user.id}`, "true");
+            setGateOverlay(true);
             setShowOnboarding(false);
             setShowTourGate(true);
+            setTimeout(() => setGateOverlay(false), 200);
           }}
         />
       )}
+      {gateOverlay && <div className="fixed inset-0 z-50 bg-white" />}
       {showTourGate && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-white/70 backdrop-blur-sm">
           <div className="flex max-w-xs flex-col items-center gap-4 text-center">
