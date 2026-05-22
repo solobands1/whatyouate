@@ -377,6 +377,8 @@ export default function HomeScreen() {
   const promptedStaleRef = useRef<Set<string>>(new Set());
   const recentQuickAddRef = useRef<number>(0);
   const quickAddBouncedRef = useRef(false);
+  const logoTapCount = useRef(0);
+  const logoTapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const quickAddConfirmingRef = useRef(false);
   const onError = useCallback((msg: string) => setLoadError(msg), []);
 
@@ -1944,7 +1946,21 @@ export default function HomeScreen() {
         <header className="mb-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-semibold text-ink">
+              <h1
+                className="text-2xl font-semibold text-ink select-none"
+                onClick={() => {
+                  if (!user) return;
+                  logoTapCount.current += 1;
+                  if (logoTapTimer.current) clearTimeout(logoTapTimer.current);
+                  logoTapTimer.current = setTimeout(() => { logoTapCount.current = 0; }, 600);
+                  if (logoTapCount.current >= 3) {
+                    logoTapCount.current = 0;
+                    localStorage.removeItem(`wya_onboarding_done_${user.id}`);
+                    setShowTourGate(false);
+                    setShowOnboarding(true);
+                  }
+                }}
+              >
                 WhatYouAt<span className="relative inline-block">e
                   <span className="absolute -top-1 right-0 translate-x-[10px] text-[9px] font-semibold text-ink/60">
                     AI
