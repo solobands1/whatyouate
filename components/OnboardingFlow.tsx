@@ -117,6 +117,9 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
     transition: "opacity 0.45s ease, transform 0.45s ease",
   });
 
+  const selectCls = "rounded-xl border border-ink/10 bg-surface px-2 py-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/30";
+  const skipCls = "w-full py-2 text-sm font-medium text-ink/40";
+
   // Intro screen
   if (showIntro) {
     return (
@@ -125,8 +128,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
           <div className="mb-5 h-16 w-16 overflow-hidden rounded-[18px] border border-ink/10 shadow-md">
             <img src="/icon-512.png" alt="WhatYouAte" className="h-full w-full object-cover" />
           </div>
-          <p className="text-3xl font-bold text-ink">Hey!</p>
-          <h1 className="mt-2 text-xl font-semibold text-ink">Before We Dive In</h1>
+          <h1 className="text-xl font-semibold text-ink">Before We Dive In</h1>
           <p className="mt-4 text-sm leading-relaxed text-muted/65">
             We need just 60 seconds to set up your profile. We use this to calculate your personal calorie targets, personalize your insights, and make sure every nudge is actually about you.
           </p>
@@ -135,7 +137,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
           </p>
           <button
             type="button"
-            className="mt-10 w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80"
+            className="mt-14 w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80"
             onClick={() => setShowIntro(false)}
           >
             Get Started
@@ -177,9 +179,6 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
     );
   }
 
-  // Shared select style
-  const selectCls = "rounded-xl border border-ink/10 bg-surface px-2 py-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/30";
-
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-white safe-top">
       {/* Progress bar */}
@@ -191,269 +190,277 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
 
         {/* Step 0: Date of birth */}
         {step === 0 && (
-          <div className="flex flex-1 flex-col pt-[12vh]">
-            <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 1 of 6</p>
-            <h1 className="mt-3 text-2xl font-semibold text-ink">When Were You Born?</h1>
-            <p className="mt-2 text-sm text-muted/60">We use this to calibrate your calorie and nutrition targets.</p>
-            <div className="mt-8 flex gap-2">
-              <select
-                className={`w-[120px] ${selectCls}`}
-                value={dobMonth}
-                onChange={(e) => { setDobMonth(e.target.value); setDobDay(""); }}
-              >
-                <option value="">Month</option>
-                {MONTHS.map((m, i) => <option key={i} value={String(i + 1)}>{m}</option>)}
-              </select>
-              <select
-                className={`w-[72px] ${selectCls}`}
-                value={dobDay}
-                onChange={(e) => setDobDay(e.target.value)}
-              >
-                <option value="">Day</option>
-                {Array.from(
-                  { length: dobYear && dobMonth ? new Date(Number(dobYear), Number(dobMonth), 0).getDate() : 31 },
-                  (_, i) => <option key={i + 1} value={String(i + 1)}>{i + 1}</option>
-                )}
-              </select>
-              <select
-                className={`w-[90px] ${selectCls}`}
-                value={dobYear}
-                onChange={(e) => { setDobYear(e.target.value); setDobDay(""); }}
-              >
-                <option value="">Year</option>
-                {Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - 13 - i).map((y) => (
-                  <option key={y} value={String(y)}>{y}</option>
-                ))}
-              </select>
-            </div>
-            <div className="mt-10 space-y-3">
-              <button
-                type="button"
-                className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80 disabled:opacity-40"
-                disabled={!canContinueDob}
-                onClick={next}
-              >
-                Continue
-              </button>
-              <button type="button" className="w-full py-2 text-sm text-muted/50" onClick={next}>
-                Skip
-              </button>
+          <div className="flex flex-1 flex-col">
+            <p className="pt-5 text-[11px] uppercase tracking-widest text-muted/50">Step 1 of 6</p>
+            <div className="mt-[12vh]">
+              <h1 className="text-2xl font-semibold text-ink">When Were You Born?</h1>
+              <p className="mt-2 text-sm text-muted/60">We use this to calibrate your calorie and nutrition targets.</p>
+              <div className="mt-8 flex gap-2">
+                <select
+                  className={`w-[120px] ${selectCls}`}
+                  value={dobMonth}
+                  onChange={(e) => { setDobMonth(e.target.value); setDobDay(""); }}
+                >
+                  <option value="">Month</option>
+                  {MONTHS.map((m, i) => <option key={i} value={String(i + 1)}>{m}</option>)}
+                </select>
+                <select
+                  className={`w-[72px] ${selectCls}`}
+                  value={dobDay}
+                  onChange={(e) => setDobDay(e.target.value)}
+                >
+                  <option value="">Day</option>
+                  {Array.from(
+                    { length: dobYear && dobMonth ? new Date(Number(dobYear), Number(dobMonth), 0).getDate() : 31 },
+                    (_, i) => <option key={i + 1} value={String(i + 1)}>{i + 1}</option>
+                  )}
+                </select>
+                <select
+                  className={`w-[90px] ${selectCls}`}
+                  value={dobYear}
+                  onChange={(e) => { setDobYear(e.target.value); setDobDay(""); }}
+                >
+                  <option value="">Year</option>
+                  {Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - 13 - i).map((y) => (
+                    <option key={y} value={String(y)}>{y}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="mt-10 space-y-3">
+                <button
+                  type="button"
+                  className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80 disabled:opacity-40"
+                  disabled={!canContinueDob}
+                  onClick={next}
+                >
+                  Continue
+                </button>
+                <button type="button" className={skipCls} onClick={next}>Skip</button>
+              </div>
             </div>
           </div>
         )}
 
         {/* Step 1: Sex */}
         {step === 1 && (
-          <div className="flex flex-1 flex-col pt-[12vh]">
-            <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 2 of 6</p>
-            <h1 className="mt-3 text-2xl font-semibold text-ink">What's Your Biological Sex?</h1>
-            <p className="mt-2 text-sm text-muted/60">We use this to calibrate your nutritional targets accurately.</p>
-            <div className="mt-8 flex flex-col gap-3">
-              {(["male","female","prefer_not"] as const).map((v) => (
+          <div className="flex flex-1 flex-col">
+            <p className="pt-5 text-[11px] uppercase tracking-widest text-muted/50">Step 2 of 6</p>
+            <div className="mt-[12vh]">
+              <h1 className="text-2xl font-semibold text-ink">What's Your Biological Sex?</h1>
+              <p className="mt-2 text-sm text-muted/60">We use this to calibrate your nutritional targets accurately.</p>
+              <div className="mt-8 flex flex-col gap-3">
+                {(["male","female","prefer_not"] as const).map((v) => (
+                  <button
+                    key={v}
+                    type="button"
+                    className={`w-full rounded-xl border py-4 text-sm font-medium transition active:opacity-80 ${
+                      sex === v ? "border-primary bg-primary/10 text-primary" : "border-ink/10 text-ink/70"
+                    }`}
+                    onClick={() => setSex(v)}
+                  >
+                    {v === "male" ? "Male" : v === "female" ? "Female" : "Prefer Not To Say"}
+                  </button>
+                ))}
+              </div>
+              <div className="mt-10">
                 <button
-                  key={v}
                   type="button"
-                  className={`w-full rounded-xl border py-4 text-sm font-medium transition active:opacity-80 ${
-                    sex === v ? "border-primary bg-primary/10 text-primary" : "border-ink/10 text-ink/70"
-                  }`}
-                  onClick={() => setSex(v)}
+                  className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80"
+                  onClick={next}
                 >
-                  {v === "male" ? "Male" : v === "female" ? "Female" : "Prefer Not To Say"}
+                  Continue
                 </button>
-              ))}
-            </div>
-            <div className="mt-10">
-              <button
-                type="button"
-                className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80"
-                onClick={next}
-              >
-                Continue
-              </button>
+              </div>
             </div>
           </div>
         )}
 
         {/* Step 2: Height + Weight */}
         {step === 2 && (
-          <div className="flex flex-1 flex-col pt-[12vh]">
-            <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 3 of 6</p>
-            <h1 className="mt-3 text-2xl font-semibold text-ink">Height & Weight</h1>
-            <p className="mt-2 text-sm text-muted/60">We use this to calculate your personal calorie targets.</p>
-            <div className="mt-8 space-y-6">
-              <div>
-                <p className="mb-2 text-xs font-medium text-muted/60">Height</p>
-                <div className="flex gap-3">
-                  <div className="relative flex-1">
-                    <input
-                      inputMode="numeric"
-                      className="w-full rounded-xl border border-ink/10 bg-surface px-3 py-3 pr-9 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
-                      placeholder="5"
-                      value={heightFt}
-                      onChange={(e) => setHeightFt(e.target.value.replace(/[^0-9]/g, "").slice(0, 1))}
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted/50">ft</span>
+          <div className="flex flex-1 flex-col">
+            <p className="pt-5 text-[11px] uppercase tracking-widest text-muted/50">Step 3 of 6</p>
+            <div className="mt-[12vh]">
+              <h1 className="text-2xl font-semibold text-ink">Height & Weight</h1>
+              <p className="mt-2 text-sm text-muted/60">We use this to calculate your personal calorie targets.</p>
+              <div className="mt-8 space-y-6">
+                <div>
+                  <p className="mb-2 text-xs font-medium text-muted/60">Height</p>
+                  <div className="flex gap-3">
+                    <div className="relative flex-1">
+                      <input
+                        inputMode="numeric"
+                        className="w-full rounded-xl border border-ink/10 bg-surface px-3 py-3 pr-9 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        placeholder="5"
+                        value={heightFt}
+                        onChange={(e) => setHeightFt(e.target.value.replace(/[^0-9]/g, "").slice(0, 1))}
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted/50">ft</span>
+                    </div>
+                    <div className="relative flex-1">
+                      <input
+                        inputMode="numeric"
+                        className="w-full rounded-xl border border-ink/10 bg-surface px-3 py-3 pr-9 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        placeholder="10"
+                        value={heightIn}
+                        onChange={(e) => {
+                          const v = parseInt(e.target.value.replace(/[^0-9]/g, "") || "0", 10);
+                          setHeightIn(String(Math.min(11, v)));
+                        }}
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted/50">in</span>
+                    </div>
                   </div>
-                  <div className="relative flex-1">
+                </div>
+                <div>
+                  <p className="mb-2 text-xs font-medium text-muted/60">Weight</p>
+                  <div className="relative">
                     <input
                       inputMode="numeric"
-                      className="w-full rounded-xl border border-ink/10 bg-surface px-3 py-3 pr-9 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
-                      placeholder="10"
-                      value={heightIn}
-                      onChange={(e) => {
-                        const v = parseInt(e.target.value.replace(/[^0-9]/g, "") || "0", 10);
-                        setHeightIn(String(Math.min(11, v)));
-                      }}
+                      className="w-full rounded-xl border border-ink/10 bg-surface px-3 py-3 pr-12 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      placeholder="160"
+                      value={weight}
+                      onChange={(e) => setWeight(e.target.value.replace(/[^0-9]/g, ""))}
                     />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted/50">in</span>
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted/50">lbs</span>
                   </div>
                 </div>
               </div>
-              <div>
-                <p className="mb-2 text-xs font-medium text-muted/60">Weight</p>
-                <div className="relative">
-                  <input
-                    inputMode="numeric"
-                    className="w-full rounded-xl border border-ink/10 bg-surface px-3 py-3 pr-12 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
-                    placeholder="160"
-                    value={weight}
-                    onChange={(e) => setWeight(e.target.value.replace(/[^0-9]/g, ""))}
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted/50">lbs</span>
-                </div>
+              <div className="mt-10 space-y-3">
+                <button
+                  type="button"
+                  className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80 disabled:opacity-40"
+                  disabled={!canContinueHeight}
+                  onClick={next}
+                >
+                  Continue
+                </button>
+                <button type="button" className={skipCls} onClick={next}>Skip</button>
               </div>
-            </div>
-            <div className="mt-10 space-y-3">
-              <button
-                type="button"
-                className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80 disabled:opacity-40"
-                disabled={!canContinueHeight}
-                onClick={next}
-              >
-                Continue
-              </button>
-              <button type="button" className="w-full py-2 text-sm text-muted/50" onClick={next}>
-                Skip
-              </button>
             </div>
           </div>
         )}
 
         {/* Step 3: Goal */}
         {step === 3 && (
-          <div className="flex flex-1 flex-col pt-[12vh]">
-            <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 4 of 6</p>
-            <h1 className="mt-3 text-2xl font-semibold text-ink">What's Your Goal?</h1>
-            <p className="mt-2 text-sm text-muted/60">This helps us understand what you're working toward.</p>
-            <div className="mt-8 flex flex-col gap-3">
-              {GOALS.map((g) => (
+          <div className="flex flex-1 flex-col">
+            <p className="pt-5 text-[11px] uppercase tracking-widest text-muted/50">Step 4 of 6</p>
+            <div className="mt-[12vh]">
+              <h1 className="text-2xl font-semibold text-ink">What's Your Goal?</h1>
+              <p className="mt-2 text-sm text-muted/60">This helps us understand what you're working toward.</p>
+              <div className="mt-8 flex flex-col gap-3">
+                {GOALS.map((g) => (
+                  <button
+                    key={g.value}
+                    type="button"
+                    className={`w-full rounded-xl border px-4 py-4 text-left transition active:opacity-80 ${
+                      goalDirection === g.value ? "border-primary bg-primary/10" : "border-ink/10"
+                    }`}
+                    onClick={() => setGoalDirection(g.value)}
+                  >
+                    <p className={`text-sm font-medium ${goalDirection === g.value ? "text-primary" : "text-ink/80"}`}>
+                      {g.label}
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted/55">{g.sub}</p>
+                  </button>
+                ))}
+              </div>
+              <div className="mt-10">
                 <button
-                  key={g.value}
                   type="button"
-                  className={`w-full rounded-xl border px-4 py-4 text-left transition active:opacity-80 ${
-                    goalDirection === g.value ? "border-primary bg-primary/10" : "border-ink/10"
-                  }`}
-                  onClick={() => setGoalDirection(g.value)}
+                  className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80"
+                  onClick={next}
                 >
-                  <p className={`text-sm font-medium ${goalDirection === g.value ? "text-primary" : "text-ink/80"}`}>
-                    {g.label}
-                  </p>
-                  <p className="mt-0.5 text-xs text-muted/55">{g.sub}</p>
+                  Continue
                 </button>
-              ))}
-            </div>
-            <div className="mt-10">
-              <button
-                type="button"
-                className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80"
-                onClick={next}
-              >
-                Continue
-              </button>
+              </div>
             </div>
           </div>
         )}
 
         {/* Step 4: Activity level */}
         {step === 4 && (
-          <div className="flex flex-1 flex-col pt-[12vh]">
-            <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 5 of 6</p>
-            <h1 className="mt-3 text-2xl font-semibold text-ink">How Active Are You?</h1>
-            <p className="mt-2 text-sm text-muted/60">We use this to estimate how many calories you need each day.</p>
-            <div className="mt-8 flex flex-col gap-3">
-              {ACTIVITY_LEVELS.map((a) => (
+          <div className="flex flex-1 flex-col">
+            <p className="pt-5 text-[11px] uppercase tracking-widest text-muted/50">Step 5 of 6</p>
+            <div className="mt-[12vh]">
+              <h1 className="text-2xl font-semibold text-ink">How Active Are You?</h1>
+              <p className="mt-2 text-sm text-muted/60">We use this to estimate how many calories you need each day.</p>
+              <div className="mt-8 flex flex-col gap-3">
+                {ACTIVITY_LEVELS.map((a) => (
+                  <button
+                    key={a.value}
+                    type="button"
+                    className={`w-full rounded-xl border px-4 py-4 text-left transition active:opacity-80 ${
+                      activityLevel === a.value ? "border-primary bg-primary/10" : "border-ink/10"
+                    }`}
+                    onClick={() => setActivityLevel(a.value)}
+                  >
+                    <p className={`text-sm font-medium ${activityLevel === a.value ? "text-primary" : "text-ink/80"}`}>
+                      {a.label}
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted/55">{a.sub}</p>
+                  </button>
+                ))}
+              </div>
+              <div className="mt-10">
                 <button
-                  key={a.value}
                   type="button"
-                  className={`w-full rounded-xl border px-4 py-4 text-left transition active:opacity-80 ${
-                    activityLevel === a.value ? "border-primary bg-primary/10" : "border-ink/10"
-                  }`}
-                  onClick={() => setActivityLevel(a.value)}
+                  className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80 disabled:opacity-40"
+                  disabled={!activityLevel}
+                  onClick={next}
                 >
-                  <p className={`text-sm font-medium ${activityLevel === a.value ? "text-primary" : "text-ink/80"}`}>
-                    {a.label}
-                  </p>
-                  <p className="mt-0.5 text-xs text-muted/55">{a.sub}</p>
+                  Continue
                 </button>
-              ))}
-            </div>
-            <div className="mt-10">
-              <button
-                type="button"
-                className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80 disabled:opacity-40"
-                disabled={!activityLevel}
-                onClick={next}
-              >
-                Continue
-              </button>
+              </div>
             </div>
           </div>
         )}
 
         {/* Step 5: Dietary restrictions */}
         {step === 5 && (
-          <div className="flex flex-1 flex-col pt-[12vh]">
-            <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 6 of 6</p>
-            <h1 className="mt-3 text-2xl font-semibold text-ink">Any Foods You Avoid?</h1>
-            <p className="mt-2 text-sm text-muted/60">We'll make sure your coach never suggests these. Tap all that apply.</p>
-            <div className="mt-8 flex flex-wrap gap-2">
-              {DIETARY_OPTIONS.map((d) => {
-                const active = dietaryRestrictions.includes(d);
-                return (
-                  <button
-                    key={d}
-                    type="button"
-                    className={`rounded-full border px-4 py-2 text-sm font-medium transition active:opacity-80 ${
-                      active ? "border-primary/60 bg-primary/10 text-primary" : "border-ink/10 text-ink/60"
-                    }`}
-                    onClick={() =>
-                      setDietaryRestrictions((prev) =>
-                        active ? prev.filter((r) => r !== d) : [...prev, d]
-                      )
-                    }
-                  >
-                    {d}
-                  </button>
-                );
-              })}
-            </div>
-            <div className="mt-10 space-y-3">
-              <button
-                type="button"
-                className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80 disabled:opacity-50"
-                disabled={saving}
-                onClick={handleSaveAndFinish}
-              >
-                {saving ? "Saving…" : "Done"}
-              </button>
-              <button
-                type="button"
-                className="w-full py-2 text-sm text-muted/50 disabled:opacity-50"
-                disabled={saving}
-                onClick={handleSaveAndFinish}
-              >
-                Skip
-              </button>
+          <div className="flex flex-1 flex-col">
+            <p className="pt-5 text-[11px] uppercase tracking-widest text-muted/50">Step 6 of 6</p>
+            <div className="mt-[12vh]">
+              <h1 className="text-2xl font-semibold text-ink">Any Foods You Avoid?</h1>
+              <p className="mt-2 text-sm text-muted/60">We'll make sure your coach never suggests these. Tap all that apply.</p>
+              <div className="mt-12 flex flex-wrap gap-2">
+                {DIETARY_OPTIONS.map((d) => {
+                  const active = dietaryRestrictions.includes(d);
+                  return (
+                    <button
+                      key={d}
+                      type="button"
+                      className={`rounded-full border px-4 py-2 text-sm font-medium transition active:opacity-80 ${
+                        active ? "border-primary/60 bg-primary/10 text-primary" : "border-ink/10 text-ink/60"
+                      }`}
+                      onClick={() =>
+                        setDietaryRestrictions((prev) =>
+                          active ? prev.filter((r) => r !== d) : [...prev, d]
+                        )
+                      }
+                    >
+                      {d}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="mt-10 space-y-3">
+                <button
+                  type="button"
+                  className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80 disabled:opacity-50"
+                  disabled={saving}
+                  onClick={handleSaveAndFinish}
+                >
+                  {saving ? "Saving…" : "Done"}
+                </button>
+                <button
+                  type="button"
+                  className={`${skipCls} disabled:opacity-50`}
+                  disabled={saving}
+                  onClick={handleSaveAndFinish}
+                >
+                  Skip
+                </button>
+              </div>
             </div>
           </div>
         )}
