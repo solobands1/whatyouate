@@ -1197,7 +1197,7 @@ export default function SummaryScreen() {
               <a href="https://www.dietaryguidelines.gov" target="_blank" rel="noopener noreferrer" className="text-primary/70 underline underline-offset-2">USDA Dietary Guidelines</a>
               {" and "}
               <a href="https://www.nih.gov/health-information" target="_blank" rel="noopener noreferrer" className="text-primary/70 underline underline-offset-2">NIH nutrition research</a>
-              . Not a substitute for medical advice.
+              . For anything medical, always check with your doctor.
             </p>
           )}
 
