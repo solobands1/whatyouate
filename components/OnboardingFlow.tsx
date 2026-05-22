@@ -19,10 +19,10 @@ const GOALS: { value: GoalDirection; label: string; sub: string }[] = [
 ];
 
 const ACTIVITY_LEVELS: { value: ActivityLevel; label: string; sub: string }[] = [
-  { value: "sedentary",         label: "Not Very Active",    sub: "Desk job, minimal movement" },
-  { value: "lightly_active",    label: "Lightly Active",     sub: "Daily walks, errands, housework" },
-  { value: "moderately_active", label: "Moderately Active",  sub: "Exercise 3–4x/week" },
   { value: "very_active",       label: "Very Active",        sub: "Training most days or physical job" },
+  { value: "moderately_active", label: "Moderately Active",  sub: "Exercise 3–4x/week" },
+  { value: "lightly_active",    label: "Lightly Active",     sub: "Daily walks, errands, housework" },
+  { value: "sedentary",         label: "Not Very Active",    sub: "Desk job, minimal movement" },
 ];
 
 function calculateAgeFromDob(dobStr: string): number | null {
@@ -55,7 +55,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
   const [heightFt, setHeightFt] = useState("");
   const [heightIn, setHeightIn] = useState("");
   const [weight, setWeight] = useState("");
-  const [goalDirection, setGoalDirection] = useState<GoalDirection>("maintain");
+  const [goalDirection, setGoalDirection] = useState<GoalDirection | "">("");
   const [activityLevel, setActivityLevel] = useState<ActivityLevel | "">("");
   const [dietaryRestrictions, setDietaryRestrictions] = useState<string[]>([]);
 
@@ -90,7 +90,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
         sex,
         height: heightCm,
         weight: weightKg,
-        goal_direction: goalDirection,
+        goal_direction: goalDirection || "maintain",
         activity_level: activityLevel || null,
         dietary_restrictions: dietaryRestrictions,
         units: "imperial",
@@ -374,7 +374,8 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
               <div className="mt-10">
                 <button
                   type="button"
-                  className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80"
+                  className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80 disabled:opacity-40"
+                  disabled={!goalDirection}
                   onClick={next}
                 >
                   Continue
