@@ -124,7 +124,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
   if (showIntro) {
     return (
       <div className="fixed inset-0 z-50 flex flex-col bg-white safe-top px-6">
-        <div className="flex flex-1 flex-col items-center text-center pt-[13vh]">
+        <div className="flex flex-1 flex-col items-center text-center pt-[18vh]">
           <div className="mb-5 h-16 w-16 overflow-hidden rounded-[18px] border border-ink/10 shadow-md">
             <img src="/icon-512.png" alt="WhatYouAte" className="h-full w-full object-cover" />
           </div>
@@ -171,7 +171,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
               className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80"
               onClick={onComplete}
             >
-              Let's Go
+              Let's Go!
             </button>
           </div>
         </div>
@@ -192,7 +192,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
         {step === 0 && (
           <div className="flex flex-1 flex-col">
             <p className="pt-5 text-[11px] uppercase tracking-widest text-muted/50">Step 1 of 6</p>
-            <div className="mt-[12vh]">
+            <div className="mt-[16vh]">
               <h1 className="text-2xl font-semibold text-ink">When Were You Born?</h1>
               <p className="mt-2 text-sm text-muted/60">We use this to calibrate your calorie and nutrition targets.</p>
               <div className="mt-8 flex gap-2">
@@ -226,7 +226,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
                   ))}
                 </select>
               </div>
-              <div className="mt-10 space-y-3">
+              <div className="mt-14 space-y-3">
                 <button
                   type="button"
                   className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80 disabled:opacity-40"
