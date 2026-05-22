@@ -45,7 +45,7 @@ export default function ReviewPromptModal() {
     return () => window.removeEventListener(REVIEW_EVENT, handler);
   }, []);
 
-  if (!open) return null;
+  if (!open && !showFeedback) return null;
 
   const firstName = profile?.firstName ?? "";
   const lastName  = profile?.lastName  ?? "";
@@ -110,7 +110,7 @@ export default function ReviewPromptModal() {
               <div className="mb-3 h-12 w-12 overflow-hidden rounded-[14px] border border-ink/10 shadow-sm">
                 <img src="/icon-512.png" alt="WhatYouAte" className="h-full w-full object-cover" />
               </div>
-              <h2 className="text-lg font-semibold text-ink">Are you enjoying WhatYouAte?</h2>
+              <h2 className="text-lg font-semibold text-ink">Are You Enjoying WhatYouAte?</h2>
               <p className="mt-1.5 text-sm text-muted/70">We'd love to know how it's going for you.</p>
               <div className="mt-5 flex w-full flex-col gap-2.5">
                 <button
