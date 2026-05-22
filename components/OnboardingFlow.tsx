@@ -197,7 +197,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
                 <svg className="h-8 w-8 text-primary/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="4" width="18" height="18" rx="2"/>
                   <path d="M16 2v4M8 2v4M3 10h18"/>
-                  <path d="M8 14h.01M12 14h.01M16 14h.01"/>
+                  <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/>
                 </svg>
               </div>
               <h1 className="text-2xl font-semibold text-ink text-center">When Were You Born?</h1>
@@ -262,8 +262,8 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
             <div className="mt-[8vh]">
               <div className="flex justify-center mb-5">
                 <svg className="h-8 w-8 text-primary/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="7" r="4"/>
-                  <path d="M4 21v-2a8 8 0 0116 0v2"/>
+                  <circle cx="12" cy="8" r="4"/>
+                  <path d="M4 21v-2a4 4 0 014-4h8a4 4 0 014 4v2"/>
                 </svg>
               </div>
               <h1 className="text-2xl font-semibold text-ink text-center">What's Your Biological Sex?</h1>
@@ -302,8 +302,8 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
             <div className="mt-[8vh]">
               <div className="flex justify-center mb-5">
                 <svg className="h-8 w-8 text-primary/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M3 6l9-3 9 3M5 10l-2 7h4zM19 10l-2 7h4z"/>
-                  <path d="M12 3v18"/>
+                  <path d="M21.3 8.7 8.7 21.3c-1 1-2.5 1-3.4 0l-2.6-2.6c-1-1-1-2.5 0-3.4L15.3 2.7c1-1 2.5-1 3.4 0l2.6 2.6c1 1 1 2.5 0 3.4z"/>
+                  <path d="m7.5 10.5 2 2M10.5 7.5l2 2M13.5 4.5l2 2M4.5 13.5l2 2"/>
                 </svg>
               </div>
               <h1 className="text-2xl font-semibold text-ink text-center">Height & Weight</h1>
@@ -375,7 +375,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
                 <svg className="h-8 w-8 text-primary/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="10"/>
                   <circle cx="12" cy="12" r="6"/>
-                  <circle cx="12" cy="12" r="2"/>
+                  <circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/>
                 </svg>
               </div>
               <h1 className="text-2xl font-semibold text-ink text-center">What's Your Goal?</h1>
@@ -418,7 +418,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
             <div className="mt-[8vh]">
               <div className="flex justify-center mb-5">
                 <svg className="h-8 w-8 text-primary/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" strokeLinejoin="round"/>
                 </svg>
               </div>
               <h1 className="text-2xl font-semibold text-ink text-center">How Active Are You?</h1>
@@ -461,7 +461,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
             <div className="mt-[8vh]">
               <div className="flex justify-center mb-5">
                 <svg className="h-8 w-8 text-primary/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M11 20A7 7 0 0118.8 9h.2a7 7 0 010 14 7 7 0 01-8-3z"/>
+                  <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z"/>
                   <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
                 </svg>
               </div>
