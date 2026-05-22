@@ -192,7 +192,14 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
         {step === 0 && (
           <div className="flex flex-1 flex-col">
             <p className="pt-5 text-[11px] uppercase tracking-widest text-muted/50">Step 1 of 6</p>
-            <div className="mt-[16vh]">
+            <div className="mt-[10vh]">
+              <div className="flex justify-center mb-5">
+                <svg className="h-8 w-8 text-primary/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2"/>
+                  <path d="M16 2v4M8 2v4M3 10h18"/>
+                  <path d="M8 14h.01M12 14h.01M16 14h.01"/>
+                </svg>
+              </div>
               <h1 className="text-2xl font-semibold text-ink text-center">When Were You Born?</h1>
               <p className="mt-2 text-sm text-muted/60 text-center">We use this to calibrate your calorie and nutrition targets</p>
               <div className="mt-8 flex justify-center gap-2">
@@ -252,7 +259,13 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
         {step === 1 && (
           <div className="flex flex-1 flex-col">
             <p className="pt-5 text-[11px] uppercase tracking-widest text-muted/50">Step 2 of 6</p>
-            <div className="mt-[12vh]">
+            <div className="mt-[8vh]">
+              <div className="flex justify-center mb-5">
+                <svg className="h-8 w-8 text-primary/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="7" r="4"/>
+                  <path d="M4 21v-2a8 8 0 0116 0v2"/>
+                </svg>
+              </div>
               <h1 className="text-2xl font-semibold text-ink text-center">What's Your Biological Sex?</h1>
               <p className="mt-2 text-sm text-muted/60 text-center">We use this to calibrate your nutritional targets accurately</p>
               <div className="mt-8 flex flex-col gap-3">
@@ -286,7 +299,13 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
         {step === 2 && (
           <div className="flex flex-1 flex-col">
             <p className="pt-5 text-[11px] uppercase tracking-widest text-muted/50">Step 3 of 6</p>
-            <div className="mt-[12vh]">
+            <div className="mt-[8vh]">
+              <div className="flex justify-center mb-5">
+                <svg className="h-8 w-8 text-primary/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 6l9-3 9 3M5 10l-2 7h4zM19 10l-2 7h4z"/>
+                  <path d="M12 3v18"/>
+                </svg>
+              </div>
               <h1 className="text-2xl font-semibold text-ink text-center">Height & Weight</h1>
               <p className="mt-2 text-sm text-muted/60 text-center">We use this to calculate your personal calorie targets</p>
               <div className="mt-8 space-y-6">
@@ -351,7 +370,14 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
         {step === 3 && (
           <div className="flex flex-1 flex-col">
             <p className="pt-5 text-[11px] uppercase tracking-widest text-muted/50">Step 4 of 6</p>
-            <div className="mt-[12vh]">
+            <div className="mt-[8vh]">
+              <div className="flex justify-center mb-5">
+                <svg className="h-8 w-8 text-primary/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <circle cx="12" cy="12" r="6"/>
+                  <circle cx="12" cy="12" r="2"/>
+                </svg>
+              </div>
               <h1 className="text-2xl font-semibold text-ink text-center">What's Your Goal?</h1>
               <p className="mt-2 text-sm text-muted/60 text-center">This helps us understand what you're working toward</p>
               <div className="mt-8 flex flex-col gap-3">
@@ -389,7 +415,12 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
         {step === 4 && (
           <div className="flex flex-1 flex-col">
             <p className="pt-5 text-[11px] uppercase tracking-widest text-muted/50">Step 5 of 6</p>
-            <div className="mt-[12vh]">
+            <div className="mt-[8vh]">
+              <div className="flex justify-center mb-5">
+                <svg className="h-8 w-8 text-primary/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                </svg>
+              </div>
               <h1 className="text-2xl font-semibold text-ink text-center">How Active Are You?</h1>
               <p className="mt-2 text-sm text-muted/60 text-center">We use this to estimate how many calories you need each day</p>
               <div className="mt-8 flex flex-col gap-3">
@@ -427,7 +458,13 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
         {step === 5 && (
           <div className="flex flex-1 flex-col">
             <p className="pt-5 text-[11px] uppercase tracking-widest text-muted/50">Step 6 of 6</p>
-            <div className="mt-[12vh]">
+            <div className="mt-[8vh]">
+              <div className="flex justify-center mb-5">
+                <svg className="h-8 w-8 text-primary/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M11 20A7 7 0 0118.8 9h.2a7 7 0 010 14 7 7 0 01-8-3z"/>
+                  <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+                </svg>
+              </div>
               <h1 className="text-2xl font-semibold text-ink text-center">Any Foods You Avoid?</h1>
               <p className="mt-2 text-sm text-muted/60 text-center">We'll make sure your coach never suggests these — tap all that apply</p>
               <div className="mt-12 flex flex-wrap justify-center gap-2">
