@@ -274,9 +274,8 @@ export default function ProfileScreen() {
       target: '[data-tour="profile-header"]',
       content: (
         <div>
-          <p style={{ fontWeight: 600, marginBottom: 10 }}>Fill Out Your Profile</p>
-          <p>The more complete your profile, the more accurate your targets, and the more useful your AI Coach becomes.</p>
-          <p style={{ marginTop: 10 }}>We are excited for you to get started!</p>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>A Few More Details</p>
+          <p>Your core profile is set. Fill in anything else below — your personal focus, body priority, daily supplements, and water tracking — to get even more out of your coach.</p>
         </div>
       ),
       disableBeacon: true,
@@ -447,6 +446,7 @@ export default function ProfileScreen() {
       `wya_walkthrough_stage_${user.id}`,
       `wya_walkthrough_gate_${user.id}`,
       `wya_walkthrough_profile_${user.id}`,
+      `wya_onboarding_done_${user.id}`,
       `wya_nudge_view_count_${user.id}`,
       `wya_dob_${user.id}`,
     ];

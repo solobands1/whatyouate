@@ -36,6 +36,7 @@ import { useTrialStatus } from "../hooks/useTrialStatus";
 import { openUpgradeModal } from "./UpgradeModal";
 import { getPendingReviewFlag, canShowReviewPrompt, checkAndSetMilestoneFlag } from "../lib/reviewPrompt";
 import { openReviewPrompt } from "./ReviewPromptModal";
+import OnboardingFlow from "./OnboardingFlow";
 import { safeFallbackAnalysis } from "../lib/ai/schema";
 import { useWorkout, WORKOUT_TYPE_OPTIONS } from "../hooks/useWorkout";
 import { useMeals } from "../hooks/useMeals";
@@ -288,6 +289,7 @@ export default function HomeScreen() {
   const [waterInputUnit, setWaterInputUnit] = useState<"ml" | "oz" | "cups" | "L">("ml");
   const [runTour, setRunTour] = useState(false);
   const [showTourGate, setShowTourGate] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [demoData] = useState(() => ({ meals: makeDemoMeals(), workouts: makeDemoWorkouts(), feelLogs: makeDemoFeelLogs() }));
   const loadingData = dataLoading;
@@ -1265,10 +1267,16 @@ export default function HomeScreen() {
       setShowTourGate(false);
       return;
     }
-    // Show gate if not yet seen — works for new users and replays (replay clears both keys)
+    // Show onboarding for new users, then gate — replays skip onboarding
+    const onboardingKey = `wya_onboarding_done_${user.id}`;
+    const onboardingDone = localStorage.getItem(onboardingKey);
     if (!seen && !active && !gateSeen) {
-      localStorage.setItem(gateKey, "true");
-      setShowTourGate(true);
+      if (!onboardingDone) {
+        setShowOnboarding(true);
+      } else {
+        localStorage.setItem(gateKey, "true");
+        setShowTourGate(true);
+      }
     }
     // Check if streak saver was already dismissed today
     if (localStorage.getItem(`wya_streak_saver_dismissed_${user.id}_${todayKey()}`) === "true") {
@@ -1695,6 +1703,22 @@ export default function HomeScreen() {
             </button>
           </div>
         </div>
+      )}
+      {showOnboarding && user && (
+        <OnboardingFlow
+          userId={user.id}
+          firstName={
+            profile?.firstName ||
+            (user as { user_metadata?: Record<string, string> }).user_metadata?.first_name ||
+            ""
+          }
+          onComplete={() => {
+            localStorage.setItem(`wya_onboarding_done_${user.id}`, "true");
+            localStorage.setItem(`wya_walkthrough_gate_${user.id}`, "true");
+            setShowOnboarding(false);
+            setShowTourGate(true);
+          }}
+        />
       )}
       {showTourGate && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-white/70 backdrop-blur-sm">
