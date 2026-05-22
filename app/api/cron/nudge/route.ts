@@ -233,7 +233,10 @@ export async function GET(req: Request) {
       const localHour = getUserLocalHour(tzOffset);
       const isMorningWindow = localHour === 7;
       const isEveningWindow = localHour === 19;
-      if (!isMorningWindow && !isEveningWindow) continue;
+      if (!isMorningWindow && !isEveningWindow) {
+        if (tzOffset == null) console.log(`[cron/nudge] skip ${userId.slice(0,8)}: no timezone offset stored (UTC hour ${new Date().getUTCHours()})`);
+        continue;
+      }
 
       const { data: recentNudgeCheck } = await supabase
         .from("nudges")
@@ -241,10 +244,10 @@ export async function GET(req: Request) {
         .eq("user_id", userId)
         .gte("created_at", fourHoursAgo)
         .limit(1);
-      if (recentNudgeCheck?.length) continue;
+      if (recentNudgeCheck?.length) { console.log(`[cron/nudge] skip ${userId.slice(0,8)}: nudge already sent in last 4h`); continue; }
 
       const isPro = await checkProEntitlement(userId);
-      if (!isPro) continue;
+      if (!isPro) { console.log(`[cron/nudge] skip ${userId.slice(0,8)}: not pro`); continue; }
 
       const sevenDaysAgoDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
       const [mealsRes, workoutsRes, profileRes, nudgesRes, feelRes, weightRes, stepsRes, sleepRes] = await Promise.all([
@@ -258,10 +261,10 @@ export async function GET(req: Request) {
         supabase.from("sleep_logs").select("date, hours").eq("user_id", userId).gte("date", sevenDaysAgoDate).order("date", { ascending: false }),
       ]);
 
-      if (!profileRes.data) continue;
+      if (!profileRes.data) { console.log(`[cron/nudge] skip ${userId.slice(0,8)}: no profile row`); continue; }
 
       const meals = (mealsRes.data ?? []).map(mapMealRow).filter(Boolean) as MealLog[];
-      if (meals.length < 5) continue;
+      if (meals.length < 5) { console.log(`[cron/nudge] skip ${userId.slice(0,8)}: only ${meals.length} meals (need 5)`); continue; }
 
       const workouts = (workoutsRes.data ?? []).map(mapWorkoutRow);
       const profile = mapProfileRow(profileRes.data as Record<string, unknown>);
@@ -345,17 +348,18 @@ export async function GET(req: Request) {
         ctx.blockedNudgeTypes = [...new Set([...morningBlocked, ...blockedNudgeTypes, "workout_fuel_low"])];
       }
 
+      console.log(`[cron/nudge] generating for ${userId.slice(0,8)} localHour=${localHour} window=${isEveningWindow ? "evening" : "morning"} meals=${meals.length}`);
       let nudge = await generateNudge(ctx);
 
-      if (nudge && !isEvening && nudge.type === "check_in" && !sparseLogs) nudge = null;
+      if (nudge && !isEvening && nudge.type === "check_in" && !sparseLogs) { console.log(`[cron/nudge] skip ${userId.slice(0,8)}: check_in suppressed (not sparse)`); nudge = null; }
 
       // Prevent consecutive streak openers (e.g. "54 days..." two nudges in a row)
       if (nudge?.message) {
         const lastMsg = ((nudgesRes.data as Array<{ message: string }> | null)?.[0]?.message ?? "").toLowerCase();
-        if (/^\d+\s+days?\b/i.test(nudge.message) && /^\d+\s+days?\b/i.test(lastMsg)) nudge = null;
+        if (/^\d+\s+days?\b/i.test(nudge.message) && /^\d+\s+days?\b/i.test(lastMsg)) { console.log(`[cron/nudge] skip ${userId.slice(0,8)}: consecutive streak opener suppressed`); nudge = null; }
       }
 
-      if (!nudge?.message) continue;
+      if (!nudge?.message) { console.log(`[cron/nudge] skip ${userId.slice(0,8)}: generateNudge returned null`); continue; }
 
       await supabase.from("nudges").insert({
         user_id: userId,
@@ -367,6 +371,7 @@ export async function GET(req: Request) {
         created_at: nowISO,
       });
 
+      console.log(`[cron/nudge] saved nudge for ${userId.slice(0,8)} type=${nudge.type}`);
       pendingPushes.push({ userId, message: nudge.message });
       processed++;
     } catch (err) {

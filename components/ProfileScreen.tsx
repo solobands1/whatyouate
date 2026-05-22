@@ -275,7 +275,7 @@ export default function ProfileScreen() {
       content: (
         <div>
           <p style={{ fontWeight: 600, marginBottom: 10 }}>A Few More Details</p>
-          <p>Your core profile is set. Fill in anything else below — your personal focus, body priority, daily supplements, and water tracking — to get even more out of your coach.</p>
+          <p>Your core profile is set. Fill in anything else below: your personal focus, body priority, daily supplements, and water tracking to get even more out of your coach.</p>
         </div>
       ),
       disableBeacon: true,
