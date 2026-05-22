@@ -1128,7 +1128,12 @@ export default function ProfileScreen() {
           <div className="border-b border-ink/5 pb-5 mb-5">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-ink/70">Apple Health</p>
+                <div className="flex items-center gap-1.5">
+                  <svg viewBox="0 0 16 16" className="h-3 w-3 text-rose-400" fill="currentColor">
+                    <path d="M8 13.7C7.7 13.5 1 9.2 1 5.5 1 3.6 2.6 2 4.5 2c1 0 2 .5 2.7 1.3L8 4.2l.8-.9C9.5 2.5 10.5 2 11.5 2 13.4 2 15 3.6 15 5.5c0 3.7-6.7 8-7 8.2z"/>
+                  </svg>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-ink/70">Apple Health</p>
+                </div>
                 <p className="mt-0.5 text-[11px] text-muted/60">Syncs steps, workouts, and sleep to make your coach smarter.</p>
               </div>
               <div className="shrink-0">

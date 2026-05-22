@@ -160,6 +160,7 @@ export default function SummaryScreen() {
     } catch { return false; }
   });
   const [showWyaaSheet, setShowWyaaSheet] = useState(false);
+  const [showNudgeInfo, setShowNudgeInfo] = useState(false);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -1178,12 +1179,29 @@ export default function SummaryScreen() {
               onClick={() => setShowWyaaSheet(true)}
             />
           </div>
-          <div className="flex items-center gap-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Nudges</p>
-            {nudgeCardIsNew && smartNudge && (
-              <span className="animate-card-fade inline-flex items-center rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold text-primary">New</span>
-            )}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Nudges</p>
+              {nudgeCardIsNew && smartNudge && (
+                <span className="animate-card-fade inline-flex items-center rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold text-primary">New</span>
+              )}
+            </div>
+            <button
+              className="flex h-4 w-4 items-center justify-center rounded-full border border-ink/20 transition hover:border-ink/40 active:opacity-60 focus:outline-none"
+              onClick={() => setShowNudgeInfo((v) => !v)}
+            >
+              <span className="text-[9px] leading-none text-muted/50">i</span>
+            </button>
           </div>
+          {showNudgeInfo && (
+            <p className="mt-2 text-[11px] leading-relaxed text-muted/55">
+              Insights are informed by{" "}
+              <a href="https://www.dietaryguidelines.gov" target="_blank" rel="noopener noreferrer" className="text-primary/70 underline underline-offset-2">USDA Dietary Guidelines</a>
+              {" and "}
+              <a href="https://www.nih.gov/health-information" target="_blank" rel="noopener noreferrer" className="text-primary/70 underline underline-offset-2">NIH nutrition research</a>
+              . Not a substitute for medical advice.
+            </p>
+          )}
 
           {isDemoMode ? (
             <div className="mt-4 space-y-2.5">
