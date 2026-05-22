@@ -155,9 +155,9 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
   }
 
   if (nudgeIntentWindow === "morning") {
-    lines.push(`\nFRAMING NOTE: This is a morning nudge. Focus on durable multi-day patterns and trends — not a real-time check-in. Avoid "right now" or time-specific references. If nothing genuinely worth saying stands out, return null.`);
+    lines.push(`\nFRAMING NOTE: This is a morning nudge. Focus on durable multi-day patterns and trends — not a real-time check-in. Avoid "right now" or time-specific references.`);
   } else if (nudgeIntentWindow === "evening") {
-    lines.push(`\nFRAMING NOTE: This is an evening nudge. Today's data is available — use it for a brief, specific, warm reflection on how the day went. If there's a meaningful gap still open and a simple food could help, mention it as an option, not a directive. If nothing stands out, return null.`);
+    lines.push(`\nFRAMING NOTE: This is an evening nudge. Today's data is available — use it for a brief, specific, warm reflection on how the day went. If there's a meaningful gap still open and a simple food could help, mention it as an option, not a directive.`);
   }
 
   const daysSinceLastLog = ctx.daysSinceLastLog as number | undefined;
@@ -321,9 +321,9 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
     : `Time of day: ${activeWindow}`;
   lines.push(`\nToday is ${todayDayOfWeek}. ${windowLine}`);
   if (nudgeIntentWindow === "morning") {
-    lines.push(`\nAnalyze the historical data above. What is the single most useful pattern, trend, or insight to set this person up for today? If nothing genuinely stands out in the data, return null.`);
+    lines.push(`\nAnalyze the historical data above. What is the single most useful pattern, trend, or insight to set this person up for today? If the user is active (logged within the last 2 days), always return something — use encouragement if nothing more specific stands out.`);
   } else if (nudgeIntentWindow === "evening") {
-    lines.push(`\nAnalyze both today's data and the historical patterns above. What is the single most useful, specific observation about how today went or what to carry forward? If nothing genuinely stands out, return null.`);
+    lines.push(`\nAnalyze both today's data and the historical patterns above. What is the single most useful, specific observation about how today went or what to carry forward? If the user is active (logged within the last 2 days), always return something — use encouragement if nothing more specific stands out.`);
   } else {
     lines.push(`\nAnalyze the data above. What is the single most useful, specific thing to tell this person right now? Theme overlap with recent nudges is not a reason to return null — find a fresh angle. Only return null if the user hasn't logged in several days and there is truly nothing in the data worth responding to.`);
   }
