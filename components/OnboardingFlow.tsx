@@ -647,7 +647,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
                 </svg>
               </div>
               <h1 className="text-2xl font-semibold text-ink text-center">Connect Apple Health?</h1>
-              <p className="mt-2 text-sm text-muted/70 text-center">Sync steps, sleep, and workouts to make your AI coach smarter</p>
+              <p className="mt-2 text-sm text-muted/70 text-center">Sync steps, sleep, and workouts to make your AI Coach smarter</p>
               <p className="mt-1 text-xs text-muted/50 text-center">You can adjust this anytime in your profile settings</p>
 
               {healthChoice === null && (
