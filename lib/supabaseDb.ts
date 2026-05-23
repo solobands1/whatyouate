@@ -262,13 +262,12 @@ export async function saveProfile(userId: string, profile: UserProfile) {
 
 export async function saveTimezoneOffset(userId: string, offsetMinutes: number): Promise<void> {
   if (useMemory) return;
-  try {
-    await supabase.from("profiles").upsert(
-      { user_id: userId, timezone_offset_minutes: offsetMinutes },
-      { onConflict: "user_id" }
-    );
-    profileCache.delete(userId);
-  } catch { /* non-critical */ }
+  const { error } = await supabase.from("profiles").upsert(
+    { user_id: userId, timezone_offset_minutes: offsetMinutes },
+    { onConflict: "user_id" }
+  );
+  if (error) console.error("[supabase] saveTimezoneOffset failed:", error.message);
+  else profileCache.delete(userId);
 }
 
 export function clearProfileCache(userId: string) {
