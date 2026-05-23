@@ -222,7 +222,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
                 </svg>
               </div>
               <h1 className="text-2xl font-semibold text-ink text-center">When Were You Born?</h1>
-              <p className="mt-2 text-sm text-muted/60 text-center">We use this to calibrate your calorie and nutrition targets</p>
+              <p className="mt-2 text-sm text-muted/70 text-center">We use this to calibrate your calorie and nutrition targets</p>
               <div className="mt-8 flex justify-center gap-2">
                 <select
                   className={`w-[120px] ${selectCls}`}
@@ -261,7 +261,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
                   ))}
                 </select>
               </div>
-              <div className="mt-20 space-y-3">
+              <div className="mt-28 space-y-3">
                 <button
                   type="button"
                   className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80 disabled:opacity-40"
@@ -293,7 +293,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
                 </svg>
               </div>
               <h1 className="text-2xl font-semibold text-ink text-center">What's Your Biological Sex?</h1>
-              <p className="mt-2 text-sm text-muted/60 text-center">We use this to calibrate your nutritional targets accurately</p>
+              <p className="mt-2 text-sm text-muted/70 text-center">We use this to calibrate your nutritional targets accurately</p>
               <div className="mt-8 flex flex-col gap-3">
                 {(["male","female","prefer_not"] as const).map((v) => (
                   <button
@@ -338,7 +338,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
                 </svg>
               </div>
               <h1 className="text-2xl font-semibold text-ink text-center">Height & Weight</h1>
-              <p className="mt-2 text-sm text-muted/60 text-center">We use this to calculate your personal calorie targets</p>
+              <p className="mt-2 text-sm text-muted/70 text-center">We use this to calculate your personal calorie targets</p>
               <div className="mt-8 space-y-6">
                 <div>
                   <p className="mb-2 text-xs font-medium text-muted/60">Height</p>
@@ -415,7 +415,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
                 </svg>
               </div>
               <h1 className="text-2xl font-semibold text-ink text-center">What's Your Goal?</h1>
-              <p className="mt-2 text-sm text-muted/60 text-center">This helps us understand what you're working toward</p>
+              <p className="mt-2 text-sm text-muted/70 text-center">This helps us understand what you're working toward</p>
               <div className="mt-8 flex flex-col gap-3">
                 {GOALS.map((g) => (
                   <button
@@ -429,7 +429,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
                     <p className={`text-sm font-medium ${goalDirection === g.value ? "text-primary" : "text-ink/80"}`}>
                       {g.label}
                     </p>
-                    <p className="mt-0.5 text-xs text-muted/55">{g.sub}</p>
+                    <p className="mt-0.5 text-xs text-muted/65">{g.sub}</p>
                   </button>
                 ))}
               </div>
@@ -463,7 +463,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
                 </svg>
               </div>
               <h1 className="text-2xl font-semibold text-ink text-center">How Active Are You?</h1>
-              <p className="mt-2 text-sm text-muted/60 text-center">We use this to estimate how many calories you need each day</p>
+              <p className="mt-2 text-sm text-muted/70 text-center">We use this to estimate how many calories you need each day</p>
               <div className="mt-8 flex flex-col gap-3">
                 {ACTIVITY_LEVELS.map((a) => (
                   <button
@@ -477,7 +477,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
                     <p className={`text-sm font-medium ${activityLevel === a.value ? "text-primary" : "text-ink/80"}`}>
                       {a.label}
                     </p>
-                    <p className="mt-0.5 text-xs text-muted/55">{a.sub}</p>
+                    <p className="mt-0.5 text-xs text-muted/65">{a.sub}</p>
                   </button>
                 ))}
               </div>
@@ -512,7 +512,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
                 </svg>
               </div>
               <h1 className="text-2xl font-semibold text-ink text-center">Any Foods You Avoid?</h1>
-              <p className="mt-2 text-sm text-muted/60 text-center">We'll make sure your coach never suggests these — tap all that apply</p>
+              <p className="mt-2 text-sm text-muted/70 text-center">We'll make sure your coach never suggests these — tap all that apply</p>
               <div className="mt-12 flex flex-wrap justify-center gap-2">
                 {DIETARY_OPTIONS.map((d) => {
                   const active = dietaryRestrictions.includes(d);

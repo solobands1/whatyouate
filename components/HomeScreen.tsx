@@ -1727,8 +1727,8 @@ export default function HomeScreen() {
       )}
       {gateOverlay && <div className="fixed inset-0 z-50 bg-white" />}
       {showTourGate && (
-        <div className="fixed inset-0 z-40 flex flex-col items-center bg-white/70 backdrop-blur-sm pt-[22vh] px-5">
-          <div className="flex max-w-xs flex-col items-center gap-4 text-center">
+        <div className="fixed inset-0 z-40 flex flex-col items-center justify-center bg-white/70 backdrop-blur-sm px-5">
+          <div className="flex max-w-xs flex-col items-center text-center -mt-[10vh]">
             <div className="w-full px-5 py-1 text-center">
               <p className="text-[26px] font-semibold text-ink/80">
                 Hey{" "}
@@ -1737,7 +1737,7 @@ export default function HomeScreen() {
                   "there"}
               </p>
             </div>
-            <div className="space-y-3 text-sm text-ink/70">
+            <div className="mt-3 space-y-3 text-sm text-ink/70">
               <p className="text-[15px] font-semibold text-ink/80">Welcome to WhatYouAte!</p>
               <p>
                 Log your meals, activity, and how you feel.
@@ -1746,6 +1746,8 @@ export default function HomeScreen() {
                 Your AI Coach connects the dots and helps you spot patterns between what you eat and how you feel, perform, and recover.
               </p>
             </div>
+          </div>
+          <div className="mt-10 flex flex-col items-center gap-4">
             <button
               type="button"
               className="rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] ring-1 ring-white/40 transition hover:bg-primary/90"
