@@ -635,7 +635,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
         {step === 6 && (
           <div className="flex flex-1 flex-col">
             <div className="flex items-center justify-between pt-5">
-              <button type="button" className="p-1 active:opacity-50" onClick={() => setStep(5)}>
+              <button type="button" className="p-1 active:opacity-50" onClick={() => { setStep(5); setHealthChoice(null); setHealthKitGranted(null); setHealthKitConnecting(false); }}>
                 <svg className="h-5 w-5 text-ink/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
               </button>
               <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 7 of 7</p>
