@@ -1487,6 +1487,8 @@ export default function HomeScreen() {
   })();
 
   const welcomeMessage = (() => {
+    const hasEverLogged = displayMeals.some((m) => m.analysisJson?.source !== "supplement" && m.status !== "failed");
+    if (!hasEverLogged) return { greeting: "Welcome!", sub: "Log Your First Meal" };
     const hour = new Date().getHours();
     if (hour < 12) return { greeting: "Good Morning", sub: "Let's make today count" };
     if (hour < 17) return { greeting: "Good Afternoon", sub: "Let's log and improve" };
@@ -1718,6 +1720,7 @@ export default function HomeScreen() {
           onComplete={() => {
             localStorage.setItem(`wya_onboarding_done_${user.id}`, "true");
             localStorage.setItem(`wya_walkthrough_gate_${user.id}`, "true");
+            reload();
             setGateOverlay(true);
             setShowOnboarding(false);
             setShowTourGate(true);

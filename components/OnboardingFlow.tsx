@@ -13,9 +13,9 @@ const DIETARY_OPTIONS = [
 ];
 
 const GOALS: { value: GoalDirection; label: string; sub: string }[] = [
-  { value: "lose",     label: "Lose Weight",  sub: "We'll focus on calorie awareness and building a healthy deficit." },
-  { value: "maintain", label: "Stay Steady",  sub: "We'll help you stay balanced and spot patterns over time." },
   { value: "gain",     label: "Gain Weight",  sub: "We'll focus on fueling your growth and performance." },
+  { value: "maintain", label: "Stay Steady",  sub: "We'll help you stay balanced and spot patterns over time." },
+  { value: "lose",     label: "Lose Weight",  sub: "We'll focus on calorie awareness and building a healthy deficit." },
 ];
 
 const ACTIVITY_LEVELS: { value: ActivityLevel; label: string; sub: string }[] = [
