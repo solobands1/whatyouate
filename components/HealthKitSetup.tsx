@@ -9,9 +9,10 @@ export default function HealthKitSetup() {
 
   useEffect(() => {
     if (!user?.id) return;
+    if (localStorage.getItem(`wya_healthkit_connected_${user.id}`) !== "true") return;
     syncHealthKitActivity(user.id).then((connected) => {
-      if (connected) {
-        localStorage.setItem(`wya_healthkit_connected_${user.id}`, "true");
+      if (!connected) {
+        localStorage.removeItem(`wya_healthkit_connected_${user.id}`);
       }
     });
   }, [user?.id]);

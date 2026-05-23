@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { clearProfileCache } from "../lib/supabaseDb";
 import { notifyProfileUpdated } from "../lib/dataEvents";
+import { requestHealthKitPermissions, checkHealthKitAuthorization, syncHealthKitActivity } from "../lib/healthKit";
 import type { ActivityLevel, GoalDirection } from "../lib/types";
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -61,6 +62,9 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
   const [goalDirection, setGoalDirection] = useState<GoalDirection | "">("");
   const [activityLevel, setActivityLevel] = useState<ActivityLevel | "">("");
   const [dietaryRestrictions, setDietaryRestrictions] = useState<string[]>([]);
+  const [healthChoice, setHealthChoice] = useState<"yes" | "no" | null>(null);
+  const [healthKitConnecting, setHealthKitConnecting] = useState(false);
+  const [healthKitGranted, setHealthKitGranted] = useState<boolean | null>(null);
 
   useEffect(() => {
     const t1 = setTimeout(() => setIntroAnimStep(1), 80);
@@ -131,7 +135,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
   const canContinueHeight = units === "metric"
     ? heightCm && weight
     : (heightFt || heightIn) && weight;
-  const progress = (step / 6) * 100;
+  const progress = (step / 7) * 100;
 
   const animStyle = (show: boolean) => ({
     opacity: show ? 1 : 0,
@@ -226,7 +230,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
               <button type="button" className="p-1 active:opacity-50" onClick={() => setShowIntro(true)}>
                 <svg className="h-5 w-5 text-ink/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
               </button>
-              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 1 of 6</p>
+              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 1 of 7</p>
             </div>
             <div className="mt-[10vh]">
               <div className="flex justify-center mb-5">
@@ -298,7 +302,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
               <button type="button" className="p-1 active:opacity-50" onClick={() => setStep(0)}>
                 <svg className="h-5 w-5 text-ink/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
               </button>
-              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 2 of 6</p>
+              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 2 of 7</p>
             </div>
             <div className="mt-[8vh]">
               <div className="flex justify-center mb-5">
@@ -344,7 +348,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
               <button type="button" className="p-1 active:opacity-50" onClick={() => setStep(1)}>
                 <svg className="h-5 w-5 text-ink/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
               </button>
-              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 3 of 6</p>
+              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 3 of 7</p>
             </div>
             <div className="mt-[8vh]">
               <div className="flex justify-center mb-5">
@@ -468,7 +472,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
               <button type="button" className="p-1 active:opacity-50" onClick={() => setStep(2)}>
                 <svg className="h-5 w-5 text-ink/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
               </button>
-              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 4 of 6</p>
+              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 4 of 7</p>
             </div>
             <div className="mt-[8vh]">
               <div className="flex justify-center mb-5">
@@ -518,7 +522,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
               <button type="button" className="p-1 active:opacity-50" onClick={() => setStep(3)}>
                 <svg className="h-5 w-5 text-ink/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
               </button>
-              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 5 of 6</p>
+              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 5 of 7</p>
             </div>
             <div className="mt-[4vh]">
               <div className="flex justify-center mb-5">
@@ -566,7 +570,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
               <button type="button" className="p-1 active:opacity-50" onClick={() => setStep(4)}>
                 <svg className="h-5 w-5 text-ink/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
               </button>
-              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 6 of 6</p>
+              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 6 of 7</p>
             </div>
             <div className="mt-[8vh]">
               <div className="flex justify-center mb-5">
@@ -610,21 +614,113 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
               <div className="mt-16 space-y-3">
                 <button
                   type="button"
-                  className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80 disabled:opacity-50"
-                  disabled={saving}
-                  onClick={handleSaveAndFinish}
+                  className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80"
+                  onClick={next}
                 >
-                  {saving ? "Saving…" : "Done"}
+                  Continue
                 </button>
                 <button
                   type="button"
-                  className={`${skipCls} disabled:opacity-50`}
-                  disabled={saving}
-                  onClick={handleSaveAndFinish}
+                  className={skipCls}
+                  onClick={next}
                 >
                   Skip
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Step 6: Apple Health */}
+        {step === 6 && (
+          <div className="flex flex-1 flex-col">
+            <div className="flex items-center justify-between pt-5">
+              <button type="button" className="p-1 active:opacity-50" onClick={() => setStep(5)}>
+                <svg className="h-5 w-5 text-ink/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+              </button>
+              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 7 of 7</p>
+            </div>
+            <div className="mt-[8vh]">
+              <div className="flex justify-center mb-5">
+                <svg viewBox="0 0 16 16" className="h-10 w-10 text-rose-400" fill="currentColor">
+                  <path d="M8 13.7C7.7 13.5 1 9.2 1 5.5 1 3.6 2.6 2 4.5 2c1 0 2 .5 2.7 1.3L8 4.2l.8-.9C9.5 2.5 10.5 2 11.5 2 13.4 2 15 3.6 15 5.5c0 3.7-6.7 8-7 8.2z"/>
+                </svg>
+              </div>
+              <h1 className="text-2xl font-semibold text-ink text-center">Connect Apple Health?</h1>
+              <p className="mt-2 text-sm text-muted/70 text-center">Sync steps, sleep, and workouts to make your AI coach smarter</p>
+              <p className="mt-1 text-xs text-muted/50 text-center">You can adjust this anytime in your profile settings</p>
+
+              {healthChoice === null && (
+                <div className="mt-10 space-y-3">
+                  <button
+                    type="button"
+                    className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80 disabled:opacity-50"
+                    disabled={healthKitConnecting}
+                    onClick={async () => {
+                      setHealthKitConnecting(true);
+                      setHealthChoice("yes");
+                      await requestHealthKitPermissions();
+                      const granted = await checkHealthKitAuthorization();
+                      if (granted) {
+                        localStorage.setItem(`wya_healthkit_connected_${userId}`, "true");
+                        syncHealthKitActivity(userId).catch(() => {});
+                      }
+                      setHealthKitGranted(granted);
+                      setHealthKitConnecting(false);
+                    }}
+                  >
+                    Yes, Connect
+                  </button>
+                  <button
+                    type="button"
+                    className={skipCls}
+                    onClick={() => setHealthChoice("no")}
+                  >
+                    No Thanks
+                  </button>
+                </div>
+              )}
+
+              {healthChoice === "yes" && healthKitConnecting && (
+                <div className="mt-10 flex justify-center">
+                  <p className="text-sm text-muted/60">Connecting…</p>
+                </div>
+              )}
+
+              {healthChoice === "yes" && !healthKitConnecting && (
+                <div className="mt-10 space-y-3">
+                  {healthKitGranted ? (
+                    <div className="flex items-center justify-center gap-2 py-3">
+                      <div className="h-2 w-2 rounded-full bg-emerald-400" />
+                      <p className="text-sm font-semibold text-emerald-600">Connected to Apple Health</p>
+                    </div>
+                  ) : (
+                    <p className="text-center text-sm text-muted/60">You can enable this anytime from your profile settings.</p>
+                  )}
+                  <button
+                    type="button"
+                    className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80 disabled:opacity-50"
+                    disabled={saving}
+                    onClick={handleSaveAndFinish}
+                  >
+                    {saving ? "Saving…" : "Done"}
+                  </button>
+                </div>
+              )}
+
+              {healthChoice === "no" && (
+                <div className="mt-10 space-y-3">
+                  <p className="text-center text-sm text-muted/60">No problem — you can connect anytime from your profile settings.</p>
+                  <button
+                    type="button"
+                    className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80 disabled:opacity-50"
+                    disabled={saving}
+                    onClick={handleSaveAndFinish}
+                  >
+                    {saving ? "Saving…" : "Done"}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}
