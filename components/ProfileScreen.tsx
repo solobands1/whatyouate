@@ -138,13 +138,11 @@ export default function ProfileScreen() {
 
     const hkConnected = localStorage.getItem(`wya_healthkit_connected_${user.id}`);
     setHealthKitStatus(hkConnected === "true" ? "connected" : "not_connected");
+    // Only confirm connected — never clear based on write-auth check (read-only grants return false)
     checkHealthKitAuthorization().then((authorized) => {
       if (authorized) {
         localStorage.setItem(`wya_healthkit_connected_${user.id}`, "true");
         setHealthKitStatus("connected");
-      } else {
-        localStorage.removeItem(`wya_healthkit_connected_${user.id}`);
-        setHealthKitStatus("not_connected");
       }
     });
 
