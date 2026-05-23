@@ -347,7 +347,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
                       <input
                         inputMode="numeric"
                         className="w-full rounded-xl border border-ink/10 bg-surface px-3 py-3 pr-9 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
-                        placeholder="5"
+                        placeholder="0"
                         value={heightFt}
                         onChange={(e) => setHeightFt(e.target.value.replace(/[^0-9]/g, "").slice(0, 1))}
                       />
@@ -357,7 +357,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
                       <input
                         inputMode="numeric"
                         className="w-full rounded-xl border border-ink/10 bg-surface px-3 py-3 pr-9 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
-                        placeholder="10"
+                        placeholder="0"
                         value={heightIn}
                         onChange={(e) => {
                           const v = parseInt(e.target.value.replace(/[^0-9]/g, "") || "0", 10);
@@ -374,7 +374,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
                     <input
                       inputMode="numeric"
                       className="w-full rounded-xl border border-ink/10 bg-surface px-3 py-3 pr-12 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
-                      placeholder="160"
+                      placeholder="0"
                       value={weight}
                       onChange={(e) => setWeight(e.target.value.replace(/[^0-9]/g, ""))}
                     />
@@ -391,7 +391,6 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
                 >
                   Continue
                 </button>
-                <button type="button" className={skipCls} onClick={next}>Skip</button>
               </div>
             </div>
           </div>
