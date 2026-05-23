@@ -210,10 +210,10 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
         {step === 0 && (
           <div className="flex flex-1 flex-col">
             <div className="flex items-center justify-between pt-5">
-              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 1 of 6</p>
               <button type="button" className="p-1 active:opacity-50" onClick={() => setShowIntro(true)}>
-                <svg className="h-4 w-4 text-muted/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+                <svg className="h-5 w-5 text-ink/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
               </button>
+              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 1 of 6</p>
             </div>
             <div className="mt-[10vh]">
               <div className="flex justify-center mb-5">
@@ -282,10 +282,10 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
         {step === 1 && (
           <div className="flex flex-1 flex-col">
             <div className="flex items-center justify-between pt-5">
-              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 2 of 6</p>
               <button type="button" className="p-1 active:opacity-50" onClick={() => setStep(0)}>
-                <svg className="h-4 w-4 text-muted/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+                <svg className="h-5 w-5 text-ink/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
               </button>
+              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 2 of 6</p>
             </div>
             <div className="mt-[8vh]">
               <div className="flex justify-center mb-5">
@@ -327,10 +327,10 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
         {step === 2 && (
           <div className="flex flex-1 flex-col">
             <div className="flex items-center justify-between pt-5">
-              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 3 of 6</p>
               <button type="button" className="p-1 active:opacity-50" onClick={() => setStep(1)}>
-                <svg className="h-4 w-4 text-muted/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+                <svg className="h-5 w-5 text-ink/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
               </button>
+              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 3 of 6</p>
             </div>
             <div className="mt-[8vh]">
               <div className="flex justify-center mb-5">
@@ -403,10 +403,10 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
         {step === 3 && (
           <div className="flex flex-1 flex-col">
             <div className="flex items-center justify-between pt-5">
-              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 4 of 6</p>
               <button type="button" className="p-1 active:opacity-50" onClick={() => setStep(2)}>
-                <svg className="h-4 w-4 text-muted/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+                <svg className="h-5 w-5 text-ink/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
               </button>
+              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 4 of 6</p>
             </div>
             <div className="mt-[8vh]">
               <div className="flex justify-center mb-5">
@@ -453,10 +453,10 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
         {step === 4 && (
           <div className="flex flex-1 flex-col">
             <div className="flex items-center justify-between pt-5">
-              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 5 of 6</p>
               <button type="button" className="p-1 active:opacity-50" onClick={() => setStep(3)}>
-                <svg className="h-4 w-4 text-muted/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+                <svg className="h-5 w-5 text-ink/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
               </button>
+              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 5 of 6</p>
             </div>
             <div className="mt-[8vh]">
               <div className="flex justify-center mb-5">
@@ -501,10 +501,10 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
         {step === 5 && (
           <div className="flex flex-1 flex-col">
             <div className="flex items-center justify-between pt-5">
-              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 6 of 6</p>
               <button type="button" className="p-1 active:opacity-50" onClick={() => setStep(4)}>
-                <svg className="h-4 w-4 text-muted/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+                <svg className="h-5 w-5 text-ink/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
               </button>
+              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 6 of 6</p>
             </div>
             <div className="mt-[8vh]">
               <div className="flex justify-center mb-5">
