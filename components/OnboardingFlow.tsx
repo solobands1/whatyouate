@@ -135,7 +135,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
     return (
       <div className="fixed inset-0 z-50 flex flex-col bg-white safe-top px-6">
         <div className="flex flex-1 flex-col items-center text-center pt-[18vh]">
-          <div style={animStyle(introAnimStep >= 1)} className="mb-5 h-16 w-16 overflow-hidden rounded-[18px] border border-ink/10 shadow-md">
+          <div style={animStyle(introAnimStep >= 1)} className="mb-6 h-24 w-24 overflow-hidden rounded-[22px] border border-ink/10 shadow-[0_8px_28px_rgba(111,168,255,0.28)]">
             <img src="/icon-512.png" alt="WhatYouAte" className="h-full w-full object-cover" />
           </div>
           <div style={animStyle(introAnimStep >= 2)}>
@@ -151,7 +151,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
               You can update any of this anytime from your profile.
             </p>
           </div>
-          <div style={animStyle(introAnimStep >= 5)} className="w-1/2 mt-14">
+          <div style={animStyle(introAnimStep >= 5)} className="w-1/2 mt-20">
             <button
               type="button"
               className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80"
