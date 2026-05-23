@@ -13,7 +13,7 @@ import { getDailySupplements, setDailySupplements, clearDailySuppsLoggedToday, c
 import { clearMealsCache } from "../lib/supabaseDb";
 import { notifyMealsUpdated } from "../lib/dataEvents";
 import { supabase } from "../lib/supabaseClient";
-import { connectHealthKit, openHealthKitSettings } from "../lib/healthKit";
+import { connectHealthKit, openHealthKitSettings, checkHealthKitAuthorization } from "../lib/healthKit";
 import { openReviewPrompt } from "./ReviewPromptModal";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
@@ -138,6 +138,15 @@ export default function ProfileScreen() {
 
     const hkConnected = localStorage.getItem(`wya_healthkit_connected_${user.id}`);
     setHealthKitStatus(hkConnected === "true" ? "connected" : "not_connected");
+    checkHealthKitAuthorization().then((authorized) => {
+      if (authorized) {
+        localStorage.setItem(`wya_healthkit_connected_${user.id}`, "true");
+        setHealthKitStatus("connected");
+      } else {
+        localStorage.removeItem(`wya_healthkit_connected_${user.id}`);
+        setHealthKitStatus("not_connected");
+      }
+    });
 
     const walkthroughKey = `wya_walkthrough_profile_${user.id}`;
     if (localStorage.getItem(walkthroughKey)) {
