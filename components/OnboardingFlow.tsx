@@ -142,7 +142,10 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
           </div>
           <div style={animStyle(introAnimStep >= 3)}>
             <p className="mt-5 text-sm leading-[1.7] text-muted/70 max-w-[260px] mx-auto">
-              A few quick questions to personalize your Coach. You can update everything anytime from your profile.
+              Let's get started with a few questions to personalize your experience!
+            </p>
+            <p className="mt-2 text-sm leading-[1.7] text-muted/60 max-w-[260px] mx-auto">
+              You can update everything anytime from your profile.
             </p>
           </div>
           <div style={animStyle(introAnimStep >= 4)} className="w-1/2 mt-20">
@@ -305,7 +308,8 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
               <div className="mt-10">
                 <button
                   type="button"
-                  className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80"
+                  className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80 disabled:opacity-40"
+                  disabled={!sex}
                   onClick={next}
                 >
                   Continue
