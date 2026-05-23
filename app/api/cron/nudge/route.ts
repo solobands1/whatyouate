@@ -227,16 +227,17 @@ export async function GET(req: Request) {
   // Phase 1: generate nudges + save to DB for all users (no sleep between users)
   const pendingPushes: Array<{ userId: string; message: string }> = [];
 
+  const utcHour = new Date().getUTCHours();
+  console.log(`[cron/nudge] tick utcHour=${utcHour} users=${userIds.length}`);
+
   for (const userId of userIds) {
     try {
       const tzOffset = timezoneByUser.get(userId);
       const localHour = getUserLocalHour(tzOffset);
       const isMorningWindow = localHour === 7;
       const isEveningWindow = localHour === 19;
-      if (!isMorningWindow && !isEveningWindow) {
-        if (tzOffset == null) console.log(`[cron/nudge] skip ${userId.slice(0,8)}: no timezone offset stored (UTC hour ${new Date().getUTCHours()})`);
-        continue;
-      }
+      console.log(`[cron/nudge] check ${userId.slice(0,8)} tzOffset=${tzOffset ?? "null"} localHour=${localHour} morning=${isMorningWindow} evening=${isEveningWindow}`);
+      if (!isMorningWindow && !isEveningWindow) continue;
 
       const { data: recentNudgeCheck } = await supabase
         .from("nudges")
