@@ -251,6 +251,7 @@ export async function saveProfile(userId: string, profile: UserProfile) {
     track_water: profile.trackWater ?? false,
     water_unit: profile.waterUnit ?? "ml",
     timezone_offset_minutes: profile.timezoneOffsetMinutes ?? null,
+    date_of_birth: profile.dateOfBirth ?? null,
     updated_at: new Date().toISOString()
   };
   const { error } = await supabase.from("profiles").upsert(payload, { onConflict: "user_id" });

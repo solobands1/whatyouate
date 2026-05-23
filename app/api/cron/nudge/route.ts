@@ -137,7 +137,7 @@ const VALID_NUDGE_TYPES = new Set([
   "streak","pattern","honest","deficit","check_in",
 ]);
 
-async function generateNudge(ctx: Record<string, unknown>): Promise<{ message: string; type: string; why?: string; action?: string; suggestions: string[] } | null> {
+async function generateNudge(ctx: Record<string, unknown>, userId: string): Promise<{ message: string; type: string; why?: string; action?: string; suggestions: string[] } | null> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) { console.error("[cron/nudge] ANTHROPIC_API_KEY not set"); return null; }
   const prompt = buildSmartPrompt(ctx);
@@ -167,27 +167,27 @@ async function generateNudge(ctx: Record<string, unknown>): Promise<{ message: s
     const result = await response.json();
     const raw = (result.content?.[0]?.text ?? "").trim();
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) { console.error("[cron/nudge] No JSON in Claude response:", raw.slice(0, 200)); return null; }
+    if (!jsonMatch) { console.error(`[cron/nudge] No JSON in Claude response for ${userId.slice(0,8)}:`, raw.slice(0, 200)); return null; }
     let parsed: Record<string, unknown>;
     try {
       parsed = JSON.parse(jsonMatch[0]);
     } catch (e) {
-      console.error("[cron/nudge] JSON parse failed:", jsonMatch[0].slice(0, 200), e);
+      console.error(`[cron/nudge] JSON parse failed for ${userId.slice(0,8)}:`, jsonMatch[0].slice(0, 200), e);
       return null;
     }
     if (!parsed.message || typeof parsed.message !== "string") return null;
-    if (parsed.message.length > 500) { console.error("[cron/nudge] Message too long:", parsed.message.length); return null; }
     if (!parsed.type || !VALID_NUDGE_TYPES.has(parsed.type as string)) {
-      console.error("[cron/nudge] Invalid nudge type:", parsed.type);
+      console.error(`[cron/nudge] Invalid nudge type for ${userId.slice(0,8)}:`, parsed.type);
       return null;
     }
 
-    // Post-generation cleanup: strip em-dashes, trim to 70 words
+    // Post-generation cleanup: strip em-dashes, trim to 70 words — do this BEFORE length check
     parsed.message = (parsed.message as string).replace(/\s*—\s*/g, " ").replace(/\s+/g, " ").trim();
     const words = (parsed.message as string).split(/\s+/);
     if (words.length > 70) {
       parsed.message = words.slice(0, 70).join(" ").replace(/[,;]$/, "") + ".";
     }
+    if ((parsed.message as string).length > 500) { console.error(`[cron/nudge] Message too long after trim for ${userId.slice(0,8)}:`, (parsed.message as string).length); return null; }
 
     return sanitizeNudgeFields(parsed) as { message: string; type: string; why?: string; action?: string; suggestions: string[] };
   } catch (err) {
@@ -349,7 +349,7 @@ export async function GET(req: Request) {
       }
 
       console.log(`[cron/nudge] generating for ${userId.slice(0,8)} localHour=${localHour} window=${isEveningWindow ? "evening" : "morning"} meals=${meals.length}`);
-      let nudge = await generateNudge(ctx);
+      let nudge = await generateNudge(ctx, userId);
 
       if (nudge && !isEvening && nudge.type === "check_in" && !sparseLogs) { console.log(`[cron/nudge] skip ${userId.slice(0,8)}: check_in suppressed (not sparse)`); nudge = null; }
 
