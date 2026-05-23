@@ -53,8 +53,10 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
   const [dobDay, setDobDay] = useState("");
   const [dobYear, setDobYear] = useState("");
   const [sex, setSex] = useState<"male" | "female" | "prefer_not" | "">();
+  const [units, setUnits] = useState<"imperial" | "metric">("imperial");
   const [heightFt, setHeightFt] = useState("");
   const [heightIn, setHeightIn] = useState("");
+  const [heightCm, setHeightCm] = useState("");
   const [weight, setWeight] = useState("");
   const [goalDirection, setGoalDirection] = useState<GoalDirection | "">("");
   const [activityLevel, setActivityLevel] = useState<ActivityLevel | "">("");
@@ -85,24 +87,33 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
         : "";
       if (dobString) localStorage.setItem(`wya_dob_${userId}`, dobString);
 
-      const ft = parseInt(heightFt || "0", 10);
-      const inch = parseInt(heightIn || "0", 10);
-      const totalIn = ft * 12 + inch;
-      const heightCm = totalIn > 0 ? Math.round(totalIn * 2.54) : null;
-      const lb = parseFloat(weight || "0");
-      const weightKg = lb > 0 ? Math.round((lb / 2.20462) * 10) / 10 : null;
+      let heightCmVal: number | null = null;
+      let weightKgVal: number | null = null;
+      if (units === "metric") {
+        const cm = parseInt(heightCm || "0", 10);
+        heightCmVal = cm > 0 ? cm : null;
+        const kg = parseFloat(weight || "0");
+        weightKgVal = kg > 0 ? Math.round(kg * 10) / 10 : null;
+      } else {
+        const ft = parseInt(heightFt || "0", 10);
+        const inch = parseInt(heightIn || "0", 10);
+        const totalIn = ft * 12 + inch;
+        heightCmVal = totalIn > 0 ? Math.round(totalIn * 2.54) : null;
+        const lb = parseFloat(weight || "0");
+        weightKgVal = lb > 0 ? Math.round((lb / 2.20462) * 10) / 10 : null;
+      }
 
       await supabase.from("profiles").upsert({
         user_id: userId,
         age: calculateAgeFromDob(dobString) ?? null,
         date_of_birth: dobString || null,
         sex: sex || "prefer_not",
-        height: heightCm,
-        weight: weightKg,
+        height: heightCmVal,
+        weight: weightKgVal,
         goal_direction: goalDirection || "maintain",
         activity_level: activityLevel || null,
         dietary_restrictions: dietaryRestrictions,
-        units: "imperial",
+        units,
         updated_at: new Date().toISOString(),
       }, { onConflict: "user_id" });
 
@@ -117,7 +128,9 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
 
   const next = () => setStep((s) => s + 1);
   const canContinueDob = dobMonth && dobDay && dobYear;
-  const canContinueHeight = (heightFt || heightIn) && weight;
+  const canContinueHeight = units === "metric"
+    ? heightCm && weight
+    : (heightFt || heightIn) && weight;
   const progress = (step / 6) * 100;
 
   const animStyle = (show: boolean) => ({
@@ -340,39 +353,86 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
                   <path d="m7.5 10.5 2 2M10.5 7.5l2 2M13.5 4.5l2 2M4.5 13.5l2 2"/>
                 </svg>
               </div>
-              <h1 className="text-2xl font-semibold text-ink text-center">Height & Weight</h1>
+              <div className="flex items-center justify-between w-full">
+                <h1 className="text-2xl font-semibold text-ink">Height & Weight</h1>
+                <div className="inline-flex rounded-full border border-ink/10 bg-ink/5 p-0.5 text-[10px]">
+                  {(["imperial", "metric"] as const).map((unit) => (
+                    <button
+                      key={unit}
+                      type="button"
+                      className={`rounded-full px-2.5 py-0.5 font-medium capitalize ${units === unit ? "bg-white text-ink" : "text-muted/60"}`}
+                      onClick={() => {
+                        if (unit === units) return;
+                        if (unit === "imperial") {
+                          const cm = parseInt(heightCm || "0", 10);
+                          if (cm > 0) {
+                            const totalIn = cm / 2.54;
+                            setHeightFt(String(Math.floor(totalIn / 12)));
+                            setHeightIn(String(Math.round(totalIn % 12)));
+                          }
+                          const kg = parseFloat(weight || "0");
+                          if (kg > 0) setWeight(String(Math.round(kg * 2.20462)));
+                        } else {
+                          const ft = parseInt(heightFt || "0", 10);
+                          const inch = parseInt(heightIn || "0", 10);
+                          const totalIn = ft * 12 + inch;
+                          if (totalIn > 0) setHeightCm(String(Math.round(totalIn * 2.54)));
+                          const lb = parseFloat(weight || "0");
+                          if (lb > 0) setWeight(String(Math.round(lb / 2.20462)));
+                        }
+                        setUnits(unit);
+                      }}
+                    >
+                      {unit}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <p className="mt-2 text-sm text-muted/70 text-center">We use this to calculate your personal calorie targets</p>
               <div className="mt-8 space-y-6">
                 <div>
-                  <p className="mb-2 text-xs font-medium text-muted/60">Height</p>
-                  <div className="flex gap-3">
-                    <div className="relative flex-1">
+                  <p className="mb-2 text-xs font-medium text-muted/60">Height {units === "metric" ? "(cm)" : "(ft + in)"}</p>
+                  {units === "metric" ? (
+                    <div className="relative">
                       <input
                         inputMode="numeric"
-                        className="w-full rounded-xl border border-ink/10 bg-surface px-3 py-3 pr-9 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        className="w-full rounded-xl border border-ink/10 bg-surface px-3 py-3 pr-12 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
                         placeholder="0"
-                        value={heightFt}
-                        onChange={(e) => setHeightFt(e.target.value.replace(/[^0-9]/g, "").slice(0, 1))}
+                        value={heightCm}
+                        onChange={(e) => setHeightCm(e.target.value.replace(/[^0-9]/g, "").slice(0, 3))}
                       />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted/50">ft</span>
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted/50">cm</span>
                     </div>
-                    <div className="relative flex-1">
-                      <input
-                        inputMode="numeric"
-                        className="w-full rounded-xl border border-ink/10 bg-surface px-3 py-3 pr-9 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
-                        placeholder="0"
-                        value={heightIn}
-                        onChange={(e) => {
-                          const v = parseInt(e.target.value.replace(/[^0-9]/g, "") || "0", 10);
-                          setHeightIn(String(Math.min(11, v)));
-                        }}
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted/50">in</span>
+                  ) : (
+                    <div className="flex gap-3">
+                      <div className="relative flex-1">
+                        <input
+                          inputMode="numeric"
+                          className="w-full rounded-xl border border-ink/10 bg-surface px-3 py-3 pr-9 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
+                          placeholder="0"
+                          value={heightFt}
+                          onChange={(e) => setHeightFt(e.target.value.replace(/[^0-9]/g, "").slice(0, 1))}
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted/50">ft</span>
+                      </div>
+                      <div className="relative flex-1">
+                        <input
+                          inputMode="numeric"
+                          className="w-full rounded-xl border border-ink/10 bg-surface px-3 py-3 pr-9 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
+                          placeholder="0"
+                          value={heightIn}
+                          onChange={(e) => {
+                            const v = parseInt(e.target.value.replace(/[^0-9]/g, "") || "0", 10);
+                            setHeightIn(String(Math.min(11, v)));
+                          }}
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted/50">in</span>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
                 <div>
-                  <p className="mb-2 text-xs font-medium text-muted/60">Weight</p>
+                  <p className="mb-2 text-xs font-medium text-muted/60">Weight ({units === "metric" ? "kg" : "lbs"})</p>
                   <div className="relative">
                     <input
                       inputMode="numeric"
@@ -381,7 +441,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
                       value={weight}
                       onChange={(e) => setWeight(e.target.value.replace(/[^0-9]/g, ""))}
                     />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted/50">lbs</span>
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted/50">{units === "metric" ? "kg" : "lbs"}</span>
                   </div>
                 </div>
               </div>

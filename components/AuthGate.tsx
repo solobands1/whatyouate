@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useAuth } from "./AuthProvider";
 import { useAppData, _dataEverLoaded } from "./AppDataProvider";
 import SplashScreen from "./SplashScreen";
@@ -21,6 +21,7 @@ export default function AuthGate({ children }: { children: ReactNode }) {
 
   // Start as false so server and client agree on initial render — no hydration mismatch.
   const [ready, setReady] = useState(false);
+  const prevUserIdRef = useRef<string | null | undefined>(undefined);
 
   // Wait for auth + main data + nudges (all load in parallel so nudges add minimal extra time)
   const fullyLoaded = !authLoading && (!user || (!dataLoading && nudgesLoaded));
@@ -35,6 +36,18 @@ export default function AuthGate({ children }: { children: ReactNode }) {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // When user transitions from logged-out → logged-in, reset splash so it shows
+  // during data load. Without this, _appReady is already true and the splash never fires.
+  useEffect(() => {
+    const prev = prevUserIdRef.current;
+    prevUserIdRef.current = user?.id ?? null;
+    if (!prev && user?.id) {
+      _appReady = false;
+      try { sessionStorage.removeItem("_appReady"); } catch {}
+      setReady(false);
+    }
+  }, [user?.id]);
 
   // Once fully loaded for the first time, mark ready and persist for this session.
   useEffect(() => {
