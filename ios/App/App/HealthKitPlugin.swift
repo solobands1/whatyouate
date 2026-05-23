@@ -68,13 +68,17 @@ public class HealthKitPlugin: CAPPlugin, CAPBridgedPlugin {
 
     @objc func checkAuthorizationStatus(_ call: CAPPluginCall) {
         guard HKHealthStore.isHealthDataAvailable() else {
-            call.resolve(["authorized": false])
+            call.resolve(["authorized": false, "notDetermined": true])
             return
         }
         let authorized = shareTypes.contains { type in
             healthStore.authorizationStatus(for: type) == .sharingAuthorized
         }
-        call.resolve(["authorized": authorized])
+        // notDetermined = user has never been shown the permission sheet for any share type
+        let notDetermined = shareTypes.allSatisfy { type in
+            healthStore.authorizationStatus(for: type) == .notDetermined
+        }
+        call.resolve(["authorized": authorized, "notDetermined": notDetermined])
     }
 
     @objc func syncActivity(_ call: CAPPluginCall) {

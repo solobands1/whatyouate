@@ -13,7 +13,7 @@ import { getDailySupplements, setDailySupplements, clearDailySuppsLoggedToday, c
 import { clearMealsCache } from "../lib/supabaseDb";
 import { notifyMealsUpdated } from "../lib/dataEvents";
 import { supabase } from "../lib/supabaseClient";
-import { requestHealthKitPermissions, syncHealthKitActivity, openHealthKitSettings, checkHealthKitAuthorization } from "../lib/healthKit";
+import { requestHealthKitPermissions, syncHealthKitActivity, openHealthKitSettings, checkHealthKitAuthorization, getHealthKitAuthStatus } from "../lib/healthKit";
 import { openReviewPrompt } from "./ReviewPromptModal";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
@@ -339,13 +339,19 @@ export default function ProfileScreen() {
     if (!user) return;
     setHealthKitConnecting(true);
     setHealthKitShowSettings(false);
+    // Check BEFORE requesting — notDetermined means the native sheet hasn't appeared yet
+    const { notDetermined } = await getHealthKitAuthStatus();
     await requestHealthKitPermissions();
     const authorized = await checkHealthKitAuthorization();
     if (authorized) {
       localStorage.setItem(`wya_healthkit_connected_${user.id}`, "true");
       setHealthKitStatus("connected");
       syncHealthKitActivity(user.id).catch(() => {});
+    } else if (notDetermined) {
+      // Native sheet just appeared for the first time — user denied; respect without redirecting to Settings
+      setHealthKitStatus("not_connected");
     } else {
+      // Previously denied — safe to show Settings instructions
       setHealthKitStatus("not_connected");
       setHealthKitShowSettings(true);
     }
