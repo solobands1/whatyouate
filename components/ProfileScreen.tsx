@@ -1659,7 +1659,6 @@ export default function ProfileScreen() {
       {healthKitShowSettings && healthKitStatus === "not_connected" && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5"
-          onClick={() => setHealthKitShowSettings(false)}
         >
           <div
             className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl"
