@@ -187,7 +187,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
         <div style={animStyle(animStep >= 4)} className="flex justify-center w-full mt-16">
           <button
             type="button"
-            className="w-1/2 rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80"
+            className="w-2/3 rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80"
             onClick={onComplete}
           >
             Let's Go!
