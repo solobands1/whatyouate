@@ -52,7 +52,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
   const [dobMonth, setDobMonth] = useState("");
   const [dobDay, setDobDay] = useState("");
   const [dobYear, setDobYear] = useState("");
-  const [sex, setSex] = useState<"male" | "female" | "prefer_not">("prefer_not");
+  const [sex, setSex] = useState<"male" | "female" | "prefer_not" | "">();
   const [heightFt, setHeightFt] = useState("");
   const [heightIn, setHeightIn] = useState("");
   const [weight, setWeight] = useState("");
@@ -97,7 +97,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
         user_id: userId,
         age: calculateAgeFromDob(dobString) ?? null,
         date_of_birth: dobString || null,
-        sex,
+        sex: sex || "prefer_not",
         height: heightCm,
         weight: weightKg,
         goal_direction: goalDirection || "maintain",
@@ -143,7 +143,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
           </div>
           <div style={animStyle(introAnimStep >= 3)}>
             <p className="mt-4 text-sm leading-relaxed text-muted/65">
-              Before we dive in, let's get you set up. Everything you fill out helps us personalize your experience and make sure your coach is tailored to you.
+              Before we dive in, let's get you set up. Everything you fill out helps us personalize your experience and make sure your Coach is tailored to you.
             </p>
           </div>
           <div style={animStyle(introAnimStep >= 4)}>
@@ -176,12 +176,10 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
             </div>
           </div>
           <div style={animStyle(animStep >= 2)}>
-            <p className="text-2xl font-semibold text-ink">
-              Welcome{firstName ? `, ${firstName}` : ""}!
-            </p>
+            <p className="text-2xl font-semibold text-ink">You're All Set!</p>
           </div>
           <div style={animStyle(animStep >= 3)}>
-            <p className="text-sm text-muted/65">Your profile is set. Let's take a look around.</p>
+            <p className="text-sm text-muted/65">Let's take a look around</p>
           </div>
         </div>
         <div style={animStyle(animStep >= 4)} className="w-full mt-16">
