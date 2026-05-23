@@ -353,8 +353,11 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
                   <path d="m7.5 10.5 2 2M10.5 7.5l2 2M13.5 4.5l2 2M4.5 13.5l2 2"/>
                 </svg>
               </div>
-              <div className="flex items-center justify-between w-full">
-                <h1 className="text-2xl font-semibold text-ink">Height & Weight</h1>
+              <h1 className="text-2xl font-semibold text-ink text-center">Height & Weight</h1>
+              <div className="mt-2 flex items-center justify-center gap-3">
+                <p className="text-sm text-muted/70">We use this to calculate your personal calorie targets</p>
+              </div>
+              <div className="mt-3 flex justify-center">
                 <div className="inline-flex rounded-full border border-ink/10 bg-ink/5 p-0.5 text-[10px]">
                   {(["imperial", "metric"] as const).map((unit) => (
                     <button
@@ -388,7 +391,6 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
                   ))}
                 </div>
               </div>
-              <p className="mt-2 text-sm text-muted/70 text-center">We use this to calculate your personal calorie targets</p>
               <div className="mt-8 space-y-6">
                 <div>
                   <p className="mb-2 text-xs font-medium text-muted/60">Height {units === "metric" ? "(cm)" : "(ft + in)"}</p>
