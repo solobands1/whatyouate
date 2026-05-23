@@ -172,7 +172,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
         `}</style>
         <div className="flex flex-col items-center gap-5 text-center">
           <div style={animStyle(animStep >= 1)}>
-            <svg className="h-14 w-14 text-primary/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg className="h-28 w-28 text-primary/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10" style={{ strokeDasharray: 63, strokeDashoffset: 63, animation: "draw-circle 0.55s ease-out 0.5s forwards" }} />
               <path d="M8 12l3 3 5-5" style={{ strokeDasharray: 12, strokeDashoffset: 12, animation: "draw-check 0.35s ease-out 1.0s forwards" }} />
             </svg>
