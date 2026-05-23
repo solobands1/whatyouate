@@ -1740,20 +1740,13 @@ export default function ProfileScreen() {
               ))}
             </div>
 
-            <div className="mt-6 space-y-2">
+            <div className="mt-6">
               <button
                 type="button"
                 className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-white transition active:opacity-80"
-                onClick={() => { openHealthKitSettings(); setHealthKitShowSettings(false); }}
-              >
-                Open Settings
-              </button>
-              <button
-                type="button"
-                className="w-full py-2 text-sm font-medium text-muted/60"
                 onClick={() => setHealthKitShowSettings(false)}
               >
-                Maybe Later
+                Got It
               </button>
             </div>
           </div>
