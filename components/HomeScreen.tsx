@@ -1727,7 +1727,7 @@ export default function HomeScreen() {
       )}
       {gateOverlay && <div className="fixed inset-0 z-50 bg-white" />}
       {showTourGate && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-white/70 backdrop-blur-sm">
+        <div className="fixed inset-0 z-40 flex flex-col items-center bg-white/70 backdrop-blur-sm pt-[22vh] px-5">
           <div className="flex max-w-xs flex-col items-center gap-4 text-center">
             <div className="w-full px-5 py-1 text-center">
               <p className="text-[26px] font-semibold text-ink/80">
