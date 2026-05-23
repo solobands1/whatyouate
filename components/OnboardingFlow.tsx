@@ -48,6 +48,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
   const [saving, setSaving] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
   const [animStep, setAnimStep] = useState(0);
+  const [introAnimStep, setIntroAnimStep] = useState(0);
   const [dobMonth, setDobMonth] = useState("");
   const [dobDay, setDobDay] = useState("");
   const [dobYear, setDobYear] = useState("");
@@ -58,6 +59,15 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
   const [goalDirection, setGoalDirection] = useState<GoalDirection | "">("");
   const [activityLevel, setActivityLevel] = useState<ActivityLevel | "">("");
   const [dietaryRestrictions, setDietaryRestrictions] = useState<string[]>([]);
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setIntroAnimStep(1), 80);
+    const t2 = setTimeout(() => setIntroAnimStep(2), 380);
+    const t3 = setTimeout(() => setIntroAnimStep(3), 660);
+    const t4 = setTimeout(() => setIntroAnimStep(4), 900);
+    const t5 = setTimeout(() => setIntroAnimStep(5), 1100);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); clearTimeout(t5); };
+  }, []);
 
   useEffect(() => {
     if (!showWelcome) return;
@@ -125,23 +135,31 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
     return (
       <div className="fixed inset-0 z-50 flex flex-col bg-white safe-top px-6">
         <div className="flex flex-1 flex-col items-center text-center pt-[18vh]">
-          <div className="mb-5 h-16 w-16 overflow-hidden rounded-[18px] border border-ink/10 shadow-md">
+          <div style={animStyle(introAnimStep >= 1)} className="mb-5 h-16 w-16 overflow-hidden rounded-[18px] border border-ink/10 shadow-md">
             <img src="/icon-512.png" alt="WhatYouAte" className="h-full w-full object-cover" />
           </div>
-          <h1 className="text-xl font-semibold text-ink">Welcome to WhatYouAte!</h1>
-          <p className="mt-4 text-sm leading-relaxed text-muted/65">
-            Before we dive in, let's get you set up. Everything you fill out helps us personalize your experience and make sure your coach is tailored to you.
-          </p>
-          <p className="mt-3 text-sm leading-relaxed text-muted/65">
-            You can update any of this anytime from your profile.
-          </p>
-          <button
-            type="button"
-            className="mt-14 w-1/2 rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80"
-            onClick={() => setShowIntro(false)}
-          >
-            Get Started!
-          </button>
+          <div style={animStyle(introAnimStep >= 2)}>
+            <h1 className="text-xl font-semibold text-ink">Welcome to WhatYouAte!</h1>
+          </div>
+          <div style={animStyle(introAnimStep >= 3)}>
+            <p className="mt-4 text-sm leading-relaxed text-muted/65">
+              Before we dive in, let's get you set up. Everything you fill out helps us personalize your experience and make sure your coach is tailored to you.
+            </p>
+          </div>
+          <div style={animStyle(introAnimStep >= 4)}>
+            <p className="mt-3 text-sm leading-relaxed text-muted/65">
+              You can update any of this anytime from your profile.
+            </p>
+          </div>
+          <div style={animStyle(introAnimStep >= 5)} className="w-1/2 mt-14">
+            <button
+              type="button"
+              className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80"
+              onClick={() => setShowIntro(false)}
+            >
+              Get Started!
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -150,8 +168,8 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
   // Welcome animation
   if (showWelcome) {
     return (
-      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white">
-        <div className="flex flex-col items-center gap-5 text-center px-8">
+      <div className="fixed inset-0 z-50 flex flex-col items-center bg-white px-8 pt-[28vh]">
+        <div className="flex flex-col items-center gap-5 text-center">
           <div style={animStyle(animStep >= 1)}>
             <div className="h-16 w-16 overflow-hidden rounded-[18px] border border-ink/10 shadow-md">
               <img src="/icon-512.png" alt="WhatYouAte" className="h-full w-full object-cover" />
@@ -165,15 +183,15 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
           <div style={animStyle(animStep >= 3)}>
             <p className="text-sm text-muted/65">Your profile is set. Let's take a look around.</p>
           </div>
-          <div style={animStyle(animStep >= 4)} className="w-full pt-2">
-            <button
-              type="button"
-              className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80"
-              onClick={onComplete}
-            >
-              Let's Go!
-            </button>
-          </div>
+        </div>
+        <div style={animStyle(animStep >= 4)} className="w-full mt-16">
+          <button
+            type="button"
+            className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80"
+            onClick={onComplete}
+          >
+            Let's Go!
+          </button>
         </div>
       </div>
     );
@@ -191,10 +209,15 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
         {/* Step 0: Date of birth */}
         {step === 0 && (
           <div className="flex flex-1 flex-col">
-            <p className="pt-5 text-[11px] uppercase tracking-widest text-muted/50">Step 1 of 6</p>
+            <div className="flex items-center justify-between pt-5">
+              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 1 of 6</p>
+              <button type="button" className="p-1 active:opacity-50" onClick={() => setShowIntro(true)}>
+                <svg className="h-4 w-4 text-muted/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+              </button>
+            </div>
             <div className="mt-[10vh]">
               <div className="flex justify-center mb-5">
-                <svg className="h-8 w-8 text-primary/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg className="h-10 w-10 text-primary/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="4" width="18" height="18" rx="2"/>
                   <path d="M16 2v4M8 2v4M3 10h18"/>
                   <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/>
@@ -240,7 +263,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
                   ))}
                 </select>
               </div>
-              <div className="mt-14 space-y-3">
+              <div className="mt-20 space-y-3">
                 <button
                   type="button"
                   className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80 disabled:opacity-40"
@@ -258,10 +281,15 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
         {/* Step 1: Sex */}
         {step === 1 && (
           <div className="flex flex-1 flex-col">
-            <p className="pt-5 text-[11px] uppercase tracking-widest text-muted/50">Step 2 of 6</p>
+            <div className="flex items-center justify-between pt-5">
+              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 2 of 6</p>
+              <button type="button" className="p-1 active:opacity-50" onClick={() => setStep(0)}>
+                <svg className="h-4 w-4 text-muted/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+              </button>
+            </div>
             <div className="mt-[8vh]">
               <div className="flex justify-center mb-5">
-                <svg className="h-8 w-8 text-primary/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg className="h-10 w-10 text-primary/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="8" r="4"/>
                   <path d="M4 21v-2a4 4 0 014-4h8a4 4 0 014 4v2"/>
                 </svg>
@@ -298,10 +326,15 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
         {/* Step 2: Height + Weight */}
         {step === 2 && (
           <div className="flex flex-1 flex-col">
-            <p className="pt-5 text-[11px] uppercase tracking-widest text-muted/50">Step 3 of 6</p>
+            <div className="flex items-center justify-between pt-5">
+              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 3 of 6</p>
+              <button type="button" className="p-1 active:opacity-50" onClick={() => setStep(1)}>
+                <svg className="h-4 w-4 text-muted/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+              </button>
+            </div>
             <div className="mt-[8vh]">
               <div className="flex justify-center mb-5">
-                <svg className="h-8 w-8 text-primary/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg className="h-10 w-10 text-primary/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21.3 8.7 8.7 21.3c-1 1-2.5 1-3.4 0l-2.6-2.6c-1-1-1-2.5 0-3.4L15.3 2.7c1-1 2.5-1 3.4 0l2.6 2.6c1 1 1 2.5 0 3.4z"/>
                   <path d="m7.5 10.5 2 2M10.5 7.5l2 2M13.5 4.5l2 2M4.5 13.5l2 2"/>
                 </svg>
@@ -369,10 +402,15 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
         {/* Step 3: Goal */}
         {step === 3 && (
           <div className="flex flex-1 flex-col">
-            <p className="pt-5 text-[11px] uppercase tracking-widest text-muted/50">Step 4 of 6</p>
+            <div className="flex items-center justify-between pt-5">
+              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 4 of 6</p>
+              <button type="button" className="p-1 active:opacity-50" onClick={() => setStep(2)}>
+                <svg className="h-4 w-4 text-muted/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+              </button>
+            </div>
             <div className="mt-[8vh]">
               <div className="flex justify-center mb-5">
-                <svg className="h-8 w-8 text-primary/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg className="h-10 w-10 text-primary/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="10"/>
                   <circle cx="12" cy="12" r="6"/>
                   <circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/>
@@ -414,10 +452,15 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
         {/* Step 4: Activity level */}
         {step === 4 && (
           <div className="flex flex-1 flex-col">
-            <p className="pt-5 text-[11px] uppercase tracking-widest text-muted/50">Step 5 of 6</p>
+            <div className="flex items-center justify-between pt-5">
+              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 5 of 6</p>
+              <button type="button" className="p-1 active:opacity-50" onClick={() => setStep(3)}>
+                <svg className="h-4 w-4 text-muted/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+              </button>
+            </div>
             <div className="mt-[8vh]">
               <div className="flex justify-center mb-5">
-                <svg className="h-8 w-8 text-primary/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg className="h-10 w-10 text-primary/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" strokeLinejoin="round"/>
                 </svg>
               </div>
@@ -457,10 +500,15 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
         {/* Step 5: Dietary restrictions */}
         {step === 5 && (
           <div className="flex flex-1 flex-col">
-            <p className="pt-5 text-[11px] uppercase tracking-widest text-muted/50">Step 6 of 6</p>
+            <div className="flex items-center justify-between pt-5">
+              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 6 of 6</p>
+              <button type="button" className="p-1 active:opacity-50" onClick={() => setStep(4)}>
+                <svg className="h-4 w-4 text-muted/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+              </button>
+            </div>
             <div className="mt-[8vh]">
               <div className="flex justify-center mb-5">
-                <svg className="h-8 w-8 text-primary/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg className="h-10 w-10 text-primary/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z"/>
                   <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
                 </svg>
@@ -488,7 +536,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
                   );
                 })}
               </div>
-              <div className="mt-10 space-y-3">
+              <div className="mt-16 space-y-3">
                 <button
                   type="button"
                   className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80 disabled:opacity-50"
