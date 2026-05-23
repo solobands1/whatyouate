@@ -64,9 +64,8 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
     const t1 = setTimeout(() => setIntroAnimStep(1), 80);
     const t2 = setTimeout(() => setIntroAnimStep(2), 380);
     const t3 = setTimeout(() => setIntroAnimStep(3), 660);
-    const t4 = setTimeout(() => setIntroAnimStep(4), 900);
-    const t5 = setTimeout(() => setIntroAnimStep(5), 1100);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); clearTimeout(t5); };
+    const t4 = setTimeout(() => setIntroAnimStep(4), 950);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
   }, []);
 
   useEffect(() => {
@@ -135,23 +134,18 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
     return (
       <div className="fixed inset-0 z-50 flex flex-col bg-white safe-top px-6">
         <div className="flex flex-1 flex-col items-center text-center pt-[18vh]">
-          <div style={animStyle(introAnimStep >= 1)} className="mb-6 h-24 w-24 overflow-hidden rounded-[22px] border border-ink/10 shadow-[0_8px_28px_rgba(111,168,255,0.28)]">
+          <div style={animStyle(introAnimStep >= 1)} className="mb-6 h-24 w-24 overflow-hidden rounded-[22px] border border-ink/10 shadow-md">
             <img src="/icon-512.png" alt="WhatYouAte" className="h-full w-full object-cover" />
           </div>
           <div style={animStyle(introAnimStep >= 2)}>
             <h1 className="text-xl font-semibold text-ink">Welcome to WhatYouAte!</h1>
           </div>
           <div style={animStyle(introAnimStep >= 3)}>
-            <p className="mt-4 text-sm leading-relaxed text-muted/65">
-              Before we dive in, let's get you set up. Everything you fill out helps us personalize your experience and make sure your Coach is tailored to you.
+            <p className="mt-5 text-sm leading-[1.7] text-muted/70 max-w-[260px] mx-auto">
+              A few quick questions to personalize your Coach. You can update everything anytime from your profile.
             </p>
           </div>
-          <div style={animStyle(introAnimStep >= 4)}>
-            <p className="mt-3 text-sm leading-relaxed text-muted/65">
-              You can update any of this anytime from your profile.
-            </p>
-          </div>
-          <div style={animStyle(introAnimStep >= 5)} className="w-1/2 mt-20">
+          <div style={animStyle(introAnimStep >= 4)} className="w-1/2 mt-20">
             <button
               type="button"
               className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80"
