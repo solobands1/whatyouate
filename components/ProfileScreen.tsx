@@ -347,11 +347,9 @@ export default function ProfileScreen() {
       localStorage.setItem(`wya_healthkit_connected_${user.id}`, "true");
       setHealthKitStatus("connected");
       syncHealthKitActivity(user.id).catch(() => {});
-    } else if (notDetermined) {
-      // Native sheet just appeared for the first time — user denied; respect without redirecting to Settings
-      setHealthKitStatus("not_connected");
     } else {
-      // Previously denied — safe to show Settings instructions
+      // requestHealthKitPermissions() was called first (native sheet appeared if never asked),
+      // so showing Settings guidance here is always appropriate
       setHealthKitStatus("not_connected");
       setHealthKitShowSettings(true);
     }
