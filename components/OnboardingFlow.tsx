@@ -535,6 +535,15 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
                     </button>
                   );
                 })}
+                <button
+                  type="button"
+                  className={`rounded-full border px-4 py-2 text-sm font-medium transition active:opacity-80 ${
+                    dietaryRestrictions.length === 0 ? "border-primary/60 bg-primary/10 text-primary" : "border-ink/10 text-ink/60"
+                  }`}
+                  onClick={() => setDietaryRestrictions([])}
+                >
+                  Anything works for me!
+                </button>
               </div>
               <div className="mt-16 space-y-3">
                 <button
