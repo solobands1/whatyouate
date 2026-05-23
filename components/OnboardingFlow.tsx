@@ -166,23 +166,28 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
   if (showWelcome) {
     return (
       <div className="fixed inset-0 z-50 flex flex-col items-center bg-white px-8 pt-[28vh]">
+        <style>{`
+          @keyframes draw-circle { from { stroke-dashoffset: 63; } to { stroke-dashoffset: 0; } }
+          @keyframes draw-check { from { stroke-dashoffset: 12; } to { stroke-dashoffset: 0; } }
+        `}</style>
         <div className="flex flex-col items-center gap-5 text-center">
           <div style={animStyle(animStep >= 1)}>
-            <div className="h-16 w-16 overflow-hidden rounded-[18px] border border-ink/10 shadow-md">
-              <img src="/icon-512.png" alt="WhatYouAte" className="h-full w-full object-cover" />
-            </div>
+            <svg className="h-14 w-14 text-primary/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" style={{ strokeDasharray: 63, strokeDashoffset: 63, animation: "draw-circle 0.55s ease-out 0.5s forwards" }} />
+              <path d="M8 12l3 3 5-5" style={{ strokeDasharray: 12, strokeDashoffset: 12, animation: "draw-check 0.35s ease-out 1.0s forwards" }} />
+            </svg>
           </div>
           <div style={animStyle(animStep >= 2)}>
-            <p className="text-2xl font-semibold text-ink">You're All Set!</p>
+            <p className="text-2xl font-semibold text-ink">You're All Set</p>
           </div>
           <div style={animStyle(animStep >= 3)}>
-            <p className="text-sm text-muted/65">Let's take a look around</p>
+            <p className="text-sm text-muted/65">Let's take a look around!</p>
           </div>
         </div>
-        <div style={animStyle(animStep >= 4)} className="w-full mt-16">
+        <div style={animStyle(animStep >= 4)} className="flex justify-center w-full mt-16">
           <button
             type="button"
-            className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80"
+            className="w-1/2 rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80"
             onClick={onComplete}
           >
             Let's Go!
@@ -453,10 +458,10 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
               </button>
               <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 5 of 6</p>
             </div>
-            <div className="mt-[8vh]">
+            <div className="mt-[4vh]">
               <div className="flex justify-center mb-5">
-                <svg className="h-10 w-10 text-primary/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" strokeLinejoin="round"/>
+                <svg className="h-12 w-8 text-primary/40" viewBox="0 0 16 28" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10 1L2 15h6l-2 12 10-16h-6l2-11z"/>
                 </svg>
               </div>
               <h1 className="text-2xl font-semibold text-ink text-center">How Active Are You?</h1>
