@@ -1737,7 +1737,6 @@ export default function ProfileScreen() {
                     Got It
                   </button>
                 </div>
-              </div>
             </div>
           </div>
         </div>
