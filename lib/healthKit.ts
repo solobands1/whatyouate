@@ -16,9 +16,11 @@ const HealthKit = registerPlugin<HealthKitPlugin>("HealthKit");
 
 export async function requestHealthKitPermissions(): Promise<void> {
   try {
+    console.log("[HealthKit] calling requestHealthPermissions");
     await HealthKit.requestHealthPermissions();
-  } catch {
-    // silent — HealthKit unavailable or denied
+    console.log("[HealthKit] requestHealthPermissions resolved");
+  } catch (err) {
+    console.error("[HealthKit] requestHealthPermissions error:", err);
   }
 }
 
@@ -35,17 +37,22 @@ export async function openHealthKitSettings(): Promise<void> {
 
 export async function checkHealthKitAuthorization(): Promise<boolean> {
   try {
-    const { authorized } = await HealthKit.checkAuthorizationStatus();
-    return authorized;
-  } catch {
+    const result = await HealthKit.checkAuthorizationStatus();
+    console.log("[HealthKit] checkAuthorizationStatus:", JSON.stringify(result));
+    return result.authorized;
+  } catch (err) {
+    console.error("[HealthKit] checkAuthorizationStatus error:", err);
     return false;
   }
 }
 
 export async function getHealthKitAuthStatus(): Promise<{ authorized: boolean; notDetermined: boolean }> {
   try {
-    return await HealthKit.checkAuthorizationStatus();
-  } catch {
+    const result = await HealthKit.checkAuthorizationStatus();
+    console.log("[HealthKit] getHealthKitAuthStatus:", JSON.stringify(result));
+    return result;
+  } catch (err) {
+    console.error("[HealthKit] getHealthKitAuthStatus error:", err);
     return { authorized: false, notDetermined: true };
   }
 }
