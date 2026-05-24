@@ -181,11 +181,16 @@ async function generateNudge(ctx: Record<string, unknown>, userId: string): Prom
       return null;
     }
 
-    // Post-generation cleanup: strip em-dashes, trim to 70 words — do this BEFORE length check
+    // Post-generation cleanup: strip em-dashes, trim to 60 words — do this BEFORE length check
     parsed.message = (parsed.message as string).replace(/\s*—\s*/g, " ").replace(/\s+/g, " ").trim();
     const words = (parsed.message as string).split(/\s+/);
-    if (words.length > 70) {
-      parsed.message = words.slice(0, 70).join(" ").replace(/[,;]$/, "") + ".";
+    if (words.length > 60) {
+      const truncated = words.slice(0, 60).join(" ");
+      // Cut at the last sentence boundary so the message never ends mid-thought
+      const lastBoundary = Math.max(truncated.lastIndexOf("."), truncated.lastIndexOf("!"), truncated.lastIndexOf("?"));
+      parsed.message = lastBoundary > truncated.length * 0.4
+        ? truncated.slice(0, lastBoundary + 1)
+        : truncated.replace(/[,;]$/, "") + ".";
     }
     if ((parsed.message as string).length > 500) { console.error(`[cron/nudge] Message too long after trim for ${userId.slice(0,8)}:`, (parsed.message as string).length); return null; }
 
@@ -279,13 +284,14 @@ export async function GET(req: Request) {
 
       // Programmatic fatigue check — enforced in code, not just in the prompt
       const recentTypes = (nudgesRes.data ?? []).slice(0, 3).map((n: { type: string }) => n.type);
-      const proteinCount = recentTypes.filter((t) => t === "protein_low" || t === "protein_low_critical" || t === "deficit").length;
-      const deficitSet = new Set(["protein_low", "protein_low_critical", "calorie_low", "fat_low", "micronutrient"]);
-      const allDeficits = recentTypes.length >= 3 && recentTypes.every((t) => deficitSet.has(t));
+      const deficitCount = recentTypes.filter((t) => t === "deficit").length;
+      const lowCount = recentTypes.filter((t) => t === "micronutrient_low").length;
+      const deficitTypes = new Set(["deficit", "micronutrient_low"]);
+      const allDeficits = recentTypes.length >= 3 && recentTypes.every((t) => deficitTypes.has(t));
       const blockedNudgeTypes: string[] = [];
-      if (proteinCount >= 1) blockedNudgeTypes.push("protein_low");
-      if (proteinCount >= 2) blockedNudgeTypes.push("protein_low_critical");
-      if (allDeficits) blockedNudgeTypes.push(...Array.from(deficitSet));
+      if (deficitCount >= 2) blockedNudgeTypes.push("deficit");
+      if (lowCount >= 2) blockedNudgeTypes.push("micronutrient_low");
+      if (allDeficits) blockedNudgeTypes.push("deficit", "micronutrient_low");
 
       // Hard water-fatigue block — if last 2 nudges both referenced water, block water-adjacent angles
       const last2Messages = (nudgesRes.data ?? []).slice(0, 2).map((n: { message: string }) => n.message?.toLowerCase() ?? "");
@@ -332,7 +338,7 @@ export async function GET(req: Request) {
         // Evening nudge has today's actual data — keep it for a reflective day recap
         // followThrough is especially useful: did they act on the morning nudge?
         ctx.nudgeIntentWindow = "evening";
-        ctx.blockedNudgeTypes = [...new Set([...blockedNudgeTypes])];
+        ctx.blockedNudgeTypes = [...new Set([...blockedNudgeTypes])].filter((t) => VALID_NUDGE_TYPES.has(t));
       } else {
         // Morning nudge: today's data is empty/stale — strip it, focus on patterns
         delete ctx.todayCalories;
@@ -346,7 +352,7 @@ export async function GET(req: Request) {
         ctx.nudgeIntentWindow = "morning";
         // Allow check_in when user hasn't logged in 3+ days — re-engagement > insight
         const morningBlocked = sparseLogs ? [] : ["check_in"];
-        ctx.blockedNudgeTypes = [...new Set([...morningBlocked, ...blockedNudgeTypes, "workout_fuel_low"])];
+        ctx.blockedNudgeTypes = [...new Set([...morningBlocked, ...blockedNudgeTypes])].filter((t) => VALID_NUDGE_TYPES.has(t));
       }
 
       console.log(`[cron/nudge] generating for ${userId.slice(0,8)} localHour=${localHour} window=${isEveningWindow ? "evening" : "morning"} meals=${meals.length}`);
