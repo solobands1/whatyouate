@@ -52,8 +52,10 @@ public class HealthKitPlugin: CAPPlugin, CAPBridgedPlugin {
             call.resolve()
             return
         }
-        healthStore.requestAuthorization(toShare: shareTypes, read: readTypes) { _, _ in
-            call.resolve()
+        DispatchQueue.main.async {
+            self.healthStore.requestAuthorization(toShare: self.shareTypes, read: self.readTypes) { _, _ in
+                call.resolve()
+            }
         }
     }
 
