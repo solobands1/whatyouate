@@ -17,8 +17,9 @@ const HealthKit = registerPlugin<HealthKitPlugin>("HealthKit");
 export async function requestHealthKitPermissions(): Promise<void> {
   try {
     await HealthKit.requestHealthPermissions();
-  } catch {
-    // silent — HealthKit unavailable or denied
+  } catch (err) {
+    // TEMP: surface error visibly for debugging — remove after HealthKit is confirmed working
+    alert(`HealthKit error: ${String(err)}`);
   }
 }
 
