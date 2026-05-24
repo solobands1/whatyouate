@@ -13,7 +13,6 @@ import { getDailySupplements, setDailySupplements, clearDailySuppsLoggedToday, c
 import { clearMealsCache } from "../lib/supabaseDb";
 import { notifyMealsUpdated } from "../lib/dataEvents";
 import { supabase } from "../lib/supabaseClient";
-import { getHealthKitAuthStatus, requestHealthKitPermissions, checkHealthKitAuthorization, syncHealthKitActivity } from "../lib/healthKit";
 import { openReviewPrompt } from "./ReviewPromptModal";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
@@ -107,7 +106,6 @@ export default function ProfileScreen() {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [healthKitShowSettings, setHealthKitShowSettings] = useState(false);
-  const [healthKitConnecting, setHealthKitConnecting] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -1125,31 +1123,10 @@ export default function ProfileScreen() {
               <div className="shrink-0">
                 <button
                   type="button"
-                  disabled={healthKitConnecting}
-                  className="rounded-full bg-primary px-3 py-1 text-[11px] font-semibold text-white transition active:opacity-70 disabled:opacity-50"
-                  onClick={async () => {
-                    if (!user) return;
-                    setHealthKitConnecting(true);
-                    try {
-                      const status = await getHealthKitAuthStatus();
-                      if (status.notDetermined) {
-                        // Never asked — show native iOS permission sheet
-                        await requestHealthKitPermissions();
-                        const granted = await checkHealthKitAuthorization();
-                        if (granted) {
-                          localStorage.setItem(`wya_healthkit_connected_${user.id}`, "true");
-                          syncHealthKitActivity(user.id).catch(() => {});
-                        }
-                      } else {
-                        // Previously asked (denied/revoked) — WhatYouAte exists in Health settings now
-                        setHealthKitShowSettings(true);
-                      }
-                    } finally {
-                      setHealthKitConnecting(false);
-                    }
-                  }}
+                  className="rounded-full bg-primary px-3 py-1 text-[11px] font-semibold text-white transition active:opacity-70"
+                  onClick={() => setHealthKitShowSettings(true)}
                 >
-                  {healthKitConnecting ? "…" : "Connect"}
+                  Connect
                 </button>
               </div>
             </div>
