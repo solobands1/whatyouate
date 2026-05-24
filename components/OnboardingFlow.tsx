@@ -647,7 +647,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
                   <path d="M8 13.7C7.7 13.5 1 9.2 1 5.5 1 3.6 2.6 2 4.5 2c1 0 2 .5 2.7 1.3L8 4.2l.8-.9C9.5 2.5 10.5 2 11.5 2 13.4 2 15 3.6 15 5.5c0 3.7-6.7 8-7 8.2z"/>
                 </svg>
               </div>
-              <h1 className="text-2xl font-semibold text-ink text-center">Connect Apple Health?</h1>
+              <h1 className="text-2xl font-semibold text-ink text-center">Connect Apple Health</h1>
               <p className="mt-2 text-sm text-muted/70 text-center">Sync steps, sleep, and workouts to make your AI Coach smarter</p>
               <p className="mt-1 text-xs text-muted/50 text-center">You can adjust this anytime in your profile settings</p>
 
@@ -711,7 +711,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
 
               {healthChoice === "no" && (
                 <div className="mt-10 space-y-3">
-                  <p className="text-center text-sm text-muted/60">No problem — you can connect anytime from your profile settings.</p>
+                  <p className="text-center text-sm text-muted/60">No problem, you can connect anytime from your profile settings.</p>
                   <button
                     type="button"
                     className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80 disabled:opacity-50"
