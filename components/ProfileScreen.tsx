@@ -13,7 +13,6 @@ import { getDailySupplements, setDailySupplements, clearDailySuppsLoggedToday, c
 import { clearMealsCache } from "../lib/supabaseDb";
 import { notifyMealsUpdated } from "../lib/dataEvents";
 import { supabase } from "../lib/supabaseClient";
-import { requestHealthKitPermissions, syncHealthKitActivity, openHealthKitSettings, checkHealthKitAuthorization, getHealthKitAuthStatus } from "../lib/healthKit";
 import { openReviewPrompt } from "./ReviewPromptModal";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
@@ -106,8 +105,6 @@ export default function ProfileScreen() {
   const [editLastName, setEditLastName] = useState("");
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [healthKitStatus, setHealthKitStatus] = useState<"unknown" | "connected" | "not_connected">("unknown");
-  const [healthKitConnecting, setHealthKitConnecting] = useState(false);
   const [healthKitShowSettings, setHealthKitShowSettings] = useState(false);
 
   useEffect(() => {
@@ -135,16 +132,6 @@ export default function ProfileScreen() {
     if (!user || dataLoading || hasInitializedRef.current) return;
     hasInitializedRef.current = true;
     setLoadError(null);
-
-    const hkConnected = localStorage.getItem(`wya_healthkit_connected_${user.id}`);
-    setHealthKitStatus(hkConnected === "true" ? "connected" : "not_connected");
-    // Only confirm connected — never clear based on write-auth check (read-only grants return false)
-    checkHealthKitAuthorization().then((authorized) => {
-      if (authorized) {
-        localStorage.setItem(`wya_healthkit_connected_${user.id}`, "true");
-        setHealthKitStatus("connected");
-      }
-    });
 
     const walkthroughKey = `wya_walkthrough_profile_${user.id}`;
     if (localStorage.getItem(walkthroughKey)) {
@@ -267,10 +254,9 @@ export default function ProfileScreen() {
   }, [showMultiSuppModal]);
 
   useEffect(() => {
-    const open = healthKitShowSettings && healthKitStatus === "not_connected";
-    document.body.style.overflow = open ? "hidden" : "";
+    document.body.style.overflow = healthKitShowSettings ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
-  }, [healthKitShowSettings, healthKitStatus]);
+  }, [healthKitShowSettings]);
 
   if (loading) {
     return (
@@ -333,27 +319,6 @@ export default function ProfileScreen() {
     }
     setFirstName(first.trim());
     setLastName(last.trim());
-  };
-
-  const handleConnectHealthKit = async () => {
-    if (!user) return;
-    setHealthKitConnecting(true);
-    setHealthKitShowSettings(false);
-    // Check BEFORE requesting — notDetermined means the native sheet hasn't appeared yet
-    const { notDetermined } = await getHealthKitAuthStatus();
-    await requestHealthKitPermissions();
-    const authorized = await checkHealthKitAuthorization();
-    if (authorized) {
-      localStorage.setItem(`wya_healthkit_connected_${user.id}`, "true");
-      setHealthKitStatus("connected");
-      syncHealthKitActivity(user.id).catch(() => {});
-    } else {
-      // requestHealthKitPermissions() was called first (native sheet appeared if never asked),
-      // so showing Settings guidance here is always appropriate
-      setHealthKitStatus("not_connected");
-      setHealthKitShowSettings(true);
-    }
-    setHealthKitConnecting(false);
   };
 
   const handleSave = async () => {
@@ -1156,32 +1121,15 @@ export default function ProfileScreen() {
                 <p className="mt-0.5 text-[11px] text-muted/60">Syncs steps, workouts, and sleep to make your coach smarter.</p>
               </div>
               <div className="shrink-0">
-                {healthKitStatus === "connected" ? (
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                    <span className="text-[11px] font-semibold text-emerald-600">Connected</span>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    className="rounded-full bg-primary px-3 py-1 text-[11px] font-semibold text-white transition active:opacity-70 disabled:opacity-50"
-                    onClick={handleConnectHealthKit}
-                    disabled={healthKitConnecting || healthKitStatus === "unknown"}
-                  >
-                    {healthKitConnecting ? "Connecting…" : "Connect"}
-                  </button>
-                )}
+                <button
+                  type="button"
+                  className="rounded-full bg-primary px-3 py-1 text-[11px] font-semibold text-white transition active:opacity-70"
+                  onClick={() => setHealthKitShowSettings(true)}
+                >
+                  Connect
+                </button>
               </div>
             </div>
-            {healthKitStatus === "connected" && (
-              <button
-                type="button"
-                className="mt-2 text-[11px] text-muted/50 underline underline-offset-2 active:opacity-60"
-                onClick={() => openHealthKitSettings()}
-              >
-                Manage in Settings
-              </button>
-            )}
           </div>
 
           <label className="block text-xs text-muted/70">
@@ -1666,7 +1614,7 @@ export default function ProfileScreen() {
         </div>
       )}
 
-      {healthKitShowSettings && healthKitStatus === "not_connected" && (
+      {healthKitShowSettings && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5"
         >
