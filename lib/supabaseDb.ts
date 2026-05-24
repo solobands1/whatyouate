@@ -220,6 +220,8 @@ export async function getProfile(userId: string): Promise<UserProfile | null> {
     trackWater: data.track_water ?? true,
     waterUnit: (data.water_unit === "oz" ? "oz" : "ml") as "ml" | "oz",
     timezoneOffsetMinutes: data.timezone_offset_minutes ?? null,
+    onboardingDone: data.onboarding_done ?? false,
+    walkthroughDone: data.walkthrough_done ?? false,
   };
   profileCache.set(userId, { data: profile, ts: Date.now() });
   return profile;

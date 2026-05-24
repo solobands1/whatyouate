@@ -46,7 +46,8 @@ export default function PushNotificationSetup() {
     if (!asked || (asked === "declined" && !declinedRecently)) {
       const t = setTimeout(() => {
         const walkthroughActive = localStorage.getItem(`wya_walkthrough_active_${user.id}`) === "true";
-        if (!walkthroughActive) setShowPrePrompt(true);
+        const onboardingDone = localStorage.getItem(`wya_onboarding_done_${user.id}`) === "true";
+        if (!walkthroughActive && onboardingDone) setShowPrePrompt(true);
       }, 5000);
       return () => clearTimeout(t);
     }

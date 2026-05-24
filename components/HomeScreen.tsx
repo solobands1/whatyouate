@@ -1255,24 +1255,34 @@ export default function HomeScreen() {
   }, [meals.meals, loadingData, failedMealPrompt, isDemoMode, runTour]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || loadingData) return;
     const key = `wya_walkthrough_${user.id}`;
-    const seen = localStorage.getItem(key);
     const gateKey = `wya_walkthrough_gate_${user.id}`;
-    const gateSeen = localStorage.getItem(gateKey);
     const activeKey = `wya_walkthrough_active_${user.id}`;
     const stageKey = `wya_walkthrough_stage_${user.id}`;
+    const onboardingKey = `wya_onboarding_done_${user.id}`;
     const active = localStorage.getItem(activeKey) === "true";
     const stage = localStorage.getItem(stageKey) ?? "home";
+
+    // Resume an in-progress walkthrough immediately — no need to wait on profile
     if (active && stage === "home") {
       if (localStorage.getItem(`wya_demo_mode_${user.id}`) === "true") setIsDemoMode(true);
       setRunTour(true);
       setShowTourGate(false);
       return;
     }
-    // Show onboarding for new users, then gate — replays skip onboarding
-    const onboardingKey = `wya_onboarding_done_${user.id}`;
+
+    // Sync Supabase flags to localStorage so reinstall/new phone works correctly
+    if (ctxProfile?.onboardingDone) localStorage.setItem(onboardingKey, "true");
+    if (ctxProfile?.walkthroughDone) {
+      localStorage.setItem(key, "true");
+      localStorage.setItem(gateKey, "true");
+    }
+
     const onboardingDone = localStorage.getItem(onboardingKey);
+    const seen = localStorage.getItem(key);
+    const gateSeen = localStorage.getItem(gateKey);
+
     if (!seen && !active && !gateSeen) {
       if (!onboardingDone) {
         setShowOnboarding(true);
@@ -1281,11 +1291,12 @@ export default function HomeScreen() {
         setShowTourGate(true);
       }
     }
+
     // Check if streak saver was already dismissed today
     if (localStorage.getItem(`wya_streak_saver_dismissed_${user.id}_${todayKey()}`) === "true") {
       setStreakSaverDismissed(true);
     }
-  }, [user]);
+  }, [user, loadingData, ctxProfile]);
 
   const displayMeals = isDemoMode ? demoData.meals : meals.meals;
   const displayWorkouts = isDemoMode ? demoData.workouts : workout.workouts;
@@ -1610,6 +1621,7 @@ export default function HomeScreen() {
       localStorage.removeItem(activeKey);
       localStorage.removeItem(stageKey);
       setRunTour(false);
+      supabase.from("profiles").update({ walkthrough_done: true }).eq("user_id", user.id).then(() => {});
       return;
     }
     if (data.type === "step:after" && data.index === steps.length - 1) {
@@ -1770,7 +1782,13 @@ export default function HomeScreen() {
             <button
               type="button"
               className="text-xs text-ink/55 underline underline-offset-2 transition hover:text-ink/70"
-              onClick={() => setShowTourGate(false)}
+              onClick={() => {
+                if (user) {
+                  localStorage.setItem(`wya_walkthrough_${user.id}`, "true");
+                  supabase.from("profiles").update({ walkthrough_done: true }).eq("user_id", user.id).then(() => {});
+                }
+                setShowTourGate(false);
+              }}
             >
               Explore On My Own
             </button>

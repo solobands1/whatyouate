@@ -118,6 +118,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
         activity_level: activityLevel || null,
         dietary_restrictions: dietaryRestrictions,
         units,
+        onboarding_done: true,
         updated_at: new Date().toISOString(),
       }, { onConflict: "user_id" });
 
