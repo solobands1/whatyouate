@@ -1142,10 +1142,24 @@ export default function ProfileScreen() {
               <div className="shrink-0">
                 <button
                   type="button"
-                  className="rounded-full bg-primary px-3 py-1 text-[11px] font-semibold text-white transition active:opacity-70"
-                  onClick={() => setHealthKitShowSettings(true)}
+                  disabled={healthKitModalState === "connecting"}
+                  className="rounded-full bg-primary px-3 py-1 text-[11px] font-semibold text-white transition active:opacity-70 disabled:opacity-50"
+                  onClick={async () => {
+                    if (!user) return;
+                    setHealthKitModalState("connecting");
+                    await requestHealthKitPermissions();
+                    const granted = await checkHealthKitAuthorization();
+                    if (granted) {
+                      localStorage.setItem(`wya_healthkit_connected_${user.id}`, "true");
+                      syncHealthKitActivity(user.id).catch(() => {});
+                      setHealthKitModalState("connect");
+                    } else {
+                      setHealthKitModalState("instructions");
+                      setHealthKitShowSettings(true);
+                    }
+                  }}
                 >
-                  Connect
+                  {healthKitModalState === "connecting" ? "…" : "Connect"}
                 </button>
               </div>
             </div>
@@ -1645,32 +1659,10 @@ export default function ProfileScreen() {
               <svg viewBox="0 0 16 16" className="mx-auto mb-3 h-8 w-8 text-rose-400" fill="currentColor">
                 <path d="M8 13.7C7.7 13.5 1 9.2 1 5.5 1 3.6 2.6 2 4.5 2c1 0 2 .5 2.7 1.3L8 4.2l.8-.9C9.5 2.5 10.5 2 11.5 2 13.4 2 15 3.6 15 5.5c0 3.7-6.7 8-7 8.2z"/>
               </svg>
-              <h2 className="text-base font-semibold text-ink">
-                {healthKitModalState === "instructions" ? "To Connect Apple Health" : "Connect Apple Health"}
-              </h2>
+              <h2 className="text-base font-semibold text-ink">To Connect Apple Health</h2>
             </div>
 
-            {(healthKitModalState === "loading" || healthKitModalState === "connecting") && (
-              <div className="flex justify-center py-6">
-                <p className="text-sm text-muted/60">{healthKitModalState === "connecting" ? "Connecting…" : "…"}</p>
-              </div>
-            )}
-
-            {healthKitModalState === "connect" && (
-              <div>
-                <p className="text-center text-sm text-muted/60 mb-6">Sync steps, sleep, and workouts to make your AI Coach smarter.</p>
-                <button
-                  type="button"
-                  className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-white transition active:opacity-80"
-                  onClick={handleHealthKitConnect}
-                >
-                  Connect
-                </button>
-              </div>
-            )}
-
-            {healthKitModalState === "instructions" && (
-              <div>
+            <div>
                 {[
                   {
                     bg: "bg-gray-500",
@@ -1746,7 +1738,7 @@ export default function ProfileScreen() {
                   </button>
                 </div>
               </div>
-            )}
+            </div>
           </div>
         </div>
       )}
