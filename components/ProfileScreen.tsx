@@ -13,7 +13,7 @@ import { getDailySupplements, setDailySupplements, clearDailySuppsLoggedToday, c
 import { clearMealsCache } from "../lib/supabaseDb";
 import { notifyMealsUpdated } from "../lib/dataEvents";
 import { supabase } from "../lib/supabaseClient";
-import { getHealthKitAuthStatus, requestHealthKitPermissions, checkHealthKitAuthorization, syncHealthKitActivity } from "../lib/healthKit";
+import { requestHealthKitPermissions, checkHealthKitAuthorization, syncHealthKitActivity } from "../lib/healthKit";
 import { openReviewPrompt } from "./ReviewPromptModal";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
@@ -262,10 +262,7 @@ export default function ProfileScreen() {
 
   useEffect(() => {
     if (!healthKitShowSettings) return;
-    setHealthKitModalState("loading");
-    getHealthKitAuthStatus().then(({ notDetermined }) => {
-      setHealthKitModalState(notDetermined ? "connect" : "instructions");
-    });
+    setHealthKitModalState("connect");
   }, [healthKitShowSettings]);
 
   async function handleHealthKitConnect() {
