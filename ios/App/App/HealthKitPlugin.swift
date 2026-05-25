@@ -34,18 +34,7 @@ public class HealthKitPlugin: CAPPlugin, CAPBridgedPlugin {
         return types
     }
 
-    private var shareTypes: Set<HKSampleType> {
-        guard HKHealthStore.isHealthDataAvailable() else { return [] }
-        var types = Set<HKSampleType>()
-        if let calorieType = HKQuantityType.quantityType(forIdentifier: .dietaryEnergyConsumed) {
-            types.insert(calorieType)
-        }
-        if let proteinType = HKQuantityType.quantityType(forIdentifier: .dietaryProtein) {
-            types.insert(proteinType)
-        }
-        types.insert(HKObjectType.workoutType())
-        return types
-    }
+    private let permissionsShownKey = "HealthKit.permissionsRequested"
 
     @objc func requestHealthPermissions(_ call: CAPPluginCall) {
         guard HKHealthStore.isHealthDataAvailable() else {
@@ -53,7 +42,8 @@ public class HealthKitPlugin: CAPPlugin, CAPBridgedPlugin {
             return
         }
         DispatchQueue.main.async {
-            self.healthStore.requestAuthorization(toShare: self.shareTypes, read: self.readTypes) { _, _ in
+            self.healthStore.requestAuthorization(toShare: [], read: self.readTypes) { _, _ in
+                UserDefaults.standard.set(true, forKey: self.permissionsShownKey)
                 call.resolve()
             }
         }
@@ -73,14 +63,10 @@ public class HealthKitPlugin: CAPPlugin, CAPBridgedPlugin {
             call.resolve(["authorized": false, "notDetermined": true])
             return
         }
-        let authorized = shareTypes.contains { type in
-            healthStore.authorizationStatus(for: type) == .sharingAuthorized
-        }
-        // notDetermined = user has never been shown the permission sheet for any share type
-        let notDetermined = shareTypes.allSatisfy { type in
-            healthStore.authorizationStatus(for: type) == .notDetermined
-        }
-        call.resolve(["authorized": authorized, "notDetermined": notDetermined])
+        // iOS never exposes read authorization status to apps for privacy reasons.
+        // Track via UserDefaults whether requestAuthorization has been shown.
+        let wasShown = UserDefaults.standard.bool(forKey: permissionsShownKey)
+        call.resolve(["authorized": wasShown, "notDetermined": !wasShown])
     }
 
     @objc func syncActivity(_ call: CAPPluginCall) {
