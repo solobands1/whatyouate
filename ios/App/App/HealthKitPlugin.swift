@@ -24,12 +24,6 @@ public class HealthKitPlugin: CAPPlugin, CAPBridgedPlugin {
         if let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) {
             types.insert(sleepType)
         }
-        if let calorieType = HKQuantityType.quantityType(forIdentifier: .dietaryEnergyConsumed) {
-            types.insert(calorieType)
-        }
-        if let proteinType = HKQuantityType.quantityType(forIdentifier: .dietaryProtein) {
-            types.insert(proteinType)
-        }
         types.insert(HKObjectType.workoutType())
         return types
     }
