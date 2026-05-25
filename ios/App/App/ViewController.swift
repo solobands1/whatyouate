@@ -5,5 +5,6 @@ import RevenuecatPurchasesCapacitor
 class ViewController: CAPBridgeViewController {
     override func capacitorDidLoad() {
         bridge?.registerPluginInstance(PurchasesPlugin())
+        bridge?.registerPluginInstance(HealthKitPlugin())
     }
 }

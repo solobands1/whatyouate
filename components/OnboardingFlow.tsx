@@ -695,7 +695,7 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
                       <p className="text-sm font-semibold text-emerald-600">Connected to Apple Health</p>
                     </div>
                   ) : (
-                    <p className="text-center text-sm text-muted/60">You can enable this anytime from your profile settings.</p>
+                    <p className="text-center text-sm text-muted/60">You can change this anytime from your profile settings</p>
                   )}
                   <button
                     type="button"
