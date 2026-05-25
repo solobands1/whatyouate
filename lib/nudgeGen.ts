@@ -379,7 +379,7 @@ Return ONLY valid JSON:
 export function buildWeeklySummaryPrompt(ctx: Record<string, unknown>): string {
   const lines: string[] = [];
 
-  const profile = ctx.profile as { firstName?: string; goalDirection?: string; freeformFocus?: string } | undefined;
+  const profile = ctx.profile as { firstName?: string; goalDirection?: string; freeformFocus?: string; units?: string } | undefined;
   if (profile?.firstName) lines.push(`User: ${profile.firstName}`);
   if (profile?.goalDirection) lines.push(`Goal direction: ${profile.goalDirection}`);
   if (profile?.freeformFocus) lines.push(`Personal focus: ${profile.freeformFocus}`);
