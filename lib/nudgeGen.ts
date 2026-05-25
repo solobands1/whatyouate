@@ -75,7 +75,9 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
     const parts = [
       profile.goalDirection && `goal: ${profile.goalDirection}`,
       profile.age && `age: ${profile.age}`,
-      profile.weight && `weight: ${profile.weight}kg`,
+      profile.weight && (profile.units === "imperial"
+        ? `weight: ${Math.round((profile.weight as number) * 2.20462)}lbs`
+        : `weight: ${profile.weight}kg`),
       profile.activityLevel && `activity: ${profile.activityLevel}`,
       profile.freeformFocus && `focus: ${profile.freeformFocus}`,
       (profile.dietaryRestrictions as string[] | undefined)?.length &&
@@ -282,9 +284,10 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
 
   const wt = ctx.weightTrend as { currentKg: number; startKg: number; changeKg: number; entryCount: number; daysSinceFirst: number } | undefined;
   if (wt) {
+    const imperial = (profile?.units as string) === "imperial";
+    const fmt = (kg: number) => imperial ? `${Math.round(kg * 2.20462)}lbs` : `${kg}kg`;
     const dir = wt.changeKg < 0 ? "down" : wt.changeKg > 0 ? "up" : "stable";
-    const absKg = Math.abs(wt.changeKg);
-    lines.push(`Weight trend (${wt.entryCount} weigh-ins over ${wt.daysSinceFirst} days): ${dir} ${absKg}kg | started at ${wt.startKg}kg, now ${wt.currentKg}kg`);
+    lines.push(`Weight trend (${wt.entryCount} weigh-ins over ${wt.daysSinceFirst} days): ${dir} ${fmt(Math.abs(wt.changeKg))} | started at ${fmt(wt.startKg)}, now ${fmt(wt.currentKg)}`);
   }
 
   const avgDailySteps = ctx.avgDailySteps as number | undefined;
@@ -422,8 +425,12 @@ export function buildWeeklySummaryPrompt(ctx: Record<string, unknown>): string {
 
   const wt = ctx.weightTrend as { currentKg: number; changeKg: number; entryCount: number; daysSinceFirst: number } | undefined;
   if (wt && wt.entryCount >= 2) {
+    const imperial = (profile?.units as string) === "imperial";
     const dir = wt.changeKg < 0 ? "down" : wt.changeKg > 0 ? "up" : "stable";
-    lines.push(`\nWeight trend: ${dir} ${Math.abs(wt.changeKg).toFixed(1)}kg over ${wt.daysSinceFirst} days (${wt.entryCount} weigh-ins)`);
+    const change = imperial
+      ? `${(Math.abs(wt.changeKg) * 2.20462).toFixed(1)}lbs`
+      : `${Math.abs(wt.changeKg).toFixed(1)}kg`;
+    lines.push(`\nWeight trend: ${dir} ${change} over ${wt.daysSinceFirst} days (${wt.entryCount} weigh-ins)`);
   }
 
   const avgSteps = ctx.avgDailySteps as number | undefined;
