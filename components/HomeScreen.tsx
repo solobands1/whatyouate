@@ -726,25 +726,26 @@ export default function HomeScreen() {
   const handleFailedMealSubmit = async () => {
     if (!failedMealPrompt || !failedMealText.trim() || !user) return;
     setFailedMealAnalyzing(true);
+    const mealIdToUpdate = failedMealPrompt.mealId;
+    // Optimistically flip to processing so the pill shimmer shows instead of "Couldn't Analyze"
+    meals.setMeals((prev) => prev.map((m) => m.id === mealIdToUpdate ? { ...m, status: "processing" as const } : m));
+    setFailedMealPrompt(null);
+    setFailedMealAnalyzing(false);
     try {
       const res = await fetch("/api/analyze-food", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ textDescription: failedMealText.trim(), mealId: failedMealPrompt.mealId, userId: user.id })
+        body: JSON.stringify({ textDescription: failedMealText.trim(), mealId: mealIdToUpdate, userId: user.id })
       });
       if (!res.ok) throw new Error("Analysis failed");
       clearMealsCache(user.id);
       notifyMealsUpdated();
-      setFailedMealPrompt(null);
     } catch {
       // Fall back to marking as failed
-      updateMeal(failedMealPrompt.mealId, safeFallbackAnalysis(), undefined, user.id, "failed").catch(() => {});
+      updateMeal(mealIdToUpdate, safeFallbackAnalysis(), undefined, user.id, "failed").catch(() => {});
       clearMealsCache(user.id);
       notifyMealsUpdated();
       setLoadError("Something went wrong. You can edit the meal manually.");
-      setFailedMealPrompt(null);
-    } finally {
-      setFailedMealAnalyzing(false);
     }
   };
 
@@ -2801,11 +2802,11 @@ export default function HomeScreen() {
               </button>
               <button
                 type="button"
-                className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
+                className={`rounded-xl px-4 py-2 text-xs font-semibold text-white transition disabled:opacity-50 ${failedMealAnalyzing ? "animate-shimmer" : "bg-primary hover:bg-primary/90"}`}
                 onClick={handleFailedMealSubmit}
                 disabled={failedMealAnalyzing || !failedMealText.trim()}
               >
-                {failedMealAnalyzing ? "Analyzing…" : "Submit"}
+                {failedMealAnalyzing ? "Analyzing…" : "Analyze"}
               </button>
             </div>
           </div>
