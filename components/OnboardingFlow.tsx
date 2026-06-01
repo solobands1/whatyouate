@@ -40,10 +40,11 @@ function calculateAgeFromDob(dobStr: string): number | null {
 interface Props {
   userId: string;
   firstName: string;
+  lastName?: string;
   onComplete: () => void;
 }
 
-export default function OnboardingFlow({ userId, firstName, onComplete }: Props) {
+export default function OnboardingFlow({ userId, firstName, lastName, onComplete }: Props) {
   const [showIntro, setShowIntro] = useState(true);
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
@@ -109,6 +110,8 @@ export default function OnboardingFlow({ userId, firstName, onComplete }: Props)
 
       await supabase.from("profiles").upsert({
         user_id: userId,
+        first_name: firstName || null,
+        last_name: lastName || null,
         age: calculateAgeFromDob(dobString) ?? null,
         date_of_birth: dobString || null,
         sex: sex || "prefer_not",

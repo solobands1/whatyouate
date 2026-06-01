@@ -1728,6 +1728,11 @@ export default function HomeScreen() {
             (user as { user_metadata?: Record<string, string> }).user_metadata?.first_name ||
             ""
           }
+          lastName={
+            profile?.lastName ||
+            (user as { user_metadata?: Record<string, string> }).user_metadata?.last_name ||
+            ""
+          }
           onComplete={() => {
             localStorage.setItem(`wya_onboarding_done_${user.id}`, "true");
             localStorage.setItem(`wya_walkthrough_gate_${user.id}`, "true");
