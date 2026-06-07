@@ -539,7 +539,11 @@ export default function HomeScreen() {
   }, [ctxProfile, ctxMeals, user]);
 
   useEffect(() => {
-    meals.setMeals(ctxMeals);
+    meals.setMeals((prev) => {
+      const optimistic = prev.filter((m) => m.id.startsWith("optimistic-"));
+      const optimisticIds = new Set(optimistic.map((m) => m.id));
+      return [...optimistic, ...ctxMeals.filter((m) => !optimisticIds.has(m.id))];
+    });
   }, [ctxMeals]);
 
   useEffect(() => {
