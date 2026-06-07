@@ -1152,8 +1152,9 @@ export default function HomeScreen() {
       }
       if (mealId) {
         // Find thumbnail for the failed meal if it's in local state
-        const thumb = meals.meals.find((m) => m.id === mealId)?.imageThumb ?? undefined;
-        setFailedMealText("");
+        const failed = meals.meals.find((m) => m.id === mealId);
+        const thumb = failed?.imageThumb ?? undefined;
+        setFailedMealText(failed?.analysisJson?.name ?? "");
         setFailedMealPrompt({ mealId, thumb });
       }
     };
@@ -2395,7 +2396,7 @@ export default function HomeScreen() {
                         key={`${meal.id}-${meal.calories}-${meal.protein}`}
                         onClick={() => {
                           if (isStaleOrFailed) {
-                            setFailedMealText("");
+                            setFailedMealText(meal.analysisJson?.name ?? "");
                             setFailedMealPrompt({ mealId: meal.id, thumb: meal.imageThumb ?? undefined });
                             return;
                           }
