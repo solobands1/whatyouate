@@ -46,6 +46,7 @@ NAMING
   - Never name a multi-item meal after a single component — if you see eggs, bacon, toast, and hash browns, the name is "Eggs, Bacon, Toast & Hash Browns", not "Fried Eggs".
 - If a single named dish is clearly identifiable (e.g., poutine, ramen, burrito bowl, pad thai), use that dish name.
 - Avoid generic names like "Meal", "Food", or "Plate" unless the content is truly unclear.
+- For mixed fruit: use "mixed fruit" if any non-berry fruits are visible (kiwi, melon, mango, pineapple, grapes, etc.). Use "mixed berries" only when all visible fruits are berries (strawberries, blueberries, raspberries, blackberries).
 
 GENERAL
 - Always output numeric ranges, never single values.
@@ -62,6 +63,7 @@ DETECTED ITEMS
 - Avoid returning a generic name like "Meal" unless the content is truly unclear.
 - If the item appears to be a packaged bar (protein bar, granola bar, candy bar), prefer a bar label
   and do not classify it as soups/stews (e.g., pho) unless clearly visible.
+- For plates with a salad or leafy greens base: always scan the full plate for proteins placed on top before naming the dish. A protein sitting on greens (e.g., salmon, chicken, shrimp, steak) must be identified and included in the name — never name the dish after the greens alone.
 - When two visually similar ingredients are plausible, prefer the one that is statistically more common for that dish type:
   - Pizza toppings: "pepperoni" over "salami" for small round cured meat slices; "mozzarella" over "provolone" for melted white cheese.
   - Burger patty: "beef" over "bison" or "lamb" unless context suggests otherwise.
