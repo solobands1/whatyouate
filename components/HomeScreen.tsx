@@ -487,10 +487,16 @@ export default function HomeScreen() {
     const capturedDate = quickAddDate;
     (async () => {
       const results = await Promise.allSettled(
-        pendingItems.map(async ({ item, analysis }) => {
+        pendingItems.map(async ({ item, analysis }, i) => {
           const created = await addMeal(user.id, analysis);
           if (!created?.id) throw new Error(`addMeal failed for ${item.name}`);
           await updateMeal(created.id, analysis, { userCorrection: item.name }, user.id);
+          // Replace optimistic pill with real DB record so ctxMeals sync doesn't create a duplicate
+          meals.setMeals((prev) => prev.map((m) =>
+            m.id === `optimistic-${now}-${i}`
+              ? { ...created, ts: now - i, analysisJson: analysis, userCorrection: item.name, status: "done" as const }
+              : m
+          ));
           if (capturedDate !== todayDateStr()) {
             const d = new Date(capturedDate + "T12:00:00");
             if (d.getTime() < Date.now()) await updateMealTs(created.id, d.getTime()).catch(() => {});
@@ -731,15 +737,35 @@ export default function HomeScreen() {
     if (!failedMealPrompt || !failedMealText.trim() || !user) return;
     setFailedMealAnalyzing(true);
     const mealIdToUpdate = failedMealPrompt.mealId;
+    const imageThumb = failedMealPrompt.thumb;
     // Optimistically flip to processing so the pill shimmer shows instead of "Couldn't Analyze"
     meals.setMeals((prev) => prev.map((m) => m.id === mealIdToUpdate ? { ...m, status: "processing" as const } : m));
     setFailedMealPrompt(null);
     setFailedMealAnalyzing(false);
+    let imageBase64: string | undefined;
+    if (imageThumb) {
+      try {
+        const imgRes = await fetch(imageThumb);
+        const blob = await imgRes.blob();
+        imageBase64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      } catch {
+        imageBase64 = undefined;
+      }
+    }
     try {
       const res = await fetch("/api/analyze-food", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ textDescription: failedMealText.trim(), mealId: mealIdToUpdate, userId: user.id })
+        body: JSON.stringify(
+          imageBase64
+            ? { imageBase64, hints: failedMealText.trim(), mealId: mealIdToUpdate, userId: user.id }
+            : { textDescription: failedMealText.trim(), mealId: mealIdToUpdate, userId: user.id }
+        )
       });
       if (!res.ok) throw new Error("Analysis failed");
       clearMealsCache(user.id);
