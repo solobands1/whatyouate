@@ -366,7 +366,7 @@ RULES:
 - NO RAW NUMBERS: Do not write specific calorie or macro values (e.g. "1864 calories", "77g protein"). Use relative language: "close to target", "the strongest day", "noticeably lower", "more than usual".
 - Never open with "This week" or "You've". Start with what you noticed, a day, a pattern, the food, the effort.
 - Sound like a person, not a system.
-- 60–80 words total. No line breaks or newlines.
+- 60–80 words total. Finish your last sentence before that limit, never mid-thought. No line breaks or newlines.
 - No food suggestions.
 - No clichés: "crush it", "you've got this", "fresh start", "amazing", "great job", "keep it up"
 - CRITICAL: Never use em dashes (— or —). Use commas or rewrite as separate sentences.
