@@ -2251,15 +2251,10 @@ export default function HomeScreen() {
           <div className="flex flex-col items-center gap-1.5 mt-5" data-tour="food-action">
           <button
             type="button"
-            className="relative flex w-full items-center justify-center gap-2.5 rounded-xl bg-primary px-5 py-3.5 text-center text-base font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] ring-1 ring-white/40 transition hover:bg-primary/90 active:scale-[0.98]"
+            className="relative block w-full rounded-xl bg-primary px-5 py-4 text-center text-base font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] ring-1 ring-white/40 transition hover:bg-primary/90 active:scale-[0.98]"
             onClick={() => setShowLogFood(true)}
           >
-            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 2v7c0 1.1.9 2 2 2a2 2 0 0 0 2-2V2" />
-              <path d="M7 2v20" />
-              <path d="M21 15V2a5 3 0 0 0-5 5v6c0 1.1.9 2 2 2h3Z" />
-            </svg>
-            <span>Log Food</span>
+            Log Food
           </button>
           </div>
           <div className="flex flex-col items-center gap-1.5" data-tour="workout-markers">
