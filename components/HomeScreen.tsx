@@ -351,6 +351,7 @@ export default function HomeScreen() {
   const [editPortion, setEditPortion] = useState<"small" | "medium" | "large">("medium");
   const [showTargetInfo, setShowTargetInfo] = useState(false);
   const [showQuickAdd, setShowQuickAdd] = useState(false);
+  const [showLogFood, setShowLogFood] = useState(false);
   const [quickAddItems, setQuickAddItems] = useState<QuickAddItem[]>([]);
   const [quickAddRecentItems, setQuickAddRecentItems] = useState<QuickAddItem[]>([]);
   const [quickAddSelected, setQuickAddSelected] = useState<Record<string, "small" | "medium" | "large">>({});
@@ -1247,9 +1248,9 @@ export default function HomeScreen() {
   }, [user, reload]);
 
   useEffect(() => {
-    document.body.style.overflow = showQuickAdd ? "hidden" : "";
+    document.body.style.overflow = (showQuickAdd || showLogFood) ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
-  }, [showQuickAdd]);
+  }, [showQuickAdd, showLogFood]);
 
   // When a meal is still processing, the "Analyzing food…" label is time-gated
   // at render time (< 90s shows spinner text, >= 90s shows "Analysis failed").
@@ -1588,7 +1589,7 @@ export default function HomeScreen() {
       content: (
         <div>
           <p style={{ fontWeight: 600, marginBottom: 10 }}>Logging Your Food Is Easy</p>
-          <p>Take a photo, scan a barcode, type it manually, or tap "quick add" to re-log something you've had before.</p>
+          <p>Tap Log Food to take a photo, scan a barcode, type it manually, or re-log something you've had before.</p>
         </div>
       ),
     },
@@ -2250,46 +2251,11 @@ export default function HomeScreen() {
           <div className="flex flex-col items-center gap-1.5 mt-5" data-tour="food-action">
           <button
             type="button"
-            className={`relative block w-full rounded-xl bg-primary px-5 py-4 text-center text-base font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] ring-1 ring-white/40 transition hover:bg-primary/90 active:scale-[0.98] ${trial.isFree && !isDemoMode ? "opacity-70" : ""}`}
-            onClick={trial.isFree && !isDemoMode ? openUpgradeModal : handleFoodPhotoClick}
+            className="relative block w-full rounded-xl bg-primary px-5 py-4 text-center text-base font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] ring-1 ring-white/40 transition hover:bg-primary/90 active:scale-[0.98]"
+            onClick={() => setShowLogFood(true)}
           >
-            Take Food Photo
-            {trial.isFree && !isDemoMode && (
-              <span className="absolute right-4 top-1/2 -translate-y-1/2">
-                <svg viewBox="0 0 24 24" className="h-4 w-4 text-white/70" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="11" width="18" height="11" rx="2" />
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                </svg>
-              </span>
-            )}
+            Log Food
           </button>
-
-          <div className="flex w-[92%]">
-            <button
-              type="button"
-              className="flex flex-1 items-center justify-center gap-2 rounded-l-xl rounded-r-none bg-primary px-3 py-2 text-xs font-semibold text-white shadow-[0_8px_20px_rgba(15,23,42,0.14)] ring-1 ring-white/40 transition-all duration-150 hover:bg-primary/90 active:translate-y-[1px] active:shadow-[0_3px_10px_rgba(15,23,42,0.18)]"
-              onClick={meals.openManualMealEntry}
-            >
-              <span>+</span>
-              <span>Manual Add</span>
-            </button>
-            <button
-              type="button"
-              className="flex flex-1 items-center justify-center gap-2 rounded-none border-l border-white/30 bg-primary px-3 py-2 text-xs font-semibold text-white shadow-[0_8px_20px_rgba(15,23,42,0.14)] ring-1 ring-white/40 transition-all duration-150 hover:bg-primary/90 active:translate-y-[1px] active:shadow-[0_3px_10px_rgba(15,23,42,0.18)]"
-              onClick={() => setBarcodeOpen(true)}
-            >
-              <span>▦</span>
-              <span>Barcode</span>
-            </button>
-            <button
-              type="button"
-              className="flex flex-1 items-center justify-center gap-2 rounded-r-xl rounded-l-none border-l border-white/30 bg-primary px-3 py-2 text-xs font-semibold text-white shadow-[0_8px_20px_rgba(15,23,42,0.14)] ring-1 ring-white/40 transition-all duration-150 hover:bg-primary/90 active:translate-y-[1px] active:shadow-[0_3px_10px_rgba(15,23,42,0.18)]"
-              onClick={handleOpenQuickAdd}
-            >
-              <span>+</span>
-              <span>Quick Add</span>
-            </button>
-          </div>
           </div>
           <div className="flex flex-col items-center gap-1.5" data-tour="workout-markers">
             <div className="flex w-[84%] text-xs rounded-xl shadow-[0_4px_12px_rgba(15,23,42,0.08),0_0_8px_rgba(111,168,255,0.12)] overflow-hidden" data-tour="workout-buttons">
@@ -2808,6 +2774,85 @@ export default function HomeScreen() {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {showLogFood && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
+          onClick={() => setShowLogFood(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl animate-pill-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-semibold text-ink">Log Food</h2>
+              <button
+                type="button"
+                className="text-xs font-semibold text-ink/50 transition active:opacity-60"
+                onClick={() => setShowLogFood(false)}
+              >
+                Cancel
+              </button>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                className="relative flex flex-col items-center justify-center gap-2 rounded-xl border border-ink/10 bg-white px-3 py-5 text-sm font-semibold text-ink/80 transition active:scale-[0.97] active:bg-primary/5"
+                onClick={() => {
+                  setShowLogFood(false);
+                  if (trial.isFree && !isDemoMode) { openUpgradeModal(); return; }
+                  handleFoodPhotoClick();
+                }}
+              >
+                <svg viewBox="0 0 24 24" className="h-6 w-6 text-primary" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                  <circle cx="12" cy="13" r="4" />
+                </svg>
+                <span>Photo</span>
+                {trial.isFree && !isDemoMode && (
+                  <span className="absolute right-2 top-2">
+                    <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-ink/30" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="11" width="18" height="11" rx="2" />
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+                  </span>
+                )}
+              </button>
+              <button
+                type="button"
+                className="flex flex-col items-center justify-center gap-2 rounded-xl border border-ink/10 bg-white px-3 py-5 text-sm font-semibold text-ink/80 transition active:scale-[0.97] active:bg-primary/5"
+                onClick={() => { setShowLogFood(false); setBarcodeOpen(true); }}
+              >
+                <svg viewBox="0 0 24 24" className="h-6 w-6 text-primary" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 5v14M7 5v14M11 5v14M16 5v14M20 5v14" />
+                </svg>
+                <span>Barcode</span>
+              </button>
+              <button
+                type="button"
+                className="flex flex-col items-center justify-center gap-2 rounded-xl border border-ink/10 bg-white px-3 py-5 text-sm font-semibold text-ink/80 transition active:scale-[0.97] active:bg-primary/5"
+                onClick={() => { setShowLogFood(false); meals.openManualMealEntry(); }}
+              >
+                <svg viewBox="0 0 24 24" className="h-6 w-6 text-primary" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 20h9" />
+                  <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4z" />
+                </svg>
+                <span>Manual</span>
+              </button>
+              <button
+                type="button"
+                className="flex flex-col items-center justify-center gap-2 rounded-xl border border-ink/10 bg-white px-3 py-5 text-sm font-semibold text-ink/80 transition active:scale-[0.97] active:bg-primary/5"
+                onClick={() => { setShowLogFood(false); handleOpenQuickAdd(); }}
+              >
+                <svg viewBox="0 0 24 24" className="h-6 w-6 text-primary" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M13 2L3 14h9l-1 8 10-12h-9z" />
+                </svg>
+                <span>Quick Add</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
