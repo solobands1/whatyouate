@@ -2780,7 +2780,7 @@ export default function HomeScreen() {
 
       {showLogFood && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5"
           onClick={() => setShowLogFood(false)}
         >
           <div
@@ -2848,7 +2848,7 @@ export default function HomeScreen() {
                 onClick={() => { setShowLogFood(false); handleOpenQuickAdd(); }}
               >
                 <svg viewBox="0 0 24 24" className="h-6 w-6 text-primary" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M13 2L3 14h9l-1 8 10-12h-9z" />
+                  <path d="M12 5v14M5 12h14" />
                 </svg>
                 <span>Quick Add</span>
               </button>
