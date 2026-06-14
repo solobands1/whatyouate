@@ -490,7 +490,9 @@ export async function listMeals(userId: string, limit = 50) {
 
 export async function markMealFailed(id: string): Promise<void> {
   if (useMemory) return;
-  await supabase.from("meals").update({ status: "failed" }).eq("id", id);
+  // Never overwrite a meal the server already analyzed successfully — a slow
+  // analysis can finish (status "done") after the client gave up on it.
+  await supabase.from("meals").update({ status: "failed" }).eq("id", id).neq("status", "done");
   mealsCache.clear();
 }
 

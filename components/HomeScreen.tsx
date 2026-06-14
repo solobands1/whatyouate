@@ -1274,7 +1274,9 @@ export default function HomeScreen() {
   // and picks up the next stale meal.
   useEffect(() => {
     if (loadingData || failedMealPrompt || isDemoMode || runTour) return;
-    const STALE_MS = 2 * 60 * 1000;
+    // Match the pill's "Couldn't Analyze" threshold (90s) so the recovery modal
+    // fires the moment the pill shows failed, not 30s later.
+    const STALE_MS = 90 * 1000;
     const stale = meals.meals.find(
       (m) => m.status === "processing" && Date.now() - m.ts > STALE_MS && !promptedStaleRef.current.has(m.id)
     );

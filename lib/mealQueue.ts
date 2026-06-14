@@ -30,7 +30,11 @@ async function processNext() {
 
   try {
     const clientController = new AbortController();
-    const clientTimeout = setTimeout(() => clientController.abort(), 20_000);
+    // Must exceed the server's own processing budget (maxDuration 60s, with a 25s
+    // Anthropic vision call + possible OpenAI fallback). A shorter client timeout
+    // aborts slow-but-successful analyses, triggering wasteful retries that race the
+    // original request on the same meal row.
+    const clientTimeout = setTimeout(() => clientController.abort(), 55_000);
     let response: Response;
     try {
       response = await fetch("/api/analyze-food", {
@@ -92,10 +96,20 @@ async function processNext() {
     clearMealsCache(job.userId);
     notifyMealsUpdated();
     window.dispatchEvent(new CustomEvent("meal-analysis-complete", { detail: job.mealId }));
-  } catch {
+  } catch (err) {
+    // Client-side timeout (abort): the server is likely still processing and will
+    // write a result on its own. Retrying here would start a second concurrent
+    // analysis racing the first on the same meal row, so don't retry and don't mark
+    // failed — leave it processing. Realtime picks up a success; the stale-recovery
+    // modal catches a genuine failure.
+    const isTimeout = (err as { name?: string } | null)?.name === "AbortError";
+    if (isTimeout) {
+      processNext();
+      return;
+    }
     const attempts = (job.attempts ?? 0) + 1;
     if (attempts < 3) {
-      // Retry transient failures up to 2 times with a 3s delay
+      // Retry genuine network errors (request never reached the server) up to 2 times
       setTimeout(() => {
         queue.unshift({ ...job, attempts });
         if (!isProcessing) processNext();
