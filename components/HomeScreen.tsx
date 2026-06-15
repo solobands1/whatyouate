@@ -2235,16 +2235,19 @@ export default function HomeScreen() {
           )}
         </div>
 
-        <div className="mt-5 flex flex-col items-center gap-1.5">
-          <div className="flex w-[90%] items-stretch rounded-xl shadow-[0_10px_24px_rgba(15,23,42,0.12)]">
-            {/* Activity — secondary, left */}
+        <div className="mt-4 flex flex-col gap-1.5">
+          <div className="flex w-full items-stretch rounded-xl shadow-[0_10px_24px_rgba(15,23,42,0.12)]">
+            {/* Log Activity — secondary, left */}
             <button
               type="button"
               data-tour="workout-buttons"
-              className="flex w-1/4 items-center justify-center rounded-l-xl border border-r-0 border-ink/10 bg-white px-1.5 py-2.5 transition-all duration-150 active:bg-ink/5"
+              className="flex w-1/4 items-center justify-center rounded-l-xl border border-r-0 border-ink/10 bg-white px-1 py-2.5 transition-all duration-150 active:bg-ink/5"
               onClick={() => workout.activeWorkout ? workout.setShowEndWorkoutModal(true) : workout.setShowStartWorkoutModal(true)}
             >
-              <span className="rounded-full border border-primary bg-white px-2.5 py-2 text-xs font-medium text-ink/70">{workout.activeWorkout ? "End" : "Activity"}</span>
+              <span className="flex flex-col items-center leading-tight rounded-full border border-primary bg-white px-2.5 py-1.5 text-sm font-medium text-ink/70">
+                <span>{workout.activeWorkout ? "End" : "Log"}</span>
+                <span>Activity</span>
+              </span>
             </button>
 
             {/* Log Food — primary, center */}
@@ -2254,7 +2257,7 @@ export default function HomeScreen() {
               className="flex w-2/4 items-center justify-center bg-white px-3 py-2.5 transition active:bg-ink/5"
               onClick={() => setShowLogFood(true)}
             >
-              <span className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-white shadow-sm">Log Food</span>
+              <span className="rounded-full bg-primary px-6 py-2.5 text-base font-semibold text-white shadow-sm">Log Food</span>
             </button>
 
             {/* Water — secondary, right */}
@@ -2262,21 +2265,13 @@ export default function HomeScreen() {
               <div className="relative w-1/4" data-tour="water-button">
                 <button
                   type="button"
-                  className="flex h-full w-full items-center justify-center gap-1.5 rounded-r-xl border border-l-0 border-ink/10 bg-white px-2 py-4 text-xs font-medium text-ink/60 transition-all duration-150 hover:bg-ink/5 active:bg-ink/10"
+                  className="flex h-full w-full items-center justify-center rounded-r-xl border border-l-0 border-ink/10 bg-white px-1 py-2.5 transition-all duration-150 active:bg-ink/5"
                   onClick={() => setWaterModalOpen(true)}
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" className="shrink-0" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                      <linearGradient id="wbtn-drop" x1="0.35" y1="0" x2="0.65" y2="1">
-                        <stop offset="0%" stopColor="#BAD8FF" />
-                        <stop offset="45%" stopColor="#93C5FD" />
-                        <stop offset="100%" stopColor="#6FA8FF" />
-                      </linearGradient>
-                    </defs>
-                    <path d="M12 3C11.4 3 5 11 5 15.5a7 7 0 0 0 14 0C19 11 12.6 3 12 3z" fill="url(#wbtn-drop)" />
-                    <ellipse cx="9.8" cy="13.5" rx="1.2" ry="2" fill="rgba(255,255,255,0.40)" transform="rotate(-20 9.8 13.5)" />
-                  </svg>
-                  <span>Water</span>
+                  <span className="flex flex-col items-center leading-tight rounded-full border border-primary bg-white px-2.5 py-1.5 text-sm font-medium text-ink/70">
+                    <span>Log</span>
+                    <span>Water</span>
+                  </span>
                 </button>
                 <button
                   type="button"
