@@ -2241,20 +2241,17 @@ export default function HomeScreen() {
             <button
               type="button"
               data-tour="workout-buttons"
-              className="flex w-1/4 items-center justify-center gap-1.5 rounded-l-xl border border-r-0 border-ink/10 bg-white px-2 py-4 text-xs font-medium text-ink/60 transition-all duration-150 hover:bg-ink/5 active:bg-ink/10"
+              className="flex w-1/4 items-center justify-center rounded-l-xl border border-r-0 border-ink/10 bg-white px-1.5 py-2.5 transition-all duration-150 active:bg-ink/5"
               onClick={() => workout.activeWorkout ? workout.setShowEndWorkoutModal(true) : workout.setShowStartWorkoutModal(true)}
             >
-              <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-ink/55" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-              </svg>
-              <span>{workout.activeWorkout ? "End" : "Activity"}</span>
+              <span className="rounded-full border border-primary bg-white px-2.5 py-2 text-xs font-medium text-ink/70">{workout.activeWorkout ? "End" : "Activity"}</span>
             </button>
 
             {/* Log Food — primary, center */}
             <button
               type="button"
               data-tour="food-action"
-              className="flex w-2/4 items-center justify-center border-y-2 border-primary bg-white px-3 py-2.5 transition active:bg-ink/5"
+              className="flex w-2/4 items-center justify-center bg-white px-3 py-2.5 transition active:bg-ink/5"
               onClick={() => setShowLogFood(true)}
             >
               <span className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-white shadow-sm">Log Food</span>
