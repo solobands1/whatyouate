@@ -1626,18 +1626,6 @@ export default function HomeScreen() {
         </div>
       ),
     },
-    {
-      target: '[data-tour="energy-buttons"]',
-      placement: "auto" as const,
-      disableBeacon: true,
-      content: (
-        <div>
-          <p style={{ fontWeight: 600, marginBottom: 10 }}>Check In On Your Energy</p>
-          <p>The high and low energy buttons let you check in on how you're feeling throughout the day.</p>
-          <p style={{ marginTop: 10 }}>This will come in handy later.</p>
-        </div>
-      ),
-    },
   ] as Step[];
 
   const handleTourCallback = (data: CallBackProps) => {
@@ -2247,71 +2235,52 @@ export default function HomeScreen() {
           )}
         </div>
 
-        <div className="mt-2 flex flex-col gap-1.5">
-          <div className="flex flex-col items-center gap-1.5 mt-5" data-tour="food-action">
-          <button
-            type="button"
-            className="relative block w-full rounded-xl bg-primary px-5 py-4 text-center text-base font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] ring-1 ring-white/40 transition hover:bg-primary/90 active:scale-[0.98]"
-            onClick={() => setShowLogFood(true)}
-          >
-            Log Food
-          </button>
-          </div>
-          <div className="flex flex-col items-center gap-1.5" data-tour="workout-markers">
-            <div className="flex w-[84%] text-xs rounded-xl shadow-[0_4px_12px_rgba(15,23,42,0.08),0_0_8px_rgba(111,168,255,0.12)] overflow-hidden" data-tour="workout-buttons">
-              <button
-                type="button"
-                className="flex flex-1 items-center justify-center rounded-l-xl rounded-r-none border border-ink/10 bg-white px-3 py-1.5 text-center font-normal text-ink/60 transition-all duration-150 hover:bg-ink/5 active:translate-y-[1px]"
-                onClick={() => workout.setShowStartWorkoutModal(true)}
-              >
-                Start Activity
-              </button>
-              <button
-                type="button"
-                className="flex flex-1 items-center justify-center rounded-r-xl rounded-l-none border border-l-0 border-ink/10 bg-white px-3 py-1.5 text-center font-normal text-ink/60 transition-all duration-150 hover:bg-ink/5 active:translate-y-[1px]"
-                onClick={() => workout.setShowEndWorkoutModal(true)}
-              >
-                End Activity
-              </button>
-            </div>
-            <div className="flex w-[60%] text-xs rounded-xl shadow-[0_4px_12px_rgba(15,23,42,0.08),0_0_8px_rgba(111,168,255,0.12)] overflow-hidden" data-tour="energy-buttons">
-              <button
-                type="button"
-                className="flex flex-1 items-center justify-center rounded-l-xl rounded-r-none border border-ink/10 bg-white px-3 py-1.5 text-center font-normal text-ink/60 transition-all duration-150 hover:bg-ink/5 active:scale-[0.96] active:bg-primary/10"
-                onClick={() => { if (!isDemoMode) handleFeelLog("good_energy", Date.now()); }}
-              >
-                High Energy
-              </button>
-              <button
-                type="button"
-                className="flex flex-1 items-center justify-center rounded-r-xl rounded-l-none border border-l-0 border-ink/10 bg-white px-3 py-1.5 text-center font-normal text-ink/60 transition-all duration-150 hover:bg-ink/5 active:scale-[0.96] active:bg-primary/10"
-                onClick={() => { if (!isDemoMode) handleFeelLog("low_energy", Date.now()); }}
-              >
-                Low Energy
-              </button>
-            </div>
-            {waterData && waterTick >= 0 && (
-              <div className="relative" data-tour="water-button">
-                <div className="flex rounded-xl shadow-[0_4px_12px_rgba(15,23,42,0.08),0_0_8px_rgba(111,168,255,0.12)] overflow-hidden">
-                  <button
-                    type="button"
-                    className="flex items-center justify-center gap-2 rounded-xl border border-ink/10 bg-white px-3 py-1 text-xs font-normal text-ink/60 transition-all duration-150 hover:bg-ink/5 active:scale-[0.96] active:bg-primary/10"
-                    onClick={() => setWaterModalOpen(true)}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <defs>
-                        <linearGradient id="wbtn-drop" x1="0.35" y1="0" x2="0.65" y2="1">
-                          <stop offset="0%" stopColor="#BAD8FF" />
-                          <stop offset="45%" stopColor="#93C5FD" />
-                          <stop offset="100%" stopColor="#6FA8FF" />
-                        </linearGradient>
-                      </defs>
-                      <path d="M12 3C11.4 3 5 11 5 15.5a7 7 0 0 0 14 0C19 11 12.6 3 12 3z" fill="url(#wbtn-drop)" />
-                      <ellipse cx="9.8" cy="13.5" rx="1.2" ry="2" fill="rgba(255,255,255,0.40)" transform="rotate(-20 9.8 13.5)" />
-                    </svg>
-                    <span>Water</span>
-                  </button>
-                </div>
+        <div className="mt-5 flex flex-col gap-1.5">
+          <div className="flex items-stretch gap-1.5">
+            {/* Activity — secondary */}
+            <button
+              type="button"
+              data-tour="workout-buttons"
+              className="flex w-1/4 flex-col items-center justify-center gap-1 rounded-xl border border-ink/10 bg-white px-2 py-3 text-[11px] font-medium text-ink/60 shadow-[0_4px_12px_rgba(15,23,42,0.08),0_0_8px_rgba(111,168,255,0.12)] transition-all duration-150 hover:bg-ink/5 active:scale-[0.97]"
+              onClick={() => workout.activeWorkout ? workout.setShowEndWorkoutModal(true) : workout.setShowStartWorkoutModal(true)}
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5 text-ink/55" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+              </svg>
+              <span>{workout.activeWorkout ? "End" : "Activity"}</span>
+            </button>
+
+            {/* Log Food — primary */}
+            <button
+              type="button"
+              data-tour="food-action"
+              className="flex w-2/4 items-center justify-center rounded-xl bg-primary px-5 text-base font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] ring-1 ring-white/40 transition hover:bg-primary/90 active:scale-[0.98]"
+              onClick={() => setShowLogFood(true)}
+            >
+              Log Food
+            </button>
+
+            {/* Water — secondary */}
+            {waterData && waterTick >= 0 ? (
+              <div className="relative w-1/4" data-tour="water-button">
+                <button
+                  type="button"
+                  className="flex w-full flex-col items-center justify-center gap-1 rounded-xl border border-ink/10 bg-white px-2 py-3 text-[11px] font-medium text-ink/60 shadow-[0_4px_12px_rgba(15,23,42,0.08),0_0_8px_rgba(111,168,255,0.12)] transition-all duration-150 hover:bg-ink/5 active:scale-[0.97]"
+                  onClick={() => setWaterModalOpen(true)}
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                      <linearGradient id="wbtn-drop" x1="0.35" y1="0" x2="0.65" y2="1">
+                        <stop offset="0%" stopColor="#BAD8FF" />
+                        <stop offset="45%" stopColor="#93C5FD" />
+                        <stop offset="100%" stopColor="#6FA8FF" />
+                      </linearGradient>
+                    </defs>
+                    <path d="M12 3C11.4 3 5 11 5 15.5a7 7 0 0 0 14 0C19 11 12.6 3 12 3z" fill="url(#wbtn-drop)" />
+                    <ellipse cx="9.8" cy="13.5" rx="1.2" ry="2" fill="rgba(255,255,255,0.40)" transform="rotate(-20 9.8 13.5)" />
+                  </svg>
+                  <span>Water</span>
+                </button>
                 <button
                   type="button"
                   onClick={() => {
@@ -2320,16 +2289,18 @@ export default function HomeScreen() {
                     setShowWaterUndo(true);
                     waterUndoTimerRef.current = setTimeout(() => setShowWaterUndo(false), 3000);
                   }}
-                  className={`absolute left-full top-1/2 -translate-y-1/2 ml-2 whitespace-nowrap text-[10px] text-ink/45 transition-opacity duration-500 ${showWaterUndo ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+                  className={`absolute left-1/2 top-full mt-1 -translate-x-1/2 whitespace-nowrap text-[10px] text-ink/45 transition-opacity duration-500 ${showWaterUndo ? "opacity-100" : "opacity-0 pointer-events-none"}`}
                 >
                   Undo
                 </button>
               </div>
-            )}
-            {workout.activeWorkout && (
-              <p className="text-center text-[11px] text-muted/60">Workout in progress</p>
+            ) : (
+              <div className="w-1/4" />
             )}
           </div>
+          {workout.activeWorkout && (
+            <p className="text-center text-[11px] text-muted/60">Workout in progress</p>
+          )}
         </div>
 
         <Card className="mt-2">
