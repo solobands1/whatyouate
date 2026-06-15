@@ -2236,12 +2236,12 @@ export default function HomeScreen() {
         </div>
 
         <div className="mt-5 flex flex-col items-center gap-1.5">
-          <div className="flex w-[90%] items-stretch gap-1.5">
-            {/* Activity — secondary */}
+          <div className="flex w-[90%] items-stretch rounded-xl shadow-[0_10px_24px_rgba(15,23,42,0.12)]">
+            {/* Activity — secondary, left */}
             <button
               type="button"
               data-tour="workout-buttons"
-              className="flex w-1/4 items-center justify-center gap-1.5 rounded-xl border border-ink/10 bg-white px-2 py-4 text-xs font-medium text-ink/60 shadow-[0_4px_12px_rgba(15,23,42,0.08),0_0_8px_rgba(111,168,255,0.12)] transition-all duration-150 hover:bg-ink/5 active:scale-[0.97]"
+              className="flex w-1/4 items-center justify-center gap-1.5 rounded-l-xl border border-r-0 border-ink/10 bg-white px-2 py-4 text-xs font-medium text-ink/60 transition-all duration-150 hover:bg-ink/5 active:bg-ink/10"
               onClick={() => workout.activeWorkout ? workout.setShowEndWorkoutModal(true) : workout.setShowStartWorkoutModal(true)}
             >
               <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-ink/55" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -2250,22 +2250,22 @@ export default function HomeScreen() {
               <span>{workout.activeWorkout ? "End" : "Activity"}</span>
             </button>
 
-            {/* Log Food — primary */}
+            {/* Log Food — primary, center */}
             <button
               type="button"
               data-tour="food-action"
-              className="flex w-2/4 items-center justify-center rounded-xl bg-primary px-5 py-4 text-base font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] ring-1 ring-white/40 transition hover:bg-primary/90 active:scale-[0.98]"
+              className="flex w-2/4 items-center justify-center bg-primary px-5 py-4 text-base font-semibold text-white transition hover:bg-primary/90 active:bg-primary/80"
               onClick={() => setShowLogFood(true)}
             >
               Log Food
             </button>
 
-            {/* Water — secondary */}
+            {/* Water — secondary, right */}
             {waterData && waterTick >= 0 ? (
               <div className="relative w-1/4" data-tour="water-button">
                 <button
                   type="button"
-                  className="flex h-full w-full items-center justify-center gap-1.5 rounded-xl border border-ink/10 bg-white px-2 py-4 text-xs font-medium text-ink/60 shadow-[0_4px_12px_rgba(15,23,42,0.08),0_0_8px_rgba(111,168,255,0.12)] transition-all duration-150 hover:bg-ink/5 active:scale-[0.97]"
+                  className="flex h-full w-full items-center justify-center gap-1.5 rounded-r-xl border border-l-0 border-ink/10 bg-white px-2 py-4 text-xs font-medium text-ink/60 transition-all duration-150 hover:bg-ink/5 active:bg-ink/10"
                   onClick={() => setWaterModalOpen(true)}
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" className="shrink-0" xmlns="http://www.w3.org/2000/svg">
