@@ -153,10 +153,10 @@ export default function BottomNav({ current }: { current: "home" | "summary" | "
             type="button"
             aria-label="Log"
             data-tour="food-action"
-            className="flex h-14 w-14 shrink-0 -translate-y-3 items-center justify-center rounded-full bg-primary text-white shadow-[0_6px_16px_rgba(15,23,42,0.22)] transition active:scale-95"
+            className="flex h-[84px] w-[84px] shrink-0 -translate-y-3 items-center justify-center rounded-full bg-primary text-white shadow-[0_6px_16px_rgba(15,23,42,0.22)] transition active:scale-95"
             onClick={() => window.dispatchEvent(new Event("wya_open_log_menu"))}
           >
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 5v14M5 12h14" />
             </svg>
           </button>
