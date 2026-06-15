@@ -2690,7 +2690,7 @@ export default function HomeScreen() {
                 Cancel
               </button>
             </div>
-            <div className="mt-3 grid grid-cols-4 gap-2">
+            <div className="mt-4 grid grid-cols-4 gap-2">
               <button
                 type="button"
                 className="relative flex flex-col items-center justify-center gap-1.5 rounded-xl border border-ink/10 bg-white px-1 py-3 text-center text-[11px] font-semibold leading-tight text-ink/80 transition active:scale-[0.97] active:bg-primary/5"
@@ -2747,10 +2747,10 @@ export default function HomeScreen() {
               </button>
             </div>
             <h2 className="mt-5 text-[11px] font-semibold uppercase tracking-wide text-muted/60">Log</h2>
-            <div className="mt-3 grid grid-cols-4 gap-2">
+            <div className="mt-4 grid grid-cols-4 gap-2">
               <button
                 type="button"
-                className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-ink/10 bg-white px-1 py-3 text-center text-[11px] font-semibold leading-tight text-ink/80 transition active:scale-[0.97] active:bg-primary/5"
+                className="col-start-2 flex flex-col items-center justify-center gap-1.5 rounded-xl border border-ink/10 bg-white px-1 py-3 text-center text-[11px] font-semibold leading-tight text-ink/80 transition active:scale-[0.97] active:bg-primary/5"
                 onClick={() => { setShowLogFood(false); workout.activeWorkout ? workout.setShowEndWorkoutModal(true) : workout.setShowStartWorkoutModal(true); }}
               >
                 <svg viewBox="0 0 24 24" className="h-5 w-5 text-primary" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
