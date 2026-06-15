@@ -2235,16 +2235,16 @@ export default function HomeScreen() {
           )}
         </div>
 
-        <div className="mt-5 flex flex-col gap-1.5">
-          <div className="flex items-stretch gap-1.5">
+        <div className="mt-5 flex flex-col items-center gap-1.5">
+          <div className="flex w-[90%] items-stretch gap-1.5">
             {/* Activity — secondary */}
             <button
               type="button"
               data-tour="workout-buttons"
-              className="flex w-1/4 flex-col items-center justify-center gap-1 rounded-xl border border-ink/10 bg-white px-2 py-3 text-[11px] font-medium text-ink/60 shadow-[0_4px_12px_rgba(15,23,42,0.08),0_0_8px_rgba(111,168,255,0.12)] transition-all duration-150 hover:bg-ink/5 active:scale-[0.97]"
+              className="flex w-1/4 items-center justify-center gap-1.5 rounded-xl border border-ink/10 bg-white px-2 py-4 text-xs font-medium text-ink/60 shadow-[0_4px_12px_rgba(15,23,42,0.08),0_0_8px_rgba(111,168,255,0.12)] transition-all duration-150 hover:bg-ink/5 active:scale-[0.97]"
               onClick={() => workout.activeWorkout ? workout.setShowEndWorkoutModal(true) : workout.setShowStartWorkoutModal(true)}
             >
-              <svg viewBox="0 0 24 24" className="h-5 w-5 text-ink/55" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-ink/55" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
               </svg>
               <span>{workout.activeWorkout ? "End" : "Activity"}</span>
@@ -2254,7 +2254,7 @@ export default function HomeScreen() {
             <button
               type="button"
               data-tour="food-action"
-              className="flex w-2/4 items-center justify-center rounded-xl bg-primary px-5 text-base font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] ring-1 ring-white/40 transition hover:bg-primary/90 active:scale-[0.98]"
+              className="flex w-2/4 items-center justify-center rounded-xl bg-primary px-5 py-4 text-base font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] ring-1 ring-white/40 transition hover:bg-primary/90 active:scale-[0.98]"
               onClick={() => setShowLogFood(true)}
             >
               Log Food
@@ -2265,10 +2265,10 @@ export default function HomeScreen() {
               <div className="relative w-1/4" data-tour="water-button">
                 <button
                   type="button"
-                  className="flex w-full flex-col items-center justify-center gap-1 rounded-xl border border-ink/10 bg-white px-2 py-3 text-[11px] font-medium text-ink/60 shadow-[0_4px_12px_rgba(15,23,42,0.08),0_0_8px_rgba(111,168,255,0.12)] transition-all duration-150 hover:bg-ink/5 active:scale-[0.97]"
+                  className="flex h-full w-full items-center justify-center gap-1.5 rounded-xl border border-ink/10 bg-white px-2 py-4 text-xs font-medium text-ink/60 shadow-[0_4px_12px_rgba(15,23,42,0.08),0_0_8px_rgba(111,168,255,0.12)] transition-all duration-150 hover:bg-ink/5 active:scale-[0.97]"
                   onClick={() => setWaterModalOpen(true)}
                 >
-                  <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <svg width="16" height="16" viewBox="0 0 24 24" className="shrink-0" xmlns="http://www.w3.org/2000/svg">
                     <defs>
                       <linearGradient id="wbtn-drop" x1="0.35" y1="0" x2="0.65" y2="1">
                         <stop offset="0%" stopColor="#BAD8FF" />
