@@ -114,9 +114,9 @@ export default function BottomNav({ current }: { current: "home" | "summary" | "
     return (
       <button
         data-tour={key === "summary" ? "nav-summary" : undefined}
-        className={`relative flex flex-1 flex-col items-center gap-0.5 rounded-full px-2 py-1.5 transition ${tappedKey === key ? "animate-nav-tap" : ""} ${
+        className={`relative flex flex-1 flex-col items-center gap-1 rounded-xl px-3 py-2 transition ${tappedKey === key ? "animate-nav-tap" : ""} ${
           isActive
-            ? "bg-primary/10 text-primary"
+            ? "bg-white text-primary shadow-[0_4px_16px_rgba(111,168,255,0.18)]"
             : "text-muted/65"
         }`}
         onPointerDown={() => {
@@ -144,21 +144,19 @@ export default function BottomNav({ current }: { current: "home" | "summary" | "
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 safe-bottom">
-      <div className="mx-auto flex max-w-md items-center gap-2.5 px-4 pb-3 pt-2">
-        <div className="flex flex-1 translate-y-1 items-center gap-1 rounded-full border border-ink/8 bg-white/95 px-2 py-1 shadow-[0_8px_28px_rgba(15,23,42,0.14)] backdrop-blur">
-          {item("/", "Home", "home")}
-          {item("/summary", "Insights", "summary")}
-          {item("/summary/insights", "Patterns", "patterns")}
-        </div>
+      <div className="mx-auto flex max-w-md items-center gap-1 border-t border-ink/8 px-4 pt-2">
+        {item("/", "Home", "home")}
+        {item("/summary", "Insights", "summary")}
+        {item("/summary/insights", "Patterns", "patterns")}
         {current === "home" && (
           <button
             type="button"
             aria-label="Log"
             data-tour="food-action"
-            className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-primary text-white shadow-[0_4px_12px_rgba(15,23,42,0.18)] transition active:scale-95"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-white shadow-[0_4px_12px_rgba(15,23,42,0.18)] transition active:scale-95"
             onClick={() => window.dispatchEvent(new Event("wya_open_log_menu"))}
           >
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 5v14M5 12h14" />
             </svg>
           </button>
