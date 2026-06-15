@@ -2254,10 +2254,10 @@ export default function HomeScreen() {
             <button
               type="button"
               data-tour="food-action"
-              className="flex w-2/4 items-center justify-center bg-primary px-5 py-4 text-base font-semibold text-white transition hover:bg-primary/90 active:bg-primary/80"
+              className="flex w-2/4 items-center justify-center border-y-2 border-primary bg-white px-3 py-2.5 transition active:bg-ink/5"
               onClick={() => setShowLogFood(true)}
             >
-              Log Food
+              <span className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-white shadow-sm">Log Food</span>
             </button>
 
             {/* Water — secondary, right */}
