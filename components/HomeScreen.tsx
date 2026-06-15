@@ -1349,6 +1349,20 @@ export default function HomeScreen() {
   const displayWorkouts = isDemoMode ? demoData.workouts : workout.workouts;
   const displayFeelLogs = isDemoMode ? demoData.feelLogs : homeFeelLogs;
 
+  // Most recent energy signal logged today (for the "last logged" indicator).
+  // Energy tags: low_energy = Low, avg_energy = Average, good_energy = High.
+  const ENERGY_META: Record<string, { color: string }> = {
+    low_energy: { color: "rgba(111,168,255,0.30)" },
+    avg_energy: { color: "rgba(111,168,255,0.60)" },
+    good_energy: { color: "#6FA8FF" },
+  };
+  const lastEnergyToday = useMemo(() => {
+    const today = todayKey();
+    return displayFeelLogs
+      .filter((f) => ENERGY_META[f.tag] && dayKeyFromTs(f.ts) === today)
+      .sort((a, b) => b.ts - a.ts)[0] ?? null;
+  }, [displayFeelLogs]);
+
   const homeVisibleNotes = useMemo(
     () => computeNudges(displayMeals, displayWorkouts, profile),
     [displayMeals, displayWorkouts, profile]
@@ -2102,6 +2116,43 @@ export default function HomeScreen() {
           );
         })()}
 
+        {/* Habit builder slot — experiment card renders here when active (added later) */}
+
+        {/* Energy check-in — quick point-in-time signal; evening recap is the source of truth */}
+        <div className="mt-4 rounded-2xl border border-ink/8 bg-white px-4 py-3 shadow-[0_4px_16px_rgba(15,23,42,0.06)]">
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">How's Your Energy?</p>
+            {lastEnergyToday && (
+              <div className="flex items-center gap-1.5 text-[11px] text-muted/55">
+                <span className="h-2.5 w-2.5 rounded-full" style={{ background: ENERGY_META[lastEnergyToday.tag].color }} />
+                <span>{new Date(lastEnergyToday.ts).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</span>
+              </div>
+            )}
+          </div>
+          <div className="mt-2.5 grid grid-cols-3 gap-2">
+            <button
+              type="button"
+              className="rounded-xl bg-primary/20 px-2 py-2.5 text-xs font-semibold text-primary transition active:scale-[0.96]"
+              onClick={() => { if (!isDemoMode) handleFeelLog("low_energy", Date.now()); }}
+            >
+              Low
+            </button>
+            <button
+              type="button"
+              className="rounded-xl bg-primary/55 px-2 py-2.5 text-xs font-semibold text-white transition active:scale-[0.96]"
+              onClick={() => { if (!isDemoMode) handleFeelLog("avg_energy", Date.now()); }}
+            >
+              Average
+            </button>
+            <button
+              type="button"
+              className="rounded-xl bg-primary px-2 py-2.5 text-xs font-semibold text-white transition active:scale-[0.96]"
+              onClick={() => { if (!isDemoMode) handleFeelLog("good_energy", Date.now()); }}
+            >
+              High
+            </button>
+          </div>
+        </div>
 
         <Card className="mt-4">
           <div className="flex items-center justify-between">
