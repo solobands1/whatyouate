@@ -2672,16 +2672,16 @@ export default function HomeScreen() {
 
       {showLogFood && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40"
           onClick={() => setShowLogFood(false)}
-          style={{ paddingBottom: "18vh" }}
         >
           <div
-            className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl animate-pill-in"
+            className="w-full max-w-md rounded-t-2xl bg-white px-5 pt-3 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-xl animate-fade-slide-up"
             onClick={(e) => e.stopPropagation()}
           >
+            <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-ink/15" />
             <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold text-ink">Log</h2>
+              <h2 className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Log Food</h2>
               <button
                 type="button"
                 className="text-xs font-semibold text-ink/50 transition active:opacity-60"
@@ -2690,24 +2690,24 @@ export default function HomeScreen() {
                 Cancel
               </button>
             </div>
-            <div className="mt-4 grid grid-cols-2 gap-3">
+            <div className="mt-3 grid grid-cols-4 gap-2">
               <button
                 type="button"
-                className="relative flex flex-col items-center justify-center gap-2 rounded-xl border border-ink/10 bg-white px-3 py-5 text-sm font-semibold text-ink/80 transition active:scale-[0.97] active:bg-primary/5"
+                className="relative flex flex-col items-center justify-center gap-1.5 rounded-xl border border-ink/10 bg-white px-1 py-3 text-center text-[11px] font-semibold leading-tight text-ink/80 transition active:scale-[0.97] active:bg-primary/5"
                 onClick={() => {
                   setShowLogFood(false);
                   if (trial.isFree && !isDemoMode) { openUpgradeModal(); return; }
                   handleFoodPhotoClick();
                 }}
               >
-                <svg viewBox="0 0 24 24" className="h-6 w-6 text-primary" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <svg viewBox="0 0 24 24" className="h-5 w-5 text-primary" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
                   <circle cx="12" cy="13" r="4" />
                 </svg>
                 <span>Photo</span>
                 {trial.isFree && !isDemoMode && (
-                  <span className="absolute right-2 top-2">
-                    <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-ink/30" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <span className="absolute right-1 top-1">
+                    <svg viewBox="0 0 24 24" className="h-3 w-3 text-ink/30" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <rect x="3" y="11" width="18" height="11" rx="2" />
                       <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                     </svg>
@@ -2716,20 +2716,10 @@ export default function HomeScreen() {
               </button>
               <button
                 type="button"
-                className="flex flex-col items-center justify-center gap-2 rounded-xl border border-ink/10 bg-white px-3 py-5 text-sm font-semibold text-ink/80 transition active:scale-[0.97] active:bg-primary/5"
-                onClick={() => { setShowLogFood(false); setBarcodeOpen(true); }}
-              >
-                <svg viewBox="0 0 24 24" className="h-6 w-6 text-primary" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M3 5v14M7 5v14M11 5v14M16 5v14M20 5v14" />
-                </svg>
-                <span>Barcode</span>
-              </button>
-              <button
-                type="button"
-                className="flex flex-col items-center justify-center gap-2 rounded-xl border border-ink/10 bg-white px-3 py-5 text-sm font-semibold text-ink/80 transition active:scale-[0.97] active:bg-primary/5"
+                className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-ink/10 bg-white px-1 py-3 text-center text-[11px] font-semibold leading-tight text-ink/80 transition active:scale-[0.97] active:bg-primary/5"
                 onClick={() => { setShowLogFood(false); meals.openManualMealEntry(); }}
               >
-                <svg viewBox="0 0 24 24" className="h-6 w-6 text-primary" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <svg viewBox="0 0 24 24" className="h-5 w-5 text-primary" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 20h9" />
                   <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4z" />
                 </svg>
@@ -2737,22 +2727,33 @@ export default function HomeScreen() {
               </button>
               <button
                 type="button"
-                className="flex flex-col items-center justify-center gap-2 rounded-xl border border-ink/10 bg-white px-3 py-5 text-sm font-semibold text-ink/80 transition active:scale-[0.97] active:bg-primary/5"
+                className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-ink/10 bg-white px-1 py-3 text-center text-[11px] font-semibold leading-tight text-ink/80 transition active:scale-[0.97] active:bg-primary/5"
+                onClick={() => { setShowLogFood(false); setBarcodeOpen(true); }}
+              >
+                <svg viewBox="0 0 24 24" className="h-5 w-5 text-primary" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 5v14M7 5v14M11 5v14M16 5v14M20 5v14" />
+                </svg>
+                <span>Barcode</span>
+              </button>
+              <button
+                type="button"
+                className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-ink/10 bg-white px-1 py-3 text-center text-[11px] font-semibold leading-tight text-ink/80 transition active:scale-[0.97] active:bg-primary/5"
                 onClick={() => { setShowLogFood(false); handleOpenQuickAdd(); }}
               >
-                <svg viewBox="0 0 24 24" className="h-6 w-6 text-primary" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <svg viewBox="0 0 24 24" className="h-5 w-5 text-primary" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 5v14M5 12h14" />
                 </svg>
                 <span>Quick Add</span>
               </button>
             </div>
-            <div className="mt-3 grid grid-cols-2 gap-3 border-t border-ink/8 pt-4">
+            <h2 className="mt-5 text-[11px] font-semibold uppercase tracking-wide text-muted/60">Log</h2>
+            <div className="mt-3 grid grid-cols-2 gap-2">
               <button
                 type="button"
-                className="flex flex-col items-center justify-center gap-2 rounded-xl border border-ink/10 bg-white px-3 py-5 text-sm font-semibold text-ink/80 transition active:scale-[0.97] active:bg-primary/5"
+                className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-ink/10 bg-white px-1 py-3 text-center text-[11px] font-semibold leading-tight text-ink/80 transition active:scale-[0.97] active:bg-primary/5"
                 onClick={() => { setShowLogFood(false); workout.activeWorkout ? workout.setShowEndWorkoutModal(true) : workout.setShowStartWorkoutModal(true); }}
               >
-                <svg viewBox="0 0 24 24" className="h-6 w-6 text-primary" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <svg viewBox="0 0 24 24" className="h-5 w-5 text-primary" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
                 </svg>
                 <span>{workout.activeWorkout ? "End Activity" : "Activity"}</span>
@@ -2760,10 +2761,10 @@ export default function HomeScreen() {
               {waterData && (
                 <button
                   type="button"
-                  className="flex flex-col items-center justify-center gap-2 rounded-xl border border-ink/10 bg-white px-3 py-5 text-sm font-semibold text-ink/80 transition active:scale-[0.97] active:bg-primary/5"
+                  className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-ink/10 bg-white px-1 py-3 text-center text-[11px] font-semibold leading-tight text-ink/80 transition active:scale-[0.97] active:bg-primary/5"
                   onClick={() => { setShowLogFood(false); setWaterModalOpen(true); }}
                 >
-                  <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <defs>
                       <linearGradient id="sheet-drop" x1="0.35" y1="0" x2="0.65" y2="1">
                         <stop offset="0%" stopColor="#BAD8FF" />
