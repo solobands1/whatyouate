@@ -352,6 +352,7 @@ export default function HomeScreen() {
   const [showTargetInfo, setShowTargetInfo] = useState(false);
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [showLogFood, setShowLogFood] = useState(false);
+  const [logFoodClosing, setLogFoodClosing] = useState(false);
   const [quickAddItems, setQuickAddItems] = useState<QuickAddItem[]>([]);
   const [quickAddRecentItems, setQuickAddRecentItems] = useState<QuickAddItem[]>([]);
   const [quickAddSelected, setQuickAddSelected] = useState<Record<string, "small" | "medium" | "large">>({});
@@ -1162,10 +1163,16 @@ export default function HomeScreen() {
 
   // Open the unified log menu when the bottom-nav FAB is tapped
   useEffect(() => {
-    const handler = () => setShowLogFood(true);
+    const handler = () => { setLogFoodClosing(false); setShowLogFood(true); };
     window.addEventListener("wya_open_log_menu", handler);
     return () => window.removeEventListener("wya_open_log_menu", handler);
   }, []);
+
+  // Animate the log drawer down before unmounting it
+  const closeLogFood = () => {
+    setLogFoodClosing(true);
+    setTimeout(() => { setShowLogFood(false); setLogFoodClosing(false); }, 240);
+  };
 
   useEffect(() => {
     if (!dailyLimitBanner) return;
@@ -2673,10 +2680,10 @@ export default function HomeScreen() {
       {showLogFood && (
         <div
           className="fixed inset-0 z-50 flex items-end justify-center bg-black/40"
-          onClick={() => setShowLogFood(false)}
+          onClick={closeLogFood}
         >
           <div
-            className="w-full max-w-md rounded-t-2xl bg-white px-5 pt-3 pb-[calc(env(safe-area-inset-bottom)+2.5rem)] shadow-xl animate-drawer-up"
+            className={`w-full max-w-md rounded-t-2xl bg-white px-5 pt-3 pb-[calc(env(safe-area-inset-bottom)+2.5rem)] shadow-xl ${logFoodClosing ? "animate-drawer-down" : "animate-drawer-up"}`}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-ink/15" />
@@ -2685,7 +2692,7 @@ export default function HomeScreen() {
               <button
                 type="button"
                 className="text-xs font-semibold text-ink/50 transition active:opacity-60"
-                onClick={() => setShowLogFood(false)}
+                onClick={closeLogFood}
               >
                 Cancel
               </button>
