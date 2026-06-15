@@ -3652,11 +3652,11 @@ export default function HomeScreen() {
       {/* Water input modal */}
       {showWaterUndo && waterData && (
         <div className="fixed bottom-24 left-1/2 z-40 -translate-x-1/2 animate-pill-in">
-          <div className="flex items-center gap-4 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-white shadow-[0_8px_24px_rgba(15,23,42,0.25)]">
+          <div className="flex items-center gap-4 rounded-full border border-primary/25 bg-primary/10 px-5 py-2.5 text-sm font-medium text-ink/80 shadow-[0_8px_24px_rgba(15,23,42,0.15)]">
             <span>Water Logged</span>
             <button
               type="button"
-              className="font-semibold text-white underline underline-offset-2 active:opacity-70"
+              className="font-semibold text-primary underline underline-offset-2 active:opacity-70"
               onClick={() => {
                 waterData.remove();
                 if (waterUndoTimerRef.current) clearTimeout(waterUndoTimerRef.current);
