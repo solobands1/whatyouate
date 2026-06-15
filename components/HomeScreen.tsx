@@ -1171,7 +1171,7 @@ export default function HomeScreen() {
   // Animate the log drawer down before unmounting it
   const closeLogFood = () => {
     setLogFoodClosing(true);
-    setTimeout(() => { setShowLogFood(false); setLogFoodClosing(false); }, 240);
+    setTimeout(() => { setShowLogFood(false); setLogFoodClosing(false); }, 300);
   };
 
   useEffect(() => {
@@ -2682,7 +2682,7 @@ export default function HomeScreen() {
           className="fixed inset-0 z-50 flex items-end justify-center"
           onClick={closeLogFood}
         >
-          <div className={`absolute inset-0 bg-black/40 transition-opacity duration-200 ${logFoodClosing ? "opacity-0" : "opacity-100"}`} />
+          <div className={`absolute inset-0 bg-black/40 transition-opacity duration-300 ease-out ${logFoodClosing ? "opacity-0" : "opacity-100"}`} />
           <div
             className={`relative w-full max-w-md rounded-t-2xl bg-white px-5 pt-3 pb-[calc(env(safe-area-inset-bottom)+2.5rem)] shadow-xl ${logFoodClosing ? "animate-drawer-down" : "animate-drawer-up"}`}
             onClick={(e) => e.stopPropagation()}
@@ -3652,8 +3652,8 @@ export default function HomeScreen() {
       {/* Water input modal */}
       {showWaterUndo && waterData && (
         <div className="fixed bottom-24 left-1/2 z-40 -translate-x-1/2 animate-pill-in">
-          <div className="flex items-center gap-3 rounded-full bg-ink/90 px-4 py-2 text-xs font-medium text-white shadow-[0_8px_24px_rgba(15,23,42,0.25)]">
-            <span>Water logged</span>
+          <div className="flex items-center gap-4 rounded-full bg-ink/90 px-5 py-2.5 text-sm font-medium text-white shadow-[0_8px_24px_rgba(15,23,42,0.25)]">
+            <span>Water Logged</span>
             <button
               type="button"
               className="font-semibold text-[#A9CCFF] active:opacity-70"
@@ -3736,7 +3736,7 @@ export default function HomeScreen() {
                 window.scrollTo(0, 0);
                 if (waterUndoTimerRef.current) clearTimeout(waterUndoTimerRef.current);
                 setShowWaterUndo(true);
-                waterUndoTimerRef.current = setTimeout(() => setShowWaterUndo(false), 3000);
+                waterUndoTimerRef.current = setTimeout(() => setShowWaterUndo(false), 6000);
               }}
               className="w-full rounded-xl bg-primary py-3 text-center text-sm font-semibold text-white transition hover:bg-primary/90 active:scale-[0.98]"
             >

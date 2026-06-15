@@ -305,7 +305,7 @@ input, textarea, select {
 }
 
 .animate-drawer-down {
-  animation: drawerDown 0.25s cubic-bezier(0.4, 0, 1, 1) forwards;
+  animation: drawerDown 0.3s cubic-bezier(0.4, 0, 1, 1) forwards;
 }
 
 @media (prefers-reduced-motion: reduce) {
