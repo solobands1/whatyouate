@@ -2676,7 +2676,7 @@ export default function HomeScreen() {
           onClick={() => setShowLogFood(false)}
         >
           <div
-            className="w-full max-w-md rounded-t-2xl bg-white px-5 pt-3 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-xl animate-fade-slide-up"
+            className="w-full max-w-md rounded-t-2xl bg-white px-5 pt-3 pb-[calc(env(safe-area-inset-bottom)+2.5rem)] shadow-xl animate-drawer-up"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-ink/15" />
@@ -2747,7 +2747,7 @@ export default function HomeScreen() {
               </button>
             </div>
             <h2 className="mt-5 text-[11px] font-semibold uppercase tracking-wide text-muted/60">Log</h2>
-            <div className="mt-3 grid grid-cols-2 gap-2">
+            <div className="mt-3 grid grid-cols-4 gap-2">
               <button
                 type="button"
                 className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-ink/10 bg-white px-1 py-3 text-center text-[11px] font-semibold leading-tight text-ink/80 transition active:scale-[0.97] active:bg-primary/5"
