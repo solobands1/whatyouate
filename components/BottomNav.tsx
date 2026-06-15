@@ -114,7 +114,7 @@ export default function BottomNav({ current }: { current: "home" | "summary" | "
     return (
       <button
         data-tour={key === "summary" ? "nav-summary" : undefined}
-        className={`relative flex flex-1 flex-col items-center gap-0.5 rounded-full px-2 py-2 transition ${tappedKey === key ? "animate-nav-tap" : ""} ${
+        className={`relative flex flex-1 flex-col items-center gap-0.5 rounded-full px-2 py-1.5 transition ${tappedKey === key ? "animate-nav-tap" : ""} ${
           isActive
             ? "bg-primary/10 text-primary"
             : "text-muted/65"
@@ -144,8 +144,8 @@ export default function BottomNav({ current }: { current: "home" | "summary" | "
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 safe-bottom">
-      <div className="mx-auto flex max-w-sm items-center gap-2.5 px-4 pb-3 pt-2">
-        <div className="flex flex-1 translate-y-1 items-center gap-1 rounded-full border border-ink/8 bg-white/95 px-2 py-1.5 shadow-[0_8px_28px_rgba(15,23,42,0.14)] backdrop-blur">
+      <div className="mx-auto flex max-w-md items-center gap-2.5 px-4 pb-3 pt-2">
+        <div className="flex flex-1 translate-y-1 items-center gap-1 rounded-full border border-ink/8 bg-white/95 px-2 py-1 shadow-[0_8px_28px_rgba(15,23,42,0.14)] backdrop-blur">
           {item("/", "Home", "home")}
           {item("/summary", "Insights", "summary")}
           {item("/summary/insights", "Patterns", "patterns")}
