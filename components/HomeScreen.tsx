@@ -2679,11 +2679,12 @@ export default function HomeScreen() {
 
       {showLogFood && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40"
+          className="fixed inset-0 z-50 flex items-end justify-center"
           onClick={closeLogFood}
         >
+          <div className={`absolute inset-0 bg-black/40 transition-opacity duration-200 ${logFoodClosing ? "opacity-0" : "opacity-100"}`} />
           <div
-            className={`w-full max-w-md rounded-t-2xl bg-white px-5 pt-3 pb-[calc(env(safe-area-inset-bottom)+2.5rem)] shadow-xl ${logFoodClosing ? "animate-drawer-down" : "animate-drawer-up"}`}
+            className={`relative w-full max-w-md rounded-t-2xl bg-white px-5 pt-3 pb-[calc(env(safe-area-inset-bottom)+2.5rem)] shadow-xl ${logFoodClosing ? "animate-drawer-down" : "animate-drawer-up"}`}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-ink/15" />
@@ -3649,6 +3650,25 @@ export default function HomeScreen() {
       <BottomNav current="home" />
 
       {/* Water input modal */}
+      {showWaterUndo && waterData && (
+        <div className="fixed bottom-24 left-1/2 z-40 -translate-x-1/2 animate-pill-in">
+          <div className="flex items-center gap-3 rounded-full bg-ink/90 px-4 py-2 text-xs font-medium text-white shadow-[0_8px_24px_rgba(15,23,42,0.25)]">
+            <span>Water logged</span>
+            <button
+              type="button"
+              className="font-semibold text-[#A9CCFF] active:opacity-70"
+              onClick={() => {
+                waterData.remove();
+                if (waterUndoTimerRef.current) clearTimeout(waterUndoTimerRef.current);
+                setShowWaterUndo(false);
+              }}
+            >
+              Undo
+            </button>
+          </div>
+        </div>
+      )}
+
       {waterModalOpen && waterData && (
         <div
           className="fixed inset-0 z-50 flex items-start justify-center px-5 pt-40"
