@@ -143,7 +143,7 @@ export default function BottomNav({ current }: { current: "home" | "summary" | "
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 safe-bottom">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-surface/95 backdrop-blur safe-bottom">
       <div className="mx-auto flex max-w-md items-center gap-1 border-t border-ink/8 px-4 pt-2">
         {item("/", "Home", "home")}
         {item("/summary", "Insights", "summary")}
