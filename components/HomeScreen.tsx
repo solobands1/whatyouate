@@ -2701,21 +2701,21 @@ export default function HomeScreen() {
             <div className="mt-4 grid grid-cols-4 gap-2">
               <button
                 type="button"
-                className="relative flex flex-col items-center justify-center gap-1.5 rounded-xl border border-ink/10 bg-white px-1 py-3 text-center text-[11px] font-semibold leading-tight text-ink/80 transition active:scale-[0.97] active:bg-primary/5"
+                className="relative flex flex-col items-center justify-center gap-1.5 rounded-xl bg-primary px-1 py-3 text-center text-[11px] font-semibold leading-tight text-white shadow-[0_4px_12px_rgba(15,23,42,0.12)] transition active:scale-[0.97] active:bg-primary/90"
                 onClick={() => {
                   setShowLogFood(false);
                   if (trial.isFree && !isDemoMode) { openUpgradeModal(); return; }
                   handleFoodPhotoClick();
                 }}
               >
-                <svg viewBox="0 0 24 24" className="h-5 w-5 text-primary" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <svg viewBox="0 0 24 24" className="h-5 w-5 text-white" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
                   <circle cx="12" cy="13" r="4" />
                 </svg>
                 <span>Photo</span>
                 {trial.isFree && !isDemoMode && (
                   <span className="absolute right-1 top-1">
-                    <svg viewBox="0 0 24 24" className="h-3 w-3 text-ink/30" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg viewBox="0 0 24 24" className="h-3 w-3 text-white/60" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <rect x="3" y="11" width="18" height="11" rx="2" />
                       <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                     </svg>
@@ -2724,10 +2724,10 @@ export default function HomeScreen() {
               </button>
               <button
                 type="button"
-                className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-ink/10 bg-white px-1 py-3 text-center text-[11px] font-semibold leading-tight text-ink/80 transition active:scale-[0.97] active:bg-primary/5"
+                className="flex flex-col items-center justify-center gap-1.5 rounded-xl bg-primary px-1 py-3 text-center text-[11px] font-semibold leading-tight text-white shadow-[0_4px_12px_rgba(15,23,42,0.12)] transition active:scale-[0.97] active:bg-primary/90"
                 onClick={() => { setShowLogFood(false); meals.openManualMealEntry(); }}
               >
-                <svg viewBox="0 0 24 24" className="h-5 w-5 text-primary" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <svg viewBox="0 0 24 24" className="h-5 w-5 text-white" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 20h9" />
                   <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4z" />
                 </svg>
@@ -2735,20 +2735,20 @@ export default function HomeScreen() {
               </button>
               <button
                 type="button"
-                className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-ink/10 bg-white px-1 py-3 text-center text-[11px] font-semibold leading-tight text-ink/80 transition active:scale-[0.97] active:bg-primary/5"
+                className="flex flex-col items-center justify-center gap-1.5 rounded-xl bg-primary px-1 py-3 text-center text-[11px] font-semibold leading-tight text-white shadow-[0_4px_12px_rgba(15,23,42,0.12)] transition active:scale-[0.97] active:bg-primary/90"
                 onClick={() => { setShowLogFood(false); setBarcodeOpen(true); }}
               >
-                <svg viewBox="0 0 24 24" className="h-5 w-5 text-primary" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <svg viewBox="0 0 24 24" className="h-5 w-5 text-white" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M3 5v14M7 5v14M11 5v14M16 5v14M20 5v14" />
                 </svg>
                 <span>Barcode</span>
               </button>
               <button
                 type="button"
-                className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-ink/10 bg-white px-1 py-3 text-center text-[11px] font-semibold leading-tight text-ink/80 transition active:scale-[0.97] active:bg-primary/5"
+                className="flex flex-col items-center justify-center gap-1.5 rounded-xl bg-primary px-1 py-3 text-center text-[11px] font-semibold leading-tight text-white shadow-[0_4px_12px_rgba(15,23,42,0.12)] transition active:scale-[0.97] active:bg-primary/90"
                 onClick={() => { setShowLogFood(false); handleOpenQuickAdd(); }}
               >
-                <svg viewBox="0 0 24 24" className="h-5 w-5 text-primary" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <svg viewBox="0 0 24 24" className="h-5 w-5 text-white" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 5v14M5 12h14" />
                 </svg>
                 <span>Quick Add</span>
@@ -3652,11 +3652,11 @@ export default function HomeScreen() {
       {/* Water input modal */}
       {showWaterUndo && waterData && (
         <div className="fixed bottom-24 left-1/2 z-40 -translate-x-1/2 animate-pill-in">
-          <div className="flex items-center gap-4 rounded-full bg-ink/90 px-5 py-2.5 text-sm font-medium text-white shadow-[0_8px_24px_rgba(15,23,42,0.25)]">
+          <div className="flex items-center gap-4 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-white shadow-[0_8px_24px_rgba(15,23,42,0.25)]">
             <span>Water Logged</span>
             <button
               type="button"
-              className="font-semibold text-[#A9CCFF] active:opacity-70"
+              className="font-semibold text-white underline underline-offset-2 active:opacity-70"
               onClick={() => {
                 waterData.remove();
                 if (waterUndoTimerRef.current) clearTimeout(waterUndoTimerRef.current);
