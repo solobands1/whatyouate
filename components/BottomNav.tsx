@@ -114,9 +114,9 @@ export default function BottomNav({ current }: { current: "home" | "summary" | "
     return (
       <button
         data-tour={key === "summary" ? "nav-summary" : undefined}
-        className={`relative flex flex-1 flex-col items-center gap-1 rounded-xl px-3 py-2 transition ${tappedKey === key ? "animate-nav-tap" : ""} ${
+        className={`relative flex flex-1 flex-col items-center gap-0.5 rounded-full px-2 py-2 transition ${tappedKey === key ? "animate-nav-tap" : ""} ${
           isActive
-            ? "bg-white text-primary shadow-[0_4px_16px_rgba(111,168,255,0.18)]"
+            ? "bg-primary/10 text-primary"
             : "text-muted/65"
         }`}
         onPointerDown={() => {
@@ -143,11 +143,26 @@ export default function BottomNav({ current }: { current: "home" | "summary" | "
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-surface/95 backdrop-blur safe-bottom">
-      <div className="mx-auto flex max-w-md gap-1 border-t border-ink/8 px-4 pt-2">
-        {item("/", "Home", "home")}
-        {item("/summary", "Insights", "summary")}
-        {item("/summary/insights", "Patterns", "patterns")}
+    <nav className="fixed bottom-0 left-0 right-0 z-40 safe-bottom">
+      <div className="mx-auto flex max-w-md items-center gap-2.5 px-4 pb-3 pt-2">
+        <div className="flex flex-1 items-center gap-1 rounded-full border border-ink/8 bg-white/95 px-2 py-1.5 shadow-[0_8px_28px_rgba(15,23,42,0.14)] backdrop-blur">
+          {item("/", "Home", "home")}
+          {item("/summary", "Insights", "summary")}
+          {item("/summary/insights", "Patterns", "patterns")}
+        </div>
+        {current === "home" && (
+          <button
+            type="button"
+            aria-label="Log"
+            data-tour="food-action"
+            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary text-white shadow-[0_10px_24px_rgba(111,168,255,0.45)] transition active:scale-95"
+            onClick={() => window.dispatchEvent(new Event("wya_open_log_menu"))}
+          >
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+          </button>
+        )}
       </div>
     </nav>
   );
