@@ -2185,12 +2185,12 @@ export default function HomeScreen() {
           {/* Hero — dynamic (Habit Builder / Reflection Reminder / Discovery / Wins) renders here */}
 
           <div className="mt-4 border-t border-ink/8 pt-3">
-            <div className="flex items-end justify-between">
-              <div className="flex items-baseline gap-1.5">
+            <div className="flex gap-3">
+              <div className="flex flex-1 items-baseline gap-1.5">
                 <span className="text-lg font-semibold text-ink">{formatClean(homeMarkers.todayTotals.calories_min, homeMarkers.todayTotals.calories_max)}</span>
                 <span className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Calories</span>
               </div>
-              <div className="flex items-baseline gap-1.5">
+              <div className="flex flex-1 items-baseline gap-1.5">
                 <span className="text-lg font-semibold text-ink">{formatClean(homeMarkers.todayTotals.protein_g_min, homeMarkers.todayTotals.protein_g_max, "g")}</span>
                 <span className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Protein</span>
               </div>
