@@ -2199,10 +2199,10 @@ export default function HomeScreen() {
           <div className={`-mx-4 mt-3 rounded-2xl border-2 border-primary/25 bg-primary/[0.05] px-4 ${heroHabit.status === "hidden" ? "py-7" : "py-5"}`}>
             {heroHabit.status === "suggested" ? (
               <>
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-primary">Habit Builder</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-primary">Habit Builder</p>
                 <p className="mt-1 text-base font-semibold text-ink">{SAMPLE_HABIT.title}</p>
-                <p className="mt-0.5 text-xs text-ink/70">{SAMPLE_HABIT.ask}</p>
-                <p className="mt-2 text-[13px] leading-relaxed text-ink/80"><span className="font-semibold text-ink">Why: </span>{SAMPLE_HABIT.why}</p>
+                <p className="mt-0.5 text-[13px] text-ink/70">{SAMPLE_HABIT.ask}</p>
+                <p className="mt-2 text-xs leading-relaxed text-ink/80"><span className="font-semibold text-ink">Why: </span>{SAMPLE_HABIT.why}</p>
                 <button
                   type="button"
                   className="mt-4 w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white transition active:scale-[0.98]"
