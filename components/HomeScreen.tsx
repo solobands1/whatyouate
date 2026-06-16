@@ -2217,28 +2217,47 @@ export default function HomeScreen() {
                 </div>
               </>
             ) : heroHabit.status === "active" ? (
-              <>
-                <div className="flex items-center justify-between">
-                  <p className="text-base font-semibold text-ink">{SAMPLE_HABIT.title}</p>
-                  <p className="text-xs font-medium text-muted/60">Day {heroHabit.days.filter(Boolean).length} of {SAMPLE_HABIT.durationDays}</p>
-                </div>
-                <p className="mt-0.5 text-sm text-ink/70">{SAMPLE_HABIT.ask}</p>
-                <div className="mt-3 flex gap-2">
-                  {heroHabit.days.map((done, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      className={`h-10 flex-1 rounded-lg border text-xs font-semibold transition active:scale-[0.96] ${done ? "border-primary bg-primary text-white" : "border-primary/25 bg-white text-ink/50"}`}
-                      onClick={() => setHeroHabit((h) => {
-                        const days = h.days.map((d, idx) => idx === i ? !d : d);
-                        return { status: days.every(Boolean) ? "done" : "active", days };
+              (() => {
+                const current = heroHabit.days.findIndex((d) => !d);
+                return (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <p className="text-base font-semibold text-ink">{SAMPLE_HABIT.title}</p>
+                      <p className="text-xs font-medium text-muted/60">Day {current + 1} of {SAMPLE_HABIT.durationDays}</p>
+                    </div>
+                    <p className="mt-0.5 text-[13px] text-ink/70">{SAMPLE_HABIT.ask}</p>
+                    <div className="mt-3 flex gap-2">
+                      {heroHabit.days.map((done, i) => {
+                        const isCurrent = i === current;
+                        return (
+                          <button
+                            key={i}
+                            type="button"
+                            disabled={!isCurrent}
+                            onClick={() => setHeroHabit((h) => {
+                              const days = h.days.map((d, idx) => (idx === i ? true : d));
+                              return { status: days.every(Boolean) ? "done" : "active", days };
+                            })}
+                            className={`flex h-11 flex-1 items-center justify-center gap-1 rounded-xl text-xs font-semibold transition ${
+                              done
+                                ? "bg-primary text-white"
+                                : isCurrent
+                                ? "border-2 border-primary bg-white text-primary shadow-[0_4px_12px_rgba(15,23,42,0.10)] active:scale-[0.97]"
+                                : "border border-ink/10 bg-ink/5 text-ink/30"
+                            }`}
+                          >
+                            {done && (
+                              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 6" /></svg>
+                            )}
+                            Day {i + 1}
+                          </button>
+                        );
                       })}
-                    >
-                      Day {i + 1}
-                    </button>
-                  ))}
-                </div>
-              </>
+                    </div>
+                    <p className="mt-2 text-center text-[11px] text-muted/55">Tap Day {current + 1} when you complete it.</p>
+                  </>
+                );
+              })()
             ) : heroHabit.status === "done" ? (
               <>
                 <p className="text-base font-semibold text-ink">Nice work!</p>
