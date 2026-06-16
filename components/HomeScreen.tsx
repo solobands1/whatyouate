@@ -124,6 +124,19 @@ const FEEL_OPTIONS = [
   { tag: "low_energy", label: "Low Energy" },
 ] as const;
 
+const FEELINGS = [
+  { tag: "energized", label: "Energized" },
+  { tag: "tired", label: "Tired" },
+  { tag: "focused", label: "Focused" },
+  { tag: "foggy", label: "Foggy" },
+  { tag: "calm", label: "Calm" },
+  { tag: "anxious", label: "Anxious" },
+  { tag: "bloated", label: "Bloated" },
+  { tag: "sluggish", label: "Sluggish" },
+  { tag: "happy", label: "Happy" },
+  { tag: "irritable", label: "Irritable" },
+] as const;
+
 // Module-level cache — survives navigation, resets on full page reload
 
 function todayDateStr() {
@@ -353,6 +366,7 @@ export default function HomeScreen() {
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [showLogFood, setShowLogFood] = useState(false);
   const [logFoodClosing, setLogFoodClosing] = useState(false);
+  const [showFeelingModal, setShowFeelingModal] = useState(false);
   const [quickAddItems, setQuickAddItems] = useState<QuickAddItem[]>([]);
   const [quickAddRecentItems, setQuickAddRecentItems] = useState<QuickAddItem[]>([]);
   const [quickAddSelected, setQuickAddSelected] = useState<Record<string, "small" | "medium" | "large">>({});
@@ -1349,20 +1363,6 @@ export default function HomeScreen() {
   const displayWorkouts = isDemoMode ? demoData.workouts : workout.workouts;
   const displayFeelLogs = isDemoMode ? demoData.feelLogs : homeFeelLogs;
 
-  // Most recent energy signal logged today (for the "last logged" indicator).
-  // Energy tags: low_energy = Low, avg_energy = Average, good_energy = High.
-  const ENERGY_META: Record<string, { color: string }> = {
-    low_energy: { color: "rgba(111,168,255,0.30)" },
-    avg_energy: { color: "rgba(111,168,255,0.60)" },
-    good_energy: { color: "#6FA8FF" },
-  };
-  const lastEnergyToday = useMemo(() => {
-    const today = todayKey();
-    return displayFeelLogs
-      .filter((f) => ENERGY_META[f.tag] && dayKeyFromTs(f.ts) === today)
-      .sort((a, b) => b.ts - a.ts)[0] ?? null;
-  }, [displayFeelLogs]);
-
   const homeVisibleNotes = useMemo(
     () => computeNudges(displayMeals, displayWorkouts, profile),
     [displayMeals, displayWorkouts, profile]
@@ -2116,8 +2116,6 @@ export default function HomeScreen() {
           );
         })()}
 
-        {/* Habit builder slot — experiment card renders here when active (added later) */}
-
         <Card className="mt-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -2169,65 +2167,34 @@ export default function HomeScreen() {
               );
             })()}
           </div>
-          <div className="mt-3">
-            <div className="flex items-center justify-between">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">How's Your Energy?</p>
-              {lastEnergyToday && (
-                <div className="flex items-center gap-1.5 text-[11px] text-muted/55">
-                  <span className="h-2.5 w-2.5 rounded-full" style={{ background: ENERGY_META[lastEnergyToday.tag].color }} />
-                  <span>{new Date(lastEnergyToday.ts).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</span>
+          {/* Hero — dynamic (Habit Builder / Reflection Reminder / Discovery / Wins) renders here */}
+
+          <div className="mt-4 border-t border-ink/8 pt-3">
+            <div className="flex items-end justify-between">
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Calories</span>
+                <span className="text-lg font-semibold text-ink">{formatClean(homeMarkers.todayTotals.calories_min, homeMarkers.todayTotals.calories_max)}</span>
+              </div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Protein</span>
+                <span className="text-lg font-semibold text-ink">{formatClean(homeMarkers.todayTotals.protein_g_min, homeMarkers.todayTotals.protein_g_max, "g")}</span>
+              </div>
+            </div>
+            {mealCount > 0 && (
+              <div className="mt-2.5 flex gap-3">
+                <div className="flex-1">
+                  <div className="h-1.5 overflow-hidden rounded-full bg-ink/5">
+                    <div className="h-full rounded-full bg-primary" style={{ width: `${barsReady ? calPct : 0}%`, transition: "width 700ms cubic-bezier(0.22,1,0.36,1)" }} />
+                  </div>
                 </div>
-              )}
-            </div>
-            <div className="mt-2.5 grid grid-cols-3 gap-2">
-              <button type="button" className="rounded-xl bg-primary/20 px-2 py-2 text-xs font-semibold text-primary transition active:scale-[0.96]" onClick={() => { if (!isDemoMode) handleFeelLog("low_energy", Date.now()); }}>Low</button>
-              <button type="button" className="rounded-xl bg-primary/55 px-2 py-2 text-xs font-semibold text-white transition active:scale-[0.96]" onClick={() => { if (!isDemoMode) handleFeelLog("avg_energy", Date.now()); }}>Average</button>
-              <button type="button" className="rounded-xl bg-primary px-2 py-2 text-xs font-semibold text-white transition active:scale-[0.96]" onClick={() => { if (!isDemoMode) handleFeelLog("good_energy", Date.now()); }}>High</button>
-            </div>
-          </div>
-          <div className="mt-4 flex items-start justify-between border-t border-ink/8 pt-4">
-            <div>
-              <p className="text-[11px] uppercase tracking-wide text-muted/60">Calories</p>
-              <p className="mt-1 text-2xl font-semibold">
-                {formatClean(homeMarkers.todayTotals.calories_min, homeMarkers.todayTotals.calories_max)}
-              </p>
-              <p className="text-[10px] text-muted/65">approx.</p>
-            </div>
-            {!loadingData && !isDemoMode && !todayHasActivity && (
-              <div
-                className="flex flex-col items-center text-center animate-fade-slide-up"
-                style={{ animationDelay: "400ms", animationFillMode: "both" }}
-              >
-                <p className="text-[11px] uppercase tracking-wide text-ink/70">{welcomeMessage.greeting}</p>
-                <p className="mt-1 text-[9px] font-normal uppercase tracking-wide text-ink/70">{welcomeMessage.sub}</p>
+                <div className="flex-1">
+                  <div className="h-1.5 overflow-hidden rounded-full bg-ink/5">
+                    <div className="h-full rounded-full bg-primary" style={{ width: `${barsReady ? protPct : 0}%`, transition: "width 700ms cubic-bezier(0.22,1,0.36,1) 80ms" }} />
+                  </div>
+                </div>
               </div>
             )}
-            <div className="text-right">
-              <p className="text-[11px] uppercase tracking-wide text-muted/60">Protein</p>
-              <p className="mt-1 text-2xl font-semibold">
-                {formatClean(
-                  homeMarkers.todayTotals.protein_g_min,
-                  homeMarkers.todayTotals.protein_g_max,
-                  "g"
-                )}
-              </p>
-              <p className="text-[10px] text-muted/65">approx.</p>
-            </div>
           </div>
-          {mealCount > 0 && (
-            <div className="mt-3 flex gap-3">
-              <div className="flex-1">
-                <div className="h-1.5 overflow-hidden rounded-full bg-ink/5">
-                  <div className="h-full rounded-full bg-primary" style={{ width: `${barsReady ? calPct : 0}%`, transition: "width 700ms cubic-bezier(0.22,1,0.36,1)" }} />
-                </div>
-              </div>
-              <div className="flex-1">
-                <div className="h-1.5 overflow-hidden rounded-full bg-ink/5">
-                  <div className="h-full rounded-full bg-primary" style={{ width: `${barsReady ? protPct : 0}%`, transition: "width 700ms cubic-bezier(0.22,1,0.36,1) 80ms" }} />
-                </div>
-              </div>
-            </div>
-          )}
           <button
             type="button"
             className="mt-2 flex items-center gap-1 text-left text-xs text-muted/70 transition active:opacity-60"
@@ -2786,10 +2753,21 @@ export default function HomeScreen() {
               </button>
             </div>
             <h2 className="mt-5 text-[11px] font-semibold uppercase tracking-wide text-muted/60">Log</h2>
-            <div className="mt-4 grid grid-cols-4 gap-2">
+            <div className="mt-4 grid grid-cols-3 gap-2">
               <button
                 type="button"
-                className="col-start-2 flex flex-col items-center justify-center gap-1.5 rounded-xl border border-ink/10 bg-white px-1 py-3 text-center text-[11px] font-semibold leading-tight text-ink/80 transition active:scale-[0.97] active:bg-primary/5"
+                className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-ink/10 bg-white px-1 py-3 text-center text-[11px] font-semibold leading-tight text-ink/80 transition active:scale-[0.97] active:bg-primary/5"
+                onClick={() => { setShowLogFood(false); setShowFeelingModal(true); }}
+              >
+                <svg viewBox="0 0 24 24" className="h-5 w-5 text-primary" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M9 10h.01M15 10h.01M8.5 14.5a4 4 0 0 0 7 0" />
+                </svg>
+                <span>Feeling</span>
+              </button>
+              <button
+                type="button"
+                className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-ink/10 bg-white px-1 py-3 text-center text-[11px] font-semibold leading-tight text-ink/80 transition active:scale-[0.97] active:bg-primary/5"
                 onClick={() => { setShowLogFood(false); workout.activeWorkout ? workout.setShowEndWorkoutModal(true) : workout.setShowStartWorkoutModal(true); }}
               >
                 <svg viewBox="0 0 24 24" className="h-5 w-5 text-primary" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -3681,6 +3659,41 @@ export default function HomeScreen() {
       <BottomNav current="home" />
 
       {/* Water input modal */}
+      {showFeelingModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5"
+          onClick={() => setShowFeelingModal(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl animate-pill-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-semibold text-ink">How Do You Feel?</h2>
+              <button
+                type="button"
+                className="text-xs font-semibold text-ink/50 transition active:opacity-60"
+                onClick={() => setShowFeelingModal(false)}
+              >
+                Cancel
+              </button>
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {FEELINGS.map((f) => (
+                <button
+                  key={f.tag}
+                  type="button"
+                  className="rounded-full border border-primary/25 bg-primary/10 px-4 py-2 text-sm font-medium text-ink/80 transition active:scale-[0.96] active:bg-primary/20"
+                  onClick={() => { if (!isDemoMode) handleFeelLog(f.tag, Date.now()); setShowFeelingModal(false); }}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {showWaterUndo && waterData && (
         <div className="fixed bottom-24 left-1/2 z-40 -translate-x-1/2 animate-pill-in">
           <div className="flex items-center gap-4 rounded-full border border-primary/25 bg-primary/10 px-5 py-2.5 text-sm font-medium text-ink/80 shadow-[0_8px_24px_rgba(15,23,42,0.15)]">
