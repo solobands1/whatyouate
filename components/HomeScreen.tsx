@@ -156,7 +156,7 @@ function feelLabel(tag: string): string {
 const SAMPLE_HABIT = {
   title: "Hydration",
   ask: "Drink an extra glass of water before your coffee, during or after lunch, and during or after dinner — 3 extra glasses total.",
-  why: "You've reported low energy several times this week. Mild dehydration is one of the most common, easy-to-miss causes — it tends to show up as afternoon fatigue and trouble focusing. A few extra glasses spread through the day is a simple thing to test.",
+  why: "You've reported low energy several times this week. Mild dehydration is an easy-to-miss cause of afternoon fatigue — a simple thing to test.",
   durationDays: 3,
 };
 
