@@ -151,6 +151,15 @@ function feelLabel(tag: string): string {
   return tag.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+// Sample habit builder wired locally so we can design the hero flow before the
+// pattern engine / templates / backend exist.
+const SAMPLE_HABIT = {
+  title: "Morning Water",
+  ask: "Drink a glass of water before your coffee for 3 days.",
+  why: "You've reported low energy most afternoons this week.",
+  durationDays: 3,
+};
+
 // Module-level cache — survives navigation, resets on full page reload
 
 function todayDateStr() {
@@ -382,6 +391,9 @@ export default function HomeScreen() {
   const [logFoodClosing, setLogFoodClosing] = useState(false);
   const [showFeelingModal, setShowFeelingModal] = useState(false);
   const [selectedFeelings, setSelectedFeelings] = useState<string[]>([]);
+  const [heroHabit, setHeroHabit] = useState<{ status: "suggested" | "active" | "done" | "hidden"; days: boolean[] }>(
+    { status: "suggested", days: Array(SAMPLE_HABIT.durationDays).fill(false) }
+  );
   const [quickAddItems, setQuickAddItems] = useState<QuickAddItem[]>([]);
   const [quickAddRecentItems, setQuickAddRecentItems] = useState<QuickAddItem[]>([]);
   const [quickAddSelected, setQuickAddSelected] = useState<Record<string, "small" | "medium" | "large">>({});
@@ -2183,12 +2195,73 @@ export default function HomeScreen() {
               );
             })()}
           </div>
-          {/* Hero — dynamic slot. Priority: active habit builder > suggestion > reflection reminder > discovery > wins > greeting (default below) */}
-          <div className="-mx-4 mt-3 rounded-2xl border-2 border-primary/25 bg-primary/[0.05] px-4 py-7">
-            <p className="text-base font-semibold text-ink">
-              {welcomeMessage.greeting}{firstName ? `, ${firstName}` : ""}
-            </p>
-            <p className="mt-1 text-xs text-muted/60">{welcomeMessage.sub}</p>
+          {/* Hero — dynamic slot. Priority: active habit builder > suggestion > reflection reminder > discovery > wins > greeting (default). Sample habit wired locally for now. */}
+          <div className={`-mx-4 mt-3 rounded-2xl border-2 border-primary/25 bg-primary/[0.05] px-4 ${heroHabit.status === "hidden" ? "py-7" : "py-5"}`}>
+            {heroHabit.status === "suggested" ? (
+              <>
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-primary/70">Suggested Habit</p>
+                <p className="mt-1 text-base font-semibold text-ink">{SAMPLE_HABIT.title}</p>
+                <p className="mt-0.5 text-sm text-ink/70">{SAMPLE_HABIT.ask}</p>
+                <p className="mt-2 text-xs text-muted/70"><span className="font-semibold text-ink/60">Why? </span>{SAMPLE_HABIT.why}</p>
+                <button
+                  type="button"
+                  className="mt-4 w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white transition active:scale-[0.98]"
+                  onClick={() => setHeroHabit((h) => ({ ...h, status: "active" }))}
+                >
+                  Let&apos;s Do It!
+                </button>
+                <div className="mt-2 flex items-center justify-center gap-3">
+                  <button type="button" className="text-xs font-medium text-ink/50 transition active:opacity-60" onClick={() => setHeroHabit((h) => ({ ...h, status: "hidden" }))}>Maybe Later</button>
+                  <span className="text-ink/20">·</span>
+                  <button type="button" className="text-xs font-medium text-ink/50 transition active:opacity-60" onClick={() => setHeroHabit((h) => ({ ...h, status: "hidden" }))}>No Thanks</button>
+                </div>
+              </>
+            ) : heroHabit.status === "active" ? (
+              <>
+                <div className="flex items-center justify-between">
+                  <p className="text-base font-semibold text-ink">{SAMPLE_HABIT.title}</p>
+                  <p className="text-xs font-medium text-muted/60">Day {heroHabit.days.filter(Boolean).length} of {SAMPLE_HABIT.durationDays}</p>
+                </div>
+                <p className="mt-0.5 text-sm text-ink/70">{SAMPLE_HABIT.ask}</p>
+                <div className="mt-3 flex gap-2">
+                  {heroHabit.days.map((done, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      className={`h-10 flex-1 rounded-lg border text-xs font-semibold transition active:scale-[0.96] ${done ? "border-primary bg-primary text-white" : "border-primary/25 bg-white text-ink/50"}`}
+                      onClick={() => setHeroHabit((h) => {
+                        const days = h.days.map((d, idx) => idx === i ? !d : d);
+                        return { status: days.every(Boolean) ? "done" : "active", days };
+                      })}
+                    >
+                      Day {i + 1}
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : heroHabit.status === "done" ? (
+              <>
+                <p className="text-base font-semibold text-ink">Nice work!</p>
+                <p className="mt-0.5 text-sm text-ink/70">You finished {SAMPLE_HABIT.title}. Did it help?</p>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  {["No change", "Slightly better", "Better", "Much better"].map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      className="rounded-xl border border-primary/25 bg-white py-2 text-xs font-medium text-ink/70 transition active:scale-[0.96] active:bg-primary/10"
+                      onClick={() => setHeroHabit((h) => ({ ...h, status: "hidden" }))}
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-base font-semibold text-ink">{welcomeMessage.greeting}{firstName ? `, ${firstName}` : ""}</p>
+                <p className="mt-1 text-xs text-muted/60">{welcomeMessage.sub}</p>
+              </>
+            )}
           </div>
 
           <div className="mt-4 border-t border-ink/8 pt-3">
