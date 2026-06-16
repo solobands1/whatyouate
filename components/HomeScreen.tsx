@@ -155,7 +155,7 @@ function feelLabel(tag: string): string {
 // pattern engine / templates / backend exist.
 const SAMPLE_HABIT = {
   title: "Hydration",
-  ask: "Drink 3 extra glasses of water every day for 3 days: before breakfast, lunch, and dinner.",
+  ask: "Drink 3 extra glasses of water every day for 3 days: one in the morning, afternoon, and evening.",
   why: "You've reported low energy several times this week. Mild dehydration is an easy-to-miss cause of afternoon fatigue, and one of the simplest things to test.",
   durationDays: 3,
 };
