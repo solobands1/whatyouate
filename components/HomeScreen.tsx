@@ -220,7 +220,7 @@ function WaterBar({ pct, displayCurrent, displayGoal }: {
   }, [fillPct]);
 
   return (
-    <div className="mt-1 px-4">
+    <div>
       {/* Drop icon + bar row */}
       <div className="flex items-center gap-2">
         <svg width="22" height="22" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="shrink-0">
@@ -1581,6 +1581,7 @@ export default function HomeScreen() {
     if (hour < 17) return { greeting: "Good Afternoon", sub: "Let's log and improve" };
     return { greeting: "Good Evening", sub: "Better late than never" };
   })();
+  const firstName = profile?.firstName || (user as { user_metadata?: Record<string, string> })?.user_metadata?.first_name || "";
 
   // Streak saver: detect if yesterday was missed but there's still a saveable streak
   const streakSaverInfo = (() => {
@@ -2182,7 +2183,13 @@ export default function HomeScreen() {
               );
             })()}
           </div>
-          {/* Hero — dynamic (Habit Builder / Reflection Reminder / Discovery / Wins) renders here */}
+          {/* Hero — dynamic slot. Priority: active habit builder > suggestion > reflection reminder > discovery > wins > greeting (default below) */}
+          <div className="mt-3">
+            <p className="text-[15px] font-semibold text-ink">
+              {welcomeMessage.greeting}{firstName ? `, ${firstName}` : ""}
+            </p>
+            <p className="mt-0.5 text-xs text-muted/60">{welcomeMessage.sub}</p>
+          </div>
 
           <div className="mt-4 border-t border-ink/8 pt-3">
             <div className="flex gap-3">
@@ -2227,18 +2234,16 @@ export default function HomeScreen() {
                 : "Standard Estimate · Complete Your Profile To Personalize."}
             </p>
           )}
-        </Card>
-
-        {/* Water bar — waterTick forces re-render on tap */}
-        <div data-tour="water-bar">
           {waterData && waterTick >= 0 && (
-            <WaterBar
-              pct={waterData.pct}
-              displayCurrent={waterData.displayCurrent}
-              displayGoal={waterData.displayGoal}
-            />
+            <div className="mt-4 border-t border-ink/8 pt-3" data-tour="water-bar">
+              <WaterBar
+                pct={waterData.pct}
+                displayCurrent={waterData.displayCurrent}
+                displayGoal={waterData.displayGoal}
+              />
+            </div>
           )}
-        </div>
+        </Card>
 
         {workout.activeWorkout && (
           <p className="mt-3 text-center text-[11px] text-muted/60">Workout in progress</p>
