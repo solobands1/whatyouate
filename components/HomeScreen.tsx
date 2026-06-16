@@ -2260,7 +2260,7 @@ export default function HomeScreen() {
                         );
                       })}
                     </div>
-                    <p className="mt-2 text-center text-[11px] text-muted/55">Check each off as you complete it.</p>
+                    <p className="mt-2 text-center text-[11px] text-ink/55">Check Each Off As You Complete It.</p>
                   </>
                 );
               })()
