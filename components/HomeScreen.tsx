@@ -154,9 +154,9 @@ function feelLabel(tag: string): string {
 // Sample habit builder wired locally so we can design the hero flow before the
 // pattern engine / templates / backend exist.
 const SAMPLE_HABIT = {
-  title: "Morning Water",
-  ask: "Drink a glass of water before your coffee for 3 days.",
-  why: "You've reported low energy most afternoons this week.",
+  title: "Hydration",
+  ask: "Drink an extra glass of water before your coffee, during or after lunch, and during or after dinner — 3 extra glasses total.",
+  why: "You've reported low energy several times this week. Mild dehydration is one of the most common, easy-to-miss causes — it tends to show up as afternoon fatigue and trouble focusing. A few extra glasses spread through the day is a simple thing to test.",
   durationDays: 3,
 };
 
@@ -2199,10 +2199,10 @@ export default function HomeScreen() {
           <div className={`-mx-4 mt-3 rounded-2xl border-2 border-primary/25 bg-primary/[0.05] px-4 ${heroHabit.status === "hidden" ? "py-7" : "py-5"}`}>
             {heroHabit.status === "suggested" ? (
               <>
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-primary/70">Suggested Habit</p>
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-primary">Habit Builder</p>
                 <p className="mt-1 text-base font-semibold text-ink">{SAMPLE_HABIT.title}</p>
                 <p className="mt-0.5 text-sm text-ink/70">{SAMPLE_HABIT.ask}</p>
-                <p className="mt-2 text-xs text-muted/70"><span className="font-semibold text-ink/60">Why? </span>{SAMPLE_HABIT.why}</p>
+                <p className="mt-2 text-xs text-muted/70"><span className="font-semibold text-ink/70">Why: </span>{SAMPLE_HABIT.why}</p>
                 <button
                   type="button"
                   className="mt-4 w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white transition active:scale-[0.98]"
