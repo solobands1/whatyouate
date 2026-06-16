@@ -157,7 +157,7 @@ export default function BottomNav({ current }: { current: "home" | "summary" | "
           className="absolute bottom-0 right-0 top-0 flex w-[100px] items-center justify-center rounded-l-full bg-primary text-white transition active:bg-primary/90"
           onClick={() => window.dispatchEvent(new Event("wya_open_log_menu"))}
         >
-          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="-translate-x-0.5 -translate-y-0.5">
             <path d="M12 5v14M5 12h14" />
           </svg>
         </button>
