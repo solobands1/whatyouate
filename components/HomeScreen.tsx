@@ -155,8 +155,8 @@ function feelLabel(tag: string): string {
 // pattern engine / templates / backend exist.
 const SAMPLE_HABIT = {
   title: "Hydration",
-  ask: "Drink an extra glass of water before your coffee, during or after lunch, and during or after dinner — 3 extra glasses total.",
-  why: "You've reported low energy several times this week. Mild dehydration is an easy-to-miss cause of afternoon fatigue — a simple thing to test.",
+  ask: "Drink 3 extra glasses of water every day for 3 days: before breakfast, lunch, and dinner.",
+  why: "You've reported low energy several times this week. Mild dehydration is an easy-to-miss cause of afternoon fatigue, and one of the simplest things to test.",
   durationDays: 3,
 };
 
@@ -2201,8 +2201,8 @@ export default function HomeScreen() {
               <>
                 <p className="text-[10px] font-semibold uppercase tracking-wide text-primary">Habit Builder</p>
                 <p className="mt-1 text-base font-semibold text-ink">{SAMPLE_HABIT.title}</p>
-                <p className="mt-0.5 text-sm text-ink/70">{SAMPLE_HABIT.ask}</p>
-                <p className="mt-2 text-xs text-muted/70"><span className="font-semibold text-ink/70">Why: </span>{SAMPLE_HABIT.why}</p>
+                <p className="mt-0.5 text-xs text-ink/70">{SAMPLE_HABIT.ask}</p>
+                <p className="mt-2 text-[13px] leading-relaxed text-ink/80"><span className="font-semibold text-ink">Why: </span>{SAMPLE_HABIT.why}</p>
                 <button
                   type="button"
                   className="mt-4 w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white transition active:scale-[0.98]"
