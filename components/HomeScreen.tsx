@@ -126,15 +126,21 @@ const FEEL_OPTIONS = [
 
 const FEELINGS = [
   { tag: "energized", label: "Energized" },
-  { tag: "tired", label: "Tired" },
   { tag: "focused", label: "Focused" },
-  { tag: "foggy", label: "Foggy" },
+  { tag: "motivated", label: "Motivated" },
   { tag: "calm", label: "Calm" },
-  { tag: "anxious", label: "Anxious" },
-  { tag: "bloated", label: "Bloated" },
-  { tag: "sluggish", label: "Sluggish" },
   { tag: "happy", label: "Happy" },
+  { tag: "content", label: "Content" },
+  { tag: "tired", label: "Tired" },
+  { tag: "sluggish", label: "Sluggish" },
+  { tag: "foggy", label: "Foggy" },
+  { tag: "anxious", label: "Anxious" },
+  { tag: "stressed", label: "Stressed" },
   { tag: "irritable", label: "Irritable" },
+  { tag: "hungry", label: "Hungry" },
+  { tag: "bloated", label: "Bloated" },
+  { tag: "nauseous", label: "Nauseous" },
+  { tag: "headache", label: "Headache" },
 ] as const;
 
 function feelLabel(tag: string): string {
@@ -375,6 +381,7 @@ export default function HomeScreen() {
   const [showLogFood, setShowLogFood] = useState(false);
   const [logFoodClosing, setLogFoodClosing] = useState(false);
   const [showFeelingModal, setShowFeelingModal] = useState(false);
+  const [selectedFeelings, setSelectedFeelings] = useState<string[]>([]);
   const [quickAddItems, setQuickAddItems] = useState<QuickAddItem[]>([]);
   const [quickAddRecentItems, setQuickAddRecentItems] = useState<QuickAddItem[]>([]);
   const [quickAddSelected, setQuickAddSelected] = useState<Record<string, "small" | "medium" | "large">>({});
@@ -2180,12 +2187,12 @@ export default function HomeScreen() {
           <div className="mt-4 border-t border-ink/8 pt-3">
             <div className="flex items-end justify-between">
               <div className="flex items-baseline gap-1.5">
-                <span className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Calories</span>
                 <span className="text-lg font-semibold text-ink">{formatClean(homeMarkers.todayTotals.calories_min, homeMarkers.todayTotals.calories_max)}</span>
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Calories</span>
               </div>
               <div className="flex items-baseline gap-1.5">
-                <span className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Protein</span>
                 <span className="text-lg font-semibold text-ink">{formatClean(homeMarkers.todayTotals.protein_g_min, homeMarkers.todayTotals.protein_g_max, "g")}</span>
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Protein</span>
               </div>
             </div>
             {mealCount > 0 && (
@@ -2765,7 +2772,7 @@ export default function HomeScreen() {
               <button
                 type="button"
                 className="flex w-[calc((100%-1.5rem)/4)] shrink-0 flex-col items-center justify-center gap-1.5 rounded-xl border border-ink/10 bg-white px-1 py-3 text-center text-[11px] font-semibold leading-tight text-ink/80 transition active:scale-[0.97] active:bg-primary/5"
-                onClick={() => { setShowLogFood(false); setShowFeelingModal(true); }}
+                onClick={() => { setShowLogFood(false); setSelectedFeelings([]); setShowFeelingModal(true); }}
               >
                 <svg viewBox="0 0 24 24" className="h-5 w-5 text-primary" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="9" />
@@ -3687,18 +3694,41 @@ export default function HomeScreen() {
                 Cancel
               </button>
             </div>
+            <p className="mt-1 text-xs text-muted/60">Pick any that fit right now.</p>
             <div className="mt-4 flex flex-wrap gap-2">
-              {FEELINGS.map((f) => (
-                <button
-                  key={f.tag}
-                  type="button"
-                  className="rounded-full border border-primary/25 bg-primary/10 px-4 py-2 text-sm font-medium text-ink/80 transition active:scale-[0.96] active:bg-primary/20"
-                  onClick={() => { if (!isDemoMode) handleFeelLog(f.tag, Date.now()); setShowFeelingModal(false); }}
-                >
-                  {f.label}
-                </button>
-              ))}
+              {FEELINGS.map((f) => {
+                const selected = selectedFeelings.includes(f.tag);
+                return (
+                  <button
+                    key={f.tag}
+                    type="button"
+                    className={`rounded-full border px-4 py-2 text-sm font-medium transition active:scale-[0.96] ${
+                      selected
+                        ? "border-primary/40 bg-primary/20 text-primary"
+                        : "border-primary/25 bg-primary/10 text-ink/80"
+                    }`}
+                    onClick={() => setSelectedFeelings((prev) => prev.includes(f.tag) ? prev.filter((t) => t !== f.tag) : [...prev, f.tag])}
+                  >
+                    {f.label}
+                  </button>
+                );
+              })}
             </div>
+            <button
+              type="button"
+              disabled={selectedFeelings.length === 0}
+              className="mt-5 w-full rounded-xl bg-primary py-3 text-sm font-semibold text-white transition active:scale-[0.98] disabled:opacity-40"
+              onClick={() => {
+                if (!isDemoMode) {
+                  const now = Date.now();
+                  selectedFeelings.forEach((tag) => handleFeelLog(tag, now));
+                }
+                setShowFeelingModal(false);
+                setSelectedFeelings([]);
+              }}
+            >
+              {selectedFeelings.length > 0 ? `Log ${selectedFeelings.length}` : "Log"}
+            </button>
           </div>
         </div>
       )}
