@@ -137,6 +137,14 @@ const FEELINGS = [
   { tag: "irritable", label: "Irritable" },
 ] as const;
 
+function feelLabel(tag: string): string {
+  const f = FEELINGS.find((x) => x.tag === tag);
+  if (f) return f.label;
+  const e = FEEL_OPTIONS.find((x) => x.tag === tag);
+  if (e) return e.label;
+  return tag.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 // Module-level cache — survives navigation, resets on full page reload
 
 function todayDateStr() {
@@ -2394,7 +2402,7 @@ export default function HomeScreen() {
                           className={`flex w-full flex-col items-center justify-center rounded-full border border-ink/10 bg-white px-3 py-1 text-[11px] text-ink/60 leading-tight shadow-[0_0_8px_rgba(111,168,255,0.12)] ${editRecents ? "cursor-pointer animate-wiggle-neutral" : "animate-pill-in"}`}
                           style={editRecents ? undefined : { animationDelay: `${fi * 35}ms` }}
                         >
-                          <span className="font-semibold text-ink/60">{log.tag === "good_energy" ? "High Energy" : log.tag === "low_energy" ? "Low Energy" : log.tag.replace(/_/g, " ")}</span>
+                          <span className="font-semibold text-ink/60">{feelLabel(log.tag)}</span>
                           <span className="text-[10px] text-ink/55">{h}:{String(d.getMinutes()).padStart(2, "0")}{period}</span>
                         </div>
                       );
@@ -2753,10 +2761,10 @@ export default function HomeScreen() {
               </button>
             </div>
             <h2 className="mt-5 text-[11px] font-semibold uppercase tracking-wide text-muted/60">Log</h2>
-            <div className="mt-4 grid grid-cols-3 gap-2">
+            <div className="mt-4 flex justify-center gap-2">
               <button
                 type="button"
-                className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-ink/10 bg-white px-1 py-3 text-center text-[11px] font-semibold leading-tight text-ink/80 transition active:scale-[0.97] active:bg-primary/5"
+                className="flex w-[calc((100%-1.5rem)/4)] shrink-0 flex-col items-center justify-center gap-1.5 rounded-xl border border-ink/10 bg-white px-1 py-3 text-center text-[11px] font-semibold leading-tight text-ink/80 transition active:scale-[0.97] active:bg-primary/5"
                 onClick={() => { setShowLogFood(false); setShowFeelingModal(true); }}
               >
                 <svg viewBox="0 0 24 24" className="h-5 w-5 text-primary" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -2767,7 +2775,7 @@ export default function HomeScreen() {
               </button>
               <button
                 type="button"
-                className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-ink/10 bg-white px-1 py-3 text-center text-[11px] font-semibold leading-tight text-ink/80 transition active:scale-[0.97] active:bg-primary/5"
+                className="flex w-[calc((100%-1.5rem)/4)] shrink-0 flex-col items-center justify-center gap-1.5 rounded-xl border border-ink/10 bg-white px-1 py-3 text-center text-[11px] font-semibold leading-tight text-ink/80 transition active:scale-[0.97] active:bg-primary/5"
                 onClick={() => { setShowLogFood(false); workout.activeWorkout ? workout.setShowEndWorkoutModal(true) : workout.setShowStartWorkoutModal(true); }}
               >
                 <svg viewBox="0 0 24 24" className="h-5 w-5 text-primary" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -2778,7 +2786,7 @@ export default function HomeScreen() {
               {waterData && (
                 <button
                   type="button"
-                  className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-ink/10 bg-white px-1 py-3 text-center text-[11px] font-semibold leading-tight text-ink/80 transition active:scale-[0.97] active:bg-primary/5"
+                  className="flex w-[calc((100%-1.5rem)/4)] shrink-0 flex-col items-center justify-center gap-1.5 rounded-xl border border-ink/10 bg-white px-1 py-3 text-center text-[11px] font-semibold leading-tight text-ink/80 transition active:scale-[0.97] active:bg-primary/5"
                   onClick={() => { setShowLogFood(false); setWaterModalOpen(true); }}
                 >
                   <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -3407,7 +3415,7 @@ export default function HomeScreen() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5">
           <div className="w-full max-w-sm rounded-2xl bg-white px-5 pb-6 pt-5 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-ink">Edit Energy Log</h2>
+              <h2 className="text-base font-semibold text-ink">Edit Feeling</h2>
               <button
                 type="button"
                 onClick={() => setEditingFeelLog(null)}
@@ -3416,18 +3424,19 @@ export default function HomeScreen() {
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
               </button>
             </div>
-            <div className="flex mb-5">
-              {FEEL_OPTIONS.map(({ tag, label }, i) => (
+            <div className="mb-5 flex flex-wrap gap-2">
+              {(FEELINGS.some((f) => f.tag === editingFeelLog.tag)
+                ? ([...FEELINGS] as { tag: string; label: string }[])
+                : [{ tag: editingFeelLog.tag, label: feelLabel(editingFeelLog.tag) }, ...FEELINGS]
+              ).map(({ tag, label }) => (
                 <button
                   key={tag}
                   type="button"
                   onClick={() => setEditFeelTag(tag)}
-                  className={`flex flex-1 items-center justify-center border py-2 text-[11px] font-normal select-none transition-colors
-                    ${i === 0 ? "rounded-l-xl" : "border-l-0"}
-                    ${i === FEEL_OPTIONS.length - 1 ? "rounded-r-xl" : ""}
+                  className={`rounded-full border px-3.5 py-1.5 text-sm font-medium transition active:scale-[0.96]
                     ${editFeelTag === tag
-                      ? "border-primary/30 bg-primary/10 text-ink/80"
-                      : "border-ink/10 bg-white text-ink/60"}`}
+                      ? "border-primary/30 bg-primary/15 text-primary"
+                      : "border-ink/10 bg-white text-ink/70"}`}
                 >
                   {label}
                 </button>
