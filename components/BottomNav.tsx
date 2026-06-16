@@ -154,8 +154,8 @@ export default function BottomNav({ current }: { current: "home" | "summary" | "
           type="button"
           aria-label="Log"
           data-tour="food-action"
-          className="absolute bottom-0 right-0 top-0 flex w-[100px] items-center justify-center rounded-l-full bg-primary pt-2 text-white transition active:bg-primary/90"
-          style={{ paddingBottom: "calc(env(safe-area-inset-bottom) - 12px)" }}
+          className="absolute bottom-0 right-0 top-0 flex w-[100px] items-center justify-center rounded-l-full bg-primary text-white transition active:bg-primary/90"
+          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
           onClick={() => window.dispatchEvent(new Event("wya_open_log_menu"))}
         >
           <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
