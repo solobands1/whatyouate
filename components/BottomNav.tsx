@@ -144,24 +144,25 @@ export default function BottomNav({ current }: { current: "home" | "summary" | "
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 bg-surface/95 backdrop-blur safe-bottom">
-      <div className={`relative mx-auto flex max-w-md items-center gap-1 border-t border-ink/8 pl-4 pt-2 ${current === "home" ? "pr-[110px]" : "pr-4"}`}>
+      <div className={`mx-auto flex max-w-md items-center gap-1 border-t border-ink/8 pl-4 pt-2 ${current === "home" ? "pr-[110px]" : "pr-4"}`}>
         {item("/", "Home", "home")}
         {item("/summary", "Insights", "summary")}
         {item("/summary/insights", "Patterns", "patterns")}
-        {current === "home" && (
-          <button
-            type="button"
-            aria-label="Log"
-            data-tour="food-action"
-            className="absolute -top-2.5 right-5 flex h-[72px] w-[72px] items-center justify-center rounded-full bg-primary text-white shadow-[0_6px_16px_rgba(15,23,42,0.22)] transition active:scale-95"
-            onClick={() => window.dispatchEvent(new Event("wya_open_log_menu"))}
-          >
-            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-          </button>
-        )}
       </div>
+      {current === "home" && (
+        <button
+          type="button"
+          aria-label="Log"
+          data-tour="food-action"
+          className="absolute bottom-0 right-0 top-0 flex w-[84px] items-center justify-center rounded-l-3xl bg-primary pt-2 text-white transition active:bg-primary/90"
+          style={{ paddingBottom: "calc(env(safe-area-inset-bottom) - 12px)" }}
+          onClick={() => window.dispatchEvent(new Event("wya_open_log_menu"))}
+        >
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+        </button>
+      )}
     </nav>
   );
 }
