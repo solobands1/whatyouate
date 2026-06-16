@@ -2184,7 +2184,7 @@ export default function HomeScreen() {
             })()}
           </div>
           {/* Hero — dynamic slot. Priority: active habit builder > suggestion > reflection reminder > discovery > wins > greeting (default below) */}
-          <div className="mt-3 rounded-2xl border border-primary/25 bg-primary/[0.05] px-4 py-5">
+          <div className="-mx-4 mt-3 rounded-2xl border border-primary/25 bg-primary/[0.05] px-4 py-5">
             <p className="text-base font-semibold text-ink">
               {welcomeMessage.greeting}{firstName ? `, ${firstName}` : ""}
             </p>
