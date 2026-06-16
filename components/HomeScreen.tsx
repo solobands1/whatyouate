@@ -158,6 +158,7 @@ const SAMPLE_HABIT = {
   ask: "Drink 3 extra glasses of water every day for 3 days: one in the morning, afternoon, and evening.",
   why: "You've reported low energy several times this week. Mild dehydration is an easy-to-miss cause of afternoon fatigue, and one of the simplest things to test.",
   durationDays: 3,
+  slots: ["Morning", "Afternoon", "Evening"],
 };
 
 // Module-level cache — survives navigation, resets on full page reload
@@ -391,8 +392,8 @@ export default function HomeScreen() {
   const [logFoodClosing, setLogFoodClosing] = useState(false);
   const [showFeelingModal, setShowFeelingModal] = useState(false);
   const [selectedFeelings, setSelectedFeelings] = useState<string[]>([]);
-  const [heroHabit, setHeroHabit] = useState<{ status: "suggested" | "active" | "done" | "hidden"; days: boolean[] }>(
-    { status: "suggested", days: Array(SAMPLE_HABIT.durationDays).fill(false) }
+  const [heroHabit, setHeroHabit] = useState<{ status: "suggested" | "active" | "done" | "hidden"; days: boolean[][] }>(
+    { status: "suggested", days: Array.from({ length: SAMPLE_HABIT.durationDays }, () => Array(SAMPLE_HABIT.slots.length).fill(false)) }
   );
   const [quickAddItems, setQuickAddItems] = useState<QuickAddItem[]>([]);
   const [quickAddRecentItems, setQuickAddRecentItems] = useState<QuickAddItem[]>([]);
@@ -2218,7 +2219,7 @@ export default function HomeScreen() {
               </>
             ) : heroHabit.status === "active" ? (
               (() => {
-                const current = heroHabit.days.findIndex((d) => !d);
+                const current = heroHabit.days.findIndex((day) => !day.every(Boolean));
                 return (
                   <>
                     <div className="flex items-center justify-between">
@@ -2227,34 +2228,39 @@ export default function HomeScreen() {
                     </div>
                     <p className="mt-0.5 text-[13px] text-ink/70">{SAMPLE_HABIT.ask}</p>
                     <div className="mt-3 flex gap-2">
-                      {heroHabit.days.map((done, i) => {
-                        const isCurrent = i === current;
+                      {SAMPLE_HABIT.slots.map((slot, s) => {
+                        const checked = heroHabit.days[current][s];
                         return (
                           <button
-                            key={i}
+                            key={slot}
                             type="button"
-                            disabled={!isCurrent}
                             onClick={() => setHeroHabit((h) => {
-                              const days = h.days.map((d, idx) => (idx === i ? true : d));
-                              return { status: days.every(Boolean) ? "done" : "active", days };
+                              const days = h.days.map((day, d) => d === current ? day.map((v, si) => si === s ? !v : v) : day);
+                              return { status: days.every((day) => day.every(Boolean)) ? "done" : "active", days };
                             })}
-                            className={`flex h-11 flex-1 items-center justify-center gap-1 rounded-xl text-xs font-semibold transition ${
-                              done
+                            className={`flex h-11 flex-1 items-center justify-center gap-1 rounded-xl text-[11px] font-semibold transition active:scale-[0.97] ${
+                              checked
                                 ? "bg-primary text-white"
-                                : isCurrent
-                                ? "border-2 border-primary bg-white text-primary shadow-[0_4px_12px_rgba(15,23,42,0.10)] active:scale-[0.97]"
-                                : "border border-ink/10 bg-ink/5 text-ink/30"
+                                : "border-2 border-primary/30 bg-white text-ink/70 shadow-[0_2px_8px_rgba(15,23,42,0.06)]"
                             }`}
                           >
-                            {done && (
-                              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 6" /></svg>
+                            {checked && (
+                              <svg viewBox="0 0 24 24" className="h-3 w-3 shrink-0" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 6" /></svg>
                             )}
-                            Day {i + 1}
+                            {slot}
                           </button>
                         );
                       })}
                     </div>
-                    <p className="mt-2 text-center text-[11px] text-muted/55">Tap Day {current + 1} when you complete it.</p>
+                    <div className="mt-3 flex items-center justify-center gap-2">
+                      {heroHabit.days.map((day, d) => {
+                        const complete = day.every(Boolean);
+                        return (
+                          <span key={d} className={`h-2 w-2 rounded-full ${complete ? "bg-primary" : d === current ? "bg-primary/40" : "bg-ink/15"}`} />
+                        );
+                      })}
+                    </div>
+                    <p className="mt-2 text-center text-[11px] text-muted/55">Check each off as you complete it.</p>
                   </>
                 );
               })()
