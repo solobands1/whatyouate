@@ -782,6 +782,7 @@ export default function HomeScreen() {
     setFailedMealAnalyzing(true);
     const mealIdToUpdate = failedMealPrompt.mealId;
     const imageThumb = failedMealPrompt.thumb;
+    const text = failedMealText.trim();
     // Optimistically flip to processing so the pill shimmer shows instead of "Couldn't Analyze"
     meals.setMeals((prev) => prev.map((m) => m.id === mealIdToUpdate ? { ...m, status: "processing" as const } : m));
     setFailedMealPrompt(null);
@@ -801,25 +802,36 @@ export default function HomeScreen() {
         imageBase64 = undefined;
       }
     }
-    try {
-      const res = await fetch("/api/analyze-food", {
+    const analyze = (body: Record<string, unknown>) =>
+      fetch("/api/analyze-food", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(
-          imageBase64
-            ? { imageBase64, hints: failedMealText.trim(), mealId: mealIdToUpdate, userId: user.id }
-            : { textDescription: failedMealText.trim(), mealId: mealIdToUpdate, userId: user.id }
-        )
+        body: JSON.stringify(body),
       });
+    try {
+      let res: Response;
+      if (imageBase64) {
+        // Try the photo + typed text first. If the photo path fails (the photo
+        // already failed once), fall back to text-only, which is far more
+        // reliable — so the user almost always gets a result.
+        res = await analyze({ imageBase64, hints: text, mealId: mealIdToUpdate, userId: user.id });
+        if (!res.ok) {
+          res = await analyze({ textDescription: text, mealId: mealIdToUpdate, userId: user.id });
+        }
+      } else {
+        res = await analyze({ textDescription: text, mealId: mealIdToUpdate, userId: user.id });
+      }
       if (!res.ok) throw new Error("Analysis failed");
       clearMealsCache(user.id);
       notifyMealsUpdated();
     } catch {
-      // Fall back to marking as failed
-      updateMeal(mealIdToUpdate, safeFallbackAnalysis(), undefined, user.id, "failed").catch(() => {});
+      // Even text-only failed (offline or over the daily limit). Keep their text
+      // and reopen the prompt so they can retry instead of silently losing it.
       clearMealsCache(user.id);
       notifyMealsUpdated();
-      setLoadError("Something went wrong. You can edit the meal manually.");
+      setLoadError("Couldn't analyze that just now. Check your connection and try again.");
+      setFailedMealText(text);
+      setFailedMealPrompt({ mealId: mealIdToUpdate, thumb: imageThumb });
     }
   };
 
