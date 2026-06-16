@@ -2184,11 +2184,11 @@ export default function HomeScreen() {
             })()}
           </div>
           {/* Hero — dynamic slot. Priority: active habit builder > suggestion > reflection reminder > discovery > wins > greeting (default below) */}
-          <div className="mt-3">
-            <p className="text-[15px] font-semibold text-ink">
+          <div className="mt-3 rounded-2xl border border-primary/25 bg-primary/[0.05] px-4 py-5">
+            <p className="text-base font-semibold text-ink">
               {welcomeMessage.greeting}{firstName ? `, ${firstName}` : ""}
             </p>
-            <p className="mt-0.5 text-xs text-muted/60">{welcomeMessage.sub}</p>
+            <p className="mt-1 text-xs text-muted/60">{welcomeMessage.sub}</p>
           </div>
 
           <div className="mt-4 border-t border-ink/8 pt-3">
