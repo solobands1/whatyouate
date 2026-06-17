@@ -1228,7 +1228,7 @@ export default function HomeScreen() {
   useEffect(() => {
     if (heroHabit.status !== "done") { setDoneStep("celebrate"); return; }
     if (doneStep !== "celebrate") return;
-    const t = setTimeout(() => setDoneStep("reflect"), 2200);
+    const t = setTimeout(() => setDoneStep("reflect"), 4400);
     return () => clearTimeout(t);
   }, [heroHabit.status, doneStep]);
 
@@ -2270,7 +2270,7 @@ export default function HomeScreen() {
                         );
                       })}
                     </div>
-                    <p className="mt-2 text-center text-[11px] text-ink/55">Check Each Off As You Complete It.</p>
+                    <p className="mt-2 text-center text-[11px] text-ink/55">Tap each one as you complete it.</p>
                   </>
                 );
               })()
@@ -2347,13 +2347,6 @@ export default function HomeScreen() {
                 <>
                   <p className="text-base font-semibold text-ink">You Started Something</p>
                   <p className="mt-1 text-[13px] leading-relaxed text-ink/80">Keep following through and we'll build on this one. Small changes in other areas, stacked on top, brick by brick. That's how feeling better stops being a project and just becomes how you live.</p>
-                  <button
-                    type="button"
-                    className="mt-4 w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white transition active:scale-[0.98]"
-                    onClick={() => setHeroHabit((h) => ({ ...h, status: "hidden" }))}
-                  >
-                    Done
-                  </button>
                 </>
               )
             ) : (
