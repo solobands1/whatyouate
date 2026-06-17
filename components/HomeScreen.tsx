@@ -1231,7 +1231,7 @@ export default function HomeScreen() {
     if (heroHabit.status !== "done") { setDoneStep("dayDone"); setRatingPicked(null); return; }
     let t: ReturnType<typeof setTimeout> | undefined;
     if (doneStep === "dayDone") t = setTimeout(() => setDoneStep("started"), 2400);
-    else if (doneStep === "celebrate") t = setTimeout(() => setDoneStep("feedback"), 3800);
+    else if (doneStep === "celebrate") t = setTimeout(() => setDoneStep("feedback"), 2600);
     return () => { if (t) clearTimeout(t); };
   }, [heroHabit.status, doneStep]);
 
@@ -2211,7 +2211,7 @@ export default function HomeScreen() {
             {heroHabit.status === "suggested" ? (
               <>
                 <p className="-mt-1 text-center text-xs font-semibold uppercase tracking-wide text-primary">Habit Builder</p>
-                <p className="mt-1 text-center text-base font-semibold text-ink">{SAMPLE_HABIT.title}</p>
+                <p className="mt-1 text-base font-semibold text-ink">{SAMPLE_HABIT.title}</p>
                 <p className="mt-0.5 text-[13px] text-ink/70">{SAMPLE_HABIT.ask}</p>
                 <p className="mt-2 text-xs leading-relaxed text-ink/80"><span className="font-semibold text-ink">Why: </span>{SAMPLE_HABIT.why}</p>
                 <button
