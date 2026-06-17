@@ -145,6 +145,19 @@ input, textarea, select {
     checkmarkBounce 0.5s ease-out 0.75s 1 both;
 }
 
+/* Habit celebration pop — one longer, satisfying bounce + glow, no second bounce */
+.animate-habit-pop {
+  animation:
+    circleImpact 0.7s cubic-bezier(0.34, 1.4, 0.5, 1) forwards,
+    glowPulse 0.85s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-habit-pop {
+    animation: none;
+  }
+}
+
 .animate-checkmark .checkmark-path {
   stroke-dasharray: 70;
   stroke-dashoffset: 70;
