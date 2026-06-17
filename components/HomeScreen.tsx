@@ -1230,8 +1230,7 @@ export default function HomeScreen() {
     if (heroHabit.status !== "done") { setDoneStep("dayDone"); return; }
     let t: ReturnType<typeof setTimeout> | undefined;
     if (doneStep === "dayDone") t = setTimeout(() => setDoneStep("started"), 2400);
-    else if (doneStep === "started") t = setTimeout(() => setDoneStep("celebrate"), 3400);
-    else if (doneStep === "celebrate") t = setTimeout(() => setDoneStep("feedback"), 2200);
+    else if (doneStep === "celebrate") t = setTimeout(() => setDoneStep("feedback"), 3800);
     return () => { if (t) clearTimeout(t); };
   }, [heroHabit.status, doneStep]);
 
@@ -2333,6 +2332,13 @@ export default function HomeScreen() {
                 <div className="py-1 text-center animate-fadeIn">
                   <p className="text-base font-semibold text-ink">You Started Something</p>
                   <p className="mt-1 text-[13px] leading-relaxed text-ink/80">Keep following through and we'll keep building, brick by brick. This is how feeling better stops being a project and just becomes how you live.</p>
+                  <button
+                    type="button"
+                    className="mt-4 w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white transition active:scale-[0.98]"
+                    onClick={() => setDoneStep("celebrate")}
+                  >
+                    Done
+                  </button>
                 </div>
               ) : (
                 <div className="text-center">
@@ -2345,17 +2351,20 @@ export default function HomeScreen() {
                         shows while the celebration lands, the buttons fade in to replace it,
                         then the line returns once a rating is picked. */}
                     {doneStep === "feedback" ? (
-                      <div className="mt-3 grid w-full grid-cols-4 gap-1.5 animate-fadeIn">
-                        {["No Change", "Slightly Better", "Better", "Much Better"].map((r) => (
-                          <button
-                            key={r}
-                            type="button"
-                            className="rounded-lg border border-primary/25 bg-white px-1 py-1.5 text-[10px] font-medium leading-tight text-ink/70 transition active:scale-[0.95] active:bg-primary/10"
-                            onClick={() => setDoneStep("rested")}
-                          >
-                            {r}
-                          </button>
-                        ))}
+                      <div className="mt-3 w-full animate-fadeIn">
+                        <div className="grid w-full grid-cols-4 gap-1.5">
+                          {["No Change", "Slightly Better", "Better", "Much Better"].map((r) => (
+                            <button
+                              key={r}
+                              type="button"
+                              className="rounded-lg border border-primary/25 bg-white px-1 py-1.5 text-[10px] font-medium leading-tight text-ink/70 transition active:scale-[0.95] active:bg-primary/10"
+                              onClick={() => setDoneStep("rested")}
+                            >
+                              {r}
+                            </button>
+                          ))}
+                        </div>
+                        <p className="mt-2 text-[12px] text-ink/60">How do you feel after building this habit?</p>
                       </div>
                     ) : (
                       <p className="mt-1 text-[13px] text-ink/70">Three days of {SAMPLE_HABIT.title.toLowerCase()}, done.</p>
