@@ -2065,7 +2065,7 @@ export default function HomeScreen() {
                       meals.openManualMealEntry();
                       meals.setManualDate(streakSaverInfo.yesterdayStr);
                     }}
-                    className={`flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 ${(saveable || atRisk) ? "animate-wiggle" : ""} ${streakBouncing ? "animate-streak-bounce" : ""}`}
+                    className={`ml-1 flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 ${(saveable || atRisk) ? "animate-wiggle" : ""} ${streakBouncing ? "animate-streak-bounce" : ""}`}
                   >
                     <svg width="14" height="16" viewBox="0 0 13 15" fill="none" aria-hidden="true" className="animate-flame">
                       <defs>
@@ -2192,7 +2192,7 @@ export default function HomeScreen() {
           );
         })()}
 
-        <Card className="mt-4">
+        <Card className="mt-2">
           {/* Hero — dynamic slot. Priority: active habit builder > suggestion > reflection reminder > discovery > wins > greeting (default). Sample habit wired locally for now. */}
           <div className={`-mx-4 rounded-2xl border-2 border-primary/25 bg-primary/[0.05] px-4 ${heroHabit.status === "hidden" ? "py-7" : "py-5"}`}>
             {heroHabit.status === "suggested" ? (
