@@ -395,7 +395,7 @@ export default function HomeScreen() {
   const [heroHabit, setHeroHabit] = useState<{ status: "suggested" | "active" | "dayComplete" | "done" | "hidden"; days: boolean[][] }>(
     { status: "suggested", days: Array.from({ length: SAMPLE_HABIT.durationDays }, () => Array(SAMPLE_HABIT.slots.length).fill(false)) }
   );
-  const [doneStep, setDoneStep] = useState<"celebrate" | "reflect" | "message" | "built">("celebrate");
+  const [doneStep, setDoneStep] = useState<"dayDone" | "started" | "celebrate" | "feedback" | "rested">("dayDone");
   const [quickAddItems, setQuickAddItems] = useState<QuickAddItem[]>([]);
   const [quickAddRecentItems, setQuickAddRecentItems] = useState<QuickAddItem[]>([]);
   const [quickAddSelected, setQuickAddSelected] = useState<Record<string, "small" | "medium" | "large">>({});
@@ -1223,13 +1223,16 @@ export default function HomeScreen() {
     return () => window.removeEventListener("wya_open_log_menu", handler);
   }, []);
 
-  // Habit-built sequence: reset to the celebration whenever we leave "done",
-  // and auto-advance from the celebration to the reflection after it plays.
+  // Final-day sequence: Done For Today → You Started Something → You Built A Habit!
+  // (the celebration lands first, then the feedback buttons fade in). Resets to the
+  // start whenever we leave "done"; "feedback" and "rested" wait on the user.
   useEffect(() => {
-    if (heroHabit.status !== "done") { setDoneStep("celebrate"); return; }
-    if (doneStep !== "celebrate") return;
-    const t = setTimeout(() => setDoneStep("reflect"), 4400);
-    return () => clearTimeout(t);
+    if (heroHabit.status !== "done") { setDoneStep("dayDone"); return; }
+    let t: ReturnType<typeof setTimeout> | undefined;
+    if (doneStep === "dayDone") t = setTimeout(() => setDoneStep("started"), 2400);
+    else if (doneStep === "started") t = setTimeout(() => setDoneStep("celebrate"), 3400);
+    else if (doneStep === "celebrate") t = setTimeout(() => setDoneStep("feedback"), 2200);
+    return () => { if (t) clearTimeout(t); };
   }, [heroHabit.status, doneStep]);
 
   // Animate the log drawer down before unmounting it
@@ -2204,7 +2207,7 @@ export default function HomeScreen() {
 
         <Card className="mt-2">
           {/* Hero — dynamic slot. Priority: active habit builder > suggestion > reflection reminder > discovery > wins > greeting (default). Sample habit wired locally for now. */}
-          <div className={`-mx-4 rounded-2xl border-2 border-primary/25 bg-primary/[0.05] px-4 ${heroHabit.status === "hidden" ? "py-7" : "py-5"} ${heroHabit.status === "done" ? "animate-habit-built" : ""}`}>
+          <div className={`-mx-4 rounded-2xl border-2 border-primary/25 bg-primary/[0.05] px-4 ${heroHabit.status === "hidden" ? "py-7" : "py-5"} ${heroHabit.status === "done" && (doneStep === "celebrate" || doneStep === "feedback" || doneStep === "rested") ? "animate-habit-built" : ""}`}>
             {heroHabit.status === "suggested" ? (
               <>
                 <p className="text-xs font-semibold uppercase tracking-wide text-primary">Habit Builder</p>
@@ -2316,45 +2319,49 @@ export default function HomeScreen() {
                 );
               })()
             ) : heroHabit.status === "done" ? (
-              (doneStep === "celebrate" || doneStep === "built") ? (
+              doneStep === "dayDone" ? (
+                <div className="text-center">
+                  <div className="flex flex-col items-center py-1">
+                    <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white animate-habit-pop">
+                      <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 6" /></svg>
+                    </span>
+                    <p className="mt-3 text-base font-semibold text-ink">Done For Today</p>
+                    <p className="mt-1 text-[13px] text-ink/70">Three days straight, this is sticking!</p>
+                  </div>
+                </div>
+              ) : doneStep === "started" ? (
+                <div className="py-1 text-center animate-fadeIn">
+                  <p className="text-base font-semibold text-ink">You Started Something</p>
+                  <p className="mt-1 text-[13px] leading-relaxed text-ink/80">Keep following through and we'll keep building, brick by brick. This is how feeling better stops being a project and just becomes how you live.</p>
+                </div>
+              ) : (
                 <div className="text-center">
                   <div className="flex flex-col items-center py-2">
                     <span className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-white animate-habit-pop">
                       <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 6" /></svg>
                     </span>
                     <p className="mt-3 text-lg font-semibold text-ink">You Built A Habit!</p>
-                    <p className="mt-1 text-[13px] text-ink/70">Three days of {SAMPLE_HABIT.title.toLowerCase()}, done.</p>
+                    {/* The second line and the feedback buttons share this slot: the line
+                        shows while the celebration lands, the buttons fade in to replace it,
+                        then the line returns once a rating is picked. */}
+                    {doneStep === "feedback" ? (
+                      <div className="mt-3 grid w-full grid-cols-4 gap-1.5 animate-fadeIn">
+                        {["No Change", "Slightly Better", "Better", "Much Better"].map((r) => (
+                          <button
+                            key={r}
+                            type="button"
+                            className="rounded-lg border border-primary/25 bg-white px-1 py-1.5 text-[10px] font-medium leading-tight text-ink/70 transition active:scale-[0.95] active:bg-primary/10"
+                            onClick={() => setDoneStep("rested")}
+                          >
+                            {r}
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="mt-1 text-[13px] text-ink/70">Three days of {SAMPLE_HABIT.title.toLowerCase()}, done.</p>
+                    )}
                   </div>
                 </div>
-              ) : doneStep === "reflect" ? (
-                <>
-                  <p className="text-base font-semibold text-ink">Did It Help?</p>
-                  <p className="mt-0.5 text-[13px] text-ink/70">Be honest. It helps us learn what actually works for you.</p>
-                  <div className="mt-3 grid grid-cols-2 gap-2">
-                    {["No Change", "Slightly Better", "Better", "Much Better"].map((r) => (
-                      <button
-                        key={r}
-                        type="button"
-                        className="rounded-xl border border-primary/25 bg-white py-2 text-xs font-medium text-ink/70 transition active:scale-[0.96] active:bg-primary/10"
-                        onClick={() => setDoneStep("message")}
-                      >
-                        {r}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <>
-                  <p className="text-base font-semibold text-ink">You Started Something!</p>
-                  <p className="mt-1 text-[13px] leading-relaxed text-ink/80">Keep following through and we'll keep building, brick by brick. This is how feeling better stops being a project and just becomes how you live.</p>
-                  <button
-                    type="button"
-                    className="mt-4 w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white transition active:scale-[0.98]"
-                    onClick={() => setDoneStep("built")}
-                  >
-                    Done
-                  </button>
-                </>
               )
             ) : (
               <>
