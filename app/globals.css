@@ -183,9 +183,21 @@ input, textarea, select {
   pointer-events: none;
 }
 
+/* A second, quieter bloom for when the card settles: the border glow swells
+   once more from its resting level and eases back, with no shimmer sweep. */
+@keyframes habitBuiltGlow {
+  0%   { box-shadow: 0 0 0 1px rgba(111,168,255,0.18), 0 0 18px 2px rgba(111,168,255,0.22); }
+  40%  { box-shadow: 0 0 0 3px rgba(111,168,255,0.40), 0 0 34px 8px rgba(111,168,255,0.45); }
+  100% { box-shadow: 0 0 0 1px rgba(111,168,255,0.18), 0 0 18px 2px rgba(111,168,255,0.22); }
+}
+.animate-habit-glow {
+  animation: habitBuiltGlow 1.4s ease-out forwards;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-habit-built { animation: none; }
   .animate-habit-built::after { animation: none; content: none; }
+  .animate-habit-glow { animation: none; }
 }
 
 .animate-checkmark .checkmark-path {

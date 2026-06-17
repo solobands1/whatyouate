@@ -396,6 +396,7 @@ export default function HomeScreen() {
     { status: "suggested", days: Array.from({ length: SAMPLE_HABIT.durationDays }, () => Array(SAMPLE_HABIT.slots.length).fill(false)) }
   );
   const [doneStep, setDoneStep] = useState<"dayDone" | "started" | "celebrate" | "feedback" | "rested">("dayDone");
+  const [ratingPicked, setRatingPicked] = useState<string | null>(null);
   const [quickAddItems, setQuickAddItems] = useState<QuickAddItem[]>([]);
   const [quickAddRecentItems, setQuickAddRecentItems] = useState<QuickAddItem[]>([]);
   const [quickAddSelected, setQuickAddSelected] = useState<Record<string, "small" | "medium" | "large">>({});
@@ -1227,7 +1228,7 @@ export default function HomeScreen() {
   // (the celebration lands first, then the feedback buttons fade in). Resets to the
   // start whenever we leave "done"; "feedback" and "rested" wait on the user.
   useEffect(() => {
-    if (heroHabit.status !== "done") { setDoneStep("dayDone"); return; }
+    if (heroHabit.status !== "done") { setDoneStep("dayDone"); setRatingPicked(null); return; }
     let t: ReturnType<typeof setTimeout> | undefined;
     if (doneStep === "dayDone") t = setTimeout(() => setDoneStep("started"), 2400);
     else if (doneStep === "celebrate") t = setTimeout(() => setDoneStep("feedback"), 3800);
@@ -2206,11 +2207,11 @@ export default function HomeScreen() {
 
         <Card className="mt-2">
           {/* Hero — dynamic slot. Priority: active habit builder > suggestion > reflection reminder > discovery > wins > greeting (default). Sample habit wired locally for now. */}
-          <div className={`-mx-4 rounded-2xl border-2 border-primary/25 bg-primary/[0.05] px-4 ${heroHabit.status === "hidden" ? "py-7" : "py-5"} ${heroHabit.status === "done" && (doneStep === "celebrate" || doneStep === "feedback" || doneStep === "rested") ? "animate-habit-built" : ""}`}>
+          <div className={`-mx-4 rounded-2xl border-2 border-primary/25 bg-primary/[0.05] px-4 ${heroHabit.status === "hidden" ? "py-7" : "py-5"} ${heroHabit.status === "done" && (doneStep === "celebrate" || doneStep === "feedback") ? "animate-habit-built" : ""} ${heroHabit.status === "done" && doneStep === "rested" ? "animate-habit-glow" : ""}`}>
             {heroHabit.status === "suggested" ? (
               <>
-                <p className="text-xs font-semibold uppercase tracking-wide text-primary">Habit Builder</p>
-                <p className="mt-1 text-base font-semibold text-ink">{SAMPLE_HABIT.title}</p>
+                <p className="-mt-1 text-center text-xs font-semibold uppercase tracking-wide text-primary">Habit Builder</p>
+                <p className="mt-1 text-center text-base font-semibold text-ink">{SAMPLE_HABIT.title}</p>
                 <p className="mt-0.5 text-[13px] text-ink/70">{SAMPLE_HABIT.ask}</p>
                 <p className="mt-2 text-xs leading-relaxed text-ink/80"><span className="font-semibold text-ink">Why: </span>{SAMPLE_HABIT.why}</p>
                 <button
@@ -2330,7 +2331,7 @@ export default function HomeScreen() {
                 </div>
               ) : doneStep === "started" ? (
                 <div className="py-1 text-center animate-fadeIn">
-                  <p className="text-base font-semibold text-ink">You Started Something</p>
+                  <p className="text-base font-semibold text-ink">You Started Something!</p>
                   <p className="mt-1 text-[13px] leading-relaxed text-ink/80">Keep following through and we'll keep building, brick by brick. This is how feeling better stops being a project and just becomes how you live.</p>
                   <button
                     type="button"
@@ -2357,8 +2358,13 @@ export default function HomeScreen() {
                             <button
                               key={r}
                               type="button"
-                              className="rounded-lg border border-primary/25 bg-white px-1 py-1.5 text-[10px] font-medium leading-tight text-ink/70 transition active:scale-[0.95] active:bg-primary/10"
-                              onClick={() => setDoneStep("rested")}
+                              disabled={ratingPicked !== null}
+                              className={`rounded-lg border px-1 py-1.5 text-[10px] font-medium leading-tight transition active:scale-[0.95] ${ratingPicked === r ? "animate-streak-bounce border-primary bg-primary/10 text-primary" : "border-primary/25 bg-white text-ink/70"}`}
+                              onClick={() => {
+                                if (ratingPicked) return;
+                                setRatingPicked(r);
+                                setTimeout(() => setDoneStep("rested"), 720);
+                              }}
                             >
                               {r}
                             </button>
@@ -2367,7 +2373,7 @@ export default function HomeScreen() {
                         <p className="mt-2 text-[12px] text-ink/60">How do you feel after building this habit?</p>
                       </div>
                     ) : (
-                      <p className="mt-1 text-[13px] text-ink/70">Three days of {SAMPLE_HABIT.title.toLowerCase()}, done.</p>
+                      <p className="mt-1 text-[13px] text-ink/70 animate-fadeIn">Three days of {SAMPLE_HABIT.title.toLowerCase()}, done.</p>
                     )}
                   </div>
                 </div>
