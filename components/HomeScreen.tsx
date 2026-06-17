@@ -395,7 +395,7 @@ export default function HomeScreen() {
   const [heroHabit, setHeroHabit] = useState<{ status: "suggested" | "active" | "dayComplete" | "done" | "hidden"; days: boolean[][] }>(
     { status: "suggested", days: Array.from({ length: SAMPLE_HABIT.durationDays }, () => Array(SAMPLE_HABIT.slots.length).fill(false)) }
   );
-  const [doneStep, setDoneStep] = useState<"celebrate" | "reflect" | "message">("celebrate");
+  const [doneStep, setDoneStep] = useState<"celebrate" | "reflect" | "message" | "built">("celebrate");
   const [quickAddItems, setQuickAddItems] = useState<QuickAddItem[]>([]);
   const [quickAddRecentItems, setQuickAddRecentItems] = useState<QuickAddItem[]>([]);
   const [quickAddSelected, setQuickAddSelected] = useState<Record<string, "small" | "medium" | "large">>({});
@@ -2316,7 +2316,7 @@ export default function HomeScreen() {
                 );
               })()
             ) : heroHabit.status === "done" ? (
-              doneStep === "celebrate" ? (
+              (doneStep === "celebrate" || doneStep === "built") ? (
                 <div className="text-center">
                   <div className="flex flex-col items-center py-2">
                     <span className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-white animate-habit-pop">
@@ -2347,6 +2347,13 @@ export default function HomeScreen() {
                 <>
                   <p className="text-base font-semibold text-ink">You Started Something</p>
                   <p className="mt-1 text-[13px] leading-relaxed text-ink/80">Keep following through and we'll build on this one. Small changes in other areas, stacked on top, brick by brick. That's how feeling better stops being a project and just becomes how you live.</p>
+                  <button
+                    type="button"
+                    className="mt-4 w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white transition active:scale-[0.98]"
+                    onClick={() => setDoneStep("built")}
+                  >
+                    Done
+                  </button>
                 </>
               )
             ) : (
