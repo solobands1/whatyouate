@@ -2345,8 +2345,8 @@ export default function HomeScreen() {
                 </>
               ) : (
                 <>
-                  <p className="text-base font-semibold text-ink">You Started Something</p>
-                  <p className="mt-1 text-[13px] leading-relaxed text-ink/80">Keep following through and we'll build on this one. Small changes in other areas, stacked on top, brick by brick. That's how feeling better stops being a project and just becomes how you live.</p>
+                  <p className="text-base font-semibold text-ink">You Started Something!</p>
+                  <p className="mt-1 text-[13px] leading-relaxed text-ink/80">Keep following through and we'll keep building, brick by brick. This is how feeling better stops being a project and just becomes how you live.</p>
                   <button
                     type="button"
                     className="mt-4 w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white transition active:scale-[0.98]"
