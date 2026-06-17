@@ -18,7 +18,9 @@ function checkAnalyzeRateLimit(key: string): boolean {
     analyzeFoodRateMap.set(key, { count: 1, resetAt: now + 60_000 });
     return true;
   }
-  if (entry.count >= 10) return false;
+  // Per-user, per-minute cap. Kept generous so a legit retry session (a failed
+  // photo, its text-only fallback, a couple of re-tries) never trips it.
+  if (entry.count >= 20) return false;
   entry.count += 1;
   return true;
 }
