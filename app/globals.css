@@ -158,6 +158,36 @@ input, textarea, select {
   }
 }
 
+/* Habit-built card celebration: the border swells then settles, an ember glow
+   blooms from inside out and stays gently lit, with one soft shimmer sweep. */
+@keyframes habitBuiltBloom {
+  0%   { box-shadow: 0 0 0 0 rgba(111,168,255,0), 0 0 0 0 rgba(111,168,255,0); }
+  30%  { box-shadow: 0 0 0 3px rgba(111,168,255,0.40), 0 0 34px 8px rgba(111,168,255,0.45); }
+  100% { box-shadow: 0 0 0 1px rgba(111,168,255,0.18), 0 0 18px 2px rgba(111,168,255,0.22); }
+}
+@keyframes habitBuiltShimmer {
+  to { transform: translateX(120%); }
+}
+.animate-habit-built {
+  position: relative;
+  overflow: hidden;
+  animation: habitBuiltBloom 1.4s ease-out forwards;
+}
+.animate-habit-built::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 35%, rgba(255,255,255,0.45) 50%, transparent 65%);
+  transform: translateX(-120%);
+  animation: habitBuiltShimmer 1.5s ease-out 0.25s;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-habit-built { animation: none; }
+  .animate-habit-built::after { animation: none; content: none; }
+}
+
 .animate-checkmark .checkmark-path {
   stroke-dasharray: 70;
   stroke-dashoffset: 70;

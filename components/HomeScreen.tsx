@@ -2204,7 +2204,7 @@ export default function HomeScreen() {
 
         <Card className="mt-2">
           {/* Hero — dynamic slot. Priority: active habit builder > suggestion > reflection reminder > discovery > wins > greeting (default). Sample habit wired locally for now. */}
-          <div className={`-mx-4 rounded-2xl border-2 border-primary/25 bg-primary/[0.05] px-4 ${heroHabit.status === "hidden" ? "py-7" : "py-5"}`}>
+          <div className={`-mx-4 rounded-2xl border-2 border-primary/25 bg-primary/[0.05] px-4 ${heroHabit.status === "hidden" ? "py-7" : "py-5"} ${heroHabit.status === "done" ? "animate-habit-built" : ""}`}>
             {heroHabit.status === "suggested" ? (
               <>
                 <p className="text-xs font-semibold uppercase tracking-wide text-primary">Habit Builder</p>
