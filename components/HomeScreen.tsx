@@ -392,7 +392,7 @@ export default function HomeScreen() {
   const [logFoodClosing, setLogFoodClosing] = useState(false);
   const [showFeelingModal, setShowFeelingModal] = useState(false);
   const [selectedFeelings, setSelectedFeelings] = useState<string[]>([]);
-  const [heroHabit, setHeroHabit] = useState<{ status: "suggested" | "active" | "done" | "hidden"; days: boolean[][] }>(
+  const [heroHabit, setHeroHabit] = useState<{ status: "suggested" | "active" | "dayComplete" | "done" | "hidden"; days: boolean[][] }>(
     { status: "suggested", days: Array.from({ length: SAMPLE_HABIT.durationDays }, () => Array(SAMPLE_HABIT.slots.length).fill(false)) }
   );
   const [quickAddItems, setQuickAddItems] = useState<QuickAddItem[]>([]);
@@ -2232,8 +2232,11 @@ export default function HomeScreen() {
                             key={slot}
                             type="button"
                             onClick={() => setHeroHabit((h) => {
-                              const days = h.days.map((day, d) => d === current ? day.map((v, si) => si === s ? !v : v) : day);
-                              return { status: days.every((day) => day.every(Boolean)) ? "done" : "active", days };
+                              const cur = h.days.findIndex((d) => !d.every(Boolean));
+                              const days = h.days.map((day, di) => di === cur ? day.map((v, si) => si === s ? !v : v) : day);
+                              const allDone = days.every((d) => d.every(Boolean));
+                              const curDone = days[cur].every(Boolean);
+                              return { ...h, days, status: allDone ? "done" : curDone ? "dayComplete" : "active" };
                             })}
                             className={`flex h-11 flex-1 items-center justify-center gap-1 rounded-xl text-[11px] font-semibold transition active:scale-[0.97] ${
                               checked
@@ -2259,6 +2262,47 @@ export default function HomeScreen() {
                     </div>
                     <p className="mt-2 text-center text-[11px] text-ink/55">Check Each Off As You Complete It.</p>
                   </>
+                );
+              })()
+            ) : heroHabit.status === "dayComplete" ? (
+              (() => {
+                const completedDays = heroHabit.days.filter((d) => d.every(Boolean)).length;
+                const lines = [
+                  "Day one down. The hardest one's behind you.",
+                  "Two days in. You're actually doing this.",
+                  "Three days straight. This is starting to stick.",
+                ];
+                const line = lines[completedDays - 1] ?? "That's today handled. See you tomorrow.";
+                return (
+                  // Tapping the body simulates the next day (demo only; real version rolls over at midnight).
+                  <div
+                    className="relative cursor-pointer text-center"
+                    role="button"
+                    aria-label="Continue to next day"
+                    onClick={() => setHeroHabit((h) => ({ ...h, status: "active" }))}
+                  >
+                    <button
+                      type="button"
+                      className="absolute right-0 top-0 text-[11px] font-medium text-ink/45 transition active:opacity-60"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setHeroHabit((h) => {
+                          const target = h.days.filter((d) => d.every(Boolean)).length - 1;
+                          const days = h.days.map((day, di) => di === target ? day.map(() => false) : day);
+                          return { ...h, days, status: "active" };
+                        });
+                      }}
+                    >
+                      Undo
+                    </button>
+                    <div className="flex flex-col items-center py-1">
+                      <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white animate-circleImpact">
+                        <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 6" /></svg>
+                      </span>
+                      <p className="mt-3 text-base font-semibold text-ink">Done for today</p>
+                      <p className="mt-1 text-[13px] text-ink/70">{line}</p>
+                    </div>
+                  </div>
                 );
               })()
             ) : heroHabit.status === "done" ? (
