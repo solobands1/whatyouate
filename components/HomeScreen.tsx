@@ -2065,7 +2065,7 @@ export default function HomeScreen() {
                       meals.openManualMealEntry();
                       meals.setManualDate(streakSaverInfo.yesterdayStr);
                     }}
-                    className={`ml-1 flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 ${(saveable || atRisk) ? "animate-wiggle" : ""} ${streakBouncing ? "animate-streak-bounce" : ""}`}
+                    className={`ml-2 flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 ${(saveable || atRisk) ? "animate-wiggle" : ""} ${streakBouncing ? "animate-streak-bounce" : ""}`}
                   >
                     <svg width="14" height="16" viewBox="0 0 13 15" fill="none" aria-hidden="true" className="animate-flame">
                       <defs>
