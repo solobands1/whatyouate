@@ -2353,13 +2353,13 @@ export default function HomeScreen() {
                         then the line returns once a rating is picked. */}
                     {doneStep === "feedback" ? (
                       <div className="mt-3 w-full animate-fadeIn">
-                        <div className="grid w-full grid-cols-4 gap-1.5">
-                          {["No Change", "Slightly Better", "Better", "Much Better"].map((r) => (
+                        <div className="grid w-full grid-cols-3 gap-2">
+                          {["Not Really", "Maybe", "Yes!"].map((r) => (
                             <button
                               key={r}
                               type="button"
                               disabled={ratingPicked !== null}
-                              className={`rounded-lg border px-1 py-1.5 text-[10px] font-medium leading-tight transition active:scale-[0.95] ${ratingPicked === r ? "animate-streak-bounce border-primary bg-primary/10 text-primary" : "border-primary/25 bg-white text-ink/70"}`}
+                              className={`rounded-lg border px-2 py-2 text-xs font-medium leading-tight transition active:scale-[0.95] ${ratingPicked === r ? "animate-streak-bounce border-primary bg-primary/10 text-primary" : "border-primary/25 bg-white text-ink/70"}`}
                               onClick={() => {
                                 if (ratingPicked) return;
                                 setRatingPicked(r);
@@ -2370,7 +2370,7 @@ export default function HomeScreen() {
                             </button>
                           ))}
                         </div>
-                        <p className="mt-2 text-[12px] text-ink/60">How do you feel after building this habit?</p>
+                        <p className="mt-2 text-[12px] text-ink/60">Do you think you'll keep this up?</p>
                       </div>
                     ) : (
                       <p className="mt-1 text-[13px] text-ink/70 animate-fadeIn">Three days of {SAMPLE_HABIT.title.toLowerCase()}, done.</p>
