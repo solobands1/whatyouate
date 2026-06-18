@@ -125,19 +125,24 @@ const FEEL_OPTIONS = [
   { tag: "low_energy", label: "Low Energy" },
 ] as const;
 
+// Grouped by domain (Energy, Mood, Body), positive-leaning first within each,
+// so related feelings sit together (e.g. energized near tired) and are easy to scan.
 const FEELINGS = [
+  // Energy
   { tag: "energized", label: "Energized" },
   { tag: "focused", label: "Focused" },
   { tag: "motivated", label: "Motivated" },
-  { tag: "calm", label: "Calm" },
-  { tag: "happy", label: "Happy" },
-  { tag: "content", label: "Content" },
   { tag: "tired", label: "Tired" },
   { tag: "sluggish", label: "Sluggish" },
   { tag: "foggy", label: "Foggy" },
+  // Mood
+  { tag: "happy", label: "Happy" },
+  { tag: "content", label: "Content" },
+  { tag: "calm", label: "Calm" },
   { tag: "anxious", label: "Anxious" },
   { tag: "stressed", label: "Stressed" },
   { tag: "irritable", label: "Irritable" },
+  // Body
   { tag: "hungry", label: "Hungry" },
   { tag: "bloated", label: "Bloated" },
   { tag: "nauseous", label: "Nauseous" },
