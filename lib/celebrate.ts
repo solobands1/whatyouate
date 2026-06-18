@@ -26,14 +26,15 @@ export function unlockAudio() {
   if (c && c.state === "suspended") c.resume().catch(() => {});
 }
 
-// One soft, bell-like sine tone with a quick attack and smooth decay.
-function tone(c: AudioContext, freq: number, startAt: number, dur: number, peak: number) {
+// One soft, bell-like sine tone. A longer `attack` rounds off the front so it
+// blooms in rather than pinging like a notification.
+function tone(c: AudioContext, freq: number, startAt: number, dur: number, peak: number, attack = 0.012) {
   const osc = c.createOscillator();
   const gain = c.createGain();
   osc.type = "sine";
   osc.frequency.value = freq;
   gain.gain.setValueAtTime(0.0001, startAt);
-  gain.gain.linearRampToValueAtTime(peak, startAt + 0.012);
+  gain.gain.linearRampToValueAtTime(peak, startAt + attack);
   gain.gain.exponentialRampToValueAtTime(0.0001, startAt + dur);
   osc.connect(gain).connect(c.destination);
   osc.start(startAt);
@@ -46,15 +47,19 @@ function playChime(kind: "daily" | "built") {
   if (c.state === "suspended") c.resume().catch(() => {});
   const t = c.currentTime + 0.01;
   if (kind === "daily") {
-    // Gentle rising two-note — a light "nice."
-    tone(c, 587.33, t, 0.5, 0.11);        // D5
-    tone(c, 880.0, t + 0.09, 0.55, 0.11); // A5
+    // Warm, rounded lift instead of two bright pings: lower register, soft attack,
+    // a low-end note for body, resolving up a fourth — satisfying, not a notification.
+    tone(c, 196.0, t, 0.6, 0.05, 0.05);          // G3 — body
+    tone(c, 392.0, t, 0.62, 0.10, 0.04);         // G4
+    tone(c, 523.25, t + 0.09, 0.85, 0.10, 0.04); // C5 — resolves up a fourth
   } else {
-    // Fuller ascending major triad + an octave sparkle — "you did it."
-    tone(c, 523.25, t, 0.6, 0.12);         // C5
-    tone(c, 659.25, t + 0.09, 0.6, 0.12);  // E5
-    tone(c, 783.99, t + 0.18, 0.7, 0.12);  // G5
-    tone(c, 1046.5, t + 0.30, 0.8, 0.085); // C6 sparkle
+    // Fuller and more satisfying: a low root for body under the ascending triad,
+    // with a sparkle that rings out longer.
+    tone(c, 261.63, t, 1.0, 0.08, 0.02);   // C4 — root / body
+    tone(c, 523.25, t, 0.72, 0.11);        // C5
+    tone(c, 659.25, t + 0.09, 0.72, 0.11); // E5
+    tone(c, 783.99, t + 0.18, 0.9, 0.11);  // G5
+    tone(c, 1046.5, t + 0.30, 1.15, 0.09); // C6 — sparkle, rings longer
   }
 }
 
