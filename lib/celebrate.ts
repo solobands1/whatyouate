@@ -53,7 +53,10 @@ function playChime(kind: "daily" | "built") {
   tone(c, 659.25, t + 0.09, 0.72, 0.11); // E5
   tone(c, 783.99, t + 0.18, 0.9, 0.11);  // G5
   tone(c, 1046.5, t + 0.30, 1.15, 0.09); // C6 — sparkle, rings longer
-  if (kind === "built") {
+  if (kind === "daily") {
+    // A friendly extra higher note to end on — a little upward lift.
+    tone(c, 1318.51, t + 0.42, 0.95, 0.08); // E6
+  } else {
     // Grander finale: a deeper octave swell for weight, and the arpeggio keeps
     // climbing to a higher shimmer that rings out — same family, bigger moment.
     tone(c, 130.81, t, 1.5, 0.07, 0.03);     // C3 — deep swell / weight
