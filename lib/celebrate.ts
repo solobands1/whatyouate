@@ -123,6 +123,12 @@ export function celebrateDaily() {
 }
 
 export function celebrateBuilt() {
-  try { nativeHaptics()?.notification?.({ type: "SUCCESS" }); } catch { /* no-op */ }
+  // "Thump, then flourish" — a heavy impact grounds the moment, then the success
+  // pattern celebrates. Mirrors the grander chime; still short overall.
+  try {
+    const h = nativeHaptics();
+    h?.impact?.({ style: "HEAVY" });
+    setTimeout(() => { try { nativeHaptics()?.notification?.({ type: "SUCCESS" }); } catch { /* no-op */ } }, 110);
+  } catch { /* no-op */ }
   playChime("built");
 }
