@@ -46,20 +46,19 @@ function playChime(kind: "daily" | "built") {
   if (!c) return;
   if (c.state === "suspended") c.resume().catch(() => {});
   const t = c.currentTime + 0.01;
-  if (kind === "daily") {
-    // Warm, rounded lift instead of two bright pings: lower register, soft attack,
-    // a low-end note for body, resolving up a fourth — satisfying, not a notification.
-    tone(c, 196.0, t, 0.6, 0.05, 0.05);          // G3 — body
-    tone(c, 392.0, t, 0.62, 0.10, 0.04);         // G4
-    tone(c, 523.25, t + 0.09, 0.85, 0.10, 0.04); // C5 — resolves up a fourth
-  } else {
-    // Fuller and more satisfying: a low root for body under the ascending triad,
-    // with a sparkle that rings out longer.
-    tone(c, 261.63, t, 1.0, 0.08, 0.02);   // C4 — root / body
-    tone(c, 523.25, t, 0.72, 0.11);        // C5
-    tone(c, 659.25, t + 0.09, 0.72, 0.11); // E5
-    tone(c, 783.99, t + 0.18, 0.9, 0.11);  // G5
-    tone(c, 1046.5, t + 0.30, 1.15, 0.09); // C6 — sparkle, rings longer
+  // Shared satisfying base: a low root for body under an ascending triad, with a
+  // sparkle that rings out. Used as-is for daily completions.
+  tone(c, 261.63, t, 1.0, 0.08, 0.02);   // C4 — root / body
+  tone(c, 523.25, t, 0.72, 0.11);        // C5
+  tone(c, 659.25, t + 0.09, 0.72, 0.11); // E5
+  tone(c, 783.99, t + 0.18, 0.9, 0.11);  // G5
+  tone(c, 1046.5, t + 0.30, 1.15, 0.09); // C6 — sparkle, rings longer
+  if (kind === "built") {
+    // Grander finale: a deeper octave swell for weight, and the arpeggio keeps
+    // climbing to a higher shimmer that rings out — same family, bigger moment.
+    tone(c, 130.81, t, 1.5, 0.07, 0.03);     // C3 — deep swell / weight
+    tone(c, 1318.51, t + 0.42, 1.3, 0.075);  // E6 — higher reach
+    tone(c, 1567.98, t + 0.54, 1.6, 0.06);   // G6 — final shimmer, rings out
   }
 }
 
