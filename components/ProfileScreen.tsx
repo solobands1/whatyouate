@@ -436,6 +436,23 @@ export default function ProfileScreen() {
     }
   };
 
+  // Commit whatever supplement name is currently typed. Used on Enter and on blur,
+  // so a user who types a supplement then taps away (or taps Save) doesn't lose it —
+  // it gets added and auto-persisted just like pressing Enter.
+  const commitNewSupplement = () => {
+    const name = newSuppInput.trim();
+    if (!name) return;
+    if (suppLookupTimer.current) clearTimeout(suppLookupTimer.current);
+    const dose = parseFloat(newSuppDose);
+    const entry: SupplementEntry = !isNaN(dose) && dose > 0
+      ? { name, dose, unit: newSuppUnit }
+      : name;
+    const updated = [...dailySupplements, entry];
+    setDailySupplementsState(updated);
+    if (user) { setDailySupplements(user.id, updated); saveDailySupplements(user.id, updated).then(() => notifyProfileUpdated()).catch(() => {}); }
+    setNewSuppInput(""); setNewSuppDose(""); setSuppMatchHint(null);
+  };
+
   const handleClear = async () => {
     await clearAllData(user.id);
 
@@ -1222,17 +1239,10 @@ export default function ProfileScreen() {
                 }}
                 onKeyDown={(e) => {
                   if (e.key !== "Enter") return;
-                  const name = newSuppInput.trim();
-                  if (!name) return;
-                  const dose = parseFloat(newSuppDose);
-                  const entry: SupplementEntry = !isNaN(dose) && dose > 0
-                    ? { name, dose, unit: newSuppUnit }
-                    : name;
-                  const updated = [...dailySupplements, entry];
-                  setDailySupplementsState(updated);
-                  if (user) { setDailySupplements(user.id, updated); saveDailySupplements(user.id, updated).then(() => notifyProfileUpdated()).catch(() => {}); }
-                  setNewSuppInput(""); setNewSuppDose(""); setSuppMatchHint(null);
+                  e.preventDefault();
+                  commitNewSupplement();
                 }}
+                onBlur={() => commitNewSupplement()}
               />
               {(suppMatchHint || suppLookingUp) && (
                 <div className="-mt-0.5 flex items-center gap-2">
