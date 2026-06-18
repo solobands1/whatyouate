@@ -53,38 +53,57 @@ function voice(c: AudioContext, dest: AudioNode, freq: number, startAt: number, 
   }
 }
 
+// A short synthesized reverb (decaying noise impulse) to glue the notes into
+// one cohesive sound instead of separate plucks.
+function makeReverb(c: AudioContext, seconds = 1.3, decay = 3): ConvolverNode {
+  const rate = c.sampleRate;
+  const len = Math.max(1, Math.floor(rate * seconds));
+  const buf = c.createBuffer(2, len, rate);
+  for (let ch = 0; ch < 2; ch++) {
+    const data = buf.getChannelData(ch);
+    for (let i = 0; i < len; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
+    }
+  }
+  const conv = c.createConvolver();
+  conv.buffer = buf;
+  return conv;
+}
+
 function playChime(kind: "daily" | "built") {
   const c = ctx();
   if (!c) return;
   if (c.state === "suspended") c.resume().catch(() => {});
   const t = c.currentTime + 0.01;
-  // Shared output chain: a gentle lowpass rounds off the highs so nothing
-  // sounds brittle or digital.
-  const master = c.createGain();
-  master.gain.value = 0.6;
+  // Shared bus → dry path (gentle lowpass) plus a wet reverb tail that ties the
+  // notes together into one sound instead of separate plucks.
+  const bus = c.createGain();
+  bus.gain.value = 0.6;
   const lp = c.createBiquadFilter();
   lp.type = "lowpass";
   lp.frequency.value = 3800;
   lp.Q.value = 0.2;
-  master.connect(lp).connect(c.destination);
+  bus.connect(lp).connect(c.destination);
+  const wet = c.createGain();
+  wet.gain.value = 0.32;
+  bus.connect(makeReverb(c)).connect(wet).connect(c.destination);
 
-  // Shared base, an octave lower than a typical UI ding so it lands warm and
-  // grounded: a deep root for body under an ascending triad that resolves up to
-  // the tonic and rings. Used as-is for daily completions.
-  voice(c, master, 130.81, t, 1.1, 0.09, 0.02);    // C3 — root / body
-  voice(c, master, 261.63, t, 0.7, 0.13);          // C4
-  voice(c, master, 329.63, t + 0.09, 0.7, 0.13);   // E4
-  voice(c, master, 392.0, t + 0.18, 0.85, 0.13);   // G4
-  voice(c, master, 523.25, t + 0.30, 1.2, 0.12);   // C5 — resolves to the tonic, rings
+  // Lower, warm, grounded. Notes are rolled tightly and sustain well past their
+  // onset so they overlap and bloom into one held chord rather than a sequence.
+  voice(c, bus, 130.81, t, 1.8, 0.09, 0.02);        // C3 — root / body
+  voice(c, bus, 261.63, t, 1.5, 0.12, 0.025);       // C4
+  voice(c, bus, 329.63, t + 0.07, 1.5, 0.12, 0.025); // E4
+  voice(c, bus, 392.0, t + 0.14, 1.6, 0.12, 0.025);  // G4
+  voice(c, bus, 523.25, t + 0.23, 1.9, 0.12, 0.03);  // C5 — resolves to the tonic, rings
   if (kind === "daily") {
     // A friendly extra higher note to end on — a gentle upward lift.
-    voice(c, master, 659.25, t + 0.42, 1.0, 0.10);  // E5
+    voice(c, bus, 659.25, t + 0.33, 1.7, 0.10, 0.035); // E5
   } else {
     // Grander finale: a deeper octave swell for weight, and the arpeggio keeps
     // climbing past the tonic and rings out — same family, bigger moment.
-    voice(c, master, 65.41, t, 1.7, 0.08, 0.03);    // C2 — deep swell / weight
-    voice(c, master, 659.25, t + 0.42, 1.3, 0.10);  // E5 — higher reach
-    voice(c, master, 783.99, t + 0.54, 1.7, 0.085); // G5 — final climb, rings out
+    voice(c, bus, 65.41, t, 2.2, 0.08, 0.03);       // C2 — deep swell / weight
+    voice(c, bus, 659.25, t + 0.33, 1.8, 0.10, 0.035); // E5 — higher reach
+    voice(c, bus, 783.99, t + 0.45, 2.2, 0.085, 0.04); // G5 — final climb, rings out
   }
 }
 
