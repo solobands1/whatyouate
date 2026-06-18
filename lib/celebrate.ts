@@ -90,20 +90,20 @@ function playChime(kind: "daily" | "built") {
 
   // Lower, warm, grounded. Notes are rolled tightly and sustain well past their
   // onset so they overlap and bloom into one held chord rather than a sequence.
-  voice(c, bus, 130.81, t, 1.8, 0.09, 0.02);        // C3 — root / body
-  voice(c, bus, 261.63, t, 1.5, 0.12, 0.025);       // C4
-  voice(c, bus, 329.63, t + 0.07, 1.5, 0.12, 0.025); // E4
-  voice(c, bus, 392.0, t + 0.14, 1.6, 0.12, 0.025);  // G4
-  voice(c, bus, 523.25, t + 0.23, 1.9, 0.12, 0.03);  // C5 — resolves to the tonic, rings
+  voice(c, bus, 130.81, t, 1.8, 0.09, 0.02);          // C3 — low root / body
+  voice(c, bus, 523.25, t, 1.5, 0.11, 0.025);         // C5
+  voice(c, bus, 659.25, t + 0.07, 1.5, 0.11, 0.025);  // E5
+  voice(c, bus, 783.99, t + 0.14, 1.6, 0.11, 0.025);  // G5
+  voice(c, bus, 1046.5, t + 0.23, 1.9, 0.11, 0.03);   // C6 — resolves to the tonic, rings
   if (kind === "daily") {
     // A friendly extra higher note to end on — a gentle upward lift.
-    voice(c, bus, 659.25, t + 0.33, 1.7, 0.10, 0.035); // E5
+    voice(c, bus, 1318.51, t + 0.33, 1.7, 0.09, 0.035); // E6
   } else {
     // Grander finale: a deeper octave swell for weight, and the arpeggio keeps
     // climbing past the tonic and rings out — same family, bigger moment.
-    voice(c, bus, 65.41, t, 2.2, 0.08, 0.03);       // C2 — deep swell / weight
-    voice(c, bus, 659.25, t + 0.33, 1.8, 0.10, 0.035); // E5 — higher reach
-    voice(c, bus, 783.99, t + 0.45, 2.2, 0.085, 0.04); // G5 — final climb, rings out
+    voice(c, bus, 65.41, t, 2.2, 0.08, 0.03);          // C2 — deep swell / weight
+    voice(c, bus, 1318.51, t + 0.33, 1.8, 0.09, 0.035); // E6 — higher reach
+    voice(c, bus, 1567.98, t + 0.45, 2.2, 0.08, 0.04);  // G6 — final climb, rings out
   }
 }
 
