@@ -393,7 +393,7 @@ export default function HomeScreen() {
   const [logFoodClosing, setLogFoodClosing] = useState(false);
   const [showFeelingModal, setShowFeelingModal] = useState(false);
   const [selectedFeelings, setSelectedFeelings] = useState<string[]>([]);
-  const [heroHabit, setHeroHabit] = useState<{ status: "suggested" | "active" | "dayComplete" | "done" | "hidden"; days: boolean[][]; holdDay?: number | null }>(
+  const [heroHabit, setHeroHabit] = useState<{ status: "suggested" | "committed" | "active" | "dayComplete" | "done" | "hidden"; days: boolean[][]; holdDay?: number | null }>(
     { status: "suggested", days: Array.from({ length: SAMPLE_HABIT.durationDays }, () => Array(SAMPLE_HABIT.slots.length).fill(false)) }
   );
   const [doneStep, setDoneStep] = useState<"dayDone" | "started" | "celebrate" | "feedback" | "rested">("dayDone");
@@ -2230,7 +2230,7 @@ export default function HomeScreen() {
                 <button
                   type="button"
                   className="mt-4 w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white transition active:scale-[0.98]"
-                  onClick={() => setHeroHabit((h) => ({ ...h, status: "active" }))}
+                  onClick={() => setHeroHabit((h) => ({ ...h, status: "committed" }))}
                 >
                   Let&apos;s Do It!
                 </button>
@@ -2240,6 +2240,29 @@ export default function HomeScreen() {
                   <button type="button" className="text-xs font-medium text-ink/50 transition active:opacity-60" onClick={() => setHeroHabit((h) => ({ ...h, status: "hidden" }))}>No Thanks</button>
                 </div>
               </>
+            ) : heroHabit.status === "committed" ? (
+              <div className="text-center">
+                <p className="-mt-1 text-center text-xs font-semibold uppercase tracking-wide text-primary">Habit Builder</p>
+                <div className="flex flex-col items-center py-1">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white animate-habit-pop">
+                    <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 6" /></svg>
+                  </span>
+                  <p className="mt-3 text-base font-semibold text-ink">You&apos;re In!</p>
+                  <p className="mt-1 text-[13px] leading-relaxed text-ink/70">{SAMPLE_HABIT.title} starts tomorrow. We&apos;ll nudge you in the morning to begin.</p>
+                </div>
+                {/* Only offer to start today if it's still early enough to actually do
+                    it (morning). After ~10am the day's slots have started passing, so we
+                    just let it begin fresh tomorrow. (Later: make the cutoff habit-aware.) */}
+                {new Date().getHours() < 10 && (
+                  <button
+                    type="button"
+                    className="mt-3 w-full rounded-xl border border-primary/30 bg-white py-2.5 text-sm font-semibold text-primary transition active:scale-[0.98] active:bg-primary/10"
+                    onClick={() => setHeroHabit((h) => ({ ...h, status: "active" }))}
+                  >
+                    Start Today
+                  </button>
+                )}
+              </div>
             ) : heroHabit.status === "active" ? (
               (() => {
                 // During the post-completion pause, holdDay keeps the just-finished day
