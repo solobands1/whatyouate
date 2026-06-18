@@ -392,7 +392,7 @@ export default function HomeScreen() {
   const [logFoodClosing, setLogFoodClosing] = useState(false);
   const [showFeelingModal, setShowFeelingModal] = useState(false);
   const [selectedFeelings, setSelectedFeelings] = useState<string[]>([]);
-  const [heroHabit, setHeroHabit] = useState<{ status: "suggested" | "active" | "dayComplete" | "done" | "hidden"; days: boolean[][] }>(
+  const [heroHabit, setHeroHabit] = useState<{ status: "suggested" | "active" | "dayComplete" | "done" | "hidden"; days: boolean[][]; holdDay?: number | null }>(
     { status: "suggested", days: Array.from({ length: SAMPLE_HABIT.durationDays }, () => Array(SAMPLE_HABIT.slots.length).fill(false)) }
   );
   const [doneStep, setDoneStep] = useState<"dayDone" | "started" | "celebrate" | "feedback" | "rested">("dayDone");
@@ -2229,7 +2229,9 @@ export default function HomeScreen() {
               </>
             ) : heroHabit.status === "active" ? (
               (() => {
-                const current = heroHabit.days.findIndex((day) => !day.every(Boolean));
+                // During the post-completion pause, holdDay keeps the just-finished day
+                // on screen (all buttons blue) instead of jumping to the next day.
+                const current = heroHabit.holdDay != null ? heroHabit.holdDay : heroHabit.days.findIndex((day) => !day.every(Boolean));
                 return (
                   <>
                     <div className="flex items-center justify-between">
@@ -2248,17 +2250,18 @@ export default function HomeScreen() {
                               const cur = h.days.findIndex((d) => !d.every(Boolean));
                               const days = h.days.map((day, di) => di === cur ? day.map((v, si) => si === s ? !v : v) : day);
                               const curDone = days[cur].every(Boolean);
-                              // If this tap finished the day, let the button fill land and hold
-                              // for a beat before the confirmation appears — so the press feels
-                              // satisfying first, then the moment.
+                              // If this tap finished the day, hold on the now-all-blue day for a
+                              // beat (holdDay) before the confirmation appears — so the press
+                              // feels satisfying first, then the moment.
                               if (curDone) {
                                 setTimeout(() => setHeroHabit((h2) => {
                                   if (!h2.days[cur]?.every(Boolean)) return h2;
                                   const allDone = h2.days.every((d) => d.every(Boolean));
-                                  return { ...h2, status: allDone ? "done" : "dayComplete" };
+                                  return { ...h2, status: allDone ? "done" : "dayComplete", holdDay: null };
                                 }), 850);
+                                return { ...h, days, status: "active", holdDay: cur };
                               }
-                              return { ...h, days, status: "active" };
+                              return { ...h, days, status: "active", holdDay: null };
                             })}
                             className={`flex h-11 flex-1 items-center justify-center gap-1 rounded-xl text-[11px] font-semibold transition active:scale-[0.97] ${
                               checked
