@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import type { MealLog, UserProfile, WorkoutSession } from "../lib/types";
 import { suppName, suppLabel } from "../lib/types";
 import { matchSupplementNutrients } from "../lib/rda";
+import { celebrateDaily, celebrateBuilt, unlockAudio } from "../lib/celebrate";
 import {
   PROFILE_UPDATED_EVENT,
   MEALS_FAILED_EVENT,
@@ -1235,6 +1236,18 @@ export default function HomeScreen() {
     return () => { if (t) clearTimeout(t); };
   }, [heroHabit.status, doneStep]);
 
+  // Haptic + chime on the two celebration beats. (Haptics fire only in the app.)
+  // Daily: when the "Done For Today" confirmation appears for a mid-habit day.
+  useEffect(() => {
+    if (heroHabit.status === "dayComplete") celebrateDaily();
+  }, [heroHabit.status]);
+  // Final day: the daily beat on "dayDone", the big one on "celebrate".
+  useEffect(() => {
+    if (heroHabit.status !== "done") return;
+    if (doneStep === "dayDone") celebrateDaily();
+    else if (doneStep === "celebrate") celebrateBuilt();
+  }, [heroHabit.status, doneStep]);
+
   // Animate the log drawer down before unmounting it
   const closeLogFood = () => {
     setLogFoodClosing(true);
@@ -2246,7 +2259,7 @@ export default function HomeScreen() {
                           <button
                             key={slot}
                             type="button"
-                            onClick={() => setHeroHabit((h) => {
+                            onClick={() => { unlockAudio(); setHeroHabit((h) => {
                               const cur = h.days.findIndex((d) => !d.every(Boolean));
                               const days = h.days.map((day, di) => di === cur ? day.map((v, si) => si === s ? !v : v) : day);
                               const curDone = days[cur].every(Boolean);
@@ -2262,7 +2275,7 @@ export default function HomeScreen() {
                                 return { ...h, days, status: "active", holdDay: cur };
                               }
                               return { ...h, days, status: "active", holdDay: null };
-                            })}
+                            }); }}
                             className={`flex h-11 flex-1 items-center justify-center gap-1 rounded-xl text-[11px] font-semibold transition active:scale-[0.97] ${
                               checked
                                 ? "bg-primary text-white"
