@@ -103,10 +103,10 @@ function playChime(kind: "daily" | "built") {
   } else {
     // Grander finale: a deeper octave swell for weight, and the arpeggio keeps
     // climbing then lands back on the tonic up high and rings out longer.
-    voice(c, bus, 65.41, t, 2.8, 0.08, 0.03);           // C2 — deep swell / weight
-    voice(c, bus, 1318.51, t + 0.33, 1.9, 0.09, 0.035); // E6 — higher reach
-    voice(c, bus, 1567.98, t + 0.48, 2.1, 0.08, 0.04);  // G6 — climb
-    voice(c, bus, 1046.5, t + 0.66, 3.0, 0.085, 0.05);  // C6 — lands on the tonic, rings out
+    voice(c, bus, 65.41, t, 3.4, 0.08, 0.03);           // C2 — deep swell / weight
+    voice(c, bus, 1318.51, t + 0.33, 2.0, 0.09, 0.035); // E6 — higher reach
+    voice(c, bus, 1567.98, t + 0.50, 2.3, 0.08, 0.04);  // G6 — climb
+    voice(c, bus, 1046.5, t + 0.70, 3.8, 0.085, 0.05);  // C6 — lands on the tonic, rings out
   }
 }
 
