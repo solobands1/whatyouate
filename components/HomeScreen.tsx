@@ -2207,7 +2207,7 @@ export default function HomeScreen() {
 
         <Card className="mt-2">
           {/* Hero — dynamic slot. Priority: active habit builder > suggestion > reflection reminder > discovery > wins > greeting (default). Sample habit wired locally for now. */}
-          <div className={`-mx-4 rounded-2xl border-2 border-primary/25 bg-primary/[0.05] px-4 ${heroHabit.status === "hidden" ? "py-7" : "py-5"} ${heroHabit.status === "done" && (doneStep === "celebrate" || doneStep === "feedback") ? "animate-habit-built" : ""} ${heroHabit.status === "done" && doneStep === "rested" ? "animate-habit-glow" : ""}`}>
+          <div className={`-mx-4 rounded-2xl border-2 border-primary/25 px-4 ${heroHabit.status === "done" ? "bg-primary/10" : "bg-primary/[0.05]"} ${heroHabit.status === "hidden" ? "py-7" : "py-5"} ${heroHabit.status === "done" && (doneStep === "celebrate" || doneStep === "feedback") ? "animate-habit-built" : ""} ${heroHabit.status === "done" && doneStep === "rested" ? "animate-habit-glow" : ""}`}>
             {heroHabit.status === "suggested" ? (
               <>
                 <p className="-mt-1 text-center text-xs font-semibold uppercase tracking-wide text-primary">Habit Builder</p>
@@ -2247,9 +2247,18 @@ export default function HomeScreen() {
                             onClick={() => setHeroHabit((h) => {
                               const cur = h.days.findIndex((d) => !d.every(Boolean));
                               const days = h.days.map((day, di) => di === cur ? day.map((v, si) => si === s ? !v : v) : day);
-                              const allDone = days.every((d) => d.every(Boolean));
                               const curDone = days[cur].every(Boolean);
-                              return { ...h, days, status: allDone ? "done" : curDone ? "dayComplete" : "active" };
+                              // If this tap finished the day, let the button fill land and hold
+                              // for a beat before the confirmation appears — so the press feels
+                              // satisfying first, then the moment.
+                              if (curDone) {
+                                setTimeout(() => setHeroHabit((h2) => {
+                                  if (!h2.days[cur]?.every(Boolean)) return h2;
+                                  const allDone = h2.days.every((d) => d.every(Boolean));
+                                  return { ...h2, status: allDone ? "done" : "dayComplete" };
+                                }), 850);
+                              }
+                              return { ...h, days, status: "active" };
                             })}
                             className={`flex h-11 flex-1 items-center justify-center gap-1 rounded-xl text-[11px] font-semibold transition active:scale-[0.97] ${
                               checked
