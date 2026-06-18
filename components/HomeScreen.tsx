@@ -2207,7 +2207,7 @@ export default function HomeScreen() {
 
         <Card className="mt-2">
           {/* Hero — dynamic slot. Priority: active habit builder > suggestion > reflection reminder > discovery > wins > greeting (default). Sample habit wired locally for now. */}
-          <div className={`-mx-4 rounded-2xl border-2 border-primary/25 px-4 ${heroHabit.status === "done" ? "bg-primary/10" : "bg-primary/[0.05]"} ${heroHabit.status === "hidden" ? "py-7" : "py-5"} ${heroHabit.status === "done" && (doneStep === "celebrate" || doneStep === "feedback") ? "animate-habit-built" : ""} ${heroHabit.status === "done" && doneStep === "rested" ? "animate-habit-glow" : ""}`}>
+          <div className={`-mx-4 rounded-2xl border-2 border-primary/25 px-4 ${heroHabit.status === "done" ? "bg-primary/10" : "bg-primary/[0.05]"} ${heroHabit.status === "hidden" ? "py-7" : "py-5"} ${heroHabit.status === "done" && (doneStep === "celebrate" || doneStep === "feedback") ? "animate-habit-built" : ""} ${heroHabit.status === "done" && doneStep === "rested" ? "animate-habit-glow" : ""} ${heroHabit.status === "active" && heroHabit.holdDay != null ? "animate-habit-shimmer" : ""}`}>
             {heroHabit.status === "suggested" ? (
               <>
                 <p className="-mt-1 text-center text-xs font-semibold uppercase tracking-wide text-primary">Habit Builder</p>
@@ -2258,7 +2258,7 @@ export default function HomeScreen() {
                                   if (!h2.days[cur]?.every(Boolean)) return h2;
                                   const allDone = h2.days.every((d) => d.every(Boolean));
                                   return { ...h2, status: allDone ? "done" : "dayComplete", holdDay: null };
-                                }), 850);
+                                }), 1450);
                                 return { ...h, days, status: "active", holdDay: cur };
                               }
                               return { ...h, days, status: "active", holdDay: null };
