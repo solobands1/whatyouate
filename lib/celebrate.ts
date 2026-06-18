@@ -96,8 +96,10 @@ function playChime(kind: "daily" | "built") {
   voice(c, bus, 783.99, t + 0.14, 1.6, 0.11, 0.025);  // G5
   voice(c, bus, 1046.5, t + 0.23, 1.9, 0.11, 0.03);   // C6 — resolves to the tonic, rings
   if (kind === "daily") {
-    // A friendly extra higher note to end on — a gentle upward lift.
-    voice(c, bus, 1318.51, t + 0.33, 1.7, 0.09, 0.035); // E6
+    // A friendly higher lift, then a gentle landing back on the tonic that rings
+    // out a bit so it lasts a little longer (smaller than the built finale).
+    voice(c, bus, 1318.51, t + 0.33, 1.9, 0.09, 0.035); // E6 — lift
+    voice(c, bus, 1046.5, t + 0.50, 2.4, 0.085, 0.045); // C6 — lands, rings out
   } else {
     // Grander finale: a deeper octave swell for weight, and the arpeggio keeps
     // climbing then lands back on the tonic up high and rings out longer.
