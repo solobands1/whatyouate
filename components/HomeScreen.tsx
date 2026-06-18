@@ -2246,10 +2246,17 @@ export default function HomeScreen() {
                 </div>
               </>
             ) : heroHabit.status === "committed" ? (
-              <div className="text-center">
+              // Tap anywhere to advance into the tracker — demo/testing only, so the
+              // sequence is reachable regardless of the 10am gate below.
+              <div
+                className="cursor-pointer text-center"
+                role="button"
+                aria-label="Start habit (testing)"
+                onClick={() => setHeroHabit((h) => ({ ...h, status: "active" }))}
+              >
                 <p className="-mt-1 text-center text-xs font-semibold uppercase tracking-wide text-primary">Habit Builder</p>
                 <div className="flex flex-col items-center py-1">
-                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white animate-habit-pop">
+                  <span className="mt-1.5 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white animate-habit-pop">
                     <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 6" /></svg>
                   </span>
                   <p className="mt-3 text-base font-semibold text-ink">You&apos;re In!</p>
@@ -2262,7 +2269,7 @@ export default function HomeScreen() {
                   <button
                     type="button"
                     className="mt-3 w-full rounded-xl border border-primary/30 bg-white py-2.5 text-sm font-semibold text-primary transition active:scale-[0.98] active:bg-primary/10"
-                    onClick={() => setHeroHabit((h) => ({ ...h, status: "active" }))}
+                    onClick={(e) => { e.stopPropagation(); setHeroHabit((h) => ({ ...h, status: "active" })); }}
                   >
                     Start Today
                   </button>
