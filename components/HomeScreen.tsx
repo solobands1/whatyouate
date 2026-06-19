@@ -2235,7 +2235,7 @@ export default function HomeScreen() {
                 <button
                   type="button"
                   className="mt-4 w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white transition active:scale-[0.98]"
-                  onClick={() => setHeroHabit((h) => ({ ...h, status: "committed" }))}
+                  onClick={() => setHeroHabit((h) => ({ ...h, status: new Date().getHours() < 10 ? "active" : "committed" }))}
                 >
                   Let&apos;s Do It!
                 </button>
@@ -2246,8 +2246,9 @@ export default function HomeScreen() {
                 </div>
               </>
             ) : heroHabit.status === "committed" ? (
-              // Tap anywhere to advance into the tracker — demo/testing only, so the
-              // sequence is reachable regardless of the 10am gate below.
+              // Reached only when accepted after 10am (before 10am it auto-starts today).
+              // Tap anywhere to advance into the tracker — demo/testing only, simulating
+              // tomorrow arriving (the real version auto-advances overnight).
               <div
                 className="cursor-pointer text-center"
                 role="button"
@@ -2262,18 +2263,6 @@ export default function HomeScreen() {
                   <p className="mt-1.5 text-base font-semibold text-ink">You&apos;re In!</p>
                   <p className="mt-1 text-[13px] leading-relaxed text-ink/70">{SAMPLE_HABIT.title} starts tomorrow. We&apos;ll nudge you in the morning to begin.</p>
                 </div>
-                {/* Only offer to start today if it's still early enough to actually do
-                    it (morning). After ~10am the day's slots have started passing, so we
-                    just let it begin fresh tomorrow. (Later: make the cutoff habit-aware.) */}
-                {new Date().getHours() < 10 && (
-                  <button
-                    type="button"
-                    className="mt-3 w-full rounded-xl border border-primary/30 bg-white py-2.5 text-sm font-semibold text-primary transition active:scale-[0.98] active:bg-primary/10"
-                    onClick={(e) => { e.stopPropagation(); setHeroHabit((h) => ({ ...h, status: "active" })); }}
-                  >
-                    Start Today
-                  </button>
-                )}
               </div>
             ) : heroHabit.status === "active" ? (
               (() => {
