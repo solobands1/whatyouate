@@ -156,9 +156,9 @@ const REFLECTION_QUESTIONS: { key: string; label: string; opts: string[]; multi?
   { key: "energy", label: "Overall Energy", opts: ["Drained", "Low", "Okay", "Good", "Great"] },
   { key: "dips", label: "Energy Dips", opts: ["None", "Morning", "Afternoon", "Evening"], multi: true },
   { key: "sleep", label: "Last Night's Sleep", opts: ["Poor", "Okay", "Pretty Good", "Good"] },
-  { key: "mood", label: "Mood", opts: ["Rough", "Okay", "Decent", "Good"] },
+  { key: "mood", label: "Mood", opts: ["Rough", "Okay", "Pretty Good", "Good"] },
   { key: "stress", label: "Stress", opts: ["Low", "Some", "Decent Amount", "High"] },
-  { key: "digestion", label: "Digestion", opts: ["Rough", "Okay", "Decent", "Good"] },
+  { key: "digestion", label: "Digestion", opts: ["Rough", "Okay", "Pretty Good", "Good"] },
 ];
 
 function feelLabel(tag: string): string {
