@@ -4127,9 +4127,9 @@ export default function HomeScreen() {
                   <button type="button" className="text-xs font-semibold text-ink/45 transition active:opacity-60" onClick={() => setShowReflection(false)}>Complete Later</button>
                 </div>
                 {REFLECTION_QUESTIONS.map((q) => (
-                  <div key={q.key} className="mt-4">
-                    <p className="text-[13px] font-medium text-ink/80">{q.label}</p>
-                    <div className={`mt-2 grid gap-1.5 ${q.opts.length === 5 ? "grid-cols-5" : q.opts.length === 4 ? "grid-cols-4" : "grid-cols-3"}`}>
+                  <div key={q.key} className="mt-5">
+                    <p className="text-sm font-semibold text-ink">{q.label}{q.multi ? <span className="ml-1.5 text-[11px] font-normal text-ink/40">select all</span> : null}</p>
+                    <div className="mt-2 flex gap-1 rounded-xl bg-ink/[0.05] p-1">
                       {q.opts.map((o, i) => {
                         const v = reflection[q.key];
                         const sel = q.multi ? Array.isArray(v) && v.includes(i) : v === i;
@@ -4137,7 +4137,7 @@ export default function HomeScreen() {
                           <button
                             key={o}
                             type="button"
-                            className={`rounded-lg border px-1 py-2 text-[11px] font-medium leading-tight transition active:scale-[0.96] ${sel ? "border-primary bg-primary/15 text-primary" : "border-primary/20 bg-white text-ink/70"}`}
+                            className={`flex-1 rounded-lg px-1 py-2 text-[11px] font-medium leading-tight transition ${sel ? "bg-white text-primary shadow-[0_1px_3px_rgba(15,23,42,0.14)]" : "text-ink/50 active:text-ink/75"}`}
                             onClick={() => setReflection((r) => {
                               if (!q.multi) return { ...r, [q.key]: i };
                               const cur = Array.isArray(r[q.key]) ? (r[q.key] as number[]) : [];
