@@ -2256,10 +2256,10 @@ export default function HomeScreen() {
               >
                 <p className="-mt-1 text-center text-xs font-semibold uppercase tracking-wide text-primary">Habit Builder</p>
                 <div className="flex flex-col items-center py-1">
-                  <span className="mt-1 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white animate-habit-pop">
+                  <span className="mt-1.5 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white animate-habit-pop">
                     <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 6" /></svg>
                   </span>
-                  <p className="mt-2 text-base font-semibold text-ink">You&apos;re In!</p>
+                  <p className="mt-1.5 text-base font-semibold text-ink">You&apos;re In!</p>
                   <p className="mt-1 text-[13px] leading-relaxed text-ink/70">{SAMPLE_HABIT.title} starts tomorrow. We&apos;ll nudge you in the morning to begin.</p>
                 </div>
                 {/* Only offer to start today if it's still early enough to actually do
