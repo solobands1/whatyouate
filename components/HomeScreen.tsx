@@ -2236,7 +2236,7 @@ export default function HomeScreen() {
 
         <Card className="mt-2">
           {/* Hero — dynamic slot. Priority: active habit builder > suggestion > reflection reminder > discovery > wins > greeting (default). Sample habit wired locally for now. */}
-          <div className={`-mx-4 rounded-2xl border-2 border-primary/25 px-4 ${heroHabit.status === "done" || heroHabit.status === "accepting" ? "bg-primary/10" : "bg-primary/[0.05]"} ${heroHabit.status === "hidden" ? "py-7" : "py-5"} ${heroHabit.status === "done" && (doneStep === "celebrate" || doneStep === "feedback") ? "animate-habit-built" : ""} ${(heroHabit.status === "done" && doneStep === "rested") || heroHabit.status === "accepting" ? "animate-habit-glow" : ""} ${heroHabit.status === "active" && heroHabit.holdDay != null ? "animate-habit-shimmer" : ""}`}>
+          <div className={`-mx-4 rounded-2xl border-2 border-primary/25 px-4 ${heroHabit.status === "done" || heroHabit.status === "accepting" ? "bg-primary/10" : "bg-primary/[0.05]"} ${heroHabit.status === "hidden" ? "py-7" : heroHabit.status === "done" && doneStep === "rested" ? "pt-5 pb-3" : "py-5"} ${heroHabit.status === "done" && (doneStep === "celebrate" || doneStep === "feedback") ? "animate-habit-built" : ""} ${(heroHabit.status === "done" && doneStep === "rested") || heroHabit.status === "accepting" ? "animate-habit-glow" : ""} ${heroHabit.status === "active" && heroHabit.holdDay != null ? "animate-habit-shimmer" : ""}`}>
             {heroHabit.status === "suggested" ? (
               <>
                 <p className="-mt-1 text-center text-xs font-semibold uppercase tracking-wide text-primary">Habit Builder</p>
@@ -2447,7 +2447,7 @@ export default function HomeScreen() {
                       <>
                         <p className="mt-1 text-[13px] text-ink/70 animate-fadeIn">Three days of {SAMPLE_HABIT.title.toLowerCase()}, done.</p>
                         {doneStep === "rested" && (
-                          <p className="mt-6 text-[9px] font-medium uppercase tracking-wide text-ink/35 animate-fadeIn">Resets tomorrow</p>
+                          <p className="mt-4 text-[8px] font-medium uppercase tracking-wide text-ink/35 animate-fadeIn">Resets tomorrow</p>
                         )}
                       </>
                     )}
