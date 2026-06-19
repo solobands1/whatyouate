@@ -2291,7 +2291,7 @@ export default function HomeScreen() {
                 <p className="-mt-1 text-center text-xs font-semibold uppercase tracking-wide text-primary">Habit Builder</p>
                 <div className="flex flex-col items-center py-1">
                   <span className="mt-1 flex h-12 w-12 items-center justify-center rounded-full bg-primary/15 text-primary">
-                    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" /></svg>
+                    <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="13" r="8" /><circle cx="11" cy="13" r="3.5" /><line x1="21" y1="3" x2="14" y2="9" /><polyline points="17.2 8.3 14 9 15.2 5.9" /></svg>
                   </span>
                   <p className="mt-2 text-base font-semibold text-ink">Oh no, we missed a day!</p>
                   <p className="mt-1 text-[13px] leading-relaxed text-ink/70">That's okay, sometimes building habits takes time.</p>
