@@ -2290,8 +2290,8 @@ export default function HomeScreen() {
               <div className="text-center">
                 <p className="-mt-1 text-center text-xs font-semibold uppercase tracking-wide text-primary">Habit Builder</p>
                 <div className="flex flex-col items-center py-1">
-                  <span className="mt-1 flex h-12 w-12 items-center justify-center rounded-full bg-primary/15 text-primary">
-                    <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><circle cx="10" cy="13" r="9" /><circle cx="10" cy="13" r="5.7" /><circle cx="10" cy="13" r="2.6" /><circle cx="10" cy="13" r="1" fill="currentColor" stroke="none" /><line x1="22" y1="4" x2="12.5" y2="11" /><polyline points="16.06 10.47 12.5 11 14.06 7.75" /></svg>
+                  <span className="mt-1 flex items-center justify-center text-primary">
+                    <svg viewBox="0 0 24 24" className="h-14 w-14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="10" cy="13" r="9" /><circle cx="10" cy="13" r="5.7" /><circle cx="10" cy="13" r="2.6" /><circle cx="10" cy="13" r="1" fill="currentColor" stroke="none" /><line x1="22" y1="4" x2="12.5" y2="11" /><polyline points="16.06 10.47 12.5 11 14.06 7.75" /></svg>
                   </span>
                   <p className="mt-2 text-base font-semibold text-ink">Oh no, we missed a day!</p>
                   <p className="mt-1 text-[13px] leading-relaxed text-ink/70">That's okay, sometimes building habits takes time.</p>
