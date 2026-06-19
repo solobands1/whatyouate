@@ -2290,8 +2290,8 @@ export default function HomeScreen() {
               <div className="text-center">
                 <p className="-mt-1 text-center text-xs font-semibold uppercase tracking-wide text-primary">Habit Builder</p>
                 <div className="flex flex-col items-center py-1">
-                  <span className="mt-1 flex items-center justify-center text-primary">
-                    <svg viewBox="0 0 24 24" className="h-14 w-14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="10" cy="13" r="9" /><circle cx="10" cy="13" r="5.7" /><circle cx="10" cy="13" r="2.6" /><circle cx="10" cy="13" r="1" fill="currentColor" stroke="none" /><line x1="23" y1="10" x2="13" y2="14" /><polyline points="16.28 14.35 13 14 15.13 11.48" /><line x1="20" y1="11.2" x2="20.7" y2="9.8" /><line x1="21" y1="10.8" x2="21.7" y2="9.4" /><line x1="22" y1="10.4" x2="22.7" y2="9" /><line x1="20" y1="11.2" x2="20.7" y2="12.6" /><line x1="21" y1="10.8" x2="21.7" y2="12.2" /><line x1="22" y1="10.4" x2="22.7" y2="11.8" /></svg>
+                  <span className="mt-1 flex h-12 w-12 items-center justify-center rounded-full bg-primary/15 text-primary">
+                    <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="16" rx="2" /><line x1="3" y1="9.5" x2="21" y2="9.5" /><line x1="8" y1="3" x2="8" y2="6.5" /><line x1="16" y1="3" x2="16" y2="6.5" /><line x1="10.5" y1="15" x2="13.5" y2="15" /></svg>
                   </span>
                   <p className="mt-2 text-base font-semibold text-ink">Oh no, we missed a day!</p>
                   <p className="mt-1 text-[13px] leading-relaxed text-ink/70">That's okay, sometimes building habits takes time.</p>
