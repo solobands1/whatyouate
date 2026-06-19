@@ -152,14 +152,14 @@ const FEELINGS = [
 
 // Nightly reflection — the primary signal feeding the coach + habit triggers
 // (feeling logs are the secondary, in-the-moment signal). All quick taps.
-const REFLECTION_QUESTIONS = [
+const REFLECTION_QUESTIONS: { key: string; label: string; opts: string[]; multi?: boolean }[] = [
   { key: "energy", label: "Overall Energy", opts: ["Drained", "Low", "Okay", "Good", "Great"] },
-  { key: "dips", label: "Energy Dips", opts: ["None", "Morning", "Afternoon", "Evening"] },
-  { key: "sleep", label: "Last Night's Sleep", opts: ["Poorly", "Okay", "Well"] },
-  { key: "mood", label: "Mood", opts: ["Rough", "Okay", "Good"] },
-  { key: "stress", label: "Stress", opts: ["Low", "Some", "High"] },
-  { key: "digestion", label: "Digestion", opts: ["Rough", "Okay", "Good"] },
-] as const;
+  { key: "dips", label: "Energy Dips", opts: ["None", "Morning", "Afternoon", "Evening"], multi: true },
+  { key: "sleep", label: "Last Night's Sleep", opts: ["Poor", "Okay", "Pretty Good", "Good"] },
+  { key: "mood", label: "Mood", opts: ["Rough", "Okay", "Decent", "Good"] },
+  { key: "stress", label: "Stress", opts: ["Low", "Some", "Decent Amount", "High"] },
+  { key: "digestion", label: "Digestion", opts: ["Rough", "Okay", "Decent", "Good"] },
+];
 
 function feelLabel(tag: string): string {
   const f = FEELINGS.find((x) => x.tag === tag);
@@ -415,7 +415,7 @@ export default function HomeScreen() {
   const [logFoodClosing, setLogFoodClosing] = useState(false);
   const [showFeelingModal, setShowFeelingModal] = useState(false);
   const [showReflection, setShowReflection] = useState(false);
-  const [reflection, setReflection] = useState<Record<string, number>>({});
+  const [reflection, setReflection] = useState<Record<string, number | number[]>>({});
   const [reflectionNote, setReflectionNote] = useState("");
   const [reflectionDone, setReflectionDone] = useState(false);
   const [selectedFeelings, setSelectedFeelings] = useState<string[]>([]);
@@ -4131,13 +4131,21 @@ export default function HomeScreen() {
                     <p className="text-[13px] font-medium text-ink/80">{q.label}</p>
                     <div className={`mt-2 grid gap-1.5 ${q.opts.length === 5 ? "grid-cols-5" : q.opts.length === 4 ? "grid-cols-4" : "grid-cols-3"}`}>
                       {q.opts.map((o, i) => {
-                        const sel = reflection[q.key] === i;
+                        const v = reflection[q.key];
+                        const sel = q.multi ? Array.isArray(v) && v.includes(i) : v === i;
                         return (
                           <button
                             key={o}
                             type="button"
                             className={`rounded-lg border px-1 py-2 text-[11px] font-medium leading-tight transition active:scale-[0.96] ${sel ? "border-primary bg-primary/15 text-primary" : "border-primary/20 bg-white text-ink/70"}`}
-                            onClick={() => setReflection((r) => ({ ...r, [q.key]: i }))}
+                            onClick={() => setReflection((r) => {
+                              if (!q.multi) return { ...r, [q.key]: i };
+                              const cur = Array.isArray(r[q.key]) ? (r[q.key] as number[]) : [];
+                              if (i === 0) return { ...r, [q.key]: [0] }; // "None" is exclusive
+                              const base = cur.filter((x) => x !== 0);
+                              const next = base.includes(i) ? base.filter((x) => x !== i) : [...base, i];
+                              return { ...r, [q.key]: next };
+                            })}
                           >
                             {o}
                           </button>
@@ -4152,13 +4160,16 @@ export default function HomeScreen() {
                     type="text"
                     value={reflectionNote}
                     onChange={(e) => setReflectionNote(e.target.value)}
-                    placeholder="A word or two"
+                    placeholder="Ex. I had a long day"
                     className="mt-2 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
                   />
                 </div>
                 <button
                   type="button"
-                  disabled={REFLECTION_QUESTIONS.some((q) => reflection[q.key] == null)}
+                  disabled={REFLECTION_QUESTIONS.some((q) => {
+                    const v = reflection[q.key];
+                    return q.multi ? !(Array.isArray(v) && v.length > 0) : v == null;
+                  })}
                   className="mt-5 w-full rounded-xl bg-primary py-3 text-sm font-semibold text-white transition active:scale-[0.98] disabled:opacity-40"
                   onClick={() => {
                     // No persistence yet — demo only.
