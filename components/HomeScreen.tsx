@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import type { MealLog, UserProfile, WorkoutSession } from "../lib/types";
 import { suppName, suppLabel } from "../lib/types";
 import { matchSupplementNutrients } from "../lib/rda";
-import { celebrateDaily, celebrateBuilt, unlockAudio } from "../lib/celebrate";
+import { celebrateDaily, celebrateBuilt, celebrateAccepted, unlockAudio } from "../lib/celebrate";
 import {
   PROFILE_UPDATED_EVENT,
   MEALS_FAILED_EVENT,
@@ -1245,9 +1245,10 @@ export default function HomeScreen() {
   // today (into the tracker), after 10am it starts tomorrow (the Starts Tomorrow card).
   useEffect(() => {
     if (heroHabit.status !== "accepting") return;
+    celebrateAccepted();
     const t = setTimeout(() => {
       setHeroHabit((h) => ({ ...h, status: new Date().getHours() < 10 ? "active" : "committed" }));
-    }, 1400);
+    }, 2800);
     return () => clearTimeout(t);
   }, [heroHabit.status]);
 
@@ -2235,7 +2236,7 @@ export default function HomeScreen() {
 
         <Card className="mt-2">
           {/* Hero — dynamic slot. Priority: active habit builder > suggestion > reflection reminder > discovery > wins > greeting (default). Sample habit wired locally for now. */}
-          <div className={`-mx-4 rounded-2xl border-2 border-primary/25 px-4 ${heroHabit.status === "done" ? "bg-primary/10" : "bg-primary/[0.05]"} ${heroHabit.status === "hidden" ? "py-7" : "py-5"} ${heroHabit.status === "done" && (doneStep === "celebrate" || doneStep === "feedback") ? "animate-habit-built" : ""} ${(heroHabit.status === "done" && doneStep === "rested") || heroHabit.status === "accepting" ? "animate-habit-glow" : ""} ${heroHabit.status === "active" && heroHabit.holdDay != null ? "animate-habit-shimmer" : ""}`}>
+          <div className={`-mx-4 rounded-2xl border-2 border-primary/25 px-4 ${heroHabit.status === "done" || heroHabit.status === "accepting" ? "bg-primary/10" : "bg-primary/[0.05]"} ${heroHabit.status === "hidden" ? "py-7" : "py-5"} ${heroHabit.status === "done" && (doneStep === "celebrate" || doneStep === "feedback") ? "animate-habit-built" : ""} ${(heroHabit.status === "done" && doneStep === "rested") || heroHabit.status === "accepting" ? "animate-habit-glow" : ""} ${heroHabit.status === "active" && heroHabit.holdDay != null ? "animate-habit-shimmer" : ""}`}>
             {heroHabit.status === "suggested" ? (
               <>
                 <p className="-mt-1 text-center text-xs font-semibold uppercase tracking-wide text-primary">Habit Builder</p>
@@ -2245,7 +2246,7 @@ export default function HomeScreen() {
                 <button
                   type="button"
                   className="mt-4 w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white transition active:scale-[0.98]"
-                  onClick={() => setHeroHabit((h) => ({ ...h, status: "accepting" }))}
+                  onClick={() => { unlockAudio(); setHeroHabit((h) => ({ ...h, status: "accepting" })); }}
                 >
                   Let&apos;s Do It!
                 </button>

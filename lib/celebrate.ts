@@ -70,7 +70,7 @@ function makeReverb(c: AudioContext, seconds = 1.3, decay = 3): ConvolverNode {
   return conv;
 }
 
-function playChime(kind: "daily" | "built") {
+function playChime(kind: "daily" | "built" | "accepted") {
   const c = ctx();
   if (!c) return;
   if (c.state === "suspended") c.resume().catch(() => {});
@@ -87,6 +87,15 @@ function playChime(kind: "daily" | "built") {
   const wet = c.createGain();
   wet.gain.value = 0.32;
   bus.connect(makeReverb(c)).connect(wet).connect(c.destination);
+
+  if (kind === "accepted") {
+    // Warm confirmation — a rising fourth that resolves to the tonic over a low
+    // root, so it reads as "locked in" rather than a full celebration.
+    voice(c, bus, 130.81, t, 1.9, 0.09, 0.025);        // C3 — body
+    voice(c, bus, 392.0, t, 1.5, 0.12, 0.03);          // G4
+    voice(c, bus, 523.25, t + 0.14, 2.1, 0.12, 0.04);  // C5 — resolves, "locked in"
+    return;
+  }
 
   // Lower, warm, grounded. Notes are rolled tightly and sustain well past their
   // onset so they overlap and bloom into one held chord rather than a sequence.
@@ -115,6 +124,11 @@ function playChime(kind: "daily" | "built") {
 function nativeHaptics(): { impact?: (o: { style: string }) => void; notification?: (o: { type: string }) => void } | null {
   if (typeof window === "undefined") return null;
   return (window as unknown as { Capacitor?: { Plugins?: { Haptics?: never } } }).Capacitor?.Plugins?.Haptics ?? null;
+}
+
+export function celebrateAccepted() {
+  try { nativeHaptics()?.impact?.({ style: "MEDIUM" }); } catch { /* no-op */ }
+  playChime("accepted");
 }
 
 export function celebrateDaily() {
