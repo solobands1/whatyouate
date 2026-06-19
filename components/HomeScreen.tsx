@@ -2393,12 +2393,13 @@ export default function HomeScreen() {
             ) : heroHabit.status === "dayComplete" ? (
               (() => {
                 const completedDays = heroHabit.days.filter((d) => d.every(Boolean)).length;
-                const lines = [
-                  "Day one down, the hardest part is behind you!",
-                  "Two days in, you're really doing this!",
-                  "Three days straight, this is sticking!",
-                ];
-                const line = lines[completedDays - 1] ?? "That's today handled, see you tomorrow!";
+                const total = activeTemplate.durationDays;
+                const line =
+                  completedDays === 1
+                    ? "Day one down, the hardest part is behind you!"
+                    : completedDays === total - 1
+                    ? "Almost there, one more day to go!"
+                    : `${completedDays} days in, you're really doing this!`;
                 return (
                   // Tapping the body simulates the next day (demo only; real version rolls over at midnight).
                   <div
@@ -2439,7 +2440,7 @@ export default function HomeScreen() {
                       <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 6" /></svg>
                     </span>
                     <p className="mt-3 text-base font-semibold text-ink">Done For Today</p>
-                    <p className="mt-1 text-[13px] text-ink/70">Three days straight, this is sticking!</p>
+                    <p className="mt-1 text-[13px] text-ink/70">{activeTemplate.durationDays} days straight, this is sticking!</p>
                   </div>
                 </div>
               ) : doneStep === "started" ? (
