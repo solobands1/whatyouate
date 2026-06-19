@@ -1423,9 +1423,9 @@ export default function HomeScreen() {
   }, [user, reload]);
 
   useEffect(() => {
-    document.body.style.overflow = (showQuickAdd || showLogFood) ? "hidden" : "";
+    document.body.style.overflow = (showQuickAdd || showLogFood || showReflection || showFeelingModal) ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
-  }, [showQuickAdd, showLogFood]);
+  }, [showQuickAdd, showLogFood, showReflection, showFeelingModal]);
 
   // When a meal is still processing, the "Analyzing food…" label is time-gated
   // at render time (< 90s shows spinner text, >= 90s shows "Analysis failed").
@@ -4160,7 +4160,7 @@ export default function HomeScreen() {
                     type="text"
                     value={reflectionNote}
                     onChange={(e) => setReflectionNote(e.target.value)}
-                    placeholder="Ex. I had a long day"
+                    placeholder="e.g. I had a long day"
                     className="mt-2 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
                   />
                 </div>
