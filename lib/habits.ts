@@ -134,10 +134,10 @@ export const HABIT_TEMPLATES: HabitTemplate[] = [
 
   // ---------- produce (one added veg, stacked on dinner) ----------
   {
-    id: "veg-3", kind: "standard", title: "Add a Veg", noun: "vegetables", category: "produce",
+    id: "veg-3", kind: "standard", title: "Add a Vegetable", noun: "vegetables", category: "produce",
     ask: "Add a vegetable to your dinner each day for 3 days. A side of whatever's easy, frozen counts.",
-    whyTemplate: "Your produce-driven nutrients have been running low, which usually means light vegetables. One veg at dinner is the simplest fix.",
-    durationDays: 3, checkpoints: ["Veg At Dinner"],
+    whyTemplate: "Your produce-driven nutrients have been running low, which usually means light vegetables. One vegetable at dinner is the simplest fix.",
+    durationDays: 3, checkpoints: ["Vegetable At Dinner"],
     triggers: [{ signal: "micronutrient_pct", nutrient: "vitamin c", op: "<", value: 0.7, ofTarget: true, windowDays: 7, minDataDays: 4 }],
     friction: "medium", priorityWeight: 5, cooldownDays: 21, maxExtensions: 2,
   },
@@ -160,7 +160,7 @@ export const HABIT_TEMPLATES: HabitTemplate[] = [
     friction: "high", priorityWeight: 5, cooldownDays: 21, maxExtensions: 2,
   },
   {
-    id: "omega3-3", kind: "standard", title: "Omega-3 Habit", noun: "omega-3", category: "micronutrient",
+    id: "omega3-3", kind: "standard", title: "Omega-3", noun: "omega-3", category: "micronutrient",
     ask: "Add an omega-3 source each day for 3 days. Walnuts, chia, flax, or a portion of fish.",
     whyTemplate: "Your omega-3 intake has been low this week. It supports mood, focus, and recovery, and a small daily source covers it.",
     durationDays: 3, checkpoints: ["Omega-3 Food"],
@@ -187,7 +187,7 @@ export const HABIT_TEMPLATES: HabitTemplate[] = [
 //
 //  hydration:      a glass before your morning coffee; water before each meal
 //  protein:        protein-forward breakfast; a protein with your afternoon coffee
-//  produce:        fruit with breakfast; a second veg color at dinner; a daily salad
+//  produce:        fruit with breakfast; a second vegetable at dinner; a daily salad
 //  micronutrient:  vitamin D (sun/supplement), calcium, potassium, zinc, folate, B12, fiber
 //  movement:       a post-dinner walk; take the stairs; a daily stretch; stand every hour
 //  sleep:          screens off 30m before bed; a consistent wake time; no caffeine after 2pm

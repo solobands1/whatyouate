@@ -150,6 +150,15 @@ const FEELINGS = [
   { tag: "headache", label: "Headache" },
 ] as const;
 
+// Nightly reflection — the primary signal feeding the coach + habit triggers
+// (feeling logs are the secondary, in-the-moment signal). All quick taps.
+const REFLECTION_QUESTIONS = [
+  { key: "energy", label: "Overall energy today", opts: ["Drained", "Low", "Okay", "Good", "Great"] },
+  { key: "crash", label: "Afternoon crash?", opts: ["No", "A Little", "Yes"] },
+  { key: "sleep", label: "Last night's sleep", opts: ["Poorly", "Okay", "Well"] },
+  { key: "mood", label: "Mood today", opts: ["Rough", "Okay", "Good"] },
+] as const;
+
 function feelLabel(tag: string): string {
   const f = FEELINGS.find((x) => x.tag === tag);
   if (f) return f.label;
@@ -403,6 +412,10 @@ export default function HomeScreen() {
   const [showLogFood, setShowLogFood] = useState(false);
   const [logFoodClosing, setLogFoodClosing] = useState(false);
   const [showFeelingModal, setShowFeelingModal] = useState(false);
+  const [showReflection, setShowReflection] = useState(false);
+  const [reflection, setReflection] = useState<Record<string, number>>({});
+  const [reflectionNote, setReflectionNote] = useState("");
+  const [reflectionDone, setReflectionDone] = useState(false);
   const [selectedFeelings, setSelectedFeelings] = useState<string[]>([]);
   const [heroHabit, setHeroHabit] = useState<{ status: "suggested" | "accepting" | "committed" | "active" | "dayComplete" | "done" | "missed" | "hidden"; days: boolean[][]; holdDay?: number | null }>(
     { status: "suggested", days: freshDays(FIRST_TEMPLATE) }
@@ -2578,6 +2591,23 @@ export default function HomeScreen() {
           )}
         </Card>
 
+        {/* Reflection entry point. Demo: always shown. Real version: appears in the
+            evening (after the night push / after ~6pm) and persists until done. */}
+        <button
+          type="button"
+          onClick={() => setShowReflection(true)}
+          className="mt-2 flex w-full items-center gap-3 rounded-2xl border border-primary/20 bg-primary/[0.05] px-4 py-3 text-left transition active:scale-[0.99]"
+        >
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z" /></svg>
+          </span>
+          <span className="flex-1">
+            <span className="block text-sm font-semibold text-ink">How was your day?</span>
+            <span className="block text-[12px] text-ink/55">Take 20 seconds to reflect</span>
+          </span>
+          <svg viewBox="0 0 24 24" className="h-4 w-4 text-ink/30" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
+        </button>
+
         {workout.activeWorkout && (
           <p className="mt-3 text-center text-[11px] text-muted/60">Workout in progress</p>
         )}
@@ -4067,6 +4097,77 @@ export default function HomeScreen() {
             >
               {selectedFeelings.length > 0 ? `Log ${selectedFeelings.length}` : "Log"}
             </button>
+          </div>
+        </div>
+      )}
+
+      {showReflection && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5"
+          onClick={() => setShowReflection(false)}
+        >
+          <div
+            className="max-h-[90vh] w-full max-w-sm overflow-y-auto rounded-2xl bg-white p-5 shadow-xl animate-pill-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {reflectionDone ? (
+              <div className="py-8 text-center">
+                <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white animate-habit-pop">
+                  <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 6" /></svg>
+                </span>
+                <p className="mt-3 text-base font-semibold text-ink">Logged.</p>
+                <p className="mt-1 text-[13px] leading-relaxed text-ink/65">This is how the coach learns your patterns.</p>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-base font-semibold text-ink">How Was Today?</h2>
+                  <button type="button" className="text-xs font-semibold text-ink/45 transition active:opacity-60" onClick={() => setShowReflection(false)}>Complete later</button>
+                </div>
+                {REFLECTION_QUESTIONS.map((q) => (
+                  <div key={q.key} className="mt-4">
+                    <p className="text-[13px] font-medium text-ink/80">{q.label}</p>
+                    <div className={`mt-2 grid gap-1.5 ${q.opts.length === 5 ? "grid-cols-5" : "grid-cols-3"}`}>
+                      {q.opts.map((o, i) => {
+                        const sel = reflection[q.key] === i;
+                        return (
+                          <button
+                            key={o}
+                            type="button"
+                            className={`rounded-lg border px-1 py-2 text-[11px] font-medium leading-tight transition active:scale-[0.96] ${sel ? "border-primary bg-primary/15 text-primary" : "border-primary/20 bg-white text-ink/70"}`}
+                            onClick={() => setReflection((r) => ({ ...r, [q.key]: i }))}
+                          >
+                            {o}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+                <div className="mt-4">
+                  <p className="text-[13px] font-medium text-ink/80">Anything stand out? <span className="font-normal text-ink/40">(optional)</span></p>
+                  <input
+                    type="text"
+                    value={reflectionNote}
+                    onChange={(e) => setReflectionNote(e.target.value)}
+                    placeholder="A word or two"
+                    className="mt-2 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                  />
+                </div>
+                <button
+                  type="button"
+                  disabled={REFLECTION_QUESTIONS.some((q) => reflection[q.key] == null)}
+                  className="mt-5 w-full rounded-xl bg-primary py-3 text-sm font-semibold text-white transition active:scale-[0.98] disabled:opacity-40"
+                  onClick={() => {
+                    // No persistence yet — demo only.
+                    setReflectionDone(true);
+                    setTimeout(() => { setShowReflection(false); setReflectionDone(false); setReflection({}); setReflectionNote(""); }, 2400);
+                  }}
+                >
+                  Done
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}
