@@ -169,7 +169,7 @@ function freshDays(t: HabitTemplate): boolean[][] {
 // Demo only: fill the {slots} in a whyTemplate with sample values. Real values
 // come from the digest context once wired.
 function fillWhy(t: HabitTemplate): string {
-  const demo: Record<string, string> = { energyLowCount: "3", proteinShortDays: "4", sluggishCount: "3" };
+  const demo: Record<string, string> = { energyLowCount: "3", proteinShortDays: "4" };
   return t.whyTemplate.replace(/\{(\w+)\}/g, (_m, k: string) => demo[k] ?? "several");
 }
 

@@ -155,7 +155,7 @@ export const HABIT_TEMPLATES: HabitTemplate[] = [
 
   // ---------- sleep (HealthKit-gated) ----------
   {
-    id: "sleep-steady-5", kind: "standard", title: "Steady Sleep", noun: "sleep", category: "sleep",
+    id: "sleep-steady-5", kind: "standard", title: "Steady Sleep", noun: "steady sleep", category: "sleep",
     ask: "Be in bed by the same time each night for 5 days.",
     whyTemplate: "Your sleep has been on the short side and you've logged feeling tired {energyLowCount} times. A consistent bedtime is the highest-leverage thing for energy.",
     durationDays: 5, checkpoints: ["In bed on time"], requiresHealthKit: true,
