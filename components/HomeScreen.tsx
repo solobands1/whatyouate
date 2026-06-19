@@ -398,7 +398,7 @@ export default function HomeScreen() {
   const [logFoodClosing, setLogFoodClosing] = useState(false);
   const [showFeelingModal, setShowFeelingModal] = useState(false);
   const [selectedFeelings, setSelectedFeelings] = useState<string[]>([]);
-  const [heroHabit, setHeroHabit] = useState<{ status: "suggested" | "committed" | "active" | "dayComplete" | "done" | "hidden"; days: boolean[][]; holdDay?: number | null }>(
+  const [heroHabit, setHeroHabit] = useState<{ status: "suggested" | "accepting" | "committed" | "active" | "dayComplete" | "done" | "hidden"; days: boolean[][]; holdDay?: number | null }>(
     { status: "suggested", days: Array.from({ length: SAMPLE_HABIT.durationDays }, () => Array(SAMPLE_HABIT.slots.length).fill(false)) }
   );
   const [doneStep, setDoneStep] = useState<"dayDone" | "started" | "celebrate" | "feedback" | "rested">("dayDone");
@@ -1240,6 +1240,16 @@ export default function HomeScreen() {
     else if (doneStep === "celebrate") t = setTimeout(() => setDoneStep("feedback"), 2600);
     return () => { if (t) clearTimeout(t); };
   }, [heroHabit.status, doneStep]);
+
+  // Brief "accepted" flourish after committing, then route: before 10am it starts
+  // today (into the tracker), after 10am it starts tomorrow (the Starts Tomorrow card).
+  useEffect(() => {
+    if (heroHabit.status !== "accepting") return;
+    const t = setTimeout(() => {
+      setHeroHabit((h) => ({ ...h, status: new Date().getHours() < 10 ? "active" : "committed" }));
+    }, 1400);
+    return () => clearTimeout(t);
+  }, [heroHabit.status]);
 
   // Haptic + chime on the two celebration beats. (Haptics fire only in the app.)
   // Daily: when the "Done For Today" confirmation appears for a mid-habit day.
@@ -2225,7 +2235,7 @@ export default function HomeScreen() {
 
         <Card className="mt-2">
           {/* Hero — dynamic slot. Priority: active habit builder > suggestion > reflection reminder > discovery > wins > greeting (default). Sample habit wired locally for now. */}
-          <div className={`-mx-4 rounded-2xl border-2 border-primary/25 px-4 ${heroHabit.status === "done" ? "bg-primary/10" : "bg-primary/[0.05]"} ${heroHabit.status === "hidden" ? "py-7" : "py-5"} ${heroHabit.status === "done" && (doneStep === "celebrate" || doneStep === "feedback") ? "animate-habit-built" : ""} ${heroHabit.status === "done" && doneStep === "rested" ? "animate-habit-glow" : ""} ${heroHabit.status === "active" && heroHabit.holdDay != null ? "animate-habit-shimmer" : ""}`}>
+          <div className={`-mx-4 rounded-2xl border-2 border-primary/25 px-4 ${heroHabit.status === "done" ? "bg-primary/10" : "bg-primary/[0.05]"} ${heroHabit.status === "hidden" ? "py-7" : "py-5"} ${heroHabit.status === "done" && (doneStep === "celebrate" || doneStep === "feedback") ? "animate-habit-built" : ""} ${(heroHabit.status === "done" && doneStep === "rested") || heroHabit.status === "accepting" ? "animate-habit-glow" : ""} ${heroHabit.status === "active" && heroHabit.holdDay != null ? "animate-habit-shimmer" : ""}`}>
             {heroHabit.status === "suggested" ? (
               <>
                 <p className="-mt-1 text-center text-xs font-semibold uppercase tracking-wide text-primary">Habit Builder</p>
@@ -2235,7 +2245,7 @@ export default function HomeScreen() {
                 <button
                   type="button"
                   className="mt-4 w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white transition active:scale-[0.98]"
-                  onClick={() => setHeroHabit((h) => ({ ...h, status: new Date().getHours() < 10 ? "active" : "committed" }))}
+                  onClick={() => setHeroHabit((h) => ({ ...h, status: "accepting" }))}
                 >
                   Let&apos;s Do It!
                 </button>
@@ -2245,6 +2255,17 @@ export default function HomeScreen() {
                   <button type="button" className="text-xs font-medium text-ink/50 transition active:opacity-60" onClick={() => setHeroHabit((h) => ({ ...h, status: "hidden" }))}>No Thanks</button>
                 </div>
               </>
+            ) : heroHabit.status === "accepting" ? (
+              <div className="text-center">
+                <p className="-mt-1 text-center text-xs font-semibold uppercase tracking-wide text-primary">Habit Builder</p>
+                <div className="flex flex-col items-center py-2">
+                  <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white animate-habit-pop">
+                    <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 6" /></svg>
+                  </span>
+                  <p className="mt-3 text-base font-semibold text-ink">You&apos;re In!</p>
+                  <p className="mt-1 text-[13px] text-ink/70">{SAMPLE_HABIT.title}</p>
+                </div>
+              </div>
             ) : heroHabit.status === "committed" ? (
               // Reached only when accepted after 10am (before 10am it auto-starts today).
               // Tap anywhere to advance into the tracker — demo/testing only, simulating
@@ -2257,11 +2278,11 @@ export default function HomeScreen() {
               >
                 <p className="-mt-1 text-center text-xs font-semibold uppercase tracking-wide text-primary">Habit Builder</p>
                 <div className="flex flex-col items-center py-1">
-                  <span className="mt-1.5 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white animate-habit-pop">
-                    <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 6" /></svg>
+                  <span className="mt-1.5 flex h-12 w-12 items-center justify-center rounded-full bg-primary/15 text-primary">
+                    <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7.5V12l3 1.5" /></svg>
                   </span>
-                  <p className="mt-1.5 text-base font-semibold text-ink">You&apos;re In!</p>
-                  <p className="mt-1 text-[13px] leading-relaxed text-ink/70">{SAMPLE_HABIT.title} starts tomorrow. We&apos;ll nudge you in the morning to begin.</p>
+                  <p className="mt-1.5 text-base font-semibold text-ink">Starts Tomorrow</p>
+                  <p className="mt-1 text-[13px] leading-relaxed text-ink/70">{SAMPLE_HABIT.title}. We&apos;ll nudge you in the morning to begin.</p>
                 </div>
               </div>
             ) : heroHabit.status === "active" ? (
