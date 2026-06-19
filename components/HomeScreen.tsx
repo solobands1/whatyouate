@@ -416,6 +416,27 @@ export default function HomeScreen() {
     setActiveTemplate(next);
     setHeroHabit({ status: "suggested", days: freshDays(next) });
   };
+  // Complete checkpoint `s` of the current day. If it finishes the day, hold on the
+  // all-blue day for a beat, then reveal the confirmation. Shared by the checkpoint
+  // buttons and the auto-complete-on-log for logging habits.
+  const completeCheckpoint = (s: number) => {
+    unlockAudio();
+    setHeroHabit((h) => {
+      const cur = h.days.findIndex((d) => !d.every(Boolean));
+      if (cur === -1) return h;
+      const days = h.days.map((day, di) => (di === cur ? day.map((v, si) => (si === s ? !v : v)) : day));
+      const curDone = days[cur].every(Boolean);
+      if (curDone) {
+        setTimeout(() => setHeroHabit((h2) => {
+          if (!h2.days[cur]?.every(Boolean)) return h2;
+          const allDone = h2.days.every((d) => d.every(Boolean));
+          return { ...h2, status: allDone ? "done" : "dayComplete", holdDay: null };
+        }), 1450);
+        return { ...h, days, status: "active", holdDay: cur };
+      }
+      return { ...h, days, status: "active", holdDay: null };
+    });
+  };
   const [doneStep, setDoneStep] = useState<"dayDone" | "started" | "celebrate" | "feedback" | "rested">("dayDone");
   const [ratingPicked, setRatingPicked] = useState<string | null>(null);
   const [quickAddItems, setQuickAddItems] = useState<QuickAddItem[]>([]);
@@ -1266,6 +1287,20 @@ export default function HomeScreen() {
     }, 2800);
     return () => clearTimeout(t);
   }, [heroHabit.status]);
+
+  // Logging habits (Find Your Footing / Pick Back Up) auto-tick the day when the
+  // user logs anything (a meal or feeling), then the confirmation appears on its
+  // own a beat later — no button to press.
+  const prevLogCountRef = useRef<number | null>(null);
+  useEffect(() => {
+    const count = (ctxMeals?.length ?? 0) + (ctxFeelLogs?.length ?? 0);
+    if (prevLogCountRef.current === null) { prevLogCountRef.current = count; return; }
+    if (count > prevLogCountRef.current && activeTemplate.autoCompleteOnLog && heroHabit.status === "active" && heroHabit.holdDay == null) {
+      completeCheckpoint(0);
+    }
+    prevLogCountRef.current = count;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ctxMeals?.length, ctxFeelLogs?.length, activeTemplate, heroHabit.status, heroHabit.holdDay]);
 
   // Haptic + chime on the two celebration beats. (Haptics fire only in the app.)
   // Daily: when the "Done For Today" confirmation appears for a mid-habit day.
@@ -2347,23 +2382,7 @@ export default function HomeScreen() {
                           <button
                             key={slot}
                             type="button"
-                            onClick={() => { unlockAudio(); setHeroHabit((h) => {
-                              const cur = h.days.findIndex((d) => !d.every(Boolean));
-                              const days = h.days.map((day, di) => di === cur ? day.map((v, si) => si === s ? !v : v) : day);
-                              const curDone = days[cur].every(Boolean);
-                              // If this tap finished the day, hold on the now-all-blue day for a
-                              // beat (holdDay) before the confirmation appears — so the press
-                              // feels satisfying first, then the moment.
-                              if (curDone) {
-                                setTimeout(() => setHeroHabit((h2) => {
-                                  if (!h2.days[cur]?.every(Boolean)) return h2;
-                                  const allDone = h2.days.every((d) => d.every(Boolean));
-                                  return { ...h2, status: allDone ? "done" : "dayComplete", holdDay: null };
-                                }), 1450);
-                                return { ...h, days, status: "active", holdDay: cur };
-                              }
-                              return { ...h, days, status: "active", holdDay: null };
-                            }); }}
+                            onClick={() => completeCheckpoint(s)}
                             className={`flex h-11 flex-1 items-center justify-center gap-1 rounded-xl text-[11px] font-semibold transition active:scale-[0.97] ${
                               checked
                                 ? "bg-primary text-white"
