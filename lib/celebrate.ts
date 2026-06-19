@@ -92,8 +92,8 @@ function playChime(kind: "daily" | "built" | "accepted") {
     // Warm confirmation — a rising fourth that resolves to the tonic over a low
     // root, so it reads as "locked in" rather than a full celebration.
     voice(c, bus, 130.81, t, 1.9, 0.09, 0.025);        // C3 — body
-    voice(c, bus, 392.0, t, 1.5, 0.12, 0.03);          // G4
-    voice(c, bus, 523.25, t + 0.14, 2.1, 0.12, 0.04);  // C5 — resolves, "locked in"
+    voice(c, bus, 783.99, t, 1.5, 0.11, 0.03);         // G5
+    voice(c, bus, 1046.5, t + 0.14, 2.1, 0.11, 0.04);  // C6 — resolves, "locked in"
     return;
   }
 
