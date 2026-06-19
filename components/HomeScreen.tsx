@@ -2444,7 +2444,12 @@ export default function HomeScreen() {
                         <p className="mt-2 text-[12px] text-ink/60">Do you think you'll keep this up?</p>
                       </div>
                     ) : (
-                      <p className="mt-1 text-[13px] text-ink/70 animate-fadeIn">Three days of {SAMPLE_HABIT.title.toLowerCase()}, done.</p>
+                      <>
+                        <p className="mt-1 text-[13px] text-ink/70 animate-fadeIn">Three days of {SAMPLE_HABIT.title.toLowerCase()}, done.</p>
+                        {doneStep === "rested" && (
+                          <p className="mt-3 text-[11px] leading-relaxed text-ink/50 animate-fadeIn">You did it. We&apos;ll line up what&apos;s next tomorrow.</p>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
