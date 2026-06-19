@@ -13,6 +13,10 @@ export type HabitCategory =
 // standard = the data-driven ones.
 export type HabitKind = "onboarding" | "reengagement" | "standard";
 
+// Effort/shopping required. Used to ramp difficulty — new users get low-friction
+// wins first; shopping-dependent habits rank lower until there's momentum.
+export type HabitFriction = "low" | "medium" | "high";
+
 // Signals computed from the user's logged data. Reliable: water/protein/feelings/
 // micros. HealthKit-only: steps/sleep. (Meal timing is intentionally absent — it's
 // unreliable due to backfilled logs; only photo-log timestamps could be trusted.)
@@ -39,10 +43,12 @@ export interface HabitTemplate {
   id: string;
   kind: HabitKind;
   title: string;
-  noun: string;                  // copy: "Three days of {noun}, done."
+  noun: string;                  // copy: "3 days of {noun}, done."
   category: HabitCategory;
 
-  // presentation (what the card already renders)
+  // presentation (what the card renders). The ask is the *frame*; at surface time
+  // the AI tailors the specifics (food examples, the cue to stack on, add vs swap)
+  // to the user's diet, goal, and what they actually log.
   ask: string;
   whyTemplate: string;           // {slots} filled from the user's own data at surface time
   durationDays: 2 | 3 | 5;
@@ -52,7 +58,8 @@ export interface HabitTemplate {
   // eligibility / constraints (deterministic gate)
   triggers: HabitCondition[];    // ALL must hold to be eligible; empty = state-driven (logging habits)
   requiresHealthKit?: boolean;   // gate to HealthKit users (steps/sleep signals)
-  priorityWeight: number;        // soft ranking hint (foundational > nice-to-have); future AI sees it too
+  friction: HabitFriction;       // easy wins first; shopping-dependent ranks lower
+  priorityWeight: number;        // soft importance hint; future AI sees it too
   cooldownDays: number;          // after complete/decline/shelve, wait before re-surfacing
 
   // miss handling + progression
@@ -60,6 +67,14 @@ export interface HabitTemplate {
   deepensTo?: string;            // id of a longer/harder variant for progression
 }
 
+// Design principles for a habit people actually do (not "pfft I already do that"):
+//  - Additive or a swap, never general — "an EXTRA protein", not "have protein".
+//  - Habit-stacked — anchor to an existing cue ("with each meal", "after lunch").
+//  - Specific & low-friction — one concrete action, doable with what's on hand.
+//  - 3-day entry, 5-day deepen (deepensTo) earned by recurrence.
+//  - friction tags easy wins so new users start frictionless.
+// The "starts tomorrow" accept default doubles as a prep day for anything that
+// needs a small grocery grab.
 export const HABIT_TEMPLATES: HabitTemplate[] = [
   // ---------- logging (cold start + re-engagement) ----------
   {
@@ -68,7 +83,7 @@ export const HABIT_TEMPLATES: HabitTemplate[] = [
     ask: "Log at least one thing each day for 5 days. A meal, a feeling, a glass of water, anything counts.",
     whyTemplate: "Everything here grows from what you log. Let's build that habit first, then the app can actually start helping.",
     durationDays: 5, checkpoints: ["Log something"], autoCompleteOnLog: true,
-    triggers: [], priorityWeight: 100, cooldownDays: 30, maxExtensions: 3,
+    triggers: [], friction: "low", priorityWeight: 100, cooldownDays: 30, maxExtensions: 3,
   },
   {
     id: "logging-comeback", kind: "reengagement", title: "Pick Back Up",
@@ -76,105 +91,109 @@ export const HABIT_TEMPLATES: HabitTemplate[] = [
     ask: "Log at least one thing each day for 2 days to get back in the rhythm.",
     whyTemplate: "Life happens and you fell off, that's normal. Two easy days to find the thread again.",
     durationDays: 2, checkpoints: ["Log something"], autoCompleteOnLog: true,
-    triggers: [], priorityWeight: 100, cooldownDays: 7, maxExtensions: 3,
+    triggers: [], friction: "low", priorityWeight: 100, cooldownDays: 7, maxExtensions: 3,
   },
 
-  // ---------- hydration (reference template, with 3 -> 5 progression) ----------
+  // ---------- hydration (reference, stacked on meals, 3 -> 5 progression) ----------
   {
     id: "hydration-3", kind: "standard", title: "Hydration", noun: "hydration", category: "hydration",
-    ask: "Drink 3 extra glasses of water every day for 3 days: one in the morning, afternoon, and evening.",
+    ask: "Have an extra glass of water with each meal for 3 days. One with breakfast, one with lunch, one with dinner.",
     whyTemplate: "You've reported low energy {energyLowCount} times this week. Mild dehydration is an easy-to-miss cause of afternoon fatigue, and one of the simplest things to test.",
-    durationDays: 3, checkpoints: ["Morning", "Afternoon", "Evening"],
+    durationDays: 3, checkpoints: ["With breakfast", "With lunch", "With dinner"],
     triggers: [{ signal: "water_pct", op: "<", value: 0.7, ofTarget: true, windowDays: 5, minDataDays: 4 }],
-    priorityWeight: 8, cooldownDays: 14, maxExtensions: 2, deepensTo: "hydration-5",
+    friction: "low", priorityWeight: 8, cooldownDays: 14, maxExtensions: 2, deepensTo: "hydration-5",
   },
   {
     id: "hydration-5", kind: "standard", title: "Hydration", noun: "hydration", category: "hydration",
-    ask: "Drink 3 extra glasses of water every day for 5 days: morning, afternoon, and evening.",
-    whyTemplate: "You did the 3-day version and water's slipping again. Let's lock it in over 5 days this time so it really sticks.",
-    durationDays: 5, checkpoints: ["Morning", "Afternoon", "Evening"],
+    ask: "Keep the extra glass of water with each meal going for 5 days now that you've got the hang of it.",
+    whyTemplate: "You did the 3-day version and water's slipping again. Lock it in over 5 days this time so it really sticks.",
+    durationDays: 5, checkpoints: ["With breakfast", "With lunch", "With dinner"],
     triggers: [{ signal: "water_pct", op: "<", value: 0.7, ofTarget: true, windowDays: 5, minDataDays: 4 }],
-    priorityWeight: 8, cooldownDays: 21, maxExtensions: 2,
+    friction: "low", priorityWeight: 8, cooldownDays: 21, maxExtensions: 2,
   },
 
-  // ---------- protein ----------
+  // ---------- protein (an EXTRA, not "have protein"; stacked on two meals) ----------
   {
-    id: "protein-5", kind: "standard", title: "Protein Anchor", noun: "protein", category: "protein",
-    ask: "Anchor each meal with a protein source for 5 days.",
-    whyTemplate: "You've come up short on protein {proteinShortDays} of the last 7 days. Protein steadies energy and curbs cravings, so it's a high-leverage place to start.",
-    durationDays: 5, checkpoints: ["Breakfast", "Lunch", "Dinner"],
+    id: "protein-3", kind: "standard", title: "Protein Boost", noun: "extra protein", category: "protein",
+    ask: "Add an extra protein to lunch and dinner for 3 days. Extra meat or beans on the plate, an egg, or a scoop of Greek yogurt.",
+    whyTemplate: "You've come up short on protein {proteinShortDays} of the last 7 days. Protein steadies energy and curbs cravings, so a little extra at two meals goes a long way.",
+    durationDays: 3, checkpoints: ["Extra at lunch", "Extra at dinner"],
     triggers: [{ signal: "protein_pct", op: "<", value: 0.8, ofTarget: true, windowDays: 7, minDataDays: 4 }],
-    priorityWeight: 7, cooldownDays: 14, maxExtensions: 2,
+    friction: "medium", priorityWeight: 7, cooldownDays: 14, maxExtensions: 2,
   },
 
-  // ---------- movement (HealthKit-gated) ----------
+  // ---------- movement (stacked on a meal; HealthKit-gated) ----------
   {
     id: "walk-10-3", kind: "standard", title: "Daily Walk", noun: "walks", category: "movement",
-    ask: "Take one 10-minute walk each day for 3 days.",
+    ask: "Take a 10-minute walk after one meal each day for 3 days. After lunch or dinner works best.",
     whyTemplate: "Your activity's been light and you've logged feeling sluggish {energyLowCount} times this week. A short daily walk is the smallest reliable lever for energy.",
     durationDays: 3, checkpoints: ["10-min walk"], requiresHealthKit: true,
     triggers: [{ signal: "steps_avg", op: "<", value: 4000, windowDays: 7, minDataDays: 4 }],
-    priorityWeight: 6, cooldownDays: 21, maxExtensions: 2,
+    friction: "low", priorityWeight: 6, cooldownDays: 21, maxExtensions: 2,
   },
 
-  // ---------- micronutrients ----------
+  // ---------- produce (one added veg, stacked on dinner) ----------
   {
-    id: "magnesium-5", kind: "standard", title: "Magnesium Boost", noun: "magnesium", category: "micronutrient",
-    ask: "Add one magnesium-rich food each day for 5 days: leafy greens, nuts, seeds, or dark chocolate.",
-    whyTemplate: "Your magnesium has been low this week. It's involved in sleep quality, muscle recovery, and energy, and it's easy to top up through food.",
-    durationDays: 5, checkpoints: ["Magnesium-rich food"],
-    triggers: [{ signal: "micronutrient_pct", nutrient: "magnesium", op: "<", value: 0.7, ofTarget: true, windowDays: 7, minDataDays: 4 }],
-    priorityWeight: 5, cooldownDays: 21, maxExtensions: 2,
-  },
-  {
-    id: "iron-5", kind: "standard", title: "Iron Focus", noun: "iron", category: "micronutrient",
-    ask: "Include an iron-rich food each day for 5 days: red meat, lentils, spinach, or fortified cereal.",
-    whyTemplate: "Your iron has been running low, which can quietly drag down energy and focus. A daily iron-rich food is an easy correction.",
-    durationDays: 5, checkpoints: ["Iron-rich food"],
-    triggers: [{ signal: "micronutrient_pct", nutrient: "iron", op: "<", value: 0.7, ofTarget: true, windowDays: 7, minDataDays: 4 }],
-    priorityWeight: 5, cooldownDays: 21, maxExtensions: 2,
-  },
-  {
-    id: "omega3-5", kind: "standard", title: "Omega-3 Habit", noun: "omega-3", category: "micronutrient",
-    ask: "Add an omega-3 source each day for 5 days: fatty fish, walnuts, chia, or flax.",
-    whyTemplate: "Your omega-3 intake has been low this week. It supports mood, focus, and recovery, and a small daily source covers it.",
-    durationDays: 5, checkpoints: ["Omega-3 source"],
-    triggers: [{ signal: "micronutrient_pct", nutrient: "omega-3", op: "<", value: 0.7, ofTarget: true, windowDays: 7, minDataDays: 4 }],
-    priorityWeight: 4, cooldownDays: 21, maxExtensions: 2,
-  },
-
-  // ---------- produce (proxy: a vitamin-C low usually means light produce) ----------
-  {
-    id: "veg-5", kind: "standard", title: "Eat the Rainbow", noun: "vegetables", category: "produce",
-    ask: "Add a serving of vegetables to lunch and dinner each day for 5 days.",
-    whyTemplate: "Your produce-driven nutrients have been running low together, which usually means light vegetables. Veg at two meals a day is the simplest fix.",
-    durationDays: 5, checkpoints: ["Lunch veg", "Dinner veg"],
+    id: "veg-3", kind: "standard", title: "Add a Veg", noun: "vegetables", category: "produce",
+    ask: "Add a vegetable to your dinner each day for 3 days. A side of whatever's easy, frozen counts.",
+    whyTemplate: "Your produce-driven nutrients have been running low, which usually means light vegetables. One veg at dinner is the simplest fix.",
+    durationDays: 3, checkpoints: ["Veg at dinner"],
     triggers: [{ signal: "micronutrient_pct", nutrient: "vitamin c", op: "<", value: 0.7, ofTarget: true, windowDays: 7, minDataDays: 4 }],
-    priorityWeight: 5, cooldownDays: 21, maxExtensions: 2,
+    friction: "medium", priorityWeight: 5, cooldownDays: 21, maxExtensions: 2,
   },
 
-  // ---------- sleep (HealthKit-gated) ----------
+  // ---------- micronutrients (added snack/food; higher friction = ranks lower) ----------
   {
-    id: "sleep-steady-5", kind: "standard", title: "Steady Sleep", noun: "steady sleep", category: "sleep",
-    ask: "Be in bed by the same time each night for 5 days.",
+    id: "magnesium-3", kind: "standard", title: "Magnesium Boost", noun: "magnesium", category: "micronutrient",
+    ask: "Add a magnesium-rich snack each day for 3 days. A handful of nuts or seeds, or a square of dark chocolate.",
+    whyTemplate: "Your magnesium has been low this week. It's involved in sleep quality, muscle recovery, and energy, and it's easy to top up through food.",
+    durationDays: 3, checkpoints: ["Magnesium snack"],
+    triggers: [{ signal: "micronutrient_pct", nutrient: "magnesium", op: "<", value: 0.7, ofTarget: true, windowDays: 7, minDataDays: 4 }],
+    friction: "high", priorityWeight: 5, cooldownDays: 21, maxExtensions: 2,
+  },
+  {
+    id: "iron-3", kind: "standard", title: "Iron Focus", noun: "iron", category: "micronutrient",
+    ask: "Add an iron-rich food to one meal each day for 3 days. Spinach, lentils, red meat, or fortified cereal.",
+    whyTemplate: "Your iron has been running low, which can quietly drag down energy and focus. A daily iron-rich food is an easy correction.",
+    durationDays: 3, checkpoints: ["Iron-rich food"],
+    triggers: [{ signal: "micronutrient_pct", nutrient: "iron", op: "<", value: 0.7, ofTarget: true, windowDays: 7, minDataDays: 4 }],
+    friction: "high", priorityWeight: 5, cooldownDays: 21, maxExtensions: 2,
+  },
+  {
+    id: "omega3-3", kind: "standard", title: "Omega-3 Habit", noun: "omega-3", category: "micronutrient",
+    ask: "Add an omega-3 source each day for 3 days. Walnuts, chia, flax, or a portion of fish.",
+    whyTemplate: "Your omega-3 intake has been low this week. It supports mood, focus, and recovery, and a small daily source covers it.",
+    durationDays: 3, checkpoints: ["Omega-3 source"],
+    triggers: [{ signal: "micronutrient_pct", nutrient: "omega-3", op: "<", value: 0.7, ofTarget: true, windowDays: 7, minDataDays: 4 }],
+    friction: "high", priorityWeight: 4, cooldownDays: 21, maxExtensions: 2,
+  },
+
+  // ---------- sleep (behavioral, no shopping; HealthKit-gated) ----------
+  {
+    id: "sleep-steady-3", kind: "standard", title: "Steady Sleep", noun: "steady sleep", category: "sleep",
+    ask: "Be in bed by your target time each night for 3 days. Pick a time and protect it.",
     whyTemplate: "Your sleep has been on the short side and you've logged feeling tired {energyLowCount} times. A consistent bedtime is the highest-leverage thing for energy.",
-    durationDays: 5, checkpoints: ["In bed on time"], requiresHealthKit: true,
+    durationDays: 3, checkpoints: ["In bed on time"], requiresHealthKit: true,
     triggers: [{ signal: "sleep_hours_avg", op: "<", value: 6.5, windowDays: 7, minDataDays: 4 }],
-    priorityWeight: 7, cooldownDays: 21, maxExtensions: 2,
+    friction: "low", priorityWeight: 7, cooldownDays: 21, maxExtensions: 2,
   },
 ];
 
 // ---------------------------------------------------------------------------
-// Future catalog (titles + category + lever) — NOT yet specced. Fill in as
-// content once the engine is proven; the well doesn't run dry. Each can scale by
-// severity and deepen (3 -> 5 days), so a moderate catalog feels endless.
+// Future catalog (titles + category + lever) — NOT yet specced. Each is a 3-day
+// entry with a 5-day deepen, written additive + habit-stacked, and tailored to
+// the user's diet/goal by the AI at surface time. Fill in as content; the well
+// doesn't run dry.
 //
-//  hydration:      glass before coffee; water before each meal
-//  protein:        protein-forward breakfast; a protein at every snack
-//  produce:        fruit with breakfast; add a second veg color; a salad a day
-//  micronutrient:  vitamin D (sun/supplement), calcium, potassium, zinc, folate, B12, fiber-rich foods
-//  movement:       7k steps/day; take the stairs; a post-meal walk; daily stretch; stand every hour
-//  sleep:          screens off 30m before bed; consistent wake time; no caffeine after 2pm
-//  timing*:        eat within an hour of waking; no eating after 9pm   (*photo-log timestamps only)
+//  hydration:      a glass before your morning coffee; water before each meal
+//  protein:        protein-forward breakfast; a protein with your afternoon coffee
+//  produce:        fruit with breakfast; a second veg color at dinner; a daily salad
+//  micronutrient:  vitamin D (sun/supplement), calcium, potassium, zinc, folate, B12, fiber
+//  movement:       a post-dinner walk; take the stairs; a daily stretch; stand every hour
+//  sleep:          screens off 30m before bed; a consistent wake time; no caffeine after 2pm
+//  timing*:        eat within an hour of waking; nothing after 9pm   (*photo-log timestamps only)
 //  mindful:        slow down at one meal; log before you eat; one no-screen meal
+//
+//  swaps (for weight-loss goals): trade the afternoon cookie for Greek yogurt;
+//  sparkling water instead of soda; fruit instead of the late-night snack
 // ---------------------------------------------------------------------------
