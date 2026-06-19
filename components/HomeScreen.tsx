@@ -398,7 +398,7 @@ export default function HomeScreen() {
   const [logFoodClosing, setLogFoodClosing] = useState(false);
   const [showFeelingModal, setShowFeelingModal] = useState(false);
   const [selectedFeelings, setSelectedFeelings] = useState<string[]>([]);
-  const [heroHabit, setHeroHabit] = useState<{ status: "suggested" | "accepting" | "committed" | "active" | "dayComplete" | "done" | "hidden"; days: boolean[][]; holdDay?: number | null }>(
+  const [heroHabit, setHeroHabit] = useState<{ status: "suggested" | "accepting" | "committed" | "active" | "dayComplete" | "done" | "missed" | "hidden"; days: boolean[][]; holdDay?: number | null }>(
     { status: "suggested", days: Array.from({ length: SAMPLE_HABIT.durationDays }, () => Array(SAMPLE_HABIT.slots.length).fill(false)) }
   );
   const [doneStep, setDoneStep] = useState<"dayDone" | "started" | "celebrate" | "feedback" | "rested">("dayDone");
@@ -2286,6 +2286,31 @@ export default function HomeScreen() {
                   <p className="mt-1 text-[13px] leading-relaxed text-ink/70">{SAMPLE_HABIT.title}. We&apos;ll nudge you in the morning to begin.</p>
                 </div>
               </div>
+            ) : heroHabit.status === "missed" ? (
+              <div className="text-center">
+                <p className="-mt-1 text-center text-xs font-semibold uppercase tracking-wide text-primary">Habit Builder</p>
+                <div className="flex flex-col items-center py-1">
+                  <span className="mt-1 flex h-12 w-12 items-center justify-center rounded-full bg-ink/5 text-ink/40">
+                    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="10" y1="9" x2="10" y2="15" /><line x1="14" y1="9" x2="14" y2="15" /></svg>
+                  </span>
+                  <p className="mt-2 text-base font-semibold text-ink">Oh no, we missed a day!</p>
+                  <p className="mt-1 text-[13px] leading-relaxed text-ink/70">That's okay, sometimes building habits takes time.</p>
+                </div>
+                <button
+                  type="button"
+                  className="mt-3 w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white transition active:scale-[0.98]"
+                  onClick={() => setHeroHabit((h) => ({ ...h, status: "active" }))}
+                >
+                  Extend
+                </button>
+                <button
+                  type="button"
+                  className="mt-2 w-full py-1 text-xs font-medium text-ink/45 transition active:opacity-60"
+                  onClick={() => setHeroHabit({ status: "suggested", days: Array.from({ length: SAMPLE_HABIT.durationDays }, () => Array(SAMPLE_HABIT.slots.length).fill(false)) })}
+                >
+                  Try Again Later
+                </button>
+              </div>
             ) : heroHabit.status === "active" ? (
               (() => {
                 // During the post-completion pause, holdDay keeps the just-finished day
@@ -2295,7 +2320,8 @@ export default function HomeScreen() {
                   <>
                     <div className="flex items-center justify-between">
                       <p className="text-base font-semibold text-ink">{SAMPLE_HABIT.title}</p>
-                      <p className="text-xs font-medium text-muted/60">Day {current + 1} of {SAMPLE_HABIT.durationDays}</p>
+                      {/* Tapping the day label simulates a missed day (demo/testing only). */}
+                      <p className="cursor-pointer text-xs font-medium text-muted/60 transition active:opacity-60" role="button" aria-label="Simulate missed day (testing)" onClick={() => setHeroHabit((h) => ({ ...h, status: "missed" }))}>Day {current + 1} of {SAMPLE_HABIT.durationDays}</p>
                     </div>
                     <p className="mt-0.5 text-[13px] text-ink/70">{SAMPLE_HABIT.ask}</p>
                     <div className="mt-3 flex gap-2">
