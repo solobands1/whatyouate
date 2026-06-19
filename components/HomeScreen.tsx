@@ -8,6 +8,7 @@ import type { MealLog, UserProfile, WorkoutSession } from "../lib/types";
 import { suppName, suppLabel } from "../lib/types";
 import { matchSupplementNutrients } from "../lib/rda";
 import { celebrateDaily, celebrateBuilt, celebrateAccepted, unlockAudio } from "../lib/celebrate";
+import { HABIT_TEMPLATES, type HabitTemplate } from "../lib/habits";
 import {
   PROFILE_UPDATED_EVENT,
   MEALS_FAILED_EVENT,
@@ -157,15 +158,20 @@ function feelLabel(tag: string): string {
   return tag.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-// Sample habit builder wired locally so we can design the hero flow before the
-// pattern engine / templates / backend exist.
-const SAMPLE_HABIT = {
-  title: "Hydration",
-  ask: "Drink 3 extra glasses of water every day for 3 days: one in the morning, afternoon, and evening.",
-  why: "You've reported low energy several times this week. Mild dehydration is an easy-to-miss cause of afternoon fatigue, and one of the simplest things to test.",
-  durationDays: 3,
-  slots: ["Morning", "Afternoon", "Evening"],
-};
+// Habit templates wired locally so we can flip through and test how each one
+// renders before the engine/persistence exist. Starts on hydration (the reference).
+const FIRST_TEMPLATE: HabitTemplate = HABIT_TEMPLATES.find((t) => t.id === "hydration-3") ?? HABIT_TEMPLATES[0];
+
+function freshDays(t: HabitTemplate): boolean[][] {
+  return Array.from({ length: t.durationDays }, () => Array(t.checkpoints.length).fill(false));
+}
+
+// Demo only: fill the {slots} in a whyTemplate with sample values. Real values
+// come from the digest context once wired.
+function fillWhy(t: HabitTemplate): string {
+  const demo: Record<string, string> = { energyLowCount: "3", proteinShortDays: "4", sluggishCount: "3" };
+  return t.whyTemplate.replace(/\{(\w+)\}/g, (_m, k: string) => demo[k] ?? "several");
+}
 
 // Module-level cache — survives navigation, resets on full page reload
 
@@ -399,8 +405,17 @@ export default function HomeScreen() {
   const [showFeelingModal, setShowFeelingModal] = useState(false);
   const [selectedFeelings, setSelectedFeelings] = useState<string[]>([]);
   const [heroHabit, setHeroHabit] = useState<{ status: "suggested" | "accepting" | "committed" | "active" | "dayComplete" | "done" | "missed" | "hidden"; days: boolean[][]; holdDay?: number | null }>(
-    { status: "suggested", days: Array.from({ length: SAMPLE_HABIT.durationDays }, () => Array(SAMPLE_HABIT.slots.length).fill(false)) }
+    { status: "suggested", days: freshDays(FIRST_TEMPLATE) }
   );
+  const [activeTemplate, setActiveTemplate] = useState<HabitTemplate>(FIRST_TEMPLATE);
+  // Demo/testing: cycle to the next template and reset to its suggestion, so we
+  // can eyeball how each one renders (different checkpoints, durations, copy).
+  const cycleTemplate = () => {
+    const i = HABIT_TEMPLATES.indexOf(activeTemplate);
+    const next = HABIT_TEMPLATES[(i + 1) % HABIT_TEMPLATES.length];
+    setActiveTemplate(next);
+    setHeroHabit({ status: "suggested", days: freshDays(next) });
+  };
   const [doneStep, setDoneStep] = useState<"dayDone" | "started" | "celebrate" | "feedback" | "rested">("dayDone");
   const [ratingPicked, setRatingPicked] = useState<string | null>(null);
   const [quickAddItems, setQuickAddItems] = useState<QuickAddItem[]>([]);
@@ -2239,10 +2254,11 @@ export default function HomeScreen() {
           <div className={`-mx-4 rounded-2xl border-2 border-primary/25 px-4 ${heroHabit.status === "done" || heroHabit.status === "accepting" ? "bg-primary/10" : "bg-primary/[0.05]"} ${heroHabit.status === "hidden" ? "py-7" : heroHabit.status === "done" && doneStep === "rested" ? "pt-5 pb-3" : "py-5"} ${heroHabit.status === "done" && (doneStep === "celebrate" || doneStep === "feedback") ? "animate-habit-built" : ""} ${(heroHabit.status === "done" && doneStep === "rested") || heroHabit.status === "accepting" ? "animate-habit-glow" : ""} ${heroHabit.status === "active" && heroHabit.holdDay != null ? "animate-habit-shimmer" : ""}`}>
             {heroHabit.status === "suggested" ? (
               <>
-                <p className="-mt-1 text-center text-xs font-semibold uppercase tracking-wide text-primary">Habit Builder</p>
-                <p className="mt-1 text-base font-semibold text-ink">{SAMPLE_HABIT.title}</p>
-                <p className="mt-0.5 text-[13px] text-ink/70">{SAMPLE_HABIT.ask}</p>
-                <p className="mt-2 text-xs leading-relaxed text-ink/80"><span className="font-semibold text-ink">Why: </span>{SAMPLE_HABIT.why}</p>
+                {/* Tap the eyebrow to cycle templates (demo/testing). */}
+                <p className="-mt-1 cursor-pointer text-center text-xs font-semibold uppercase tracking-wide text-primary transition active:opacity-60" role="button" aria-label="Next template (testing)" onClick={cycleTemplate}>Habit Builder</p>
+                <p className="mt-1 text-base font-semibold text-ink">{activeTemplate.title}</p>
+                <p className="mt-0.5 text-[13px] text-ink/70">{activeTemplate.ask}</p>
+                <p className="mt-2 text-xs leading-relaxed text-ink/80"><span className="font-semibold text-ink">Why: </span>{fillWhy(activeTemplate)}</p>
                 <button
                   type="button"
                   className="mt-4 w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white transition active:scale-[0.98]"
@@ -2264,7 +2280,7 @@ export default function HomeScreen() {
                     <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 6" /></svg>
                   </span>
                   <p className="mt-3 text-base font-semibold text-ink">You&apos;re In!</p>
-                  <p className="mt-1 text-[13px] text-ink/70">{SAMPLE_HABIT.title}</p>
+                  <p className="mt-1 text-[13px] text-ink/70">{activeTemplate.title}</p>
                 </div>
               </div>
             ) : heroHabit.status === "committed" ? (
@@ -2283,7 +2299,7 @@ export default function HomeScreen() {
                     <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7.5V12l3 1.5" /></svg>
                   </span>
                   <p className="mt-1.5 text-base font-semibold text-ink">Starts Tomorrow</p>
-                  <p className="mt-1 text-[13px] leading-relaxed text-ink/70">{SAMPLE_HABIT.title}. We&apos;ll nudge you in the morning to begin.</p>
+                  <p className="mt-1 text-[13px] leading-relaxed text-ink/70">{activeTemplate.title}. We&apos;ll nudge you in the morning to begin.</p>
                 </div>
               </div>
             ) : heroHabit.status === "missed" ? (
@@ -2306,7 +2322,7 @@ export default function HomeScreen() {
                 <button
                   type="button"
                   className="mt-2 w-full py-1 text-xs font-medium text-ink/45 transition active:opacity-60"
-                  onClick={() => setHeroHabit({ status: "suggested", days: Array.from({ length: SAMPLE_HABIT.durationDays }, () => Array(SAMPLE_HABIT.slots.length).fill(false)) })}
+                  onClick={() => setHeroHabit({ status: "suggested", days: freshDays(activeTemplate) })}
                 >
                   Try Again Later
                 </button>
@@ -2319,13 +2335,13 @@ export default function HomeScreen() {
                 return (
                   <>
                     <div className="flex items-center justify-between">
-                      <p className="text-base font-semibold text-ink">{SAMPLE_HABIT.title}</p>
+                      <p className="text-base font-semibold text-ink">{activeTemplate.title}</p>
                       {/* Tapping the day label simulates a missed day (demo/testing only). */}
-                      <p className="cursor-pointer text-xs font-medium text-muted/60 transition active:opacity-60" role="button" aria-label="Simulate missed day (testing)" onClick={() => setHeroHabit((h) => ({ ...h, status: "missed" }))}>Day {current + 1} of {SAMPLE_HABIT.durationDays}</p>
+                      <p className="cursor-pointer text-xs font-medium text-muted/60 transition active:opacity-60" role="button" aria-label="Simulate missed day (testing)" onClick={() => setHeroHabit((h) => ({ ...h, status: "missed" }))}>Day {current + 1} of {activeTemplate.durationDays}</p>
                     </div>
-                    <p className="mt-0.5 text-[13px] text-ink/70">{SAMPLE_HABIT.ask}</p>
+                    <p className="mt-0.5 text-[13px] text-ink/70">{activeTemplate.ask}</p>
                     <div className="mt-3 flex gap-2">
-                      {SAMPLE_HABIT.slots.map((slot, s) => {
+                      {activeTemplate.checkpoints.map((slot, s) => {
                         const checked = heroHabit.days[current][s];
                         return (
                           <button
@@ -2471,7 +2487,7 @@ export default function HomeScreen() {
                       </div>
                     ) : (
                       <>
-                        <p className="mt-1 text-[13px] text-ink/70 animate-fadeIn">Three days of {SAMPLE_HABIT.title.toLowerCase()}, done.</p>
+                        <p className="mt-1 text-[13px] text-ink/70 animate-fadeIn">{activeTemplate.durationDays} days of {activeTemplate.noun}, done.</p>
                         {doneStep === "rested" && (
                           <p className="mt-4 text-[8px] font-medium uppercase tracking-wide text-ink/35 animate-fadeIn">Resets tomorrow</p>
                         )}
