@@ -34,27 +34,19 @@ export default function WyaaAvatar({
             <stop offset="88%" stopColor="#A4C6FF" stopOpacity="0.6" />
             <stop offset="100%" stopColor="#A4C6FF" stopOpacity="0.2" />
           </linearGradient>
-          {/* the WhatYouAte "bite" out of the upper-right — our signature, and not Bevel */}
-          <mask id="wyaa-bite">
-            <rect x="0" y="0" width="40" height="40" fill="white" />
-            <circle cx="31.5" cy="7" r="7.5" fill="black" />
-            <circle cx="28.4" cy="13.8" r="1.35" fill="white" />
-            <circle cx="26" cy="12.1" r="1.35" fill="white" />
-            <circle cx="24.2" cy="9.6" r="1.35" fill="white" />
-          </mask>
         </defs>
 
-        {/* round-top body fading toward the bottom, with the signature bite */}
-        <circle cx="20" cy="17.5" r="14" fill="url(#wyaa-body)" mask="url(#wyaa-bite)" />
+        {/* round-top body fading toward the bottom */}
+        <circle cx="20" cy="17.5" r="14" fill="url(#wyaa-body)" />
 
         {/* glossy top highlight */}
         <ellipse cx="14.3" cy="10.5" rx="4" ry="2.4" fill="#FFFFFF" opacity="0.12" />
 
-        {/* eyes — minimal soft white ovals that look around + blink */}
+        {/* eyes — soft white squircles (rounded rectangles) that look around + blink */}
         <g className="wyaa-look">
           <g className="wyaa-blink">
-            <ellipse cx="15.6" cy="16.4" rx="2.2" ry="3.3" fill="#FFFFFF" />
-            <ellipse cx="24.4" cy="16.4" rx="2.2" ry="3.3" fill="#FFFFFF" />
+            <rect x="13.7" y="14" width="3.8" height="4.8" rx="1.6" fill="#FFFFFF" />
+            <rect x="22.5" y="14" width="3.8" height="4.8" rx="1.6" fill="#FFFFFF" />
           </g>
         </g>
       </svg>
