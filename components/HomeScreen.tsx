@@ -155,13 +155,13 @@ const FEELINGS = [
 const RX_SVG = "h-10 w-10 text-primary/40";
 const REFLECTION_QUESTIONS: { key: string; label: string; hint: string; opts: string[]; multi?: boolean; icon: JSX.Element }[] = [
   { key: "energy", label: "Overall Energy", hint: "How was your overall energy across the day?", opts: ["Drained", "Low", "Okay", "Good", "Great"],
-    icon: <svg className={RX_SVG} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg> },
+    icon: <svg className={RX_SVG} viewBox="0 0 16 28" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 1L2 15h6l-2 12 10-16h-6l2-11z" /></svg> },
   { key: "dips", label: "Energy Dips", hint: "Did you have any energy dips today?", opts: ["None", "Morning", "Afternoon", "Evening"], multi: true,
     icon: <svg className={RX_SVG} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></svg> },
   { key: "sleep", label: "Last Night's Sleep", hint: "How well did you sleep last night?", opts: ["Poor", "Okay", "Good", "Great"],
     icon: <svg className={RX_SVG} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg> },
   { key: "mood", label: "Mood", hint: "How was your mood overall today?", opts: ["Poor", "Okay", "Good", "Great"],
-    icon: <svg className={RX_SVG} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M8 14s1.5 2 4 2 4-2 4-2" /><line x1="9" y1="9" x2="9.01" y2="9" /><line x1="15" y1="9" x2="15.01" y2="9" /></svg> },
+    icon: <svg className={RX_SVG} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9.5" /><path d="M8.5 14.5c.9 1.1 2.1 1.7 3.5 1.7s2.6-.6 3.5-1.7" /><circle cx="9.2" cy="10.5" r="0.8" fill="currentColor" stroke="none" /><circle cx="14.8" cy="10.5" r="0.8" fill="currentColor" stroke="none" /></svg> },
   { key: "stress", label: "Stress", hint: "How much stress did you feel today?", opts: ["None", "Mild", "Moderate", "High"],
     icon: <svg className={RX_SVG} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg> },
   { key: "digestion", label: "Digestion", hint: "How did your digestion feel today?", opts: ["Poor", "Okay", "Good", "Great"],
