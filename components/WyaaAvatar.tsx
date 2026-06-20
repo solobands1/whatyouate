@@ -27,38 +27,40 @@ export default function WyaaAvatar({
     >
       <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <radialGradient id="wyaa-bg" cx="38%" cy="32%" r="65%">
-            <stop offset="0%" stopColor="#C4DAFF" />
-            <stop offset="60%" stopColor="#6FA8FF" />
-            <stop offset="100%" stopColor="#5A96F0" />
+          {/* translucent glowing orb: lit from the upper-left, soft translucent rim */}
+          <radialGradient id="wyaa-orb" cx="42%" cy="35%" r="72%">
+            <stop offset="0%" stopColor="#E4EEFF" />
+            <stop offset="42%" stopColor="#9CC0FF" />
+            <stop offset="84%" stopColor="#6FA8FF" />
+            <stop offset="100%" stopColor="#6FA8FF" stopOpacity="0.45" />
           </radialGradient>
-          <radialGradient id="wyaa-glow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.18" />
+          {/* soft outer halo */}
+          <radialGradient id="wyaa-halo" cx="50%" cy="50%" r="50%">
+            <stop offset="48%" stopColor="#7FB0FF" stopOpacity="0.32" />
+            <stop offset="100%" stopColor="#7FB0FF" stopOpacity="0" />
+          </radialGradient>
+          {/* faint inner-bottom glow for the translucent feel */}
+          <radialGradient id="wyaa-underglow" cx="50%" cy="78%" r="42%">
+            <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.55" />
             <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
           </radialGradient>
         </defs>
 
-        {/* Base circle */}
-        <circle cx="20" cy="20" r="19" fill="url(#wyaa-bg)" />
+        {/* glow halo */}
+        <circle cx="20" cy="20" r="20" fill="url(#wyaa-halo)" />
 
-        {/* Inner glow */}
-        <circle cx="20" cy="20" r="19" fill="url(#wyaa-glow)" />
+        {/* the orb */}
+        <circle cx="20" cy="20" r="16.5" fill="url(#wyaa-orb)" />
 
-        {/* Subtle top-left highlight */}
-        <ellipse cx="13.5" cy="12" rx="7" ry="5" fill="white" opacity="0.18" />
+        {/* soft light pooling at the bottom (the see-through, glowing quality) */}
+        <circle cx="20" cy="20" r="16.5" fill="url(#wyaa-underglow)" />
 
-        {/* 4-point sparkle */}
-        <g transform="translate(20, 20)">
-          {/* Main vertical */}
-          <path d="M0 -7.5 C0.9 -3 0.9 3 0 7.5 C-0.9 3 -0.9 -3 0 -7.5Z" fill="white" opacity="0.95" />
-          {/* Main horizontal */}
-          <path d="M-7.5 0 C-3 0.9 3 0.9 7.5 0 C3 -0.9 -3 -0.9 -7.5 0Z" fill="white" opacity="0.95" />
-          {/* Thin diagonal arms */}
-          <path d="M-3.8 -3.8 C-1 -1 1 1 3.8 3.8" stroke="white" strokeWidth="0.9" strokeLinecap="round" opacity="0.4" />
-          <path d="M3.8 -3.8 C1 -1 -1 1 -3.8 3.8" stroke="white" strokeWidth="0.9" strokeLinecap="round" opacity="0.4" />
-          {/* Center */}
-          <circle r="1.4" fill="white" />
-        </g>
+        {/* glossy top-left highlight */}
+        <ellipse cx="14" cy="12.5" rx="6" ry="3.8" fill="#FFFFFF" opacity="0.3" />
+
+        {/* friendly eyes — soft white ovals */}
+        <ellipse cx="15.3" cy="18.6" rx="2.3" ry="3.4" fill="#FFFFFF" />
+        <ellipse cx="24.7" cy="18.6" rx="2.3" ry="3.4" fill="#FFFFFF" />
       </svg>
     </button>
     <div
