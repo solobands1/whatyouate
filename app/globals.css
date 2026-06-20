@@ -366,20 +366,21 @@ input, textarea, select {
 /* Coach eyes: a slow looking-around cycle (right, left, up, center) + blinks,
    so it reads as curious and alive. */
 @keyframes wyaaLook {
-  0%, 16%   { transform: translate(0px, 0px); }
-  22%, 34%  { transform: translate(1.9px, 0.3px); }
-  40%, 52%  { transform: translate(-1.9px, 0.3px); }
-  58%, 68%  { transform: translate(0px, -1.5px); }
-  74%, 100% { transform: translate(0px, 0px); }
+  0%, 16%    { transform: translate(0px, 0px); }
+  22%, 30%   { transform: translate(2px, 0.3px); }
+  36%, 48%   { transform: translate(0px, 0px); }
+  54%, 62%   { transform: translate(-2px, 0.3px); }
+  68%, 80%   { transform: translate(0px, 0px); }
+  85%, 91%   { transform: translate(0px, -1.6px); }
+  96%, 100%  { transform: translate(0px, 0px); }
 }
 @keyframes wyaaBlink {
-  0%, 23%, 25%, 72%, 74%, 100% { transform: scaleY(1); }
-  24% { transform: scaleY(0.12); }
-  73% { transform: scaleY(0.12); }
+  0%, 9%, 11%, 41%, 43%, 73%, 75%, 93%, 95%, 100% { transform: scaleY(1); }
+  10%, 42%, 74%, 94% { transform: scaleY(0.1); }
 }
-.wyaa-look { animation: wyaaLook 6.5s ease-in-out infinite; }
+.wyaa-look { animation: wyaaLook 8s ease-in-out infinite; }
 .wyaa-blink {
-  animation: wyaaBlink 6.5s ease-in-out infinite;
+  animation: wyaaBlink 8s ease-in-out infinite;
   transform-origin: center;
   transform-box: fill-box;
 }

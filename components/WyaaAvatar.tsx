@@ -29,10 +29,10 @@ export default function WyaaAvatar({
         <defs>
           {/* lighter body, round at the top, dissolving toward the bottom like a soft wisp */}
           <linearGradient id="wyaa-body" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#BAD6FF" />
-            <stop offset="52%" stopColor="#A9CCFF" />
-            <stop offset="80%" stopColor="#A9CCFF" stopOpacity="0.45" />
-            <stop offset="100%" stopColor="#A9CCFF" stopOpacity="0" />
+            <stop offset="0%" stopColor="#A4C6FF" />
+            <stop offset="60%" stopColor="#A4C6FF" />
+            <stop offset="88%" stopColor="#A4C6FF" stopOpacity="0.6" />
+            <stop offset="100%" stopColor="#A4C6FF" stopOpacity="0.2" />
           </linearGradient>
           {/* soft halo */}
           <radialGradient id="wyaa-halo" cx="50%" cy="42%" r="55%">
