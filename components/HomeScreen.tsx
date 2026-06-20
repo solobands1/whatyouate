@@ -4120,8 +4120,8 @@ export default function HomeScreen() {
         const atCloser = reflectionStep === total + 2;
         const progress = Math.min(100, (reflectionStep / (total + 1)) * 100);
         return (
-          <div className="fixed inset-0 z-[60] flex flex-col bg-primary px-3.5" style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.875rem)", paddingBottom: "calc(env(safe-area-inset-bottom) + 0.875rem)" }}>
-            <div className="flex flex-1 flex-col overflow-hidden rounded-3xl bg-white animate-card-fade">
+          <div className="fixed inset-0 z-[60] flex flex-col bg-primary-soft px-6" style={{ paddingTop: "calc(env(safe-area-inset-top) + 1.5rem)", paddingBottom: "calc(env(safe-area-inset-bottom) + 1.5rem)" }}>
+            <div className="flex flex-1 flex-col overflow-hidden rounded-3xl bg-white shadow-card animate-card-fade">
             {!atIntro && (
               <div className="h-1 w-full bg-ink/8">
                 <div className="h-full bg-primary transition-all duration-500" style={{ width: `${progress}%` }} />
