@@ -153,12 +153,12 @@ const FEELINGS = [
 // Nightly reflection — the primary signal feeding the coach + habit triggers
 // (feeling logs are the secondary, in-the-moment signal). All quick taps.
 const REFLECTION_QUESTIONS: { key: string; label: string; opts: string[]; multi?: boolean }[] = [
-  { key: "energy", label: "Overall Energy", opts: ["Drained", "Low", "Okay", "Good", "Great"] },
+  { key: "energy", label: "Overall Energy", opts: ["Drained", "Low", "Fair", "Good", "Great"] },
   { key: "dips", label: "Energy Dips", opts: ["None", "Morning", "Afternoon", "Evening"], multi: true },
-  { key: "sleep", label: "Last Night's Sleep", opts: ["Poor", "Okay", "Pretty Good", "Good"] },
-  { key: "mood", label: "Mood", opts: ["Rough", "Okay", "Pretty Good", "Good"] },
-  { key: "stress", label: "Stress", opts: ["Low", "Some", "Decent Amount", "High"] },
-  { key: "digestion", label: "Digestion", opts: ["Rough", "Okay", "Pretty Good", "Good"] },
+  { key: "sleep", label: "Last Night's Sleep", opts: ["Poor", "Fair", "Good", "Great"] },
+  { key: "mood", label: "Mood", opts: ["Poor", "Fair", "Good", "Great"] },
+  { key: "stress", label: "Stress", opts: ["None", "Mild", "Moderate", "High"] },
+  { key: "digestion", label: "Digestion", opts: ["Poor", "Fair", "Good", "Great"] },
 ];
 
 function feelLabel(tag: string): string {
