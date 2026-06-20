@@ -154,17 +154,17 @@ const FEELINGS = [
 // (feeling logs are the secondary, in-the-moment signal). All quick taps.
 const RX_SVG = "h-10 w-10 text-primary/40";
 const REFLECTION_QUESTIONS: { key: string; label: string; hint: string; opts: string[]; multi?: boolean; icon: JSX.Element }[] = [
-  { key: "energy", label: "Overall Energy", hint: "Across the whole day", opts: ["Drained", "Low", "Fair", "Good", "Great"],
+  { key: "energy", label: "Overall Energy", hint: "How was your overall energy across the day?", opts: ["Drained", "Low", "Fair", "Good", "Great"],
     icon: <svg className={RX_SVG} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg> },
-  { key: "dips", label: "Energy Dips", hint: "When did your energy drop?", opts: ["None", "Morning", "Afternoon", "Evening"], multi: true,
+  { key: "dips", label: "Energy Dips", hint: "When did your energy dip today?", opts: ["None", "Morning", "Afternoon", "Evening"], multi: true,
     icon: <svg className={RX_SVG} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></svg> },
-  { key: "sleep", label: "Last Night's Sleep", hint: "How rested did you wake up?", opts: ["Poor", "Fair", "Good", "Great"],
+  { key: "sleep", label: "Last Night's Sleep", hint: "How well did you sleep last night?", opts: ["Poor", "Fair", "Good", "Great"],
     icon: <svg className={RX_SVG} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg> },
-  { key: "mood", label: "Mood", hint: "Overall, how did you feel?", opts: ["Poor", "Fair", "Good", "Great"],
+  { key: "mood", label: "Mood", hint: "How was your mood overall today?", opts: ["Poor", "Fair", "Good", "Great"],
     icon: <svg className={RX_SVG} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M8 14s1.5 2 4 2 4-2 4-2" /><line x1="9" y1="9" x2="9.01" y2="9" /><line x1="15" y1="9" x2="15.01" y2="9" /></svg> },
-  { key: "stress", label: "Stress", hint: "How much pressure today?", opts: ["High", "Moderate", "Mild", "None"],
+  { key: "stress", label: "Stress", hint: "How much stress did you feel today?", opts: ["High", "Moderate", "Mild", "None"],
     icon: <svg className={RX_SVG} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg> },
-  { key: "digestion", label: "Digestion", hint: "How did your stomach feel?", opts: ["Poor", "Fair", "Good", "Great"],
+  { key: "digestion", label: "Digestion", hint: "How did your digestion feel today?", opts: ["Poor", "Fair", "Good", "Great"],
     icon: <svg className={RX_SVG} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" /></svg> },
 ];
 
