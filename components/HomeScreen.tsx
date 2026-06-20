@@ -152,13 +152,20 @@ const FEELINGS = [
 
 // Nightly reflection — the primary signal feeding the coach + habit triggers
 // (feeling logs are the secondary, in-the-moment signal). All quick taps.
-const REFLECTION_QUESTIONS: { key: string; label: string; opts: string[]; multi?: boolean }[] = [
-  { key: "energy", label: "Overall Energy", opts: ["Drained", "Low", "Fair", "Good", "Great"] },
-  { key: "dips", label: "Energy Dips", opts: ["None", "Morning", "Afternoon", "Evening"], multi: true },
-  { key: "sleep", label: "Last Night's Sleep", opts: ["Poor", "Fair", "Good", "Great"] },
-  { key: "mood", label: "Mood", opts: ["Poor", "Fair", "Good", "Great"] },
-  { key: "stress", label: "Stress", opts: ["None", "Mild", "Moderate", "High"] },
-  { key: "digestion", label: "Digestion", opts: ["Poor", "Fair", "Good", "Great"] },
+const RX_SVG = "h-10 w-10 text-primary/40";
+const REFLECTION_QUESTIONS: { key: string; label: string; hint: string; opts: string[]; multi?: boolean; icon: JSX.Element }[] = [
+  { key: "energy", label: "Overall Energy", hint: "Across the whole day", opts: ["Drained", "Low", "Fair", "Good", "Great"],
+    icon: <svg className={RX_SVG} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg> },
+  { key: "dips", label: "Energy Dips", hint: "When did your energy drop?", opts: ["None", "Morning", "Afternoon", "Evening"], multi: true,
+    icon: <svg className={RX_SVG} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></svg> },
+  { key: "sleep", label: "Last Night's Sleep", hint: "How rested did you wake up?", opts: ["Poor", "Fair", "Good", "Great"],
+    icon: <svg className={RX_SVG} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg> },
+  { key: "mood", label: "Mood", hint: "Overall, how did you feel?", opts: ["Poor", "Fair", "Good", "Great"],
+    icon: <svg className={RX_SVG} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M8 14s1.5 2 4 2 4-2 4-2" /><line x1="9" y1="9" x2="9.01" y2="9" /><line x1="15" y1="9" x2="15.01" y2="9" /></svg> },
+  { key: "stress", label: "Stress", hint: "How much pressure today?", opts: ["None", "Mild", "Moderate", "High"],
+    icon: <svg className={RX_SVG} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg> },
+  { key: "digestion", label: "Digestion", hint: "How did your stomach feel?", opts: ["Poor", "Fair", "Good", "Great"],
+    icon: <svg className={RX_SVG} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" /></svg> },
 ];
 
 function feelLabel(tag: string): string {
@@ -417,7 +424,9 @@ export default function HomeScreen() {
   const [showReflection, setShowReflection] = useState(false);
   const [reflection, setReflection] = useState<Record<string, number | number[]>>({});
   const [reflectionNote, setReflectionNote] = useState("");
-  const [reflectionDone, setReflectionDone] = useState(false);
+  const [reflectionStep, setReflectionStep] = useState(0);
+  const closeReflection = () => setShowReflection(false); // keeps progress for "Later"
+  const finishReflection = () => { setShowReflection(false); setReflectionStep(0); setReflection({}); setReflectionNote(""); };
   const [selectedFeelings, setSelectedFeelings] = useState<string[]>([]);
   const [heroHabit, setHeroHabit] = useState<{ status: "suggested" | "accepting" | "committed" | "active" | "dayComplete" | "done" | "missed" | "hidden"; days: boolean[][]; holdDay?: number | null }>(
     { status: "suggested", days: freshDays(FIRST_TEMPLATE) }
@@ -4103,87 +4112,112 @@ export default function HomeScreen() {
         </div>
       )}
 
-      {showReflection && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5"
-          onClick={() => setShowReflection(false)}
-        >
-          <div
-            className="max-h-[90vh] w-full max-w-sm overflow-y-auto rounded-2xl bg-white p-5 shadow-xl animate-pill-in"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {reflectionDone ? (
-              <div className="py-8 text-center">
-                <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white animate-habit-pop">
-                  <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 6" /></svg>
-                </span>
-                <p className="mt-3 text-base font-semibold text-ink">Thanks For Checking In</p>
-                <p className="mt-1 text-[13px] leading-relaxed text-ink/65">The more you reflect, the sharper your coach gets at spotting what actually helps you.</p>
-              </div>
-            ) : (
-              <>
-                <div className="flex items-center justify-between">
-                  <h2 className="text-base font-semibold text-ink">How Was Your Day?</h2>
-                  <button type="button" className="text-xs font-semibold text-ink/45 transition active:opacity-60" onClick={() => setShowReflection(false)}>Complete Later</button>
+      {showReflection && (() => {
+        const total = REFLECTION_QUESTIONS.length;
+        const atNote = reflectionStep === total;
+        const atCloser = reflectionStep > total;
+        const progress = Math.min(100, (reflectionStep / (total + 1)) * 100);
+        const q = reflectionStep < total ? REFLECTION_QUESTIONS[reflectionStep] : null;
+        return (
+          <div className="fixed inset-0 z-[60] flex flex-col bg-white safe-top animate-card-fade">
+            <div className="h-1 w-full bg-ink/8">
+              <div className="h-full bg-primary transition-all duration-500" style={{ width: `${progress}%` }} />
+            </div>
+            <div className="flex flex-1 flex-col px-6 overflow-y-auto">
+              {!atCloser && (
+                <div className="flex items-center justify-between pt-5">
+                  <button type="button" className="p-1 active:opacity-50" onClick={() => (reflectionStep > 0 ? setReflectionStep((s) => s - 1) : closeReflection())}>
+                    <svg className="h-5 w-5 text-ink/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+                  </button>
+                  <button type="button" className="text-xs font-semibold text-ink/45 active:opacity-60" onClick={closeReflection}>Later</button>
                 </div>
-                {REFLECTION_QUESTIONS.map((q) => (
-                  <div key={q.key} className="mt-5">
-                    <p className="text-sm font-semibold text-ink">{q.label}{q.multi ? <span className="ml-1.5 text-[11px] font-normal text-ink/40">select all</span> : null}</p>
-                    <div className="mt-2 flex gap-1 rounded-xl bg-ink/[0.05] p-1">
-                      {q.opts.map((o, i) => {
-                        const v = reflection[q.key];
-                        const sel = q.multi ? Array.isArray(v) && v.includes(i) : v === i;
-                        return (
-                          <button
-                            key={o}
-                            type="button"
-                            className={`flex-1 rounded-lg px-1 py-2 text-[11px] font-medium leading-tight transition ${sel ? "bg-white text-primary shadow-[0_1px_3px_rgba(15,23,42,0.14)]" : "text-ink/50 active:text-ink/75"}`}
-                            onClick={() => setReflection((r) => {
-                              if (!q.multi) return { ...r, [q.key]: i };
-                              const cur = Array.isArray(r[q.key]) ? (r[q.key] as number[]) : [];
-                              if (i === 0) return { ...r, [q.key]: [0] }; // "None" is exclusive
-                              const base = cur.filter((x) => x !== 0);
-                              const next = base.includes(i) ? base.filter((x) => x !== i) : [...base, i];
-                              return { ...r, [q.key]: next };
-                            })}
-                          >
-                            {o}
-                          </button>
-                        );
-                      })}
-                    </div>
+              )}
+
+              {q && (
+                <div className="mt-[8vh] pb-10">
+                  <div className="mb-5 flex justify-center">{q.icon}</div>
+                  <h1 className="text-center text-2xl font-semibold text-ink">{q.label}</h1>
+                  <p className="mt-2 text-center text-sm text-muted/70">{q.hint}</p>
+                  <div className="mt-8 flex flex-col gap-3">
+                    {q.opts.map((o, i) => {
+                      const v = reflection[q.key];
+                      const sel = q.multi ? Array.isArray(v) && v.includes(i) : v === i;
+                      return (
+                        <button
+                          key={o}
+                          type="button"
+                          className={`w-full rounded-xl border py-4 text-center text-sm font-medium transition active:opacity-80 ${sel ? "border-primary bg-primary/10 text-primary" : "border-ink/10 text-ink/80"}`}
+                          onClick={() => {
+                            if (q.multi) {
+                              setReflection((r) => {
+                                const cur = Array.isArray(r[q.key]) ? (r[q.key] as number[]) : [];
+                                if (i === 0) return { ...r, [q.key]: [0] }; // "None" is exclusive
+                                const base = cur.filter((x) => x !== 0);
+                                const next = base.includes(i) ? base.filter((x) => x !== i) : [...base, i];
+                                return { ...r, [q.key]: next };
+                              });
+                            } else {
+                              setReflection((r) => ({ ...r, [q.key]: i }));
+                              setTimeout(() => setReflectionStep((s) => s + 1), 200);
+                            }
+                          }}
+                        >
+                          {o}
+                        </button>
+                      );
+                    })}
                   </div>
-                ))}
-                <div className="mt-4">
-                  <p className="text-[13px] font-medium text-ink/80">Anything stand out? <span className="font-normal text-ink/40">(optional)</span></p>
+                  {q.multi && (
+                    <button
+                      type="button"
+                      disabled={!(Array.isArray(reflection[q.key]) && (reflection[q.key] as number[]).length > 0)}
+                      className="mt-8 w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80 disabled:opacity-40"
+                      onClick={() => setReflectionStep((s) => s + 1)}
+                    >
+                      Continue
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {atNote && (
+                <div className="mt-[8vh] pb-10">
+                  <div className="mb-5 flex justify-center">
+                    <svg className="h-10 w-10 text-primary/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+                  </div>
+                  <h1 className="text-center text-2xl font-semibold text-ink">Anything Stand Out?</h1>
+                  <p className="mt-2 text-center text-sm text-muted/70">Optional, a quick note for your coach</p>
                   <input
                     type="text"
                     value={reflectionNote}
                     onChange={(e) => setReflectionNote(e.target.value)}
                     placeholder="e.g. I had a long day"
-                    className="mt-2 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    className="mt-8 w-full rounded-xl border border-ink/10 px-4 py-4 text-center text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
                   />
+                  <button
+                    type="button"
+                    className="mt-8 w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80"
+                    onClick={() => setReflectionStep((s) => s + 1)}
+                  >
+                    {reflectionNote.trim() ? "Done" : "Skip"}
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  disabled={REFLECTION_QUESTIONS.some((q) => {
-                    const v = reflection[q.key];
-                    return q.multi ? !(Array.isArray(v) && v.length > 0) : v == null;
-                  })}
-                  className="mt-5 w-full rounded-xl bg-primary py-3 text-sm font-semibold text-white transition active:scale-[0.98] disabled:opacity-40"
-                  onClick={() => {
-                    // No persistence yet — demo only.
-                    setReflectionDone(true);
-                    setTimeout(() => { setShowReflection(false); setReflectionDone(false); setReflection({}); setReflectionNote(""); }, 2400);
-                  }}
-                >
-                  Done
-                </button>
-              </>
-            )}
+              )}
+
+              {atCloser && (
+                <div className="flex flex-1 flex-col items-center justify-center pb-[12vh]">
+                  <span className="flex h-20 w-20 items-center justify-center rounded-full bg-primary text-white animate-habit-pop">
+                    <svg viewBox="0 0 24 24" className="h-10 w-10" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 6" /></svg>
+                  </span>
+                  <p className="mt-6 text-center text-2xl font-semibold text-ink">Thanks For Checking In</p>
+                  <p className="mt-2 max-w-xs text-center text-sm text-muted/70">The more you reflect, the sharper your coach gets at spotting what actually helps you.</p>
+                  <button type="button" className="mt-10 w-full max-w-xs rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80" onClick={finishReflection}>Done</button>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {showWaterUndo && waterData && (
         <div className="fixed bottom-24 left-1/2 z-40 -translate-x-1/2 animate-pill-in">
