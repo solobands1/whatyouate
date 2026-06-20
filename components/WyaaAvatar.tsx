@@ -34,15 +34,7 @@ export default function WyaaAvatar({
             <stop offset="88%" stopColor="#A4C6FF" stopOpacity="0.6" />
             <stop offset="100%" stopColor="#A4C6FF" stopOpacity="0.2" />
           </linearGradient>
-          {/* soft halo */}
-          <radialGradient id="wyaa-halo" cx="50%" cy="42%" r="55%">
-            <stop offset="42%" stopColor="#B6D2FF" stopOpacity="0.28" />
-            <stop offset="100%" stopColor="#B6D2FF" stopOpacity="0" />
-          </radialGradient>
         </defs>
-
-        {/* halo */}
-        <ellipse cx="20" cy="17" rx="18" ry="19" fill="url(#wyaa-halo)" />
 
         {/* round-top body fading toward the bottom */}
         <circle cx="20" cy="17.5" r="14" fill="url(#wyaa-body)" />
