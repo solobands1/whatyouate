@@ -4227,7 +4227,7 @@ export default function HomeScreen() {
                     <svg viewBox="0 0 24 24" className="h-10 w-10" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 6" /></svg>
                   </span>
                   <p className="mt-6 text-center text-2xl font-semibold text-ink">Thanks For Checking In</p>
-                  <p className="mt-2 max-w-xs text-center text-sm text-muted/70">The more you reflect, the sharper your coach gets at spotting what actually helps you.</p>
+                  <p className="mt-2 max-w-xs text-center text-sm text-muted/70">That's today, noted. Showing up for yourself like this is how feeling better slowly stops being a goal and just becomes your normal.</p>
                   <button type="button" className="mt-10 w-full max-w-xs rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80" onClick={finishReflection}>Done</button>
                 </div>
               )}
