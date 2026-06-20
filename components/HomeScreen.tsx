@@ -4120,7 +4120,8 @@ export default function HomeScreen() {
         const atCloser = reflectionStep === total + 2;
         const progress = Math.min(100, (reflectionStep / (total + 1)) * 100);
         return (
-          <div className="fixed inset-0 z-[60] flex flex-col bg-white safe-top animate-card-fade" style={{ boxShadow: "inset 0 0 150px 14px rgba(111,168,255,0.20)" }}>
+          <div className="fixed inset-0 z-[60] flex flex-col bg-primary px-3.5" style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.875rem)", paddingBottom: "calc(env(safe-area-inset-bottom) + 0.875rem)" }}>
+            <div className="flex flex-1 flex-col overflow-hidden rounded-3xl bg-white animate-card-fade">
             {!atIntro && (
               <div className="h-1 w-full bg-ink/8">
                 <div className="h-full bg-primary transition-all duration-500" style={{ width: `${progress}%` }} />
@@ -4137,7 +4138,7 @@ export default function HomeScreen() {
               )}
 
               {atIntro && (
-                <div className="flex flex-1 flex-col items-center justify-center px-2 pb-[6vh] text-center">
+                <div className="flex flex-1 flex-col items-center justify-center px-2 pb-[16vh] text-center">
                   <span className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/15 text-primary">
                     <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
                   </span>
@@ -4231,6 +4232,7 @@ export default function HomeScreen() {
                   <button type="button" className="mt-10 w-full max-w-xs rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80" onClick={finishReflection}>Done</button>
                 </div>
               )}
+            </div>
             </div>
           </div>
         );
