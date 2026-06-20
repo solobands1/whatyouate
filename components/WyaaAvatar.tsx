@@ -40,7 +40,7 @@ export default function WyaaAvatar({
         <circle cx="20" cy="17.5" r="14" fill="url(#wyaa-body)" />
 
         {/* glossy top highlight */}
-        <ellipse cx="14.5" cy="10.5" rx="5.5" ry="3.4" fill="#FFFFFF" opacity="0.35" />
+        <ellipse cx="14.3" cy="10.5" rx="4" ry="2.4" fill="#FFFFFF" opacity="0.12" />
 
         {/* friendly eyes — soft white ovals that look around + blink (curious) */}
         <g className="wyaa-look">
