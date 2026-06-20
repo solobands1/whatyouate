@@ -1175,7 +1175,7 @@ export default function SummaryScreen() {
           <div className="absolute -top-5 -right-1 z-10">
             <WyaaAvatar
               isNew={nudgeCardIsNew && !!smartNudge}
-              size={56}
+              size={64}
               onClick={() => setShowWyaaSheet(true)}
             />
           </div>
