@@ -162,7 +162,7 @@ const REFLECTION_QUESTIONS: { key: string; label: string; hint: string; opts: st
     icon: <svg className={RX_SVG} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg> },
   { key: "mood", label: "Mood", hint: "Overall, how did you feel?", opts: ["Poor", "Fair", "Good", "Great"],
     icon: <svg className={RX_SVG} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M8 14s1.5 2 4 2 4-2 4-2" /><line x1="9" y1="9" x2="9.01" y2="9" /><line x1="15" y1="9" x2="15.01" y2="9" /></svg> },
-  { key: "stress", label: "Stress", hint: "How much pressure today?", opts: ["None", "Mild", "Moderate", "High"],
+  { key: "stress", label: "Stress", hint: "How much pressure today?", opts: ["High", "Moderate", "Mild", "None"],
     icon: <svg className={RX_SVG} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg> },
   { key: "digestion", label: "Digestion", hint: "How did your stomach feel?", opts: ["Poor", "Fair", "Good", "Great"],
     icon: <svg className={RX_SVG} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" /></svg> },
@@ -4114,39 +4114,55 @@ export default function HomeScreen() {
 
       {showReflection && (() => {
         const total = REFLECTION_QUESTIONS.length;
-        const atNote = reflectionStep === total;
-        const atCloser = reflectionStep > total;
+        const atIntro = reflectionStep === 0;
+        const q = reflectionStep >= 1 && reflectionStep <= total ? REFLECTION_QUESTIONS[reflectionStep - 1] : null;
+        const atNote = reflectionStep === total + 1;
+        const atCloser = reflectionStep === total + 2;
         const progress = Math.min(100, (reflectionStep / (total + 1)) * 100);
-        const q = reflectionStep < total ? REFLECTION_QUESTIONS[reflectionStep] : null;
         return (
-          <div className="fixed inset-0 z-[60] flex flex-col bg-white safe-top animate-card-fade">
-            <div className="h-1 w-full bg-ink/8">
-              <div className="h-full bg-primary transition-all duration-500" style={{ width: `${progress}%` }} />
-            </div>
+          <div className="fixed inset-0 z-[60] flex flex-col bg-gradient-to-b from-white to-primary/[0.06] safe-top animate-card-fade">
+            {!atIntro && (
+              <div className="h-1 w-full bg-ink/8">
+                <div className="h-full bg-primary transition-all duration-500" style={{ width: `${progress}%` }} />
+              </div>
+            )}
             <div className="flex flex-1 flex-col px-6 overflow-y-auto">
-              {!atCloser && (
+              {!atIntro && !atCloser && (
                 <div className="flex items-center justify-between pt-5">
-                  <button type="button" className="p-1 active:opacity-50" onClick={() => (reflectionStep > 0 ? setReflectionStep((s) => s - 1) : closeReflection())}>
+                  <button type="button" className="p-1 active:opacity-50" onClick={() => setReflectionStep((s) => s - 1)}>
                     <svg className="h-5 w-5 text-ink/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
                   </button>
-                  <button type="button" className="text-xs font-semibold text-ink/45 active:opacity-60" onClick={closeReflection}>Later</button>
+                  <p className="text-[11px] uppercase tracking-widest text-muted/50">Step {reflectionStep} of {total + 1}</p>
+                </div>
+              )}
+
+              {atIntro && (
+                <div className="flex flex-1 flex-col items-center justify-center px-2 pb-[6vh] text-center">
+                  <span className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/15 text-primary">
+                    <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
+                  </span>
+                  <h1 className="mt-5 text-2xl font-semibold text-ink">Your Nightly Check-In</h1>
+                  <p className="mt-3 max-w-xs text-sm leading-relaxed text-muted/75">A quick look back at your day. It takes under a minute, and it&apos;s how your coach learns what lifts your energy and what drags it down.</p>
+                  <button type="button" className="mt-8 w-full max-w-xs rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80" onClick={() => setReflectionStep(1)}>Get Started</button>
+                  <button type="button" className="mt-3 text-xs font-semibold text-ink/45 active:opacity-60" onClick={closeReflection}>Maybe Later</button>
                 </div>
               )}
 
               {q && (
-                <div className="mt-[8vh] pb-10">
+                <div className="mt-[7vh] pb-10">
                   <div className="mb-5 flex justify-center">{q.icon}</div>
                   <h1 className="text-center text-2xl font-semibold text-ink">{q.label}</h1>
                   <p className="mt-2 text-center text-sm text-muted/70">{q.hint}</p>
                   <div className="mt-8 flex flex-col gap-3">
-                    {q.opts.map((o, i) => {
+                    {q.opts.map((_o, idx) => idx).reverse().map((i) => {
+                      const o = q.opts[i];
                       const v = reflection[q.key];
                       const sel = q.multi ? Array.isArray(v) && v.includes(i) : v === i;
                       return (
                         <button
                           key={o}
                           type="button"
-                          className={`w-full rounded-xl border py-4 text-center text-sm font-medium transition active:opacity-80 ${sel ? "border-primary bg-primary/10 text-primary" : "border-ink/10 text-ink/80"}`}
+                          className={`w-full rounded-xl border py-4 text-center text-sm font-medium transition active:opacity-80 ${sel ? "border-primary bg-primary/10 text-primary" : "border-ink/10 bg-white text-ink/80"}`}
                           onClick={() => {
                             if (q.multi) {
                               setReflection((r) => {
@@ -4192,7 +4208,7 @@ export default function HomeScreen() {
                     value={reflectionNote}
                     onChange={(e) => setReflectionNote(e.target.value)}
                     placeholder="e.g. I had a long day"
-                    className="mt-8 w-full rounded-xl border border-ink/10 px-4 py-4 text-center text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    className="mt-8 w-full rounded-xl border border-ink/10 bg-white px-4 py-4 text-center text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
                   />
                   <button
                     type="button"
