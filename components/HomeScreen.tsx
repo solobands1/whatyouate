@@ -4150,7 +4150,7 @@ export default function HomeScreen() {
               )}
 
               {q && (
-                <div className="mt-[7vh] pb-10">
+                <div className="mt-[3vh] pb-10">
                   <div className="mb-5 flex justify-center">{q.icon}</div>
                   <h1 className="text-center text-2xl font-semibold text-ink">{q.label}</h1>
                   <p className="mt-2 text-center text-sm text-ink/65">{q.hint}</p>
@@ -4199,7 +4199,7 @@ export default function HomeScreen() {
               )}
 
               {atNote && (
-                <div className="mt-[8vh] pb-10">
+                <div className="mt-[3vh] pb-10">
                   <div className="mb-5 flex justify-center">
                     <svg className="h-10 w-10 text-primary/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
                   </div>
