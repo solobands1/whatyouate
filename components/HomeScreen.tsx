@@ -4120,8 +4120,8 @@ export default function HomeScreen() {
         const atCloser = reflectionStep === total + 2;
         const progress = Math.min(100, (reflectionStep / (total + 1)) * 100);
         return (
-          <div className="fixed inset-0 z-[60] flex flex-col bg-[#EDF4FF] px-6" style={{ paddingTop: "calc(env(safe-area-inset-top) + 3rem)", paddingBottom: "calc(env(safe-area-inset-bottom) + 4.5rem)" }}>
-            <div className="flex flex-1 flex-col overflow-hidden rounded-3xl border border-primary/20 bg-white animate-card-fade">
+          <div className="fixed inset-0 z-[60] flex flex-col justify-center bg-[#EDF4FF] px-6" style={{ paddingTop: "calc(env(safe-area-inset-top) + 1rem)", paddingBottom: "calc(env(safe-area-inset-bottom) + 1rem)" }}>
+            <div className="flex h-[72vh] max-h-full flex-col overflow-hidden rounded-3xl border border-primary/20 bg-white animate-card-fade">
             {!atIntro && (
               <div className="mx-5 mt-4 h-1.5 overflow-hidden rounded-full bg-ink/8">
                 <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${progress}%` }} />
@@ -4138,7 +4138,7 @@ export default function HomeScreen() {
               )}
 
               {atIntro && (
-                <div className="flex flex-1 flex-col items-center justify-center px-2 pb-[16vh] text-center">
+                <div className="flex flex-1 flex-col items-center justify-center px-2 pb-[10vh] text-center">
                   <span className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/15 text-primary">
                     <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
                   </span>
