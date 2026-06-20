@@ -4164,7 +4164,7 @@ export default function HomeScreen() {
                         <button
                           key={o}
                           type="button"
-                          className={`w-full rounded-xl border py-4 text-center text-sm font-medium transition active:opacity-80 ${sel ? "border-primary bg-primary/10 text-primary" : "border-ink/10 bg-white text-ink/80"}`}
+                          className={`w-full rounded-xl border py-4 text-center text-sm font-medium transition active:opacity-80 ${sel ? "border-primary bg-primary/10 text-primary" : "border-ink/20 bg-white text-ink/80"}`}
                           onClick={() => {
                             if (q.multi) {
                               setReflection((r) => {
