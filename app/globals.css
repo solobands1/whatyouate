@@ -363,6 +363,27 @@ input, textarea, select {
   animation: wyaaBounce 0.8s ease-in-out;
 }
 
+/* Coach eyes: a slow looking-around cycle (right, left, up, center) + blinks,
+   so it reads as curious and alive. */
+@keyframes wyaaLook {
+  0%, 16%   { transform: translate(0px, 0px); }
+  22%, 34%  { transform: translate(1.9px, 0.3px); }
+  40%, 52%  { transform: translate(-1.9px, 0.3px); }
+  58%, 68%  { transform: translate(0px, -1.5px); }
+  74%, 100% { transform: translate(0px, 0px); }
+}
+@keyframes wyaaBlink {
+  0%, 23%, 25%, 72%, 74%, 100% { transform: scaleY(1); }
+  24% { transform: scaleY(0.12); }
+  73% { transform: scaleY(0.12); }
+}
+.wyaa-look { animation: wyaaLook 6.5s ease-in-out infinite; }
+.wyaa-blink {
+  animation: wyaaBlink 6.5s ease-in-out infinite;
+  transform-origin: center;
+  transform-box: fill-box;
+}
+
 @keyframes drawerUp {
   from { transform: translateY(100%); }
   to { transform: translateY(0); }
@@ -385,6 +406,8 @@ input, textarea, select {
   .animate-wyaa-float,
   .animate-wyaa-bounce,
   .animate-wyaa-shadow,
+  .wyaa-look,
+  .wyaa-blink,
   .animate-drawer-up,
   .animate-drawer-down {
     animation: none;

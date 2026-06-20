@@ -29,10 +29,10 @@ export default function WyaaAvatar({
         <defs>
           {/* lighter body, round at the top, dissolving toward the bottom like a soft wisp */}
           <linearGradient id="wyaa-body" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#EAF2FF" />
-            <stop offset="38%" stopColor="#BCD6FF" />
-            <stop offset="74%" stopColor="#A8CBFF" stopOpacity="0.45" />
-            <stop offset="100%" stopColor="#A8CBFF" stopOpacity="0" />
+            <stop offset="0%" stopColor="#BAD6FF" />
+            <stop offset="52%" stopColor="#A9CCFF" />
+            <stop offset="80%" stopColor="#A9CCFF" stopOpacity="0.45" />
+            <stop offset="100%" stopColor="#A9CCFF" stopOpacity="0" />
           </linearGradient>
           {/* soft halo */}
           <radialGradient id="wyaa-halo" cx="50%" cy="42%" r="55%">
@@ -50,9 +50,13 @@ export default function WyaaAvatar({
         {/* glossy top highlight */}
         <ellipse cx="14.5" cy="10.5" rx="5.5" ry="3.4" fill="#FFFFFF" opacity="0.35" />
 
-        {/* friendly eyes — soft white ovals */}
-        <ellipse cx="15.6" cy="16.4" rx="2.2" ry="3.3" fill="#FFFFFF" />
-        <ellipse cx="24.4" cy="16.4" rx="2.2" ry="3.3" fill="#FFFFFF" />
+        {/* friendly eyes — soft white ovals that look around + blink (curious) */}
+        <g className="wyaa-look">
+          <g className="wyaa-blink">
+            <ellipse cx="15.6" cy="16.4" rx="2.2" ry="3.3" fill="#FFFFFF" />
+            <ellipse cx="24.4" cy="16.4" rx="2.2" ry="3.3" fill="#FFFFFF" />
+          </g>
+        </g>
       </svg>
     </button>
     <div
