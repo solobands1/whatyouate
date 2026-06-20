@@ -42,11 +42,15 @@ export default function WyaaAvatar({
         {/* glossy top highlight */}
         <ellipse cx="14.3" cy="10.5" rx="4" ry="2.4" fill="#FFFFFF" opacity="0.12" />
 
-        {/* friendly eyes — soft white ovals that look around + blink (curious) */}
+        {/* eyes — rounder whites with soft pupils + a catchlight, looking around + blinking */}
         <g className="wyaa-look">
           <g className="wyaa-blink">
-            <ellipse cx="15.6" cy="16.4" rx="2.2" ry="3.3" fill="#FFFFFF" />
-            <ellipse cx="24.4" cy="16.4" rx="2.2" ry="3.3" fill="#FFFFFF" />
+            <ellipse cx="15.6" cy="16.4" rx="2.6" ry="2.9" fill="#FFFFFF" />
+            <ellipse cx="24.4" cy="16.4" rx="2.6" ry="2.9" fill="#FFFFFF" />
+            <circle cx="15.6" cy="16.7" r="1.1" fill="#3D5C99" />
+            <circle cx="24.4" cy="16.7" r="1.1" fill="#3D5C99" />
+            <circle cx="15.2" cy="16.2" r="0.42" fill="#FFFFFF" />
+            <circle cx="24" cy="16.2" r="0.42" fill="#FFFFFF" />
           </g>
         </g>
       </svg>
