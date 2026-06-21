@@ -2573,6 +2573,12 @@ export default function HomeScreen() {
                 </div>
               </div>
             )}
+            {mealCount > 0 && (
+              <div className="mt-2.5 flex gap-3 text-[11px] text-muted/55">
+                <span className="flex-1"><span className="font-semibold text-ink/65">{formatClean(homeMarkers.todayTotals.carbs_g_min, homeMarkers.todayTotals.carbs_g_max, "g")}</span> Carbs</span>
+                <span className="flex-1"><span className="font-semibold text-ink/65">{formatClean(homeMarkers.todayTotals.fat_g_min, homeMarkers.todayTotals.fat_g_max, "g")}</span> Fat</span>
+              </div>
+            )}
           </div>
           <button
             type="button"
