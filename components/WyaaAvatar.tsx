@@ -131,7 +131,7 @@ export default function WyaaAvatar({
         </defs>
 
         {/* app-icon style squircle body with a wide rounded top tapering to a narrower bottom, fading toward the bottom */}
-        <path d="M15.5 3.5 L24.5 3.5 Q34 3.5 34 13 C35.4 16 34 26 28 30.5 C24.5 33 15.5 33 12 30.5 C6 26 4.6 16 6 13 Q6 3.5 15.5 3.5 Z" fill="url(#wyaa-body)" />
+        <path d="M18 3.4 L22 3.4 Q34 4 34 13 C35.4 16 34 26 28 30.5 C24.5 33 15.5 33 12 30.5 C6 26 4.6 16 6 13 Q6 4 18 3.4 Z" fill="url(#wyaa-body)" />
 
         {/* glossy top highlight */}
         <ellipse cx="14.3" cy="10.5" rx="4" ry="2.4" fill="#FFFFFF" opacity="0.12" />
