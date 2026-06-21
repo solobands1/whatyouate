@@ -181,6 +181,7 @@ export default function SummaryScreen() {
     }, 440);
   };
   const [showNudgeInfo, setShowNudgeInfo] = useState(false);
+  const [showNudgeHistory, setShowNudgeHistory] = useState(false);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -1192,176 +1193,239 @@ export default function SummaryScreen() {
 
         <Card className={`relative mt-6${nudgeCardIsNew && smartNudge ? " ring-1 ring-primary/20" : ""}`} data-tour="nudges-card">
           <div data-tour="nudges-inner" className="pointer-events-none absolute inset-x-1 -top-4 bottom-2" />
-          <div className="absolute -top-6 -right-1 z-10">
-            <WyaaAvatar
-              isNew={nudgeCardIsNew && !!smartNudge}
-              size={72}
-              onClick={openCoach}
-              fly={
-                coachPhase === "opening" || coachPhase === "open" || coachPhase === "closing"
-                  ? "out"
-                  : coachPhase === "returning"
-                    ? "in"
-                    : null
-              }
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Nudges</p>
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Habit Builder History</p>
             <button
-              className="flex h-4 w-4 items-center justify-center rounded-full border border-ink/20 transition hover:border-ink/40 active:opacity-60 focus:outline-none"
-              onClick={() => setShowNudgeInfo((v) => !v)}
+              type="button"
+              onClick={() => setShowNudgeHistory(true)}
+              className="flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/[0.06] px-2.5 py-1 text-[11px] font-semibold text-primary/80 transition active:opacity-70"
             >
-              <span className="text-[9px] leading-none text-muted/50">i</span>
+              <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7.5V12l3 2" /></svg>
+              Nudge History
             </button>
-            {nudgeCardIsNew && smartNudge && (
-              <span className="animate-card-fade inline-flex items-center rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold text-primary">New</span>
-            )}
           </div>
-          {showNudgeInfo && (
-            <p className="mt-2 text-[11px] leading-relaxed text-muted/55">
-              Insights are informed by{" "}
-              <a href="https://www.dietaryguidelines.gov" target="_blank" rel="noopener noreferrer" className="text-primary/70 underline underline-offset-2">USDA Dietary Guidelines</a>
-              {" and "}
-              <a href="https://www.nih.gov/health-information" target="_blank" rel="noopener noreferrer" className="text-primary/70 underline underline-offset-2">NIH nutrition research</a>
-              . This is for general wellness only. Consult a healthcare professional before making any health decisions.
-            </p>
-          )}
 
-          {isDemoMode ? (
-            <div className="mt-4 space-y-2.5">
-              <div className="flex items-center justify-between">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/50">This Afternoon</p>
-                <span className="text-[11px] text-ink/30">2:14 pm</span>
-              </div>
-              <div className="rounded-xl border border-primary/60 bg-primary/5 px-4 py-3 space-y-2.5">
-                <p className="text-sm font-medium text-ink/90">{DEMO_NUDGE}</p>
-                <p className="text-[11px] text-primary/70 font-medium">— Coach</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {["Chicken Breast", "Greek Yogurt", "Mixed Nuts"].map((food) => (
-                    <span key={food} className="rounded-full border border-ink/10 bg-white px-2.5 py-0.5 text-[11px] text-ink/60">+ {food}</span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ) : mealCount === 0 ? (
-            <div className="mt-3 space-y-1">
-              <p className="text-sm text-ink/70">Log a few meals and I’ll start learning your patterns.</p>
-              <p className="text-xs text-muted/65">Nudges appear after 5 meals.</p>
-            </div>
-          ) : mealCount < 5 ? (
-            <div className="mt-3 space-y-1">
-              <p className="text-sm text-ink/70">Getting Started — Log {5 - mealCount} more meal{5 - mealCount !== 1 ? "s" : ""} and I’ll have my first read on your patterns.</p>
-              <div className="mt-2 flex gap-1">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className={`h-1.5 flex-1 rounded-full ${i < mealCount ? "bg-primary/60" : "bg-ink/10"}`} />
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="mt-4 space-y-3">
-              {(() => {
-                const nudgeTs = smartNudge?.generatedAt ? new Date(smartNudge.generatedAt) : null;
-                const nudgeLocalHr = nudgeTs ? nudgeTs.getHours() : new Date().getHours();
-                const windowLabel = smartNudge?.type === "weekly_summary" ? "Week Recap" : nudgeLocalHr < 12 ? "This Morning" : nudgeLocalHr < 17 ? "This Afternoon" : "This Evening";
-                const nudgeTimeLabel = nudgeTs ? nudgeTs.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }).toLowerCase() : null;
-                return (
-                  <div className="flex items-center justify-between">
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/65">{windowLabel}</p>
-                    {nudgeTimeLabel && <span className="text-[11px] text-ink/50">{nudgeTimeLabel}</span>}
-                  </div>
-                );
-              })()}
-
-              {smartNudge && trial.isFree && !isDemoMode ? (
-                <div className="relative overflow-hidden rounded-xl border border-primary/30 bg-primary/5 px-4 py-3">
-                  <p className="text-sm font-medium text-ink/90 line-clamp-1">
-                    {smartNudge.message.slice(0, 48)}{smartNudge.message.length > 48 ? "..." : ""}
-                  </p>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-surface/80 backdrop-blur-[3px]">
-                    <button type="button" onClick={openUpgradeModal} className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition active:opacity-80">
-                      Unlock To Read
-                    </button>
-                  </div>
-                </div>
-              ) : smartNudge ? (
-                (() => {
-                  const nudge = smartNudge;
-                  const todayCalAvg = (summaryMarkers.todayTotals.calories_min + summaryMarkers.todayTotals.calories_max) / 2;
-                  const todayProAvg = (summaryMarkers.todayTotals.protein_g_min + summaryMarkers.todayTotals.protein_g_max) / 2;
-                  const calTarget = summaryMarkers.gentleTargets?.calories ?? 0;
-                  const proTarget = summaryMarkers.gentleTargets?.protein ?? 0;
-                  const isCaughtUp =
-                    (nudge.type === "calorie_low" && calTarget > 0 && todayCalAvg >= calTarget * 0.9) ||
-                    ((nudge.type === "protein_low" || nudge.type === "protein_low_critical") && proTarget > 0 && todayProAvg >= proTarget * 0.85);
-                  const noSuggestionTypes = ["workout_missing", "calorie_high", "on_track", "win", "best_day", "momentum", "habit", "pattern", "variety", "check_in", "discovery", "weekly_summary", "encouragement", "food_win", "micronutrient_win", "streak", "honest"];
-                  const foodSuggestions = !noSuggestionTypes.includes(nudge.type)
-                    ? (nudge.suggestions ?? []).slice(0, 3)
-                    : [];
-                  return (
-                    <div className="rounded-xl border border-primary/60 bg-primary/5 px-4 py-3 space-y-2.5">
-                      <p className="text-sm font-medium text-ink/90">{nudge.message.replace(/\n+/g, " ")}</p>
-                      <p className="text-[11px] text-primary/70 font-medium">— Coach</p>
-                      {isCaughtUp && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-600">
-                          <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 6l3 3 5-5"/></svg>
-                          Caught up since then
+          {(() => {
+            const builtHabits = [
+              { title: "Hydration", days: 5, when: "This week", result: "Helped", tone: "good" as const },
+              { title: "Walk After Lunch", days: 3, when: "Last week", result: "Helped a lot", tone: "great" as const },
+              { title: "Protein At Breakfast", days: 3, when: "2 weeks ago", result: "Not sure", tone: "neutral" as const },
+              { title: "Earlier Dinner", days: 5, when: "3 weeks ago", result: "Helped", tone: "good" as const },
+            ];
+            const toneChip: Record<"great" | "good" | "neutral", string> = {
+              great: "bg-emerald-500/15 text-emerald-600",
+              good: "bg-primary/15 text-primary",
+              neutral: "bg-ink/[0.08] text-ink/55",
+            };
+            if (builtHabits.length === 0) {
+              return <p className="mt-3 text-sm text-muted/65">Your completed habit builders will collect here, one win at a time.</p>;
+            }
+            return (
+              <>
+                <p className="mt-1 text-sm text-ink/70"><span className="font-semibold text-ink">{builtHabits.length} habits</span> built so far. Keep stacking them.</p>
+                <div className="mt-4">
+                  {builtHabits.map((h, i) => (
+                    <div key={h.title} className="relative flex gap-3 pb-4 last:pb-0">
+                      <div className="relative flex flex-col items-center">
+                        <span className="z-10 flex h-7 w-7 items-center justify-center rounded-full border-2 border-primary/40 bg-primary/15 text-primary">
+                          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l4 4L19 7" /></svg>
                         </span>
-                      )}
-                      {foodSuggestions.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5">
-                          {foodSuggestions.map((food) => (
-                            <span key={food} className="rounded-full border border-ink/10 bg-white px-2.5 py-0.5 text-[11px] text-ink/60">
-                              + {food}
-                            </span>
-                          ))}
+                        {i < builtHabits.length - 1 && <span className="absolute top-7 bottom-0 w-0.5 bg-primary/15" />}
+                      </div>
+                      <div className="flex-1 rounded-xl border border-primary/15 bg-primary/[0.05] px-3 py-2.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-sm font-semibold text-ink">{h.title}</p>
+                          <span className="shrink-0 text-[10px] text-muted/60">{h.when}</span>
                         </div>
-                      )}
-                    </div>
-                  );
-                })()
-              ) : (
-                <div className="rounded-xl border border-primary/60 bg-primary/5 px-4 py-3 flex items-center gap-2.5">
-                  <span className="relative flex h-2 w-2 shrink-0">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
-                    <span className="relative inline-flex h-2 w-2 rounded-full bg-primary/80" />
-                  </span>
-                  <p className="text-[13px] font-medium text-primary/70">Monitoring Your Patterns</p>
-                </div>
-              )}
-
-              {/* Past nudges */}
-              {trial.isFree && historyGroups.length > 0 && (
-                <button type="button" onClick={openUpgradeModal} className="mt-1 w-full rounded-lg bg-ink/5 px-3 py-2.5 text-left transition active:opacity-70">
-                  <p className="text-xs text-ink/50">
-                    {historyGroups.reduce((n, g) => n + g.items.length, 0)} previous nudges are locked{" "}
-                    <span className="font-semibold text-primary/70">Upgrade To Read</span>
-                  </p>
-                </button>
-              )}
-              {!trial.isFree && historyGroups.slice(0, visibleNudgeGroupCount).map((group) => (
-                <div key={group.label} className="space-y-1.5">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/65">{group.label}</p>
-                  {group.items.map((nudge) => (
-                    <div key={nudge.id ?? nudge.message} className="rounded-lg bg-ink/5 px-3 py-2 text-xs text-ink/60">
-                      <p>{nudge.message.replace(/ • /g, ". ").replace(/\.{2,}$/g, "")}</p>
+                        <div className="mt-1 flex items-center gap-2">
+                          <span className="text-[11px] text-muted/70">{h.days}-day builder</span>
+                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${toneChip[h.tone]}`}>{h.result}</span>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
-              ))}
-              {!trial.isFree && visibleNudgeGroupCount < historyGroups.length && (
-                <button type="button" className="mt-1 text-[11px] font-semibold text-ink/50 underline transition active:opacity-50" onClick={() => setVisibleNudgeGroupCount((prev) => prev + 3)}>
-                  Show more
-                </button>
-              )}
-            </div>
-          )}
+              </>
+            );
+          })()}
         </Card>
 
 
       </div>
 
       <BottomNav current="summary" />
+
+      {/* Nudge history sheet */}
+      {showNudgeHistory && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={() => setShowNudgeHistory(false)}>
+          <div className="absolute inset-0 bg-black/30" />
+          <div className="relative w-full max-w-md max-h-[85vh] overflow-y-auto rounded-t-3xl bg-white p-5 pb-8 shadow-xl animate-drawer-up" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-3">
+              <WyaaAvatar
+                size={48}
+                onClick={openCoach}
+                fly={
+                  coachPhase === "opening" || coachPhase === "open" || coachPhase === "closing"
+                    ? "out"
+                    : coachPhase === "returning"
+                      ? "in"
+                      : null
+                }
+              />
+              <div className="flex-1">
+                <p className="text-base font-semibold text-ink">Nudges</p>
+                <p className="text-xs text-muted/65">Honest reads from your coach</p>
+              </div>
+              <button type="button" onClick={() => setShowNudgeHistory(false)} className="text-sm font-semibold text-ink/50 active:opacity-60">Close</button>
+            </div>
+
+            <div className="mt-5">
+              {isDemoMode ? (
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/50">This Afternoon</p>
+                    <span className="text-[11px] text-ink/30">2:14 pm</span>
+                  </div>
+                  <div className="rounded-xl border border-primary/60 bg-primary/5 px-4 py-3 space-y-2.5">
+                    <p className="text-sm font-medium text-ink/90">{DEMO_NUDGE}</p>
+                    <p className="text-[11px] text-primary/70 font-medium">— Coach</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {["Chicken Breast", "Greek Yogurt", "Mixed Nuts"].map((food) => (
+                        <span key={food} className="rounded-full border border-ink/10 bg-white px-2.5 py-0.5 text-[11px] text-ink/60">+ {food}</span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : mealCount === 0 ? (
+                <div className="space-y-1">
+                  <p className="text-sm text-ink/70">Log a few meals and I’ll start learning your patterns.</p>
+                  <p className="text-xs text-muted/65">Nudges appear after 5 meals.</p>
+                </div>
+              ) : mealCount < 5 ? (
+                <div className="space-y-1">
+                  <p className="text-sm text-ink/70">Getting Started — Log {5 - mealCount} more meal{5 - mealCount !== 1 ? "s" : ""} and I’ll have my first read on your patterns.</p>
+                  <div className="mt-2 flex gap-1">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <div key={i} className={`h-1.5 flex-1 rounded-full ${i < mealCount ? "bg-primary/60" : "bg-ink/10"}`} />
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {(() => {
+                    const nudgeTs = smartNudge?.generatedAt ? new Date(smartNudge.generatedAt) : null;
+                    const nudgeLocalHr = nudgeTs ? nudgeTs.getHours() : new Date().getHours();
+                    const windowLabel = smartNudge?.type === "weekly_summary" ? "Week Recap" : nudgeLocalHr < 12 ? "This Morning" : nudgeLocalHr < 17 ? "This Afternoon" : "This Evening";
+                    const nudgeTimeLabel = nudgeTs ? nudgeTs.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }).toLowerCase() : null;
+                    return (
+                      <div className="flex items-center justify-between">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/65">{windowLabel}</p>
+                        {nudgeTimeLabel && <span className="text-[11px] text-ink/50">{nudgeTimeLabel}</span>}
+                      </div>
+                    );
+                  })()}
+
+                  {smartNudge && trial.isFree && !isDemoMode ? (
+                    <div className="relative overflow-hidden rounded-xl border border-primary/30 bg-primary/5 px-4 py-3">
+                      <p className="text-sm font-medium text-ink/90 line-clamp-1">
+                        {smartNudge.message.slice(0, 48)}{smartNudge.message.length > 48 ? "..." : ""}
+                      </p>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-surface/80 backdrop-blur-[3px]">
+                        <button type="button" onClick={openUpgradeModal} className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition active:opacity-80">
+                          Unlock To Read
+                        </button>
+                      </div>
+                    </div>
+                  ) : smartNudge ? (
+                    (() => {
+                      const nudge = smartNudge;
+                      const todayCalAvg = (summaryMarkers.todayTotals.calories_min + summaryMarkers.todayTotals.calories_max) / 2;
+                      const todayProAvg = (summaryMarkers.todayTotals.protein_g_min + summaryMarkers.todayTotals.protein_g_max) / 2;
+                      const calTarget = summaryMarkers.gentleTargets?.calories ?? 0;
+                      const proTarget = summaryMarkers.gentleTargets?.protein ?? 0;
+                      const isCaughtUp =
+                        (nudge.type === "calorie_low" && calTarget > 0 && todayCalAvg >= calTarget * 0.9) ||
+                        ((nudge.type === "protein_low" || nudge.type === "protein_low_critical") && proTarget > 0 && todayProAvg >= proTarget * 0.85);
+                      const noSuggestionTypes = ["workout_missing", "calorie_high", "on_track", "win", "best_day", "momentum", "habit", "pattern", "variety", "check_in", "discovery", "weekly_summary", "encouragement", "food_win", "micronutrient_win", "streak", "honest"];
+                      const foodSuggestions = !noSuggestionTypes.includes(nudge.type)
+                        ? (nudge.suggestions ?? []).slice(0, 3)
+                        : [];
+                      return (
+                        <div className="rounded-xl border border-primary/60 bg-primary/5 px-4 py-3 space-y-2.5">
+                          <p className="text-sm font-medium text-ink/90">{nudge.message.replace(/\n+/g, " ")}</p>
+                          <p className="text-[11px] text-primary/70 font-medium">— Coach</p>
+                          {isCaughtUp && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-600">
+                              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 6l3 3 5-5"/></svg>
+                              Caught up since then
+                            </span>
+                          )}
+                          {foodSuggestions.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5">
+                              {foodSuggestions.map((food) => (
+                                <span key={food} className="rounded-full border border-ink/10 bg-white px-2.5 py-0.5 text-[11px] text-ink/60">
+                                  + {food}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()
+                  ) : (
+                    <div className="rounded-xl border border-primary/60 bg-primary/5 px-4 py-3 flex items-center gap-2.5">
+                      <span className="relative flex h-2 w-2 shrink-0">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
+                        <span className="relative inline-flex h-2 w-2 rounded-full bg-primary/80" />
+                      </span>
+                      <p className="text-[13px] font-medium text-primary/70">Monitoring Your Patterns</p>
+                    </div>
+                  )}
+
+                  {/* Past nudges */}
+                  {trial.isFree && historyGroups.length > 0 && (
+                    <button type="button" onClick={openUpgradeModal} className="mt-1 w-full rounded-lg bg-ink/5 px-3 py-2.5 text-left transition active:opacity-70">
+                      <p className="text-xs text-ink/50">
+                        {historyGroups.reduce((n, g) => n + g.items.length, 0)} previous nudges are locked{" "}
+                        <span className="font-semibold text-primary/70">Upgrade To Read</span>
+                      </p>
+                    </button>
+                  )}
+                  {!trial.isFree && historyGroups.slice(0, visibleNudgeGroupCount).map((group) => (
+                    <div key={group.label} className="space-y-1.5">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/65">{group.label}</p>
+                      {group.items.map((nudge) => (
+                        <div key={nudge.id ?? nudge.message} className="rounded-lg bg-ink/5 px-3 py-2 text-xs text-ink/60">
+                          <p>{nudge.message.replace(/ • /g, ". ").replace(/\.{2,}$/g, "")}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                  {!trial.isFree && visibleNudgeGroupCount < historyGroups.length && (
+                    <button type="button" className="mt-1 text-[11px] font-semibold text-ink/50 underline transition active:opacity-50" onClick={() => setVisibleNudgeGroupCount((prev) => prev + 3)}>
+                      Show more
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <button type="button" onClick={() => setShowNudgeInfo((v) => !v)} className="mt-5 flex items-center gap-1 text-[11px] text-muted/60 active:opacity-60">
+              <span className="flex h-4 w-4 items-center justify-center rounded-full border border-ink/20 text-[9px]">i</span>
+              How nudges work
+            </button>
+            {showNudgeInfo && (
+              <p className="mt-2 text-[11px] leading-relaxed text-muted/55">
+                Insights are informed by{" "}
+                <a href="https://www.dietaryguidelines.gov" target="_blank" rel="noopener noreferrer" className="text-primary/70 underline underline-offset-2">USDA Dietary Guidelines</a>
+                {" and "}
+                <a href="https://www.nih.gov/health-information" target="_blank" rel="noopener noreferrer" className="text-primary/70 underline underline-offset-2">NIH nutrition research</a>
+                . This is for general wellness only. Consult a healthcare professional before making any health decisions.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* About AI Coach sheet */}
       {showWyaaSheet && (
