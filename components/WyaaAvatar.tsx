@@ -43,19 +43,19 @@ export default function WyaaAvatar({
       >
         <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            {/* Clean base gradient for the orb. */}
+            {/* Light, glassy base gradient. */}
             <linearGradient id="wyaa-orb" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#C2DBFF" />
-              <stop offset="100%" stopColor="#7FB0FF" />
+              <stop offset="0%" stopColor="#EFF6FF" />
+              <stop offset="100%" stopColor="#CADFFF" />
             </linearGradient>
             {/* Wider-range blue hues so the drifting colours clearly shift: bright cyan, deep indigo-blue, primary, periwinkle. */}
             <radialGradient id="wyaa-b1" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#5FD2FF" stopOpacity="0.95" />
-              <stop offset="100%" stopColor="#5FD2FF" stopOpacity="0" />
+              <stop offset="0%" stopColor="#4ECBFF" stopOpacity="1" />
+              <stop offset="100%" stopColor="#4ECBFF" stopOpacity="0" />
             </radialGradient>
             <radialGradient id="wyaa-b2" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#2E55C4" stopOpacity="0.9" />
-              <stop offset="100%" stopColor="#2E55C4" stopOpacity="0" />
+              <stop offset="0%" stopColor="#1E45AE" stopOpacity="0.95" />
+              <stop offset="100%" stopColor="#1E45AE" stopOpacity="0" />
             </radialGradient>
             <radialGradient id="wyaa-b3" cx="50%" cy="50%" r="50%">
               <stop offset="0%" stopColor="#6FA8FF" stopOpacity="0.9" />
