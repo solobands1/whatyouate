@@ -1045,7 +1045,7 @@ export default function SummaryScreen() {
         })()}
 
 
-        <Card className="mt-6" data-tour="summary-week">
+        <Card data-tour="summary-week">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">This week</p>
 
           {/* 7-day dot strip */}
@@ -1098,6 +1098,59 @@ export default function SummaryScreen() {
               </div>
             </>
           )}
+        </Card>
+
+        <Card className="mt-6">
+          {(() => {
+            const ts = !isDemoMode && smartNudge?.generatedAt ? new Date(smartNudge.generatedAt) : null;
+            const isSameDay = ts ? ts.toDateString() === new Date().toDateString() : true;
+            const stamp = isDemoMode
+              ? "2:14 pm"
+              : ts
+                ? (isSameDay
+                    ? ts.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }).toLowerCase()
+                    : ts.toLocaleDateString([], { month: "short", day: "numeric" }))
+                : "";
+            const locked = !isDemoMode && trial.isFree && !!smartNudge;
+            const message = isDemoMode ? DEMO_NUDGE : smartNudge ? smartNudge.message.replace(/\n+/g, " ") : null;
+            return (
+              <>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Most Recent Nudge</p>
+                  {stamp && <span className="text-[11px] text-ink/45">{stamp}</span>}
+                </div>
+                {locked ? (
+                  <div className="relative mt-3 overflow-hidden rounded-xl border border-primary/30 bg-primary/5 px-4 py-3">
+                    <p className="text-sm font-medium text-ink/90 line-clamp-1">{smartNudge!.message.slice(0, 48)}{smartNudge!.message.length > 48 ? "..." : ""}</p>
+                    <div className="absolute inset-0 flex items-center justify-center bg-surface/80 backdrop-blur-[3px]">
+                      <button type="button" onClick={openUpgradeModal} className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition active:opacity-80">Unlock To Read</button>
+                    </div>
+                  </div>
+                ) : message ? (
+                  <div className="mt-3 rounded-xl border border-primary/60 bg-primary/5 px-4 py-3">
+                    <p className="text-sm font-medium text-ink/90">{message}</p>
+                    <p className="mt-2 text-[11px] font-medium text-primary/70">— Coach</p>
+                  </div>
+                ) : (
+                  <div className="mt-3 flex items-center gap-2.5 rounded-xl border border-primary/60 bg-primary/5 px-4 py-3">
+                    <span className="relative flex h-2 w-2 shrink-0">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-primary/80" />
+                    </span>
+                    <p className="text-[13px] font-medium text-primary/70">Monitoring Your Patterns</p>
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setShowNudgeHistory(true)}
+                  className="mt-3 flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/[0.06] px-3 py-1.5 text-[11px] font-semibold text-primary/80 transition active:opacity-70"
+                >
+                  <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7.5V12l3 2" /></svg>
+                  Nudge History
+                </button>
+              </>
+            );
+          })()}
         </Card>
 
         <Card className={`relative mt-6${nudgeCardIsNew && smartNudge ? " ring-1 ring-primary/20" : ""}`} data-tour="nudges-card">

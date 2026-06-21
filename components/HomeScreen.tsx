@@ -1762,6 +1762,10 @@ export default function HomeScreen() {
   const protMid = (homeMarkers.todayTotals.protein_g_min + homeMarkers.todayTotals.protein_g_max) / 2;
   const calPct = Math.min(100, Math.round((calMid / gentleTargetsDisplay.calories) * 100));
   const protPct = Math.min(100, Math.round((protMid / gentleTargetsDisplay.protein) * 100));
+  const carbMid = (homeMarkers.todayTotals.carbs_g_min + homeMarkers.todayTotals.carbs_g_max) / 2;
+  const fatMid = (homeMarkers.todayTotals.fat_g_min + homeMarkers.todayTotals.fat_g_max) / 2;
+  const carbPct = Math.min(100, Math.round((carbMid / (homeMarkers.gentleTargets?.carbs ?? 277)) * 100));
+  const fatPct = Math.min(100, Math.round((fatMid / (homeMarkers.gentleTargets?.fat ?? 77)) * 100));
   const showStatsBanner = !loadingData && !isDemoMode
     && displayMeals.filter((m) => m.analysisJson?.source !== "supplement").length >= 1
     && (!profile || profile.height === null || profile.weight === null || profile.age === null);
@@ -2574,9 +2578,19 @@ export default function HomeScreen() {
               </div>
             )}
             {mealCount > 0 && (
-              <div className="mt-2.5 flex gap-3 text-[11px] text-muted/55">
-                <span className="flex-1"><span className="font-semibold text-ink/65">{formatClean(homeMarkers.todayTotals.carbs_g_min, homeMarkers.todayTotals.carbs_g_max, "g")}</span> Carbs</span>
-                <span className="flex-1"><span className="font-semibold text-ink/65">{formatClean(homeMarkers.todayTotals.fat_g_min, homeMarkers.todayTotals.fat_g_max, "g")}</span> Fat</span>
+              <div className="mt-2.5 flex gap-3">
+                <div className="flex flex-1 items-center gap-2">
+                  <span className="whitespace-nowrap text-[11px] text-muted/55"><span className="font-semibold text-ink/65">{formatClean(homeMarkers.todayTotals.carbs_g_min, homeMarkers.todayTotals.carbs_g_max, "g")}</span> Carbs</span>
+                  <div className="h-1 flex-1 overflow-hidden rounded-full bg-ink/5">
+                    <div className="h-full rounded-full bg-primary/55" style={{ width: `${barsReady ? carbPct : 0}%`, transition: "width 700ms cubic-bezier(0.22,1,0.36,1) 160ms" }} />
+                  </div>
+                </div>
+                <div className="flex flex-1 items-center gap-2">
+                  <span className="whitespace-nowrap text-[11px] text-muted/55"><span className="font-semibold text-ink/65">{formatClean(homeMarkers.todayTotals.fat_g_min, homeMarkers.todayTotals.fat_g_max, "g")}</span> Fat</span>
+                  <div className="h-1 flex-1 overflow-hidden rounded-full bg-ink/5">
+                    <div className="h-full rounded-full bg-primary/55" style={{ width: `${barsReady ? fatPct : 0}%`, transition: "width 700ms cubic-bezier(0.22,1,0.36,1) 240ms" }} />
+                  </div>
+                </div>
               </div>
             )}
           </div>
