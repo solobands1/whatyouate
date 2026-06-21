@@ -43,24 +43,24 @@ export default function WyaaAvatar({
       >
         <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            {/* Even, matte blue body (no glossy hot spot) so the moving blobs are what reads. */}
+            {/* Light, translucent blue body so the moving blobs show through clearly. */}
             <radialGradient id="wyaa-orb" cx="48%" cy="46%" r="62%">
-              <stop offset="0%" stopColor="#7FB0FF" />
-              <stop offset="62%" stopColor="#6098F0" />
-              <stop offset="100%" stopColor="#3F79DE" />
+              <stop offset="0%" stopColor="#ABCEFF" />
+              <stop offset="62%" stopColor="#7FB0FF" />
+              <stop offset="100%" stopColor="#5A92EC" />
             </radialGradient>
-            {/* Inner blobs that flow inside: a light tone, a bright tone, and a deeper blue for depth. */}
+            {/* Inner blobs that flow inside: a light tone, a bright tone, and a deeper blue for depth. High contrast so the motion reads. */}
             <radialGradient id="wyaa-blob-light" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#CFE4FF" stopOpacity="0.95" />
-              <stop offset="100%" stopColor="#CFE4FF" stopOpacity="0" />
+              <stop offset="0%" stopColor="#E4F0FF" stopOpacity="1" />
+              <stop offset="100%" stopColor="#E4F0FF" stopOpacity="0" />
             </radialGradient>
             <radialGradient id="wyaa-blob-bright" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#EAF3FF" stopOpacity="0.95" />
-              <stop offset="100%" stopColor="#EAF3FF" stopOpacity="0" />
+              <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.95" />
+              <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
             </radialGradient>
             <radialGradient id="wyaa-blob-deep" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#2F62C8" stopOpacity="0.8" />
-              <stop offset="100%" stopColor="#2F62C8" stopOpacity="0" />
+              <stop offset="0%" stopColor="#235AC0" stopOpacity="0.95" />
+              <stop offset="100%" stopColor="#235AC0" stopOpacity="0" />
             </radialGradient>
             {/* Outer glow. */}
             <radialGradient id="wyaa-glow" cx="50%" cy="50%" r="50%">
@@ -69,7 +69,7 @@ export default function WyaaAvatar({
             </radialGradient>
             {/* Soft blur so the blobs blend like plasma rather than hard circles. */}
             <filter id="wyaa-soft" x="-30%" y="-30%" width="160%" height="160%">
-              <feGaussianBlur stdDeviation="1.3" />
+              <feGaussianBlur stdDeviation="1.1" />
             </filter>
             <clipPath id="wyaa-clip">
               <circle cx="20" cy="20" r="13.5" />
@@ -85,16 +85,16 @@ export default function WyaaAvatar({
               <circle className="wyaa-ping" cx="20" cy="20" r="13.5" fill="none" stroke="#6FA8FF" strokeWidth="1.4" />
             )}
 
-            {/* matte body */}
-            <circle cx="20" cy="20" r="13.5" fill="url(#wyaa-orb)" />
+            {/* translucent body */}
+            <circle cx="20" cy="20" r="13.5" fill="url(#wyaa-orb)" fillOpacity="0.9" />
 
             {/* flowing inner blobs, blurred and clipped inside the orb */}
             <g clipPath="url(#wyaa-clip)">
               <g filter="url(#wyaa-soft)">
-                <circle className="wyaa-blob-1" cx="14.5" cy="15" r="8.5" fill="url(#wyaa-blob-light)" />
-                <circle className="wyaa-blob-2" cx="26" cy="24" r="8" fill="url(#wyaa-blob-deep)" />
-                <circle className="wyaa-blob-3" cx="21" cy="22" r="6" fill="url(#wyaa-blob-bright)" />
-                <circle className="wyaa-blob-4" cx="24" cy="14" r="6.5" fill="url(#wyaa-blob-light)" />
+                <circle className="wyaa-blob-1" cx="14" cy="15" r="9.5" fill="url(#wyaa-blob-light)" />
+                <circle className="wyaa-blob-2" cx="26" cy="24" r="9" fill="url(#wyaa-blob-deep)" />
+                <circle className="wyaa-blob-3" cx="21" cy="22" r="7" fill="url(#wyaa-blob-bright)" />
+                <circle className="wyaa-blob-4" cx="25" cy="14" r="7.5" fill="url(#wyaa-blob-light)" />
               </g>
             </g>
 
