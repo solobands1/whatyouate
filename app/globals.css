@@ -363,33 +363,39 @@ input, textarea, select {
   animation: wyaaBounce 0.8s ease-in-out;
 }
 
-/* Coach entrance: a little excited pop-in on load. A few variants so each load
-   looks a bit different. */
-@keyframes wyaaPop1 {
-  0%   { transform: scale(0.45) translateY(7px); opacity: 0; }
-  55%  { transform: scale(1.16) translateY(-4px); opacity: 1; }
-  73%  { transform: scale(0.94) translateY(1px); }
-  87%  { transform: scale(1.04) translateY(-1px); }
-  100% { transform: scale(1) translateY(0); }
+/* Coach entrance: bouncy/jumpy on load (squash + hop), a few variants so each
+   load looks a bit different. */
+@keyframes wyaaPop1 { /* drop in and settle like a ball */
+  0%   { transform: translateY(-15px) scale(0.92); opacity: 0; }
+  22%  { transform: translateY(0) scale(1.12, 0.86); opacity: 1; }
+  42%  { transform: translateY(-11px) scale(0.97, 1.05); }
+  60%  { transform: translateY(0) scale(1.06, 0.92); }
+  76%  { transform: translateY(-4px) scale(1); }
+  90%  { transform: translateY(0) scale(1.02, 0.98); }
+  100% { transform: translateY(0) scale(1); }
 }
-@keyframes wyaaPop2 {
-  0%   { transform: scale(0.5) rotate(-9deg); opacity: 0; }
-  50%  { transform: scale(1.13) rotate(6deg); opacity: 1; }
-  70%  { transform: scale(0.97) rotate(-3deg); }
-  86%  { transform: scale(1.03) rotate(1.5deg); }
-  100% { transform: scale(1) rotate(0deg); }
+@keyframes wyaaPop2 { /* land, then hop side to side and settle */
+  0%   { transform: translate(0, -12px) scale(0.92); opacity: 0; }
+  18%  { transform: translate(0, 0) scale(1.12, 0.86); opacity: 1; }
+  38%  { transform: translate(-6px, -10px) rotate(-7deg); }
+  55%  { transform: translate(-6px, 0) scale(1.06, 0.92); }
+  74%  { transform: translate(6px, -9px) rotate(6deg); }
+  90%  { transform: translate(0, 0) scale(1.04, 0.95); }
+  100% { transform: translate(0, 0) scale(1) rotate(0deg); }
 }
-@keyframes wyaaPop3 {
-  0%   { transform: scale(0.5) translateY(8px); opacity: 0; }
-  38%  { transform: scale(1.12) translateY(-5px); opacity: 1; }
-  56%  { transform: scale(0.96) translateY(0); }
-  73%  { transform: scale(1.08) translateY(-4px); }
-  88%  { transform: scale(0.98) translateY(0); }
-  100% { transform: scale(1) translateY(0); }
+@keyframes wyaaPop3 { /* excited triple hop in place */
+  0%   { transform: translateY(0) scale(0.94); opacity: 0; }
+  12%  { transform: translateY(0); opacity: 1; }
+  28%  { transform: translateY(-12px); }
+  44%  { transform: translateY(0) scale(1.1, 0.88); }
+  60%  { transform: translateY(-8px); }
+  76%  { transform: translateY(0) scale(1.05, 0.93); }
+  88%  { transform: translateY(-3px); }
+  100% { transform: translateY(0) scale(1); }
 }
-.wyaa-pop-1 { animation: wyaaPop1 0.85s cubic-bezier(0.34, 1.56, 0.5, 1) both; }
-.wyaa-pop-2 { animation: wyaaPop2 0.9s cubic-bezier(0.34, 1.5, 0.5, 1) both; }
-.wyaa-pop-3 { animation: wyaaPop3 1s cubic-bezier(0.34, 1.4, 0.5, 1) both; }
+.wyaa-pop-1 { animation: wyaaPop1 0.95s cubic-bezier(0.3, 1.3, 0.5, 1) both; transform-origin: center bottom; }
+.wyaa-pop-2 { animation: wyaaPop2 1.15s cubic-bezier(0.3, 1.2, 0.5, 1) both; transform-origin: center bottom; }
+.wyaa-pop-3 { animation: wyaaPop3 1.05s cubic-bezier(0.3, 1.3, 0.5, 1) both; transform-origin: center bottom; }
 
 @keyframes drawerUp {
   from { transform: translateY(100%); }

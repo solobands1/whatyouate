@@ -30,7 +30,7 @@ export default function WyaaAvatar({
     const variants = ["wyaa-pop-1", "wyaa-pop-2", "wyaa-pop-3"];
     setPopClass(variants[Math.floor(Math.random() * variants.length)]);
     setEntering(true);
-    const t = setTimeout(() => setEntering(false), 1050);
+    const t = setTimeout(() => setEntering(false), 1200);
     return () => clearTimeout(t);
   }, []);
 
@@ -80,10 +80,10 @@ export default function WyaaAvatar({
         <defs>
           {/* lighter body, round at the top, dissolving toward the bottom like a soft wisp */}
           <linearGradient id="wyaa-body" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#8FBCFF" />
-            <stop offset="50%" stopColor="#6FA8FF" />
-            <stop offset="85%" stopColor="#6FA8FF" stopOpacity="0.55" />
-            <stop offset="100%" stopColor="#6FA8FF" stopOpacity="0.18" />
+            <stop offset="0%" stopColor="#A6CDFF" />
+            <stop offset="50%" stopColor="#83B6FF" />
+            <stop offset="85%" stopColor="#83B6FF" stopOpacity="0.5" />
+            <stop offset="100%" stopColor="#83B6FF" stopOpacity="0.16" />
           </linearGradient>
         </defs>
 
