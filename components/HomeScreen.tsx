@@ -4121,28 +4121,33 @@ export default function HomeScreen() {
         const progress = Math.min(100, (reflectionStep / (total + 1)) * 100);
         return (
           <div className="fixed inset-0 z-[60] flex flex-col justify-start bg-[#EDF4FF] px-6" style={{ paddingTop: "calc(env(safe-area-inset-top) + 2.5rem)", paddingBottom: "calc(env(safe-area-inset-bottom) + 1rem)" }}>
-            {/* Faint crescent moons scattered across the whole blue background, for the nightly theme. */}
+            {/* Faint crescent moons scattered across the whole blue background, for the nightly theme.
+                "meet" keeps the full field on screen (no side crop) so they peek at the top, sides
+                and bottom around the card. */}
             <div aria-hidden className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-              <svg className="h-full w-full" viewBox="0 0 400 800" fill="none" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+              <svg className="h-full w-full" viewBox="0 0 400 800" fill="none" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
                 <g fill="#6FA8FF">
-                  <g opacity="0.10" transform="translate(34 40) scale(1.5) rotate(6)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
-                  <g opacity="0.07" transform="translate(170 70) scale(0.95) rotate(-7)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
-                  <g opacity="0.11" transform="translate(300 50) scale(2.1) rotate(8)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
-                  <g opacity="0.08" transform="translate(60 140) scale(1.1) rotate(4)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
-                  <g opacity="0.09" transform="translate(240 160) scale(1.6) rotate(-9)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
-                  <g opacity="0.07" transform="translate(350 200) scale(1.0) rotate(5)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
-                  <g opacity="0.10" transform="translate(120 240) scale(1.3) rotate(-4)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
-                  <g opacity="0.07" transform="translate(300 300) scale(0.9) rotate(7)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
-                  <g opacity="0.09" transform="translate(40 330) scale(1.8) rotate(-6)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
-                  <g opacity="0.08" transform="translate(200 380) scale(1.1) rotate(3)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
-                  <g opacity="0.10" transform="translate(330 430) scale(1.4) rotate(-8)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
-                  <g opacity="0.07" transform="translate(90 470) scale(1.0) rotate(5)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
-                  <g opacity="0.11" transform="translate(250 520) scale(2.0) rotate(9)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
-                  <g opacity="0.08" transform="translate(160 580) scale(0.95) rotate(-5)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
-                  <g opacity="0.09" transform="translate(40 620) scale(1.5) rotate(6)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
-                  <g opacity="0.08" transform="translate(330 660) scale(1.2) rotate(-7)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
-                  <g opacity="0.10" transform="translate(120 710) scale(1.7) rotate(4)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
-                  <g opacity="0.07" transform="translate(260 750) scale(0.9) rotate(-3)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
+                  {/* top band */}
+                  <g opacity="0.10" transform="translate(30 14) scale(1.3) rotate(6)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
+                  <g opacity="0.08" transform="translate(150 30) scale(0.9) rotate(-7)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
+                  <g opacity="0.11" transform="translate(262 12) scale(1.7) rotate(8)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
+                  <g opacity="0.07" transform="translate(352 36) scale(1.0) rotate(-5)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
+                  {/* left column */}
+                  <g opacity="0.09" transform="translate(8 130) scale(1.4) rotate(5)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
+                  <g opacity="0.08" transform="translate(16 300) scale(1.0) rotate(-6)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
+                  <g opacity="0.10" transform="translate(6 470) scale(1.6) rotate(6)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
+                  <g opacity="0.08" transform="translate(14 640) scale(1.1) rotate(-4)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
+                  {/* right column */}
+                  <g opacity="0.08" transform="translate(372 110) scale(1.2) rotate(-7)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
+                  <g opacity="0.10" transform="translate(380 280) scale(1.5) rotate(6)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
+                  <g opacity="0.07" transform="translate(368 450) scale(1.0) rotate(-5)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
+                  <g opacity="0.09" transform="translate(378 630) scale(1.3) rotate(5)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
+                  {/* bottom band */}
+                  <g opacity="0.09" transform="translate(160 560) scale(1.2) rotate(6)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
+                  <g opacity="0.11" transform="translate(290 600) scale(2.0) rotate(9)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
+                  <g opacity="0.10" transform="translate(80 690) scale(1.5) rotate(-6)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
+                  <g opacity="0.08" transform="translate(220 740) scale(1.0) rotate(5)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
+                  <g opacity="0.09" transform="translate(330 720) scale(1.3) rotate(-4)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
                 </g>
               </svg>
             </div>
