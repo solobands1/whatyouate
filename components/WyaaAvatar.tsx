@@ -43,10 +43,10 @@ export default function WyaaAvatar({
       >
         <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            {/* Light, glassy base gradient. */}
+            {/* Light blue glassy base gradient (more blue, less white). */}
             <linearGradient id="wyaa-orb" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#EFF6FF" />
-              <stop offset="100%" stopColor="#CADFFF" />
+              <stop offset="0%" stopColor="#CFE2FF" />
+              <stop offset="100%" stopColor="#9EC2FF" />
             </linearGradient>
             {/* Wider-range blue hues so the drifting colours clearly shift: bright cyan, deep indigo-blue, primary, periwinkle. */}
             <radialGradient id="wyaa-b1" cx="50%" cy="50%" r="50%">
@@ -54,8 +54,8 @@ export default function WyaaAvatar({
               <stop offset="100%" stopColor="#4ECBFF" stopOpacity="0" />
             </radialGradient>
             <radialGradient id="wyaa-b2" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#1E45AE" stopOpacity="0.95" />
-              <stop offset="100%" stopColor="#1E45AE" stopOpacity="0" />
+              <stop offset="0%" stopColor="#102A66" stopOpacity="1" />
+              <stop offset="100%" stopColor="#102A66" stopOpacity="0" />
             </radialGradient>
             <radialGradient id="wyaa-b3" cx="50%" cy="50%" r="50%">
               <stop offset="0%" stopColor="#6FA8FF" stopOpacity="0.9" />
@@ -72,7 +72,7 @@ export default function WyaaAvatar({
             </radialGradient>
             {/* Blur so the blobs melt into a smooth gradient, but defined enough that the colour shift reads. */}
             <filter id="wyaa-soft" x="-40%" y="-40%" width="180%" height="180%">
-              <feGaussianBlur stdDeviation="1.7" />
+              <feGaussianBlur stdDeviation="1.4" />
             </filter>
             <clipPath id="wyaa-clip">
               <circle cx="20" cy="20" r="13.5" />
