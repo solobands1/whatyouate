@@ -130,8 +130,8 @@ export default function WyaaAvatar({
           </linearGradient>
         </defs>
 
-        {/* app-icon style rounded square (squircle) body, fading toward the bottom */}
-        <rect x="6" y="3.5" width="28" height="28" rx="9.5" fill="url(#wyaa-body)" />
+        {/* app-icon style squircle body with a wide rounded top tapering to a narrower bottom, fading toward the bottom */}
+        <path d="M15.5 3.5 L24.5 3.5 Q34 3.5 34 13 C34 21 33.5 26 30 30 C26 32.5 14 32.5 10 30 C6.5 26 6 21 6 13 Q6 3.5 15.5 3.5 Z" fill="url(#wyaa-body)" />
 
         {/* glossy top highlight */}
         <ellipse cx="14.3" cy="10.5" rx="4" ry="2.4" fill="#FFFFFF" opacity="0.12" />
