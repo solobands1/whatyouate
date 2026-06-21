@@ -37,7 +37,7 @@ export default function WyaaAvatar({
       <button
         type="button"
         onClick={onClick}
-        className={`inline-flex shrink-0 transition active:opacity-80 ${flyClass ? flyClass : "animate-wyaa-float"}`}
+        className={`inline-flex shrink-0 transition active:opacity-80 ${flyClass ?? ""}`}
         aria-label="About your AI coach"
         style={{ background: "none", border: "none", padding: 0 }}
       >
@@ -96,6 +96,7 @@ export default function WyaaAvatar({
           {/* orb sits above the fixed shadow; orbit slowly rotates the whole orb;
               breathe squashes/stretches it, so the bulge travels around the edge and it
               feels alive (cheap, smooth transforms). */}
+          <g className="wyaa-orb-float">
           <g transform="translate(0 -3.5)">
           <g className="wyaa-orbit">
             <g className="wyaa-breathe">
@@ -112,6 +113,7 @@ export default function WyaaAvatar({
                 </g>
               </g>
             </g>
+          </g>
           </g>
           </g>
         </svg>

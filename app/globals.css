@@ -455,6 +455,11 @@ input, textarea, select {
 @keyframes wyaaOrbit { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 .wyaa-orbit { transform-box: fill-box; transform-origin: center; animation: wyaaOrbit 30s linear infinite; }
 
+/* Gentle vertical bob for the orb only (the shadow stays a fixed floor). Units are
+   SVG user units, so this is a small float at the rendered size. */
+@keyframes wyaaOrbFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-1.6px); } }
+.wyaa-orb-float { animation: wyaaOrbFloat 4s ease-in-out infinite; }
+
 /* Soft contact shadow that widens/fades in sync with the orb's breathing. */
 @keyframes wyaaContactShadow {
   0%, 100% { transform: scaleX(1.05); opacity: 0.9; }
@@ -500,6 +505,7 @@ input, textarea, select {
   .wyaa-mesh-4,
   .wyaa-mesh-spin,
   .wyaa-orbit,
+  .wyaa-orb-float,
   .wyaa-contact-shadow,
   .wyaa-breathe,
   .wyaa-glow-pulse,
