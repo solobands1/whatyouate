@@ -1192,7 +1192,7 @@ export default function SummaryScreen() {
 
         <Card className={`relative mt-6${nudgeCardIsNew && smartNudge ? " ring-1 ring-primary/20" : ""}`} data-tour="nudges-card">
           <div data-tour="nudges-inner" className="pointer-events-none absolute inset-x-1 -top-4 bottom-2" />
-          <div className="absolute -top-8 -right-1 z-10">
+          <div className="absolute -top-6 -right-1 z-10">
             <WyaaAvatar
               isNew={nudgeCardIsNew && !!smartNudge}
               size={72}
