@@ -48,31 +48,31 @@ export default function WyaaAvatar({
               <stop offset="0%" stopColor="#C2DBFF" />
               <stop offset="100%" stopColor="#7FB0FF" />
             </linearGradient>
-            {/* Soft colour blobs in different blue hues that drift to form a living gradient. */}
+            {/* Wider-range blue hues so the drifting colours clearly shift: bright cyan, deep indigo-blue, primary, periwinkle. */}
             <radialGradient id="wyaa-b1" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#9AD8FF" stopOpacity="0.85" />
-              <stop offset="100%" stopColor="#9AD8FF" stopOpacity="0" />
+              <stop offset="0%" stopColor="#5FD2FF" stopOpacity="0.95" />
+              <stop offset="100%" stopColor="#5FD2FF" stopOpacity="0" />
             </radialGradient>
             <radialGradient id="wyaa-b2" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#3F79DE" stopOpacity="0.6" />
-              <stop offset="100%" stopColor="#3F79DE" stopOpacity="0" />
+              <stop offset="0%" stopColor="#2E55C4" stopOpacity="0.9" />
+              <stop offset="100%" stopColor="#2E55C4" stopOpacity="0" />
             </radialGradient>
             <radialGradient id="wyaa-b3" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#6FA8FF" stopOpacity="0.75" />
+              <stop offset="0%" stopColor="#6FA8FF" stopOpacity="0.9" />
               <stop offset="100%" stopColor="#6FA8FF" stopOpacity="0" />
             </radialGradient>
             <radialGradient id="wyaa-b4" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#A9C4FF" stopOpacity="0.7" />
-              <stop offset="100%" stopColor="#A9C4FF" stopOpacity="0" />
+              <stop offset="0%" stopColor="#9CB6FF" stopOpacity="0.85" />
+              <stop offset="100%" stopColor="#9CB6FF" stopOpacity="0" />
             </radialGradient>
             {/* Outer glow. */}
             <radialGradient id="wyaa-glow" cx="50%" cy="50%" r="50%">
               <stop offset="55%" stopColor="#6FA8FF" stopOpacity="0.28" />
               <stop offset="100%" stopColor="#6FA8FF" stopOpacity="0" />
             </radialGradient>
-            {/* Heavy blur so the blobs melt into a smooth, modern gradient field. */}
+            {/* Blur so the blobs melt into a smooth gradient, but defined enough that the colour shift reads. */}
             <filter id="wyaa-soft" x="-40%" y="-40%" width="180%" height="180%">
-              <feGaussianBlur stdDeviation="2.2" />
+              <feGaussianBlur stdDeviation="1.7" />
             </filter>
             <clipPath id="wyaa-clip">
               <circle cx="20" cy="20" r="13.5" />
