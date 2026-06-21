@@ -444,8 +444,12 @@ input, textarea, select {
 }
 .wyaa-core-pulse { transform-box: fill-box; transform-origin: center; animation: wyaaCorePulse 4s ease-in-out infinite; }
 
-@keyframes wyaaBreathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.035); } }
-.wyaa-breathe { transform-box: fill-box; transform-origin: center; animation: wyaaBreathe 4s ease-in-out infinite; }
+@keyframes wyaaBreathe {
+  0%, 100% { transform: scale(1, 1); }
+  33%      { transform: scale(1.05, 0.97); }
+  66%      { transform: scale(0.97, 1.04); }
+}
+.wyaa-breathe { transform-box: fill-box; transform-origin: center; animation: wyaaBreathe 6s ease-in-out infinite; }
 
 @keyframes wyaaGlowPulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 0.85; } }
 .wyaa-glow-pulse { animation: wyaaGlowPulse 4s ease-in-out infinite; }
