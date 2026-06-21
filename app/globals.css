@@ -411,28 +411,28 @@ input, textarea, select {
    scale slowly behind a heavy blur, so the colour flows smoothly (Apple
    Intelligence / modern assistant style) with a clean crisp circle edge. */
 @keyframes wyaaMesh1 {
-  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.85; }
-  33%      { transform: translate(6px, -5px) scale(1.3); opacity: 1; }
-  66%      { transform: translate(2px, 5px) scale(0.82); opacity: 0.55; }
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.8; }
+  33%      { transform: translate(2.5px, -2px) scale(1.12); opacity: 1; }
+  66%      { transform: translate(1px, 2px) scale(0.92); opacity: 0.7; }
 }
 @keyframes wyaaMesh2 {
-  0%, 100% { transform: translate(0, 0) scale(1.05); opacity: 0.7; }
-  40%      { transform: translate(-6px, 5px) scale(0.84); opacity: 1; }
-  70%      { transform: translate(4px, -4px) scale(1.2); opacity: 0.6; }
+  0%, 100% { transform: translate(0, 0) scale(1.03); opacity: 0.7; }
+  40%      { transform: translate(-2.5px, 2px) scale(0.92); opacity: 0.95; }
+  70%      { transform: translate(1.5px, -1.5px) scale(1.1); opacity: 0.65; }
 }
 @keyframes wyaaMesh3 {
-  0%, 100% { transform: translate(0, 0) scale(0.95); opacity: 0.75; }
-  45%      { transform: translate(5px, 6px) scale(1.25); opacity: 1; }
-  75%      { transform: translate(-5px, -2px) scale(0.85); opacity: 0.6; }
+  0%, 100% { transform: translate(0, 0) scale(0.97); opacity: 0.72; }
+  45%      { transform: translate(2px, 2.5px) scale(1.12); opacity: 0.95; }
+  75%      { transform: translate(-2px, -1px) scale(0.92); opacity: 0.65; }
 }
 @keyframes wyaaMesh4 {
   0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.65; }
-  50%      { transform: translate(-5px, -6px) scale(1.2); opacity: 1; }
+  50%      { transform: translate(-2px, -2.5px) scale(1.1); opacity: 0.9; }
 }
-.wyaa-mesh-1 { transform-box: fill-box; transform-origin: center; animation: wyaaMesh1 7s ease-in-out infinite; }
-.wyaa-mesh-2 { transform-box: fill-box; transform-origin: center; animation: wyaaMesh2 9s ease-in-out infinite; animation-delay: -3s; }
-.wyaa-mesh-3 { transform-box: fill-box; transform-origin: center; animation: wyaaMesh3 11s ease-in-out infinite; animation-delay: -5s; }
-.wyaa-mesh-4 { transform-box: fill-box; transform-origin: center; animation: wyaaMesh4 13s ease-in-out infinite; animation-delay: -8s; }
+.wyaa-mesh-1 { transform-box: fill-box; transform-origin: center; animation: wyaaMesh1 10s ease-in-out infinite; }
+.wyaa-mesh-2 { transform-box: fill-box; transform-origin: center; animation: wyaaMesh2 13s ease-in-out infinite; animation-delay: -4s; }
+.wyaa-mesh-3 { transform-box: fill-box; transform-origin: center; animation: wyaaMesh3 16s ease-in-out infinite; animation-delay: -7s; }
+.wyaa-mesh-4 { transform-box: fill-box; transform-origin: center; animation: wyaaMesh4 19s ease-in-out infinite; animation-delay: -11s; }
 
 /* Slow overall rotation so the whole colour field gently churns. */
 @keyframes wyaaMeshSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
@@ -447,13 +447,13 @@ input, textarea, select {
 /* Squash-and-stretch breathe: the orb becomes a wide then tall ellipse, and the
    wyaa-orbit rotation spins that bulge around the edge so it morphs smoothly. */
 @keyframes wyaaBreathe {
-  0%, 100% { transform: scale(1.06, 0.95); }
-  50%      { transform: scale(0.95, 1.06); }
+  0%, 100% { transform: scale(1.03, 0.98); }
+  50%      { transform: scale(0.98, 1.03); }
 }
-.wyaa-breathe { transform-box: fill-box; transform-origin: center; animation: wyaaBreathe 5s ease-in-out infinite; }
+.wyaa-breathe { transform-box: fill-box; transform-origin: center; animation: wyaaBreathe 7s ease-in-out infinite; }
 
 @keyframes wyaaOrbit { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-.wyaa-orbit { transform-box: fill-box; transform-origin: center; animation: wyaaOrbit 16s linear infinite; }
+.wyaa-orbit { transform-box: fill-box; transform-origin: center; animation: wyaaOrbit 30s linear infinite; }
 
 @keyframes wyaaGlowPulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 0.85; } }
 .wyaa-glow-pulse { animation: wyaaGlowPulse 4s ease-in-out infinite; }
