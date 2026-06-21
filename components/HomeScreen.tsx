@@ -4125,13 +4125,13 @@ export default function HomeScreen() {
             <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-[36vh] overflow-hidden">
               <svg className="h-full w-full" viewBox="0 0 400 240" fill="none" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
                 <g fill="#6FA8FF">
-                  <g opacity="0.10" transform="translate(34 54) scale(1.5) rotate(18)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
-                  <g opacity="0.07" transform="translate(168 24) scale(0.95) rotate(-14)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
-                  <g opacity="0.12" transform="translate(296 86) scale(2.1) rotate(34)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
-                  <g opacity="0.07" transform="translate(232 150) scale(1.1) rotate(8)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
-                  <g opacity="0.09" transform="translate(74 168) scale(1.7) rotate(-26)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
-                  <g opacity="0.08" transform="translate(344 198) scale(1.2) rotate(48)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
-                  <g opacity="0.10" transform="translate(168 206) scale(0.85) rotate(-6)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
+                  <g opacity="0.10" transform="translate(34 54) scale(1.5) rotate(6)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
+                  <g opacity="0.07" transform="translate(168 24) scale(0.95) rotate(-7)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
+                  <g opacity="0.12" transform="translate(296 86) scale(2.1) rotate(8)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
+                  <g opacity="0.07" transform="translate(232 150) scale(1.1) rotate(4)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
+                  <g opacity="0.09" transform="translate(74 168) scale(1.7) rotate(-9)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
+                  <g opacity="0.08" transform="translate(344 198) scale(1.2) rotate(5)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
+                  <g opacity="0.10" transform="translate(168 206) scale(0.85) rotate(-3)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
                 </g>
               </svg>
             </div>
