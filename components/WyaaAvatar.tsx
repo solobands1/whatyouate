@@ -43,11 +43,11 @@ export default function WyaaAvatar({
       >
         <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            {/* Glowing blue sphere: brighter mid, deeper (but not black) blue rim. */}
+            {/* Glowing blue sphere: bright mid, medium-blue rim (kept fairly light). */}
             <radialGradient id="wyaa-orb" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#4E7AD0" />
-              <stop offset="58%" stopColor="#3460BC" />
-              <stop offset="100%" stopColor="#1C3D80" />
+              <stop offset="0%" stopColor="#6E97DE" />
+              <stop offset="58%" stopColor="#4D77CE" />
+              <stop offset="100%" stopColor="#3056A8" />
             </radialGradient>
             {/* Luminous core bloom. */}
             <radialGradient id="wyaa-core" cx="50%" cy="50%" r="50%">
@@ -81,16 +81,24 @@ export default function WyaaAvatar({
             {/* glowing sphere */}
             <circle cx="20" cy="20" r="13.5" fill="url(#wyaa-orb)" />
 
-            {/* horizontal waving light ribbons + core bloom, blurred and clipped inside */}
+            {/* 3 center-anchored ribbons; each is two halves that pivot around the
+                center so the middle stays put and the ends wave. Core bloom behind. */}
             <g clipPath="url(#wyaa-clip)">
               <g filter="url(#wyaa-soft)">
                 {/* core bloom sits behind the ribbons */}
                 <circle className="wyaa-core-pulse" cx="20" cy="20" r="6.5" fill="url(#wyaa-core)" />
-                <path className="wyaa-rib-a" d="M-8 14 Q2 11.8 12 14 Q22 16.2 32 14 Q42 11.8 52 14" fill="none" stroke="#BCE0FF" strokeOpacity="0.7" strokeWidth="1.9" strokeLinecap="round" />
-                <path className="wyaa-rib-b" d="M-8 17.5 Q2 19.9 12 17.5 Q22 15.1 32 17.5 Q42 19.9 52 17.5" fill="none" stroke="#93CFFF" strokeOpacity="0.65" strokeWidth="1.8" strokeLinecap="round" />
-                <path className="wyaa-rib-c" d="M-8 20 Q2 16.8 12 20 Q22 23.2 32 20 Q42 16.8 52 20" fill="none" stroke="#79C4FF" strokeOpacity="0.62" strokeWidth="2" strokeLinecap="round" />
-                <path className="wyaa-rib-d" d="M-8 22.5 Q2 24.9 12 22.5 Q22 20.1 32 22.5 Q42 24.9 52 22.5" fill="none" stroke="#8FBCFF" strokeOpacity="0.6" strokeWidth="1.8" strokeLinecap="round" />
-                <path className="wyaa-rib-e" d="M-8 26 Q2 23.6 12 26 Q22 28.4 32 26 Q42 23.6 52 26" fill="none" stroke="#A9D8FF" strokeOpacity="0.58" strokeWidth="1.8" strokeLinecap="round" />
+
+                {/* ribbon 1 (baseline 17.5) */}
+                <path className="wyaa-sway-1" style={{ transformBox: "view-box", transformOrigin: "20px 17.5px" }} d="M20 17.5 Q8 14.5 -6 17.5" fill="none" stroke="#BCE0FF" strokeOpacity="0.7" strokeWidth="1.9" strokeLinecap="round" />
+                <path className="wyaa-sway-2" style={{ transformBox: "view-box", transformOrigin: "20px 17.5px" }} d="M20 17.5 Q32 20.5 46 17.5" fill="none" stroke="#BCE0FF" strokeOpacity="0.7" strokeWidth="1.9" strokeLinecap="round" />
+
+                {/* ribbon 2 (baseline 20) */}
+                <path className="wyaa-sway-3" style={{ transformBox: "view-box", transformOrigin: "20px 20px" }} d="M20 20 Q8 23 -6 20" fill="none" stroke="#79C4FF" strokeOpacity="0.64" strokeWidth="2" strokeLinecap="round" />
+                <path className="wyaa-sway-4" style={{ transformBox: "view-box", transformOrigin: "20px 20px" }} d="M20 20 Q32 17 46 20" fill="none" stroke="#79C4FF" strokeOpacity="0.64" strokeWidth="2" strokeLinecap="round" />
+
+                {/* ribbon 3 (baseline 22.5) */}
+                <path className="wyaa-sway-5" style={{ transformBox: "view-box", transformOrigin: "20px 22.5px" }} d="M20 22.5 Q8 19.5 -6 22.5" fill="none" stroke="#A9D8FF" strokeOpacity="0.6" strokeWidth="1.8" strokeLinecap="round" />
+                <path className="wyaa-sway-6" style={{ transformBox: "view-box", transformOrigin: "20px 22.5px" }} d="M20 22.5 Q32 25.5 46 22.5" fill="none" stroke="#A9D8FF" strokeOpacity="0.6" strokeWidth="1.8" strokeLinecap="round" />
               </g>
             </g>
           </g>
