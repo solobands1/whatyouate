@@ -1193,17 +1193,6 @@ export default function SummaryScreen() {
 
         <Card className={`relative mt-6${nudgeCardIsNew && smartNudge ? " ring-1 ring-primary/20" : ""}`} data-tour="nudges-card">
           <div data-tour="nudges-inner" className="pointer-events-none absolute inset-x-1 -top-4 bottom-2" />
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Habit Builder History</p>
-            <button
-              type="button"
-              onClick={() => setShowNudgeHistory(true)}
-              className="flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/[0.06] px-2.5 py-1 text-[11px] font-semibold text-primary/80 transition active:opacity-70"
-            >
-              <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7.5V12l3 2" /></svg>
-              Nudge History
-            </button>
-          </div>
 
           {(() => {
             const builtHabits = [
@@ -1222,17 +1211,14 @@ export default function SummaryScreen() {
             }
             return (
               <>
-                <div className="mt-2 flex gap-2">
-                  <div className="flex-1 rounded-2xl border border-primary/15 bg-primary/[0.06] px-3 py-3 text-center">
-                    <p className="text-3xl font-bold leading-none text-primary">{builtHabits.length}</p>
-                    <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-muted/65">Habits Built</p>
-                  </div>
-                  <div className="flex-1 rounded-2xl border border-primary/15 bg-primary/[0.06] px-3 py-3 text-center">
-                    <p className="text-3xl font-bold leading-none text-primary">{builtHabits.reduce((n, h) => n + h.days, 0)}</p>
-                    <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-muted/65">Days Practiced</p>
+                <div className="flex items-start justify-between gap-3">
+                  <p className="pt-1.5 text-xs font-semibold uppercase tracking-wide text-muted/70">Habit Builder History</p>
+                  <div className="flex h-36 w-36 shrink-0 flex-col items-center justify-center rounded-full border-2 border-primary/25 bg-primary/[0.07]">
+                    <span className="text-5xl font-bold leading-none text-primary">{builtHabits.length}</span>
+                    <span className="mt-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted/65">Habits Built</span>
                   </div>
                 </div>
-                <p className="mt-3 mb-1 text-xs font-semibold uppercase tracking-wide text-muted/55">Your Journey</p>
+                <p className="mt-4 mb-1 text-xs font-semibold uppercase tracking-wide text-muted/55">Your Journey</p>
                 <div className="mt-1">
                   {builtHabits.map((h, i) => (
                     <div key={h.title} className="relative flex gap-3 pb-4 last:pb-0">
@@ -1255,6 +1241,16 @@ export default function SummaryScreen() {
                     </div>
                   ))}
                 </div>
+
+                {/* Temporarily parked here until final placement is decided. */}
+                <button
+                  type="button"
+                  onClick={() => setShowNudgeHistory(true)}
+                  className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-full border border-primary/20 bg-primary/[0.06] px-3 py-2 text-[11px] font-semibold text-primary/80 transition active:opacity-70"
+                >
+                  <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7.5V12l3 2" /></svg>
+                  Nudge History
+                </button>
               </>
             );
           })()}
