@@ -80,9 +80,6 @@ export default function WyaaAvatar({
           </defs>
 
           <g className="wyaa-breathe">
-            {/* soft outer glow */}
-            <circle className="wyaa-glow-pulse" cx="20" cy="20" r="19" fill="url(#wyaa-glow)" />
-
             {/* attention pulse when there's something new */}
             {isNew && (
               <circle className="wyaa-ping" cx="20" cy="20" r="13.5" fill="none" stroke="#6FA8FF" strokeWidth="1.4" />
