@@ -363,39 +363,29 @@ input, textarea, select {
   animation: wyaaBounce 0.8s ease-in-out;
 }
 
-/* Coach entrance: bouncy/jumpy on load (squash + hop), a few variants so each
-   load looks a bit different. */
-@keyframes wyaaPop1 { /* drop in and settle like a ball */
-  0%   { transform: translateY(-15px) scale(0.92); opacity: 0; }
-  22%  { transform: translateY(0) scale(1.12, 0.86); opacity: 1; }
-  42%  { transform: translateY(-11px) scale(0.97, 1.05); }
-  60%  { transform: translateY(0) scale(1.06, 0.92); }
-  76%  { transform: translateY(-4px) scale(1); }
-  90%  { transform: translateY(0) scale(1.02, 0.98); }
+/* Coach entrance: after a calm beat it notices you and bounces up and down.
+   Both variants start and end at rest, with a tiny anticipation crouch so it
+   reads as a reaction rather than a pop-in. */
+@keyframes wyaaPop1 { /* notice, then one big bounce that settles */
+  0%   { transform: translateY(0) scale(1); }
+  12%  { transform: translateY(2px) scale(1.05, 0.92); }   /* crouch / notice */
+  40%  { transform: translateY(-13px) scale(0.97, 1.05); } /* spring up */
+  62%  { transform: translateY(0) scale(1.07, 0.9); }      /* land squash */
+  80%  { transform: translateY(-4px) scale(1); }           /* small rebound */
   100% { transform: translateY(0) scale(1); }
 }
-@keyframes wyaaPop2 { /* land, then hop side to side and settle */
-  0%   { transform: translate(0, -12px) scale(0.92); opacity: 0; }
-  18%  { transform: translate(0, 0) scale(1.12, 0.86); opacity: 1; }
-  38%  { transform: translate(-6px, -10px) rotate(-7deg); }
-  55%  { transform: translate(-6px, 0) scale(1.06, 0.92); }
-  74%  { transform: translate(6px, -9px) rotate(6deg); }
-  90%  { transform: translate(0, 0) scale(1.04, 0.95); }
-  100% { transform: translate(0, 0) scale(1) rotate(0deg); }
-}
-@keyframes wyaaPop3 { /* excited triple hop in place */
-  0%   { transform: translateY(0) scale(0.94); opacity: 0; }
-  12%  { transform: translateY(0); opacity: 1; }
-  28%  { transform: translateY(-12px); }
-  44%  { transform: translateY(0) scale(1.1, 0.88); }
-  60%  { transform: translateY(-8px); }
-  76%  { transform: translateY(0) scale(1.05, 0.93); }
-  88%  { transform: translateY(-3px); }
+@keyframes wyaaPop3 { /* notice, then an excited double hop */
+  0%   { transform: translateY(0) scale(1); }
+  10%  { transform: translateY(2px) scale(1.05, 0.92); }   /* crouch / notice */
+  30%  { transform: translateY(-13px); }                   /* hop 1 */
+  48%  { transform: translateY(0) scale(1.08, 0.9); }
+  64%  { transform: translateY(-9px); }                    /* hop 2 */
+  80%  { transform: translateY(0) scale(1.04, 0.94); }
+  90%  { transform: translateY(-3px); }
   100% { transform: translateY(0) scale(1); }
 }
-.wyaa-pop-1 { animation: wyaaPop1 0.95s cubic-bezier(0.3, 1.3, 0.5, 1) both; transform-origin: center bottom; }
-.wyaa-pop-2 { animation: wyaaPop2 1.15s cubic-bezier(0.3, 1.2, 0.5, 1) both; transform-origin: center bottom; }
-.wyaa-pop-3 { animation: wyaaPop3 1.05s cubic-bezier(0.3, 1.3, 0.5, 1) both; transform-origin: center bottom; }
+.wyaa-pop-1 { animation: wyaaPop1 0.9s cubic-bezier(0.3, 1.3, 0.5, 1) both; transform-origin: center bottom; }
+.wyaa-pop-3 { animation: wyaaPop3 1s cubic-bezier(0.3, 1.3, 0.5, 1) both; transform-origin: center bottom; }
 
 @keyframes drawerUp {
   from { transform: translateY(100%); }
@@ -420,7 +410,6 @@ input, textarea, select {
   .animate-wyaa-bounce,
   .animate-wyaa-shadow,
   .wyaa-pop-1,
-  .wyaa-pop-2,
   .wyaa-pop-3,
   .animate-drawer-up,
   .animate-drawer-down {

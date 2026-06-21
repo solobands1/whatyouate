@@ -20,18 +20,23 @@ export default function WyaaAvatar({
 }: WyaaAvatarProps) {
   const [gaze, setGaze] = useState({ x: 0, y: 0, dur: 0.8 });
   const [blink, setBlink] = useState(false);
+  const [wander, setWander] = useState({ x: 0, dur: 1.4 });
 
-  // Excited pop-in on load, then settle to the calm float. Random variant so each
-  // load looks a bit different.
+  // On load it sits calmly for a beat, then "notices" you and bounces up and
+  // down, then settles back to the calm float. Random variant + slight delay so
+  // each load feels a little different.
   const [popClass, setPopClass] = useState("");
   const [entering, setEntering] = useState(false);
   useEffect(() => {
     if (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
-    const variants = ["wyaa-pop-1", "wyaa-pop-2", "wyaa-pop-3"];
-    setPopClass(variants[Math.floor(Math.random() * variants.length)]);
-    setEntering(true);
-    const t = setTimeout(() => setEntering(false), 1200);
-    return () => clearTimeout(t);
+    const variants = ["wyaa-pop-1", "wyaa-pop-3"];
+    let end: ReturnType<typeof setTimeout>;
+    const start = setTimeout(() => {
+      setPopClass(variants[Math.floor(Math.random() * variants.length)]);
+      setEntering(true);
+      end = setTimeout(() => setEntering(false), 1100);
+    }, 500 + Math.random() * 350);
+    return () => { clearTimeout(start); clearTimeout(end); };
   }, []);
 
   // Random, calm glances: it rests, then occasionally drifts to a new spot (often
@@ -51,6 +56,28 @@ export default function WyaaAvatar({
     return () => clearTimeout(t);
   }, []);
 
+  // Occasionally the whole body wanders a little to one side, then drifts back
+  // to center. Not constant, random side + distance + timing so it never reads
+  // as a fixed "left then back" pattern.
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    const reach = size * 0.075;
+    let t1: ReturnType<typeof setTimeout>;
+    let t2: ReturnType<typeof setTimeout>;
+    const loop = () => {
+      t1 = setTimeout(() => {
+        if (Math.random() < 0.6) {
+          const offset = (Math.random() < 0.5 ? -1 : 1) * (reach * 0.45 + Math.random() * reach * 0.55);
+          setWander({ x: offset, dur: 1.1 + Math.random() * 1.1 });
+          t2 = setTimeout(() => setWander({ x: 0, dur: 1.0 + Math.random() * 1.2 }), 1400 + Math.random() * 2000);
+        }
+        loop();
+      }, 5000 + Math.random() * 6500);
+    };
+    loop();
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [size]);
+
   // Occasional blink at random intervals.
   useEffect(() => {
     if (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
@@ -68,7 +95,7 @@ export default function WyaaAvatar({
   }, []);
 
   return (
-    <div className={`relative inline-flex shrink-0 flex-col items-center ${className}`} style={{ width: size, height: size + 8 }}>
+    <div className={`relative inline-flex shrink-0 flex-col items-center ${className}`} style={{ width: size, height: size + 8, transform: `translateX(${wander.x}px)`, transition: `transform ${wander.dur}s ease-in-out` }}>
     <button
       type="button"
       onClick={onClick}
