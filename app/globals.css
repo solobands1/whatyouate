@@ -403,23 +403,33 @@ input, textarea, select {
 .wyaa-fly-out { animation: wyaaFlyOut 0.42s cubic-bezier(0.5, 0, 0.75, 0.15) both; transform-origin: center bottom; }
 .wyaa-fly-in { animation: wyaaFlyIn 0.6s cubic-bezier(0.2, 0.75, 0.3, 1) both; transform-origin: center bottom; }
 
-/* Faceless cat's-eye marble: a near-clear orb with a coloured vane that slowly
-   swirls and waves inside it. Two vanes rotate at different speeds/directions
-   and gently squash so it undulates rather than just spinning. */
-@keyframes wyaaCatsEye1 {
+/* Siri-style faceless orb (blue): a dark glowing blue sphere with bright light
+   ribbons looping inside and a luminous core. The ribbons are elliptical light
+   loops that rotate at different speeds/directions and gently wobble so they
+   weave through each other; the core softly pulses. */
+@keyframes wyaaRing1 {
   0%   { transform: rotate(0deg) scale(1, 1); }
-  25%  { transform: rotate(90deg) scale(1.06, 0.8); }
-  50%  { transform: rotate(180deg) scale(0.94, 1.08); }
-  75%  { transform: rotate(270deg) scale(1.06, 0.82); }
+  50%  { transform: rotate(180deg) scale(1.08, 0.9); }
   100% { transform: rotate(360deg) scale(1, 1); }
 }
-@keyframes wyaaCatsEye2 {
-  0%   { transform: rotate(0deg) scale(1, 0.9); }
-  50%  { transform: rotate(-180deg) scale(0.88, 1.06); }
-  100% { transform: rotate(-360deg) scale(1, 0.9); }
+@keyframes wyaaRing2 {
+  0%   { transform: rotate(0deg) scale(0.96, 1.06); }
+  100% { transform: rotate(-360deg) scale(0.96, 1.06); }
 }
-.wyaa-catseye-1 { transform-box: fill-box; transform-origin: center; animation: wyaaCatsEye1 11s linear infinite; }
-.wyaa-catseye-2 { transform-box: fill-box; transform-origin: center; animation: wyaaCatsEye2 15s linear infinite; }
+@keyframes wyaaRing3 {
+  0%   { transform: rotate(0deg) scale(1, 1); }
+  50%  { transform: rotate(180deg) scale(0.9, 1.1); }
+  100% { transform: rotate(360deg) scale(1, 1); }
+}
+.wyaa-ring-1 { transform-box: fill-box; transform-origin: center; animation: wyaaRing1 10s linear infinite; }
+.wyaa-ring-2 { transform-box: fill-box; transform-origin: center; animation: wyaaRing2 14s linear infinite; animation-delay: -5s; }
+.wyaa-ring-3 { transform-box: fill-box; transform-origin: center; animation: wyaaRing3 18s linear infinite; animation-delay: -9s; }
+
+@keyframes wyaaCorePulse {
+  0%, 100% { transform: scale(0.9); opacity: 0.8; }
+  50%      { transform: scale(1.1); opacity: 1; }
+}
+.wyaa-core-pulse { transform-box: fill-box; transform-origin: center; animation: wyaaCorePulse 4s ease-in-out infinite; }
 
 @keyframes wyaaBreathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.035); } }
 .wyaa-breathe { transform-box: fill-box; transform-origin: center; animation: wyaaBreathe 4s ease-in-out infinite; }
@@ -456,8 +466,10 @@ input, textarea, select {
   .wyaa-pop-3,
   .wyaa-fly-out,
   .wyaa-fly-in,
-  .wyaa-catseye-1,
-  .wyaa-catseye-2,
+  .wyaa-ring-1,
+  .wyaa-ring-2,
+  .wyaa-ring-3,
+  .wyaa-core-pulse,
   .wyaa-breathe,
   .wyaa-glow-pulse,
   .wyaa-ping,

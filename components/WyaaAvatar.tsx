@@ -43,26 +43,26 @@ export default function WyaaAvatar({
       >
         <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            {/* Near-clear glass body with only a very faint blue tinge. */}
-            <radialGradient id="wyaa-orb" cx="48%" cy="46%" r="62%">
-              <stop offset="0%" stopColor="#EAF3FF" />
-              <stop offset="65%" stopColor="#DCEBFF" />
-              <stop offset="100%" stopColor="#C6DEFF" />
+            {/* Dark glowing blue sphere: brighter mid, deep navy rim (the spherical vignette). */}
+            <radialGradient id="wyaa-orb" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#3F6FC8" />
+              <stop offset="58%" stopColor="#234FA8" />
+              <stop offset="100%" stopColor="#0B1E47" />
             </radialGradient>
-            {/* The coloured cat's-eye vane: denser blue in the middle, fading at the tips. */}
-            <radialGradient id="wyaa-catseye" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#5E9BF2" stopOpacity="0.85" />
-              <stop offset="70%" stopColor="#5E9BF2" stopOpacity="0.45" />
-              <stop offset="100%" stopColor="#5E9BF2" stopOpacity="0" />
+            {/* Luminous core bloom. */}
+            <radialGradient id="wyaa-core" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.95" />
+              <stop offset="35%" stopColor="#CFE6FF" stopOpacity="0.65" />
+              <stop offset="100%" stopColor="#CFE6FF" stopOpacity="0" />
             </radialGradient>
             {/* Outer glow. */}
             <radialGradient id="wyaa-glow" cx="50%" cy="50%" r="50%">
-              <stop offset="55%" stopColor="#8FBCFF" stopOpacity="0.24" />
-              <stop offset="100%" stopColor="#8FBCFF" stopOpacity="0" />
+              <stop offset="55%" stopColor="#5E9BF2" stopOpacity="0.3" />
+              <stop offset="100%" stopColor="#5E9BF2" stopOpacity="0" />
             </radialGradient>
-            {/* Soft blur so the vane reads as fluid light rather than a hard shape. */}
+            {/* Soft blur so the ribbons read as glowing light rather than hard strokes. */}
             <filter id="wyaa-soft" x="-30%" y="-30%" width="160%" height="160%">
-              <feGaussianBlur stdDeviation="1.0" />
+              <feGaussianBlur stdDeviation="1.1" />
             </filter>
             <clipPath id="wyaa-clip">
               <circle cx="20" cy="20" r="13.5" />
@@ -75,17 +75,20 @@ export default function WyaaAvatar({
 
             {/* attention pulse when there's something new */}
             {isNew && (
-              <circle className="wyaa-ping" cx="20" cy="20" r="13.5" fill="none" stroke="#6FA8FF" strokeWidth="1.4" />
+              <circle className="wyaa-ping" cx="20" cy="20" r="13.5" fill="none" stroke="#7FB6FF" strokeWidth="1.4" />
             )}
 
-            {/* near-clear glass body, no border */}
-            <circle cx="20" cy="20" r="13.5" fill="url(#wyaa-orb)" fillOpacity="0.28" />
+            {/* dark glowing sphere */}
+            <circle cx="20" cy="20" r="13.5" fill="url(#wyaa-orb)" />
 
-            {/* swirling cat's-eye vanes, blurred and clipped inside the orb */}
+            {/* looping light ribbons + core bloom, blurred and clipped inside the orb */}
             <g clipPath="url(#wyaa-clip)">
               <g filter="url(#wyaa-soft)">
-                <path className="wyaa-catseye-1" d="M7 20 C11 13.5 29 13.5 33 20 C29 26.5 11 26.5 7 20 Z" fill="url(#wyaa-catseye)" opacity="0.65" />
-                <path className="wyaa-catseye-2" d="M7 20 C11 13.5 29 13.5 33 20 C29 26.5 11 26.5 7 20 Z" fill="url(#wyaa-catseye)" opacity="0.4" />
+                <ellipse className="wyaa-ring-1" cx="20" cy="20" rx="10.5" ry="5" fill="none" stroke="#A9D8FF" strokeOpacity="0.75" strokeWidth="3.1" />
+                <ellipse className="wyaa-ring-2" cx="20" cy="20" rx="11" ry="4.5" fill="none" stroke="#79C4FF" strokeOpacity="0.6" strokeWidth="2.9" />
+                <ellipse className="wyaa-ring-3" cx="20" cy="20" rx="9.5" ry="5.6" fill="none" stroke="#6FA8FF" strokeOpacity="0.55" strokeWidth="2.9" />
+                {/* luminous core */}
+                <circle className="wyaa-core-pulse" cx="20" cy="20" r="8.5" fill="url(#wyaa-core)" />
               </g>
             </g>
           </g>
