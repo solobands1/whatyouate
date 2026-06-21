@@ -61,6 +61,10 @@ export default function WyaaAvatar({
               <stop offset="0%" stopColor="#6FA8FF" stopOpacity="0.75" />
               <stop offset="100%" stopColor="#6FA8FF" stopOpacity="0" />
             </radialGradient>
+            <radialGradient id="wyaa-b4" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#A9C4FF" stopOpacity="0.7" />
+              <stop offset="100%" stopColor="#A9C4FF" stopOpacity="0" />
+            </radialGradient>
             {/* Outer glow. */}
             <radialGradient id="wyaa-glow" cx="50%" cy="50%" r="50%">
               <stop offset="55%" stopColor="#6FA8FF" stopOpacity="0.28" />
@@ -87,12 +91,16 @@ export default function WyaaAvatar({
             {/* clean base orb */}
             <circle cx="20" cy="20" r="13.5" fill="url(#wyaa-orb)" />
 
-            {/* drifting colour blobs, heavily blurred and clipped to a crisp circle */}
+            {/* drifting colour blobs, heavily blurred and clipped to a crisp circle;
+                the whole field also slowly rotates so it feels alive */}
             <g clipPath="url(#wyaa-clip)">
-              <g filter="url(#wyaa-soft)">
-                <circle className="wyaa-mesh-1" cx="14" cy="14.5" r="11" fill="url(#wyaa-b1)" />
-                <circle className="wyaa-mesh-2" cx="27" cy="24" r="12" fill="url(#wyaa-b2)" />
-                <circle className="wyaa-mesh-3" cx="21" cy="26" r="10" fill="url(#wyaa-b3)" />
+              <g className="wyaa-mesh-spin">
+                <g filter="url(#wyaa-soft)">
+                  <circle className="wyaa-mesh-1" cx="14" cy="14.5" r="11" fill="url(#wyaa-b1)" />
+                  <circle className="wyaa-mesh-2" cx="27" cy="24" r="12" fill="url(#wyaa-b2)" />
+                  <circle className="wyaa-mesh-3" cx="21" cy="26" r="10" fill="url(#wyaa-b3)" />
+                  <circle className="wyaa-mesh-4" cx="13" cy="25" r="9" fill="url(#wyaa-b4)" />
+                </g>
               </g>
             </g>
           </g>

@@ -412,19 +412,31 @@ input, textarea, select {
    Intelligence / modern assistant style) with a clean crisp circle edge. */
 @keyframes wyaaMesh1 {
   0%, 100% { transform: translate(0, 0) scale(1); }
-  50%      { transform: translate(4px, -3px) scale(1.18); }
+  33%      { transform: translate(5px, -4px) scale(1.2); }
+  66%      { transform: translate(2px, 4px) scale(0.9); }
 }
 @keyframes wyaaMesh2 {
   0%, 100% { transform: translate(0, 0) scale(1.05); }
-  50%      { transform: translate(-4px, 3px) scale(0.88); }
+  40%      { transform: translate(-5px, 4px) scale(0.86); }
+  70%      { transform: translate(3px, -3px) scale(1.16); }
 }
 @keyframes wyaaMesh3 {
   0%, 100% { transform: translate(0, 0) scale(0.95); }
-  50%      { transform: translate(3px, 4px) scale(1.12); }
+  45%      { transform: translate(4px, 5px) scale(1.2); }
+  75%      { transform: translate(-4px, -2px) scale(0.9); }
 }
-.wyaa-mesh-1 { transform-box: fill-box; transform-origin: center; animation: wyaaMesh1 9s ease-in-out infinite; }
-.wyaa-mesh-2 { transform-box: fill-box; transform-origin: center; animation: wyaaMesh2 12s ease-in-out infinite; animation-delay: -4s; }
-.wyaa-mesh-3 { transform-box: fill-box; transform-origin: center; animation: wyaaMesh3 15s ease-in-out infinite; animation-delay: -7s; }
+@keyframes wyaaMesh4 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(-4px, -5px) scale(1.15); }
+}
+.wyaa-mesh-1 { transform-box: fill-box; transform-origin: center; animation: wyaaMesh1 7s ease-in-out infinite; }
+.wyaa-mesh-2 { transform-box: fill-box; transform-origin: center; animation: wyaaMesh2 9s ease-in-out infinite; animation-delay: -3s; }
+.wyaa-mesh-3 { transform-box: fill-box; transform-origin: center; animation: wyaaMesh3 11s ease-in-out infinite; animation-delay: -5s; }
+.wyaa-mesh-4 { transform-box: fill-box; transform-origin: center; animation: wyaaMesh4 13s ease-in-out infinite; animation-delay: -8s; }
+
+/* Slow overall rotation so the whole colour field gently churns. */
+@keyframes wyaaMeshSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.wyaa-mesh-spin { transform-box: fill-box; transform-origin: center; animation: wyaaMeshSpin 24s linear infinite; }
 
 @keyframes wyaaCorePulse {
   0%, 100% { transform: scale(0.9); opacity: 0.8; }
@@ -470,6 +482,8 @@ input, textarea, select {
   .wyaa-mesh-1,
   .wyaa-mesh-2,
   .wyaa-mesh-3,
+  .wyaa-mesh-4,
+  .wyaa-mesh-spin,
   .wyaa-breathe,
   .wyaa-glow-pulse,
   .wyaa-ping,
