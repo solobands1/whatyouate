@@ -43,27 +43,27 @@ export default function WyaaAvatar({
       >
         <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            {/* Light blue glassy base gradient (more blue, less white). */}
+            {/* Glassy base gradient from the app's soft + ring blues. */}
             <linearGradient id="wyaa-orb" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#CFE2FF" />
-              <stop offset="100%" stopColor="#9EC2FF" />
+              <stop offset="0%" stopColor="#DDEBFF" />
+              <stop offset="100%" stopColor="#BBD4FF" />
             </linearGradient>
-            {/* Wider-range blue hues so the drifting colours clearly shift: bright cyan, deep indigo-blue, primary, periwinkle. */}
+            {/* Drifting colour blobs, only the app blues: primary, primary.dark, ring. */}
             <radialGradient id="wyaa-b1" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#4ECBFF" stopOpacity="1" />
-              <stop offset="100%" stopColor="#4ECBFF" stopOpacity="0" />
+              <stop offset="0%" stopColor="#6FA8FF" stopOpacity="0.95" />
+              <stop offset="100%" stopColor="#6FA8FF" stopOpacity="0" />
             </radialGradient>
             <radialGradient id="wyaa-b2" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#102A66" stopOpacity="1" />
-              <stop offset="100%" stopColor="#102A66" stopOpacity="0" />
+              <stop offset="0%" stopColor="#4F88E8" stopOpacity="1" />
+              <stop offset="100%" stopColor="#4F88E8" stopOpacity="0" />
             </radialGradient>
             <radialGradient id="wyaa-b3" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#6FA8FF" stopOpacity="0.9" />
+              <stop offset="0%" stopColor="#6FA8FF" stopOpacity="0.85" />
               <stop offset="100%" stopColor="#6FA8FF" stopOpacity="0" />
             </radialGradient>
             <radialGradient id="wyaa-b4" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#9CB6FF" stopOpacity="0.85" />
-              <stop offset="100%" stopColor="#9CB6FF" stopOpacity="0" />
+              <stop offset="0%" stopColor="#BBD4FF" stopOpacity="0.8" />
+              <stop offset="100%" stopColor="#BBD4FF" stopOpacity="0" />
             </radialGradient>
             {/* Outer glow. */}
             <radialGradient id="wyaa-glow" cx="50%" cy="50%" r="50%">
@@ -85,7 +85,7 @@ export default function WyaaAvatar({
 
             {/* attention pulse when there's something new */}
             {isNew && (
-              <circle className="wyaa-ping" cx="20" cy="20" r="13.5" fill="none" stroke="#7FB6FF" strokeWidth="1.4" />
+              <circle className="wyaa-ping" cx="20" cy="20" r="13.5" fill="none" stroke="#6FA8FF" strokeWidth="1.4" />
             )}
 
             {/* clean base orb */}
