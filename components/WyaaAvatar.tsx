@@ -74,41 +74,30 @@ export default function WyaaAvatar({
             <filter id="wyaa-soft" x="-40%" y="-40%" width="180%" height="180%">
               <feGaussianBlur stdDeviation="1.4" />
             </filter>
-            {/* Living edge: animated turbulence displaces the silhouette so its bumps
-                slowly travel around the circumference and morph, making it feel alive. */}
-            <filter id="wyaa-wobble" x="-25%" y="-25%" width="150%" height="150%">
-              <feTurbulence type="fractalNoise" baseFrequency="0.014" numOctaves="2" seed="4" result="n">
-                <animate attributeName="baseFrequency" dur="16s" values="0.012;0.02;0.014;0.012" repeatCount="indefinite" />
-                <animate attributeName="seed" dur="22s" values="0;7;0" repeatCount="indefinite" />
-              </feTurbulence>
-              <feDisplacementMap in="SourceGraphic" in2="n" scale="3.2" xChannelSelector="R" yChannelSelector="G" />
-            </filter>
             <clipPath id="wyaa-clip">
               <circle cx="20" cy="20" r="13.5" />
             </clipPath>
           </defs>
 
-          <g className="wyaa-breathe">
-            {/* attention pulse when there's something new */}
-            {isNew && (
-              <circle className="wyaa-ping" cx="20" cy="20" r="13.5" fill="none" stroke="#6FA8FF" strokeWidth="1.4" />
-            )}
+          {/* attention pulse when there's something new */}
+          {isNew && (
+            <circle className="wyaa-ping" cx="20" cy="20" r="13.5" fill="none" stroke="#6FA8FF" strokeWidth="1.4" />
+          )}
 
-            {/* body + inner color field, displaced by the wobble filter for a living, morphing edge */}
-            <g filter="url(#wyaa-wobble)">
+          {/* orbit slowly rotates the whole orb; breathe squashes/stretches it, so the
+              bulge travels around the edge and it feels alive (cheap, smooth transforms). */}
+          <g className="wyaa-orbit">
+            <g className="wyaa-breathe">
               {/* clean base orb */}
               <circle cx="20" cy="20" r="13.5" fill="url(#wyaa-orb)" />
 
-              {/* drifting colour blobs, heavily blurred and clipped to the circle;
-                  the whole field also slowly rotates so it feels alive */}
+              {/* drifting colour blobs, heavily blurred and clipped to the circle */}
               <g clipPath="url(#wyaa-clip)">
-                <g className="wyaa-mesh-spin">
-                  <g filter="url(#wyaa-soft)">
-                    <circle className="wyaa-mesh-1" cx="14" cy="14.5" r="11" fill="url(#wyaa-b1)" />
-                    <circle className="wyaa-mesh-2" cx="27" cy="24" r="12" fill="url(#wyaa-b2)" />
-                    <circle className="wyaa-mesh-3" cx="21" cy="26" r="10" fill="url(#wyaa-b3)" />
-                    <circle className="wyaa-mesh-4" cx="13" cy="25" r="9" fill="url(#wyaa-b4)" />
-                  </g>
+                <g filter="url(#wyaa-soft)">
+                  <circle className="wyaa-mesh-1" cx="14" cy="14.5" r="11" fill="url(#wyaa-b1)" />
+                  <circle className="wyaa-mesh-2" cx="27" cy="24" r="12" fill="url(#wyaa-b2)" />
+                  <circle className="wyaa-mesh-3" cx="21" cy="26" r="10" fill="url(#wyaa-b3)" />
+                  <circle className="wyaa-mesh-4" cx="13" cy="25" r="9" fill="url(#wyaa-b4)" />
                 </g>
               </g>
             </g>

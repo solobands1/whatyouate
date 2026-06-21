@@ -444,12 +444,16 @@ input, textarea, select {
 }
 .wyaa-core-pulse { transform-box: fill-box; transform-origin: center; animation: wyaaCorePulse 4s ease-in-out infinite; }
 
+/* Squash-and-stretch breathe: the orb becomes a wide then tall ellipse, and the
+   wyaa-orbit rotation spins that bulge around the edge so it morphs smoothly. */
 @keyframes wyaaBreathe {
-  0%, 100% { transform: scale(1, 1); }
-  33%      { transform: scale(1.05, 0.97); }
-  66%      { transform: scale(0.97, 1.04); }
+  0%, 100% { transform: scale(1.06, 0.95); }
+  50%      { transform: scale(0.95, 1.06); }
 }
-.wyaa-breathe { transform-box: fill-box; transform-origin: center; animation: wyaaBreathe 6s ease-in-out infinite; }
+.wyaa-breathe { transform-box: fill-box; transform-origin: center; animation: wyaaBreathe 5s ease-in-out infinite; }
+
+@keyframes wyaaOrbit { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.wyaa-orbit { transform-box: fill-box; transform-origin: center; animation: wyaaOrbit 16s linear infinite; }
 
 @keyframes wyaaGlowPulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 0.85; } }
 .wyaa-glow-pulse { animation: wyaaGlowPulse 4s ease-in-out infinite; }
@@ -488,6 +492,7 @@ input, textarea, select {
   .wyaa-mesh-3,
   .wyaa-mesh-4,
   .wyaa-mesh-spin,
+  .wyaa-orbit,
   .wyaa-breathe,
   .wyaa-glow-pulse,
   .wyaa-ping,
