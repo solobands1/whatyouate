@@ -1211,8 +1211,31 @@ export default function SummaryScreen() {
             }
             return (
               <>
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Habit Builder History</p>
-                <p className="mt-1 text-sm text-ink/70"><span className="font-semibold text-ink">{builtHabits.length} habits</span> built so far. Keep stacking them.</p>
+                <div className="absolute -top-6 -right-1 z-10 flex flex-col items-center gap-1.5">
+                  <WyaaAvatar
+                    size={72}
+                    onClick={openCoach}
+                    fly={
+                      coachPhase === "opening" || coachPhase === "open" || coachPhase === "closing"
+                        ? "out"
+                        : coachPhase === "returning"
+                          ? "in"
+                          : null
+                    }
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNudgeHistory(true)}
+                    className="flex items-center gap-1 rounded-full border border-primary/20 bg-primary/[0.06] px-2 py-0.5 text-[10px] font-semibold text-primary/80 transition active:opacity-70"
+                  >
+                    <svg viewBox="0 0 24 24" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7.5V12l3 2" /></svg>
+                    Nudge History
+                  </button>
+                </div>
+                <div className="pr-24">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Habit Builder History</p>
+                  <p className="mt-1 text-sm text-ink/70"><span className="font-semibold text-ink">{builtHabits.length} Habits</span> built so far. Keep stacking them.</p>
+                </div>
                 <p className="mt-4 mb-1 text-xs font-semibold uppercase tracking-wide text-muted/55">Your Journey</p>
                 <div className="mt-1">
                   {builtHabits.map((h, i) => (
@@ -1229,7 +1252,7 @@ export default function SummaryScreen() {
                           <span className="shrink-0 text-[10px] text-muted/60">{h.when}</span>
                         </div>
                         <div className="mt-1 flex items-center gap-2">
-                          <span className="text-[11px] text-muted/70">{h.days}-day builder</span>
+                          <span className="text-[11px] text-muted/70">{h.days}-Day Builder</span>
                           <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${toneChip[h.tone]}`}>{h.result}</span>
                         </div>
                       </div>
@@ -1237,15 +1260,6 @@ export default function SummaryScreen() {
                   ))}
                 </div>
 
-                {/* Temporarily parked here until final placement is decided. */}
-                <button
-                  type="button"
-                  onClick={() => setShowNudgeHistory(true)}
-                  className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-full border border-primary/20 bg-primary/[0.06] px-3 py-2 text-[11px] font-semibold text-primary/80 transition active:opacity-70"
-                >
-                  <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7.5V12l3 2" /></svg>
-                  Nudge History
-                </button>
               </>
             );
           })()}
@@ -1262,17 +1276,7 @@ export default function SummaryScreen() {
           <div className="absolute inset-0 bg-black/30" />
           <div className="relative w-full max-w-md max-h-[85vh] overflow-y-auto rounded-t-3xl bg-white p-5 pb-8 shadow-xl animate-drawer-up" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-3">
-              <WyaaAvatar
-                size={48}
-                onClick={openCoach}
-                fly={
-                  coachPhase === "opening" || coachPhase === "open" || coachPhase === "closing"
-                    ? "out"
-                    : coachPhase === "returning"
-                      ? "in"
-                      : null
-                }
-              />
+              <WyaaAvatar size={48} />
               <div className="flex-1">
                 <p className="text-base font-semibold text-ink">Nudges</p>
                 <p className="text-xs text-muted/65">Honest reads from your coach</p>
