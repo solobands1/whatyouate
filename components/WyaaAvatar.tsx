@@ -45,27 +45,27 @@ export default function WyaaAvatar({
           <defs>
             {/* Light, translucent blue body so the moving blobs show through clearly. */}
             <radialGradient id="wyaa-orb" cx="48%" cy="46%" r="62%">
-              <stop offset="0%" stopColor="#ABCEFF" />
-              <stop offset="62%" stopColor="#7FB0FF" />
-              <stop offset="100%" stopColor="#5A92EC" />
+              <stop offset="0%" stopColor="#CBE0FF" />
+              <stop offset="62%" stopColor="#A4C8FF" />
+              <stop offset="100%" stopColor="#83B0F7" />
             </radialGradient>
-            {/* Inner blobs that flow inside: a light tone, a bright tone, and a deeper blue for depth. High contrast so the motion reads. */}
+            {/* Inner blobs that flow inside: soft blue tones (not white) plus a slightly deeper blue for gentle depth, kept low-opacity so it stays clear/glassy. */}
             <radialGradient id="wyaa-blob-light" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#E4F0FF" stopOpacity="1" />
-              <stop offset="100%" stopColor="#E4F0FF" stopOpacity="0" />
+              <stop offset="0%" stopColor="#C6DEFF" stopOpacity="0.6" />
+              <stop offset="100%" stopColor="#C6DEFF" stopOpacity="0" />
             </radialGradient>
             <radialGradient id="wyaa-blob-bright" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.95" />
-              <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+              <stop offset="0%" stopColor="#DCEBFF" stopOpacity="0.4" />
+              <stop offset="100%" stopColor="#DCEBFF" stopOpacity="0" />
             </radialGradient>
             <radialGradient id="wyaa-blob-deep" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#235AC0" stopOpacity="0.95" />
-              <stop offset="100%" stopColor="#235AC0" stopOpacity="0" />
+              <stop offset="0%" stopColor="#5E96EE" stopOpacity="0.6" />
+              <stop offset="100%" stopColor="#5E96EE" stopOpacity="0" />
             </radialGradient>
             {/* Outer glow. */}
             <radialGradient id="wyaa-glow" cx="50%" cy="50%" r="50%">
-              <stop offset="55%" stopColor="#6FA8FF" stopOpacity="0.4" />
-              <stop offset="100%" stopColor="#6FA8FF" stopOpacity="0" />
+              <stop offset="55%" stopColor="#8FBCFF" stopOpacity="0.28" />
+              <stop offset="100%" stopColor="#8FBCFF" stopOpacity="0" />
             </radialGradient>
             {/* Soft blur so the blobs blend like plasma rather than hard circles. */}
             <filter id="wyaa-soft" x="-30%" y="-30%" width="160%" height="160%">
@@ -86,7 +86,7 @@ export default function WyaaAvatar({
             )}
 
             {/* translucent body */}
-            <circle cx="20" cy="20" r="13.5" fill="url(#wyaa-orb)" fillOpacity="0.9" />
+            <circle cx="20" cy="20" r="13.5" fill="url(#wyaa-orb)" fillOpacity="0.6" />
 
             {/* flowing inner blobs, blurred and clipped inside the orb */}
             <g clipPath="url(#wyaa-clip)">
