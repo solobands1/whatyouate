@@ -21,10 +21,6 @@ export default function WyaaAvatar({
   className = "",
   fly = null,
 }: WyaaAvatarProps) {
-  const [gaze, setGaze] = useState({ x: 0, y: 0, dur: 0.8 });
-  const [blink, setBlink] = useState(false);
-  const [wander, setWander] = useState({ x: 0, dur: 1.4 });
-
   // When flying in, drop the fly class after it lands so the calm float resumes.
   const [flyInDone, setFlyInDone] = useState(false);
   useEffect(() => {
@@ -36,132 +32,66 @@ export default function WyaaAvatar({
   }, [fly]);
   const flyClass = fly === "out" ? "wyaa-fly-out" : fly === "in" && !flyInDone ? "wyaa-fly-in" : null;
 
-  // On load it sits calmly for a beat, then "notices" you and bounces up and
-  // down, then settles back to the calm float. Random variant + slight delay so
-  // each load feels a little different. Skipped when it's flying in (the fly is
-  // its entrance in that case).
-  const [popClass, setPopClass] = useState("");
-  const [entering, setEntering] = useState(false);
-  useEffect(() => {
-    if (fly) return;
-    if (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
-    const variants = ["wyaa-pop-1", "wyaa-pop-3"];
-    let end: ReturnType<typeof setTimeout>;
-    const start = setTimeout(() => {
-      setPopClass(variants[Math.floor(Math.random() * variants.length)]);
-      setEntering(true);
-      end = setTimeout(() => setEntering(false), 1100);
-    }, 500 + Math.random() * 350);
-    return () => { clearTimeout(start); clearTimeout(end); };
-  }, []);
-
-  // Random, calm glances: it rests, then occasionally drifts to a new spot (often
-  // back to center). Randomly timed so it never reads as a fixed pattern.
-  useEffect(() => {
-    if (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
-    let t: ReturnType<typeof setTimeout>;
-    const loop = () => {
-      t = setTimeout(() => {
-        setGaze(Math.random() < 0.42
-          ? { x: 0, y: 0, dur: 0.7 + Math.random() * 0.6 } // gentle settle back to center
-          : { x: (Math.random() * 2 - 1) * 1.7, y: (Math.random() * 2 - 1) * 1.2, dur: 0.28 + Math.random() * 0.95 }); // some quick darts, some slow drifts
-        loop();
-      }, 1600 + Math.random() * 3200);
-    };
-    loop();
-    return () => clearTimeout(t);
-  }, []);
-
-  // Occasionally the whole body wanders a little to one side, then drifts back
-  // to center. Not constant, random side + distance + timing so it never reads
-  // as a fixed "left then back" pattern.
-  useEffect(() => {
-    if (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
-    const reach = size * 0.075;
-    let t1: ReturnType<typeof setTimeout>;
-    let t2: ReturnType<typeof setTimeout>;
-    const loop = () => {
-      t1 = setTimeout(() => {
-        if (Math.random() < 0.6) {
-          const offset = (Math.random() < 0.5 ? -1 : 1) * (reach * 0.45 + Math.random() * reach * 0.55);
-          setWander({ x: offset, dur: 1.1 + Math.random() * 1.1 });
-          t2 = setTimeout(() => setWander({ x: 0, dur: 1.0 + Math.random() * 1.2 }), 1400 + Math.random() * 2000);
-        }
-        loop();
-      }, 5000 + Math.random() * 6500);
-    };
-    loop();
-    return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, [size]);
-
-  // Occasional blink at random intervals.
-  useEffect(() => {
-    if (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
-    let t: ReturnType<typeof setTimeout>;
-    let t2: ReturnType<typeof setTimeout>;
-    const loop = () => {
-      t = setTimeout(() => {
-        setBlink(true);
-        t2 = setTimeout(() => setBlink(false), 130);
-        loop();
-      }, 2800 + Math.random() * 4200);
-    };
-    loop();
-    return () => { clearTimeout(t); clearTimeout(t2); };
-  }, []);
-
   return (
-    <div className={`relative inline-flex shrink-0 flex-col items-center ${className}`} style={{ width: size, height: size + 8, transform: `translateX(${wander.x}px)`, transition: `transform ${wander.dur}s ease-in-out` }}>
-    <button
-      type="button"
-      onClick={onClick}
-      className={`inline-flex shrink-0 transition active:opacity-70 ${flyClass ? flyClass : entering && popClass ? popClass : isNew ? "animate-wyaa-bounce" : "animate-wyaa-float"}`}
-      aria-label="About your AI coach"
-      style={{ background: "none", border: "none", padding: 0 }}
-    >
-      <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          {/* lighter body, round at the top, dissolving toward the bottom like a soft wisp */}
-          <linearGradient id="wyaa-body" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#A6CDFF" />
-            <stop offset="50%" stopColor="#83B6FF" />
-            <stop offset="85%" stopColor="#83B6FF" stopOpacity="0.5" />
-            <stop offset="100%" stopColor="#83B6FF" stopOpacity="0.16" />
-          </linearGradient>
-        </defs>
+    <div className={`relative inline-flex shrink-0 items-center justify-center ${className}`} style={{ width: size, height: size }}>
+      <button
+        type="button"
+        onClick={onClick}
+        className={`inline-flex shrink-0 transition active:opacity-80 ${flyClass ? flyClass : "animate-wyaa-float"}`}
+        aria-label="About your AI coach"
+        style={{ background: "none", border: "none", padding: 0 }}
+      >
+        <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            {/* Spherical blue body: bright off-centre core fading to a deeper blue edge. */}
+            <radialGradient id="wyaa-orb" cx="42%" cy="36%" r="68%">
+              <stop offset="0%" stopColor="#EAF3FF" />
+              <stop offset="32%" stopColor="#A6CCFF" />
+              <stop offset="66%" stopColor="#6FA8FF" />
+              <stop offset="100%" stopColor="#3F79DE" />
+            </radialGradient>
+            {/* Soft inner light wisps that drift around inside the orb. */}
+            <radialGradient id="wyaa-wisp" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#E4F0FF" stopOpacity="0.85" />
+              <stop offset="100%" stopColor="#E4F0FF" stopOpacity="0" />
+            </radialGradient>
+            {/* Outer glow. */}
+            <radialGradient id="wyaa-glow" cx="50%" cy="50%" r="50%">
+              <stop offset="55%" stopColor="#6FA8FF" stopOpacity="0.45" />
+              <stop offset="100%" stopColor="#6FA8FF" stopOpacity="0" />
+            </radialGradient>
+            <clipPath id="wyaa-clip">
+              <circle cx="20" cy="20" r="13.5" />
+            </clipPath>
+          </defs>
 
-        {/* app-icon style squircle body with a wide rounded top tapering to a narrower bottom, fading toward the bottom */}
-        <path d="M18 3.4 L22 3.4 Q34 4 34 13 C35.4 16 34 26 28 30.5 C24.5 33 15.5 33 12 30.5 C6 26 4.6 16 6 13 Q6 4 18 3.4 Z" fill="url(#wyaa-body)" />
+          <g className="wyaa-breathe">
+            {/* soft outer glow */}
+            <circle className="wyaa-glow-pulse" cx="20" cy="20" r="19" fill="url(#wyaa-glow)" />
 
-        {/* glossy top highlight */}
-        <ellipse cx="14.3" cy="10.5" rx="4" ry="2.4" fill="#FFFFFF" opacity="0.12" />
+            {/* attention pulse when there's something new */}
+            {isNew && (
+              <circle className="wyaa-ping" cx="20" cy="20" r="13.5" fill="none" stroke="#6FA8FF" strokeWidth="1.4" />
+            )}
 
-        {/* eyes — soft round white eyes; glance + blink at random, organic intervals */}
-        <g style={{ transform: `translate(${gaze.x}px, ${gaze.y}px)`, transition: `transform ${gaze.dur}s ease-in-out` }}>
-          <g style={{ transform: blink ? "scaleY(0.1)" : "scaleY(1)", transformOrigin: "center", transformBox: "fill-box", transition: "transform 90ms ease-in-out" }}>
-            <ellipse cx="15.6" cy="16.4" rx="2.2" ry="3.3" fill="#FFFFFF" />
-            <ellipse cx="24.4" cy="16.4" rx="2.2" ry="3.3" fill="#FFFFFF" />
+            {/* main orb */}
+            <circle cx="20" cy="20" r="13.5" fill="url(#wyaa-orb)" />
+
+            {/* drifting inner light, clipped inside the orb */}
+            <g clipPath="url(#wyaa-clip)">
+              <circle className="wyaa-wisp-a" cx="15" cy="16" r="9" fill="url(#wyaa-wisp)" />
+              <circle className="wyaa-wisp-b" cx="26" cy="24" r="8" fill="url(#wyaa-wisp)" />
+              <circle className="wyaa-wisp-c" cx="20" cy="27" r="7" fill="url(#wyaa-wisp)" />
+            </g>
+
+            {/* specular highlight */}
+            <ellipse cx="15" cy="13" rx="4.4" ry="2.9" fill="#FFFFFF" opacity="0.4" />
+
+            {/* faint rim light */}
+            <circle cx="20" cy="20" r="13.2" fill="none" stroke="#EAF3FF" strokeOpacity="0.22" strokeWidth="0.6" />
           </g>
-        </g>
-      </svg>
-    </button>
-    {/* Hidden while it's off the page so no orphan shadow is left behind. */}
-    {!flyClass && (
-    <div
-      className={isNew ? "" : "animate-wyaa-shadow"}
-      style={{
-        position: "absolute",
-        bottom: 0,
-        left: "50%",
-        width: size * 0.55,
-        height: 4,
-        borderRadius: 9999,
-        background: "rgba(111,168,255,0.38)",
-        filter: "blur(3px)",
-        transformOrigin: "center",
-      }}
-    />
-    )}
+        </svg>
+      </button>
     </div>
   );
 }
