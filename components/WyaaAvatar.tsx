@@ -41,7 +41,7 @@ export default function WyaaAvatar({
         aria-label="About your AI coach"
         style={{ background: "none", border: "none", padding: 0 }}
       >
-        <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg width={size} height={size} viewBox="0 0 40 40" fill="none" style={{ overflow: "visible" }} xmlns="http://www.w3.org/2000/svg">
           <defs>
             {/* Glassy base gradient from the app's soft + ring blues. */}
             <linearGradient id="wyaa-orb" x1="0" y1="0" x2="0" y2="1">
@@ -85,8 +85,8 @@ export default function WyaaAvatar({
             </clipPath>
           </defs>
 
-          {/* soft contact shadow: a static "floor" beneath the orb */}
-          <ellipse cx="20" cy="38" rx="8.5" ry="1.7" fill="url(#wyaa-shadow)" />
+          {/* floor shadow: stays grounded, tracks the orb left/right, grows/shrinks with distance */}
+          <ellipse className="wyaa-floor-shadow" cx="20" cy="38" rx="8.5" ry="1.7" fill="url(#wyaa-shadow)" />
 
           {/* attention pulse when there's something new */}
           {isNew && (

@@ -455,10 +455,27 @@ input, textarea, select {
 @keyframes wyaaOrbit { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 .wyaa-orbit { transform-box: fill-box; transform-origin: center; animation: wyaaOrbit 30s linear infinite; }
 
-/* Gentle vertical bob for the orb only (the shadow stays a fixed floor). Units are
-   SVG user units, so this is a small float at the rendered size. */
-@keyframes wyaaOrbFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-1.6px); } }
-.wyaa-orb-float { animation: wyaaOrbFloat 4s ease-in-out infinite; }
+/* Gentle float for the orb only: it bobs up/down and sways left/right (SVG user
+   units). The floor shadow below is synced to the same 6s timing. */
+@keyframes wyaaOrbFloat {
+  0%   { transform: translate(0, 0); }
+  25%  { transform: translate(1.5px, -1.8px); }
+  50%  { transform: translate(0, -2.4px); }
+  75%  { transform: translate(-1.5px, -1.8px); }
+  100% { transform: translate(0, 0); }
+}
+.wyaa-orb-float { animation: wyaaOrbFloat 6s ease-in-out infinite; }
+
+/* Floor shadow: stays on the ground (no vertical move), tracks the orb left/right,
+   and shrinks/fades when the orb floats up (further) and grows when it's lower (closer). */
+@keyframes wyaaFloorShadow {
+  0%   { transform: translateX(0) scale(1); opacity: 1; }
+  25%  { transform: translateX(0.9px) scale(0.9); opacity: 0.85; }
+  50%  { transform: translateX(0) scale(0.8); opacity: 0.7; }
+  75%  { transform: translateX(-0.9px) scale(0.9); opacity: 0.85; }
+  100% { transform: translateX(0) scale(1); opacity: 1; }
+}
+.wyaa-floor-shadow { transform-box: fill-box; transform-origin: center; animation: wyaaFloorShadow 6s ease-in-out infinite; }
 
 /* Soft contact shadow that widens/fades in sync with the orb's breathing. */
 @keyframes wyaaContactShadow {
@@ -506,7 +523,7 @@ input, textarea, select {
   .wyaa-mesh-spin,
   .wyaa-orbit,
   .wyaa-orb-float,
-  .wyaa-contact-shadow,
+  .wyaa-floor-shadow,
   .wyaa-breathe,
   .wyaa-glow-pulse,
   .wyaa-ping,
