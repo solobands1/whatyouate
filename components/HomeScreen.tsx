@@ -2596,10 +2596,10 @@ export default function HomeScreen() {
           </div>
           <button
             type="button"
-            className="mt-2 flex items-center gap-1 text-left text-xs text-muted/70 transition active:opacity-60"
+            className="mt-2 flex items-center gap-1 text-left text-[10px] text-muted/70 transition active:opacity-60"
             onClick={() => setShowTargetInfo((v) => !v)}
           >
-            <span>Target Range<span className="text-muted/65">{!loadingData && mealCount === 0 && !profile ? " (preview)" : ""}</span>: {gentleTargetsDisplay.calories} kcal · {gentleTargetsDisplay.protein} g protein</span>
+            <span>Target Range<span className="text-muted/65">{!loadingData && mealCount === 0 && !profile ? " (preview)" : ""}</span>: {gentleTargetsDisplay.calories} kcal · {gentleTargetsDisplay.protein}g protein · {homeMarkers.gentleTargets?.carbs ?? 277}g carbs · {homeMarkers.gentleTargets?.fat ?? 77}g fat</span>
             <span className="inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border border-muted/40 text-[8px] text-muted/65">i</span>
           </button>
           {showTargetInfo && (
