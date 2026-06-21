@@ -1213,10 +1213,7 @@ export default function SummaryScreen() {
               <>
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Habit Builder History</p>
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-xl font-bold leading-none text-primary">{builtHabits.length}</span>
-                    <span className="text-[10px] font-semibold uppercase tracking-wide text-muted/65">Habits Built</span>
-                  </div>
+                  <span className="text-xl font-bold leading-none text-primary">{builtHabits.length}</span>
                 </div>
                 <p className="mt-4 mb-1 text-xs font-semibold uppercase tracking-wide text-muted/55">Your Journey</p>
                 <div className="mt-1">
