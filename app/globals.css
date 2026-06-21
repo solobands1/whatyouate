@@ -414,20 +414,20 @@ input, textarea, select {
    centre of each ribbon). */
 @keyframes wyaaSwayA {
   0%   { transform: rotate(0deg) scaleY(1); }
-  35%  { transform: rotate(7deg) scaleY(1.12); }
-  68%  { transform: rotate(-5deg) scaleY(0.9); }
+  35%  { transform: rotate(3.5deg) scaleY(1.06); }
+  68%  { transform: rotate(-2.5deg) scaleY(0.95); }
   100% { transform: rotate(0deg) scaleY(1); }
 }
 @keyframes wyaaSwayB {
   0%   { transform: rotate(0deg) scaleY(1); }
-  42%  { transform: rotate(-7deg) scaleY(1.1); }
-  72%  { transform: rotate(5deg) scaleY(0.88); }
+  42%  { transform: rotate(-3.5deg) scaleY(1.05); }
+  72%  { transform: rotate(2.5deg) scaleY(0.94); }
   100% { transform: rotate(0deg) scaleY(1); }
 }
 @keyframes wyaaSwayC {
-  0%   { transform: rotate(0deg) scaleY(0.95); }
-  50%  { transform: rotate(6deg) scaleY(1.08); }
-  100% { transform: rotate(0deg) scaleY(0.95); }
+  0%   { transform: rotate(0deg) scaleY(0.97); }
+  50%  { transform: rotate(3deg) scaleY(1.05); }
+  100% { transform: rotate(0deg) scaleY(0.97); }
 }
 .wyaa-sway-1 { animation: wyaaSwayA 6s ease-in-out infinite; }
 .wyaa-sway-2 { animation: wyaaSwayB 6s ease-in-out infinite; animation-delay: -2s; }
