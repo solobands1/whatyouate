@@ -86,7 +86,7 @@ export default function WyaaAvatar({
           </defs>
 
           {/* soft contact shadow under the orb, pulsing with its breathing */}
-          <ellipse className="wyaa-contact-shadow" cx="20" cy="36.5" rx="9" ry="1.9" fill="url(#wyaa-shadow)" />
+          <ellipse className="wyaa-contact-shadow" cx="20" cy="38" rx="8.5" ry="1.7" fill="url(#wyaa-shadow)" />
 
           {/* attention pulse when there's something new */}
           {isNew && (
