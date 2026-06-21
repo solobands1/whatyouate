@@ -403,14 +403,40 @@ input, textarea, select {
 .wyaa-fly-out { animation: wyaaFlyOut 0.42s cubic-bezier(0.5, 0, 0.75, 0.15) both; transform-origin: center bottom; }
 .wyaa-fly-in { animation: wyaaFlyIn 0.6s cubic-bezier(0.2, 0.75, 0.3, 1) both; transform-origin: center bottom; }
 
-/* Siri-style faceless orb: slow drifting inner light, gentle breathing, soft
-   glow pulse, plus an attention pulse ring when there's something new. */
-@keyframes wyaaWispA { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(3px, 2.5px); } }
-@keyframes wyaaWispB { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-3px, -2px); } }
-@keyframes wyaaWispC { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(2px, -3px); } }
-.wyaa-wisp-a { transform-box: fill-box; transform-origin: center; animation: wyaaWispA 6s ease-in-out infinite; }
-.wyaa-wisp-b { transform-box: fill-box; transform-origin: center; animation: wyaaWispB 7.5s ease-in-out infinite; }
-.wyaa-wisp-c { transform-box: fill-box; transform-origin: center; animation: wyaaWispC 9s ease-in-out infinite; }
+/* Siri-style faceless orb: soft blue blobs flow and morph inside, gentle
+   breathing, soft glow pulse, plus an attention pulse ring when there's
+   something new. The blobs follow small looping paths and scale so the inside
+   reads as churning plasma rather than a pendulum. */
+@keyframes wyaaBlob1 {
+  0%   { transform: translate(0, 0) scale(1); }
+  25%  { transform: translate(4px, 3px) scale(1.18); }
+  50%  { transform: translate(2px, -3px) scale(0.86); }
+  75%  { transform: translate(-3px, 1px) scale(1.1); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+@keyframes wyaaBlob2 {
+  0%   { transform: translate(0, 0) scale(1); }
+  30%  { transform: translate(-4px, -2px) scale(1.12); }
+  55%  { transform: translate(-2px, 3px) scale(0.88); }
+  80%  { transform: translate(3px, 2px) scale(1.16); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+@keyframes wyaaBlob3 {
+  0%   { transform: translate(0, 0) scale(1); }
+  35%  { transform: translate(3px, -3px) scale(1.2); }
+  65%  { transform: translate(-3px, -2px) scale(0.85); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+@keyframes wyaaBlob4 {
+  0%   { transform: translate(0, 0) scale(0.95); }
+  40%  { transform: translate(-3px, 3px) scale(1.15); }
+  70%  { transform: translate(2px, 3px) scale(0.9); }
+  100% { transform: translate(0, 0) scale(0.95); }
+}
+.wyaa-blob-1 { transform-box: fill-box; transform-origin: center; animation: wyaaBlob1 5s ease-in-out infinite; }
+.wyaa-blob-2 { transform-box: fill-box; transform-origin: center; animation: wyaaBlob2 6.5s ease-in-out infinite; }
+.wyaa-blob-3 { transform-box: fill-box; transform-origin: center; animation: wyaaBlob3 8s ease-in-out infinite; }
+.wyaa-blob-4 { transform-box: fill-box; transform-origin: center; animation: wyaaBlob4 7s ease-in-out infinite; }
 
 @keyframes wyaaBreathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.035); } }
 .wyaa-breathe { transform-box: fill-box; transform-origin: center; animation: wyaaBreathe 4s ease-in-out infinite; }
@@ -447,9 +473,10 @@ input, textarea, select {
   .wyaa-pop-3,
   .wyaa-fly-out,
   .wyaa-fly-in,
-  .wyaa-wisp-a,
-  .wyaa-wisp-b,
-  .wyaa-wisp-c,
+  .wyaa-blob-1,
+  .wyaa-blob-2,
+  .wyaa-blob-3,
+  .wyaa-blob-4,
   .wyaa-breathe,
   .wyaa-glow-pulse,
   .wyaa-ping,

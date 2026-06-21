@@ -43,23 +43,34 @@ export default function WyaaAvatar({
       >
         <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            {/* Spherical blue body: bright off-centre core fading to a deeper blue edge. */}
-            <radialGradient id="wyaa-orb" cx="42%" cy="36%" r="68%">
-              <stop offset="0%" stopColor="#EAF3FF" />
-              <stop offset="32%" stopColor="#A6CCFF" />
-              <stop offset="66%" stopColor="#6FA8FF" />
+            {/* Even, matte blue body (no glossy hot spot) so the moving blobs are what reads. */}
+            <radialGradient id="wyaa-orb" cx="48%" cy="46%" r="62%">
+              <stop offset="0%" stopColor="#7FB0FF" />
+              <stop offset="62%" stopColor="#6098F0" />
               <stop offset="100%" stopColor="#3F79DE" />
             </radialGradient>
-            {/* Soft inner light wisps that drift around inside the orb. */}
-            <radialGradient id="wyaa-wisp" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#E4F0FF" stopOpacity="0.85" />
-              <stop offset="100%" stopColor="#E4F0FF" stopOpacity="0" />
+            {/* Inner blobs that flow inside: a light tone, a bright tone, and a deeper blue for depth. */}
+            <radialGradient id="wyaa-blob-light" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#CFE4FF" stopOpacity="0.95" />
+              <stop offset="100%" stopColor="#CFE4FF" stopOpacity="0" />
+            </radialGradient>
+            <radialGradient id="wyaa-blob-bright" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#EAF3FF" stopOpacity="0.95" />
+              <stop offset="100%" stopColor="#EAF3FF" stopOpacity="0" />
+            </radialGradient>
+            <radialGradient id="wyaa-blob-deep" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#2F62C8" stopOpacity="0.8" />
+              <stop offset="100%" stopColor="#2F62C8" stopOpacity="0" />
             </radialGradient>
             {/* Outer glow. */}
             <radialGradient id="wyaa-glow" cx="50%" cy="50%" r="50%">
-              <stop offset="55%" stopColor="#6FA8FF" stopOpacity="0.45" />
+              <stop offset="55%" stopColor="#6FA8FF" stopOpacity="0.4" />
               <stop offset="100%" stopColor="#6FA8FF" stopOpacity="0" />
             </radialGradient>
+            {/* Soft blur so the blobs blend like plasma rather than hard circles. */}
+            <filter id="wyaa-soft" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="1.3" />
+            </filter>
             <clipPath id="wyaa-clip">
               <circle cx="20" cy="20" r="13.5" />
             </clipPath>
@@ -74,21 +85,21 @@ export default function WyaaAvatar({
               <circle className="wyaa-ping" cx="20" cy="20" r="13.5" fill="none" stroke="#6FA8FF" strokeWidth="1.4" />
             )}
 
-            {/* main orb */}
+            {/* matte body */}
             <circle cx="20" cy="20" r="13.5" fill="url(#wyaa-orb)" />
 
-            {/* drifting inner light, clipped inside the orb */}
+            {/* flowing inner blobs, blurred and clipped inside the orb */}
             <g clipPath="url(#wyaa-clip)">
-              <circle className="wyaa-wisp-a" cx="15" cy="16" r="9" fill="url(#wyaa-wisp)" />
-              <circle className="wyaa-wisp-b" cx="26" cy="24" r="8" fill="url(#wyaa-wisp)" />
-              <circle className="wyaa-wisp-c" cx="20" cy="27" r="7" fill="url(#wyaa-wisp)" />
+              <g filter="url(#wyaa-soft)">
+                <circle className="wyaa-blob-1" cx="14.5" cy="15" r="8.5" fill="url(#wyaa-blob-light)" />
+                <circle className="wyaa-blob-2" cx="26" cy="24" r="8" fill="url(#wyaa-blob-deep)" />
+                <circle className="wyaa-blob-3" cx="21" cy="22" r="6" fill="url(#wyaa-blob-bright)" />
+                <circle className="wyaa-blob-4" cx="24" cy="14" r="6.5" fill="url(#wyaa-blob-light)" />
+              </g>
             </g>
 
-            {/* specular highlight */}
-            <ellipse cx="15" cy="13" rx="4.4" ry="2.9" fill="#FFFFFF" opacity="0.4" />
-
-            {/* faint rim light */}
-            <circle cx="20" cy="20" r="13.2" fill="none" stroke="#EAF3FF" strokeOpacity="0.22" strokeWidth="0.6" />
+            {/* very faint rim light to seat the sphere */}
+            <circle cx="20" cy="20" r="13.2" fill="none" stroke="#BCDAFF" strokeOpacity="0.18" strokeWidth="0.6" />
           </g>
         </svg>
       </button>
