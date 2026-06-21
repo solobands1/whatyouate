@@ -1115,8 +1115,18 @@ export default function SummaryScreen() {
             const message = isDemoMode ? DEMO_NUDGE : smartNudge ? smartNudge.message.replace(/\n+/g, " ") : null;
             return (
               <>
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Most Recent Nudge</p>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Most Recent Nudge</p>
+                    <button
+                      type="button"
+                      onClick={() => setShowNudgeHistory(true)}
+                      className="flex items-center gap-1 rounded-full border border-primary/20 bg-primary/[0.06] px-2 py-0.5 text-[10px] font-semibold text-primary/80 transition active:opacity-70"
+                    >
+                      <svg viewBox="0 0 24 24" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7.5V12l3 2" /></svg>
+                      History
+                    </button>
+                  </div>
                   {stamp && <span className="text-[11px] text-ink/45">{stamp}</span>}
                 </div>
                 {locked ? (
@@ -1140,20 +1150,12 @@ export default function SummaryScreen() {
                     <p className="text-[13px] font-medium text-primary/70">Monitoring Your Patterns</p>
                   </div>
                 )}
-                <button
-                  type="button"
-                  onClick={() => setShowNudgeHistory(true)}
-                  className="mt-3 flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/[0.06] px-3 py-1.5 text-[11px] font-semibold text-primary/80 transition active:opacity-70"
-                >
-                  <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7.5V12l3 2" /></svg>
-                  Nudge History
-                </button>
               </>
             );
           })()}
         </Card>
 
-        <Card className={`relative mt-6${nudgeCardIsNew && smartNudge ? " ring-1 ring-primary/20" : ""}`} data-tour="nudges-card">
+        <Card className={`relative mt-3${nudgeCardIsNew && smartNudge ? " ring-1 ring-primary/20" : ""}`} data-tour="nudges-card">
           <div data-tour="nudges-inner" className="pointer-events-none absolute inset-x-1 -top-4 bottom-2" />
 
           {(() => {
