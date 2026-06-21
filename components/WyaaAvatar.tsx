@@ -67,10 +67,10 @@ export default function WyaaAvatar({
         <defs>
           {/* lighter body, round at the top, dissolving toward the bottom like a soft wisp */}
           <linearGradient id="wyaa-body" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#A4C6FF" />
-            <stop offset="60%" stopColor="#A4C6FF" />
-            <stop offset="88%" stopColor="#A4C6FF" stopOpacity="0.6" />
-            <stop offset="100%" stopColor="#A4C6FF" stopOpacity="0.2" />
+            <stop offset="0%" stopColor="#86CFFF" />
+            <stop offset="50%" stopColor="#7FB2FF" />
+            <stop offset="85%" stopColor="#7FB2FF" stopOpacity="0.55" />
+            <stop offset="100%" stopColor="#7FB2FF" stopOpacity="0.18" />
           </linearGradient>
         </defs>
 
@@ -83,8 +83,8 @@ export default function WyaaAvatar({
         {/* eyes — soft round white eyes; glance + blink at random, organic intervals */}
         <g style={{ transform: `translate(${gaze.x}px, ${gaze.y}px)`, transition: "transform 0.8s ease-in-out" }}>
           <g style={{ transform: blink ? "scaleY(0.1)" : "scaleY(1)", transformOrigin: "center", transformBox: "fill-box", transition: "transform 90ms ease-in-out" }}>
-            <ellipse cx="15.6" cy="16.4" rx="2.7" ry="2" fill="#FFFFFF" />
-            <ellipse cx="24.4" cy="16.4" rx="2.7" ry="2" fill="#FFFFFF" />
+            <ellipse cx="15.6" cy="16.4" rx="2.2" ry="3.3" fill="#FFFFFF" />
+            <ellipse cx="24.4" cy="16.4" rx="2.2" ry="3.3" fill="#FFFFFF" />
           </g>
         </g>
       </svg>
