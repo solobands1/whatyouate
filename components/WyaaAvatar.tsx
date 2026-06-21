@@ -74,10 +74,19 @@ export default function WyaaAvatar({
             <filter id="wyaa-soft" x="-40%" y="-40%" width="180%" height="180%">
               <feGaussianBlur stdDeviation="1.4" />
             </filter>
+            {/* Soft contact shadow. */}
+            <radialGradient id="wyaa-shadow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#4F88E8" stopOpacity="0.3" />
+              <stop offset="70%" stopColor="#4F88E8" stopOpacity="0.12" />
+              <stop offset="100%" stopColor="#4F88E8" stopOpacity="0" />
+            </radialGradient>
             <clipPath id="wyaa-clip">
               <circle cx="20" cy="20" r="13.5" />
             </clipPath>
           </defs>
+
+          {/* soft contact shadow under the orb, pulsing with its breathing */}
+          <ellipse className="wyaa-contact-shadow" cx="20" cy="36.5" rx="9" ry="1.9" fill="url(#wyaa-shadow)" />
 
           {/* attention pulse when there's something new */}
           {isNew && (

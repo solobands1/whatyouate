@@ -455,6 +455,13 @@ input, textarea, select {
 @keyframes wyaaOrbit { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 .wyaa-orbit { transform-box: fill-box; transform-origin: center; animation: wyaaOrbit 30s linear infinite; }
 
+/* Soft contact shadow that widens/fades in sync with the orb's breathing. */
+@keyframes wyaaContactShadow {
+  0%, 100% { transform: scaleX(1.05); opacity: 0.9; }
+  50%      { transform: scaleX(0.92); opacity: 0.6; }
+}
+.wyaa-contact-shadow { transform-box: fill-box; transform-origin: center; animation: wyaaContactShadow 7s ease-in-out infinite; }
+
 @keyframes wyaaGlowPulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 0.85; } }
 .wyaa-glow-pulse { animation: wyaaGlowPulse 4s ease-in-out infinite; }
 
@@ -493,6 +500,7 @@ input, textarea, select {
   .wyaa-mesh-4,
   .wyaa-mesh-spin,
   .wyaa-orbit,
+  .wyaa-contact-shadow,
   .wyaa-breathe,
   .wyaa-glow-pulse,
   .wyaa-ping,
