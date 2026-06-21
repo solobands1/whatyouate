@@ -43,11 +43,11 @@ export default function WyaaAvatar({
       >
         <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            {/* Light, translucent blue body so the moving blobs show through clearly. */}
+            {/* Near-clear body with only a faint blue tinge, like a water droplet. */}
             <radialGradient id="wyaa-orb" cx="48%" cy="46%" r="62%">
-              <stop offset="0%" stopColor="#CBE0FF" />
-              <stop offset="62%" stopColor="#A4C8FF" />
-              <stop offset="100%" stopColor="#83B0F7" />
+              <stop offset="0%" stopColor="#E2EEFF" />
+              <stop offset="62%" stopColor="#C2DBFF" />
+              <stop offset="100%" stopColor="#A6C8FF" />
             </radialGradient>
             {/* Inner blobs that flow inside: soft blue tones (not white) plus a slightly deeper blue for gentle depth, kept low-opacity so it stays clear/glassy. */}
             <radialGradient id="wyaa-blob-light" cx="50%" cy="50%" r="50%">
@@ -85,8 +85,8 @@ export default function WyaaAvatar({
               <circle className="wyaa-ping" cx="20" cy="20" r="13.5" fill="none" stroke="#6FA8FF" strokeWidth="1.4" />
             )}
 
-            {/* translucent body */}
-            <circle cx="20" cy="20" r="13.5" fill="url(#wyaa-orb)" fillOpacity="0.6" />
+            {/* near-clear body, faint blue tinge */}
+            <circle cx="20" cy="20" r="13.5" fill="url(#wyaa-orb)" fillOpacity="0.32" />
 
             {/* flowing inner blobs, blurred and clipped inside the orb */}
             <g clipPath="url(#wyaa-clip)">
@@ -98,8 +98,8 @@ export default function WyaaAvatar({
               </g>
             </g>
 
-            {/* very faint rim light to seat the sphere */}
-            <circle cx="20" cy="20" r="13.2" fill="none" stroke="#BCDAFF" strokeOpacity="0.18" strokeWidth="0.6" />
+            {/* rim that defines the clear bubble's edge */}
+            <circle cx="20" cy="20" r="13.2" fill="none" stroke="#8FB8FF" strokeOpacity="0.45" strokeWidth="0.8" />
           </g>
         </svg>
       </button>
