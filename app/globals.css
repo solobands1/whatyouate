@@ -407,23 +407,43 @@ input, textarea, select {
    ribbons looping inside and a luminous core. The ribbons are elliptical light
    loops that rotate at different speeds/directions and gently wobble so they
    weave through each other; the core softly pulses. */
-@keyframes wyaaRing1 {
-  0%   { transform: rotate(0deg) scale(1, 1); }
-  50%  { transform: rotate(180deg) scale(1.08, 0.9); }
-  100% { transform: rotate(360deg) scale(1, 1); }
+/* Ribbons stay roughly horizontal and wave up and down (Siri-style): each drifts
+   sideways a little and changes amplitude (scaleY) at its own irregular pace, so
+   together they undulate rather than spin. */
+@keyframes wyaaWave1 {
+  0%   { transform: translate(0, 0) scaleY(1); }
+  33%  { transform: translate(-4px, -1.5px) scaleY(1.18); }
+  66%  { transform: translate(3px, 1.5px) scaleY(0.84); }
+  100% { transform: translate(0, 0) scaleY(1); }
 }
-@keyframes wyaaRing2 {
-  0%   { transform: rotate(0deg) scale(0.96, 1.06); }
-  100% { transform: rotate(-360deg) scale(0.96, 1.06); }
+@keyframes wyaaWave2 {
+  0%   { transform: translate(0, 0) scaleY(0.95); }
+  40%  { transform: translate(4px, 1.5px) scaleY(1.22); }
+  70%  { transform: translate(-3px, -1px) scaleY(0.86); }
+  100% { transform: translate(0, 0) scaleY(0.95); }
 }
-@keyframes wyaaRing3 {
-  0%   { transform: rotate(0deg) scale(1, 1); }
-  50%  { transform: rotate(180deg) scale(0.9, 1.1); }
-  100% { transform: rotate(360deg) scale(1, 1); }
+@keyframes wyaaWave3 {
+  0%   { transform: translate(0, 0) scaleY(1.06); }
+  50%  { transform: translate(-5px, 2px) scaleY(0.82); }
+  100% { transform: translate(0, 0) scaleY(1.06); }
 }
-.wyaa-ring-1 { transform-box: fill-box; transform-origin: center; animation: wyaaRing1 10s linear infinite; }
-.wyaa-ring-2 { transform-box: fill-box; transform-origin: center; animation: wyaaRing2 14s linear infinite; animation-delay: -5s; }
-.wyaa-ring-3 { transform-box: fill-box; transform-origin: center; animation: wyaaRing3 18s linear infinite; animation-delay: -9s; }
+@keyframes wyaaWave4 {
+  0%   { transform: translate(0, 0) scaleY(0.9); }
+  35%  { transform: translate(3px, -2px) scaleY(1.16); }
+  65%  { transform: translate(-4px, 1px) scaleY(0.92); }
+  100% { transform: translate(0, 0) scaleY(0.9); }
+}
+@keyframes wyaaWave5 {
+  0%   { transform: translate(0, 0) scaleY(1); }
+  45%  { transform: translate(5px, 1.5px) scaleY(1.12); }
+  75%  { transform: translate(-2px, -1.5px) scaleY(0.88); }
+  100% { transform: translate(0, 0) scaleY(1); }
+}
+.wyaa-rib-a { transform-box: fill-box; transform-origin: center; animation: wyaaWave1 7s ease-in-out infinite; }
+.wyaa-rib-b { transform-box: fill-box; transform-origin: center; animation: wyaaWave2 9s ease-in-out infinite; animation-delay: -3s; }
+.wyaa-rib-c { transform-box: fill-box; transform-origin: center; animation: wyaaWave3 11s ease-in-out infinite; animation-delay: -5s; }
+.wyaa-rib-d { transform-box: fill-box; transform-origin: center; animation: wyaaWave4 8.5s ease-in-out infinite; animation-delay: -2s; }
+.wyaa-rib-e { transform-box: fill-box; transform-origin: center; animation: wyaaWave5 12s ease-in-out infinite; animation-delay: -7s; }
 
 @keyframes wyaaCorePulse {
   0%, 100% { transform: scale(0.9); opacity: 0.8; }
@@ -466,9 +486,11 @@ input, textarea, select {
   .wyaa-pop-3,
   .wyaa-fly-out,
   .wyaa-fly-in,
-  .wyaa-ring-1,
-  .wyaa-ring-2,
-  .wyaa-ring-3,
+  .wyaa-rib-a,
+  .wyaa-rib-b,
+  .wyaa-rib-c,
+  .wyaa-rib-d,
+  .wyaa-rib-e,
   .wyaa-core-pulse,
   .wyaa-breathe,
   .wyaa-glow-pulse,
