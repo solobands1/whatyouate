@@ -83,8 +83,8 @@ export default function WyaaAvatar({
         {/* eyes — soft round white eyes; glance + blink at random, organic intervals */}
         <g style={{ transform: `translate(${gaze.x}px, ${gaze.y}px)`, transition: "transform 0.8s ease-in-out" }}>
           <g style={{ transform: blink ? "scaleY(0.1)" : "scaleY(1)", transformOrigin: "center", transformBox: "fill-box", transition: "transform 90ms ease-in-out" }}>
-            <circle cx="15.6" cy="16.4" r="2.4" fill="#FFFFFF" />
-            <circle cx="24.4" cy="16.4" r="2.4" fill="#FFFFFF" />
+            <ellipse cx="15.6" cy="16.4" rx="2.7" ry="2" fill="#FFFFFF" />
+            <ellipse cx="24.4" cy="16.4" rx="2.7" ry="2" fill="#FFFFFF" />
           </g>
         </g>
       </svg>
