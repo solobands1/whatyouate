@@ -1211,7 +1211,7 @@ export default function SummaryScreen() {
             }
             return (
               <>
-                <div className="absolute -top-6 -right-1 z-10 flex flex-col items-center gap-1.5">
+                <div className="absolute -top-6 -right-1 z-10">
                   <WyaaAvatar
                     size={72}
                     onClick={openCoach}
@@ -1223,21 +1223,12 @@ export default function SummaryScreen() {
                           : null
                     }
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowNudgeHistory(true)}
-                    className="flex items-center gap-1 rounded-full border border-primary/20 bg-primary/[0.06] px-2 py-0.5 text-[10px] font-semibold text-primary/80 transition active:opacity-70"
-                  >
-                    <svg viewBox="0 0 24 24" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7.5V12l3 2" /></svg>
-                    Nudge History
-                  </button>
                 </div>
                 <div className="pr-24">
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Habit Builder History</p>
                   <p className="mt-1 text-sm text-ink/70"><span className="font-semibold text-ink">{builtHabits.length} Habits</span> built so far. Keep stacking them.</p>
                 </div>
-                <p className="mt-4 mb-1 text-xs font-semibold uppercase tracking-wide text-muted/55">Your Journey</p>
-                <div className="mt-1">
+                <div className="mt-4">
                   {builtHabits.map((h, i) => (
                     <div key={h.title} className="relative flex gap-3 pb-4 last:pb-0">
                       <div className="relative flex flex-col items-center">
