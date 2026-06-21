@@ -1376,12 +1376,12 @@ export default function SummaryScreen() {
               <div className="flex flex-col items-center gap-4 text-center">
                 <WyaaAvatar size={72} fly={coachPhase === "closing" ? "out" : "in"} />
                 <div>
-                  <p className="text-base font-semibold text-ink">I&apos;m Your AI Nutrition Coach</p>
+                  <p className="text-base font-semibold text-ink">I&apos;m Your AI Coach</p>
                   <p className="mt-2.5 text-sm leading-relaxed text-muted/80">
-                    I read your logs and send you honest, specific nudges throughout the day based on what you&apos;ve actually eaten and what you&apos;re working toward.
+                    I read your meals and your nightly check-ins to learn how food affects your energy and how you feel, then send you honest, specific nudges through the day.
                   </p>
                   <p className="mt-2.5 text-sm leading-relaxed text-muted/80">
-                    The more you log, the more useful I get!
+                    When something&apos;s worth working on, I&apos;ll build a small habit with you, one easy step at a time. The more you share, the more useful I get!
                   </p>
                 </div>
                 <button
