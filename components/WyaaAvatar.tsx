@@ -18,8 +18,21 @@ export default function WyaaAvatar({
   onClick,
   className = "",
 }: WyaaAvatarProps) {
-  const [gaze, setGaze] = useState({ x: 0, y: 0 });
+  const [gaze, setGaze] = useState({ x: 0, y: 0, dur: 0.8 });
   const [blink, setBlink] = useState(false);
+
+  // Excited pop-in on load, then settle to the calm float. Random variant so each
+  // load looks a bit different.
+  const [popClass, setPopClass] = useState("");
+  const [entering, setEntering] = useState(false);
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    const variants = ["wyaa-pop-1", "wyaa-pop-2", "wyaa-pop-3"];
+    setPopClass(variants[Math.floor(Math.random() * variants.length)]);
+    setEntering(true);
+    const t = setTimeout(() => setEntering(false), 1050);
+    return () => clearTimeout(t);
+  }, []);
 
   // Random, calm glances: it rests, then occasionally drifts to a new spot (often
   // back to center). Randomly timed so it never reads as a fixed pattern.
@@ -29,8 +42,8 @@ export default function WyaaAvatar({
     const loop = () => {
       t = setTimeout(() => {
         setGaze(Math.random() < 0.42
-          ? { x: 0, y: 0 }
-          : { x: (Math.random() * 2 - 1) * 1.7, y: (Math.random() * 2 - 1) * 1.2 });
+          ? { x: 0, y: 0, dur: 0.7 + Math.random() * 0.6 } // gentle settle back to center
+          : { x: (Math.random() * 2 - 1) * 1.7, y: (Math.random() * 2 - 1) * 1.2, dur: 0.28 + Math.random() * 0.95 }); // some quick darts, some slow drifts
         loop();
       }, 1600 + Math.random() * 3200);
     };
@@ -59,7 +72,7 @@ export default function WyaaAvatar({
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex shrink-0 transition active:opacity-70 ${isNew ? "animate-wyaa-bounce" : "animate-wyaa-float"}`}
+      className={`inline-flex shrink-0 transition active:opacity-70 ${entering && popClass ? popClass : isNew ? "animate-wyaa-bounce" : "animate-wyaa-float"}`}
       aria-label="About your AI coach"
       style={{ background: "none", border: "none", padding: 0 }}
     >
@@ -81,7 +94,7 @@ export default function WyaaAvatar({
         <ellipse cx="14.3" cy="10.5" rx="4" ry="2.4" fill="#FFFFFF" opacity="0.12" />
 
         {/* eyes — soft round white eyes; glance + blink at random, organic intervals */}
-        <g style={{ transform: `translate(${gaze.x}px, ${gaze.y}px)`, transition: "transform 0.8s ease-in-out" }}>
+        <g style={{ transform: `translate(${gaze.x}px, ${gaze.y}px)`, transition: `transform ${gaze.dur}s ease-in-out` }}>
           <g style={{ transform: blink ? "scaleY(0.1)" : "scaleY(1)", transformOrigin: "center", transformBox: "fill-box", transition: "transform 90ms ease-in-out" }}>
             <ellipse cx="15.6" cy="16.4" rx="2.2" ry="3.3" fill="#FFFFFF" />
             <ellipse cx="24.4" cy="16.4" rx="2.2" ry="3.3" fill="#FFFFFF" />
