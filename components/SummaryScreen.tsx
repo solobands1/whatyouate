@@ -1211,10 +1211,8 @@ export default function SummaryScreen() {
             }
             return (
               <>
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Habit Builder History</p>
-                  <span className="text-xl font-bold leading-none text-primary">{builtHabits.length}</span>
-                </div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Habit Builder History</p>
+                <p className="mt-1 text-sm text-ink/70"><span className="font-semibold text-ink">{builtHabits.length} habits</span> built so far. Keep stacking them.</p>
                 <p className="mt-4 mb-1 text-xs font-semibold uppercase tracking-wide text-muted/55">Your Journey</p>
                 <div className="mt-1">
                   {builtHabits.map((h, i) => (
