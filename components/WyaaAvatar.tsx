@@ -43,33 +43,26 @@ export default function WyaaAvatar({
       >
         <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            {/* Near-clear body with only a faint blue tinge, like a water droplet. */}
+            {/* Near-clear glass body with only a very faint blue tinge. */}
             <radialGradient id="wyaa-orb" cx="48%" cy="46%" r="62%">
-              <stop offset="0%" stopColor="#E2EEFF" />
-              <stop offset="62%" stopColor="#C2DBFF" />
-              <stop offset="100%" stopColor="#A6C8FF" />
+              <stop offset="0%" stopColor="#EAF3FF" />
+              <stop offset="65%" stopColor="#DCEBFF" />
+              <stop offset="100%" stopColor="#C6DEFF" />
             </radialGradient>
-            {/* Inner blobs that flow inside: soft blue tones (not white) plus a slightly deeper blue for gentle depth, kept low-opacity so it stays clear/glassy. */}
-            <radialGradient id="wyaa-blob-light" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#C6DEFF" stopOpacity="0.6" />
-              <stop offset="100%" stopColor="#C6DEFF" stopOpacity="0" />
-            </radialGradient>
-            <radialGradient id="wyaa-blob-bright" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#DCEBFF" stopOpacity="0.4" />
-              <stop offset="100%" stopColor="#DCEBFF" stopOpacity="0" />
-            </radialGradient>
-            <radialGradient id="wyaa-blob-deep" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#5E96EE" stopOpacity="0.6" />
-              <stop offset="100%" stopColor="#5E96EE" stopOpacity="0" />
+            {/* The coloured cat's-eye vane: denser blue in the middle, fading at the tips. */}
+            <radialGradient id="wyaa-catseye" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#5E9BF2" stopOpacity="0.85" />
+              <stop offset="70%" stopColor="#5E9BF2" stopOpacity="0.45" />
+              <stop offset="100%" stopColor="#5E9BF2" stopOpacity="0" />
             </radialGradient>
             {/* Outer glow. */}
             <radialGradient id="wyaa-glow" cx="50%" cy="50%" r="50%">
-              <stop offset="55%" stopColor="#8FBCFF" stopOpacity="0.28" />
+              <stop offset="55%" stopColor="#8FBCFF" stopOpacity="0.24" />
               <stop offset="100%" stopColor="#8FBCFF" stopOpacity="0" />
             </radialGradient>
-            {/* Soft blur so the blobs blend like plasma rather than hard circles. */}
+            {/* Soft blur so the vane reads as fluid light rather than a hard shape. */}
             <filter id="wyaa-soft" x="-30%" y="-30%" width="160%" height="160%">
-              <feGaussianBlur stdDeviation="1.1" />
+              <feGaussianBlur stdDeviation="1.0" />
             </filter>
             <clipPath id="wyaa-clip">
               <circle cx="20" cy="20" r="13.5" />
@@ -85,21 +78,16 @@ export default function WyaaAvatar({
               <circle className="wyaa-ping" cx="20" cy="20" r="13.5" fill="none" stroke="#6FA8FF" strokeWidth="1.4" />
             )}
 
-            {/* near-clear body, faint blue tinge */}
-            <circle cx="20" cy="20" r="13.5" fill="url(#wyaa-orb)" fillOpacity="0.32" />
+            {/* near-clear glass body, no border */}
+            <circle cx="20" cy="20" r="13.5" fill="url(#wyaa-orb)" fillOpacity="0.28" />
 
-            {/* flowing inner blobs, blurred and clipped inside the orb */}
+            {/* swirling cat's-eye vanes, blurred and clipped inside the orb */}
             <g clipPath="url(#wyaa-clip)">
               <g filter="url(#wyaa-soft)">
-                <circle className="wyaa-blob-1" cx="14" cy="15" r="9.5" fill="url(#wyaa-blob-light)" />
-                <circle className="wyaa-blob-2" cx="26" cy="24" r="9" fill="url(#wyaa-blob-deep)" />
-                <circle className="wyaa-blob-3" cx="21" cy="22" r="7" fill="url(#wyaa-blob-bright)" />
-                <circle className="wyaa-blob-4" cx="25" cy="14" r="7.5" fill="url(#wyaa-blob-light)" />
+                <path className="wyaa-catseye-1" d="M7 20 C11 13.5 29 13.5 33 20 C29 26.5 11 26.5 7 20 Z" fill="url(#wyaa-catseye)" opacity="0.65" />
+                <path className="wyaa-catseye-2" d="M7 20 C11 13.5 29 13.5 33 20 C29 26.5 11 26.5 7 20 Z" fill="url(#wyaa-catseye)" opacity="0.4" />
               </g>
             </g>
-
-            {/* rim that defines the clear bubble's edge */}
-            <circle cx="20" cy="20" r="13.2" fill="none" stroke="#8FB8FF" strokeOpacity="0.45" strokeWidth="0.8" />
           </g>
         </svg>
       </button>
