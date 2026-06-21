@@ -85,16 +85,18 @@ export default function WyaaAvatar({
             </clipPath>
           </defs>
 
-          {/* soft contact shadow under the orb, pulsing with its breathing */}
-          <ellipse className="wyaa-contact-shadow" cx="20" cy="38" rx="8.5" ry="1.7" fill="url(#wyaa-shadow)" />
+          {/* soft contact shadow: a static "floor" beneath the orb */}
+          <ellipse cx="20" cy="38" rx="8.5" ry="1.7" fill="url(#wyaa-shadow)" />
 
           {/* attention pulse when there's something new */}
           {isNew && (
             <circle className="wyaa-ping" cx="20" cy="20" r="13.5" fill="none" stroke="#6FA8FF" strokeWidth="1.4" />
           )}
 
-          {/* orbit slowly rotates the whole orb; breathe squashes/stretches it, so the
-              bulge travels around the edge and it feels alive (cheap, smooth transforms). */}
+          {/* orb sits above the fixed shadow; orbit slowly rotates the whole orb;
+              breathe squashes/stretches it, so the bulge travels around the edge and it
+              feels alive (cheap, smooth transforms). */}
+          <g transform="translate(0 -3.5)">
           <g className="wyaa-orbit">
             <g className="wyaa-breathe">
               {/* clean base orb */}
@@ -110,6 +112,7 @@ export default function WyaaAvatar({
                 </g>
               </g>
             </g>
+          </g>
           </g>
         </svg>
       </button>
