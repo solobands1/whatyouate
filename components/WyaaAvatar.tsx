@@ -43,20 +43,32 @@ export default function WyaaAvatar({
       >
         <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            {/* Very pale blue sphere (almost as light as the food pills), with a slightly deeper rim for form. */}
-            <radialGradient id="wyaa-orb" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#EAF3FF" />
-              <stop offset="60%" stopColor="#DCEBFF" />
-              <stop offset="100%" stopColor="#BCD7FF" />
+            {/* Clean base gradient for the orb. */}
+            <linearGradient id="wyaa-orb" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#C2DBFF" />
+              <stop offset="100%" stopColor="#7FB0FF" />
+            </linearGradient>
+            {/* Soft colour blobs in different blue hues that drift to form a living gradient. */}
+            <radialGradient id="wyaa-b1" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#9AD8FF" stopOpacity="0.85" />
+              <stop offset="100%" stopColor="#9AD8FF" stopOpacity="0" />
+            </radialGradient>
+            <radialGradient id="wyaa-b2" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#3F79DE" stopOpacity="0.6" />
+              <stop offset="100%" stopColor="#3F79DE" stopOpacity="0" />
+            </radialGradient>
+            <radialGradient id="wyaa-b3" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#6FA8FF" stopOpacity="0.75" />
+              <stop offset="100%" stopColor="#6FA8FF" stopOpacity="0" />
             </radialGradient>
             {/* Outer glow. */}
             <radialGradient id="wyaa-glow" cx="50%" cy="50%" r="50%">
-              <stop offset="55%" stopColor="#5E9BF2" stopOpacity="0.3" />
-              <stop offset="100%" stopColor="#5E9BF2" stopOpacity="0" />
+              <stop offset="55%" stopColor="#6FA8FF" stopOpacity="0.28" />
+              <stop offset="100%" stopColor="#6FA8FF" stopOpacity="0" />
             </radialGradient>
-            {/* Light blur: ribbons stay fairly defined but not stark. */}
-            <filter id="wyaa-soft" x="-30%" y="-30%" width="160%" height="160%">
-              <feGaussianBlur stdDeviation="0.6" />
+            {/* Heavy blur so the blobs melt into a smooth, modern gradient field. */}
+            <filter id="wyaa-soft" x="-40%" y="-40%" width="180%" height="180%">
+              <feGaussianBlur stdDeviation="2.2" />
             </filter>
             <clipPath id="wyaa-clip">
               <circle cx="20" cy="20" r="13.5" />
@@ -72,24 +84,15 @@ export default function WyaaAvatar({
               <circle className="wyaa-ping" cx="20" cy="20" r="13.5" fill="none" stroke="#7FB6FF" strokeWidth="1.4" />
             )}
 
-            {/* glowing sphere */}
+            {/* clean base orb */}
             <circle cx="20" cy="20" r="13.5" fill="url(#wyaa-orb)" />
 
-            {/* 3 center-anchored ribbons; each is two halves that pivot around the
-                center so the middle stays put and the ends wave. Core bloom behind. */}
+            {/* drifting colour blobs, heavily blurred and clipped to a crisp circle */}
             <g clipPath="url(#wyaa-clip)">
               <g filter="url(#wyaa-soft)">
-                {/* ribbon 1 (baseline 18.5) — light-medium blue */}
-                <path className="wyaa-sway-1" style={{ transformBox: "view-box", transformOrigin: "20px 18.5px" }} d="M20 18.5 Q9 17 -6 18.5" fill="none" stroke="#7FB0FF" strokeOpacity="0.85" strokeWidth="1.7" strokeLinecap="round" />
-                <path className="wyaa-sway-2" style={{ transformBox: "view-box", transformOrigin: "20px 18.5px" }} d="M20 18.5 Q31 20 46 18.5" fill="none" stroke="#7FB0FF" strokeOpacity="0.85" strokeWidth="1.7" strokeLinecap="round" />
-
-                {/* ribbon 2 (baseline 20) — deepest blue */}
-                <path className="wyaa-sway-3" style={{ transformBox: "view-box", transformOrigin: "20px 20px" }} d="M20 20 Q9 21.5 -6 20" fill="none" stroke="#4F88E8" strokeOpacity="0.85" strokeWidth="1.8" strokeLinecap="round" />
-                <path className="wyaa-sway-4" style={{ transformBox: "view-box", transformOrigin: "20px 20px" }} d="M20 20 Q31 18.5 46 20" fill="none" stroke="#4F88E8" strokeOpacity="0.85" strokeWidth="1.8" strokeLinecap="round" />
-
-                {/* ribbon 3 (baseline 21.5) — mid blue */}
-                <path className="wyaa-sway-5" style={{ transformBox: "view-box", transformOrigin: "20px 21.5px" }} d="M20 21.5 Q9 20 -6 21.5" fill="none" stroke="#5E9BF2" strokeOpacity="0.83" strokeWidth="1.7" strokeLinecap="round" />
-                <path className="wyaa-sway-6" style={{ transformBox: "view-box", transformOrigin: "20px 21.5px" }} d="M20 21.5 Q31 23 46 21.5" fill="none" stroke="#5E9BF2" strokeOpacity="0.83" strokeWidth="1.7" strokeLinecap="round" />
+                <circle className="wyaa-mesh-1" cx="14" cy="14.5" r="11" fill="url(#wyaa-b1)" />
+                <circle className="wyaa-mesh-2" cx="27" cy="24" r="12" fill="url(#wyaa-b2)" />
+                <circle className="wyaa-mesh-3" cx="21" cy="26" r="10" fill="url(#wyaa-b3)" />
               </g>
             </g>
           </g>
