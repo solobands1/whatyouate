@@ -160,6 +160,26 @@ export default function SummaryScreen() {
     } catch { return false; }
   });
   const [showWyaaSheet, setShowWyaaSheet] = useState(false);
+  // Coach open/close choreography: the avatar hovers up off the page, the window
+  // opens with the avatar in it, and on close it hovers back off then returns.
+  const [coachPhase, setCoachPhase] = useState<"idle" | "opening" | "open" | "closing" | "returning">("idle");
+  const openCoach = () => {
+    if (coachPhase !== "idle") return;
+    const reduced = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (reduced) { setShowWyaaSheet(true); setCoachPhase("open"); return; }
+    setCoachPhase("opening");
+    setTimeout(() => { setShowWyaaSheet(true); setCoachPhase("open"); }, 360);
+  };
+  const closeCoach = () => {
+    const reduced = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (reduced) { setShowWyaaSheet(false); setCoachPhase("idle"); return; }
+    setCoachPhase("closing");
+    setTimeout(() => {
+      setShowWyaaSheet(false);
+      setCoachPhase("returning");
+      setTimeout(() => setCoachPhase("idle"), 640);
+    }, 440);
+  };
   const [showNudgeInfo, setShowNudgeInfo] = useState(false);
 
   useEffect(() => {
@@ -1176,7 +1196,14 @@ export default function SummaryScreen() {
             <WyaaAvatar
               isNew={nudgeCardIsNew && !!smartNudge}
               size={72}
-              onClick={() => setShowWyaaSheet(true)}
+              onClick={openCoach}
+              fly={
+                coachPhase === "opening" || coachPhase === "open" || coachPhase === "closing"
+                  ? "out"
+                  : coachPhase === "returning"
+                    ? "in"
+                    : null
+              }
             />
           </div>
           <div className="flex items-center gap-2">
@@ -1338,7 +1365,7 @@ export default function SummaryScreen() {
 
       {/* About AI Coach sheet */}
       {showWyaaSheet && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-6" onClick={() => setShowWyaaSheet(false)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-6" onClick={closeCoach}>
           <div className="absolute inset-0 bg-black/30" />
           <div
             className="animate-scaleIn relative w-full max-w-xs"
@@ -1347,7 +1374,7 @@ export default function SummaryScreen() {
             {/* Speech bubble */}
             <div className="relative rounded-2xl bg-white px-6 py-6 shadow-xl">
               <div className="flex flex-col items-center gap-4 text-center">
-                <WyaaAvatar size={72} />
+                <WyaaAvatar size={72} fly={coachPhase === "closing" ? "out" : "in"} />
                 <div>
                   <p className="text-base font-semibold text-ink">I&apos;m Your AI Nutrition Coach</p>
                   <p className="mt-2.5 text-sm leading-relaxed text-muted/80">
@@ -1360,7 +1387,7 @@ export default function SummaryScreen() {
                 <button
                   type="button"
                   className="mt-1 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-white active:opacity-70"
-                  onClick={() => setShowWyaaSheet(false)}
+                  onClick={closeCoach}
                 >
                   Got it
                 </button>

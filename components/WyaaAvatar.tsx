@@ -10,6 +10,8 @@ interface WyaaAvatarProps {
   size?: number;
   onClick?: () => void;
   className?: string;
+  // "out" = hover up off the page (and stay off); "in" = hover back down into place.
+  fly?: "in" | "out" | null;
 }
 
 export default function WyaaAvatar({
@@ -17,17 +19,31 @@ export default function WyaaAvatar({
   size = 36,
   onClick,
   className = "",
+  fly = null,
 }: WyaaAvatarProps) {
   const [gaze, setGaze] = useState({ x: 0, y: 0, dur: 0.8 });
   const [blink, setBlink] = useState(false);
   const [wander, setWander] = useState({ x: 0, dur: 1.4 });
 
+  // When flying in, drop the fly class after it lands so the calm float resumes.
+  const [flyInDone, setFlyInDone] = useState(false);
+  useEffect(() => {
+    setFlyInDone(false);
+    if (fly === "in") {
+      const t = setTimeout(() => setFlyInDone(true), 620);
+      return () => clearTimeout(t);
+    }
+  }, [fly]);
+  const flyClass = fly === "out" ? "wyaa-fly-out" : fly === "in" && !flyInDone ? "wyaa-fly-in" : null;
+
   // On load it sits calmly for a beat, then "notices" you and bounces up and
   // down, then settles back to the calm float. Random variant + slight delay so
-  // each load feels a little different.
+  // each load feels a little different. Skipped when it's flying in (the fly is
+  // its entrance in that case).
   const [popClass, setPopClass] = useState("");
   const [entering, setEntering] = useState(false);
   useEffect(() => {
+    if (fly) return;
     if (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
     const variants = ["wyaa-pop-1", "wyaa-pop-3"];
     let end: ReturnType<typeof setTimeout>;
@@ -99,7 +115,7 @@ export default function WyaaAvatar({
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex shrink-0 transition active:opacity-70 ${entering && popClass ? popClass : isNew ? "animate-wyaa-bounce" : "animate-wyaa-float"}`}
+      className={`inline-flex shrink-0 transition active:opacity-70 ${flyClass ? flyClass : entering && popClass ? popClass : isNew ? "animate-wyaa-bounce" : "animate-wyaa-float"}`}
       aria-label="About your AI coach"
       style={{ background: "none", border: "none", padding: 0 }}
     >
@@ -129,6 +145,8 @@ export default function WyaaAvatar({
         </g>
       </svg>
     </button>
+    {/* Hidden while it's off the page so no orphan shadow is left behind. */}
+    {!flyClass && (
     <div
       className={isNew ? "" : "animate-wyaa-shadow"}
       style={{
@@ -143,6 +161,7 @@ export default function WyaaAvatar({
         transformOrigin: "center",
       }}
     />
+    )}
     </div>
   );
 }
