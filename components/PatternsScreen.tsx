@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
 import WyaaAvatar from "./WyaaAvatar";
@@ -27,15 +28,27 @@ const TONE_CHIP: Record<"great" | "good" | "neutral", string> = {
   neutral: "bg-ink/[0.08] text-ink/55",
 };
 
-const BETTER_DAYS = ["More water", "Earlier meals", "Better sleep", "More activity"];
-const LOWER_DAYS = ["Lower hydration", "Later meals", "Less activity"];
+// Behaviour/timing differences (kept distinct from the ranked factors above).
+const BETTER_DAYS = ["Breakfast before 9am", "A walk or workout", "In bed before 11pm", "Steady meals through the day"];
+const LOWER_DAYS = ["First meal after noon", "Caffeine after 2pm", "Long gaps without eating", "Little movement"];
 
-const CLUES: { text: string; confidence: string }[] = [
-  { text: "Iron-rich foods have been lower on your low-energy days.", confidence: "Moderate" },
-  { text: "Your highest-energy days have included more water.", confidence: "Building" },
+// The uncertain frontier — things still being investigated, not the confident findings above.
+const CLUES: { text: string; confidence: string; habit: string }[] = [
+  { text: "Iron-rich foods have been lower on your low-energy days.", confidence: "Moderate", habit: "iron" },
+  { text: "Afternoon dips have lined up with later, heavier lunches.", confidence: "Building", habit: "lunch timing" },
 ];
 
+// 7-day energy trend (sample).
+const ENERGY_WEEK: ("high" | "avg" | "low")[] = ["avg", "high", "low", "avg", "high", "high", "avg"];
+const ENERGY_DAY_LABELS = ["T", "W", "T", "F", "S", "S", "M"];
+const ENERGY_DOT: Record<"high" | "avg" | "low", string> = {
+  high: "bg-primary",
+  avg: "bg-primary/35",
+  low: "bg-amber-400/80",
+};
+
 export default function PatternsScreen() {
+  const router = useRouter();
   const { user } = useAuth();
   const { meals } = useAppData();
   const [isDemoMode, setIsDemoMode] = useState(false);
@@ -80,12 +93,32 @@ export default function PatternsScreen() {
                   <WyaaAvatar size={40} />
                 </div>
                 <div>
-                  <p className="text-[15px] font-medium leading-relaxed text-ink/90">Your better days tend to include more water and earlier meals.</p>
+                  <p className="text-[15px] font-medium leading-relaxed text-ink/90">Water keeps showing up on your better days — it&apos;s the clearest signal so far.</p>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
                     <span className="text-[11px] font-medium text-primary/70">— Coach</span>
                     <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary/70">Confidence: Building</span>
                   </div>
                 </div>
+              </div>
+            </Card>
+
+            {/* Energy trend */}
+            <Card className="mt-6">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Your Energy Lately</p>
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-600">
+                  <svg viewBox="0 0 24 24" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 15l7-7 7 7" /></svg>
+                  Improving
+                </span>
+              </div>
+              <p className="mt-2 text-sm text-ink/80"><span className="font-semibold text-ink">2 low-energy days</span> this week, down from 4 last week.</p>
+              <div className="mt-3 flex items-end justify-between">
+                {ENERGY_WEEK.map((lvl, i) => (
+                  <div key={i} className="flex flex-col items-center gap-1.5">
+                    <span className={`h-2.5 w-2.5 rounded-full ${ENERGY_DOT[lvl]}`} />
+                    <span className="text-[10px] text-muted/60">{ENERGY_DAY_LABELS[i]}</span>
+                  </div>
+                ))}
               </div>
             </Card>
 
@@ -149,7 +182,17 @@ export default function PatternsScreen() {
                 {CLUES.map((c) => (
                   <div key={c.text} className="rounded-xl border border-primary/15 bg-primary/[0.05] px-3 py-2.5">
                     <p className="text-sm text-ink/90">{c.text}</p>
-                    <span className="mt-1.5 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary/70">Confidence: {c.confidence}</span>
+                    <div className="mt-1.5 flex items-center justify-between gap-2">
+                      <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary/70">Confidence: {c.confidence}</span>
+                      <button
+                        type="button"
+                        onClick={() => router.push("/")}
+                        className="inline-flex shrink-0 items-center gap-0.5 text-[11px] font-semibold text-primary/80 transition active:opacity-60"
+                      >
+                        Try as a habit
+                        <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
