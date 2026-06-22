@@ -183,6 +183,15 @@ export default function SummaryScreen() {
   const [showNudgeInfo, setShowNudgeInfo] = useState(false);
   const [showNudgeHistory, setShowNudgeHistory] = useState(false);
 
+  // Lock body scroll while the nudge history sheet is open so scrolling it
+  // doesn't bleed through to the page behind it.
+  useEffect(() => {
+    if (!showNudgeHistory) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, [showNudgeHistory]);
+
   useEffect(() => {
     mountedRef.current = true;
     localStorage.setItem("wya_nudge_seen_ts", Date.now().toString());
@@ -1229,7 +1238,7 @@ export default function SummaryScreen() {
       {showNudgeHistory && (
         <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={() => setShowNudgeHistory(false)}>
           <div className="absolute inset-0 bg-black/30" />
-          <div className="relative w-full max-w-md max-h-[85vh] overflow-y-auto rounded-t-3xl bg-white p-5 pb-8 shadow-xl animate-drawer-up" onClick={(e) => e.stopPropagation()}>
+          <div className="relative w-full max-w-md max-h-[85vh] overflow-y-auto overscroll-contain rounded-t-3xl bg-white p-5 pb-8 shadow-xl animate-drawer-up" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-3">
               <WyaaAvatar size={48} />
               <div className="flex-1">
