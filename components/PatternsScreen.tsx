@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
+import MacroRing from "./MacroRing";
 import WyaaAvatar from "./WyaaAvatar";
 import { useAuth } from "./AuthProvider";
 import { useAppData } from "./AppDataProvider";
@@ -11,9 +12,9 @@ import { hasEnoughDataForPatterns } from "../lib/trial";
 
 // Sample/placeholder content until the pattern engine + persisted reflections exist.
 const FACTORS = [
-  { label: "Hydration", strength: 0.9 },
-  { label: "Sleep Consistency", strength: 0.72 },
-  { label: "Protein At Breakfast", strength: 0.58 },
+  { label: "Hydration", short: "Hydration", strength: 0.9 },
+  { label: "Sleep Consistency", short: "Sleep", strength: 0.72 },
+  { label: "Protein At Breakfast", short: "Protein", strength: 0.58 },
 ];
 
 const HABITS: { title: string; result: string; tone: "great" | "good" | "neutral" }[] = [
@@ -125,18 +126,17 @@ export default function PatternsScreen() {
             {/* What seems to matter most */}
             <Card className="mt-6">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">What Seems To Matter Most</p>
-              <p className="mt-1 text-sm text-muted/65">The factors most linked to your better days.</p>
-              <div className="mt-4 space-y-3.5">
-                {FACTORS.map((f, i) => (
-                  <div key={f.label} className="flex items-center gap-3">
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[11px] font-bold text-primary">{i + 1}</span>
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold text-ink">{f.label}</p>
-                      <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-ink/5">
-                        <div className="h-full rounded-full bg-primary" style={{ width: `${Math.round(f.strength * 100)}%` }} />
-                      </div>
-                    </div>
-                  </div>
+              <p className="mt-1 text-sm text-muted/65">How strongly each links to your better days.</p>
+              <div className="mt-5 flex justify-between">
+                {FACTORS.map((f) => (
+                  <MacroRing
+                    key={f.label}
+                    label={f.short}
+                    value={Math.round(f.strength * 100)}
+                    unit="%"
+                    target={100}
+                    animate
+                  />
                 ))}
               </div>
             </Card>
