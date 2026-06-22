@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
-import MacroRing from "./MacroRing";
 import WyaaAvatar from "./WyaaAvatar";
 import { useAuth } from "./AuthProvider";
 import { useAppData } from "./AppDataProvider";
@@ -12,9 +11,9 @@ import { hasEnoughDataForPatterns } from "../lib/trial";
 
 // Sample/placeholder content until the pattern engine + persisted reflections exist.
 const FACTORS = [
-  { label: "Hydration", short: "Hydration", strength: 0.9 },
-  { label: "Sleep Consistency", short: "Sleep", strength: 0.72 },
-  { label: "Protein At Breakfast", short: "Protein", strength: 0.58 },
+  { label: "Hydration", strength: 0.9 },
+  { label: "Sleep Consistency", strength: 0.72 },
+  { label: "Protein At Breakfast", strength: 0.58 },
 ];
 
 const HABITS: { title: string; result: string; tone: "great" | "good" | "neutral" }[] = [
@@ -94,7 +93,7 @@ export default function PatternsScreen() {
                   <WyaaAvatar size={40} />
                 </div>
                 <div>
-                  <p className="text-[15px] font-medium leading-relaxed text-ink/90">Water keeps showing up on your better days — it&apos;s the clearest signal so far.</p>
+                  <p className="text-[15px] font-medium leading-relaxed text-ink/90">Water keeps showing up on your better days. It&apos;s the clearest signal so far.</p>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
                     <span className="text-[11px] font-medium text-primary/70">— Coach</span>
                     <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary/70">Confidence: Building</span>
@@ -112,7 +111,7 @@ export default function PatternsScreen() {
                   Improving
                 </span>
               </div>
-              <p className="mt-2 text-sm text-ink/80"><span className="font-semibold text-ink">2 low-energy days</span> this week, down from 4 last week.</p>
+              <p className="mt-2 text-sm text-ink/80"><span className="font-semibold text-ink">2 Low-Energy Days</span> this week, down from 4 last week.</p>
               <div className="mt-3 flex items-end justify-between">
                 {ENERGY_WEEK.map((lvl, i) => (
                   <div key={i} className="flex flex-col items-center gap-1.5">
@@ -121,63 +120,65 @@ export default function PatternsScreen() {
                   </div>
                 ))}
               </div>
+              <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span className="flex items-center gap-1 text-[10px] text-muted/60"><span className="h-2 w-2 rounded-full bg-primary" /> High</span>
+                <span className="flex items-center gap-1 text-[10px] text-muted/60"><span className="h-2 w-2 rounded-full bg-primary/35" /> Average</span>
+                <span className="flex items-center gap-1 text-[10px] text-muted/60"><span className="h-2 w-2 rounded-full bg-amber-400/80" /> Low</span>
+              </div>
             </Card>
 
             {/* What seems to matter most */}
             <Card className="mt-6">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">What Seems To Matter Most</p>
-              <p className="mt-1 text-sm text-muted/65">How strongly each links to your better days.</p>
-              <div className="mt-5 flex justify-between">
-                {FACTORS.map((f) => (
-                  <MacroRing
-                    key={f.label}
-                    label={f.short}
-                    value={Math.round(f.strength * 100)}
-                    unit="%"
-                    target={100}
-                    animate
-                  />
+              <p className="mt-1 text-sm text-muted/65">The factors most linked to your better days.</p>
+              <div className="mt-4 space-y-3.5">
+                {FACTORS.map((f, i) => (
+                  <div key={f.label} className="flex items-center gap-3">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[11px] font-bold text-primary">{i + 1}</span>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-ink">{f.label}</p>
+                      <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-ink/5">
+                        <div className="h-full rounded-full bg-primary" style={{ width: `${Math.round(f.strength * 100)}%` }} />
+                      </div>
+                    </div>
+                  </div>
                 ))}
               </div>
             </Card>
 
             {/* Best vs low-energy days */}
             <Card className="mt-6">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Your Days, Compared</p>
-              <div className="mt-4 space-y-4">
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-emerald-600/80">Better Days Include</p>
-                  <ul className="mt-2 space-y-1.5">
-                    {BETTER_DAYS.map((d) => (
-                      <li key={d} className="flex items-center gap-2 text-sm text-ink/80">
-                        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600">
-                          <svg viewBox="0 0 24 24" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l4 4L19 7" /></svg>
-                        </span>
-                        {d}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-600/80">Low-Energy Days Include</p>
-                  <ul className="mt-2 space-y-1.5">
-                    {LOWER_DAYS.map((d) => (
-                      <li key={d} className="flex items-center gap-2 text-sm text-ink/80">
-                        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-500/15 text-amber-600">
-                          <svg viewBox="0 0 24 24" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8v5M12 16.5v.5" /></svg>
-                        </span>
-                        {d}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Your Days Compared</p>
+              <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-emerald-600/80">Better Days</p>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-600/80">Low-Energy Days</p>
+                <ul className="space-y-1.5">
+                  {BETTER_DAYS.map((d) => (
+                    <li key={d} className="flex items-start gap-2 text-[13px] text-ink/80">
+                      <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600">
+                        <svg viewBox="0 0 24 24" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l4 4L19 7" /></svg>
+                      </span>
+                      {d}
+                    </li>
+                  ))}
+                </ul>
+                <ul className="space-y-1.5">
+                  {LOWER_DAYS.map((d) => (
+                    <li key={d} className="flex items-start gap-2 text-[13px] text-ink/80">
+                      <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-500/15 text-amber-600">
+                        <svg viewBox="0 0 24 24" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8v5M12 16.5v.5" /></svg>
+                      </span>
+                      {d}
+                    </li>
+                  ))}
+                </ul>
               </div>
             </Card>
 
             {/* Potential clues */}
             <Card className="mt-6">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Potential Clues</p>
-              <p className="mt-1 text-sm text-muted/65">Worth keeping an eye on — not conclusions yet.</p>
+              <p className="mt-1 text-sm text-muted/65">Worth keeping an eye on, not conclusions yet.</p>
               <div className="mt-3 space-y-2.5">
                 {CLUES.map((c) => (
                   <div key={c.text} className="rounded-xl border border-primary/15 bg-primary/[0.05] px-3 py-2.5">

@@ -7,6 +7,7 @@ import { summarizeLoggedDays, summarizeWeek } from "../lib/summary";
 import { computeGentleTargets } from "../lib/digestEngine";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
+import MacroRing from "./MacroRing";
 import { useAuth } from "./AuthProvider";
 import { useAppData } from "./AppDataProvider";
 import { dayKeyFromTs } from "../lib/utils";
@@ -407,10 +408,6 @@ export default function InsightsScreen() {
   }, [sparklineData, gentleTargets]);
 
   const gentleTargetsDisplay = gentleTargets;
-  const displayAvgCalories = hasEnoughData ? `${avgCalories}` : isDemoMode ? "1,840" : "—";
-  const displayAvgProtein = hasEnoughData ? `${avgProtein}g` : isDemoMode ? "148g" : "—";
-  const displayAvgCarbs = hasEnoughData ? `${avgCarbs}g` : isDemoMode ? "180g" : "—";
-  const displayAvgFat = hasEnoughData ? `${avgFat}g` : isDemoMode ? "62g" : "—";
 
   const displayMicronutrients = hasEnoughData
     ? micronutrientPatterns
@@ -604,27 +601,39 @@ export default function InsightsScreen() {
             </div>
             <p className="text-[11px] uppercase tracking-wide text-muted/70">Avg trend</p>
           </div>
-          <div className={`mt-5 flex items-baseline justify-between${!hasEnoughData && !isDemoMode ? " opacity-50" : ""}`}>
-            <div>
-              <p className="text-[11px] uppercase tracking-wide text-muted/70">Calories</p>
-              <p className="mt-1 text-xl font-semibold">{displayAvgCalories}</p>
-              <p className="text-[10px] text-muted/70">Avg trend</p>
-            </div>
-            <div>
-              <p className="text-[11px] uppercase tracking-wide text-muted/70">Carbs</p>
-              <p className="mt-1 text-xl font-semibold">{displayAvgCarbs}</p>
-              <p className="text-[10px] text-muted/70">Avg trend</p>
-            </div>
-            <div>
-              <p className="text-[11px] uppercase tracking-wide text-muted/70">Fats</p>
-              <p className="mt-1 text-xl font-semibold">{displayAvgFat}</p>
-              <p className="text-[10px] text-muted/70">Avg trend</p>
-            </div>
-            <div>
-              <p className="text-[11px] uppercase tracking-wide text-muted/70">Protein</p>
-              <p className="mt-1 text-xl font-semibold">{displayAvgProtein}</p>
-              <p className="text-[10px] text-muted/70">Avg trend</p>
-            </div>
+          <div className={`mt-5 flex justify-between${!hasEnoughData && !isDemoMode ? " opacity-50" : ""}`}>
+            <MacroRing
+              label="Calories"
+              unit=""
+              value={hasEnoughData ? avgCalories : isDemoMode ? 1840 : 0}
+              target={gentleTargetsDisplay?.calories ?? 2300}
+              animate
+              caption="avg"
+            />
+            <MacroRing
+              label="Carbs"
+              unit="g"
+              value={hasEnoughData ? avgCarbs : isDemoMode ? 180 : 0}
+              target={gentleTargetsDisplay?.carbs ?? 277}
+              animate
+              caption="avg"
+            />
+            <MacroRing
+              label="Fats"
+              unit="g"
+              value={hasEnoughData ? avgFat : isDemoMode ? 62 : 0}
+              target={gentleTargetsDisplay?.fat ?? 77}
+              animate
+              caption="avg"
+            />
+            <MacroRing
+              label="Protein"
+              unit="g"
+              value={hasEnoughData ? avgProtein : isDemoMode ? 148 : 0}
+              target={gentleTargetsDisplay?.protein ?? 125}
+              animate
+              caption="avg"
+            />
           </div>
           {gentleTargetsDisplay ? (
             <p className="mt-4 text-xs text-muted/70">
