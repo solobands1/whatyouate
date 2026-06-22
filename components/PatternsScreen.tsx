@@ -27,6 +27,14 @@ const TONE_CHIP: Record<"great" | "good" | "neutral", string> = {
   neutral: "bg-ink/[0.08] text-ink/55",
 };
 
+const BETTER_DAYS = ["More water", "Earlier meals", "Better sleep", "More activity"];
+const LOWER_DAYS = ["Lower hydration", "Later meals", "Less activity"];
+
+const CLUES: { text: string; confidence: string }[] = [
+  { text: "Iron-rich foods have been lower on your low-energy days.", confidence: "Moderate" },
+  { text: "Your highest-energy days have included more water.", confidence: "Building" },
+];
+
 export default function PatternsScreen() {
   const { user } = useAuth();
   const { meals } = useAppData();
@@ -95,6 +103,53 @@ export default function PatternsScreen() {
                         <div className="h-full rounded-full bg-primary" style={{ width: `${Math.round(f.strength * 100)}%` }} />
                       </div>
                     </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+
+            {/* Best vs low-energy days */}
+            <Card className="mt-6">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Your Days, Compared</p>
+              <div className="mt-4 space-y-4">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-emerald-600/80">Better Days Include</p>
+                  <ul className="mt-2 space-y-1.5">
+                    {BETTER_DAYS.map((d) => (
+                      <li key={d} className="flex items-center gap-2 text-sm text-ink/80">
+                        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600">
+                          <svg viewBox="0 0 24 24" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l4 4L19 7" /></svg>
+                        </span>
+                        {d}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-600/80">Low-Energy Days Include</p>
+                  <ul className="mt-2 space-y-1.5">
+                    {LOWER_DAYS.map((d) => (
+                      <li key={d} className="flex items-center gap-2 text-sm text-ink/80">
+                        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-500/15 text-amber-600">
+                          <svg viewBox="0 0 24 24" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8v5M12 16.5v.5" /></svg>
+                        </span>
+                        {d}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </Card>
+
+            {/* Potential clues */}
+            <Card className="mt-6">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Potential Clues</p>
+              <p className="mt-1 text-sm text-muted/65">Worth keeping an eye on — not conclusions yet.</p>
+              <div className="mt-3 space-y-2.5">
+                {CLUES.map((c) => (
+                  <div key={c.text} className="rounded-xl border border-primary/15 bg-primary/[0.05] px-3 py-2.5">
+                    <p className="text-sm text-ink/90">{c.text}</p>
+                    <span className="mt-1.5 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary/70">Confidence: {c.confidence}</span>
                   </div>
                 ))}
               </div>
