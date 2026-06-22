@@ -1,12 +1,12 @@
 import { Suspense } from "react";
-import PatternsScreen from "../../../components/PatternsScreen";
+import InsightsScreen from "../../../components/InsightsScreen";
 
 export const dynamic = 'force-static';
 
 export default function Page() {
   return (
     <Suspense fallback={<div className="min-h-screen bg-surface" />}>
-      <PatternsScreen />
+      <InsightsScreen />
     </Suspense>
   );
 }

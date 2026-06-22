@@ -529,7 +529,7 @@ export default function InsightsScreen() {
           <div className="mb-4 animate-pulse rounded-2xl bg-ink/10 p-5" style={{ height: 120 }} />
           <div className="animate-pulse rounded-2xl bg-ink/10 p-5" style={{ height: 120 }} />
         </div>
-        <BottomNav current="patterns" />
+        <BottomNav current="summary" />
       </div>
     );
   }
@@ -569,9 +569,17 @@ export default function InsightsScreen() {
       />
       <div className={`mx-auto flex min-h-screen max-w-md flex-col px-5 pb-24 safe-top ${trial.isFree && !isDemoMode ? "blur-sm pointer-events-none select-none" : ""}`}>
         <header className="mb-6" data-tour="insights-header">
+          <button
+            type="button"
+            onClick={() => router.push("/summary")}
+            className="mb-3 inline-flex items-center gap-1 text-sm font-medium text-muted/70 transition active:opacity-60"
+          >
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+            Insights
+          </button>
           <div>
-            <h1 className="text-2xl font-semibold text-ink">Patterns</h1>
-            <p className="mt-1 text-sm text-muted/70">Longer-term trends from your logged meals</p>
+            <h1 className="text-2xl font-semibold text-ink">Nutrition</h1>
+            <p className="mt-1 text-sm text-muted/70">Your macros, micronutrients, and intake from your logged meals</p>
             {!hasEnoughData && !isDemoMode && (
               <div className="mt-2 inline-flex items-center rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-[11px] text-primary/80">
                 Log Meals Across 5 Days To Unlock Real Data
@@ -883,7 +891,7 @@ export default function InsightsScreen() {
         </div>
       )}
 
-      <BottomNav current="patterns" />
+      <BottomNav current="summary" />
 
       {activeNutrient && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">

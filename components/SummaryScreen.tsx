@@ -1026,6 +1026,23 @@ export default function SummaryScreen() {
           <p className="mt-1 text-sm text-muted/70">Daily snapshot and weekly insights at a glance</p>
         </header>
 
+        <button
+          type="button"
+          onClick={() => router.push("/summary/nutrition")}
+          className="mb-6 flex w-full items-center justify-between rounded-2xl border border-primary/20 bg-primary/[0.05] px-4 py-3 transition active:opacity-70"
+        >
+          <div className="flex items-center gap-3">
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/15 text-primary">
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M20 20H3" /></svg>
+            </span>
+            <div className="text-left">
+              <p className="text-sm font-semibold text-ink">Nutrition</p>
+              <p className="text-[11px] text-muted/65">Macros, micronutrients &amp; intake</p>
+            </div>
+          </div>
+          <svg className="h-4 w-4 text-muted/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+        </button>
+
         {/* Unlock progress timeline — only shown until all milestones are reached (14 logged days) */}
         {!isDemoMode && dayCount < 14 && (() => {
           const nudgesUnlocked = mealCount >= 5;
