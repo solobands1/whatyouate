@@ -16,16 +16,17 @@ const FACTORS = [
   { label: "Protein At Breakfast", strength: 0.58 },
 ];
 
-const HABITS: { title: string; result: string; tone: "great" | "good" | "neutral" }[] = [
-  { title: "Walk After Lunch", result: "Helped A Lot", tone: "great" },
-  { title: "Hydration", result: "Helped", tone: "good" },
-  { title: "Protein At Breakfast", result: "Not Sure", tone: "neutral" },
+// From the post-habit "Do you think you'll keep this up?" answer. We only surface
+// the ones kept (yes/maybe) — the distilled wins — not every builder ever tried.
+const KEPT_HABITS: { title: string; keep: "yes" | "maybe" }[] = [
+  { title: "Walk After Lunch", keep: "yes" },
+  { title: "Hydration", keep: "yes" },
+  { title: "Protein At Breakfast", keep: "maybe" },
 ];
 
-const TONE_CHIP: Record<"great" | "good" | "neutral", string> = {
-  great: "bg-primary-dark/15 text-primary-dark",
-  good: "bg-primary/15 text-primary",
-  neutral: "bg-ink/[0.08] text-ink/55",
+const KEEP_CHIP: Record<"yes" | "maybe", { label: string; cls: string }> = {
+  yes: { label: "Keeping It", cls: "bg-primary-dark/15 text-primary-dark" },
+  maybe: { label: "Might Keep", cls: "bg-primary/15 text-primary" },
 };
 
 // Behaviour/timing differences (kept distinct from the ranked factors above).
@@ -199,15 +200,15 @@ export default function PatternsScreen() {
               </div>
             </Card>
 
-            {/* Habit effectiveness */}
+            {/* Habits that stuck */}
             <Card className="mt-6">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Habit Effectiveness</p>
-              <p className="mt-1 text-sm text-muted/65">Whether the habits you tried actually helped.</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Habits That Stuck</p>
+              <p className="mt-1 text-sm text-muted/65">The ones you decided were worth keeping.</p>
               <div className="mt-3 space-y-2">
-                {HABITS.map((h) => (
+                {KEPT_HABITS.map((h) => (
                   <div key={h.title} className="flex items-center justify-between gap-2 rounded-xl border border-primary/15 bg-primary/[0.05] px-3 py-2.5">
                     <p className="text-sm font-semibold text-ink">{h.title}</p>
-                    <span className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${TONE_CHIP[h.tone]}`}>{h.result}</span>
+                    <span className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${KEEP_CHIP[h.keep].cls}`}>{KEEP_CHIP[h.keep].label}</span>
                   </div>
                 ))}
               </div>
