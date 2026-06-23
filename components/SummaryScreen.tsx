@@ -1129,16 +1129,18 @@ export default function SummaryScreen() {
           <div data-tour="nudges-inner" className="pointer-events-none absolute inset-x-1 -top-4 bottom-2" />
 
           {(() => {
+            // "keep" is the post-habit "Do you think you'll keep this up?" answer
+            // (yes / maybe / no). The full archive shows all of them with their status.
             const builtHabits = [
-              { title: "Hydration", days: 5, when: "This week", result: "Helped", tone: "good" as const },
-              { title: "Walk After Lunch", days: 3, when: "Last week", result: "Helped a lot", tone: "great" as const },
-              { title: "Protein At Breakfast", days: 3, when: "2 weeks ago", result: "Not sure", tone: "neutral" as const },
-              { title: "Earlier Dinner", days: 5, when: "3 weeks ago", result: "Helped", tone: "good" as const },
+              { title: "Hydration", days: 5, when: "This week", keep: "yes" as const },
+              { title: "Walk After Lunch", days: 3, when: "Last week", keep: "yes" as const },
+              { title: "Protein At Breakfast", days: 3, when: "2 weeks ago", keep: "maybe" as const },
+              { title: "Earlier Dinner", days: 5, when: "3 weeks ago", keep: "no" as const },
             ];
-            const toneChip: Record<"great" | "good" | "neutral", string> = {
-              great: "bg-primary-dark/15 text-primary-dark",
-              good: "bg-primary/15 text-primary",
-              neutral: "bg-ink/[0.08] text-ink/55",
+            const keepChip: Record<"yes" | "maybe" | "no", { label: string; cls: string }> = {
+              yes: { label: "Kept", cls: "bg-primary-dark/15 text-primary-dark" },
+              maybe: { label: "Might Keep", cls: "bg-primary/15 text-primary" },
+              no: { label: "Didn't Keep", cls: "bg-ink/[0.08] text-ink/55" },
             };
             if (builtHabits.length === 0) {
               return <p className="mt-3 text-sm text-muted/65">Your completed habit builders will collect here, one win at a time.</p>;
@@ -1178,7 +1180,7 @@ export default function SummaryScreen() {
                         </div>
                         <div className="mt-1 flex items-center gap-2">
                           <span className="text-[11px] text-muted/70">{h.days}-Day Builder</span>
-                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${toneChip[h.tone]}`}>{h.result}</span>
+                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${keepChip[h.keep].cls}`}>{keepChip[h.keep].label}</span>
                         </div>
                       </div>
                     </div>
