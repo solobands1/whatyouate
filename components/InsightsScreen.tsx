@@ -8,6 +8,8 @@ import { computeGentleTargets } from "../lib/digestEngine";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
 import MacroRing from "./MacroRing";
+import WaterBar from "./WaterBar";
+import { fetchWaterLogs } from "../lib/supabaseDb";
 import { useAuth } from "./AuthProvider";
 import { useAppData } from "./AppDataProvider";
 import { dayKeyFromTs } from "../lib/utils";
@@ -84,6 +86,12 @@ export default function InsightsScreen() {
   const mountedRef = useRef(true);
   const [runInsightsTour, setRunInsightsTour] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
+  const [waterLogs, setWaterLogs] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    if (!user || !profile?.trackWater) return;
+    fetchWaterLogs(user.id).then(setWaterLogs).catch(() => {});
+  }, [user, profile?.trackWater]);
 
   const demoFeelLogs = useMemo<FeelLog[]>(() => {
     const day = (offsetDays: number, h: number, m: number) => {
@@ -409,6 +417,30 @@ export default function InsightsScreen() {
 
   const gentleTargetsDisplay = gentleTargets;
 
+  // Average daily water over the last 14 days (days with a log), styled like the home water bar.
+  const waterTrend = (() => {
+    const unit = profile?.waterUnit ?? "ml";
+    const fmt = (ml: number) => unit === "oz" ? `${Math.round(ml / 29.5735)} oz` : `${ml} ml`;
+    if (isDemoMode) {
+      return { has: true, days: 12, pct: 72, displayCurrent: fmt(1800), displayGoal: fmt(2500) };
+    }
+    if (!user || !profile?.trackWater) return { has: false, days: 0, pct: 0, displayCurrent: "", displayGoal: "" };
+    const cutoff = Date.now() - 14 * 24 * 60 * 60 * 1000;
+    const recent = Object.entries(waterLogs).filter(([k, ml]) => ml > 0 && new Date(`${k}T12:00:00`).getTime() >= cutoff);
+    const avgMl = recent.length ? Math.round(recent.reduce((s, [, ml]) => s + ml, 0) / recent.length) : 0;
+    const recommendedGoalMl = profile?.weight ? Math.min(3500, Math.max(1500, Math.round((profile.weight * 35) / 100) * 100)) : 2500;
+    let customGoalMl: number | null = null;
+    try { const v = parseInt(localStorage.getItem(`wya_water_goal_ml_${user.id}`) ?? "", 10); customGoalMl = isNaN(v) ? null : v; } catch {}
+    const goalMl = customGoalMl ?? recommendedGoalMl;
+    return {
+      has: recent.length > 0,
+      days: recent.length,
+      pct: goalMl ? Math.min(100, Math.round((avgMl / goalMl) * 100)) : 0,
+      displayCurrent: fmt(avgMl),
+      displayGoal: fmt(goalMl),
+    };
+  })();
+
   const displayMicronutrients = hasEnoughData
     ? micronutrientPatterns
     : [
@@ -701,6 +733,9 @@ export default function InsightsScreen() {
         </Card>
 
 
+        {/* Archived: time-of-day energy chart. Energy is captured once nightly via the
+            check-in, so a time-of-day view stays sparse. Kept (disabled) in case it's revived. */}
+        {false && (
         <Card className="mt-3 py-3" data-tour="insights-energy">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
@@ -791,6 +826,23 @@ export default function InsightsScreen() {
               </div>
             </div>
           </Card>
+        )}
+
+        {(profile?.trackWater || isDemoMode) && (
+          <Card className="mt-3">
+            <div className="flex items-center justify-between">
+              <p className="text-xs uppercase tracking-wide text-muted/70">Water &middot; 2-Week Average</p>
+              {waterTrend.days > 0 && <p className="text-[11px] text-muted/70">{waterTrend.days} day{waterTrend.days !== 1 ? "s" : ""} logged</p>}
+            </div>
+            <div className="mt-4">
+              {waterTrend.has ? (
+                <WaterBar pct={waterTrend.pct} displayCurrent={waterTrend.displayCurrent} displayGoal={waterTrend.displayGoal} />
+              ) : (
+                <p className="text-sm text-muted/65">Start logging water on the home screen to see your 2-week average here.</p>
+              )}
+            </div>
+          </Card>
+        )}
 
         <Card className="mt-6" data-tour="insights-micro">
           <div className="flex items-center justify-between">
