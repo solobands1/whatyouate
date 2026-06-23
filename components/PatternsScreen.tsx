@@ -23,7 +23,7 @@ const HABITS: { title: string; result: string; tone: "great" | "good" | "neutral
 ];
 
 const TONE_CHIP: Record<"great" | "good" | "neutral", string> = {
-  great: "bg-emerald-500/15 text-emerald-600",
+  great: "bg-primary-dark/15 text-primary-dark",
   good: "bg-primary/15 text-primary",
   neutral: "bg-ink/[0.08] text-ink/55",
 };
@@ -44,7 +44,7 @@ const ENERGY_DAY_LABELS = ["T", "W", "T", "F", "S", "S", "M"];
 const ENERGY_DOT: Record<"high" | "avg" | "low", string> = {
   high: "bg-primary",
   avg: "bg-primary/35",
-  low: "bg-amber-400/80",
+  low: "bg-ink/25",
 };
 
 export default function PatternsScreen() {
@@ -106,7 +106,7 @@ export default function PatternsScreen() {
             <Card className="mt-6">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Your Energy Lately</p>
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-600">
+                <span className="inline-flex items-center gap-1 rounded-full bg-primary-dark/15 px-2 py-0.5 text-[10px] font-semibold text-primary-dark">
                   <svg viewBox="0 0 24 24" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 15l7-7 7 7" /></svg>
                   Improving
                 </span>
@@ -123,7 +123,7 @@ export default function PatternsScreen() {
               <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
                 <span className="flex items-center gap-1 text-[10px] text-muted/60"><span className="h-2 w-2 rounded-full bg-primary" /> High</span>
                 <span className="flex items-center gap-1 text-[10px] text-muted/60"><span className="h-2 w-2 rounded-full bg-primary/35" /> Average</span>
-                <span className="flex items-center gap-1 text-[10px] text-muted/60"><span className="h-2 w-2 rounded-full bg-amber-400/80" /> Low</span>
+                <span className="flex items-center gap-1 text-[10px] text-muted/60"><span className="h-2 w-2 rounded-full bg-ink/25" /> Low</span>
               </div>
             </Card>
 
@@ -150,12 +150,12 @@ export default function PatternsScreen() {
             <Card className="mt-6">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Your Days Compared</p>
               <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-emerald-600/80">Better Days</p>
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-600/80">Low-Energy Days</p>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-primary-dark/80">Better Days</p>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/70">Low-Energy Days</p>
                 <ul className="space-y-1.5">
                   {BETTER_DAYS.map((d) => (
                     <li key={d} className="flex items-start gap-2 text-[13px] text-ink/80">
-                      <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600">
+                      <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary-dark/15 text-primary-dark">
                         <svg viewBox="0 0 24 24" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l4 4L19 7" /></svg>
                       </span>
                       {d}
@@ -165,7 +165,7 @@ export default function PatternsScreen() {
                 <ul className="space-y-1.5">
                   {LOWER_DAYS.map((d) => (
                     <li key={d} className="flex items-start gap-2 text-[13px] text-ink/80">
-                      <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-500/15 text-amber-600">
+                      <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-ink/[0.08] text-ink/45">
                         <svg viewBox="0 0 24 24" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8v5M12 16.5v.5" /></svg>
                       </span>
                       {d}

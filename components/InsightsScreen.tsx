@@ -646,7 +646,7 @@ export default function InsightsScreen() {
 
         <Card className="mt-6">
           <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-wide text-muted/70">Daily Intake</p>
+            <p className="text-xs uppercase tracking-wide text-muted/70">Daily Intake &middot; Calories</p>
             <p className="text-[11px] text-muted/70">{sparklineLoggedCount} / 7 days</p>
           </div>
           <div className="mt-3">

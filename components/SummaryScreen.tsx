@@ -1136,7 +1136,7 @@ export default function SummaryScreen() {
               { title: "Earlier Dinner", days: 5, when: "3 weeks ago", result: "Helped", tone: "good" as const },
             ];
             const toneChip: Record<"great" | "good" | "neutral", string> = {
-              great: "bg-emerald-500/15 text-emerald-600",
+              great: "bg-primary-dark/15 text-primary-dark",
               good: "bg-primary/15 text-primary",
               neutral: "bg-ink/[0.08] text-ink/55",
             };
@@ -1285,7 +1285,7 @@ export default function SummaryScreen() {
                           <p className="text-sm font-medium text-ink/90">{nudge.message.replace(/\n+/g, " ")}</p>
                           <p className="text-[11px] text-primary/70 font-medium">— Coach</p>
                           {isCaughtUp && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-600">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-primary-dark/15 px-2.5 py-0.5 text-[11px] font-semibold text-primary-dark">
                               <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 6l3 3 5-5"/></svg>
                               Caught up since then
                             </span>
