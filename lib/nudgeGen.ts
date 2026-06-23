@@ -75,7 +75,7 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
     const parts = [
       profile.goalDirection && `goal: ${profile.goalDirection}`,
       profile.age && `age: ${profile.age}`,
-      profile.weight && (profile.units === "imperial"
+      profile.weight && ctx.weightFresh !== false && (profile.units === "imperial"
         ? `weight: ${Math.round((profile.weight as number) * 2.20462)}lbs`
         : `weight: ${profile.weight}kg`),
       profile.activityLevel && `activity: ${profile.activityLevel}`,

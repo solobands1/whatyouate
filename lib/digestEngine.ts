@@ -108,6 +108,7 @@ export interface SmartNudgeContext {
   feelLogCorrelations: FeelLogCorrelation[];
   followThrough?: NudgeFollowThrough;
   weightTrend?: WeightTrend;
+  weightFresh?: boolean;
   waterIntake?: { consumedMl: number; goalMl: number; pct: number };
   todayDayOfWeek: string;
   daysSinceLastLog?: number;
@@ -1109,6 +1110,13 @@ export function buildSmartNudgeContext(
     };
   }
 
+  // Whether the latest weight entry is recent enough to reference in a nudge (within 14 days).
+  let weightFresh = false;
+  if (rawWeightLogs && rawWeightLogs.length > 0) {
+    const latestMs = Math.max(...rawWeightLogs.map((w) => new Date(w.logged_at).getTime()));
+    weightFresh = Date.now() - latestMs <= 14 * 24 * 60 * 60 * 1000;
+  }
+
   let followThrough: NudgeFollowThrough | undefined;
   if (lastNudgeRecord?.created_at) {
     const nudgeTs = new Date(lastNudgeRecord.created_at).getTime();
@@ -1210,6 +1218,7 @@ export function buildSmartNudgeContext(
     feelLogCorrelations,
     followThrough,
     weightTrend,
+    weightFresh,
     waterIntake,
     todayDayOfWeek: DOW[new Date(todayKeyLocal + "T12:00:00Z").getUTCDay()],
     daysSinceLastLog,

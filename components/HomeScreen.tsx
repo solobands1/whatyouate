@@ -20,7 +20,7 @@ import { supabase } from "../lib/supabaseClient";
 import "../lib/mealQueue";
 import BarcodeScannerOverlay from "./BarcodeScannerOverlay";
 import { getFoodCacheEntry, setFoodCacheEntry, deleteFoodCacheEntry, deleteFoodTextEntry, incrementFoodCacheLogCount, incrementFoodTextLogCount, getQuickAddFromMeals, addQuickAddRemoved, getDailySupplements, setDailySupplements, hasDailySuppsLoggedToday, markDailySuppsLoggedToday, clearDailySuppsLoggedToday, type QuickAddItem } from "../lib/foodCache";
-import { addFeelLog, deleteFeelLog, updateFeelLog, fetchWaterLogs, upsertWaterLog, type FeelLog } from "../lib/supabaseDb";
+import { addFeelLog, deleteFeelLog, updateFeelLog, fetchWaterLogs, upsertWaterLog, addWeightLog, saveProfile, type FeelLog } from "../lib/supabaseDb";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
 import { useAuth } from "./AuthProvider";
@@ -319,9 +319,51 @@ function WaterBar({ pct, displayCurrent, displayGoal }: {
 export default function HomeScreen() {
   const router = useRouter();
   const { user, loading } = useAuth();
-  const { profile: ctxProfile, meals: ctxMeals, workouts: ctxWorkouts, feelLogs: ctxFeelLogs, loading: dataLoading, reload } = useAppData();
+  const { profile: ctxProfile, meals: ctxMeals, workouts: ctxWorkouts, feelLogs: ctxFeelLogs, weightLogs: ctxWeightLogs, setWeightLogs, loading: dataLoading, reload } = useAppData();
 
   const [profile, setProfile] = useState<UserProfile | undefined>(undefined);
+
+  // Monthly weight check-in prompt (keeps weight fresh so the coach/targets stay accurate).
+  const [weightInput, setWeightInput] = useState("");
+  const [weightPromptHidden, setWeightPromptHidden] = useState(false);
+  const [savingWeight, setSavingWeight] = useState(false);
+  const weightUnitLabel = profile?.units === "metric" ? "kg" : "lbs";
+  const weightPromptDue = useMemo(() => {
+    if (!user || !profile?.weight || typeof window === "undefined") return false;
+    const lastWeigh = (ctxWeightLogs ?? []).reduce((m, w) => Math.max(m, new Date(w.logged_at).getTime()), 0);
+    const profileUpdated = Number(localStorage.getItem(`wya_profile_updated_${user.id}`) || 0);
+    const baseline = Math.max(lastWeigh, profileUpdated);
+    if (!baseline) return false;
+    const dismissed = Number(localStorage.getItem(`wya_weight_prompt_dismissed_${user.id}`) || 0);
+    const THIRTY = 30 * 24 * 60 * 60 * 1000;
+    return Date.now() - baseline > THIRTY && Date.now() - dismissed > THIRTY;
+  }, [user, profile?.weight, ctxWeightLogs]);
+  const showWeightPrompt = weightPromptDue && !weightPromptHidden;
+  const dismissWeightPrompt = () => {
+    if (user) localStorage.setItem(`wya_weight_prompt_dismissed_${user.id}`, String(Date.now()));
+    setWeightPromptHidden(true);
+  };
+  const saveWeightPrompt = async () => {
+    if (!user || !profile || savingWeight) return;
+    const num = parseFloat(weightInput);
+    if (!Number.isFinite(num) || num <= 0) return;
+    setSavingWeight(true);
+    try {
+      const kg = profile.units === "metric" ? Math.round(num * 10) / 10 : Math.round((num / 2.20462) * 10) / 10;
+      const log = await addWeightLog(user.id, kg);
+      if (log) setWeightLogs((prev) => [log, ...prev]);
+      const updated = { ...profile, weight: kg };
+      await saveProfile(user.id, updated);
+      setProfile(updated);
+      localStorage.setItem(`wya_profile_updated_${user.id}`, String(Date.now()));
+      setWeightInput("");
+      setWeightPromptHidden(true);
+    } catch {
+      // best effort; leave the prompt open so they can retry
+    } finally {
+      setSavingWeight(false);
+    }
+  };
   const [waterTick, setWaterTick] = useState(0);
   const [showWaterUndo, setShowWaterUndo] = useState(false);
   const waterUndoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -2621,6 +2663,40 @@ export default function HomeScreen() {
             </div>
           )}
         </Card>
+
+        {showWeightPrompt && (
+          <div className="mt-3 rounded-2xl border-2 border-primary/25 bg-primary/[0.05] px-4 py-3 animate-card-fade">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <p className="text-sm font-semibold text-ink">Quick Weight Check-In</p>
+                <p className="mt-0.5 text-xs text-muted/70">It&apos;s been a while. A quick update keeps your coach and targets accurate.</p>
+              </div>
+              <button type="button" onClick={dismissWeightPrompt} aria-label="Not now" className="-mr-1 -mt-1 p-1 text-ink/35 transition active:opacity-60">
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+              </button>
+            </div>
+            <div className="mt-2.5 flex items-center gap-2">
+              <div className="flex items-center rounded-xl border border-primary/25 bg-white px-3 py-2">
+                <input
+                  value={weightInput}
+                  onChange={(e) => setWeightInput(e.target.value.replace(/[^0-9.]/g, ""))}
+                  inputMode="decimal"
+                  placeholder="0"
+                  className="w-16 bg-transparent text-sm font-semibold text-ink outline-none"
+                />
+                <span className="text-xs text-muted/60">{weightUnitLabel}</span>
+              </div>
+              <button
+                type="button"
+                onClick={saveWeightPrompt}
+                disabled={savingWeight || !weightInput}
+                className="ml-auto rounded-xl bg-primary px-5 py-2 text-xs font-semibold text-white transition active:opacity-80 disabled:opacity-40"
+              >
+                {savingWeight ? "Saving…" : "Save"}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Reflection entry point. Demo: always shown. Real version: appears in the
             evening (after the night push / after ~6pm) and persists until done. */}
