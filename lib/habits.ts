@@ -79,6 +79,9 @@ export interface HabitTemplate {
   // miss handling + progression
   maxExtensions: number;         // missed days that can be made up before it lapses (0 = strict)
   deepensTo?: string;            // id of a longer/harder variant for progression
+
+  // example foods/options shown behind a "What Helps?" expander on the card
+  ideas?: string[];
 }
 
 // Design principles for a habit people actually do (not "pfft I already do that"):
@@ -132,6 +135,7 @@ export const HABIT_TEMPLATES: HabitTemplate[] = [
     ask: "Add an extra protein to lunch and dinner for 3 days. Extra meat or beans on the plate, an egg, or a scoop of Greek yogurt.",
     whyTemplate: "You've come up short on protein {proteinShortDays} of the last 7 days. Protein steadies energy and curbs cravings, so a little extra at two meals goes a long way.",
     durationDays: 3, checkpoints: ["Lunch Protein", "Dinner Protein"],
+    ideas: ["Eggs", "Greek yogurt", "Chicken breast", "Cottage cheese", "Tuna", "Tofu", "Lentils", "Edamame", "Beans", "A protein shake"],
     triggers: [{ signal: "protein_pct", op: "<", value: 0.8, ofTarget: true, windowDays: 7, minDataDays: 4 }],
     friction: "medium", priorityWeight: 7, cooldownDays: 14, maxExtensions: 2,
   },
@@ -152,6 +156,7 @@ export const HABIT_TEMPLATES: HabitTemplate[] = [
     ask: "Add an extra vegetable to any meal each day for 3 days. A side of whatever's easy, frozen counts.",
     whyTemplate: "Your produce-driven nutrients have been running low, which usually means light vegetables. One extra vegetable a day is the simplest fix.",
     durationDays: 3, checkpoints: ["Added Vegetable"],
+    ideas: ["Broccoli", "Spinach", "Bell peppers", "Carrots", "Frozen peas", "Zucchini", "Tomatoes", "Mixed greens", "Green beans", "Cauliflower"],
     triggers: [{ signal: "micronutrient_pct", nutrient: "vitamin c", op: "<", value: 0.7, ofTarget: true, windowDays: 7, minDataDays: 4 }],
     friction: "medium", priorityWeight: 5, cooldownDays: 21, maxExtensions: 2,
   },
@@ -162,6 +167,7 @@ export const HABIT_TEMPLATES: HabitTemplate[] = [
     ask: "Add a magnesium-rich food each day for 3 days. A handful of nuts or seeds, or a square of dark chocolate.",
     whyTemplate: "Your magnesium has been low this week. It's involved in sleep quality, muscle recovery, and energy, and it's easy to top up through food.",
     durationDays: 3, checkpoints: ["Magnesium-Rich Food"],
+    ideas: ["Pumpkin seeds", "Almonds", "Dark chocolate", "Black beans", "Spinach", "Cashews", "Avocado", "Edamame", "Peanut butter", "Whole grains"],
     triggers: [{ signal: "micronutrient_pct", nutrient: "magnesium", op: "<", value: 0.7, ofTarget: true, windowDays: 7, minDataDays: 4 }],
     friction: "high", priorityWeight: 5, cooldownDays: 21, maxExtensions: 2,
   },
@@ -170,6 +176,7 @@ export const HABIT_TEMPLATES: HabitTemplate[] = [
     ask: "Add an iron-rich food to one meal each day for 3 days. Spinach, lentils, red meat, or fortified cereal.",
     whyTemplate: "Your iron has been running low, which can quietly drag down energy and focus. A daily iron-rich food is an easy correction.",
     durationDays: 3, checkpoints: ["Iron-Rich Food"],
+    ideas: ["Red meat", "Lentils", "Spinach", "Chickpeas", "Tofu", "Fortified cereal", "Pumpkin seeds", "Beans", "Dark chocolate", "Shellfish"],
     triggers: [{ signal: "micronutrient_pct", nutrient: "iron", op: "<", value: 0.7, ofTarget: true, windowDays: 7, minDataDays: 4 }],
     friction: "high", priorityWeight: 5, cooldownDays: 21, maxExtensions: 2,
   },
@@ -178,6 +185,7 @@ export const HABIT_TEMPLATES: HabitTemplate[] = [
     ask: "Add an omega-3 source each day for 3 days. Walnuts, chia, flax, or a portion of fish.",
     whyTemplate: "Your omega-3 intake has been low this week. It supports mood, focus, and recovery, and a small daily source covers it.",
     durationDays: 3, checkpoints: ["Omega-3-Rich Food"],
+    ideas: ["Salmon", "Sardines", "Walnuts", "Chia seeds", "Flaxseed", "Mackerel", "Hemp seeds", "Edamame", "Anchovies", "Tuna"],
     triggers: [{ signal: "micronutrient_pct", nutrient: "omega-3", op: "<", value: 0.7, ofTarget: true, windowDays: 7, minDataDays: 4 }],
     friction: "high", priorityWeight: 4, cooldownDays: 21, maxExtensions: 2,
   },
@@ -238,6 +246,7 @@ export const HABIT_TEMPLATES: HabitTemplate[] = [
     ask: "Have protein with breakfast each day for 3 days. Eggs, Greek yogurt, or a scoop of protein in your coffee or smoothie.",
     whyTemplate: "A protein-forward breakfast steadies blood sugar, which means fewer mid-morning cravings and steadier focus.",
     durationDays: 3, checkpoints: ["Protein Breakfast"],
+    ideas: ["Eggs", "Greek yogurt", "Cottage cheese", "A protein shake", "Smoked salmon", "Tofu scramble", "Protein oats", "Nut butter", "Edamame", "Turkey sausage"],
     triggers: [],
     friction: "low", priorityWeight: 6, cooldownDays: 14, maxExtensions: 2,
   },

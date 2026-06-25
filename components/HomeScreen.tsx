@@ -394,6 +394,7 @@ export default function HomeScreen() {
     { status: "suggested", days: freshDays(FIRST_TEMPLATE) }
   );
   const [activeTemplate, setActiveTemplate] = useState<HabitTemplate>(FIRST_TEMPLATE);
+  const [showHabitIdeas, setShowHabitIdeas] = useState(false);
 
   // Surface the habits matching the user's feeling goal(s) first.
   const goalHabits = useMemo(() => habitsForGoals(profile?.feelingGoals), [profile?.feelingGoals]);
@@ -2297,6 +2298,21 @@ export default function HomeScreen() {
                 <p className="mt-1 text-base font-semibold text-ink">{activeTemplate.title}</p>
                 <p className="mt-0.5 text-[13px] text-ink/70">{activeTemplate.ask}</p>
                 <p className="mt-2 text-xs leading-relaxed text-ink/80"><span className="font-semibold text-ink">Why: </span>{fillWhy(activeTemplate)}</p>
+                {activeTemplate.ideas && activeTemplate.ideas.length > 0 && (
+                  <div className="mt-2.5">
+                    <button type="button" onClick={() => setShowHabitIdeas((v) => !v)} className="inline-flex items-center gap-1 text-xs font-semibold text-primary/80 transition active:opacity-60">
+                      What Helps?
+                      <svg viewBox="0 0 24 24" className={`h-3 w-3 transition-transform ${showHabitIdeas ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
+                    </button>
+                    {showHabitIdeas && (
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {activeTemplate.ideas.map((f) => (
+                          <span key={f} className="rounded-full border border-primary/15 bg-primary/[0.05] px-2.5 py-1 text-[11px] text-ink/70">{f}</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
                 <button
                   type="button"
                   className="mt-4 w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white transition active:scale-[0.98]"
