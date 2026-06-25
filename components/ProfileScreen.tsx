@@ -88,6 +88,7 @@ export default function ProfileScreen() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [runProfileTour, setRunProfileTour] = useState(false);
   const [showGoalInfo, setShowGoalInfo] = useState(false);
+  const [showFeelingInfo, setShowFeelingInfo] = useState(false);
   const [showBodyInfo, setShowBodyInfo] = useState(false);
   const [showProfilePrompt, setShowProfilePrompt] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
@@ -891,8 +892,19 @@ export default function ProfileScreen() {
         </Card>
 
         <Card className="mt-4 border border-primary/40">
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-ink/70">What Do You Want To Feel Better About?</span>
-          <p className="mt-1 text-xs text-muted/65">This guides the habits we suggest and how your coach talks to you. Pick up to 2.</p>
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-ink/70">What Do You Want To Feel Better About?</span>
+            <button
+              type="button"
+              className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-ink/10 text-[10px] font-semibold text-ink/60"
+              onClick={() => setShowFeelingInfo((v) => !v)}
+              aria-label="About feeling goals"
+            >
+              i
+            </button>
+          </div>
+          {showFeelingInfo && <p className="mt-1.5 text-xs text-muted/65">Guides the habits we suggest and how your coach talks to you.</p>}
+          <p className="mt-1 text-xs text-muted/55">Pick up to 2.</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {FEELING_GOALS.map(({ value, label }) => {
               const active = feelingGoals.includes(value);
