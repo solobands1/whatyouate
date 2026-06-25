@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Joyride, { STATUS, CallBackProps, type Step } from "react-joyride";
 import { notifyProfileUpdated } from "../lib/dataEvents";
-import type { ActivityLevel, GoalDirection, SupplementEntry, SupplementNutrient, Units, UserProfile } from "../lib/types";
+import type { ActivityLevel, FeelingGoal, GoalDirection, SupplementEntry, SupplementNutrient, Units, UserProfile } from "../lib/types";
 import { suppLabel, suppName } from "../lib/types";
 import { matchSupplementNutrients, NUTRIENT_UNITS, NUTRIENT_DISPLAY_NAMES } from "../lib/rda";
 import { clearAllData, saveProfile, saveDailySupplements, clearProfileCache, addWeightLog, LOCAL_MODE } from "../lib/supabaseDb";
@@ -30,6 +30,15 @@ function calculateAgeFromDob(dobStr: string): number | null {
   if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
   return age >= 0 && age < 130 ? age : null;
 }
+
+const FEELING_GOALS: { value: FeelingGoal; label: string }[] = [
+  { value: "energy", label: "More Energy" },
+  { value: "sleep", label: "Better Sleep" },
+  { value: "mood", label: "Better Mood" },
+  { value: "focus", label: "Sharper Focus" },
+  { value: "digestion", label: "Better Digestion" },
+  { value: "cravings", label: "Fewer Cravings" },
+];
 
 const goals: { value: GoalDirection; label: string }[] = [
   { value: "gain", label: "Gain Weight" },
@@ -60,6 +69,7 @@ export default function ProfileScreen() {
   const [dobDay, setDobDay] = useState("");
   const [sex, setSex] = useState<UserProfile["sex"]>("prefer_not");
   const [goalDirection, setGoalDirection] = useState<GoalDirection>("maintain");
+  const [feelingGoals, setFeelingGoals] = useState<FeelingGoal[]>([]);
   const [bodyPriority, setBodyPriority] = useState("");
   const [freeformFocus, setFreeformFocus] = useState("");
   const [activityLevel, setActivityLevel] = useState<ActivityLevel | "">("");
@@ -149,6 +159,7 @@ export default function ProfileScreen() {
       setLastName(data.lastName || meta.last_name || "");
       setSex(data.sex ?? "prefer_not");
       setGoalDirection(data.goalDirection ?? "maintain");
+      setFeelingGoals(data.feelingGoals ?? []);
       setBodyPriority(data.bodyPriority ?? "");
       setFreeformFocus(data.freeformFocus ?? "");
       setActivityLevel(data.activityLevel ?? "");
@@ -381,6 +392,7 @@ export default function ProfileScreen() {
         goal_direction: goalDirection,
         body_priority: bodyPriority || null,
         freeform_focus: freeformFocus || null,
+        feeling_goals: feelingGoals,
         activity_level: activityLevel || null,
         dietary_restrictions: dietaryRestrictions,
         units,
@@ -401,6 +413,7 @@ export default function ProfileScreen() {
           age: payload.age ?? null,
           sex,
           goalDirection,
+          feelingGoals,
           bodyPriority: payload.body_priority ?? "",
           freeformFocus: payload.freeform_focus ?? "",
           activityLevel: (activityLevel || undefined) as ActivityLevel | undefined,
@@ -492,6 +505,7 @@ export default function ProfileScreen() {
     setDobDay("");
     setSex("prefer_not");
     setGoalDirection("maintain");
+    setFeelingGoals([]);
     setBodyPriority("");
     setActivityLevel("");
     setDietaryRestrictions([]);
@@ -877,10 +891,30 @@ export default function ProfileScreen() {
         </Card>
 
         <Card className="mt-4 border border-primary/40">
+          <span className="text-[11px] font-semibold uppercase tracking-wide text-ink/70">What Do You Want To Feel Better About?</span>
+          <p className="mt-1 text-xs text-muted/65">This guides the habits we suggest and how your coach talks to you. Pick any that fit.</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {FEELING_GOALS.map(({ value, label }) => {
+              const active = feelingGoals.includes(value);
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setFeelingGoals((prev) => prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value])}
+                  className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${active ? "border-primary/60 bg-primary/10 text-ink/80" : "border-ink/10 text-muted/65"}`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </Card>
+
+        <Card className="mt-4 border border-primary/40">
           <label className="block text-xs text-muted/70">
             <span className="flex items-center justify-between">
               <span className="text-[11px] font-semibold uppercase tracking-wide text-ink/70">
-                Goal direction
+                Body Goal
               </span>
               <button
                 type="button"

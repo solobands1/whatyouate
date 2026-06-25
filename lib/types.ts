@@ -26,6 +26,10 @@ export type GoalDirection = "gain" | "maintain" | "balance" | "lose";
 
 export type ActivityLevel = "sedentary" | "lightly_active" | "moderately_active" | "very_active";
 
+// What the user wants to feel better about — the primary, feeling-oriented goal of
+// the app (distinct from the body/weight goalDirection). Drives habit selection + coach.
+export type FeelingGoal = "energy" | "sleep" | "mood" | "focus" | "digestion" | "cravings";
+
 export interface UserProfile {
   id: string;
   firstName?: string;
@@ -38,6 +42,7 @@ export interface UserProfile {
   goalDirection: GoalDirection;
   bodyPriority?: string;
   freeformFocus?: string;
+  feelingGoals?: FeelingGoal[];
   activityLevel?: ActivityLevel;
   dietaryRestrictions?: string[];
   units: Units;
