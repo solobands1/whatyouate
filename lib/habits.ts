@@ -159,9 +159,9 @@ export const HABIT_TEMPLATES: HabitTemplate[] = [
   // ---------- micronutrients (added snack/food; higher friction = ranks lower) ----------
   {
     id: "magnesium-3", kind: "standard", title: "Magnesium Boost", noun: "magnesium", category: "micronutrient",
-    ask: "Add a magnesium-rich snack each day for 3 days. A handful of nuts or seeds, or a square of dark chocolate.",
+    ask: "Add a magnesium-rich food each day for 3 days. A handful of nuts or seeds, or a square of dark chocolate.",
     whyTemplate: "Your magnesium has been low this week. It's involved in sleep quality, muscle recovery, and energy, and it's easy to top up through food.",
-    durationDays: 3, checkpoints: ["Magnesium Snack"],
+    durationDays: 3, checkpoints: ["Magnesium-Rich Food"],
     triggers: [{ signal: "micronutrient_pct", nutrient: "magnesium", op: "<", value: 0.7, ofTarget: true, windowDays: 7, minDataDays: 4 }],
     friction: "high", priorityWeight: 5, cooldownDays: 21, maxExtensions: 2,
   },
@@ -177,7 +177,7 @@ export const HABIT_TEMPLATES: HabitTemplate[] = [
     id: "omega3-3", kind: "standard", title: "Omega-3 Boost", noun: "omega-3", category: "micronutrient",
     ask: "Add an omega-3 source each day for 3 days. Walnuts, chia, flax, or a portion of fish.",
     whyTemplate: "Your omega-3 intake has been low this week. It supports mood, focus, and recovery, and a small daily source covers it.",
-    durationDays: 3, checkpoints: ["Omega-3 Food"],
+    durationDays: 3, checkpoints: ["Omega-3-Rich Food"],
     triggers: [{ signal: "micronutrient_pct", nutrient: "omega-3", op: "<", value: 0.7, ofTarget: true, windowDays: 7, minDataDays: 4 }],
     friction: "high", priorityWeight: 4, cooldownDays: 21, maxExtensions: 2,
   },
@@ -194,7 +194,7 @@ export const HABIT_TEMPLATES: HabitTemplate[] = [
 
   // ---------- sleep / wind-down (behavioral, no shopping, no HealthKit) ----------
   {
-    id: "wind-down-3", kind: "standard", title: "Wind Down", noun: "wind-down", category: "sleep",
+    id: "wind-down-3", kind: "standard", title: "Wind Down", noun: "winding down", category: "sleep",
     ask: "Put your screens away 30 minutes before bed for 3 days. Read, stretch, or just sit instead.",
     whyTemplate: "You've logged feeling tired {energyLowCount} times this week. Winding down screen-free helps you fall asleep faster, and it needs nothing to track.",
     durationDays: 3, checkpoints: ["Screens Off Early"],
@@ -217,7 +217,7 @@ export const HABIT_TEMPLATES: HabitTemplate[] = [
     id: "daylight-3", kind: "standard", title: "Daylight", noun: "daylight", category: "mind",
     ask: "Get 10 minutes of outdoor daylight each day for 3 days. A morning walk, coffee outside, or a quick step out.",
     whyTemplate: "Morning daylight lifts mood and sets your body clock for steadier energy and sleep. Ten minutes outside is enough to feel it.",
-    durationDays: 3, checkpoints: ["10 Min Outside"],
+    durationDays: 3, checkpoints: ["10-Min Daylight"],
     triggers: [],
     friction: "low", priorityWeight: 7, cooldownDays: 21, maxExtensions: 2,
   },
@@ -254,7 +254,7 @@ export const HABIT_TEMPLATES: HabitTemplate[] = [
 
   // ---------- caffeine (timing/cutoff — sleep, energy, focus, cravings) ----------
   {
-    id: "caffeine-curfew-3", kind: "standard", title: "Caffeine Curfew", noun: "caffeine curfew", category: "caffeine",
+    id: "caffeine-curfew-3", kind: "standard", title: "Caffeine Curfew", noun: "caffeine cutoffs", category: "caffeine",
     ask: "Have your last caffeine by 2pm for 3 days. Switch to water, decaf, or herbal tea after that.",
     whyTemplate: "Caffeine lingers in your system for hours. An early cutoff helps you wind down and sleep deeper, which lifts next-day energy and focus.",
     durationDays: 3, checkpoints: ["Cutoff By 2pm"],
