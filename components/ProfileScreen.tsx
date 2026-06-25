@@ -892,16 +892,20 @@ export default function ProfileScreen() {
 
         <Card className="mt-4 border border-primary/40">
           <span className="text-[11px] font-semibold uppercase tracking-wide text-ink/70">What Do You Want To Feel Better About?</span>
-          <p className="mt-1 text-xs text-muted/65">This guides the habits we suggest and how your coach talks to you. Pick any that fit.</p>
+          <p className="mt-1 text-xs text-muted/65">This guides the habits we suggest and how your coach talks to you. Pick up to 2.</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {FEELING_GOALS.map(({ value, label }) => {
               const active = feelingGoals.includes(value);
+              const atCap = !active && feelingGoals.length >= 2;
               return (
                 <button
                   key={value}
                   type="button"
-                  onClick={() => setFeelingGoals((prev) => prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value])}
-                  className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${active ? "border-primary/60 bg-primary/10 text-ink/80" : "border-ink/10 text-muted/65"}`}
+                  disabled={atCap}
+                  onClick={() => setFeelingGoals((prev) =>
+                    prev.includes(value) ? prev.filter((v) => v !== value) : prev.length >= 2 ? prev : [...prev, value]
+                  )}
+                  className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${active ? "border-primary/60 bg-primary/10 text-ink/80" : atCap ? "border-ink/10 text-muted/35" : "border-ink/10 text-muted/65"}`}
                 >
                   {label}
                 </button>
