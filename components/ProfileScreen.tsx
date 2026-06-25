@@ -893,7 +893,7 @@ export default function ProfileScreen() {
 
         <Card className="mt-4 border border-primary/40">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] font-semibold uppercase tracking-wide text-ink/70">What Do You Want To Feel Better About?</span>
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-ink/70">Feeling Goal</span>
             <button
               type="button"
               className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-ink/10 text-[10px] font-semibold text-ink/60"
