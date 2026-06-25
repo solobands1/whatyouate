@@ -904,7 +904,7 @@ export default function ProfileScreen() {
             </button>
           </div>
           {showFeelingInfo && <p className="mt-1.5 text-xs text-muted/65">Guides the habits we suggest and how your coach talks to you.</p>}
-          <p className="mt-1 text-xs text-muted/55">Pick up to 2.</p>
+          <p className="mt-1 text-xs text-muted/55">Pick up to two.</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {FEELING_GOALS.map(({ value, label }) => {
               const active = feelingGoals.includes(value);
