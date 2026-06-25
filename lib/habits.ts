@@ -9,17 +9,18 @@ import type { FeelingGoal } from "./types";
 
 export type HabitCategory =
   | "logging" | "hydration" | "protein" | "movement"
-  | "sleep" | "micronutrient" | "produce";
+  | "sleep" | "micronutrient" | "produce"
+  | "mind" | "timing";
 
 // Which habit categories tend to serve each feeling goal. Used to surface the
 // habits most relevant to what the user said they want to feel better about.
 export const FEELING_GOAL_CATEGORIES: Record<FeelingGoal, HabitCategory[]> = {
-  energy:    ["hydration", "protein", "micronutrient", "sleep", "movement"],
-  sleep:     ["sleep", "micronutrient", "movement"],
-  mood:      ["micronutrient", "movement", "sleep"],
-  focus:     ["hydration", "protein", "micronutrient", "sleep"],
-  digestion: ["produce", "hydration"],
-  cravings:  ["protein", "produce"],
+  energy:    ["hydration", "protein", "movement", "sleep", "micronutrient", "mind"],
+  sleep:     ["sleep", "mind", "timing", "micronutrient", "movement"],
+  mood:      ["mind", "movement", "sleep", "micronutrient"],
+  focus:     ["protein", "hydration", "mind", "micronutrient", "sleep"],
+  digestion: ["produce", "timing", "mind", "hydration"],
+  cravings:  ["protein", "produce", "mind"],
 };
 
 // onboarding = cold-start logging habit; reengagement = comeback logging habit;
@@ -165,7 +166,7 @@ export const HABIT_TEMPLATES: HabitTemplate[] = [
     friction: "high", priorityWeight: 5, cooldownDays: 21, maxExtensions: 2,
   },
   {
-    id: "iron-3", kind: "standard", title: "Iron Focus", noun: "iron", category: "micronutrient",
+    id: "iron-3", kind: "standard", title: "Iron Boost", noun: "iron", category: "micronutrient",
     ask: "Add an iron-rich food to one meal each day for 3 days. Spinach, lentils, red meat, or fortified cereal.",
     whyTemplate: "Your iron has been running low, which can quietly drag down energy and focus. A daily iron-rich food is an easy correction.",
     durationDays: 3, checkpoints: ["Iron-Rich Food"],
@@ -173,7 +174,7 @@ export const HABIT_TEMPLATES: HabitTemplate[] = [
     friction: "high", priorityWeight: 5, cooldownDays: 21, maxExtensions: 2,
   },
   {
-    id: "omega3-3", kind: "standard", title: "Omega-3", noun: "omega-3", category: "micronutrient",
+    id: "omega3-3", kind: "standard", title: "Omega-3 Boost", noun: "omega-3", category: "micronutrient",
     ask: "Add an omega-3 source each day for 3 days. Walnuts, chia, flax, or a portion of fish.",
     whyTemplate: "Your omega-3 intake has been low this week. It supports mood, focus, and recovery, and a small daily source covers it.",
     durationDays: 3, checkpoints: ["Omega-3 Food"],
@@ -189,6 +190,66 @@ export const HABIT_TEMPLATES: HabitTemplate[] = [
     durationDays: 3, checkpoints: ["In Bed On Time"], requiresHealthKit: true,
     triggers: [{ signal: "sleep_hours_avg", op: "<", value: 6.5, windowDays: 7, minDataDays: 4 }],
     friction: "low", priorityWeight: 7, cooldownDays: 21, maxExtensions: 2,
+  },
+
+  // ---------- sleep / wind-down (behavioral, no shopping, no HealthKit) ----------
+  {
+    id: "wind-down-3", kind: "standard", title: "Wind Down", noun: "wind-down", category: "sleep",
+    ask: "Put your screens away 30 minutes before bed for 3 days. Read, stretch, or just sit instead.",
+    whyTemplate: "You've logged feeling tired {energyLowCount} times this week. Winding down screen-free helps you fall asleep faster, and it needs nothing to track.",
+    durationDays: 3, checkpoints: ["Screens Off Early"],
+    triggers: [{ signal: "energy_low_count", op: ">=", value: 2, windowDays: 7, minDataDays: 3 }],
+    friction: "low", priorityWeight: 7, cooldownDays: 21, maxExtensions: 2,
+  },
+
+  // ---------- movement (no HealthKit version) ----------
+  {
+    id: "move-often-3", kind: "standard", title: "Move Often", noun: "movement breaks", category: "movement",
+    ask: "Get up and move for a minute every hour or so while you're working, for 3 days. Stand, stretch, or take the stairs.",
+    whyTemplate: "Long stretches of sitting drain energy and focus. Short movement breaks keep you steadier through the day, no gym required.",
+    durationDays: 3, checkpoints: ["Hourly Movement"],
+    triggers: [],
+    friction: "low", priorityWeight: 6, cooldownDays: 21, maxExtensions: 2,
+  },
+
+  // ---------- mood / daylight ----------
+  {
+    id: "daylight-3", kind: "standard", title: "Daylight", noun: "daylight", category: "mind",
+    ask: "Get 10 minutes of outdoor daylight each day for 3 days. A morning walk, coffee outside, or a quick step out.",
+    whyTemplate: "Morning daylight lifts mood and sets your body clock for steadier energy and sleep. Ten minutes outside is enough to feel it.",
+    durationDays: 3, checkpoints: ["10 Min Outside"],
+    triggers: [],
+    friction: "low", priorityWeight: 7, cooldownDays: 21, maxExtensions: 2,
+  },
+
+  // ---------- digestion / meal timing ----------
+  {
+    id: "earlier-dinner-3", kind: "standard", title: "Earlier Dinner", noun: "earlier dinners", category: "timing",
+    ask: "Finish dinner at least 2 hours before bed for 3 days. Pick a cutoff and protect it.",
+    whyTemplate: "Eating close to bedtime can disrupt sleep and digestion. Giving your body a couple of hours to settle helps both.",
+    durationDays: 3, checkpoints: ["Early Dinner"],
+    triggers: [],
+    friction: "low", priorityWeight: 6, cooldownDays: 21, maxExtensions: 2,
+  },
+
+  // ---------- cravings / focus — protein breakfast ----------
+  {
+    id: "protein-breakfast-3", kind: "standard", title: "Protein Breakfast", noun: "protein breakfasts", category: "protein",
+    ask: "Have protein with breakfast each day for 3 days. Eggs, Greek yogurt, or a scoop of protein in your coffee or smoothie.",
+    whyTemplate: "A protein-forward breakfast steadies blood sugar, which means fewer mid-morning cravings and steadier focus.",
+    durationDays: 3, checkpoints: ["Protein Breakfast"],
+    triggers: [],
+    friction: "low", priorityWeight: 6, cooldownDays: 14, maxExtensions: 2,
+  },
+
+  // ---------- digestion / mindful eating ----------
+  {
+    id: "mindful-meal-3", kind: "standard", title: "Mindful Meal", noun: "mindful meals", category: "mind",
+    ask: "Eat one meal a day slowly and screen-free for 3 days. Just the food and you.",
+    whyTemplate: "Slowing down at one meal helps digestion and helps you notice when you're actually full, which curbs overeating.",
+    durationDays: 3, checkpoints: ["One Slow Meal"],
+    triggers: [],
+    friction: "low", priorityWeight: 5, cooldownDays: 21, maxExtensions: 2,
   },
 ];
 
