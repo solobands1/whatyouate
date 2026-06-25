@@ -67,6 +67,11 @@ why: empty string for encouragement, streak, honest, food_win, micronutrient_win
 action: empty string for encouragement, streak, honest, food_win, micronutrient_win. For pattern, micronutrient_low, deficit: 1-2 specific sentences naming a food, timing, or next step.
 suggestions: 1-3 specific foods for micronutrient_low and deficit types only. Empty array for all other types. Match time of day. Do not repeat recently suggested foods.`;
 
+const FEELING_GOAL_LABELS: Record<string, string> = {
+  energy: "more energy", sleep: "better sleep", mood: "better mood",
+  focus: "sharper focus", digestion: "better digestion", cravings: "fewer cravings",
+};
+
 export function buildSmartPrompt(ctx: Record<string, unknown>): string {
   const profile = ctx.profile as Record<string, unknown> | null;
   const lines: string[] = [];
@@ -74,6 +79,8 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
   if (profile) {
     const parts = [
       profile.goalDirection && `goal: ${profile.goalDirection}`,
+      (profile.feelingGoals as string[] | undefined)?.length &&
+        `wants to improve: ${(profile.feelingGoals as string[]).map((g) => FEELING_GOAL_LABELS[g] ?? g).join(", ")}`,
       profile.age && `age: ${profile.age}`,
       profile.weight && ctx.weightFresh !== false && (profile.units === "imperial"
         ? `weight: ${Math.round((profile.weight as number) * 2.20462)}lbs`

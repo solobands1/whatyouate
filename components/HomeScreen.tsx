@@ -8,7 +8,7 @@ import type { MealLog, UserProfile, WorkoutSession } from "../lib/types";
 import { suppName, suppLabel } from "../lib/types";
 import { matchSupplementNutrients } from "../lib/rda";
 import { celebrateDaily, celebrateBuilt, celebrateAccepted, unlockAudio } from "../lib/celebrate";
-import { HABIT_TEMPLATES, type HabitTemplate } from "../lib/habits";
+import { HABIT_TEMPLATES, habitsForGoals, type HabitTemplate } from "../lib/habits";
 import {
   PROFILE_UPDATED_EVENT,
   MEALS_FAILED_EVENT,
@@ -394,11 +394,24 @@ export default function HomeScreen() {
     { status: "suggested", days: freshDays(FIRST_TEMPLATE) }
   );
   const [activeTemplate, setActiveTemplate] = useState<HabitTemplate>(FIRST_TEMPLATE);
+
+  // Surface the habits matching the user's feeling goal(s) first.
+  const goalHabits = useMemo(() => habitsForGoals(profile?.feelingGoals), [profile?.feelingGoals]);
+  const appliedGoalHabitRef = useRef(false);
+  useEffect(() => {
+    if (appliedGoalHabitRef.current || !profile || goalHabits.length === 0) return;
+    appliedGoalHabitRef.current = true;
+    const top = goalHabits[0];
+    setActiveTemplate(top);
+    setHeroHabit({ status: "suggested", days: freshDays(top) });
+  }, [profile, goalHabits]);
+
   // Demo/testing: cycle to the next template and reset to its suggestion, so we
   // can eyeball how each one renders (different checkpoints, durations, copy).
   const cycleTemplate = () => {
-    const i = HABIT_TEMPLATES.indexOf(activeTemplate);
-    const next = HABIT_TEMPLATES[(i + 1) % HABIT_TEMPLATES.length];
+    const list = goalHabits.length ? goalHabits : HABIT_TEMPLATES;
+    const i = list.indexOf(activeTemplate);
+    const next = list[(i + 1) % list.length];
     setActiveTemplate(next);
     setHeroHabit({ status: "suggested", days: freshDays(next) });
   };

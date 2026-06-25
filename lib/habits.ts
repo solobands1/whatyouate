@@ -5,9 +5,22 @@
 // gate, then surfaces ONE at a time (deterministic pick now; AI selection later).
 // See the project_habit_builder memory for the full design + user-state machine.
 
+import type { FeelingGoal } from "./types";
+
 export type HabitCategory =
   | "logging" | "hydration" | "protein" | "movement"
   | "sleep" | "micronutrient" | "produce";
+
+// Which habit categories tend to serve each feeling goal. Used to surface the
+// habits most relevant to what the user said they want to feel better about.
+export const FEELING_GOAL_CATEGORIES: Record<FeelingGoal, HabitCategory[]> = {
+  energy:    ["hydration", "protein", "micronutrient", "sleep", "movement"],
+  sleep:     ["sleep", "micronutrient", "movement"],
+  mood:      ["micronutrient", "movement", "sleep"],
+  focus:     ["hydration", "protein", "micronutrient", "sleep"],
+  digestion: ["produce", "hydration"],
+  cravings:  ["protein", "produce"],
+};
 
 // onboarding = cold-start logging habit; reengagement = comeback logging habit;
 // standard = the data-driven ones.
@@ -197,3 +210,17 @@ export const HABIT_TEMPLATES: HabitTemplate[] = [
 //  swaps (for weight-loss goals): trade the afternoon cookie for Greek yogurt;
 //  sparkling water instead of soda; fruit instead of the late-night snack
 // ---------------------------------------------------------------------------
+
+// Standard habit templates relevant to the user's feeling goal(s), goal-matched
+// first (the rest follow so cycling/fallback still works). Empty goals = all standard.
+export function habitsForGoals(
+  goals: FeelingGoal[] | undefined,
+  templates: HabitTemplate[] = HABIT_TEMPLATES,
+): HabitTemplate[] {
+  const standard = templates.filter((t) => t.kind === "standard");
+  if (!goals || goals.length === 0) return standard;
+  const cats = new Set(goals.flatMap((g) => FEELING_GOAL_CATEGORIES[g] ?? []));
+  const matched = standard.filter((t) => cats.has(t.category));
+  const rest = standard.filter((t) => !cats.has(t.category));
+  return [...matched, ...rest];
+}
