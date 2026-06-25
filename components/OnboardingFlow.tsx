@@ -5,7 +5,7 @@ import { supabase } from "../lib/supabaseClient";
 import { clearProfileCache } from "../lib/supabaseDb";
 import { notifyProfileUpdated } from "../lib/dataEvents";
 import { requestHealthKitPermissions, checkHealthKitAuthorization, syncHealthKitActivity } from "../lib/healthKit";
-import type { ActivityLevel, GoalDirection } from "../lib/types";
+import type { ActivityLevel, FeelingGoal, GoalDirection } from "../lib/types";
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
@@ -17,6 +17,15 @@ const GOALS: { value: GoalDirection; label: string; sub: string }[] = [
   { value: "gain",     label: "Gain Weight",  sub: "We'll focus on fueling your growth and performance." },
   { value: "maintain", label: "Stay Steady",  sub: "We'll help you stay balanced and spot patterns over time." },
   { value: "lose",     label: "Lose Weight",  sub: "We'll focus on calorie awareness and building a healthy deficit." },
+];
+
+const FEELING_GOALS: { value: FeelingGoal; label: string }[] = [
+  { value: "energy", label: "More Energy" },
+  { value: "sleep", label: "Better Sleep" },
+  { value: "mood", label: "Better Mood" },
+  { value: "focus", label: "Sharper Focus" },
+  { value: "digestion", label: "Better Digestion" },
+  { value: "cravings", label: "Fewer Cravings" },
 ];
 
 const ACTIVITY_LEVELS: { value: ActivityLevel; label: string; sub: string }[] = [
@@ -61,6 +70,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
   const [heightCm, setHeightCm] = useState("");
   const [weight, setWeight] = useState("");
   const [goalDirection, setGoalDirection] = useState<GoalDirection | "">("");
+  const [feelingGoals, setFeelingGoals] = useState<FeelingGoal[]>([]);
   const [activityLevel, setActivityLevel] = useState<ActivityLevel | "">("");
   const [dietaryRestrictions, setDietaryRestrictions] = useState<string[]>([]);
   const [healthChoice, setHealthChoice] = useState<"yes" | "no" | null>(null);
@@ -118,6 +128,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
         height: heightCmVal,
         weight: weightKgVal,
         goal_direction: goalDirection || "maintain",
+        feeling_goals: feelingGoals,
         activity_level: activityLevel || null,
         dietary_restrictions: dietaryRestrictions,
         units,
@@ -139,7 +150,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
   const canContinueHeight = units === "metric"
     ? heightCm && weight
     : (heightFt || heightIn) && weight;
-  const progress = (step / 7) * 100;
+  const progress = (step / 8) * 100;
 
   const animStyle = (show: boolean) => ({
     opacity: show ? 1 : 0,
@@ -234,7 +245,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
               <button type="button" className="p-1 active:opacity-50" onClick={() => setShowIntro(true)}>
                 <svg className="h-5 w-5 text-ink/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
               </button>
-              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 1 of 7</p>
+              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 1 of 8</p>
             </div>
             <div className="mt-[10vh]">
               <div className="flex justify-center mb-5">
@@ -306,7 +317,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
               <button type="button" className="p-1 active:opacity-50" onClick={() => setStep(0)}>
                 <svg className="h-5 w-5 text-ink/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
               </button>
-              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 2 of 7</p>
+              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 2 of 8</p>
             </div>
             <div className="mt-[8vh]">
               <div className="flex justify-center mb-5">
@@ -352,7 +363,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
               <button type="button" className="p-1 active:opacity-50" onClick={() => setStep(1)}>
                 <svg className="h-5 w-5 text-ink/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
               </button>
-              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 3 of 7</p>
+              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 3 of 8</p>
             </div>
             <div className="mt-[8vh]">
               <div className="flex justify-center mb-5">
@@ -476,7 +487,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
               <button type="button" className="p-1 active:opacity-50" onClick={() => setStep(2)}>
                 <svg className="h-5 w-5 text-ink/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
               </button>
-              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 4 of 7</p>
+              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 4 of 8</p>
             </div>
             <div className="mt-[8vh]">
               <div className="flex justify-center mb-5">
@@ -519,14 +530,62 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
           </div>
         )}
 
-        {/* Step 4: Activity level */}
+        {/* Step 4: Feeling goal */}
         {step === 4 && (
           <div className="flex flex-1 flex-col">
             <div className="flex items-center justify-between pt-5">
               <button type="button" className="p-1 active:opacity-50" onClick={() => setStep(3)}>
                 <svg className="h-5 w-5 text-ink/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
               </button>
-              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 5 of 7</p>
+              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 5 of 8</p>
+            </div>
+            <div className="mt-[8vh]">
+              <div className="flex justify-center mb-5">
+                <svg className="h-10 w-10 text-primary/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="4" />
+                  <path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19" />
+                </svg>
+              </div>
+              <h1 className="text-2xl font-semibold text-ink text-center">What Do You Want To Feel Better About?</h1>
+              <p className="mt-2 text-sm text-muted/70 text-center">This shapes the habits we suggest and how your coach talks to you. Pick up to two.</p>
+              <div className="mt-8 flex flex-wrap justify-center gap-2.5">
+                {FEELING_GOALS.map(({ value, label }) => {
+                  const active = feelingGoals.includes(value);
+                  const atCap = !active && feelingGoals.length >= 2;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      disabled={atCap}
+                      onClick={() => setFeelingGoals((prev) => prev.includes(value) ? prev.filter((v) => v !== value) : prev.length >= 2 ? prev : [...prev, value])}
+                      className={`rounded-full border px-4 py-2 text-sm font-medium transition ${active ? "border-primary bg-primary/10 text-primary" : atCap ? "border-ink/10 text-muted/35" : "border-ink/10 text-ink/80"}`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="mt-10">
+                <button
+                  type="button"
+                  className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80"
+                  onClick={next}
+                >
+                  Continue
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Step 5: Activity level */}
+        {step === 5 && (
+          <div className="flex flex-1 flex-col">
+            <div className="flex items-center justify-between pt-5">
+              <button type="button" className="p-1 active:opacity-50" onClick={() => setStep(4)}>
+                <svg className="h-5 w-5 text-ink/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+              </button>
+              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 6 of 8</p>
             </div>
             <div className="mt-[4vh]">
               <div className="flex justify-center mb-5">
@@ -567,14 +626,14 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
           </div>
         )}
 
-        {/* Step 5: Dietary restrictions */}
-        {step === 5 && (
+        {/* Step 6: Dietary restrictions */}
+        {step === 6 && (
           <div className="flex flex-1 flex-col">
             <div className="flex items-center justify-between pt-5">
-              <button type="button" className="p-1 active:opacity-50" onClick={() => setStep(4)}>
+              <button type="button" className="p-1 active:opacity-50" onClick={() => setStep(5)}>
                 <svg className="h-5 w-5 text-ink/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
               </button>
-              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 6 of 7</p>
+              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 7 of 8</p>
             </div>
             <div className="mt-[8vh]">
               <div className="flex justify-center mb-5">
@@ -635,14 +694,14 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
           </div>
         )}
 
-        {/* Step 6: Apple Health */}
-        {step === 6 && (
+        {/* Step 7: Apple Health */}
+        {step === 7 && (
           <div className="flex flex-1 flex-col">
             <div className="flex items-center justify-between pt-5">
-              <button type="button" className="p-1 active:opacity-50" onClick={() => { setStep(5); setHealthChoice(null); setHealthKitGranted(null); setHealthKitConnecting(false); }}>
+              <button type="button" className="p-1 active:opacity-50" onClick={() => { setStep(6); setHealthChoice(null); setHealthKitGranted(null); setHealthKitConnecting(false); }}>
                 <svg className="h-5 w-5 text-ink/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
               </button>
-              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 7 of 7</p>
+              <p className="text-[11px] uppercase tracking-widest text-muted/50">Step 8 of 8</p>
             </div>
             <div className="mt-[14vh]">
               <div className="flex justify-center mb-5">
