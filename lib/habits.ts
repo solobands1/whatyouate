@@ -10,17 +10,17 @@ import type { FeelingGoal } from "./types";
 export type HabitCategory =
   | "logging" | "hydration" | "protein" | "movement"
   | "sleep" | "micronutrient" | "produce"
-  | "mind" | "timing";
+  | "mind" | "timing" | "caffeine";
 
 // Which habit categories tend to serve each feeling goal. Used to surface the
 // habits most relevant to what the user said they want to feel better about.
 export const FEELING_GOAL_CATEGORIES: Record<FeelingGoal, HabitCategory[]> = {
-  energy:    ["hydration", "protein", "movement", "sleep", "micronutrient", "mind"],
-  sleep:     ["sleep", "mind", "timing", "micronutrient", "movement"],
+  energy:    ["hydration", "protein", "movement", "sleep", "caffeine", "micronutrient", "mind"],
+  sleep:     ["sleep", "caffeine", "mind", "timing", "micronutrient", "movement"],
   mood:      ["mind", "movement", "sleep", "micronutrient"],
-  focus:     ["protein", "hydration", "mind", "micronutrient", "sleep"],
+  focus:     ["protein", "hydration", "caffeine", "mind", "micronutrient", "sleep"],
   digestion: ["produce", "timing", "mind", "hydration"],
-  cravings:  ["protein", "produce", "mind"],
+  cravings:  ["protein", "produce", "caffeine", "mind"],
 };
 
 // onboarding = cold-start logging habit; reengagement = comeback logging habit;
@@ -250,6 +250,16 @@ export const HABIT_TEMPLATES: HabitTemplate[] = [
     durationDays: 3, checkpoints: ["One Slow Meal"],
     triggers: [],
     friction: "low", priorityWeight: 5, cooldownDays: 21, maxExtensions: 2,
+  },
+
+  // ---------- caffeine (timing/cutoff — sleep, energy, focus, cravings) ----------
+  {
+    id: "caffeine-curfew-3", kind: "standard", title: "Caffeine Curfew", noun: "caffeine curfew", category: "caffeine",
+    ask: "Have your last caffeine by 2pm for 3 days. Switch to water, decaf, or herbal tea after that.",
+    whyTemplate: "Caffeine lingers in your system for hours. An early cutoff helps you wind down and sleep deeper, which lifts next-day energy and focus.",
+    durationDays: 3, checkpoints: ["Cutoff By 2pm"],
+    triggers: [],
+    friction: "low", priorityWeight: 6, cooldownDays: 21, maxExtensions: 2,
   },
 ];
 
