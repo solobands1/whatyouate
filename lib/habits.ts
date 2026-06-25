@@ -96,7 +96,7 @@ export const HABIT_TEMPLATES: HabitTemplate[] = [
     noun: "logging", category: "logging",
     ask: "Log at least one thing each day for 5 days. A meal, a feeling, a glass of water, anything counts.",
     whyTemplate: "Everything here grows from what you log. Let's build that habit first, then the app can actually start helping.",
-    durationDays: 5, checkpoints: ["Log Something"], autoCompleteOnLog: true,
+    durationDays: 5, checkpoints: ["I Logged Something!"], autoCompleteOnLog: true,
     triggers: [], friction: "low", priorityWeight: 100, cooldownDays: 30, maxExtensions: 3,
   },
   {
@@ -104,24 +104,24 @@ export const HABIT_TEMPLATES: HabitTemplate[] = [
     noun: "logging", category: "logging",
     ask: "Log at least one thing each day for 2 days to get back in the rhythm.",
     whyTemplate: "Life happens and you fell off, that's normal. Two easy days to find the thread again.",
-    durationDays: 2, checkpoints: ["Log Something"], autoCompleteOnLog: true,
+    durationDays: 2, checkpoints: ["I Logged Something!"], autoCompleteOnLog: true,
     triggers: [], friction: "low", priorityWeight: 100, cooldownDays: 7, maxExtensions: 3,
   },
 
   // ---------- hydration (reference, stacked on meals, 3 -> 5 progression) ----------
   {
     id: "hydration-3", kind: "standard", title: "Hydration", noun: "hydration", category: "hydration",
-    ask: "Have an extra glass of water with each meal for 3 days. One with breakfast, one with lunch, one with dinner.",
+    ask: "Have an extra glass of water in the morning, afternoon, and evening for 3 days.",
     whyTemplate: "You've reported low energy {energyLowCount} times this week. Mild dehydration is an easy-to-miss cause of afternoon fatigue, and one of the simplest things to test.",
-    durationDays: 3, checkpoints: ["With Breakfast", "With Lunch", "With Dinner"],
+    durationDays: 3, checkpoints: ["Morning", "Afternoon", "Evening"],
     triggers: [{ signal: "water_pct", op: "<", value: 0.7, ofTarget: true, windowDays: 5, minDataDays: 4 }],
     friction: "low", priorityWeight: 8, cooldownDays: 14, maxExtensions: 2, deepensTo: "hydration-5",
   },
   {
     id: "hydration-5", kind: "standard", title: "Hydration", noun: "hydration", category: "hydration",
-    ask: "Have an extra glass of water with each meal for 5 days.",
+    ask: "Have an extra glass of water in the morning, afternoon, and evening for 5 days.",
     whyTemplate: "You built this one before and it's drifted back. Going 5 days this time helps it hold for good.",
-    durationDays: 5, checkpoints: ["With Breakfast", "With Lunch", "With Dinner"],
+    durationDays: 5, checkpoints: ["Morning", "Afternoon", "Evening"],
     triggers: [{ signal: "water_pct", op: "<", value: 0.7, ofTarget: true, windowDays: 5, minDataDays: 4 }],
     friction: "low", priorityWeight: 8, cooldownDays: 21, maxExtensions: 2,
   },
@@ -149,9 +149,9 @@ export const HABIT_TEMPLATES: HabitTemplate[] = [
   // ---------- produce (one added veg, stacked on dinner) ----------
   {
     id: "veg-3", kind: "standard", title: "Add a Vegetable", noun: "vegetables", category: "produce",
-    ask: "Add a vegetable to your dinner each day for 3 days. A side of whatever's easy, frozen counts.",
-    whyTemplate: "Your produce-driven nutrients have been running low, which usually means light vegetables. One vegetable at dinner is the simplest fix.",
-    durationDays: 3, checkpoints: ["Vegetable At Dinner"],
+    ask: "Add an extra vegetable to any meal each day for 3 days. A side of whatever's easy, frozen counts.",
+    whyTemplate: "Your produce-driven nutrients have been running low, which usually means light vegetables. One extra vegetable a day is the simplest fix.",
+    durationDays: 3, checkpoints: ["Added Vegetable"],
     triggers: [{ signal: "micronutrient_pct", nutrient: "vitamin c", op: "<", value: 0.7, ofTarget: true, windowDays: 7, minDataDays: 4 }],
     friction: "medium", priorityWeight: 5, cooldownDays: 21, maxExtensions: 2,
   },
