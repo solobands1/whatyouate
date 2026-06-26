@@ -54,9 +54,19 @@ input, textarea, select {
 }
 .animate-habit-note { animation: habitNote 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
 
+/* One-shot blue border pulse when the habit card finishes dropping down, echoing
+   the finished-habit glow but settling back to no glow. */
+@keyframes cardBorderPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(111,168,255,0); }
+  45%  { box-shadow: 0 0 0 3px rgba(111,168,255,0.40), 0 0 30px 6px rgba(111,168,255,0.40); }
+  100% { box-shadow: 0 0 0 0 rgba(111,168,255,0); }
+}
+.animate-card-pulse { animation: cardBorderPulse 1.5s ease-out 1; }
+
 @media (prefers-reduced-motion: reduce) {
   .animate-card-fade,
-  .animate-habit-note {
+  .animate-habit-note,
+  .animate-card-pulse {
     animation: none;
   }
 }

@@ -192,6 +192,43 @@ function fillWhy(t: HabitTemplate): string {
   return t.whyTemplate.replace(/\{(\w+)\}/g, (_m, k: string) => demo[k] ?? "several");
 }
 
+// Varied streak-progress lines so the feedback doesn't feel repetitive. Picked
+// deterministically from a seed so it stays stable within a render but differs
+// across habits and days. {n} is filled with the day count.
+function pickLine(lines: string[], seed: string): string {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+  return lines[h % lines.length];
+}
+const HABIT_FIRST_DAY_LINES = [
+  "Day one down, the hardest part is behind you!",
+  "First day done, that's how it starts!",
+  "Day one in the books, nice work!",
+  "You showed up on day one, that's the whole game!",
+  "One day down, momentum starts here!",
+];
+const HABIT_ALMOST_LINES = [
+  "Almost there, one more day to go!",
+  "So close, just one more day!",
+  "One day left, you've basically got this!",
+  "The finish line is right there, one more!",
+  "Last push, one more day to lock it in!",
+];
+const HABIT_MID_LINES = [
+  "{n} days in, you're really doing this!",
+  "{n} days deep, this is becoming a thing!",
+  "{n} in a row, look at you go!",
+  "{n} days down, you're on a roll!",
+  "Day {n} done, steady as you go!",
+];
+const HABIT_DONE_LINES = [
+  "{n} days straight, this is sticking!",
+  "{n} days done, you built something!",
+  "{n} for {n}, that's a real habit forming!",
+  "All {n} days, this one is yours now!",
+  "{n} days running, look how far you came!",
+];
+
 // Module-level cache — survives navigation, resets on full page reload
 
 function todayDateStr() {
@@ -396,10 +433,11 @@ export default function HomeScreen() {
   const [activeTemplate, setActiveTemplate] = useState<HabitTemplate>(FIRST_TEMPLATE);
   const [showHabitIdeas, setShowHabitIdeas] = useState(false);
   const [heroExpanded, setHeroExpanded] = useState(false);
+  const [heroPulse, setHeroPulse] = useState(false);
   const heroRevealedRef = useRef(false);
 
   // Surface the habits matching the user's feeling goal(s) first.
-  const goalHabits = useMemo(() => habitsForGoals(profile?.feelingGoals), [profile?.feelingGoals]);
+  const goalHabits = useMemo(() => habitsForGoals(profile?.feelingGoals, profile?.goalDirection), [profile?.feelingGoals, profile?.goalDirection]);
   const appliedGoalHabitRef = useRef(false);
   useEffect(() => {
     if (appliedGoalHabitRef.current || !profile || goalHabits.length === 0) return;
@@ -419,6 +457,14 @@ export default function HomeScreen() {
     const t = setTimeout(() => setHeroExpanded(true), 750);
     return () => clearTimeout(t);
   }, [heroHabit.status]);
+
+  // Once the card finishes dropping down, pulse its border like a finished habit.
+  useEffect(() => {
+    if (!heroExpanded) return;
+    const t1 = setTimeout(() => setHeroPulse(true), 620);
+    const t2 = setTimeout(() => setHeroPulse(false), 620 + 1500);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [heroExpanded]);
 
   // Demo/testing: cycle to the next template and reset to its suggestion, so we
   // can eyeball how each one renders (different checkpoints, durations, copy).
@@ -716,7 +762,7 @@ export default function HomeScreen() {
     const nameChanged = reanalyze && quickConfirmName.trim().toLowerCase() !== quickConfirmOriginalName.trim().toLowerCase();
 
     if (nameChanged && quickConfirmName.trim()) {
-      // Close immediately and show analyzing shimmer while re-analysis runs in background
+      // Close immediately; the recents pill shows "Analyzing Food…" while it re-analyzes.
       const mealId = quickConfirmMeal.id;
       const imageThumb = quickConfirmMeal.imageThumb;
       const newName = quickConfirmName.trim();
@@ -724,41 +770,38 @@ export default function HomeScreen() {
 
       setReanalyzingMealIds((prev) => new Set([...prev, mealId]));
       setQuickConfirmMeal(null);
-
-      (async () => {
-        let imageBase64: string | undefined;
-        if (imageThumb) {
-          try {
-            const imgRes = await fetch(imageThumb);
-            const blob = await imgRes.blob();
-            imageBase64 = await new Promise<string>((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onload = () => resolve(reader.result as string);
-              reader.onerror = reject;
-              reader.readAsDataURL(blob);
-            });
-          } catch {
-            imageBase64 = undefined;
-          }
-        }
+      let imageBase64: string | undefined;
+      if (imageThumb) {
         try {
-          await fetch("/api/analyze-food", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(
-              imageBase64
-                ? { imageBase64, hints: newName, mealId, userId: capturedUserId }
-                : { textDescription: newName, mealId, userId: capturedUserId }
-            ),
+          const imgRes = await fetch(imageThumb);
+          const blob = await imgRes.blob();
+          imageBase64 = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
           });
-          clearMealsCache(capturedUserId);
-          await meals.load(capturedUserId);
-        } catch (err) {
-          console.error("Re-analyze failed", err);
-        } finally {
-          setReanalyzingMealIds((prev) => { const next = new Set(prev); next.delete(mealId); return next; });
+        } catch {
+          imageBase64 = undefined;
         }
-      })();
+      }
+      try {
+        await fetch("/api/analyze-food", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(
+            imageBase64
+              ? { imageBase64, hints: newName, mealId, userId: capturedUserId }
+              : { textDescription: newName, mealId, userId: capturedUserId }
+          ),
+        });
+        clearMealsCache(capturedUserId);
+        await meals.load(capturedUserId);
+      } catch (err) {
+        console.error("Re-analyze failed", err);
+      } finally {
+        setReanalyzingMealIds((prev) => { const next = new Set(prev); next.delete(mealId); return next; });
+      }
       return;
     }
 
@@ -796,8 +839,11 @@ export default function HomeScreen() {
     const imageThumb = meals.editingMeal.imageThumb;
     const newName = meals.editForm.name.trim();
     const capturedUserId = user.id;
+    // Close immediately; the recents pill shows "Analyzing Food…" while it re-analyzes.
     setReanalyzingMealIds((prev) => new Set([...prev, mealId]));
     meals.setEditingMeal(null);
+    setEditRecents(false);
+    setStreakSaverMode(false);
     (async () => {
       let imageBase64: string | undefined;
       if (imageThumb) {
@@ -840,9 +886,13 @@ export default function HomeScreen() {
     const mealIdToUpdate = failedMealPrompt.mealId;
     const imageThumb = failedMealPrompt.thumb;
     const text = failedMealText.trim();
-    // Optimistically flip to processing so the pill shimmer shows instead of "Couldn't Analyze"
+    // Close immediately and force the recents pill into the "Analyzing Food…" shimmer.
+    // reanalyzingMealIds overrides the meal's age — a stale failed photo is older than
+    // the 90s window, so the optimistic "processing" flip alone wouldn't shimmer.
+    setReanalyzingMealIds((prev) => new Set([...prev, mealIdToUpdate]));
     meals.setMeals((prev) => prev.map((m) => m.id === mealIdToUpdate ? { ...m, status: "processing" as const } : m));
     setFailedMealPrompt(null);
+    setFailedMealText("");
     setFailedMealAnalyzing(false);
     let imageBase64: string | undefined;
     if (imageThumb) {
@@ -880,6 +930,7 @@ export default function HomeScreen() {
       }
       if (!res.ok) throw new Error("Analysis failed");
       clearMealsCache(user.id);
+      await meals.load(user.id);
       notifyMealsUpdated();
     } catch {
       // Even text-only failed (offline or over the daily limit). Keep their text
@@ -889,6 +940,8 @@ export default function HomeScreen() {
       setLoadError("Couldn't analyze that just now. Check your connection and try again.");
       setFailedMealText(text);
       setFailedMealPrompt({ mealId: mealIdToUpdate, thumb: imageThumb });
+    } finally {
+      setReanalyzingMealIds((prev) => { const next = new Set(prev); next.delete(mealIdToUpdate); return next; });
     }
   };
 
@@ -2303,7 +2356,7 @@ export default function HomeScreen() {
 
         <Card className="mt-2">
           {/* Hero — dynamic slot. Priority: active habit builder > suggestion > reflection reminder > discovery > wins > greeting (default). Sample habit wired locally for now. */}
-          <div className={`-mx-4 rounded-2xl border-2 border-primary/25 px-4 ${heroHabit.status === "done" || heroHabit.status === "accepting" ? "bg-primary/10" : "bg-primary/[0.05]"} ${heroHabit.status === "hidden" ? "py-7" : heroHabit.status === "done" && doneStep === "rested" ? "pt-5 pb-3" : "py-5"} ${heroHabit.status === "done" && (doneStep === "celebrate" || doneStep === "feedback") ? "animate-habit-built" : ""} ${(heroHabit.status === "done" && doneStep === "rested") || heroHabit.status === "accepting" ? "animate-habit-glow" : ""} ${heroHabit.status === "active" && heroHabit.holdDay != null ? "animate-habit-shimmer" : ""}`}>
+          <div className={`-mx-4 rounded-2xl border-2 border-primary/25 px-4 ${heroHabit.status === "done" || heroHabit.status === "accepting" ? "bg-primary/10" : "bg-primary/[0.05]"} ${heroHabit.status === "hidden" ? "py-7" : heroHabit.status === "done" && doneStep === "rested" ? "pt-5 pb-3" : "py-5"} ${heroHabit.status === "done" && (doneStep === "celebrate" || doneStep === "feedback") ? "animate-habit-built" : ""} ${(heroHabit.status === "done" && doneStep === "rested") || heroHabit.status === "accepting" ? "animate-habit-glow" : ""} ${heroHabit.status === "active" && heroHabit.holdDay != null ? "animate-habit-shimmer" : ""} ${heroPulse ? "animate-card-pulse" : ""}`}>
             {heroHabit.status === "suggested" ? (
               <div className={heroExpanded ? "" : "animate-habit-note"}>
                 {/* Tap the eyebrow to cycle templates (demo/testing). */}
@@ -2434,21 +2487,6 @@ export default function HomeScreen() {
                         );
                       })}
                     </div>
-                    {activeTemplate.ideas && activeTemplate.ideas.length > 0 && (
-                      <div className="mt-3">
-                        <button type="button" onClick={() => setShowHabitIdeas((v) => !v)} className="inline-flex items-center gap-1 text-xs font-semibold text-primary/80 transition active:opacity-60">
-                          What Helps?
-                          <svg viewBox="0 0 24 24" className={`h-3 w-3 transition-transform ${showHabitIdeas ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
-                        </button>
-                        {showHabitIdeas && (
-                          <div className="mt-2 flex flex-wrap gap-1.5">
-                            {activeTemplate.ideas.map((f) => (
-                              <span key={f} className="rounded-full border border-primary/15 bg-primary/[0.05] px-2.5 py-1 text-[11px] text-ink/70">{f}</span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
                     <div className="mt-3 flex items-center justify-center gap-2">
                       {heroHabit.days.map((day, d) => {
                         const complete = day.every(Boolean);
@@ -2458,6 +2496,22 @@ export default function HomeScreen() {
                       })}
                     </div>
                     <p className="mt-2 text-center text-[11px] text-ink/55">Tap each one as you complete it.</p>
+                    {/* What Helps lives below the dots so expanding it never pushes them down. */}
+                    {activeTemplate.ideas && activeTemplate.ideas.length > 0 && (
+                      <div className="mt-3 text-center">
+                        <button type="button" onClick={() => setShowHabitIdeas((v) => !v)} className="inline-flex items-center gap-1 text-xs font-semibold text-primary/80 transition active:opacity-60">
+                          What Helps?
+                          <svg viewBox="0 0 24 24" className={`h-3 w-3 transition-transform ${showHabitIdeas ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
+                        </button>
+                        {showHabitIdeas && (
+                          <div className="mt-2 flex flex-wrap justify-center gap-1.5">
+                            {activeTemplate.ideas.map((f) => (
+                              <span key={f} className="rounded-full border border-primary/15 bg-primary/[0.05] px-2.5 py-1 text-[11px] text-ink/70">{f}</span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </>
                 );
               })()
@@ -2467,10 +2521,10 @@ export default function HomeScreen() {
                 const total = activeTemplate.durationDays;
                 const line =
                   completedDays === 1
-                    ? "Day one down, the hardest part is behind you!"
+                    ? pickLine(HABIT_FIRST_DAY_LINES, activeTemplate.id + "-first")
                     : completedDays === total - 1
-                    ? "Almost there, one more day to go!"
-                    : `${completedDays} days in, you're really doing this!`;
+                    ? pickLine(HABIT_ALMOST_LINES, activeTemplate.id + "-almost")
+                    : pickLine(HABIT_MID_LINES, activeTemplate.id + "-" + completedDays).replace(/\{n\}/g, String(completedDays));
                 return (
                   // Tapping the body simulates the next day (demo only; real version rolls over at midnight).
                   <div
@@ -2511,7 +2565,7 @@ export default function HomeScreen() {
                       <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 6" /></svg>
                     </span>
                     <p className="mt-3 text-base font-semibold text-ink">Done For Today</p>
-                    <p className="mt-1 text-[13px] text-ink/70">{activeTemplate.durationDays} days straight, this is sticking!</p>
+                    <p className="mt-1 text-[13px] text-ink/70">{pickLine(HABIT_DONE_LINES, activeTemplate.id + "-done").replace(/\{n\}/g, String(activeTemplate.durationDays))}</p>
                   </div>
                 </div>
               ) : doneStep === "started" ? (

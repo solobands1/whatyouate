@@ -5,12 +5,12 @@
 // gate, then surfaces ONE at a time (deterministic pick now; AI selection later).
 // See the project_habit_builder memory for the full design + user-state machine.
 
-import type { FeelingGoal } from "./types";
+import type { FeelingGoal, GoalDirection } from "./types";
 
 export type HabitCategory =
   | "logging" | "hydration" | "protein" | "movement"
   | "sleep" | "micronutrient" | "produce"
-  | "mind" | "timing" | "caffeine";
+  | "mind" | "timing" | "caffeine" | "balance";
 
 // Which habit categories tend to serve each feeling goal. Used to surface the
 // habits most relevant to what the user said they want to feel better about.
@@ -76,6 +76,11 @@ export interface HabitTemplate {
   priorityWeight: number;        // soft importance hint; future AI sees it too
   cooldownDays: number;          // after complete/decline/shelve, wait before re-surfacing
 
+  // weight/body-goal targeting. If set, the habit ONLY surfaces for users whose
+  // body goal matches (e.g. a calorie-dense snack only for those gaining). Habits
+  // without this are feeling-goal driven and surface regardless of body goal.
+  goalDirections?: GoalDirection[];
+
   // miss handling + progression
   maxExtensions: number;         // missed days that can be made up before it lapses (0 = strict)
   deepensTo?: string;            // id of a longer/harder variant for progression
@@ -115,7 +120,7 @@ export const HABIT_TEMPLATES: HabitTemplate[] = [
   {
     id: "hydration-3", kind: "standard", title: "Hydration", noun: "hydration", category: "hydration",
     ask: "Have an extra glass of water in the morning, afternoon, and evening for 3 days.",
-    whyTemplate: "You've reported low energy {energyLowCount} times this week. Mild dehydration is an easy-to-miss cause of afternoon fatigue, and one of the simplest things to test.",
+    whyTemplate: "Mild dehydration is an easy-to-miss cause of afternoon fatigue, and one of the simplest things to test.",
     durationDays: 3, checkpoints: ["Morning", "Afternoon", "Evening"],
     triggers: [{ signal: "water_pct", op: "<", value: 0.7, ofTarget: true, windowDays: 5, minDataDays: 4 }],
     friction: "low", priorityWeight: 8, cooldownDays: 14, maxExtensions: 2, deepensTo: "hydration-5",
@@ -133,7 +138,7 @@ export const HABIT_TEMPLATES: HabitTemplate[] = [
   {
     id: "protein-3", kind: "standard", title: "Protein Boost", noun: "extra protein", category: "protein",
     ask: "Add an extra protein to lunch and dinner for 3 days. Extra meat or beans on the plate, an egg, or a scoop of Greek yogurt.",
-    whyTemplate: "You've come up short on protein {proteinShortDays} of the last 7 days. Protein steadies energy and curbs cravings, so a little extra at two meals goes a long way.",
+    whyTemplate: "Protein steadies energy and curbs cravings, so a little extra at two meals goes a long way.",
     durationDays: 3, checkpoints: ["Lunch Protein", "Dinner Protein"],
     ideas: ["Eggs", "Greek Yogurt", "Chicken Breast", "Cottage Cheese", "Tuna", "Tofu", "Lentils", "Edamame", "Beans", "A Protein Shake"],
     triggers: [{ signal: "protein_pct", op: "<", value: 0.8, ofTarget: true, windowDays: 7, minDataDays: 4 }],
@@ -144,7 +149,7 @@ export const HABIT_TEMPLATES: HabitTemplate[] = [
   {
     id: "walk-10-3", kind: "standard", title: "Daily Walk", noun: "walks", category: "movement",
     ask: "Take a 10-minute walk after one meal each day for 3 days. After lunch or dinner works best.",
-    whyTemplate: "Your activity's been light and you've logged feeling sluggish {energyLowCount} times this week. A short daily walk is the smallest reliable lever for energy.",
+    whyTemplate: "A short daily walk is one of the smallest reliable levers for energy, especially on lighter-activity days.",
     durationDays: 3, checkpoints: ["10-Min Walk"], requiresHealthKit: true,
     triggers: [{ signal: "steps_avg", op: "<", value: 4000, windowDays: 7, minDataDays: 4 }],
     friction: "low", priorityWeight: 6, cooldownDays: 21, maxExtensions: 2,
@@ -194,7 +199,7 @@ export const HABIT_TEMPLATES: HabitTemplate[] = [
   {
     id: "sleep-steady-3", kind: "standard", title: "Steady Sleep", noun: "steady sleep", category: "sleep",
     ask: "Be in bed by your target time each night for 3 days. Pick a time and protect it.",
-    whyTemplate: "Your sleep has been on the short side and you've logged feeling tired {energyLowCount} times. A consistent bedtime is the highest-leverage thing for energy.",
+    whyTemplate: "A consistent bedtime is one of the highest-leverage things for steady energy, even more than total hours.",
     durationDays: 3, checkpoints: ["In Bed On Time"], requiresHealthKit: true,
     triggers: [{ signal: "sleep_hours_avg", op: "<", value: 6.5, windowDays: 7, minDataDays: 4 }],
     friction: "low", priorityWeight: 7, cooldownDays: 21, maxExtensions: 2,
@@ -204,7 +209,7 @@ export const HABIT_TEMPLATES: HabitTemplate[] = [
   {
     id: "wind-down-3", kind: "standard", title: "Wind Down", noun: "winding down", category: "sleep",
     ask: "Put your screens away 30 minutes before bed for 3 days. Read, stretch, or just sit instead.",
-    whyTemplate: "You've logged feeling tired {energyLowCount} times this week. Winding down screen-free helps you fall asleep faster, and it needs nothing to track.",
+    whyTemplate: "Winding down screen-free helps you fall asleep faster, and it needs nothing to track.",
     durationDays: 3, checkpoints: ["Screens Off Early"],
     triggers: [{ signal: "energy_low_count", op: ">=", value: 2, windowDays: 7, minDataDays: 3 }],
     friction: "low", priorityWeight: 7, cooldownDays: 21, maxExtensions: 2,
@@ -213,9 +218,9 @@ export const HABIT_TEMPLATES: HabitTemplate[] = [
   // ---------- movement (no HealthKit version) ----------
   {
     id: "move-often-3", kind: "standard", title: "Move Often", noun: "movement breaks", category: "movement",
-    ask: "Get up and move for a minute every hour or so while you're working, for 3 days. Stand, stretch, or take the stairs.",
-    whyTemplate: "Long stretches of sitting drain energy and focus. Short movement breaks keep you steadier through the day, no gym required.",
-    durationDays: 3, checkpoints: ["Hourly Movement"],
+    ask: "Get up and move for a minute a few times a day, for 3 days. Stand, stretch, or take the stairs.",
+    whyTemplate: "Long stretches of sitting drain energy and focus. A few movement breaks keep you steadier through the day, no gym required.",
+    durationDays: 3, checkpoints: ["Movement Break"],
     triggers: [],
     friction: "low", priorityWeight: 6, cooldownDays: 21, maxExtensions: 2,
   },
@@ -232,10 +237,10 @@ export const HABIT_TEMPLATES: HabitTemplate[] = [
 
   // ---------- digestion / meal timing ----------
   {
-    id: "earlier-dinner-3", kind: "standard", title: "Earlier Dinner", noun: "earlier dinners", category: "timing",
-    ask: "Finish dinner at least 2 hours before bed for 3 days. Pick a cutoff and protect it.",
+    id: "earlier-dinner-3", kind: "standard", title: "Earlier Cutoff", noun: "earlier cutoffs", category: "timing",
+    ask: "Stop eating at least 2 hours before bed for 3 days. Pick a cutoff and protect it.",
     whyTemplate: "Eating close to bedtime can disrupt sleep and digestion. Giving your body a couple of hours to settle helps both.",
-    durationDays: 3, checkpoints: ["Early Dinner"],
+    durationDays: 3, checkpoints: ["Kitchen Closed"],
     triggers: [],
     friction: "low", priorityWeight: 6, cooldownDays: 21, maxExtensions: 2,
   },
@@ -270,6 +275,38 @@ export const HABIT_TEMPLATES: HabitTemplate[] = [
     triggers: [],
     friction: "low", priorityWeight: 6, cooldownDays: 21, maxExtensions: 2,
   },
+
+  // ---------- weight goals (body-goal targeted, surfaced via goalDirection) ----------
+  {
+    id: "smart-swap-3", kind: "standard", title: "Smart Swap", noun: "smart swaps", category: "balance",
+    ask: "Swap one sugary drink or snack for a lighter option each day for 3 days. Sparkling water, fruit, or Greek yogurt all work.",
+    whyTemplate: "Small daily swaps trim calories without feeling like a diet, and they add up faster than you'd expect.",
+    durationDays: 3, checkpoints: ["Made the Swap"],
+    ideas: ["Sparkling Water", "Fruit", "Greek Yogurt", "Air-Popped Popcorn", "A Dark Chocolate Square", "Herbal Tea", "Veggies And Hummus", "Cottage Cheese", "A Handful Of Nuts", "Plain Coffee"],
+    goalDirections: ["lose"],
+    triggers: [],
+    friction: "low", priorityWeight: 7, cooldownDays: 14, maxExtensions: 2,
+  },
+  {
+    id: "veg-half-plate-3", kind: "standard", title: "Half-Plate Veg", noun: "fuller plates", category: "balance",
+    ask: "Fill half your plate with vegetables at one meal each day for 3 days. They fill you up for very few calories.",
+    whyTemplate: "Leading with vegetables crowds out heavier foods and keeps you full, which makes eating a little less almost automatic.",
+    durationDays: 3, checkpoints: ["Half-Plate Veg"],
+    ideas: ["Broccoli", "Spinach", "Bell Peppers", "Carrots", "Frozen Peas", "Zucchini", "Tomatoes", "Mixed Greens", "Green Beans", "Cauliflower"],
+    goalDirections: ["lose"],
+    triggers: [],
+    friction: "medium", priorityWeight: 6, cooldownDays: 21, maxExtensions: 2,
+  },
+  {
+    id: "calorie-snack-3", kind: "standard", title: "Add a Snack", noun: "extra snacks", category: "balance",
+    ask: "Add one calorie-dense snack each day for 3 days. Nut butter, trail mix, whole milk, or a smoothie.",
+    whyTemplate: "Gaining comes down to a small daily surplus. One extra nourishing snack is the easiest way to add it without forcing big meals.",
+    durationDays: 3, checkpoints: ["Extra Snack"],
+    ideas: ["Nut Butter", "Trail Mix", "Whole Milk", "Granola", "Avocado", "Cheese", "Dried Fruit", "A Smoothie", "An Olive Oil Drizzle", "Hummus"],
+    goalDirections: ["gain"],
+    triggers: [],
+    friction: "low", priorityWeight: 7, cooldownDays: 14, maxExtensions: 2,
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -291,16 +328,24 @@ export const HABIT_TEMPLATES: HabitTemplate[] = [
 //  sparkling water instead of soda; fruit instead of the late-night snack
 // ---------------------------------------------------------------------------
 
-// Standard habit templates relevant to the user's feeling goal(s), goal-matched
-// first (the rest follow so cycling/fallback still works). Empty goals = all standard.
+// Standard habit templates relevant to the user's feeling goal(s) and body goal,
+// best-matched first (the rest follow so cycling/fallback still works). Body-goal
+// targeted habits (goalDirections set) ONLY appear when the direction matches, so a
+// "gain" snack never shows to someone losing. Empty goals = all eligible standard.
 export function habitsForGoals(
   goals: FeelingGoal[] | undefined,
+  goalDirection?: GoalDirection,
   templates: HabitTemplate[] = HABIT_TEMPLATES,
 ): HabitTemplate[] {
   const standard = templates.filter((t) => t.kind === "standard");
-  if (!goals || goals.length === 0) return standard;
-  const cats = new Set(goals.flatMap((g) => FEELING_GOAL_CATEGORIES[g] ?? []));
-  const matched = standard.filter((t) => cats.has(t.category));
-  const rest = standard.filter((t) => !cats.has(t.category));
+  // Drop body-goal habits that don't match this user's direction.
+  const eligible = standard.filter((t) => !t.goalDirections || (goalDirection != null && t.goalDirections.includes(goalDirection)));
+  const cats = new Set((goals ?? []).flatMap((g) => FEELING_GOAL_CATEGORIES[g] ?? []));
+  const matches = (t: HabitTemplate) =>
+    (t.goalDirections != null && goalDirection != null && t.goalDirections.includes(goalDirection)) ||
+    (cats.size > 0 && cats.has(t.category));
+  if (cats.size === 0 && goalDirection == null) return eligible;
+  const matched = eligible.filter(matches);
+  const rest = eligible.filter((t) => !matches(t));
   return [...matched, ...rest];
 }
