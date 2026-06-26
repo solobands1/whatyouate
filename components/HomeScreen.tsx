@@ -2292,7 +2292,7 @@ export default function HomeScreen() {
           {/* Hero — dynamic slot. Priority: active habit builder > suggestion > reflection reminder > discovery > wins > greeting (default). Sample habit wired locally for now. */}
           <div className={`-mx-4 rounded-2xl border-2 border-primary/25 px-4 ${heroHabit.status === "done" || heroHabit.status === "accepting" ? "bg-primary/10" : "bg-primary/[0.05]"} ${heroHabit.status === "hidden" ? "py-7" : heroHabit.status === "done" && doneStep === "rested" ? "pt-5 pb-3" : "py-5"} ${heroHabit.status === "done" && (doneStep === "celebrate" || doneStep === "feedback") ? "animate-habit-built" : ""} ${(heroHabit.status === "done" && doneStep === "rested") || heroHabit.status === "accepting" ? "animate-habit-glow" : ""} ${heroHabit.status === "active" && heroHabit.holdDay != null ? "animate-habit-shimmer" : ""}`}>
             {heroHabit.status === "suggested" ? (
-              <>
+              <div key={activeTemplate.id} className="habit-reveal-stagger">
                 {/* Tap the eyebrow to cycle templates (demo/testing). */}
                 <p className="-mt-1 cursor-pointer text-center text-xs font-semibold uppercase tracking-wide text-primary transition active:opacity-60" role="button" aria-label="Next template (testing)" onClick={cycleTemplate}>Habit Builder</p>
                 <p className="mt-1 text-base font-semibold text-ink">{activeTemplate.title}</p>
@@ -2325,7 +2325,7 @@ export default function HomeScreen() {
                   <span className="text-ink/20">·</span>
                   <button type="button" className="text-xs font-medium text-ink/50 transition active:opacity-60" onClick={() => setHeroHabit((h) => ({ ...h, status: "hidden" }))}>No Thanks</button>
                 </div>
-              </>
+              </div>
             ) : heroHabit.status === "accepting" ? (
               <div className="text-center">
                 <p className="-mt-1 text-center text-xs font-semibold uppercase tracking-wide text-primary">Habit Builder</p>
