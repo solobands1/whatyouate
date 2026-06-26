@@ -2551,10 +2551,10 @@ export default function HomeScreen() {
                 </div>
               )
             ) : (
-              <>
-                <p className="text-base font-semibold text-ink">{welcomeMessage.greeting}{firstName ? `, ${firstName}` : ""}</p>
-                <p className="mt-1 text-xs text-muted/60">{welcomeMessage.sub}</p>
-              </>
+              <div className="text-center">
+                <p className="text-lg font-semibold text-ink">{welcomeMessage.greeting}{firstName ? `, ${firstName}` : ""}</p>
+                <p className="mt-1 text-sm text-muted/60">{welcomeMessage.sub}</p>
+              </div>
             )}
           </div>
 
