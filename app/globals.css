@@ -44,43 +44,19 @@ input, textarea, select {
   animation: cardFadeIn 180ms ease-out forwards;
 }
 
-/* Staggered reveal for the habit suggestion — each element rises/fades in just
-   after the last for a satisfying "building up" feel. Re-keyed per template so it
-   replays when a new habit is suggested. */
-@keyframes habitReveal {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+/* First habit prompt: a compact "Habit Builder" notification pops in (a soft
+   spring with a touch of overshoot), then the card expands smoothly to reveal the
+   suggestion. The expand itself is handled by a grid-rows transition in the JSX. */
+@keyframes habitNote {
+  0%   { opacity: 0; transform: translateY(-8px) scale(0.96); }
+  60%  { opacity: 1; transform: translateY(0) scale(1.015); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
 }
-.habit-reveal-stagger > * { animation: habitReveal 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
-.habit-reveal-stagger > *:nth-child(1) { animation-delay: 0.02s; }
-.habit-reveal-stagger > *:nth-child(2) { animation-delay: 0.09s; }
-.habit-reveal-stagger > *:nth-child(3) { animation-delay: 0.16s; }
-.habit-reveal-stagger > *:nth-child(4) { animation-delay: 0.23s; }
-.habit-reveal-stagger > *:nth-child(5) { animation-delay: 0.30s; }
-.habit-reveal-stagger > *:nth-child(6) { animation-delay: 0.37s; }
-.habit-reveal-stagger > *:nth-child(7) { animation-delay: 0.44s; }
-
-/* "Habit Builder" reveal curtain: a title card that settles in, holds, then lifts
-   away to reveal the suggestion. */
-@keyframes habitCurtain {
-  0%   { opacity: 0; transform: scale(0.97); }
-  18%  { opacity: 1; transform: scale(1); }
-  72%  { opacity: 1; transform: scale(1); }
-  100% { opacity: 0; transform: translateY(-10px) scale(1.01); }
-}
-.animate-habit-curtain { animation: habitCurtain 1.2s ease-in-out both; }
-
-@keyframes habitCurtainText {
-  from { opacity: 0; transform: translateY(6px); letter-spacing: 0.28em; }
-  to   { opacity: 1; transform: translateY(0); letter-spacing: 0.15em; }
-}
-.animate-habit-curtain-text { animation: habitCurtainText 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-habit-note { animation: habitNote 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
 
 @media (prefers-reduced-motion: reduce) {
   .animate-card-fade,
-  .habit-reveal-stagger > *,
-  .animate-habit-curtain,
-  .animate-habit-curtain-text {
+  .animate-habit-note {
     animation: none;
   }
 }
