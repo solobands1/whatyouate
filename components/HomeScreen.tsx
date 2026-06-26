@@ -1692,11 +1692,11 @@ export default function HomeScreen() {
 
   const welcomeMessage = (() => {
     const hasEverLogged = displayMeals.some((m) => m.analysisJson?.source !== "supplement" && m.status !== "failed");
-    if (!hasEverLogged) return { greeting: "Welcome!", sub: "Log Your First Meal" };
+    if (!hasEverLogged) return { greeting: "Welcome!", sub: "Log Your First Meal!" };
     const hour = new Date().getHours();
-    if (hour < 12) return { greeting: "Good Morning", sub: "Let's make today count" };
-    if (hour < 17) return { greeting: "Good Afternoon", sub: "Let's log and improve" };
-    return { greeting: "Good Evening", sub: "Better late than never" };
+    if (hour < 12) return { greeting: "Good Morning", sub: "Let's make today count!" };
+    if (hour < 17) return { greeting: "Good Afternoon", sub: "Let's log and improve!" };
+    return { greeting: "Good Evening", sub: "Better late than never!" };
   })();
   const firstName = profile?.firstName || (user as { user_metadata?: Record<string, string> })?.user_metadata?.first_name || "";
 
