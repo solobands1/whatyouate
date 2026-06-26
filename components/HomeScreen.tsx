@@ -2416,6 +2416,21 @@ export default function HomeScreen() {
                         );
                       })}
                     </div>
+                    {activeTemplate.ideas && activeTemplate.ideas.length > 0 && (
+                      <div className="mt-3">
+                        <button type="button" onClick={() => setShowHabitIdeas((v) => !v)} className="inline-flex items-center gap-1 text-xs font-semibold text-primary/80 transition active:opacity-60">
+                          What Helps?
+                          <svg viewBox="0 0 24 24" className={`h-3 w-3 transition-transform ${showHabitIdeas ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
+                        </button>
+                        {showHabitIdeas && (
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            {activeTemplate.ideas.map((f) => (
+                              <span key={f} className="rounded-full border border-primary/15 bg-primary/[0.05] px-2.5 py-1 text-[11px] text-ink/70">{f}</span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
                     <div className="mt-3 flex items-center justify-center gap-2">
                       {heroHabit.days.map((day, d) => {
                         const complete = day.every(Boolean);
