@@ -395,6 +395,7 @@ export default function HomeScreen() {
   );
   const [activeTemplate, setActiveTemplate] = useState<HabitTemplate>(FIRST_TEMPLATE);
   const [showHabitIdeas, setShowHabitIdeas] = useState(false);
+  const [habitCurtain, setHabitCurtain] = useState(true);
 
   // Surface the habits matching the user's feeling goal(s) first.
   const goalHabits = useMemo(() => habitsForGoals(profile?.feelingGoals), [profile?.feelingGoals]);
@@ -406,6 +407,16 @@ export default function HomeScreen() {
     setActiveTemplate(top);
     setHeroHabit({ status: "suggested", days: freshDays(top) });
   }, [profile, goalHabits]);
+
+  // Show the "Habit Builder" reveal curtain whenever a new habit is suggested, then
+  // lift it to reveal the suggestion.
+  useEffect(() => {
+    if (heroHabit.status !== "suggested") return;
+    setHabitCurtain(true);
+    const t = setTimeout(() => setHabitCurtain(false), 1200);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTemplate.id]);
 
   // Demo/testing: cycle to the next template and reset to its suggestion, so we
   // can eyeball how each one renders (different checkpoints, durations, copy).
@@ -2292,6 +2303,12 @@ export default function HomeScreen() {
           {/* Hero — dynamic slot. Priority: active habit builder > suggestion > reflection reminder > discovery > wins > greeting (default). Sample habit wired locally for now. */}
           <div className={`-mx-4 rounded-2xl border-2 border-primary/25 px-4 ${heroHabit.status === "done" || heroHabit.status === "accepting" ? "bg-primary/10" : "bg-primary/[0.05]"} ${heroHabit.status === "hidden" ? "py-7" : heroHabit.status === "done" && doneStep === "rested" ? "pt-5 pb-3" : "py-5"} ${heroHabit.status === "done" && (doneStep === "celebrate" || doneStep === "feedback") ? "animate-habit-built" : ""} ${(heroHabit.status === "done" && doneStep === "rested") || heroHabit.status === "accepting" ? "animate-habit-glow" : ""} ${heroHabit.status === "active" && heroHabit.holdDay != null ? "animate-habit-shimmer" : ""}`}>
             {heroHabit.status === "suggested" ? (
+              habitCurtain ? (
+                <div className="animate-habit-curtain flex flex-col items-center justify-center text-center" style={{ minHeight: 220 }}>
+                  <svg viewBox="0 0 24 24" className="mb-2 h-6 w-6 text-primary/70" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1" /></svg>
+                  <span className="animate-habit-curtain-text text-sm font-semibold uppercase tracking-[0.15em] text-primary">Habit Builder</span>
+                </div>
+              ) : (
               <div key={activeTemplate.id} className="habit-reveal-stagger">
                 {/* Tap the eyebrow to cycle templates (demo/testing). */}
                 <p className="-mt-1 cursor-pointer text-center text-xs font-semibold uppercase tracking-wide text-primary transition active:opacity-60" role="button" aria-label="Next template (testing)" onClick={cycleTemplate}>Habit Builder</p>
@@ -2326,6 +2343,7 @@ export default function HomeScreen() {
                   <button type="button" className="text-xs font-medium text-ink/50 transition active:opacity-60" onClick={() => setHeroHabit((h) => ({ ...h, status: "hidden" }))}>No Thanks</button>
                 </div>
               </div>
+              )
             ) : heroHabit.status === "accepting" ? (
               <div className="text-center">
                 <p className="-mt-1 text-center text-xs font-semibold uppercase tracking-wide text-primary">Habit Builder</p>

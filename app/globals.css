@@ -60,9 +60,27 @@ input, textarea, select {
 .habit-reveal-stagger > *:nth-child(6) { animation-delay: 0.37s; }
 .habit-reveal-stagger > *:nth-child(7) { animation-delay: 0.44s; }
 
+/* "Habit Builder" reveal curtain: a title card that settles in, holds, then lifts
+   away to reveal the suggestion. */
+@keyframes habitCurtain {
+  0%   { opacity: 0; transform: scale(0.97); }
+  18%  { opacity: 1; transform: scale(1); }
+  72%  { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: translateY(-10px) scale(1.01); }
+}
+.animate-habit-curtain { animation: habitCurtain 1.2s ease-in-out both; }
+
+@keyframes habitCurtainText {
+  from { opacity: 0; transform: translateY(6px); letter-spacing: 0.28em; }
+  to   { opacity: 1; transform: translateY(0); letter-spacing: 0.15em; }
+}
+.animate-habit-curtain-text { animation: habitCurtainText 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
 @media (prefers-reduced-motion: reduce) {
   .animate-card-fade,
-  .habit-reveal-stagger > * {
+  .habit-reveal-stagger > *,
+  .animate-habit-curtain,
+  .animate-habit-curtain-text {
     animation: none;
   }
 }
