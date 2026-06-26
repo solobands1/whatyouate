@@ -2498,10 +2498,10 @@ export default function HomeScreen() {
                     <p className="mt-2 text-center text-[11px] text-ink/55">Tap each one as you complete it.</p>
                     {/* Small and tucked into the bottom-right so it stays out of the way of the check-in. */}
                     {activeTemplate.ideas && activeTemplate.ideas.length > 0 && (
-                      <div className="mt-2 flex flex-col items-end">
+                      <div className="-mt-1 flex flex-col items-end">
                         <button type="button" onClick={() => setShowHabitIdeas((v) => !v)} className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary/70 transition active:opacity-60">
-                          What Helps?
                           <svg viewBox="0 0 24 24" className={`h-2.5 w-2.5 transition-transform ${showHabitIdeas ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
+                          What Helps?
                         </button>
                         {showHabitIdeas && (
                           <div className="mt-2 flex flex-wrap justify-end gap-1.5">
