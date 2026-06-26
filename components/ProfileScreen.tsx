@@ -8,6 +8,7 @@ import { notifyProfileUpdated } from "../lib/dataEvents";
 import type { ActivityLevel, FeelingGoal, GoalDirection, SupplementEntry, SupplementNutrient, Units, UserProfile } from "../lib/types";
 import { suppLabel, suppName } from "../lib/types";
 import { matchSupplementNutrients, NUTRIENT_UNITS, NUTRIENT_DISPLAY_NAMES } from "../lib/rda";
+import { HABIT_TEMPLATES } from "../lib/habits";
 import { clearAllData, saveProfile, saveDailySupplements, clearProfileCache, addWeightLog, LOCAL_MODE } from "../lib/supabaseDb";
 import { getDailySupplements, setDailySupplements, clearDailySuppsLoggedToday, clearAllFoodCaches } from "../lib/foodCache";
 import { clearMealsCache } from "../lib/supabaseDb";
@@ -55,6 +56,7 @@ export default function ProfileScreen() {
   const initialWeightKgRef = useRef<number | null>(null);
   const [mounted, setMounted] = useState(false);
   const [showWeightHistory, setShowWeightHistory] = useState(false);
+  const [habitPreviewIdx, setHabitPreviewIdx] = useState(0);
   const profileTapCount = useRef(0);
   const profileTapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -1393,6 +1395,55 @@ export default function ProfileScreen() {
           >
             Replay Walkthrough
           </button>
+        </Card>
+
+        {/* Testing-only: browse every habit builder so the copy can be tweaked. */}
+        <Card className="mt-6">
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Habit Builders · Testing</p>
+            <span className="text-[11px] text-muted/60">{habitPreviewIdx + 1} of {HABIT_TEMPLATES.length}</span>
+          </div>
+          <p className="mt-1 text-[11px] text-muted/50">Browse every template to review and tweak the wording.</p>
+          {(() => {
+            const ht = HABIT_TEMPLATES[habitPreviewIdx];
+            return (
+              <div className="mt-3 rounded-2xl border-2 border-primary/25 bg-primary/[0.05] px-4 py-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-primary">Habit Builder</p>
+                  <span className="rounded-full bg-ink/5 px-2 py-0.5 text-[10px] font-medium text-ink/50">{ht.category}</span>
+                </div>
+                <p className="mt-1 text-base font-semibold text-ink">{ht.title}</p>
+                <p className="mt-0.5 text-[13px] text-ink/70">{ht.ask}</p>
+                <p className="mt-2 text-xs leading-relaxed text-ink/80"><span className="font-semibold text-ink">Why: </span>{ht.whyTemplate}</p>
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {ht.checkpoints.map((c) => (
+                    <span key={c} className="rounded-xl border-2 border-primary/30 bg-white px-2.5 py-1 text-[11px] font-semibold text-ink/70">{c}</span>
+                  ))}
+                </div>
+                {ht.ideas && ht.ideas.length > 0 && (
+                  <div className="mt-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-muted/50">What Helps</p>
+                    <div className="mt-1.5 flex flex-wrap gap-1.5">
+                      {ht.ideas.map((f) => (
+                        <span key={f} className="rounded-full border border-primary/15 bg-primary/[0.05] px-2.5 py-1 text-[11px] text-ink/70">{f}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[10px] text-muted/50">
+                  <span className="rounded bg-ink/5 px-1.5 py-0.5">{ht.durationDays}-day</span>
+                  <span className="rounded bg-ink/5 px-1.5 py-0.5">{ht.checkpoints.length} check-in{ht.checkpoints.length !== 1 ? "s" : ""}/day</span>
+                  <span className="rounded bg-ink/5 px-1.5 py-0.5">{ht.friction} friction</span>
+                  {ht.goalDirections && <span className="rounded bg-ink/5 px-1.5 py-0.5">goal: {ht.goalDirections.join(", ")}</span>}
+                  <span className="rounded bg-ink/5 px-1.5 py-0.5 font-mono">{ht.id}</span>
+                </div>
+              </div>
+            );
+          })()}
+          <div className="mt-3 flex items-center gap-3">
+            <button type="button" className="flex-1 rounded-xl border border-ink/10 bg-ink/5 px-4 py-2 text-xs font-semibold text-ink/70 transition active:opacity-60" onClick={() => setHabitPreviewIdx((i) => (i - 1 + HABIT_TEMPLATES.length) % HABIT_TEMPLATES.length)}>← Prev</button>
+            <button type="button" className="flex-1 rounded-xl border border-ink/10 bg-ink/5 px-4 py-2 text-xs font-semibold text-ink/70 transition active:opacity-60" onClick={() => setHabitPreviewIdx((i) => (i + 1) % HABIT_TEMPLATES.length)}>Next →</button>
+          </div>
         </Card>
 
         <div className="mt-8 px-1">

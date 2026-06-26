@@ -2496,15 +2496,15 @@ export default function HomeScreen() {
                       })}
                     </div>
                     <p className="mt-2 text-center text-[11px] text-ink/55">Tap each one as you complete it.</p>
-                    {/* What Helps lives below the dots so expanding it never pushes them down. */}
+                    {/* Small and tucked into the bottom-right so it stays out of the way of the check-in. */}
                     {activeTemplate.ideas && activeTemplate.ideas.length > 0 && (
-                      <div className="mt-3 text-center">
-                        <button type="button" onClick={() => setShowHabitIdeas((v) => !v)} className="inline-flex items-center gap-1 text-xs font-semibold text-primary/80 transition active:opacity-60">
+                      <div className="mt-2 flex flex-col items-end">
+                        <button type="button" onClick={() => setShowHabitIdeas((v) => !v)} className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary/70 transition active:opacity-60">
                           What Helps?
-                          <svg viewBox="0 0 24 24" className={`h-3 w-3 transition-transform ${showHabitIdeas ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
+                          <svg viewBox="0 0 24 24" className={`h-2.5 w-2.5 transition-transform ${showHabitIdeas ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
                         </button>
                         {showHabitIdeas && (
-                          <div className="mt-2 flex flex-wrap justify-center gap-1.5">
+                          <div className="mt-2 flex flex-wrap justify-end gap-1.5">
                             {activeTemplate.ideas.map((f) => (
                               <span key={f} className="rounded-full border border-primary/15 bg-primary/[0.05] px-2.5 py-1 text-[11px] text-ink/70">{f}</span>
                             ))}
