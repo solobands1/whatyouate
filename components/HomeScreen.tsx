@@ -470,17 +470,19 @@ export default function HomeScreen() {
     if (heroRevealedRef.current) return;
     if (heroHabit.status !== "suggested") return;
     heroRevealedRef.current = true;
-    // Hold on the solo "Habit Builder" title long enough for the attention beat to
-    // land before the card expands.
-    const t = setTimeout(() => setHeroExpanded(true), 1500);
-    return () => clearTimeout(t);
+    // First-appearance sequence: card shimmers + title bounces on mount (CSS), then a
+    // solo border pulse, then the card expands (which pulses its border again).
+    const tPulse = setTimeout(() => setHeroPulse(true), 800);
+    const tPulseOff = setTimeout(() => setHeroPulse(false), 2050);
+    const tExpand = setTimeout(() => setHeroExpanded(true), 1700);
+    return () => { clearTimeout(tPulse); clearTimeout(tPulseOff); clearTimeout(tExpand); };
   }, [heroHabit.status]);
 
-  // Once the card finishes dropping down, pulse its border like a finished habit.
+  // Once the card finishes dropping down, pulse its border again like a finished habit.
   useEffect(() => {
     if (!heroExpanded) return;
-    const t1 = setTimeout(() => setHeroPulse(true), 620);
-    const t2 = setTimeout(() => setHeroPulse(false), 620 + 1500);
+    const t1 = setTimeout(() => setHeroPulse(true), 700);
+    const t2 = setTimeout(() => setHeroPulse(false), 700 + 1500);
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [heroExpanded]);
 
@@ -2382,22 +2384,14 @@ export default function HomeScreen() {
 
         <Card className="mt-2">
           {/* Hero — dynamic slot. Priority: active habit builder > suggestion > reflection reminder > discovery > wins > greeting (default). Sample habit wired locally for now. */}
-          <div className={`-mx-4 rounded-2xl border-2 border-primary/25 px-4 ${heroHabit.status === "done" || heroHabit.status === "accepting" ? "bg-primary/10" : "bg-primary/[0.05]"} ${heroHabit.status === "hidden" ? "py-7" : heroHabit.status === "done" && doneStep === "rested" ? "pt-5 pb-3" : "py-5"} ${heroHabit.status === "done" && (doneStep === "celebrate" || doneStep === "feedback") ? "animate-habit-built" : ""} ${(heroHabit.status === "done" && doneStep === "rested") || heroHabit.status === "accepting" ? "animate-habit-glow" : ""} ${heroHabit.status === "active" && heroHabit.holdDay != null ? "animate-habit-shimmer" : ""} ${heroPulse ? "animate-card-pulse" : ""}`}>
+          <div className={`-mx-4 rounded-2xl border-2 border-primary/25 px-4 ${heroHabit.status === "done" || heroHabit.status === "accepting" ? "bg-primary/10" : "bg-primary/[0.05]"} ${heroHabit.status === "hidden" ? "py-7" : heroHabit.status === "done" && doneStep === "rested" ? "pt-5 pb-3" : "py-5"} ${heroHabit.status === "done" && (doneStep === "celebrate" || doneStep === "feedback") ? "animate-habit-built" : ""} ${(heroHabit.status === "done" && doneStep === "rested") || heroHabit.status === "accepting" ? "animate-habit-glow" : ""} ${(heroHabit.status === "active" && heroHabit.holdDay != null) || (heroHabit.status === "suggested" && !heroExpanded) ? "animate-habit-shimmer" : ""} ${heroPulse ? "animate-card-pulse" : ""}`}>
             {heroHabit.status === "suggested" ? (
               <div className={heroExpanded ? "" : "animate-habit-note"}>
-                {/* Solo "notification" moment: sparkles + a pulse draw the eye to the new
-                    Habit Builder before it expands. Tap the eyebrow to cycle (demo/testing). */}
-                <div className="-mt-1 flex items-center justify-center gap-1.5">
-                  {!heroExpanded && (
-                    <svg viewBox="0 0 24 24" className="animate-habit-spark h-3 w-3 text-primary" fill="currentColor"><path d="M12 2l1.5 6.5L20 10l-6.5 1.5L12 18l-1.5-6.5L4 10l6.5-1.5z" /></svg>
-                  )}
-                  <p className={`cursor-pointer text-center text-xs font-semibold uppercase tracking-wide text-primary transition active:opacity-60 ${heroExpanded ? "" : "animate-habit-attention"}`} role="button" aria-label="Next template (testing)" onClick={cycleTemplate}>Habit Builder</p>
-                  {!heroExpanded && (
-                    <svg viewBox="0 0 24 24" className="animate-habit-spark h-3 w-3 text-primary" style={{ animationDelay: "0.55s" }} fill="currentColor"><path d="M12 2l1.5 6.5L20 10l-6.5 1.5L12 18l-1.5-6.5L4 10l6.5-1.5z" /></svg>
-                  )}
-                </div>
+                {/* Tap the eyebrow to cycle templates (demo/testing). On first appearance
+                    the word bounces once while the card shimmers. */}
+                <p className={`-mt-1 cursor-pointer text-center text-xs font-semibold uppercase tracking-wide text-primary transition active:opacity-60 ${heroExpanded ? "" : "animate-habit-bounce"}`} role="button" aria-label="Next template (testing)" onClick={cycleTemplate}>Habit Builder</p>
                 {/* Collapsed "notification" expands smoothly into the full card. */}
-                <div className={`grid transition-all duration-[600ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${heroExpanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
+                <div className={`grid transition-all duration-[800ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${heroExpanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
                   <div className="min-h-0 overflow-hidden">
                     <p className="mt-1 text-base font-semibold text-ink">{activeTemplate.title}</p>
                     <p className="mt-0.5 text-[13px] text-ink/70">{activeTemplate.ask}</p>
