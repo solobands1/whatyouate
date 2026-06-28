@@ -1031,7 +1031,7 @@ export default function SummaryScreen() {
           <div className="mt-3 flex items-start justify-between">
             {last7Days.map((day, i) => (
               <div key={day.key} className="flex flex-col items-center gap-1.5">
-                <div className={`h-2.5 w-2.5 rounded-full ${(isDemoMode ? [true,true,false,true,true,true,false][i] : day.logged) ? "bg-primary/70" : "bg-ink/10"}`} />
+                <div className={`h-2.5 w-2.5 rounded-full ${(isDemoMode ? [true,true,false,true,true,true,false][i] : day.logged) ? "bg-primary/70" : "bg-ink/10"}`} style={{ opacity: hydrated ? 1 : 0, transform: hydrated ? "scale(1)" : "scale(0.3)", transition: `opacity 500ms ease ${250 + i * 70}ms, transform 500ms cubic-bezier(0.34,1.56,0.64,1) ${250 + i * 70}ms` }} />
                 <p className={`text-[10px] ${day.isToday ? "font-bold text-ink/80" : "text-muted/60"}`}>{day.label}</p>
               </div>
             ))}
@@ -1170,7 +1170,7 @@ export default function SummaryScreen() {
                 </div>
                 <div className="mt-4">
                   {builtHabits.map((h, i) => (
-                    <div key={h.title} className="relative flex gap-3 pb-4 last:pb-0">
+                    <div key={h.title} className="relative flex gap-3 pb-4 last:pb-0" style={{ opacity: hydrated ? 1 : 0, transform: hydrated ? "translateY(0)" : "translateY(10px)", transition: `opacity 500ms ease ${450 + i * 130}ms, transform 500ms cubic-bezier(0.22,1,0.36,1) ${450 + i * 130}ms` }}>
                       <div className="relative flex flex-col items-center">
                         <span className="z-10 flex h-7 w-7 items-center justify-center rounded-full border-2 border-primary/40 bg-primary/15 text-primary">
                           <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l4 4L19 7" /></svg>
