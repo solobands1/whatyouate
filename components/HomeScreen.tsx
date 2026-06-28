@@ -466,6 +466,14 @@ export default function HomeScreen() {
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [heroExpanded]);
 
+  // Auto-collapse the "What Helps?" list 20s after it opens (also closed on reload,
+  // since the state resets).
+  useEffect(() => {
+    if (!showHabitIdeas) return;
+    const t = setTimeout(() => setShowHabitIdeas(false), 20000);
+    return () => clearTimeout(t);
+  }, [showHabitIdeas]);
+
   // Demo/testing: cycle to the next template and reset to its suggestion, so we
   // can eyeball how each one renders (different checkpoints, durations, copy).
   const cycleTemplate = () => {
