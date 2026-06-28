@@ -1,6 +1,7 @@
 import { supabase } from "./supabaseClient";
 import { LOCAL_MODE } from "./config";
 import type { MealAnalysis, MealLog, SupplementEntry, UserProfile, WorkoutSession } from "./types";
+import type { HabitState, HabitHistoryEntry, ReflectionEntry } from "./habitState";
 import { approxFromRange } from "./utils";
 import { safeFallbackAnalysis } from "./ai/schema";
 
@@ -299,6 +300,77 @@ export async function upsertWaterLog(userId: string, dayKey: string, ml: number)
     waterLogsCache.set(userId, updated);
     await supabase.from("profiles").upsert(
       { user_id: userId, water_logs_json: updated, updated_at: new Date().toISOString() },
+      { onConflict: "user_id" }
+    );
+  } catch {}
+}
+
+// ── Habit builder + nightly reflection persistence ─────────────────────────
+const habitStateCache = new Map<string, HabitState | null>();
+const habitHistoryCache = new Map<string, HabitHistoryEntry[]>();
+const reflectionsCache = new Map<string, ReflectionEntry[]>();
+
+export async function fetchHabitState(userId: string): Promise<HabitState | null> {
+  if (useMemory) return habitStateCache.get(userId) ?? null;
+  try {
+    const { data } = await supabase.from("profiles").select("habit_state_json").eq("user_id", userId).single();
+    const state = (data?.habit_state_json as HabitState | null) ?? null;
+    habitStateCache.set(userId, state);
+    return state;
+  } catch { return null; }
+}
+
+export async function saveHabitState(userId: string, state: HabitState | null): Promise<void> {
+  habitStateCache.set(userId, state);
+  if (useMemory) return;
+  try {
+    await supabase.from("profiles").upsert(
+      { user_id: userId, habit_state_json: state, updated_at: new Date().toISOString() },
+      { onConflict: "user_id" }
+    );
+  } catch {}
+}
+
+export async function fetchHabitHistory(userId: string): Promise<HabitHistoryEntry[]> {
+  if (useMemory) return habitHistoryCache.get(userId) ?? [];
+  try {
+    const { data } = await supabase.from("profiles").select("habit_history_json").eq("user_id", userId).single();
+    const h = Array.isArray(data?.habit_history_json) ? (data!.habit_history_json as HabitHistoryEntry[]) : [];
+    habitHistoryCache.set(userId, h);
+    return h;
+  } catch { return []; }
+}
+
+export async function saveHabitHistory(userId: string, history: HabitHistoryEntry[]): Promise<void> {
+  habitHistoryCache.set(userId, history);
+  if (useMemory) return;
+  try {
+    await supabase.from("profiles").upsert(
+      { user_id: userId, habit_history_json: history, updated_at: new Date().toISOString() },
+      { onConflict: "user_id" }
+    );
+  } catch {}
+}
+
+export async function fetchReflections(userId: string): Promise<ReflectionEntry[]> {
+  if (useMemory) return reflectionsCache.get(userId) ?? [];
+  try {
+    const { data } = await supabase.from("profiles").select("reflections_json").eq("user_id", userId).single();
+    const r = Array.isArray(data?.reflections_json) ? (data!.reflections_json as ReflectionEntry[]) : [];
+    reflectionsCache.set(userId, r);
+    return r;
+  } catch { return []; }
+}
+
+// Upsert a reflection, replacing any existing entry for the same day (one per day).
+export async function addReflection(userId: string, entry: ReflectionEntry): Promise<void> {
+  const current = reflectionsCache.has(userId) ? reflectionsCache.get(userId)! : await fetchReflections(userId);
+  const updated = [entry, ...current.filter((e) => e.date !== entry.date)];
+  reflectionsCache.set(userId, updated);
+  if (useMemory) return;
+  try {
+    await supabase.from("profiles").upsert(
+      { user_id: userId, reflections_json: updated, updated_at: new Date().toISOString() },
       { onConflict: "user_id" }
     );
   } catch {}
