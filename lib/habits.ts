@@ -276,7 +276,7 @@ export const HABIT_TEMPLATES: HabitTemplate[] = [
     friction: "low", priorityWeight: 6, cooldownDays: 21, maxExtensions: 2,
   },
 
-  // ---------- weight goals (body-goal targeted, surfaced via goalDirection) ----------
+  // ---------- weight goal: lose (gated to "lose", weight-framed) ----------
   {
     id: "smart-swap-3", kind: "standard", title: "Smart Swap", noun: "smart swaps", category: "balance",
     ask: "Swap one sugary drink or snack for a lighter option each day for 3 days. Sparkling water, fruit, or Greek yogurt all work.",
@@ -298,6 +298,36 @@ export const HABIT_TEMPLATES: HabitTemplate[] = [
     friction: "medium", priorityWeight: 6, cooldownDays: 21, maxExtensions: 2,
   },
   {
+    id: "protein-satiety-3", kind: "standard", title: "Protein To Stay Full", noun: "filling protein", category: "protein",
+    ask: "Add a protein to lunch and dinner for 3 days. Extra meat or beans, an egg, or a scoop of Greek yogurt.",
+    whyTemplate: "Protein is the most filling macronutrient, so leading with it keeps you satisfied on fewer calories and takes the edge off cravings later.",
+    durationDays: 3, checkpoints: ["Lunch Protein", "Dinner Protein"],
+    ideas: ["Eggs", "Greek Yogurt", "Chicken Breast", "Cottage Cheese", "Tuna", "Tofu", "Lentils", "Edamame", "Beans", "A Protein Shake"],
+    goalDirections: ["lose"],
+    triggers: [],
+    friction: "medium", priorityWeight: 7, cooldownDays: 14, maxExtensions: 2,
+  },
+  {
+    id: "water-before-meals-3", kind: "standard", title: "Water Before Meals", noun: "pre-meal water", category: "hydration",
+    ask: "Drink a glass of water before each main meal for 3 days. Right before you sit down.",
+    whyTemplate: "A glass of water before eating takes the edge off hunger, so you start the meal a little less ravenous and tend to stop sooner.",
+    durationDays: 3, checkpoints: ["Before Breakfast", "Before Lunch", "Before Dinner"],
+    goalDirections: ["lose"],
+    triggers: [],
+    friction: "low", priorityWeight: 6, cooldownDays: 14, maxExtensions: 2,
+  },
+  {
+    id: "slow-down-3", kind: "standard", title: "Slow Down", noun: "slower meals", category: "mind",
+    ask: "Slow down at one meal a day for 3 days. Put the fork down between bites and let the meal take longer.",
+    whyTemplate: "Fullness signals take about twenty minutes to reach your brain. Eating slower gives them time to land, so you notice you're satisfied before you overshoot.",
+    durationDays: 3, checkpoints: ["One Slow Meal"],
+    goalDirections: ["lose"],
+    triggers: [],
+    friction: "low", priorityWeight: 5, cooldownDays: 21, maxExtensions: 2,
+  },
+
+  // ---------- weight goal: gain (gated to "gain", weight-framed) ----------
+  {
     id: "calorie-snack-3", kind: "standard", title: "Add a Snack", noun: "extra snacks", category: "balance",
     ask: "Add one calorie-dense snack each day for 3 days. Nut butter, trail mix, whole milk, or a smoothie.",
     whyTemplate: "Gaining comes down to a small daily surplus. One extra nourishing snack is the easiest way to add it without forcing big meals.",
@@ -306,6 +336,35 @@ export const HABIT_TEMPLATES: HabitTemplate[] = [
     goalDirections: ["gain"],
     triggers: [],
     friction: "low", priorityWeight: 7, cooldownDays: 14, maxExtensions: 2,
+  },
+  {
+    id: "protein-build-3", kind: "standard", title: "Protein To Build On", noun: "muscle-building protein", category: "protein",
+    ask: "Add a protein to lunch and dinner for 3 days. Extra meat, fish, eggs, dairy, or a shake.",
+    whyTemplate: "Gaining well means building muscle, not just weight, and that takes steady protein. An extra serving at two meals gives your body what it needs to grow.",
+    durationDays: 3, checkpoints: ["Lunch Protein", "Dinner Protein"],
+    ideas: ["Eggs", "Greek Yogurt", "Chicken Breast", "Salmon", "Ground Beef", "Cottage Cheese", "A Protein Shake", "Milk", "Tofu", "Beans"],
+    goalDirections: ["gain"],
+    triggers: [],
+    friction: "medium", priorityWeight: 7, cooldownDays: 14, maxExtensions: 2,
+  },
+  {
+    id: "bigger-portions-3", kind: "standard", title: "Bigger Portions", noun: "bigger portions", category: "balance",
+    ask: "Add a little more to your plate at lunch and dinner for 3 days. A bigger scoop, an extra side, or seconds.",
+    whyTemplate: "Gaining comes down to a steady surplus. Slightly bigger portions are an easier way to get there than forcing whole extra meals.",
+    durationDays: 3, checkpoints: ["Bigger Lunch", "Bigger Dinner"],
+    goalDirections: ["gain"],
+    triggers: [],
+    friction: "low", priorityWeight: 6, cooldownDays: 14, maxExtensions: 2,
+  },
+  {
+    id: "gain-shake-3", kind: "standard", title: "Add a Shake", noun: "shakes", category: "protein",
+    ask: "Have a calorie-rich shake or smoothie once a day for 3 days. Milk, fruit, nut butter, oats, or a scoop of protein.",
+    whyTemplate: "Drinking calories is easier than eating them when appetite is the limit. A shake adds a solid hit of energy and protein without filling you up like a meal.",
+    durationDays: 3, checkpoints: ["Daily Shake"],
+    ideas: ["Whole Milk", "Banana", "Peanut Butter", "Oats", "Greek Yogurt", "A Protein Scoop", "Honey", "Frozen Berries", "Almond Butter", "Chia Seeds"],
+    goalDirections: ["gain"],
+    triggers: [],
+    friction: "low", priorityWeight: 6, cooldownDays: 14, maxExtensions: 2,
   },
 ];
 
