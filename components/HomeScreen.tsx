@@ -454,6 +454,9 @@ export default function HomeScreen() {
   const [showHabitIdeas, setShowHabitIdeas] = useState(false);
   const [heroExpanded, setHeroExpanded] = useState(false);
   const [heroPulse, setHeroPulse] = useState(false);
+  // False until the persisted habit state has loaded, so the hero enters once with the
+  // correct content (no flash of the default suggestion before an active builder).
+  const [habitLoaded, setHabitLoaded] = useState(false);
   const heroRevealedRef = useRef(false);
 
   // Surface the habits matching the user's feeling goal(s) first.
@@ -470,6 +473,7 @@ export default function HomeScreen() {
       const top = goalHabits[0];
       setActiveTemplate(top);
       setHeroHabit({ status: "suggested", days: freshDays(top) });
+      setHabitLoaded(true);
       return;
     }
     let cancelled = false;
@@ -493,6 +497,7 @@ export default function HomeScreen() {
           setHeroHabit((h) => ({ ...h, status: "hidden" }));
         }
       }
+      setHabitLoaded(true);
     })();
     return () => { cancelled = true; };
   }, [profile, goalHabits, user, isDemoMode]);
@@ -571,6 +576,7 @@ export default function HomeScreen() {
   // smoothly expand into the full card. Only runs once (later prompts/cycles are
   // already expanded).
   useEffect(() => {
+    if (!habitLoaded) return; // wait for the real state before any reveal
     if (heroRevealedRef.current) return;
     if (heroHabit.status !== "suggested") return;
     heroRevealedRef.current = true;
@@ -580,7 +586,7 @@ export default function HomeScreen() {
     const tPulseOff = setTimeout(() => setHeroPulse(false), 2050);
     const tExpand = setTimeout(() => setHeroExpanded(true), 1700);
     return () => { clearTimeout(tPulse); clearTimeout(tPulseOff); clearTimeout(tExpand); };
-  }, [heroHabit.status]);
+  }, [heroHabit.status, habitLoaded]);
 
   // Once the card finishes dropping down, pulse its border again like a finished habit.
   useEffect(() => {
@@ -2495,7 +2501,7 @@ export default function HomeScreen() {
           );
         })()}
 
-        <Card className="mt-2" style={riseIn(barsReady, 0)}>
+        <Card className="mt-2" style={riseIn(barsReady && habitLoaded, 0)}>
           {/* Hero — dynamic slot. Priority: active habit builder > suggestion > reflection reminder > discovery > wins > greeting (default). Sample habit wired locally for now. */}
           <div className={`-mx-4 rounded-2xl border-2 border-primary/25 px-4 ${heroHabit.status === "done" || heroHabit.status === "accepting" ? "bg-primary/10" : "bg-primary/[0.05]"} ${heroHabit.status === "hidden" ? "py-7" : heroHabit.status === "done" && doneStep === "rested" ? "pt-5 pb-3" : "py-5"} ${heroHabit.status === "done" && (doneStep === "celebrate" || doneStep === "feedback") ? "animate-habit-built" : ""} ${(heroHabit.status === "done" && doneStep === "rested") || heroHabit.status === "accepting" ? "animate-habit-glow" : ""} ${(heroHabit.status === "active" && heroHabit.holdDay != null) || (heroHabit.status === "suggested" && !heroExpanded) ? "animate-habit-shimmer" : ""} ${heroPulse ? "animate-card-pulse" : ""}`}>
             {heroHabit.status === "suggested" ? (
@@ -2879,7 +2885,7 @@ export default function HomeScreen() {
 
         {/* Reflection entry point. Demo: always shown. Real version: appears in the
             evening (after the night push / after ~6pm) and persists until done. */}
-        <div className="mt-2" style={riseIn(barsReady, 1)}>
+        <div className="mt-2" style={riseIn(barsReady && habitLoaded, 1)}>
           <button
             type="button"
             onClick={() => setShowReflection(true)}
@@ -2900,7 +2906,7 @@ export default function HomeScreen() {
           <p className="mt-3 text-center text-[11px] text-muted/60">Workout in progress</p>
         )}
 
-        <Card className="mt-2" style={riseIn(barsReady, 2)}>
+        <Card className="mt-2" style={riseIn(barsReady && habitLoaded, 2)}>
           <div className="flex items-start justify-between">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Recent</p>
             <div className="flex items-center gap-2">
