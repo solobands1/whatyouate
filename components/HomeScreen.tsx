@@ -21,7 +21,7 @@ import { supabase } from "../lib/supabaseClient";
 import "../lib/mealQueue";
 import BarcodeScannerOverlay from "./BarcodeScannerOverlay";
 import { getFoodCacheEntry, setFoodCacheEntry, deleteFoodCacheEntry, deleteFoodTextEntry, incrementFoodCacheLogCount, incrementFoodTextLogCount, getQuickAddFromMeals, addQuickAddRemoved, getDailySupplements, setDailySupplements, hasDailySuppsLoggedToday, markDailySuppsLoggedToday, clearDailySuppsLoggedToday, type QuickAddItem } from "../lib/foodCache";
-import { addFeelLog, deleteFeelLog, updateFeelLog, fetchWaterLogs, upsertWaterLog, addWeightLog, saveProfile, type FeelLog } from "../lib/supabaseDb";
+import { addFeelLog, deleteFeelLog, updateFeelLog, fetchWaterLogs, upsertWaterLog, addWeightLog, saveProfile, addReflection, fetchReflections, type FeelLog } from "../lib/supabaseDb";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
 import WaterBar from "./WaterBar";
@@ -428,20 +428,22 @@ export default function HomeScreen() {
   const [lastReflection, setLastReflection] = useState<{ reflection: Record<string, number | number[]>; note: string } | null>(null);
   const closeReflection = () => setShowReflection(false); // keeps progress for "Later"
   const finishReflection = () => {
-    // Remember a completed check-in so "Same As Last Night" can prefill it next time.
+    // Persist the completed check-in so it feeds the coach and "Same As Last Night".
     if (user && Object.keys(reflection).length > 0) {
-      const payload = { reflection, note: reflectionNote };
-      try { localStorage.setItem(`wya_last_reflection_${user.id}`, JSON.stringify(payload)); } catch {}
-      setLastReflection(payload);
+      setLastReflection({ reflection, note: reflectionNote });
+      void addReflection(user.id, { date: todayDateStr(), answers: reflection, note: reflectionNote, ts: Date.now() });
     }
     setShowReflection(false); setReflectionStep(0); setReflection({}); setReflectionNote("");
   };
   useEffect(() => {
     if (!user) return;
-    try {
-      const raw = localStorage.getItem(`wya_last_reflection_${user.id}`);
-      if (raw) setLastReflection(JSON.parse(raw));
-    } catch { /* ignore */ }
+    let cancelled = false;
+    fetchReflections(user.id).then((rows) => {
+      if (cancelled || rows.length === 0) return;
+      const latest = rows[0]; // addReflection keeps newest first
+      setLastReflection({ reflection: latest.answers, note: latest.note });
+    });
+    return () => { cancelled = true; };
   }, [user]);
   const [selectedFeelings, setSelectedFeelings] = useState<string[]>([]);
   const [heroHabit, setHeroHabit] = useState<{ status: "suggested" | "accepting" | "committed" | "active" | "dayComplete" | "done" | "missed" | "hidden"; days: boolean[][]; holdDay?: number | null }>(
