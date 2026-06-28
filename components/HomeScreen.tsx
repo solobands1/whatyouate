@@ -482,11 +482,16 @@ export default function HomeScreen() {
         setActiveTemplate(t);
         setHeroHabit({ status: state.builder.status, days: state.builder.days, holdDay: state.builder.holdDay ?? null });
       } else {
-        const ids = goalHabits.map((g) => g.id);
-        const suggestId = pickSuggestionId(state, ids) ?? ids[0];
-        const t = HABIT_TEMPLATES.find((x) => x.id === suggestId) ?? goalHabits[0];
-        setActiveTemplate(t);
-        setHeroHabit({ status: "suggested", days: freshDays(t) });
+        // Respect the breather/cooldown: only suggest when cadence says it's time.
+        // Otherwise show the greeting (no habit) rather than re-offering one.
+        const suggestId = pickSuggestionId(state, goalHabits.map((g) => g.id));
+        if (suggestId) {
+          const t = HABIT_TEMPLATES.find((x) => x.id === suggestId) ?? goalHabits[0];
+          setActiveTemplate(t);
+          setHeroHabit({ status: "suggested", days: freshDays(t) });
+        } else {
+          setHeroHabit((h) => ({ ...h, status: "hidden" }));
+        }
       }
     })();
     return () => { cancelled = true; };
@@ -497,6 +502,7 @@ export default function HomeScreen() {
   // suggestions are recomputed and completions are archived separately.
   useEffect(() => {
     if (!appliedGoalHabitRef.current || isDemoMode || !user) return;
+    if (heroHabit.status === "done") return; // the done effect is the sole writer for completion
     const persistable = ["committed", "active", "dayComplete", "missed"].includes(heroHabit.status);
     let builder: ActiveBuilder | null = null;
     if (persistable) {
@@ -523,6 +529,12 @@ export default function HomeScreen() {
     if (doneArchivedRef.current || isDemoMode || !user) return;
     doneArchivedRef.current = true;
     const tmpl = activeTemplate;
+    // 1. Clear the builder + start the breather immediately (sync), so a reload during
+    //    the celebration can't restart the habit.
+    const ended = endBuilderCompleted(habitStateRef.current, tmpl.id, tmpl.cooldownDays);
+    habitStateRef.current = ended;
+    void saveHabitState(user.id, ended);
+    // 2. Archive the completion (best-effort; keep answer patches it later).
     void (async () => {
       const entry: HabitHistoryEntry = {
         templateId: tmpl.id, title: tmpl.title, days: tmpl.durationDays,
@@ -530,9 +542,6 @@ export default function HomeScreen() {
       };
       const history = await fetchHabitHistory(user.id);
       await saveHabitHistory(user.id, [entry, ...history]);
-      const next = endBuilderCompleted(habitStateRef.current, tmpl.id, tmpl.cooldownDays);
-      habitStateRef.current = next;
-      await saveHabitState(user.id, next);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [heroHabit.status, isDemoMode, user]);
@@ -1491,14 +1500,23 @@ export default function HomeScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ctxMeals?.length, ctxFeelLogs?.length, activeTemplate, heroHabit.status, heroHabit.holdDay]);
 
+  // Celebrations should only fire on a live transition, never when a persisted
+  // dayComplete/done state is restored on reload. Arm shortly after mount so the
+  // first (restore) render is skipped.
+  const celebrationArmedRef = useRef(false);
+  useEffect(() => {
+    const t = setTimeout(() => { celebrationArmedRef.current = true; }, 200);
+    return () => clearTimeout(t);
+  }, []);
+
   // Haptic + chime on the two celebration beats. (Haptics fire only in the app.)
   // Daily: when the "Done For Today" confirmation appears for a mid-habit day.
   useEffect(() => {
-    if (heroHabit.status === "dayComplete") celebrateDaily();
+    if (celebrationArmedRef.current && heroHabit.status === "dayComplete") celebrateDaily();
   }, [heroHabit.status]);
   // Final day: the daily beat on "dayDone", the big one on "celebrate".
   useEffect(() => {
-    if (heroHabit.status !== "done") return;
+    if (!celebrationArmedRef.current || heroHabit.status !== "done") return;
     if (doneStep === "dayDone") celebrateDaily();
     else if (doneStep === "celebrate") celebrateBuilt();
   }, [heroHabit.status, doneStep]);
