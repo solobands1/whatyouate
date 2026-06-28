@@ -81,7 +81,7 @@ input, textarea, select {
 .animate-clock-wind {
   transform-box: view-box;
   transform-origin: 12px 12px;
-  animation: clockWind 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: clockWind 2.5s cubic-bezier(0.33, 0, 0.2, 1) both;
 }
 
 /* Nightly check-in moon: rises in (plain circle, no glow), then breathes gently. */
