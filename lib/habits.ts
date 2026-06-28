@@ -209,7 +209,7 @@ export const HABIT_TEMPLATES: HabitTemplate[] = [
   {
     id: "wind-down-3", kind: "standard", title: "Wind Down", noun: "winding down", category: "sleep",
     ask: "Put your screens away 30 minutes before bed for 3 days. Read, stretch, or just sit instead.",
-    whyTemplate: "Winding down screen-free helps you fall asleep faster, and it needs nothing to track.",
+    whyTemplate: "Screens keep your brain alert right when it should be powering down. Winding down without them helps you fall asleep faster, and you'll often feel it the very first night.",
     durationDays: 3, checkpoints: ["Screens Off Early"],
     triggers: [{ signal: "energy_low_count", op: ">=", value: 2, windowDays: 7, minDataDays: 3 }],
     friction: "low", priorityWeight: 7, cooldownDays: 21, maxExtensions: 2,
