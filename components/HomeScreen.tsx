@@ -2406,7 +2406,7 @@ export default function HomeScreen() {
                         {showHabitIdeas && (
                           <div className="mt-2 flex flex-wrap gap-1.5">
                             {activeTemplate.ideas.map((f) => (
-                              <span key={f} className="rounded-full border border-primary/15 bg-primary/[0.05] px-2.5 py-1 text-[11px] text-ink/70">{f}</span>
+                              <span key={f} className="flex-1 whitespace-nowrap rounded-full border border-primary/15 bg-primary/[0.05] px-2.5 py-1 text-center text-[11px] text-ink/70">{f}</span>
                             ))}
                           </div>
                         )}
@@ -2534,9 +2534,9 @@ export default function HomeScreen() {
                           What Helps?
                         </button>
                         {showHabitIdeas && (
-                          <div className="mt-2 flex flex-wrap justify-end gap-1.5">
+                          <div className="mt-2 flex w-full flex-wrap gap-1.5">
                             {activeTemplate.ideas.map((f) => (
-                              <span key={f} className="rounded-full border border-primary/15 bg-primary/[0.05] px-2.5 py-1 text-[11px] text-ink/70">{f}</span>
+                              <span key={f} className="flex-1 whitespace-nowrap rounded-full border border-primary/15 bg-primary/[0.05] px-2.5 py-1 text-center text-[11px] text-ink/70">{f}</span>
                             ))}
                           </div>
                         )}
