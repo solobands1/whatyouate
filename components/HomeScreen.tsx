@@ -26,6 +26,7 @@ import { EMPTY_HABIT_STATE, pickSuggestionId, snoozeSuggestion, declineSuggestio
 import BottomNav from "./BottomNav";
 import Card from "./Card";
 import WaterBar from "./WaterBar";
+import WyaaAvatar from "./WyaaAvatar";
 import { useAuth } from "./AuthProvider";
 import { useAppData } from "./AppDataProvider";
 import {
@@ -283,7 +284,7 @@ function ManualDateRow({ manualDate, setManualDate }: { manualDate: string; setM
 export default function HomeScreen() {
   const router = useRouter();
   const { user, loading } = useAuth();
-  const { profile: ctxProfile, meals: ctxMeals, workouts: ctxWorkouts, feelLogs: ctxFeelLogs, weightLogs: ctxWeightLogs, setWeightLogs, loading: dataLoading, reload } = useAppData();
+  const { profile: ctxProfile, meals: ctxMeals, workouts: ctxWorkouts, feelLogs: ctxFeelLogs, weightLogs: ctxWeightLogs, setWeightLogs, nudges, nudgesLoaded, loading: dataLoading, reload } = useAppData();
 
   const [profile, setProfile] = useState<UserProfile | undefined>(undefined);
 
@@ -466,6 +467,21 @@ export default function HomeScreen() {
 
   // Surface the habits matching the user's feeling goal(s) first.
   const goalHabits = useMemo(() => habitsForGoals(profile?.feelingGoals, profile?.goalDirection), [profile?.feelingGoals, profile?.goalDirection]);
+
+  // The current coach nudge (today's, or yesterday's before 2am) — shown in the hero
+  // whenever no habit builder is occupying it. Mirrors the Insights selection.
+  const currentWindowNudge = useMemo(() => {
+    if (!nudgesLoaded || (ctxMeals?.length ?? 0) < 5) return null;
+    const now = new Date();
+    const todayStr = todayKey();
+    const yesterday = new Date(now); yesterday.setDate(yesterday.getDate() - 1);
+    const mostRecent = nudges[0];
+    if (!mostRecent?.created_at) return null;
+    const nudgeDate = todayKey(new Date(mostRecent.created_at));
+    if (nudgeDate === todayStr) return mostRecent;
+    if (nudgeDate === todayKey(yesterday) && now.getHours() < 2) return mostRecent;
+    return null;
+  }, [nudgesLoaded, nudges, ctxMeals?.length]);
   const appliedGoalHabitRef = useRef(false);
   // Mirror of the persisted habit state, kept in a ref so the save/cadence effects
   // can read the latest without re-running on it.
@@ -2808,6 +2824,22 @@ export default function HomeScreen() {
                   </div>
                 </div>
               )
+            ) : currentWindowNudge && !trial.isFree && !isDemoMode ? (
+              // No habit builder in the slot: hold the current coach nudge instead of the
+              // greeting. The greeting only shows in the gap before today's nudge exists.
+              <div>
+                <div className="flex items-start gap-3 text-left">
+                  <WyaaAvatar size={40} />
+                  <p className="flex-1 text-[15px] leading-relaxed text-ink/90">{currentWindowNudge.message.replace(/\n+/g, " ")}</p>
+                </div>
+                <div className="mt-3 flex items-center justify-between">
+                  <span className="text-[11px] font-medium text-primary/70">— Coach</span>
+                  <button type="button" onClick={startHabitManually} className="inline-flex items-center gap-1 text-xs font-semibold text-primary/80 transition active:opacity-60">
+                    Start a Habit
+                    <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
+                  </button>
+                </div>
+              </div>
             ) : (
               <div className="text-center">
                 <p className="text-lg font-semibold text-ink">{welcomeMessage.greeting}{firstName ? `, ${firstName}` : ""}</p>
