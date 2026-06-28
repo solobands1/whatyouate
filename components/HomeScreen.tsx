@@ -2429,7 +2429,7 @@ export default function HomeScreen() {
                 <p className="-mt-1 text-center text-xs font-semibold uppercase tracking-wide text-primary">Habit Builder</p>
                 <div className="flex flex-col items-center py-1">
                   <span className="mt-1.5 flex h-12 w-12 items-center justify-center rounded-full bg-primary/15 text-primary">
-                    <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7.5V12l3 1.5" /></svg>
+                    <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><g className="animate-clock-wind"><path d="M12 7.5V12l3 1.5" /></g></svg>
                   </span>
                   <p className="mt-1.5 text-base font-semibold text-ink">Starts Tomorrow</p>
                   <p className="mt-1 text-[13px] leading-relaxed text-ink/70">{activeTemplate.title}. We&apos;ll nudge you in the morning to begin.</p>
@@ -4309,8 +4309,8 @@ export default function HomeScreen() {
 
               {atIntro && (
                 <div className="flex flex-1 flex-col items-center justify-center px-2 pb-[10vh] text-center">
-                  <span className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/15 text-primary">
-                    <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
+                  <span className="animate-moon-glow flex h-16 w-16 items-center justify-center rounded-full bg-primary/15 text-primary">
+                    <svg viewBox="0 0 24 24" className="animate-moon-float h-8 w-8" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
                   </span>
                   <h1 className="mt-5 text-2xl font-semibold text-ink">Your Nightly Check-In</h1>
                   <p className="mt-3 max-w-xs text-sm leading-relaxed text-ink/70">A quick look back at your day. It takes under a minute, and it&apos;s how your coach learns what lifts your energy and what drags it down.</p>
