@@ -551,6 +551,9 @@ export default function HomeScreen() {
     doneHandledRef.current = true;
     const tmpl = activeTemplate;
     const prev = habitStateRef.current.builder;
+    // Only persist on a live completion. If the builder is already "done" (restored on
+    // reload), do nothing — otherwise finishedAt + the breather would reset every load.
+    if (prev?.status === "done" && prev.templateId === tmpl.id) return;
     const startedAt = prev && prev.templateId === tmpl.id ? prev.startedAt : new Date().toISOString();
     const doneBuilder: ActiveBuilder = {
       templateId: tmpl.id, status: "done", days: heroHabit.days, startedAt,

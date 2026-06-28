@@ -9,7 +9,8 @@ import type { ActivityLevel, FeelingGoal, GoalDirection, SupplementEntry, Supple
 import { suppLabel, suppName } from "../lib/types";
 import { matchSupplementNutrients, NUTRIENT_UNITS, NUTRIENT_DISPLAY_NAMES } from "../lib/rda";
 import { HABIT_TEMPLATES } from "../lib/habits";
-import { clearAllData, saveProfile, saveDailySupplements, clearProfileCache, addWeightLog, LOCAL_MODE } from "../lib/supabaseDb";
+import { clearAllData, saveProfile, saveDailySupplements, clearProfileCache, addWeightLog, saveHabitState, saveHabitHistory, LOCAL_MODE } from "../lib/supabaseDb";
+import { EMPTY_HABIT_STATE } from "../lib/habitState";
 import { getDailySupplements, setDailySupplements, clearDailySuppsLoggedToday, clearAllFoodCaches } from "../lib/foodCache";
 import { clearMealsCache } from "../lib/supabaseDb";
 import { notifyMealsUpdated } from "../lib/dataEvents";
@@ -57,6 +58,14 @@ export default function ProfileScreen() {
   const [mounted, setMounted] = useState(false);
   const [showWeightHistory, setShowWeightHistory] = useState(false);
   const [habitPreviewIdx, setHabitPreviewIdx] = useState(0);
+  const [habitReset, setHabitReset] = useState(false);
+  const handleResetHabitData = async () => {
+    if (!user) return;
+    await saveHabitState(user.id, EMPTY_HABIT_STATE);
+    await saveHabitHistory(user.id, []);
+    setHabitReset(true);
+    setTimeout(() => setHabitReset(false), 2500);
+  };
   const profileTapCount = useRef(0);
   const profileTapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -1444,6 +1453,10 @@ export default function ProfileScreen() {
             <button type="button" className="flex-1 rounded-xl border border-ink/10 bg-ink/5 px-4 py-2 text-xs font-semibold text-ink/70 transition active:opacity-60" onClick={() => setHabitPreviewIdx((i) => (i - 1 + HABIT_TEMPLATES.length) % HABIT_TEMPLATES.length)}>← Prev</button>
             <button type="button" className="flex-1 rounded-xl border border-ink/10 bg-ink/5 px-4 py-2 text-xs font-semibold text-ink/70 transition active:opacity-60" onClick={() => setHabitPreviewIdx((i) => (i + 1) % HABIT_TEMPLATES.length)}>Next →</button>
           </div>
+          {/* Wipes the active/completed builder + history so the flow can be re-tested. */}
+          <button type="button" onClick={handleResetHabitData} className="mt-2 w-full rounded-xl border border-ink/10 px-4 py-2 text-xs font-semibold text-ink/55 transition active:opacity-60">
+            {habitReset ? "Reset ✓ — reopen Home" : "Reset Habit Builder Data"}
+          </button>
         </Card>
 
         <div className="mt-8 px-1">
