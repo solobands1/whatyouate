@@ -498,8 +498,9 @@ export default function HomeScreen() {
         setActiveTemplate(t);
         setHeroHabit({ status: b.status, days: b.days, holdDay: b.holdDay ?? null });
         // Restore a finished builder without replaying the celebration: the answered
-        // "rested" confirmation, or the keep prompt if not answered yet.
-        if (b.status === "done") setDoneStep(b.keptAnswer ? "rested" : "feedback");
+        // "rested" confirmation, or the "You Started Something!" step (which waits for
+        // the Done tap, then leads to the keep prompt) if not answered yet.
+        if (b.status === "done") setDoneStep(b.keptAnswer ? "rested" : "started");
       } else {
         // Respect the breather/cooldown: only suggest when cadence says it's time.
         // Otherwise show the greeting (no habit) rather than re-offering one.
