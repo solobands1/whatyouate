@@ -617,7 +617,7 @@ export default function InsightsScreen() {
           </div>
         </header>
 
-        <Card>
+        <Card style={{ transform: barsReady ? "translateY(0)" : "translateY(14px)", transition: "transform 600ms cubic-bezier(0.22,1,0.36,1) 0ms" }}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <p className="text-xs uppercase tracking-wide text-muted/70">Macros</p>
@@ -639,7 +639,7 @@ export default function InsightsScreen() {
               unit=""
               value={hasEnoughData ? avgCalories : isDemoMode ? 1840 : 0}
               target={gentleTargetsDisplay?.calories ?? 2300}
-              animate
+              animate={barsReady}
               caption="avg"
             />
             <MacroRing
@@ -647,7 +647,7 @@ export default function InsightsScreen() {
               unit="g"
               value={hasEnoughData ? avgCarbs : isDemoMode ? 180 : 0}
               target={gentleTargetsDisplay?.carbs ?? 277}
-              animate
+              animate={barsReady}
               caption="avg"
             />
             <MacroRing
@@ -655,7 +655,7 @@ export default function InsightsScreen() {
               unit="g"
               value={hasEnoughData ? avgFat : isDemoMode ? 62 : 0}
               target={gentleTargetsDisplay?.fat ?? 77}
-              animate
+              animate={barsReady}
               caption="avg"
             />
             <MacroRing
@@ -663,7 +663,7 @@ export default function InsightsScreen() {
               unit="g"
               value={hasEnoughData ? avgProtein : isDemoMode ? 148 : 0}
               target={gentleTargetsDisplay?.protein ?? 125}
-              animate
+              animate={barsReady}
               caption="avg"
             />
           </div>
@@ -676,7 +676,7 @@ export default function InsightsScreen() {
           )}
         </Card>
 
-        <Card className="mt-6">
+        <Card className="mt-6" style={{ transform: barsReady ? "translateY(0)" : "translateY(14px)", transition: "transform 600ms cubic-bezier(0.22,1,0.36,1) 120ms" }}>
           <div className="flex items-center justify-between">
             <p className="text-xs uppercase tracking-wide text-muted/70">Daily Intake &middot; Calories</p>
             <p className="text-[11px] text-muted/70">{sparklineLoggedCount} / 7 days</p>
@@ -829,7 +829,7 @@ export default function InsightsScreen() {
         )}
 
         {(profile?.trackWater || isDemoMode) && (
-          <Card className="mt-3">
+          <Card className="mt-3" style={{ transform: barsReady ? "translateY(0)" : "translateY(14px)", transition: "transform 600ms cubic-bezier(0.22,1,0.36,1) 240ms" }}>
             <div className="flex items-center justify-between">
               <p className="text-xs uppercase tracking-wide text-muted/70">Water &middot; 2-Week Average</p>
               {waterTrend.days > 0 && <p className="text-[11px] text-muted/70">{waterTrend.days} day{waterTrend.days !== 1 ? "s" : ""} logged</p>}
@@ -844,7 +844,7 @@ export default function InsightsScreen() {
           </Card>
         )}
 
-        <Card className="mt-6" data-tour="insights-micro">
+        <Card className="mt-6" data-tour="insights-micro" style={{ transform: barsReady ? "translateY(0)" : "translateY(14px)", transition: "transform 600ms cubic-bezier(0.22,1,0.36,1) 360ms" }}>
           <div className="flex items-center justify-between">
             <p className="text-xs uppercase tracking-wide text-muted/70" data-tour="insights-micro-title">
               Micronutrients
