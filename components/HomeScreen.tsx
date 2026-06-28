@@ -572,6 +572,16 @@ export default function HomeScreen() {
     void saveHabitState(user.id, next);
   };
 
+  // Manually surface a habit (from the greeting during the breather / after finishing
+  // one). Shows it expanded right away — no first-appearance reveal. The eyebrow then
+  // cycles through the rest for testing.
+  const startHabitManually = () => {
+    const t = goalHabits[0] ?? HABIT_TEMPLATES[0];
+    setActiveTemplate(t);
+    setHeroExpanded(true);
+    setHeroHabit({ status: "suggested", days: freshDays(t) });
+  };
+
   // On the very first habit prompt, show a compact "Habit Builder" notification, then
   // smoothly expand into the full card. Only runs once (later prompts/cycles are
   // already expanded).
@@ -2775,6 +2785,10 @@ export default function HomeScreen() {
               <div className="text-center">
                 <p className="text-lg font-semibold text-ink">{welcomeMessage.greeting}{firstName ? `, ${firstName}` : ""}</p>
                 <p className="mt-1 text-sm text-muted/60">{welcomeMessage.sub}</p>
+                <button type="button" onClick={startHabitManually} className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-primary/80 transition active:opacity-60">
+                  Start a Habit
+                  <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
+                </button>
               </div>
             )}
           </div>
