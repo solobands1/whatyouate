@@ -6,6 +6,18 @@
   color-scheme: light;
 }
 
+/* Accessibility: honor reduced-motion app-wide. Collapses every transition and
+   animation (including the inline-style entrances driven by JS) to near-instant, so
+   content still appears, just without movement. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 body {
   background-color: #F8FAFC;
   @apply text-ink antialiased;

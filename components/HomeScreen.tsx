@@ -9,6 +9,7 @@ import { suppName, suppLabel } from "../lib/types";
 import { matchSupplementNutrients } from "../lib/rda";
 import { celebrateDaily, celebrateBuilt, celebrateAccepted, unlockAudio } from "../lib/celebrate";
 import { HABIT_TEMPLATES, habitsForGoals, type HabitTemplate } from "../lib/habits";
+import { riseIn } from "../lib/motion";
 import {
   PROFILE_UPDATED_EVENT,
   MEALS_FAILED_EVENT,
@@ -2382,7 +2383,7 @@ export default function HomeScreen() {
           );
         })()}
 
-        <Card className="mt-2">
+        <Card className="mt-2" style={riseIn(barsReady, 0)}>
           {/* Hero — dynamic slot. Priority: active habit builder > suggestion > reflection reminder > discovery > wins > greeting (default). Sample habit wired locally for now. */}
           <div className={`-mx-4 rounded-2xl border-2 border-primary/25 px-4 ${heroHabit.status === "done" || heroHabit.status === "accepting" ? "bg-primary/10" : "bg-primary/[0.05]"} ${heroHabit.status === "hidden" ? "py-7" : heroHabit.status === "done" && doneStep === "rested" ? "pt-5 pb-3" : "py-5"} ${heroHabit.status === "done" && (doneStep === "celebrate" || doneStep === "feedback") ? "animate-habit-built" : ""} ${(heroHabit.status === "done" && doneStep === "rested") || heroHabit.status === "accepting" ? "animate-habit-glow" : ""} ${(heroHabit.status === "active" && heroHabit.holdDay != null) || (heroHabit.status === "suggested" && !heroExpanded) ? "animate-habit-shimmer" : ""} ${heroPulse ? "animate-card-pulse" : ""}`}>
             {heroHabit.status === "suggested" ? (
@@ -2765,26 +2766,28 @@ export default function HomeScreen() {
 
         {/* Reflection entry point. Demo: always shown. Real version: appears in the
             evening (after the night push / after ~6pm) and persists until done. */}
-        <button
-          type="button"
-          onClick={() => setShowReflection(true)}
-          className="mt-2 flex w-full items-center gap-3 rounded-2xl border-2 border-primary/25 bg-primary/[0.05] px-4 py-3 text-left transition active:scale-[0.99]"
-        >
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
-            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z" /></svg>
-          </span>
-          <span className="flex-1">
-            <span className="block text-sm font-semibold text-ink">How Was Your Day?</span>
-            <span className="block text-[12px] text-ink/55">A quick nightly check-in</span>
-          </span>
-          <svg viewBox="0 0 24 24" className="h-4 w-4 text-ink/30" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
-        </button>
+        <div className="mt-2" style={riseIn(barsReady, 1)}>
+          <button
+            type="button"
+            onClick={() => setShowReflection(true)}
+            className="flex w-full items-center gap-3 rounded-2xl border-2 border-primary/25 bg-primary/[0.05] px-4 py-3 text-left transition active:scale-[0.99]"
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z" /></svg>
+            </span>
+            <span className="flex-1">
+              <span className="block text-sm font-semibold text-ink">How Was Your Day?</span>
+              <span className="block text-[12px] text-ink/55">A quick nightly check-in</span>
+            </span>
+            <svg viewBox="0 0 24 24" className="h-4 w-4 text-ink/30" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
+          </button>
+        </div>
 
         {workout.activeWorkout && (
           <p className="mt-3 text-center text-[11px] text-muted/60">Workout in progress</p>
         )}
 
-        <Card className="mt-2">
+        <Card className="mt-2" style={riseIn(barsReady, 2)}>
           <div className="flex items-start justify-between">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Recent</p>
             <div className="flex items-center gap-2">

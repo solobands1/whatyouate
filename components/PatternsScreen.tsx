@@ -8,6 +8,7 @@ import WyaaAvatar from "./WyaaAvatar";
 import { useAuth } from "./AuthProvider";
 import { useAppData } from "./AppDataProvider";
 import { hasEnoughDataForPatterns } from "../lib/trial";
+import { riseIn } from "../lib/motion";
 
 // Sample/placeholder content until the pattern engine + persisted reflections exist.
 const FACTORS = [
@@ -94,7 +95,7 @@ export default function PatternsScreen() {
         ) : (
           <>
             {/* Headline clue, in the coach's voice */}
-            <Card className="relative">
+            <Card className="relative" style={riseIn(ready, 0)}>
               <div className="flex items-start gap-3">
                 <div className="-mt-1 shrink-0">
                   <WyaaAvatar size={40} />
@@ -110,7 +111,7 @@ export default function PatternsScreen() {
             </Card>
 
             {/* Energy trend */}
-            <Card className="mt-6">
+            <Card className="mt-6" style={riseIn(ready, 1)}>
               <div className="flex items-center justify-between">
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Your Energy Lately</p>
                 <span className="inline-flex items-center gap-1 rounded-full bg-primary-dark/15 px-2 py-0.5 text-[10px] font-semibold text-primary-dark">
@@ -135,7 +136,7 @@ export default function PatternsScreen() {
             </Card>
 
             {/* What seems to matter most */}
-            <Card className="mt-6">
+            <Card className="mt-6" style={riseIn(ready, 2)}>
               <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">What Seems To Matter Most</p>
               <p className="mt-1 text-sm text-muted/65">The factors most linked to your better days.</p>
               <div className="mt-4 space-y-3.5">
@@ -154,7 +155,7 @@ export default function PatternsScreen() {
             </Card>
 
             {/* Best vs low-energy days */}
-            <Card className="mt-6">
+            <Card className="mt-6" style={riseIn(ready, 3)}>
               <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Your Days Compared</p>
               <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-primary-dark/80">Better Days</p>
@@ -183,7 +184,7 @@ export default function PatternsScreen() {
             </Card>
 
             {/* Potential clues */}
-            <Card className="mt-6">
+            <Card className="mt-6" style={riseIn(ready, 4)}>
               <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Potential Clues</p>
               <p className="mt-1 text-sm text-muted/65">Worth keeping an eye on, not conclusions yet.</p>
               <div className="mt-3 space-y-2.5">
@@ -207,7 +208,7 @@ export default function PatternsScreen() {
             </Card>
 
             {/* Habits that stuck */}
-            <Card className="mt-6">
+            <Card className="mt-6" style={riseIn(ready, 5)}>
               <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Habits That Stuck</p>
               <p className="mt-1 text-sm text-muted/65">The ones you decided were worth keeping.</p>
               <div className="mt-3 space-y-2">

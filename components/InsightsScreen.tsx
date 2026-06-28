@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { riseIn } from "../lib/motion";
 import Joyride, { CallBackProps, STATUS, type Step } from "react-joyride";
 import { useRouter } from "next/navigation";
 import { summarizeLoggedDays, summarizeWeek } from "../lib/summary";
@@ -73,15 +74,6 @@ const NUTRIENT_INFO: Record<string, string | string[]> = {
   "B6": "Involved in protein metabolism, neurotransmitter production (serotonin, dopamine), and immune function. Low levels can affect mood and energy. Found in poultry, fish, potatoes, bananas, and chickpeas. Chickpeas are one of the richest plant sources.",
   "Energy Check-Ins": "Each dot's position shows the time of day you logged your energy, PM towards the top and AM towards the bottom. No entry assumes average energy.\n\nThis helps you spot low or high energy patterns and relate them to foods you ate to improve energy based on your food intake.",
 };
-
-// Unified card entrance: fade + rise together, staggered. Overrides Card's quick
-// fade so the two don't fight (which read as a jolt). i = stagger index.
-const riseIn = (ready: boolean, i: number): CSSProperties => ({
-  opacity: ready ? 1 : 0,
-  transform: ready ? "translateY(0)" : "translateY(16px)",
-  transition: `opacity 700ms ease ${i * 150}ms, transform 850ms cubic-bezier(0.22,1,0.36,1) ${i * 150}ms`,
-  animation: "none",
-});
 
 export default function InsightsScreen() {
   const router = useRouter();
