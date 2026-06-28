@@ -75,13 +75,13 @@ input, textarea, select {
   animation: clockWind 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-/* Nightly check-in moon: rises in with a soft glow, then breathes gently. */
-@keyframes moonGlowIn {
-  0%   { opacity: 0; transform: scale(0.8); box-shadow: 0 0 0 0 rgba(111,168,255,0); }
-  60%  { opacity: 1; transform: scale(1.05); box-shadow: 0 0 22px 4px rgba(111,168,255,0.35); }
-  100% { opacity: 1; transform: scale(1); box-shadow: 0 0 14px 2px rgba(111,168,255,0.22); }
+/* Nightly check-in moon: rises in (plain circle, no glow), then breathes gently. */
+@keyframes moonRise {
+  0%   { opacity: 0; transform: scale(0.8); }
+  60%  { opacity: 1; transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1); }
 }
-.animate-moon-glow { animation: moonGlowIn 0.85s cubic-bezier(0.34, 1.4, 0.5, 1) both; }
+.animate-moon-rise { animation: moonRise 0.85s cubic-bezier(0.34, 1.4, 0.5, 1) both; }
 @keyframes moonFloat {
   0%, 100% { transform: translateY(0); }
   50%      { transform: translateY(-3px); }
@@ -93,7 +93,7 @@ input, textarea, select {
   .animate-habit-note,
   .animate-card-pulse,
   .animate-clock-wind,
-  .animate-moon-glow,
+  .animate-moon-rise,
   .animate-moon-float {
     animation: none;
   }
