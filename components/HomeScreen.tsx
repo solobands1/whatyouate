@@ -424,8 +424,24 @@ export default function HomeScreen() {
   const [reflection, setReflection] = useState<Record<string, number | number[]>>({});
   const [reflectionNote, setReflectionNote] = useState("");
   const [reflectionStep, setReflectionStep] = useState(0);
+  const [lastReflection, setLastReflection] = useState<{ reflection: Record<string, number | number[]>; note: string } | null>(null);
   const closeReflection = () => setShowReflection(false); // keeps progress for "Later"
-  const finishReflection = () => { setShowReflection(false); setReflectionStep(0); setReflection({}); setReflectionNote(""); };
+  const finishReflection = () => {
+    // Remember a completed check-in so "Same As Last Night" can prefill it next time.
+    if (user && Object.keys(reflection).length > 0) {
+      const payload = { reflection, note: reflectionNote };
+      try { localStorage.setItem(`wya_last_reflection_${user.id}`, JSON.stringify(payload)); } catch {}
+      setLastReflection(payload);
+    }
+    setShowReflection(false); setReflectionStep(0); setReflection({}); setReflectionNote("");
+  };
+  useEffect(() => {
+    if (!user) return;
+    try {
+      const raw = localStorage.getItem(`wya_last_reflection_${user.id}`);
+      if (raw) setLastReflection(JSON.parse(raw));
+    } catch { /* ignore */ }
+  }, [user]);
   const [selectedFeelings, setSelectedFeelings] = useState<string[]>([]);
   const [heroHabit, setHeroHabit] = useState<{ status: "suggested" | "accepting" | "committed" | "active" | "dayComplete" | "done" | "missed" | "hidden"; days: boolean[][]; holdDay?: number | null }>(
     { status: "suggested", days: freshDays(FIRST_TEMPLATE) }
@@ -4315,6 +4331,15 @@ export default function HomeScreen() {
                   <h1 className="mt-5 text-2xl font-semibold text-ink">Your Nightly Check-In</h1>
                   <p className="mt-3 max-w-xs text-sm leading-relaxed text-ink/70">A quick look back at your day. It takes under a minute, and it&apos;s how your coach learns what lifts your energy and what drags it down.</p>
                   <button type="button" className="mt-8 w-full max-w-xs rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80" onClick={() => setReflectionStep(1)}>Get Started</button>
+                  {lastReflection && (
+                    <button
+                      type="button"
+                      className="mt-3 w-full max-w-xs rounded-xl border border-primary/30 bg-white py-4 text-sm font-semibold text-primary transition active:opacity-80"
+                      onClick={() => { setReflection(lastReflection.reflection); setReflectionNote(lastReflection.note); setReflectionStep(total + 2); }}
+                    >
+                      Same As Last Night
+                    </button>
+                  )}
                   <button type="button" className="mt-3 text-xs font-semibold text-ink/45 active:opacity-60" onClick={closeReflection}>Maybe Later</button>
                 </div>
               )}
