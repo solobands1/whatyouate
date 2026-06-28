@@ -935,6 +935,12 @@ export async function addWeightLog(userId: string, weightKg: number): Promise<We
   return data as WeightLog;
 }
 
+export async function deleteWeightLog(userId: string, id: string): Promise<void> {
+  if (useMemory) return;
+  const { error } = await supabase.from("weight_logs").delete().eq("id", id).eq("user_id", userId);
+  if (error) console.error("deleteWeightLog", error);
+}
+
 export async function getWeightLogs(userId: string, limit = 60): Promise<WeightLog[]> {
   if (useMemory) return [];
   const { data, error } = await supabase
