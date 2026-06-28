@@ -122,7 +122,7 @@ export default function PatternsScreen() {
               <div className="mt-3 flex items-end justify-between">
                 {ENERGY_WEEK.map((lvl, i) => (
                   <div key={i} className="flex flex-col items-center gap-1.5">
-                    <span className={`h-2.5 w-2.5 rounded-full ${ENERGY_DOT[lvl]}`} style={{ opacity: ready ? 1 : 0, transform: ready ? "scale(1)" : "scale(0.3)", transition: `opacity 400ms ease ${i * 60}ms, transform 400ms cubic-bezier(0.34,1.56,0.64,1) ${i * 60}ms` }} />
+                    <span className={`h-2.5 w-2.5 rounded-full ${ENERGY_DOT[lvl]}`} style={{ opacity: ready ? 1 : 0, transform: ready ? "scale(1)" : "scale(0.3)", transition: `opacity 600ms ease ${i * 110}ms, transform 600ms cubic-bezier(0.34,1.56,0.64,1) ${i * 110}ms` }} />
                     <span className="text-[10px] text-muted/60">{ENERGY_DAY_LABELS[i]}</span>
                   </div>
                 ))}
@@ -145,7 +145,7 @@ export default function PatternsScreen() {
                     <div className="flex-1">
                       <p className="text-sm font-semibold text-ink">{f.label}</p>
                       <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-ink/5">
-                        <div className="h-full rounded-full bg-primary" style={{ width: ready ? `${Math.round(f.strength * 100)}%` : "0%", transition: `width 750ms cubic-bezier(0.22,1,0.36,1) ${i * 90}ms` }} />
+                        <div className="h-full rounded-full bg-primary" style={{ width: ready ? `${Math.round(f.strength * 100)}%` : "0%", transition: `width 1100ms cubic-bezier(0.22,1,0.36,1) ${i * 160}ms` }} />
                       </div>
                     </div>
                   </div>

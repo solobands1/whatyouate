@@ -470,7 +470,9 @@ export default function HomeScreen() {
     if (heroRevealedRef.current) return;
     if (heroHabit.status !== "suggested") return;
     heroRevealedRef.current = true;
-    const t = setTimeout(() => setHeroExpanded(true), 750);
+    // Hold on the solo "Habit Builder" title long enough for the attention beat to
+    // land before the card expands.
+    const t = setTimeout(() => setHeroExpanded(true), 1500);
     return () => clearTimeout(t);
   }, [heroHabit.status]);
 
@@ -2383,8 +2385,17 @@ export default function HomeScreen() {
           <div className={`-mx-4 rounded-2xl border-2 border-primary/25 px-4 ${heroHabit.status === "done" || heroHabit.status === "accepting" ? "bg-primary/10" : "bg-primary/[0.05]"} ${heroHabit.status === "hidden" ? "py-7" : heroHabit.status === "done" && doneStep === "rested" ? "pt-5 pb-3" : "py-5"} ${heroHabit.status === "done" && (doneStep === "celebrate" || doneStep === "feedback") ? "animate-habit-built" : ""} ${(heroHabit.status === "done" && doneStep === "rested") || heroHabit.status === "accepting" ? "animate-habit-glow" : ""} ${heroHabit.status === "active" && heroHabit.holdDay != null ? "animate-habit-shimmer" : ""} ${heroPulse ? "animate-card-pulse" : ""}`}>
             {heroHabit.status === "suggested" ? (
               <div className={heroExpanded ? "" : "animate-habit-note"}>
-                {/* Tap the eyebrow to cycle templates (demo/testing). */}
-                <p className="-mt-1 cursor-pointer text-center text-xs font-semibold uppercase tracking-wide text-primary transition active:opacity-60" role="button" aria-label="Next template (testing)" onClick={cycleTemplate}>Habit Builder</p>
+                {/* Solo "notification" moment: sparkles + a pulse draw the eye to the new
+                    Habit Builder before it expands. Tap the eyebrow to cycle (demo/testing). */}
+                <div className="-mt-1 flex items-center justify-center gap-1.5">
+                  {!heroExpanded && (
+                    <svg viewBox="0 0 24 24" className="animate-habit-spark h-3 w-3 text-primary" fill="currentColor"><path d="M12 2l1.5 6.5L20 10l-6.5 1.5L12 18l-1.5-6.5L4 10l6.5-1.5z" /></svg>
+                  )}
+                  <p className={`cursor-pointer text-center text-xs font-semibold uppercase tracking-wide text-primary transition active:opacity-60 ${heroExpanded ? "" : "animate-habit-attention"}`} role="button" aria-label="Next template (testing)" onClick={cycleTemplate}>Habit Builder</p>
+                  {!heroExpanded && (
+                    <svg viewBox="0 0 24 24" className="animate-habit-spark h-3 w-3 text-primary" style={{ animationDelay: "0.55s" }} fill="currentColor"><path d="M12 2l1.5 6.5L20 10l-6.5 1.5L12 18l-1.5-6.5L4 10l6.5-1.5z" /></svg>
+                  )}
+                </div>
                 {/* Collapsed "notification" expands smoothly into the full card. */}
                 <div className={`grid transition-all duration-[600ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${heroExpanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
                   <div className="min-h-0 overflow-hidden">
