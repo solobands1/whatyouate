@@ -59,6 +59,20 @@ export default function ProfileScreen() {
   const [showWeightHistory, setShowWeightHistory] = useState(false);
   const [habitPreviewIdx, setHabitPreviewIdx] = useState(0);
   const [habitReset, setHabitReset] = useState(false);
+  const [historyWeightInput, setHistoryWeightInput] = useState("");
+  const saveHistoryWeight = async () => {
+    if (!user || !historyWeightInput.trim()) return;
+    const num = parseFloat(historyWeightInput);
+    if (!isFinite(num) || num <= 0) return;
+    const kg = Math.round((units === "imperial" ? num / 2.20462 : num) * 10) / 10;
+    const log = await addWeightLog(user.id, kg);
+    if (log) {
+      setWeightLogs((prev) => [log, ...prev]);
+      setWeight(String(Math.round(num)));
+      initialWeightKgRef.current = kg;
+    }
+    setHistoryWeightInput("");
+  };
   const handleResetHabitData = async () => {
     if (!user) return;
     await saveHabitState(user.id, EMPTY_HABIT_STATE);
@@ -1990,33 +2004,51 @@ export default function ProfileScreen() {
               <button type="button" className="text-sm font-semibold text-ink/50 transition active:opacity-60" onClick={() => setShowWeightHistory(false)}>Close</button>
             </div>
 
-            {/* Sparkline chart */}
+            {/* Trend chart */}
             {weightLogs.length >= 2 && (() => {
               const points = [...weightLogs].reverse(); // oldest first
               const weights = points.map((p) => p.weight_kg);
               const minW = Math.min(...weights);
               const maxW = Math.max(...weights);
-              const range = maxW - minW || 1;
-              const W = 280; const H = 64; const PAD = 8;
-              const innerH = H - PAD * 2;
+              // Pad the y-range so small day-to-day changes don't look like cliffs.
+              const yPad = Math.max((maxW - minW) * 0.25, 0.5);
+              const lo = minW - yPad; const hi = maxW + yPad; const range = hi - lo;
+              const W = 300; const H = 120; const PADX = 12; const PADTOP = 14; const PADBOT = 14;
+              const innerH = H - PADTOP - PADBOT;
               const times = points.map((p) => new Date(p.logged_at).getTime());
               const minT = times[0]; const maxT = times[times.length - 1];
-              const tRange = maxT - minT || 1;
-              const px = (t: number) => ((t - minT) / tRange) * W;
-              const py = (w: number) => PAD + innerH - ((w - minW) / range) * innerH;
-              const d = points.map((p, i) => `${i === 0 ? "M" : "L"} ${px(times[i]).toFixed(1)} ${py(p.weight_kg).toFixed(1)}`).join(" ");
-              const isDown = weights[weights.length - 1] <= weights[0];
+              const tRange = (maxT - minT) || 1;
+              const px = (t: number) => PADX + ((t - minT) / tRange) * (W - PADX * 2);
+              const py = (w: number) => PADTOP + innerH - ((w - lo) / range) * innerH;
+              const line = points.map((p, i) => `${i === 0 ? "M" : "L"} ${px(times[i]).toFixed(1)} ${py(p.weight_kg).toFixed(1)}`).join(" ");
+              const area = `${line} L ${px(maxT).toFixed(1)} ${(H - PADBOT).toFixed(1)} L ${px(minT).toFixed(1)} ${(H - PADBOT).toFixed(1)} Z`;
+              const net = weights[weights.length - 1] - weights[0];
+              const isDown = net <= 0;
+              const color = isDown ? "#10b981" : "#6FA8FF";
+              const fmtChange = units === "imperial" ? `${Math.abs(Math.round(net * 2.20462 * 10) / 10)} lb` : `${Math.abs(Math.round(net * 10) / 10)} kg`;
+              const fmtDate = (t: number) => new Date(t).toLocaleDateString(undefined, { month: "short", day: "numeric" });
               return (
-                <div className="mb-4 overflow-hidden rounded-xl bg-ink/[0.03] px-3 py-2">
-                  <svg width="100%" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="h-16">
-                    <path d={d} fill="none" stroke={isDown ? "#10b981" : "#6FA8FF"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    {points.map((p, i) => (
-                      <circle key={i} cx={px(times[i])} cy={py(p.weight_kg)} r="3" fill={isDown ? "#10b981" : "#6FA8FF"} />
-                    ))}
-                  </svg>
-                  <div className="mt-1 flex justify-between text-[10px] text-muted/50">
-                    <span>{units === "imperial" ? `${Math.round(minW * 2.20462)} lb` : `${minW} kg`}</span>
-                    <span>{units === "imperial" ? `${Math.round(maxW * 2.20462)} lb` : `${maxW} kg`}</span>
+                <div className="mb-4">
+                  <div className="mb-2 flex items-baseline justify-between">
+                    <span className={`text-xs font-semibold ${isDown ? "text-emerald-500" : "text-ink/60"}`}>
+                      {net === 0 ? "No change" : `${isDown ? "Down" : "Up"} ${fmtChange}`}
+                    </span>
+                    <span className="text-[10px] text-muted/50">{fmtDate(minT)} to {fmtDate(maxT)}</span>
+                  </div>
+                  <div className="overflow-hidden rounded-xl bg-ink/[0.03] px-2 py-2">
+                    <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
+                      <defs>
+                        <linearGradient id="wt-area" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor={color} stopOpacity="0.18" />
+                          <stop offset="100%" stopColor={color} stopOpacity="0" />
+                        </linearGradient>
+                      </defs>
+                      <path d={area} fill="url(#wt-area)" />
+                      <path d={line} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      {points.map((p, i) => (
+                        <circle key={i} cx={px(times[i])} cy={py(p.weight_kg)} r="2.5" fill="#fff" stroke={color} strokeWidth="1.5" />
+                      ))}
+                    </svg>
                   </div>
                 </div>
               );
@@ -2049,13 +2081,25 @@ export default function ProfileScreen() {
               })}
             </div>
 
-            <button
-              type="button"
-              className="mt-4 w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white transition active:opacity-70"
-              onClick={() => { setShowWeightHistory(false); setTimeout(() => document.querySelector<HTMLInputElement>("input[placeholder='kg'], input[placeholder='lb']")?.focus(), 100); }}
-            >
-              Update Weight
-            </button>
+            {/* Inline update so it works on iOS (a focus() from a timeout is ignored there). */}
+            <div className="mt-4 flex items-center gap-2">
+              <input
+                inputMode="decimal"
+                value={historyWeightInput}
+                onChange={(e) => setHistoryWeightInput(e.target.value.replace(/[^0-9.]/g, ""))}
+                onKeyDown={(e) => { if (e.key === "Enter") saveHistoryWeight(); }}
+                placeholder={units === "imperial" ? "New weight (lb)" : "New weight (kg)"}
+                className="flex-1 rounded-xl border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+              />
+              <button
+                type="button"
+                disabled={!historyWeightInput.trim()}
+                className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition active:opacity-70 disabled:opacity-40"
+                onClick={saveHistoryWeight}
+              >
+                Save
+              </button>
+            </div>
           </div>
         </div>
       )}
