@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import Joyride, { CallBackProps, STATUS, type Step } from "react-joyride";
 import { useRouter } from "next/navigation";
 import { dayKeyFromTs, formatDateShort, todayKey } from "../lib/utils";
@@ -68,6 +68,15 @@ function UnlockTimeline({ milestones }: { milestones: MilestoneItem[] }) {
 
 
 const DEMO_NUDGE = "Your protein has been strong this week, but your last two days have been lighter on calories overall. If you're training today, consider a bigger lunch or an extra snack before your session — your body will make better use of what you eat around activity.";
+
+// Unified card entrance: fade + rise together, staggered. Overrides Card's quick
+// fade so the two don't fight (which read as a jolt). i = stagger index.
+const riseIn = (ready: boolean, i: number): CSSProperties => ({
+  opacity: ready ? 1 : 0,
+  transform: ready ? "translateY(0)" : "translateY(16px)",
+  transition: `opacity 700ms ease ${i * 150}ms, transform 850ms cubic-bezier(0.22,1,0.36,1) ${i * 150}ms`,
+  animation: "none",
+});
 
 export default function SummaryScreen() {
   const router = useRouter();
@@ -1015,7 +1024,7 @@ export default function SummaryScreen() {
         })()}
 
 
-        <Card data-tour="summary-week">
+        <Card data-tour="summary-week" style={riseIn(hydrated, 0)}>
           <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">This week</p>
 
           {/* 7-day dot strip */}
@@ -1070,7 +1079,7 @@ export default function SummaryScreen() {
           )}
         </Card>
 
-        <Card className="mt-6">
+        <Card className="mt-6" style={riseIn(hydrated, 1)}>
           {(() => {
             const ts = !isDemoMode && smartNudge?.generatedAt ? new Date(smartNudge.generatedAt) : null;
             const isSameDay = ts ? ts.toDateString() === new Date().toDateString() : true;
@@ -1125,7 +1134,7 @@ export default function SummaryScreen() {
           })()}
         </Card>
 
-        <Card className={`relative mt-3${nudgeCardIsNew && smartNudge ? " ring-1 ring-primary/20" : ""}`} data-tour="nudges-card">
+        <Card className={`relative mt-3${nudgeCardIsNew && smartNudge ? " ring-1 ring-primary/20" : ""}`} data-tour="nudges-card" style={riseIn(hydrated, 2)}>
           <div data-tour="nudges-inner" className="pointer-events-none absolute inset-x-1 -top-4 bottom-2" />
 
           {(() => {

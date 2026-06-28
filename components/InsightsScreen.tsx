@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import Joyride, { CallBackProps, STATUS, type Step } from "react-joyride";
 import { useRouter } from "next/navigation";
 import { summarizeLoggedDays, summarizeWeek } from "../lib/summary";
@@ -74,6 +74,14 @@ const NUTRIENT_INFO: Record<string, string | string[]> = {
   "Energy Check-Ins": "Each dot's position shows the time of day you logged your energy, PM towards the top and AM towards the bottom. No entry assumes average energy.\n\nThis helps you spot low or high energy patterns and relate them to foods you ate to improve energy based on your food intake.",
 };
 
+// Unified card entrance: fade + rise together, staggered. Overrides Card's quick
+// fade so the two don't fight (which read as a jolt). i = stagger index.
+const riseIn = (ready: boolean, i: number): CSSProperties => ({
+  opacity: ready ? 1 : 0,
+  transform: ready ? "translateY(0)" : "translateY(16px)",
+  transition: `opacity 700ms ease ${i * 150}ms, transform 850ms cubic-bezier(0.22,1,0.36,1) ${i * 150}ms`,
+  animation: "none",
+});
 
 export default function InsightsScreen() {
   const router = useRouter();
@@ -617,7 +625,7 @@ export default function InsightsScreen() {
           </div>
         </header>
 
-        <Card style={{ transform: barsReady ? "translateY(0)" : "translateY(14px)", transition: "transform 600ms cubic-bezier(0.22,1,0.36,1) 0ms" }}>
+        <Card style={riseIn(barsReady, 0)}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <p className="text-xs uppercase tracking-wide text-muted/70">Macros</p>
@@ -676,7 +684,7 @@ export default function InsightsScreen() {
           )}
         </Card>
 
-        <Card className="mt-6" style={{ transform: barsReady ? "translateY(0)" : "translateY(14px)", transition: "transform 600ms cubic-bezier(0.22,1,0.36,1) 120ms" }}>
+        <Card className="mt-6" style={riseIn(barsReady, 1)}>
           <div className="flex items-center justify-between">
             <p className="text-xs uppercase tracking-wide text-muted/70">Daily Intake &middot; Calories</p>
             <p className="text-[11px] text-muted/70">{sparklineLoggedCount} / 7 days</p>
@@ -829,7 +837,7 @@ export default function InsightsScreen() {
         )}
 
         {(profile?.trackWater || isDemoMode) && (
-          <Card className="mt-3" style={{ transform: barsReady ? "translateY(0)" : "translateY(14px)", transition: "transform 600ms cubic-bezier(0.22,1,0.36,1) 240ms" }}>
+          <Card className="mt-3" style={riseIn(barsReady, 2)}>
             <div className="flex items-center justify-between">
               <p className="text-xs uppercase tracking-wide text-muted/70">Water &middot; 2-Week Average</p>
               {waterTrend.days > 0 && <p className="text-[11px] text-muted/70">{waterTrend.days} day{waterTrend.days !== 1 ? "s" : ""} logged</p>}
@@ -844,7 +852,7 @@ export default function InsightsScreen() {
           </Card>
         )}
 
-        <Card className="mt-6" data-tour="insights-micro" style={{ transform: barsReady ? "translateY(0)" : "translateY(14px)", transition: "transform 600ms cubic-bezier(0.22,1,0.36,1) 360ms" }}>
+        <Card className="mt-6" data-tour="insights-micro" style={riseIn(barsReady, 3)}>
           <div className="flex items-center justify-between">
             <p className="text-xs uppercase tracking-wide text-muted/70" data-tour="insights-micro-title">
               Micronutrients
