@@ -1,3 +1,5 @@
+import { NUTRIENT_DISPLAY_NAMES } from "./rda";
+
 export const SMART_NUDGE_SYSTEM_PROMPT = `CRITICAL: Respond ONLY with valid JSON. No analysis, no reasoning, no text outside the JSON object. Never write explanatory text.
 
 You are a personal coach who has been watching this person's food data every day. You know their patterns, their wins, their off days. You are warm, direct, and specific. You speak like a person, not a system.
@@ -16,7 +18,7 @@ NUDGE TYPES, in priority order:
 1. encouragement — the default. Use this whenever nothing more specific stands out. Genuine praise for showing up, logging consistently, or making a good choice. Reference something specific they did. Connect it to why logging matters. 3-4 sentences. Examples:
    "Proud of you for showing up today. You've logged every meal and it's only 2pm, which is exactly the kind of consistency that makes this work. The more you log, the better I understand your patterns, and you're giving me a lot to work with right now."
    "You're doing really well. Three days of solid logging means I can actually see what's working for you. That data is what turns this from an app into something that genuinely helps, so keep going."
-   "Good job today. You logged breakfast and lunch before noon, which is the best thing you can do. Early logging means I can help you before the day gets away from you, not after."
+   "Good job today. You logged breakfast and lunch already, which is the best thing you can do. The more you log, the more I can help you before the day gets away from you, not after."
 
 2. food_win — when a specific food they ate this week is worth celebrating. Name the food, state the benefit, explain why it matters in one sentence. Warm close. Science goes in the message, not a separate field.
    "That salmon earlier this week was a great call. It covered your Omega-3 for the week, and it's one of the only foods that actually moves that number. Most people are chronically low and never know it."
@@ -35,8 +37,8 @@ NUDGE TYPES, in priority order:
    STREAK RULE: If the most recent nudge already featured the streak number prominently, do NOT open this nudge the same way. Lead with a food, a pattern, or an observation instead.
 
 6. pattern — a visible trend across 2+ data points the user likely hasn't noticed. Cite specific data. Explain the biology behind it simply.
-   "Your best energy days this week all had a real breakfast before 9am. Blood sugar stabilizes earlier when you eat within an hour of waking, and it sets the tone for everything after."
-   "You tend to eat heavier in the evening on days you skipped lunch. That's not a willpower thing. It's your body catching up on a deficit it's been running since noon."
+   "Your highest-protein days this week were also the days you logged feeling steady. Protein blunts the blood sugar swings that show up as afternoon dips, and your own data is showing it."
+   "On the days you added a real vegetable, your fiber and micronutrients both climbed. Those move together, and small produce additions are doing more for you than they look."
 
 7. honest — use when: the user significantly exceeded their calorie target (more than 20% over), logged several indulgent meals in a row with poor overall nutrition, or had a notably low logging day after a streak. Acknowledge it without judgment and redirect warmly.
    "Not your best week nutritionally, but you showed up and logged every day. That matters more than any single meal."
@@ -59,6 +61,8 @@ RULES:
 - When referencing a specific past day by name, only do so if it was yesterday or the day before. Older days use "earlier this week."
 - FOLLOW-THROUGH: if last nudge is provided, never repeat the same message verbatim.
 - Respect dietary restrictions in suggestions.
+- MICRONUTRIENTS: Only ever name a vitamin or mineral that appears in the tracked-nutrient list provided in the data. Never reference any vitamin or mineral outside that list, even in passing.
+- MEAL TIMING: Never make claims or observations about when the user ate or their meal timing (for example "you ate late", "breakfast before 9am", "you skipped lunch", "eating close to bed"). Log timestamps record when food was entered, which is often backfilled hours later, so they do not reliably show when the person actually ate. You may acknowledge that they logged and how consistently, but never infer eating times or timing patterns.
 
 Return ONLY valid JSON:
 {"message": "...", "type": "encouragement|food_win|micronutrient_win|micronutrient_low|streak|pattern|honest|deficit|check_in", "why": "...", "action": "...", "suggestions": ["food1","food2","food3"]}
@@ -101,7 +105,7 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
 
   const last7 = ctx.last7Days as Array<Record<string, unknown>> | undefined;
   if (last7?.length) {
-    lines.push(`Previous days, excluding today (day | date | kcal | protein | carbs | fat | log count + first@HH last@HH + % cals before noon | workout). Days marked "no log" were not logged:`);
+    lines.push(`Previous days, excluding today (day | date | kcal | protein | carbs | fat | log count | workout). Days marked "no log" were not logged:`);
     last7.forEach((d) => {
       const types = (d.workoutTypes as string[] | undefined)?.join(", ");
       const wk = d.hasWorkout ? ` | workout ${d.workoutMinutes ?? "?"}min ${d.workoutIntensity ?? ""}${types ? ` [${types}]` : ""}` : "";
@@ -110,14 +114,8 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
         lines.push(`  ${d.dayOfWeek} ${d.dateKey}: no log${wk}`);
       } else {
         const mealCount = d.mealCount as number | undefined;
-        const firstH = d.firstMealHour as number | undefined;
-        const lastH = d.lastMealHour as number | undefined;
-        const pctAM = d.pctCaloriesAM as number | undefined;
-        const fmt = (h: number) => { const hh = h % 12 || 12; return `${hh}${h < 12 ? "am" : "pm"}`; };
-        const timing = mealCount != null
-          ? ` | ${mealCount} log${mealCount !== 1 ? "s" : ""}${firstH != null ? ` first@${fmt(firstH)}` : ""}${lastH != null ? ` last@${fmt(lastH)}` : ""}${pctAM != null ? ` ${pctAM}% cals before noon` : ""}`
-          : "";
-        lines.push(`  ${d.dayOfWeek} ${d.dateKey}: ${d.calories} kcal / ${d.protein}g protein / ${d.carbs}g carbs / ${d.fat}g fat${timing}${wk}`);
+        const logs = mealCount != null ? ` | ${mealCount} log${mealCount !== 1 ? "s" : ""}` : "";
+        lines.push(`  ${d.dayOfWeek} ${d.dateKey}: ${d.calories} kcal / ${d.protein}g protein / ${d.carbs}g carbs / ${d.fat}g fat${logs}${wk}`);
       }
     });
   }
@@ -135,7 +133,6 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
   const remCal = ctx.remainingCalories as number | null | undefined;
   const remPro = ctx.remainingProtein as number | null | undefined;
   const todayMeals = ctx.todayMeals as Array<{ name: string; time: string; calories: number; protein: number }> | undefined;
-  const lastMealTime = ctx.lastMealTime as string | null | undefined;
   const mealsLoggedToday = ctx.mealsLoggedToday as number | undefined ?? 0;
 
   if (hasTodayData) {
@@ -148,9 +145,9 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
         lines.push(`Still needed today: ${parts.join(" | ")}`);
       }
       if (todayMeals?.length) {
-        const mealStr = todayMeals.map((m) => `${m.time} ${m.name} (~${m.calories} kcal, ${m.protein}g protein)`).join(", ");
+        const mealStr = todayMeals.map((m) => `${m.name} (~${m.calories} kcal, ${m.protein}g protein)`).join(", ");
         lines.push(`Food logged today: ${mealStr}`);
-        if (lastMealTime) lines.push(`Last log at: ${lastMealTime}. Logs today: ${mealsLoggedToday}`);
+        if (mealsLoggedToday) lines.push(`Logs today: ${mealsLoggedToday}`);
       }
     } else {
       lines.push(`Today so far (${activeWindow}): nothing logged yet`);
@@ -255,11 +252,10 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
   }> | undefined;
   if (feelCorrelations?.length) {
     const fmt = (h: number) => { const hh = h % 12 || 12; return `${hh}${h < 12 ? "am" : "pm"}`; };
-    lines.push(`Energy check-ins with that day's food context (tag | time logged | kcal | protein | meals | first meal | workout):`);
+    lines.push(`Energy check-ins with that day's food context (tag | check-in time | kcal | protein | logs | workout):`);
     feelCorrelations.forEach((c) => {
-      const firstMeal = c.firstMealHour != null ? ` | first meal ${fmt(c.firstMealHour)}` : "";
       const wk = c.hadWorkout ? " | workout day" : "";
-      lines.push(`  ${c.dayOfWeek} ${fmt(c.logHour)}: ${c.tag.replace(/_/g, " ")} | ${c.calories} kcal / ${c.protein}g protein / ${c.mealCount} meal${c.mealCount !== 1 ? "s" : ""}${firstMeal}${wk}`);
+      lines.push(`  ${c.dayOfWeek} ${fmt(c.logHour)}: ${c.tag.replace(/_/g, " ")} | ${c.calories} kcal / ${c.protein}g protein / ${c.mealCount} log${c.mealCount !== 1 ? "s" : ""}${wk}`);
     });
   } else {
     const feelLogs = ctx.recentFeelLogs as Array<{ ts: number; tag: string }> | undefined;
@@ -275,13 +271,6 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
       }).join(", ");
       lines.push(`How the user has been feeling (recent logs): ${feelStr}`);
     }
-  }
-
-  const typicalFirstLogHour = ctx.typicalFirstLogHour as number | null | undefined;
-  if (typicalFirstLogHour !== null && typicalFirstLogHour !== undefined) {
-    const h = typicalFirstLogHour % 12 || 12;
-    const period = typicalFirstLogHour < 12 ? "am" : "pm";
-    lines.push(`Typical first log time: around ${h}${period} (median of last 14 logged days)`);
   }
 
   const water = ctx.waterIntake as { consumedMl: number; goalMl: number; pct: number } | undefined;
@@ -323,6 +312,8 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
       lines.push(`No meals logged since that nudge.`);
     }
   }
+
+  lines.push(`\nTRACKED NUTRIENTS: The app only measures these vitamins and minerals: ${Object.values(NUTRIENT_DISPLAY_NAMES).join(", ")}. Only ever reference nutrients from this list, never any outside it.`);
 
   const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const todayDayOfWeek = (ctx.todayDayOfWeek as string | undefined) ?? DOW[new Date().getDay()];
