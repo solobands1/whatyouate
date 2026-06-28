@@ -25,7 +25,8 @@ export interface TemplateCadence {
 
 export interface HabitCadence {
   lastEndedAt: string | null;          // when the last builder finished/declined (2-day breather)
-  suggestionId: string | null;         // template currently offered in the hero (if any)
+  suggestionId: string | null;         // template to (re)offer when a suggestion is due
+  suggestionHoldUntil: string | null;  // don't show a suggestion before this (Maybe Later → tomorrow)
   templates: Record<string, TemplateCadence>;
 }
 
@@ -51,8 +52,94 @@ export interface ReflectionEntry {
 
 export const EMPTY_HABIT_STATE: HabitState = {
   builder: null,
-  cadence: { lastEndedAt: null, suggestionId: null, templates: {} },
+  cadence: { lastEndedAt: null, suggestionId: null, suggestionHoldUntil: null, templates: {} },
 };
 
 // Days to wait after a builder ends before the next one is suggested (the "breather").
 export const HABIT_BREATHER_DAYS = 2;
+
+// ── Cadence logic ──────────────────────────────────────────────────────────
+// Pure functions that decide which habit (if any) to surface and how the snooze /
+// decline rules age out. Time is injected so they're testable.
+
+const DAY_MS = 86_400_000;
+
+function isPast(iso: string | null, now: Date): boolean {
+  return !iso || new Date(iso).getTime() <= now.getTime();
+}
+function startOfTomorrowISO(now: Date): string {
+  const d = new Date(now);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + 1);
+  return d.toISOString();
+}
+function addDaysISO(days: number, now: Date): string {
+  return new Date(now.getTime() + days * DAY_MS).toISOString();
+}
+
+// Which template to suggest right now, or null if we're mid-breather, holding after a
+// snooze, or nothing eligible is off cooldown. `eligibleIds` should already be the
+// goal-matched standard templates, in priority order.
+export function pickSuggestionId(state: HabitState, eligibleIds: string[], now: Date = new Date()): string | null {
+  const { cadence } = state;
+  if (cadence.lastEndedAt && now.getTime() - new Date(cadence.lastEndedAt).getTime() < HABIT_BREATHER_DAYS * DAY_MS) {
+    return null; // still in the post-habit breather
+  }
+  if (!isPast(cadence.suggestionHoldUntil, now)) return null; // soft-snoozed until tomorrow
+  const notShelved = (id: string) => isPast(cadence.templates[id]?.shelvedUntil ?? null, now);
+  // Re-offer the previously held one first (e.g. after a Maybe Later), else next eligible.
+  if (cadence.suggestionId && eligibleIds.includes(cadence.suggestionId) && notShelved(cadence.suggestionId)) {
+    return cadence.suggestionId;
+  }
+  return eligibleIds.find(notShelved) ?? null;
+}
+
+// "Maybe Later": re-offer the same habit tomorrow. The second snooze on a habit is
+// treated as a "No Thanks" (shelve it for its cooldown, start the breather).
+export function snoozeSuggestion(state: HabitState, templateId: string, cooldownDays: number, now: Date = new Date()): HabitState {
+  const prev = state.cadence.templates[templateId] ?? { snoozeCount: 0, shelvedUntil: null };
+  const snoozeCount = prev.snoozeCount + 1;
+  if (snoozeCount >= 2) return declineSuggestion(state, templateId, cooldownDays, now);
+  return {
+    ...state,
+    builder: null,
+    cadence: {
+      ...state.cadence,
+      suggestionId: templateId,
+      suggestionHoldUntil: startOfTomorrowISO(now),
+      templates: { ...state.cadence.templates, [templateId]: { ...prev, snoozeCount } },
+    },
+  };
+}
+
+// "No Thanks" (or a second Maybe Later): shelve the habit for its cooldown, offer
+// something different next time, and start the breather.
+export function declineSuggestion(state: HabitState, templateId: string, cooldownDays: number, now: Date = new Date()): HabitState {
+  return {
+    ...state,
+    builder: null,
+    cadence: {
+      ...state.cadence,
+      lastEndedAt: now.toISOString(),
+      suggestionId: null,
+      suggestionHoldUntil: null,
+      templates: { ...state.cadence.templates, [templateId]: { snoozeCount: 0, shelvedUntil: addDaysISO(cooldownDays, now) } },
+    },
+  };
+}
+
+// A builder finished: clear it, shelve that template for its cooldown so it doesn't
+// immediately re-suggest, and start the breather before the next one.
+export function endBuilderCompleted(state: HabitState, templateId: string, cooldownDays: number, now: Date = new Date()): HabitState {
+  return {
+    ...state,
+    builder: null,
+    cadence: {
+      ...state.cadence,
+      lastEndedAt: now.toISOString(),
+      suggestionId: null,
+      suggestionHoldUntil: null,
+      templates: { ...state.cadence.templates, [templateId]: { snoozeCount: 0, shelvedUntil: addDaysISO(cooldownDays, now) } },
+    },
+  };
+}
