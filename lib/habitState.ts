@@ -14,6 +14,8 @@ export interface ActiveBuilder {
   days: boolean[][];          // [day][checkpoint] completion grid
   startedAt: string | null;   // ISO date the tracker went active; drives midnight rollover
   holdDay?: number | null;    // post-completion pause: keep this day on screen
+  finishedAt?: string;        // ISO when the builder completed (status "done")
+  keptAnswer?: "yes" | "maybe" | "no" | null; // the "keep this up?" answer, once given
 }
 
 // Per-template cadence memory. snoozeCount tracks "Maybe Later" taps (2 = treat as
@@ -128,12 +130,12 @@ export function declineSuggestion(state: HabitState, templateId: string, cooldow
   };
 }
 
-// A builder finished: clear it, shelve that template for its cooldown so it doesn't
-// immediately re-suggest, and start the breather before the next one.
-export function endBuilderCompleted(state: HabitState, templateId: string, cooldownDays: number, now: Date = new Date()): HabitState {
+// A habit ended: shelve that template for its cooldown and start the breather. The
+// builder is left untouched so a finished "done" confirmation can stay on screen until
+// the day rolls over.
+export function markHabitEnded(state: HabitState, templateId: string, cooldownDays: number, now: Date = new Date()): HabitState {
   return {
     ...state,
-    builder: null,
     cadence: {
       ...state.cadence,
       lastEndedAt: now.toISOString(),
@@ -142,4 +144,10 @@ export function endBuilderCompleted(state: HabitState, templateId: string, coold
       templates: { ...state.cadence.templates, [templateId]: { snoozeCount: 0, shelvedUntil: addDaysISO(cooldownDays, now) } },
     },
   };
+}
+
+// As above, but also clears the builder (used when the confirmation should go away,
+// e.g. the day after completion).
+export function endBuilderCompleted(state: HabitState, templateId: string, cooldownDays: number, now: Date = new Date()): HabitState {
+  return { ...markHabitEnded(state, templateId, cooldownDays, now), builder: null };
 }

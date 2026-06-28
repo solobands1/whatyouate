@@ -22,7 +22,7 @@ import "../lib/mealQueue";
 import BarcodeScannerOverlay from "./BarcodeScannerOverlay";
 import { getFoodCacheEntry, setFoodCacheEntry, deleteFoodCacheEntry, deleteFoodTextEntry, incrementFoodCacheLogCount, incrementFoodTextLogCount, getQuickAddFromMeals, addQuickAddRemoved, getDailySupplements, setDailySupplements, hasDailySuppsLoggedToday, markDailySuppsLoggedToday, clearDailySuppsLoggedToday, type QuickAddItem } from "../lib/foodCache";
 import { addFeelLog, deleteFeelLog, updateFeelLog, fetchWaterLogs, upsertWaterLog, addWeightLog, saveProfile, addReflection, fetchReflections, fetchHabitState, saveHabitState, fetchHabitHistory, saveHabitHistory, type FeelLog } from "../lib/supabaseDb";
-import { EMPTY_HABIT_STATE, pickSuggestionId, snoozeSuggestion, declineSuggestion, endBuilderCompleted, type HabitState, type ActiveBuilder, type HabitHistoryEntry } from "../lib/habitState";
+import { EMPTY_HABIT_STATE, pickSuggestionId, snoozeSuggestion, declineSuggestion, markHabitEnded, type HabitState, type ActiveBuilder, type HabitHistoryEntry } from "../lib/habitState";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
 import WaterBar from "./WaterBar";
@@ -236,6 +236,11 @@ const HABIT_DONE_LINES = [
 function todayDateStr() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+// True if an ISO timestamp falls on the same local calendar day as `d`.
+function sameLocalDay(iso: string, d: Date): boolean {
+  const a = new Date(iso);
+  return a.getFullYear() === d.getFullYear() && a.getMonth() === d.getMonth() && a.getDate() === d.getDate();
 }
 function minDateStr() {
   const d = new Date();
@@ -478,15 +483,23 @@ export default function HomeScreen() {
     }
     let cancelled = false;
     (async () => {
-      const state = (await fetchHabitState(user.id)) ?? EMPTY_HABIT_STATE;
+      const loaded = (await fetchHabitState(user.id)) ?? EMPTY_HABIT_STATE;
       if (cancelled) return;
+      // A finished "done" confirmation only lives until the day rolls over.
+      let state = loaded;
+      if (loaded.builder?.status === "done" && loaded.builder.finishedAt && !sameLocalDay(loaded.builder.finishedAt, new Date())) {
+        state = { ...loaded, builder: null };
+        void saveHabitState(user.id, state);
+      }
       habitStateRef.current = state;
       if (state.builder) {
-        const t = HABIT_TEMPLATES.find((x) => x.id === state.builder!.templateId) ?? goalHabits[0];
+        const b = state.builder;
+        const t = HABIT_TEMPLATES.find((x) => x.id === b.templateId) ?? goalHabits[0];
         setActiveTemplate(t);
-        setHeroHabit({ status: state.builder.status, days: state.builder.days, holdDay: state.builder.holdDay ?? null });
-        // Restoring a finished builder: jump straight to the keep prompt (no celebration replay).
-        if (state.builder.status === "done") setDoneStep("feedback");
+        setHeroHabit({ status: b.status, days: b.days, holdDay: b.holdDay ?? null });
+        // Restore a finished builder without replaying the celebration: the answered
+        // "rested" confirmation, or the keep prompt if not answered yet.
+        if (b.status === "done") setDoneStep(b.keptAnswer ? "rested" : "feedback");
       } else {
         // Respect the breather/cooldown: only suggest when cadence says it's time.
         // Otherwise show the greeting (no habit) rather than re-offering one.
@@ -504,12 +517,13 @@ export default function HomeScreen() {
     return () => { cancelled = true; };
   }, [profile, goalHabits, user, isDemoMode]);
 
-  // Persist the in-progress builder whenever it changes. The "done" celebration is
-  // persisted too (so a reload still lets you answer "keep this up?"); only truly
-  // transient states (suggested/accepting/hidden) are not stored as a builder.
+  // Persist the in-progress builder whenever it changes. "done" is handled by its own
+  // effect below (it carries finishedAt + the keep answer); transient states
+  // (suggested/accepting/hidden) are not stored as a builder.
   useEffect(() => {
     if (!appliedGoalHabitRef.current || isDemoMode || !user) return;
-    const persistable = ["committed", "active", "dayComplete", "missed", "done"].includes(heroHabit.status);
+    if (heroHabit.status === "done") return;
+    const persistable = ["committed", "active", "dayComplete", "missed"].includes(heroHabit.status);
     let builder: ActiveBuilder | null = null;
     if (persistable) {
       const prev = habitStateRef.current.builder;
@@ -527,9 +541,30 @@ export default function HomeScreen() {
     void saveHabitState(user.id, next);
   }, [heroHabit, activeTemplate, isDemoMode, user]);
 
-  // The keep answer is the real end of a habit: archive it with the answer, then clear
-  // the builder + start the breather. (Until this, the done state persists so a reload
-  // still shows the celebration + keep prompt.)
+  // On completion, persist the finished builder (with finishedAt) and start the
+  // breather — but keep the builder so the "You Built A Habit" confirmation stays on
+  // screen until the day rolls over. The live celebration sequence is untouched.
+  const doneHandledRef = useRef(false);
+  useEffect(() => {
+    if (heroHabit.status !== "done") { doneHandledRef.current = false; return; }
+    if (doneHandledRef.current || isDemoMode || !user) return;
+    doneHandledRef.current = true;
+    const tmpl = activeTemplate;
+    const prev = habitStateRef.current.builder;
+    const startedAt = prev && prev.templateId === tmpl.id ? prev.startedAt : new Date().toISOString();
+    const doneBuilder: ActiveBuilder = {
+      templateId: tmpl.id, status: "done", days: heroHabit.days, startedAt,
+      holdDay: null, finishedAt: new Date().toISOString(), keptAnswer: prev?.keptAnswer ?? null,
+    };
+    const next: HabitState = { ...markHabitEnded(habitStateRef.current, tmpl.id, tmpl.cooldownDays), builder: doneBuilder };
+    habitStateRef.current = next;
+    void saveHabitState(user.id, next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [heroHabit.status, isDemoMode, user]);
+
+  // The keep answer: archive the completion with the answer and record it on the
+  // persisted builder (so a reload shows the answered confirmation, not the prompt).
+  // The builder is NOT cleared here — it stays until the day rolls over.
   const setBuiltHabitKeep = (keep: "yes" | "maybe" | "no") => {
     if (isDemoMode || !user) return;
     const tmpl = activeTemplate;
@@ -540,9 +575,12 @@ export default function HomeScreen() {
       };
       const history = await fetchHabitHistory(user.id);
       await saveHabitHistory(user.id, [entry, ...history]);
-      const ended = endBuilderCompleted(habitStateRef.current, tmpl.id, tmpl.cooldownDays);
-      habitStateRef.current = ended;
-      await saveHabitState(user.id, ended);
+      const cur = habitStateRef.current;
+      if (cur.builder?.status === "done") {
+        const next: HabitState = { ...cur, builder: { ...cur.builder, keptAnswer: keep } };
+        habitStateRef.current = next;
+        await saveHabitState(user.id, next);
+      }
     })();
   };
 
