@@ -21,7 +21,8 @@ import { supabase } from "../lib/supabaseClient";
 import "../lib/mealQueue";
 import BarcodeScannerOverlay from "./BarcodeScannerOverlay";
 import { getFoodCacheEntry, setFoodCacheEntry, deleteFoodCacheEntry, deleteFoodTextEntry, incrementFoodCacheLogCount, incrementFoodTextLogCount, getQuickAddFromMeals, addQuickAddRemoved, getDailySupplements, setDailySupplements, hasDailySuppsLoggedToday, markDailySuppsLoggedToday, clearDailySuppsLoggedToday, type QuickAddItem } from "../lib/foodCache";
-import { addFeelLog, deleteFeelLog, updateFeelLog, fetchWaterLogs, upsertWaterLog, addWeightLog, saveProfile, addReflection, fetchReflections, type FeelLog } from "../lib/supabaseDb";
+import { addFeelLog, deleteFeelLog, updateFeelLog, fetchWaterLogs, upsertWaterLog, addWeightLog, saveProfile, addReflection, fetchReflections, fetchHabitState, saveHabitState, fetchHabitHistory, saveHabitHistory, type FeelLog } from "../lib/supabaseDb";
+import { EMPTY_HABIT_STATE, pickSuggestionId, snoozeSuggestion, declineSuggestion, endBuilderCompleted, type HabitState, type ActiveBuilder, type HabitHistoryEntry } from "../lib/habitState";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
 import WaterBar from "./WaterBar";
@@ -458,13 +459,104 @@ export default function HomeScreen() {
   // Surface the habits matching the user's feeling goal(s) first.
   const goalHabits = useMemo(() => habitsForGoals(profile?.feelingGoals, profile?.goalDirection), [profile?.feelingGoals, profile?.goalDirection]);
   const appliedGoalHabitRef = useRef(false);
+  // Mirror of the persisted habit state, kept in a ref so the save/cadence effects
+  // can read the latest without re-running on it.
+  const habitStateRef = useRef<HabitState>(EMPTY_HABIT_STATE);
   useEffect(() => {
     if (appliedGoalHabitRef.current || !profile || goalHabits.length === 0) return;
     appliedGoalHabitRef.current = true;
-    const top = goalHabits[0];
-    setActiveTemplate(top);
-    setHeroHabit({ status: "suggested", days: freshDays(top) });
-  }, [profile, goalHabits]);
+    // Demo/walkthrough stays in-memory and never touches persistence.
+    if (isDemoMode || !user) {
+      const top = goalHabits[0];
+      setActiveTemplate(top);
+      setHeroHabit({ status: "suggested", days: freshDays(top) });
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const state = (await fetchHabitState(user.id)) ?? EMPTY_HABIT_STATE;
+      if (cancelled) return;
+      habitStateRef.current = state;
+      if (state.builder) {
+        const t = HABIT_TEMPLATES.find((x) => x.id === state.builder!.templateId) ?? goalHabits[0];
+        setActiveTemplate(t);
+        setHeroHabit({ status: state.builder.status, days: state.builder.days, holdDay: state.builder.holdDay ?? null });
+      } else {
+        const ids = goalHabits.map((g) => g.id);
+        const suggestId = pickSuggestionId(state, ids) ?? ids[0];
+        const t = HABIT_TEMPLATES.find((x) => x.id === suggestId) ?? goalHabits[0];
+        setActiveTemplate(t);
+        setHeroHabit({ status: "suggested", days: freshDays(t) });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [profile, goalHabits, user, isDemoMode]);
+
+  // Persist the in-progress builder whenever it changes. Transient states
+  // (suggested/accepting/hidden/done) are not stored as an active builder —
+  // suggestions are recomputed and completions are archived separately.
+  useEffect(() => {
+    if (!appliedGoalHabitRef.current || isDemoMode || !user) return;
+    const persistable = ["committed", "active", "dayComplete", "missed"].includes(heroHabit.status);
+    let builder: ActiveBuilder | null = null;
+    if (persistable) {
+      const prev = habitStateRef.current.builder;
+      const startedAt = prev && prev.templateId === activeTemplate.id ? prev.startedAt : new Date().toISOString();
+      builder = {
+        templateId: activeTemplate.id,
+        status: heroHabit.status,
+        days: heroHabit.days,
+        startedAt,
+        holdDay: heroHabit.holdDay ?? null,
+      };
+    }
+    const next: HabitState = { ...habitStateRef.current, builder };
+    habitStateRef.current = next;
+    void saveHabitState(user.id, next);
+  }, [heroHabit, activeTemplate, isDemoMode, user]);
+
+  // Capture a completion the moment the builder finishes, so it's archived even if
+  // the user reloads before answering "keep this up?". The keep answer patches it.
+  const doneArchivedRef = useRef(false);
+  useEffect(() => {
+    if (heroHabit.status !== "done") { doneArchivedRef.current = false; return; }
+    if (doneArchivedRef.current || isDemoMode || !user) return;
+    doneArchivedRef.current = true;
+    const tmpl = activeTemplate;
+    void (async () => {
+      const entry: HabitHistoryEntry = {
+        templateId: tmpl.id, title: tmpl.title, days: tmpl.durationDays,
+        finishedAt: new Date().toISOString(), keep: null,
+      };
+      const history = await fetchHabitHistory(user.id);
+      await saveHabitHistory(user.id, [entry, ...history]);
+      const next = endBuilderCompleted(habitStateRef.current, tmpl.id, tmpl.cooldownDays);
+      habitStateRef.current = next;
+      await saveHabitState(user.id, next);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [heroHabit.status, isDemoMode, user]);
+
+  // Patch the most recent history entry with the user's "keep this up?" answer.
+  const setBuiltHabitKeep = (keep: "yes" | "maybe" | "no") => {
+    if (isDemoMode || !user) return;
+    void (async () => {
+      const history = await fetchHabitHistory(user.id);
+      if (history.length === 0) return;
+      await saveHabitHistory(user.id, [{ ...history[0], keep }, ...history.slice(1)]);
+    })();
+  };
+
+  // Maybe Later = soft snooze (re-offer tomorrow; 2nd = No); No Thanks = shelve it.
+  const dismissSuggestion = (hard: boolean) => {
+    setHeroHabit((h) => ({ ...h, status: "hidden" }));
+    if (isDemoMode || !user) return;
+    const next = hard
+      ? declineSuggestion(habitStateRef.current, activeTemplate.id, activeTemplate.cooldownDays)
+      : snoozeSuggestion(habitStateRef.current, activeTemplate.id, activeTemplate.cooldownDays);
+    habitStateRef.current = next;
+    void saveHabitState(user.id, next);
+  };
 
   // On the very first habit prompt, show a compact "Habit Builder" notification, then
   // smoothly expand into the full card. Only runs once (later prompts/cycles are
@@ -2422,9 +2514,9 @@ export default function HomeScreen() {
                       Let&apos;s Do It!
                     </button>
                     <div className="mt-2 flex items-center justify-center gap-3">
-                      <button type="button" className="text-xs font-medium text-ink/50 transition active:opacity-60" onClick={() => setHeroHabit((h) => ({ ...h, status: "hidden" }))}>Maybe Later</button>
+                      <button type="button" className="text-xs font-medium text-ink/50 transition active:opacity-60" onClick={() => dismissSuggestion(false)}>Maybe Later</button>
                       <span className="text-ink/20">·</span>
-                      <button type="button" className="text-xs font-medium text-ink/50 transition active:opacity-60" onClick={() => setHeroHabit((h) => ({ ...h, status: "hidden" }))}>No Thanks</button>
+                      <button type="button" className="text-xs font-medium text-ink/50 transition active:opacity-60" onClick={() => dismissSuggestion(true)}>No Thanks</button>
                     </div>
                   </div>
                 </div>
@@ -2634,6 +2726,7 @@ export default function HomeScreen() {
                               onClick={() => {
                                 if (ratingPicked) return;
                                 setRatingPicked(r);
+                                setBuiltHabitKeep(r === "Yes!" ? "yes" : r === "Maybe" ? "maybe" : "no");
                                 setTimeout(() => setDoneStep("rested"), 720);
                               }}
                             >
