@@ -70,10 +70,15 @@ input, textarea, select {
    card shimmers, before the border pulses and the card expands. */
 @keyframes habitBounce {
   0%   { transform: translateY(0); }
-  45%  { transform: translateY(-8px); }
+  28%  { transform: translateY(-11px); }
+  52%  { transform: translateY(0); }
+  70%  { transform: translateY(-4px); }
+  86%  { transform: translateY(0); }
+  93%  { transform: translateY(-1.5px); }
   100% { transform: translateY(0); }
 }
-.animate-habit-bounce { animation: habitBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+/* A decaying multi-hop bounce (never dips below the baseline, so no "thud"). */
+.animate-habit-bounce { animation: habitBounce 0.95s cubic-bezier(0.3, 0.7, 0.4, 1) both; }
 
 /* One-shot blue border pulse when the habit card finishes dropping down, echoing
    the finished-habit glow but settling back to no glow. */
@@ -107,7 +112,7 @@ input, textarea, select {
   0%, 100% { transform: translateY(0); }
   50%      { transform: translateY(-3px); }
 }
-.animate-moon-float { animation: moonFloat 4.5s ease-in-out infinite; }
+.animate-moon-float { animation: moonFloat 7s ease-in-out infinite; }
 
 @media (prefers-reduced-motion: reduce) {
   .animate-card-fade,

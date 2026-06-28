@@ -2549,9 +2549,9 @@ export default function HomeScreen() {
                 {/* Collapsed "notification" expands smoothly into the full card. */}
                 <div className={`grid transition-all duration-[800ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${heroExpanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
                   <div className="min-h-0 overflow-hidden">
-                    <p className="mt-1 text-base font-semibold text-ink">{activeTemplate.title}</p>
-                    <p className="mt-0.5 text-[13px] text-ink/70">{activeTemplate.ask}</p>
-                    <p className="mt-2 text-xs leading-relaxed text-ink/80"><span className="font-semibold text-ink">Why: </span>{fillWhy(activeTemplate)}</p>
+                    <p className="mt-2 text-base font-semibold text-ink">{activeTemplate.title}</p>
+                    <p className="mt-1.5 text-[13px] text-ink/70">{activeTemplate.ask}</p>
+                    <p className="mt-3 text-xs leading-relaxed text-ink/80"><span className="font-semibold text-ink">Why: </span>{fillWhy(activeTemplate)}</p>
                     {activeTemplate.ideas && activeTemplate.ideas.length > 0 && (
                       <div className="mt-2.5">
                         <button type="button" onClick={() => setShowHabitIdeas((v) => !v)} className="inline-flex items-center gap-1 text-xs font-semibold text-primary/80 transition active:opacity-60">
@@ -2569,12 +2569,12 @@ export default function HomeScreen() {
                     )}
                     <button
                       type="button"
-                      className="mt-4 w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white transition active:scale-[0.98]"
+                      className="mt-5 w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white transition active:scale-[0.98]"
                       onClick={() => { unlockAudio(); setHeroHabit((h) => ({ ...h, status: "accepting" })); }}
                     >
                       Let&apos;s Do It!
                     </button>
-                    <div className="mt-2 flex items-center justify-center gap-3">
+                    <div className="mt-3 flex items-center justify-center gap-3">
                       <button type="button" className="text-xs font-medium text-ink/50 transition active:opacity-60" onClick={() => dismissSuggestion(false)}>Maybe Later</button>
                       <span className="text-ink/20">·</span>
                       <button type="button" className="text-xs font-medium text-ink/50 transition active:opacity-60" onClick={() => dismissSuggestion(true)}>No Thanks</button>
@@ -2649,8 +2649,8 @@ export default function HomeScreen() {
                       {/* Tapping the day label simulates a missed day (demo/testing only). */}
                       <p className="cursor-pointer text-xs font-medium text-muted/60 transition active:opacity-60" role="button" aria-label="Simulate missed day (testing)" onClick={() => setHeroHabit((h) => ({ ...h, status: "missed" }))}>Day {current + 1} of {activeTemplate.durationDays}</p>
                     </div>
-                    <p className="mt-0.5 text-[13px] text-ink/70">{activeTemplate.ask}</p>
-                    <div className="mt-3 flex gap-2">
+                    <p className="mt-1.5 text-[13px] text-ink/70">{activeTemplate.ask}</p>
+                    <div className="mt-4 flex gap-2">
                       {activeTemplate.checkpoints.map((slot, s) => {
                         const checked = heroHabit.days[current][s];
                         return (
