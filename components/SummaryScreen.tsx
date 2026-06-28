@@ -127,6 +127,12 @@ export default function SummaryScreen() {
   };
   const [showNudgeInfo, setShowNudgeInfo] = useState(false);
   const [showNudgeHistory, setShowNudgeHistory] = useState(false);
+  const [nudgeHistoryClosing, setNudgeHistoryClosing] = useState(false);
+  // Animate the sheet down before unmounting, instead of it vanishing.
+  const closeNudgeHistory = () => {
+    setNudgeHistoryClosing(true);
+    setTimeout(() => { setShowNudgeHistory(false); setNudgeHistoryClosing(false); }, 280);
+  };
 
   // Lock body scroll while the nudge history sheet is open so scrolling it
   // doesn't bleed through to the page behind it.
@@ -1194,16 +1200,16 @@ export default function SummaryScreen() {
 
       {/* Nudge history sheet */}
       {showNudgeHistory && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={() => setShowNudgeHistory(false)}>
-          <div className="absolute inset-0 bg-black/30" />
-          <div className="relative w-full max-w-md max-h-[85vh] overflow-y-auto overscroll-contain rounded-t-3xl bg-white p-5 pb-8 shadow-xl animate-drawer-up" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={closeNudgeHistory}>
+          <div className={`absolute inset-0 bg-black/30 transition-opacity duration-300 ${nudgeHistoryClosing ? "opacity-0" : "opacity-100"}`} />
+          <div className={`relative w-full max-w-md max-h-[85vh] overflow-y-auto overscroll-contain rounded-t-3xl bg-white p-5 pb-8 shadow-xl ${nudgeHistoryClosing ? "animate-drawer-down" : "animate-drawer-up"}`} onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-3">
               <WyaaAvatar size={48} />
               <div className="flex-1">
                 <p className="text-base font-semibold text-ink">Nudges</p>
                 <p className="text-xs text-muted/65">Honest reads from your coach</p>
               </div>
-              <button type="button" onClick={() => setShowNudgeHistory(false)} className="text-sm font-semibold text-ink/50 active:opacity-60">Close</button>
+              <button type="button" onClick={closeNudgeHistory} className="text-sm font-semibold text-ink/50 active:opacity-60">Close</button>
             </div>
 
             <div className="mt-5">
