@@ -485,6 +485,8 @@ export default function HomeScreen() {
         const t = HABIT_TEMPLATES.find((x) => x.id === state.builder!.templateId) ?? goalHabits[0];
         setActiveTemplate(t);
         setHeroHabit({ status: state.builder.status, days: state.builder.days, holdDay: state.builder.holdDay ?? null });
+        // Restoring a finished builder: jump straight to the keep prompt (no celebration replay).
+        if (state.builder.status === "done") setDoneStep("feedback");
       } else {
         // Respect the breather/cooldown: only suggest when cadence says it's time.
         // Otherwise show the greeting (no habit) rather than re-offering one.
@@ -502,13 +504,12 @@ export default function HomeScreen() {
     return () => { cancelled = true; };
   }, [profile, goalHabits, user, isDemoMode]);
 
-  // Persist the in-progress builder whenever it changes. Transient states
-  // (suggested/accepting/hidden/done) are not stored as an active builder —
-  // suggestions are recomputed and completions are archived separately.
+  // Persist the in-progress builder whenever it changes. The "done" celebration is
+  // persisted too (so a reload still lets you answer "keep this up?"); only truly
+  // transient states (suggested/accepting/hidden) are not stored as a builder.
   useEffect(() => {
     if (!appliedGoalHabitRef.current || isDemoMode || !user) return;
-    if (heroHabit.status === "done") return; // the done effect is the sole writer for completion
-    const persistable = ["committed", "active", "dayComplete", "missed"].includes(heroHabit.status);
+    const persistable = ["committed", "active", "dayComplete", "missed", "done"].includes(heroHabit.status);
     let builder: ActiveBuilder | null = null;
     if (persistable) {
       const prev = habitStateRef.current.builder;
@@ -526,38 +527,22 @@ export default function HomeScreen() {
     void saveHabitState(user.id, next);
   }, [heroHabit, activeTemplate, isDemoMode, user]);
 
-  // Capture a completion the moment the builder finishes, so it's archived even if
-  // the user reloads before answering "keep this up?". The keep answer patches it.
-  const doneArchivedRef = useRef(false);
-  useEffect(() => {
-    if (heroHabit.status !== "done") { doneArchivedRef.current = false; return; }
-    if (doneArchivedRef.current || isDemoMode || !user) return;
-    doneArchivedRef.current = true;
+  // The keep answer is the real end of a habit: archive it with the answer, then clear
+  // the builder + start the breather. (Until this, the done state persists so a reload
+  // still shows the celebration + keep prompt.)
+  const setBuiltHabitKeep = (keep: "yes" | "maybe" | "no") => {
+    if (isDemoMode || !user) return;
     const tmpl = activeTemplate;
-    // 1. Clear the builder + start the breather immediately (sync), so a reload during
-    //    the celebration can't restart the habit.
-    const ended = endBuilderCompleted(habitStateRef.current, tmpl.id, tmpl.cooldownDays);
-    habitStateRef.current = ended;
-    void saveHabitState(user.id, ended);
-    // 2. Archive the completion (best-effort; keep answer patches it later).
     void (async () => {
       const entry: HabitHistoryEntry = {
         templateId: tmpl.id, title: tmpl.title, days: tmpl.durationDays,
-        finishedAt: new Date().toISOString(), keep: null,
+        finishedAt: new Date().toISOString(), keep,
       };
       const history = await fetchHabitHistory(user.id);
       await saveHabitHistory(user.id, [entry, ...history]);
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [heroHabit.status, isDemoMode, user]);
-
-  // Patch the most recent history entry with the user's "keep this up?" answer.
-  const setBuiltHabitKeep = (keep: "yes" | "maybe" | "no") => {
-    if (isDemoMode || !user) return;
-    void (async () => {
-      const history = await fetchHabitHistory(user.id);
-      if (history.length === 0) return;
-      await saveHabitHistory(user.id, [{ ...history[0], keep }, ...history.slice(1)]);
+      const ended = endBuilderCompleted(habitStateRef.current, tmpl.id, tmpl.cooldownDays);
+      habitStateRef.current = ended;
+      await saveHabitState(user.id, ended);
     })();
   };
 
