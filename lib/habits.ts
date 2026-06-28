@@ -40,7 +40,8 @@ export type HabitSignal =
   | "energy_low_count"   // # of tired/sluggish/foggy feel logs in the window
   | "micronutrient_pct"  // a nutrient's intake vs RDA (requires `nutrient`)
   | "steps_avg"          // HealthKit only
-  | "sleep_hours_avg";   // HealthKit only
+  | "sleep_hours_avg"    // HealthKit only
+  | "workout_count";     // # of logged or HealthKit workouts in the window
 
 export interface HabitCondition {
   signal: HabitSignal;
@@ -153,6 +154,24 @@ export const HABIT_TEMPLATES: HabitTemplate[] = [
     durationDays: 3, checkpoints: ["10-Min Walk"], requiresHealthKit: true,
     triggers: [{ signal: "steps_avg", op: "<", value: 4000, windowDays: 7, minDataDays: 4 }],
     friction: "low", priorityWeight: 6, cooldownDays: 21, maxExtensions: 2,
+  },
+
+  // ---------- movement (entry-level walk for inactive users; no HealthKit needed) ----------
+  {
+    id: "start-walking-3", kind: "standard", title: "Start Walking", noun: "walks", category: "movement",
+    ask: "Take a 15-minute walk each day for 3 days. Any time that fits, around the block counts.",
+    whyTemplate: "Walking is the simplest way to get moving, and a short daily one lifts energy and mood more than its size suggests. The hardest part is the first few days, which is exactly what this builds.",
+    durationDays: 3, checkpoints: ["15-Min Walk"],
+    triggers: [{ signal: "workout_count", op: "<=", value: 1, windowDays: 7, minDataDays: 4 }],
+    friction: "low", priorityWeight: 7, cooldownDays: 21, maxExtensions: 2, deepensTo: "start-walking-5",
+  },
+  {
+    id: "start-walking-5", kind: "standard", title: "Start Walking", noun: "walks", category: "movement",
+    ask: "Take a 15-minute walk each day for 5 days. Any time that fits, around the block counts.",
+    whyTemplate: "You built the 3-day version, so let's make it stick. Five days is where a walk starts to feel like part of the day instead of a task.",
+    durationDays: 5, checkpoints: ["15-Min Walk"],
+    triggers: [{ signal: "workout_count", op: "<=", value: 1, windowDays: 7, minDataDays: 4 }],
+    friction: "low", priorityWeight: 7, cooldownDays: 21, maxExtensions: 2,
   },
 
   // ---------- produce (one added veg, stacked on dinner) ----------
