@@ -183,6 +183,35 @@ function feelLabel(tag: string): string {
   return tag.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+// Faint crescent moons scattered across the nightly check-in background.
+function NightlyMoonsBg() {
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+      <svg className="h-full w-full" viewBox="0 0 400 800" fill="none" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+        <g fill="#6FA8FF">
+          <g opacity="0.10" transform="translate(30 14) scale(1.3) rotate(6)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
+          <g opacity="0.08" transform="translate(150 30) scale(0.9) rotate(-7)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
+          <g opacity="0.11" transform="translate(262 12) scale(1.7) rotate(8)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
+          <g opacity="0.07" transform="translate(352 36) scale(1.0) rotate(-5)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
+          <g opacity="0.09" transform="translate(8 130) scale(1.4) rotate(5)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
+          <g opacity="0.08" transform="translate(16 300) scale(1.0) rotate(-6)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
+          <g opacity="0.10" transform="translate(6 470) scale(1.6) rotate(6)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
+          <g opacity="0.08" transform="translate(14 640) scale(1.1) rotate(-4)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
+          <g opacity="0.08" transform="translate(372 110) scale(1.2) rotate(-7)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
+          <g opacity="0.10" transform="translate(380 280) scale(1.5) rotate(6)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
+          <g opacity="0.07" transform="translate(368 450) scale(1.0) rotate(-5)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
+          <g opacity="0.09" transform="translate(378 630) scale(1.3) rotate(5)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
+          <g opacity="0.09" transform="translate(160 560) scale(1.2) rotate(6)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
+          <g opacity="0.11" transform="translate(290 600) scale(2.0) rotate(9)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
+          <g opacity="0.10" transform="translate(80 690) scale(1.5) rotate(-6)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
+          <g opacity="0.08" transform="translate(220 740) scale(1.0) rotate(5)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
+          <g opacity="0.09" transform="translate(330 720) scale(1.3) rotate(-4)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
+        </g>
+      </svg>
+    </div>
+  );
+}
+
 // Habit templates wired locally so we can flip through and test how each one
 // renders before the engine/persistence exist. Starts on hydration (the reference).
 const FIRST_TEMPLATE: HabitTemplate = HABIT_TEMPLATES.find((t) => t.id === "hydration-3") ?? HABIT_TEMPLATES[0];
@@ -440,7 +469,11 @@ export default function HomeScreen() {
   // Today's completed check-in (so the button shows "Checked In" + can be edited).
   // Clears on its own at midnight since the date no longer matches.
   const [todayReflection, setTodayReflection] = useState<{ reflection: Record<string, number | number[]>; note: string } | null>(null);
-  const closeReflection = () => setShowReflection(false); // keeps progress for "Later"
+  // Edit mode: a summary of answers; tap one to edit just that question/note.
+  // editingKey: null = summary, a question key, or "note".
+  const [reflectionEditMode, setReflectionEditMode] = useState(false);
+  const [reflectionEditingKey, setReflectionEditingKey] = useState<string | null>(null);
+  const closeReflection = () => { setShowReflection(false); setReflectionEditMode(false); setReflectionEditingKey(null); };
   const finishReflection = () => {
     // Persist the completed check-in so it feeds the coach and "Same As Last Night".
     if (user && Object.keys(reflection).length > 0) {
@@ -450,13 +483,23 @@ export default function HomeScreen() {
     }
     setShowReflection(false); setReflectionStep(0); setReflection({}); setReflectionNote("");
   };
-  // Reopen today's check-in prefilled, to edit it (re-submitting overwrites the day).
+  // Reopen today's check-in as an editable summary.
   const editTodayReflection = () => {
     if (!todayReflection) { setShowReflection(true); return; }
     setReflection(todayReflection.reflection);
     setReflectionNote(todayReflection.note);
-    setReflectionStep(1);
+    setReflectionEditMode(true);
+    setReflectionEditingKey(null);
     setShowReflection(true);
+  };
+  // Save the edited answers (overwrites today) and close.
+  const saveEditedReflection = () => {
+    if (user && Object.keys(reflection).length > 0) {
+      setTodayReflection({ reflection, note: reflectionNote });
+      setLastReflection({ reflection, note: reflectionNote });
+      void addReflection(user.id, { date: todayDateStr(), answers: reflection, note: reflectionNote, ts: Date.now() });
+    }
+    setShowReflection(false); setReflectionEditMode(false); setReflectionEditingKey(null);
   };
   useEffect(() => {
     if (!user) return;
@@ -4584,38 +4627,100 @@ export default function HomeScreen() {
         const atNote = reflectionStep === total + 1;
         const atCloser = reflectionStep === total + 2;
         const progress = Math.min(100, (reflectionStep / (total + 1)) * 100);
+        const editQ = reflectionEditMode && reflectionEditingKey && reflectionEditingKey !== "note"
+          ? REFLECTION_QUESTIONS.find((x) => x.key === reflectionEditingKey) : null;
+        if (reflectionEditMode) {
+          return (
+            <div className="fixed inset-0 z-[60] flex flex-col justify-start bg-[#EDF4FF] px-6" style={{ paddingTop: "calc(env(safe-area-inset-top) + 2.5rem)", paddingBottom: "calc(env(safe-area-inset-bottom) + 1rem)" }}>
+              <NightlyMoonsBg />
+              <div className="relative z-10 flex h-[72vh] max-h-full flex-col overflow-hidden rounded-3xl border border-primary/20 bg-white animate-card-fade">
+                <div className="flex flex-1 flex-col px-6 overflow-y-auto">
+                  {reflectionEditingKey && (
+                    <div className="flex items-center pt-5">
+                      <button type="button" className="p-1 active:opacity-50" onClick={() => setReflectionEditingKey(null)}>
+                        <svg className="h-5 w-5 text-ink/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+                      </button>
+                    </div>
+                  )}
+                  {!reflectionEditingKey && (
+                    <div className="mt-[3vh] pb-10">
+                      <h1 className="text-center text-2xl font-semibold text-ink">Your Check-In</h1>
+                      <p className="mt-2 text-center text-sm text-ink/65">Tap an answer to change it.</p>
+                      <div className="mt-6 space-y-2">
+                        {REFLECTION_QUESTIONS.map((qq) => {
+                          const v = reflection[qq.key];
+                          const answer = qq.multi
+                            ? (Array.isArray(v) && v.length ? v.map((i) => qq.opts[i]).join(", ") : "—")
+                            : (typeof v === "number" ? qq.opts[v] : "—");
+                          return (
+                            <button key={qq.key} type="button" onClick={() => setReflectionEditingKey(qq.key)} className="flex w-full items-center justify-between gap-3 rounded-xl border border-ink/15 bg-white px-4 py-3 text-left transition active:bg-primary/5">
+                              <span className="shrink-0 text-sm text-ink/65">{qq.label}</span>
+                              <span className="flex items-center gap-1 text-right text-sm font-semibold text-ink">{answer}<svg className="h-3.5 w-3.5 shrink-0 text-ink/30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg></span>
+                            </button>
+                          );
+                        })}
+                        <button type="button" onClick={() => setReflectionEditingKey("note")} className="flex w-full items-center justify-between gap-3 rounded-xl border border-ink/15 bg-white px-4 py-3 text-left transition active:bg-primary/5">
+                          <span className="shrink-0 text-sm text-ink/65">Note</span>
+                          <span className="flex items-center gap-1 truncate text-right text-sm font-semibold text-ink">{reflectionNote.trim() ? reflectionNote : "—"}<svg className="h-3.5 w-3.5 shrink-0 text-ink/30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg></span>
+                        </button>
+                      </div>
+                      <button type="button" className="mt-8 w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80" onClick={saveEditedReflection}>Done</button>
+                    </div>
+                  )}
+                  {editQ && (
+                    <div className="mt-[3vh] pb-10">
+                      <div className="mb-5 flex justify-center">{editQ.icon}</div>
+                      <h1 className="text-center text-2xl font-semibold text-ink">{editQ.label}</h1>
+                      <p className="mt-2 text-center text-sm text-ink/65">{editQ.hint}</p>
+                      {editQ.multi && <p className="mt-1 text-center text-xs font-medium text-primary/70">Select all that apply</p>}
+                      <div className="mt-8 flex flex-col gap-3">
+                        {editQ.opts.map((_o, idx) => idx).reverse().map((i) => {
+                          const o = editQ.opts[i];
+                          const v = reflection[editQ.key];
+                          const sel = editQ.multi ? Array.isArray(v) && v.includes(i) : v === i;
+                          return (
+                            <button key={o} type="button" className={`w-full rounded-xl border py-4 text-center text-sm font-medium transition active:opacity-80 ${sel ? "border-primary bg-primary/10 text-primary" : "border-ink/20 bg-white text-ink/80"}`}
+                              onClick={() => {
+                                if (editQ.multi) {
+                                  setReflection((r) => {
+                                    const cur = Array.isArray(r[editQ.key]) ? (r[editQ.key] as number[]) : [];
+                                    if (i === 0) return { ...r, [editQ.key]: [0] };
+                                    const base = cur.filter((x) => x !== 0);
+                                    const next = base.includes(i) ? base.filter((x) => x !== i) : [...base, i];
+                                    return { ...r, [editQ.key]: next };
+                                  });
+                                } else {
+                                  setReflection((r) => ({ ...r, [editQ.key]: i }));
+                                  setTimeout(() => setReflectionEditingKey(null), 180);
+                                }
+                              }}
+                            >{o}</button>
+                          );
+                        })}
+                      </div>
+                      {editQ.multi && (
+                        <button type="button" className="mt-8 w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80" onClick={() => setReflectionEditingKey(null)}>Done</button>
+                      )}
+                    </div>
+                  )}
+                  {reflectionEditingKey === "note" && (
+                    <div className="mt-[3vh] pb-10">
+                      <div className="mb-5 flex justify-center">
+                        <svg className="h-10 w-10 text-primary/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+                      </div>
+                      <h1 className="text-center text-2xl font-semibold text-ink">Anything Stand Out?</h1>
+                      <input type="text" value={reflectionNote} onChange={(e) => setReflectionNote(e.target.value)} placeholder="e.g. I felt bloated today" className="mt-8 w-full rounded-xl border border-ink/10 bg-white px-4 py-4 text-center text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30" />
+                      <button type="button" className="mt-8 w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80" onClick={() => setReflectionEditingKey(null)}>Done</button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        }
         return (
           <div className="fixed inset-0 z-[60] flex flex-col justify-start bg-[#EDF4FF] px-6" style={{ paddingTop: "calc(env(safe-area-inset-top) + 2.5rem)", paddingBottom: "calc(env(safe-area-inset-bottom) + 1rem)" }}>
-            {/* Faint crescent moons scattered across the whole blue background, for the nightly theme.
-                "meet" keeps the full field on screen (no side crop) so they peek at the top, sides
-                and bottom around the card. */}
-            <div aria-hidden className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-              <svg className="h-full w-full" viewBox="0 0 400 800" fill="none" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
-                <g fill="#6FA8FF">
-                  {/* top band */}
-                  <g opacity="0.10" transform="translate(30 14) scale(1.3) rotate(6)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
-                  <g opacity="0.08" transform="translate(150 30) scale(0.9) rotate(-7)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
-                  <g opacity="0.11" transform="translate(262 12) scale(1.7) rotate(8)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
-                  <g opacity="0.07" transform="translate(352 36) scale(1.0) rotate(-5)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
-                  {/* left column */}
-                  <g opacity="0.09" transform="translate(8 130) scale(1.4) rotate(5)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
-                  <g opacity="0.08" transform="translate(16 300) scale(1.0) rotate(-6)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
-                  <g opacity="0.10" transform="translate(6 470) scale(1.6) rotate(6)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
-                  <g opacity="0.08" transform="translate(14 640) scale(1.1) rotate(-4)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
-                  {/* right column */}
-                  <g opacity="0.08" transform="translate(372 110) scale(1.2) rotate(-7)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
-                  <g opacity="0.10" transform="translate(380 280) scale(1.5) rotate(6)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
-                  <g opacity="0.07" transform="translate(368 450) scale(1.0) rotate(-5)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
-                  <g opacity="0.09" transform="translate(378 630) scale(1.3) rotate(5)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
-                  {/* bottom band */}
-                  <g opacity="0.09" transform="translate(160 560) scale(1.2) rotate(6)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
-                  <g opacity="0.11" transform="translate(290 600) scale(2.0) rotate(9)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
-                  <g opacity="0.10" transform="translate(80 690) scale(1.5) rotate(-6)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
-                  <g opacity="0.08" transform="translate(220 740) scale(1.0) rotate(5)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
-                  <g opacity="0.09" transform="translate(330 720) scale(1.3) rotate(-4)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></g>
-                </g>
-              </svg>
-            </div>
+            <NightlyMoonsBg />
             <div className="relative z-10 flex h-[72vh] max-h-full flex-col overflow-hidden rounded-3xl border border-primary/20 bg-white animate-card-fade">
             {!atIntro && (
               <div className="mx-5 mt-4 h-1.5 overflow-hidden rounded-full bg-ink/8">
