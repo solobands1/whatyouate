@@ -2900,7 +2900,7 @@ export default function HomeScreen() {
               // No habit builder in the slot: hold the current coach nudge (matches the
               // Patterns headline-clue style). Greeting only shows before today's nudge exists.
               <div className={`relative ${nudgeExpanded ? "" : "animate-habit-note"}`}>
-                <p className={`-mt-1 text-center text-xs font-semibold uppercase tracking-wide text-primary ${nudgeExpanded ? "" : "animate-habit-bounce"}`}>Nudge</p>
+                <p className={`-mt-2 text-center text-xs font-semibold uppercase tracking-wide text-primary ${nudgeExpanded ? "" : "animate-habit-bounce"}`}>Nudge</p>
                 {currentWindowNudge.created_at && (
                   <span className="absolute -top-2 right-0 text-[10px] text-muted/50">
                     {(() => {
@@ -2913,7 +2913,7 @@ export default function HomeScreen() {
                 )}
                 <div className={`grid transition-all duration-[800ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${nudgeExpanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
                   <div className="min-h-0 overflow-hidden">
-                    <p className="mt-2 text-[15px] font-medium leading-relaxed text-ink/90">{currentWindowNudge.message.replace(/\n+/g, " ")}</p>
+                    <p className="mt-2 text-sm font-medium leading-relaxed text-ink/90">{currentWindowNudge.message.replace(/\n+/g, " ")}</p>
                   </div>
                 </div>
               </div>
