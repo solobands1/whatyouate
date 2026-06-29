@@ -9,9 +9,7 @@ import BottomNav from "./BottomNav";
 import Card from "./Card";
 import { useAuth } from "./AuthProvider";
 import { useAppData } from "./AppDataProvider";
-import { fetchReflections } from "../lib/supabaseDb";
 import type { FeelLog } from "../lib/supabaseDb";
-import type { ReflectionEntry } from "../lib/habitState";
 import { computeSummaryMarkers, type ComputedNudge, type NudgeType } from "../lib/digestEngine";
 import { useTrialStatus } from "../hooks/useTrialStatus";
 import { openUpgradeModal } from "./UpgradeModal";
@@ -72,24 +70,6 @@ function UnlockTimeline({ milestones }: { milestones: MilestoneItem[] }) {
 
 const DEMO_NUDGE = "Your protein has been strong this week, but your last two days have been lighter on calories overall. If you're training today, consider a bigger lunch or an extra snack before your session — your body will make better use of what you eat around activity.";
 
-// The scale metrics shown in the check-in heatmap. Stress is inverted so "filled = good"
-// holds across every row. `dips` (multi) + the note live in the per-night detail.
-const CHECKIN_METRICS: { key: string; label: string; opts: string[]; invert: boolean }[] = [
-  { key: "energy", label: "Energy", opts: ["Drained", "Low", "Okay", "Good", "Great"], invert: false },
-  { key: "sleep", label: "Sleep", opts: ["Poor", "Okay", "Good", "Great"], invert: false },
-  { key: "mood", label: "Mood", opts: ["Poor", "Okay", "Good", "Great"], invert: false },
-  { key: "stress", label: "Stress", opts: ["None", "Mild", "Moderate", "High"], invert: true },
-  { key: "digestion", label: "Digestion", opts: ["Poor", "Okay", "Good", "Great"], invert: false },
-];
-const CHECKIN_DIP_OPTS = ["None", "Morning", "Afternoon", "Evening"];
-// 0..1 (higher = better) for a metric's chosen option index, or null if unanswered.
-function checkinValue(answers: Record<string, number | number[]> | undefined, m: { key: string; opts: string[]; invert: boolean }): number | null {
-  const idx = answers?.[m.key];
-  if (typeof idx !== "number") return null;
-  const max = m.opts.length - 1;
-  return m.invert ? (max - idx) / max : idx / max;
-}
-
 export default function SummaryScreen() {
   const router = useRouter();
   const { user, loading } = useAuth();
@@ -97,8 +77,6 @@ export default function SummaryScreen() {
   const trial = useTrialStatus();
   const [hydrated, setHydrated] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
-  const [reflections, setReflections] = useState<ReflectionEntry[]>([]);
-  const [checkInNight, setCheckInNight] = useState<ReflectionEntry | null>(null); // detail sheet
 
   useEffect(() => {
     if (!user) return;
@@ -198,42 +176,6 @@ export default function SummaryScreen() {
   useEffect(() => {
     setHydrated(true);
   }, []);
-
-  useEffect(() => {
-    if (!user || isDemoMode) return;
-    fetchReflections(user.id).then(setReflections);
-  }, [user, isDemoMode]);
-
-  // Last 7 nights (oldest -> newest) with day labels.
-  const checkInDays = useMemo(() => {
-    const out: { key: string; label: string; isToday: boolean }[] = [];
-    const L = ["S", "M", "T", "W", "T", "F", "S"];
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(); d.setDate(d.getDate() - i);
-      out.push({ key: todayKey(d), label: L[d.getDay()], isToday: i === 0 });
-    }
-    return out;
-  }, []);
-
-  // Sample data so the heatmap looks populated during the walkthrough.
-  const checkInByDate = useMemo(() => {
-    if (isDemoMode) {
-      const demo: Record<string, ReflectionEntry> = {};
-      const samples = [
-        { energy: 3, sleep: 2, mood: 3, stress: 1, digestion: 2 },
-        { energy: 4, sleep: 3, mood: 3, stress: 0, digestion: 3 },
-        { energy: 1, sleep: 1, mood: 1, stress: 3, digestion: 1 },
-        { energy: 3, sleep: 2, mood: 2, stress: 1, digestion: 2 },
-        { energy: 4, sleep: 3, mood: 3, stress: 1, digestion: 3 },
-        { energy: 2, sleep: 2, mood: 2, stress: 2, digestion: 2 },
-        { energy: 3, sleep: 3, mood: 3, stress: 1, digestion: 3 },
-      ];
-      checkInDays.forEach((d, i) => { demo[d.key] = { date: d.key, answers: samples[i], note: "", ts: 0 }; });
-      return demo;
-    }
-    return Object.fromEntries(reflections.map((r) => [r.date, r]));
-  }, [isDemoMode, reflections, checkInDays]);
-  const hasCheckIns = isDemoMode || reflections.length > 0;
 
 
   const summaryMarkers = useMemo(
@@ -1251,89 +1193,10 @@ export default function SummaryScreen() {
           })()}
         </Card>
 
-        {/* Nightly check-in heatmap — last 7 nights, tap a day for detail. */}
-        <Card className="mt-3" style={riseIn(hydrated, 3)}>
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Check-Ins</p>
-          {hasCheckIns ? (
-            <>
-              <p className="mt-1 text-sm text-muted/65">Your last 7 nights. Tap a day for detail.</p>
-              <div className="mt-4 space-y-1.5">
-                {CHECKIN_METRICS.map((m) => (
-                  <div key={m.key} className="flex items-center gap-2">
-                    <span className="w-16 shrink-0 text-[10px] text-muted/60">{m.label}</span>
-                    <div className="flex flex-1 gap-1">
-                      {checkInDays.map((d) => {
-                        const entry = checkInByDate[d.key];
-                        const v = checkinValue(entry?.answers, m);
-                        return (
-                          <button
-                            key={d.key}
-                            type="button"
-                            aria-label={`${m.label} ${d.key}`}
-                            onClick={() => entry && setCheckInNight(entry)}
-                            className="h-5 flex-1 rounded"
-                            style={v == null ? { border: "1px solid rgba(15,23,42,0.08)" } : { backgroundColor: `rgba(111,168,255,${0.14 + v * 0.76})` }}
-                          />
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-                <div className="flex items-center gap-2">
-                  <span className="w-16 shrink-0" />
-                  <div className="flex flex-1 gap-1">
-                    {checkInDays.map((d) => (
-                      <span key={d.key} className={`flex-1 text-center text-[10px] ${d.isToday ? "font-bold text-ink/70" : "text-muted/50"}`}>{d.label}</span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <p className="mt-3 text-[10px] leading-snug text-muted/50">Filled means better. Stress is flipped, so calm shows filled.</p>
-            </>
-          ) : (
-            <p className="mt-2 text-sm text-muted/65">Your nightly check-ins will show up here once you start logging them.</p>
-          )}
-        </Card>
-
 
       </div>
 
       <BottomNav current="summary" />
-
-      {/* Check-in night detail */}
-      {checkInNight && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={() => setCheckInNight(null)}>
-          <div className="absolute inset-0 bg-black/30" />
-          <div className="relative w-full max-w-md rounded-t-3xl bg-white p-5 pb-8 shadow-xl animate-drawer-up" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <p className="text-base font-semibold text-ink">{checkInNight.date === todayKey() ? "Tonight" : new Date(checkInNight.date + "T00:00:00").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}</p>
-              <button type="button" onClick={() => setCheckInNight(null)} className="text-sm font-semibold text-ink/50 active:opacity-60">Close</button>
-            </div>
-            <div className="mt-4 space-y-2.5">
-              {CHECKIN_METRICS.map((m) => {
-                const idx = checkInNight.answers[m.key];
-                return (
-                  <div key={m.key} className="flex items-center justify-between text-sm">
-                    <span className="text-muted/60">{m.label}</span>
-                    <span className="font-medium text-ink/80">{typeof idx === "number" ? m.opts[idx] : "—"}</span>
-                  </div>
-                );
-              })}
-              {(() => {
-                const dips = checkInNight.answers["dips"];
-                const list = Array.isArray(dips) ? dips.map((i) => CHECKIN_DIP_OPTS[i]).filter(Boolean) : [];
-                return (
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted/60">Energy Dips</span>
-                    <span className="font-medium text-ink/80">{list.length ? list.join(", ") : "—"}</span>
-                  </div>
-                );
-              })()}
-            </div>
-            {checkInNight.note && <p className="mt-4 rounded-xl bg-ink/[0.03] px-3 py-2.5 text-sm text-ink/75">{checkInNight.note}</p>}
-          </div>
-        </div>
-      )}
 
       {/* Nudge history sheet */}
       {showNudgeHistory && (
