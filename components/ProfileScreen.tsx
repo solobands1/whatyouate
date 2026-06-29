@@ -60,6 +60,8 @@ export default function ProfileScreen() {
   const [habitPreviewIdx, setHabitPreviewIdx] = useState(0);
   const [habitReset, setHabitReset] = useState(false);
   const [historyWeightInput, setHistoryWeightInput] = useState("");
+  const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
+  const [historyWeightDate, setHistoryWeightDate] = useState(todayStr);
   const deleteWeight = async (id: string) => {
     if (!user) return;
     setWeightLogs((prev) => prev.filter((l) => l.id !== id));
@@ -70,13 +72,17 @@ export default function ProfileScreen() {
     const num = parseFloat(historyWeightInput);
     if (!isFinite(num) || num <= 0) return;
     const kg = Math.round((units === "imperial" ? num / 2.20462 : num) * 10) / 10;
-    const log = await addWeightLog(user.id, kg);
+    const isToday = historyWeightDate === todayStr();
+    // Backdated entries log at noon of that day; today logs at the current moment.
+    const loggedAt = isToday ? undefined : new Date(historyWeightDate + "T12:00:00").toISOString();
+    const log = await addWeightLog(user.id, kg, loggedAt);
     if (log) {
-      setWeightLogs((prev) => [log, ...prev]);
-      setWeight(String(Math.round(num)));
-      initialWeightKgRef.current = kg;
+      setWeightLogs((prev) => [log, ...prev].sort((a, b) => new Date(b.logged_at).getTime() - new Date(a.logged_at).getTime()));
+      // Only update the profile's current weight if this is the latest entry.
+      if (isToday) { setWeight(String(Math.round(num))); initialWeightKgRef.current = kg; }
     }
     setHistoryWeightInput("");
+    setHistoryWeightDate(todayStr());
   };
   // Lock the page behind the weight history modal while it's open.
   useEffect(() => {
@@ -2132,6 +2138,13 @@ export default function ProfileScreen() {
                 onKeyDown={(e) => { if (e.key === "Enter") saveHistoryWeight(); }}
                 placeholder={units === "imperial" ? "New Weight (lb)" : "New Weight (kg)"}
                 className="flex-1 rounded-xl border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+              />
+              <input
+                type="date"
+                value={historyWeightDate}
+                max={todayStr()}
+                onChange={(e) => setHistoryWeightDate(e.target.value)}
+                className="rounded-xl border border-ink/10 bg-white px-2 py-2 text-xs text-ink/70 focus:outline-none focus:ring-1 focus:ring-primary/30"
               />
               <button
                 type="button"

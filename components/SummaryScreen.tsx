@@ -1114,10 +1114,15 @@ export default function SummaryScreen() {
                     </div>
                   </div>
                 ) : message ? (
-                  <div className="mt-3 rounded-xl border border-primary/60 bg-primary/5 px-4 py-3">
-                    <p className="text-sm font-medium text-ink/90">{message}</p>
-                    <p className="mt-2 text-[11px] font-medium text-primary/70">— Coach</p>
-                  </div>
+                  isDemoMode ? (
+                    <div className="mt-3 rounded-xl border border-primary/60 bg-primary/5 px-4 py-3">
+                      <p className="text-sm font-medium text-ink/90">{message}</p>
+                      <p className="mt-2 text-[11px] font-medium text-primary/70">— Coach</p>
+                    </div>
+                  ) : (
+                    // It's already in the home hero; avoid duplicating it here. History lives in the header.
+                    <p className="mt-3 text-[13px] text-muted/65">Today&apos;s nudge is at the top of your home screen. Tap History to revisit past ones.</p>
+                  )
                 ) : (
                   <div className="mt-3 flex items-center gap-2.5 rounded-xl border border-primary/60 bg-primary/5 px-4 py-3">
                     <span className="relative flex h-2 w-2 shrink-0">

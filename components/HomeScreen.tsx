@@ -763,12 +763,10 @@ export default function HomeScreen() {
     if (heroRevealedRef.current) return;
     if (heroHabit.status !== "suggested") return;
     heroRevealedRef.current = true;
-    // First-appearance sequence: card shimmers + title bounces on mount (CSS), then a
-    // solo border pulse, then the card expands (which pulses its border again).
-    const tPulse = setTimeout(() => setHeroPulse(true), 800);
-    const tPulseOff = setTimeout(() => setHeroPulse(false), 2050);
+    // First-appearance sequence: card shimmers + title bounces on mount (CSS), then the
+    // card expands (which pulses its border once it settles).
     const tExpand = setTimeout(() => setHeroExpanded(true), 1700);
-    return () => { clearTimeout(tPulse); clearTimeout(tPulseOff); clearTimeout(tExpand); };
+    return () => clearTimeout(tExpand);
   }, [heroHabit.status, habitLoaded]);
 
   // Once the card finishes dropping down, pulse its border again like a finished habit.
@@ -1802,9 +1800,13 @@ export default function HomeScreen() {
   }, [user, reload]);
 
   useEffect(() => {
-    document.body.style.overflow = (showQuickAdd || showLogFood || showReflection || showFeelingModal) ? "hidden" : "";
+    const anyModal = showQuickAdd || showLogFood || showReflection || showFeelingModal
+      || waterModalOpen || quickConfirmMeal != null || failedMealPrompt != null
+      || meals.editingMeal != null || editingFeelLog != null
+      || workout.showStartWorkoutModal || workout.showEndWorkoutModal || pendingDelete != null;
+    document.body.style.overflow = anyModal ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
-  }, [showQuickAdd, showLogFood, showReflection, showFeelingModal]);
+  }, [showQuickAdd, showLogFood, showReflection, showFeelingModal, waterModalOpen, quickConfirmMeal, failedMealPrompt, meals.editingMeal, editingFeelLog, workout.showStartWorkoutModal, workout.showEndWorkoutModal, pendingDelete]);
 
   // When a meal is still processing, the "Analyzing food…" label is time-gated
   // at render time (< 90s shows spinner text, >= 90s shows "Analysis failed").
@@ -3108,8 +3110,8 @@ export default function HomeScreen() {
                 )}
               </span>
               <span className="flex-1">
-                <span className="block text-sm font-semibold text-ink">{todayReflection ? "Checked In For Tonight" : "How Was Your Day?"}</span>
-                <span className="block text-[12px] text-ink/55">{todayReflection ? "Tap to edit your check-in" : "A quick nightly check-in"}</span>
+                <span className="block text-sm font-semibold text-ink">{todayReflection ? "Reflected On Today" : "How Was Your Day?"}</span>
+                <span className="block text-[12px] text-ink/55">{todayReflection ? "Tap to edit your reflection" : "A quick nightly reflection"}</span>
               </span>
               <svg viewBox="0 0 24 24" className="h-4 w-4 text-ink/30" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
             </button>
@@ -3693,7 +3695,7 @@ export default function HomeScreen() {
                   onClick={() => { setShowLogFood(false); if (todayReflection) editTodayReflection(); else setShowReflection(true); }}
                 >
                   <svg viewBox="0 0 24 24" className="h-5 w-5 text-primary" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z" /></svg>
-                  <span>{todayReflection ? "Edit Check-In" : "Check-In"}</span>
+                  <span>{todayReflection ? "Edit Reflection" : "Reflection"}</span>
                 </button>
               )}
             </div>
@@ -4644,7 +4646,7 @@ export default function HomeScreen() {
                   )}
                   {!reflectionEditingKey && (
                     <div className="mt-[3vh] pb-10">
-                      <h1 className="text-center text-2xl font-semibold text-ink">Your Check-In</h1>
+                      <h1 className="text-center text-2xl font-semibold text-ink">Your Reflection</h1>
                       <p className="mt-2 text-center text-sm text-ink/65">Tap an answer to change it.</p>
                       <div className="mt-6 space-y-2">
                         {REFLECTION_QUESTIONS.map((qq) => {
@@ -4742,7 +4744,7 @@ export default function HomeScreen() {
                   <span className="animate-moon-rise flex h-16 w-16 items-center justify-center rounded-full bg-primary/15 text-primary">
                     <svg viewBox="0 0 24 24" className="animate-moon-float h-8 w-8" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
                   </span>
-                  <h1 className="mt-5 text-2xl font-semibold text-ink">Your Nightly Check-In</h1>
+                  <h1 className="mt-5 text-2xl font-semibold text-ink">Your Nightly Reflection</h1>
                   <p className="mt-3 max-w-xs text-sm leading-relaxed text-ink/70">A quick look back at your day. It takes under a minute, and it&apos;s how your coach learns what lifts your energy and what drags it down.</p>
                   <button type="button" className="mt-8 w-full max-w-xs rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80" onClick={() => setReflectionStep(1)}>Get Started</button>
                   {lastReflection && (
@@ -4836,7 +4838,7 @@ export default function HomeScreen() {
                   <span className="flex h-20 w-20 items-center justify-center rounded-full bg-primary text-white animate-habit-pop">
                     <svg viewBox="0 0 24 24" className="h-10 w-10" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 6" /></svg>
                   </span>
-                  <p className="mt-6 text-center text-2xl font-semibold text-ink">Thanks For Checking In</p>
+                  <p className="mt-6 text-center text-2xl font-semibold text-ink">Thanks For Reflecting</p>
                   <p className="mt-2 max-w-xs text-center text-sm text-ink/65">That's today, noted. Showing up for yourself like this is how feeling better slowly stops being a goal and just becomes your normal.</p>
                   <button type="button" className="mt-10 w-full max-w-xs rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80" onClick={finishReflection}>Done</button>
                 </div>

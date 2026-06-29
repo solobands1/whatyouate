@@ -924,11 +924,13 @@ export async function exportAllData(userId: string) {
 
 export type WeightLog = { id: string; weight_kg: number; logged_at: string };
 
-export async function addWeightLog(userId: string, weightKg: number): Promise<WeightLog | null> {
+export async function addWeightLog(userId: string, weightKg: number, loggedAt?: string): Promise<WeightLog | null> {
   if (useMemory) return null; // local mode — skip
+  const row: Record<string, unknown> = { user_id: userId, weight_kg: weightKg };
+  if (loggedAt) row.logged_at = loggedAt;
   const { data, error } = await supabase
     .from("weight_logs")
-    .insert({ user_id: userId, weight_kg: weightKg })
+    .insert(row)
     .select("id, weight_kg, logged_at")
     .single();
   if (error) { console.error("addWeightLog", error); return null; }
