@@ -2872,17 +2872,19 @@ export default function HomeScreen() {
               // No habit builder in the slot: hold the current coach nudge (matches the
               // Patterns headline-clue style). Greeting only shows before today's nudge exists.
               <div>
-                <p className="-mt-1 text-center text-xs font-semibold uppercase tracking-wide text-primary">Your Coach</p>
-                {currentWindowNudge.created_at && (
-                  <p className="mt-0.5 text-center text-[10px] text-muted/50">
-                    {(() => {
-                      const d = new Date(currentWindowNudge.created_at);
-                      return sameLocalDay(currentWindowNudge.created_at, new Date())
-                        ? d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }).toLowerCase()
-                        : d.toLocaleDateString([], { month: "short", day: "numeric" });
-                    })()}
-                  </p>
-                )}
+                <div className="-mt-1 flex items-center justify-between">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-primary">Nudge</p>
+                  {currentWindowNudge.created_at && (
+                    <span className="text-[10px] text-muted/50">
+                      {(() => {
+                        const d = new Date(currentWindowNudge.created_at);
+                        return sameLocalDay(currentWindowNudge.created_at, new Date())
+                          ? d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }).toLowerCase()
+                          : d.toLocaleDateString([], { month: "short", day: "numeric" });
+                      })()}
+                    </span>
+                  )}
+                </div>
                 <p className="mt-2 text-[15px] font-medium leading-relaxed text-ink/90">{currentWindowNudge.message.replace(/\n+/g, " ")}</p>
               </div>
             ) : (
