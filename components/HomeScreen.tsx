@@ -437,22 +437,35 @@ export default function HomeScreen() {
   const [reflectionNote, setReflectionNote] = useState("");
   const [reflectionStep, setReflectionStep] = useState(0);
   const [lastReflection, setLastReflection] = useState<{ reflection: Record<string, number | number[]>; note: string } | null>(null);
+  // Today's completed check-in (so the button shows "Checked In" + can be edited).
+  // Clears on its own at midnight since the date no longer matches.
+  const [todayReflection, setTodayReflection] = useState<{ reflection: Record<string, number | number[]>; note: string } | null>(null);
   const closeReflection = () => setShowReflection(false); // keeps progress for "Later"
   const finishReflection = () => {
     // Persist the completed check-in so it feeds the coach and "Same As Last Night".
     if (user && Object.keys(reflection).length > 0) {
       setLastReflection({ reflection, note: reflectionNote });
+      setTodayReflection({ reflection, note: reflectionNote });
       void addReflection(user.id, { date: todayDateStr(), answers: reflection, note: reflectionNote, ts: Date.now() });
     }
     setShowReflection(false); setReflectionStep(0); setReflection({}); setReflectionNote("");
+  };
+  // Reopen today's check-in prefilled, to edit it (re-submitting overwrites the day).
+  const editTodayReflection = () => {
+    if (!todayReflection) { setShowReflection(true); return; }
+    setReflection(todayReflection.reflection);
+    setReflectionNote(todayReflection.note);
+    setReflectionStep(1);
+    setShowReflection(true);
   };
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
     fetchReflections(user.id).then((rows) => {
       if (cancelled || rows.length === 0) return;
-      const latest = rows[0]; // addReflection keeps newest first
-      setLastReflection({ reflection: latest.answers, note: latest.note });
+      setLastReflection({ reflection: rows[0].answers, note: rows[0].note }); // newest first
+      const today = rows.find((r) => r.date === todayDateStr());
+      if (today) setTodayReflection({ reflection: today.answers, note: today.note });
     });
     return () => { cancelled = true; };
   }, [user]);
@@ -3034,24 +3047,31 @@ export default function HomeScreen() {
           </div>
         )}
 
-        {/* Reflection entry point. Demo: always shown. Real version: appears in the
-            evening (after the night push / after ~6pm) and persists until done. */}
-        <div className="mt-2" style={riseIn(barsReady && habitLoaded, 1)}>
-          <button
-            type="button"
-            onClick={() => setShowReflection(true)}
-            className="flex w-full items-center gap-3 rounded-2xl border-2 border-primary/25 bg-primary/[0.05] px-4 py-3 text-left transition active:scale-[0.99]"
-          >
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
-              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z" /></svg>
-            </span>
-            <span className="flex-1">
-              <span className="block text-sm font-semibold text-ink">How Was Your Day?</span>
-              <span className="block text-[12px] text-ink/55">A quick nightly check-in</span>
-            </span>
-            <svg viewBox="0 0 24 24" className="h-4 w-4 text-ink/30" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
-          </button>
-        </div>
+        {/* Nightly check-in entry. The big home button appears at 7pm (or once done,
+            showing "Checked In" until midnight); 5-7pm it lives in the + menu. Demo
+            always shows it. */}
+        {(isDemoMode || todayReflection || new Date().getHours() >= 19) && (
+          <div className="mt-2" style={riseIn(barsReady && habitLoaded, 1)}>
+            <button
+              type="button"
+              onClick={todayReflection ? editTodayReflection : () => setShowReflection(true)}
+              className="flex w-full items-center gap-3 rounded-2xl border-2 border-primary/25 bg-primary/[0.05] px-4 py-3 text-left transition active:scale-[0.99]"
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
+                {todayReflection ? (
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 6" /></svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z" /></svg>
+                )}
+              </span>
+              <span className="flex-1">
+                <span className="block text-sm font-semibold text-ink">{todayReflection ? "Checked In For Tonight" : "How Was Your Day?"}</span>
+                <span className="block text-[12px] text-ink/55">{todayReflection ? "Tap to edit your check-in" : "A quick nightly check-in"}</span>
+              </span>
+              <svg viewBox="0 0 24 24" className="h-4 w-4 text-ink/30" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
+            </button>
+          </div>
+        )}
 
         {workout.activeWorkout && (
           <p className="mt-3 text-center text-[11px] text-muted/60">Workout in progress</p>
@@ -3620,6 +3640,17 @@ export default function HomeScreen() {
                     <path d="M12 3C11.4 3 5 11 5 15.5a7 7 0 0 0 14 0C19 11 12.6 3 12 3z" fill="url(#sheet-drop)" />
                   </svg>
                   <span>Water</span>
+                </button>
+              )}
+              {/* Nightly check-in lives here from 5pm; the big home button takes over at 7pm. */}
+              {new Date().getHours() >= 17 && (
+                <button
+                  type="button"
+                  className="flex w-[calc((100%-1.5rem)/4)] shrink-0 flex-col items-center justify-center gap-1.5 rounded-xl border border-ink/10 bg-white px-1 py-3 text-center text-[11px] font-semibold leading-tight text-ink/80 transition active:scale-[0.97] active:bg-primary/5"
+                  onClick={() => { setShowLogFood(false); if (todayReflection) editTodayReflection(); else setShowReflection(true); }}
+                >
+                  <svg viewBox="0 0 24 24" className="h-5 w-5 text-primary" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z" /></svg>
+                  <span>{todayReflection ? "Edit Check-In" : "Check-In"}</span>
                 </button>
               )}
             </div>
