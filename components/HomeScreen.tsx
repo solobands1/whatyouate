@@ -2914,6 +2914,7 @@ export default function HomeScreen() {
                 <div className={`grid transition-all duration-[800ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${nudgeExpanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
                   <div className="min-h-0 overflow-hidden">
                     <p className="mt-2 text-sm font-medium leading-relaxed text-ink/90">{currentWindowNudge.message.replace(/\n+/g, " ")}</p>
+                    <p className="mt-2 text-[11px] font-medium text-primary/70">— Coach</p>
                   </div>
                 </div>
               </div>
