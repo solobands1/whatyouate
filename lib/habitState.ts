@@ -16,6 +16,8 @@ export interface ActiveBuilder {
   holdDay?: number | null;    // post-completion pause: keep this day on screen
   finishedAt?: string;        // ISO when the builder completed (status "done")
   keptAnswer?: "yes" | "maybe" | "no" | null; // the "keep this up?" answer, once given
+  lastCompletedDate?: string | null; // YYYY-MM-DD of the most recent finished day (one/day gate)
+  extensionsUsed?: number;    // missed days made up via Extend
 }
 
 // Per-template cadence memory. snoozeCount tracks "Maybe Later" taps (2 = treat as
@@ -150,4 +152,53 @@ export function markHabitEnded(state: HabitState, templateId: string, cooldownDa
 // e.g. the day after completion).
 export function endBuilderCompleted(state: HabitState, templateId: string, cooldownDays: number, now: Date = new Date()): HabitState {
   return { ...markHabitEnded(state, templateId, cooldownDays, now), builder: null };
+}
+
+// ── Midnight rollover ──────────────────────────────────────────────────────
+// A builder advances one day per calendar day. On load we resolve what state it
+// should be in today: still working (active), already done for today (dayComplete),
+// behind (missed → Extend), finished (done), or lapsed (extensions exhausted).
+
+function dateKeyOf(iso: string): string {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+function calDaysBetween(startKey: string, endKey: string): number {
+  const s = new Date(startKey + "T00:00:00").getTime();
+  const e = new Date(endKey + "T00:00:00").getTime();
+  return Math.round((e - s) / DAY_MS);
+}
+
+export type RolledStatus = "active" | "dayComplete" | "missed" | "done" | "lapsed";
+
+export function resolveBuilderForToday(
+  builder: ActiveBuilder,
+  durationDays: number,
+  maxExtensions: number,
+  todayKey: string,
+): { status: RolledStatus; missed: number } {
+  const completed = builder.days.filter((d) => d.every(Boolean)).length;
+  if (completed >= durationDays) return { status: "done", missed: 0 };
+  if (builder.lastCompletedDate === todayKey) return { status: "dayComplete", missed: 0 };
+  if (!builder.startedAt) return { status: "active", missed: 0 };
+  const elapsed = calDaysBetween(dateKeyOf(builder.startedAt), todayKey);
+  const expected = Math.min(elapsed, durationDays);
+  const missed = expected - completed;
+  if (missed <= 0) return { status: "active", missed: 0 };
+  if ((builder.extensionsUsed ?? 0) + missed > maxExtensions) return { status: "lapsed", missed };
+  return { status: "missed", missed };
+}
+
+// Make up the missed day(s): consume that many extensions and re-anchor the schedule
+// so today is the due day for the next incomplete day.
+export function extendBuilder(builder: ActiveBuilder, missed: number, todayKey: string): ActiveBuilder {
+  const completed = builder.days.filter((d) => d.every(Boolean)).length;
+  const anchor = new Date(todayKey + "T00:00:00");
+  anchor.setDate(anchor.getDate() - completed);
+  return {
+    ...builder,
+    status: "active",
+    startedAt: anchor.toISOString(),
+    extensionsUsed: (builder.extensionsUsed ?? 0) + missed,
+  };
 }

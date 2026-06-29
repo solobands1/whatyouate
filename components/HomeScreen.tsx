@@ -22,7 +22,7 @@ import "../lib/mealQueue";
 import BarcodeScannerOverlay from "./BarcodeScannerOverlay";
 import { getFoodCacheEntry, setFoodCacheEntry, deleteFoodCacheEntry, deleteFoodTextEntry, incrementFoodCacheLogCount, incrementFoodTextLogCount, getQuickAddFromMeals, addQuickAddRemoved, getDailySupplements, setDailySupplements, hasDailySuppsLoggedToday, markDailySuppsLoggedToday, clearDailySuppsLoggedToday, type QuickAddItem } from "../lib/foodCache";
 import { addFeelLog, deleteFeelLog, updateFeelLog, fetchWaterLogs, upsertWaterLog, addWeightLog, saveProfile, addReflection, fetchReflections, fetchHabitState, saveHabitState, fetchHabitHistory, saveHabitHistory, type FeelLog } from "../lib/supabaseDb";
-import { EMPTY_HABIT_STATE, pickSuggestionId, snoozeSuggestion, declineSuggestion, markHabitEnded, type HabitState, type ActiveBuilder, type HabitHistoryEntry } from "../lib/habitState";
+import { EMPTY_HABIT_STATE, pickSuggestionId, snoozeSuggestion, declineSuggestion, markHabitEnded, endBuilderCompleted, resolveBuilderForToday, extendBuilder, type HabitState, type ActiveBuilder, type HabitHistoryEntry } from "../lib/habitState";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
 import WaterBar from "./WaterBar";
@@ -512,11 +512,36 @@ export default function HomeScreen() {
         const b = state.builder;
         const t = HABIT_TEMPLATES.find((x) => x.id === b.templateId) ?? goalHabits[0];
         setActiveTemplate(t);
-        setHeroHabit({ status: b.status, days: b.days, holdDay: b.holdDay ?? null });
-        // Restore a finished builder without replaying the celebration: the answered
-        // "rested" confirmation, or the "You Started Something!" step (which waits for
-        // the Done tap, then leads to the keep prompt) if not answered yet.
-        if (b.status === "done") setDoneStep(b.keptAnswer ? "rested" : "started");
+        if (b.status === "done") {
+          setHeroHabit({ status: "done", days: b.days, holdDay: null });
+          // Answered "rested" confirmation, or the "You Started Something!" step (waits
+          // for the Done tap) if not answered yet. No celebration replay.
+          setDoneStep(b.keptAnswer ? "rested" : "started");
+        } else if (b.status === "committed") {
+          // "Starts Tomorrow" turns active once the next calendar day arrives.
+          if (sameLocalDay(b.startedAt ?? new Date().toISOString(), new Date())) {
+            setHeroHabit({ status: "committed", days: b.days, holdDay: null });
+          } else {
+            const started: HabitState = { ...state, builder: { ...b, status: "active", startedAt: new Date().toISOString() } };
+            habitStateRef.current = started;
+            void saveHabitState(user.id, started);
+            setHeroHabit({ status: "active", days: b.days, holdDay: null });
+          }
+        } else {
+          // active / dayComplete / missed → roll forward by calendar day.
+          const r = resolveBuilderForToday(b, t.durationDays, t.maxExtensions, todayKey());
+          if (r.status === "lapsed") {
+            const cleared = endBuilderCompleted(state, b.templateId, t.cooldownDays);
+            habitStateRef.current = cleared;
+            void saveHabitState(user.id, cleared);
+            setHeroHabit((h) => ({ ...h, status: "hidden" }));
+          } else if (r.status === "done") {
+            setHeroHabit({ status: "done", days: b.days, holdDay: null });
+            setDoneStep("started");
+          } else {
+            setHeroHabit({ status: r.status, days: b.days, holdDay: null });
+          }
+        }
       } else {
         // Respect the breather/cooldown: only suggest when cadence says it's time.
         // Otherwise show the greeting (no habit) rather than re-offering one.
@@ -544,13 +569,20 @@ export default function HomeScreen() {
     let builder: ActiveBuilder | null = null;
     if (persistable) {
       const prev = habitStateRef.current.builder;
-      const startedAt = prev && prev.templateId === activeTemplate.id ? prev.startedAt : new Date().toISOString();
+      const sameTpl = !!prev && prev.templateId === activeTemplate.id;
+      const startedAt = sameTpl ? prev!.startedAt : new Date().toISOString();
+      // Stamp the completed day when we hit "Done For Today" (drives the one-per-day
+      // gate + missed detection); otherwise carry the prior value forward.
+      let lastCompletedDate = sameTpl ? (prev!.lastCompletedDate ?? null) : null;
+      if (heroHabit.status === "dayComplete") lastCompletedDate = todayKey();
       builder = {
         templateId: activeTemplate.id,
         status: heroHabit.status,
         days: heroHabit.days,
         startedAt,
         holdDay: heroHabit.holdDay ?? null,
+        lastCompletedDate,
+        extensionsUsed: sameTpl ? (prev!.extensionsUsed ?? 0) : 0,
       };
     }
     const next: HabitState = { ...habitStateRef.current, builder };
@@ -623,6 +655,19 @@ export default function HomeScreen() {
     setActiveTemplate(t);
     setHeroExpanded(true);
     setHeroHabit({ status: "suggested", days: freshDays(t) });
+  };
+
+  // Make up missed day(s): consume the extension(s), re-anchor the schedule to today,
+  // and resume the tracker.
+  const extendHabit = () => {
+    setHeroHabit((h) => ({ ...h, status: "active" }));
+    if (isDemoMode || !user) return;
+    const b = habitStateRef.current.builder;
+    if (!b) return;
+    const r = resolveBuilderForToday(b, activeTemplate.durationDays, activeTemplate.maxExtensions, todayKey());
+    const next: HabitState = { ...habitStateRef.current, builder: extendBuilder(b, Math.max(1, r.missed), todayKey()) };
+    habitStateRef.current = next;
+    void saveHabitState(user.id, next);
   };
 
   // On the very first habit prompt, show a compact "Habit Builder" notification, then
@@ -2641,7 +2686,7 @@ export default function HomeScreen() {
                 <button
                   type="button"
                   className="mt-3 w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white transition active:scale-[0.98]"
-                  onClick={() => setHeroHabit((h) => ({ ...h, status: "active" }))}
+                  onClick={extendHabit}
                 >
                   Extend
                 </button>
