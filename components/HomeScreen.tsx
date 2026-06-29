@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Joyride, { CallBackProps, STATUS, type Step } from "react-joyride";
 import { useRouter } from "next/navigation";
 import type { MealLog, UserProfile, WorkoutSession } from "../lib/types";
@@ -45,6 +45,10 @@ import OnboardingFlow from "./OnboardingFlow";
 import { safeFallbackAnalysis } from "../lib/ai/schema";
 import { useWorkout, WORKOUT_TYPE_OPTIONS } from "../hooks/useWorkout";
 import { useMeals } from "../hooks/useMeals";
+
+// Layout effect on the client (so a new nudge can start collapsed before paint), but
+// falls back to useEffect during SSR to avoid the dev warning.
+const useIsoLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
 
 function makeDemoMeals(): MealLog[] {
@@ -284,6 +288,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const { user, loading } = useAuth();
   const { profile: ctxProfile, meals: ctxMeals, workouts: ctxWorkouts, feelLogs: ctxFeelLogs, weightLogs: ctxWeightLogs, setWeightLogs, nudges, nudgesLoaded, loading: dataLoading, reload } = useAppData();
+  const trial = useTrialStatus();
 
   const [profile, setProfile] = useState<UserProfile | undefined>(undefined);
 
@@ -462,6 +467,10 @@ export default function HomeScreen() {
   // False until the persisted habit state has loaded, so the hero enters once with the
   // correct content (no flash of the default suggestion before an active builder).
   const [habitLoaded, setHabitLoaded] = useState(false);
+  // Nudge hero reveal: a brand-new nudge animates in like a new habit (shimmer + bounce
+  // -> pulse -> slide down -> pulse), once per nudge. Default expanded (seen nudges).
+  const [nudgeExpanded, setNudgeExpanded] = useState(true);
+  const nudgeRevealedRef = useRef(false);
   const heroRevealedRef = useRef(false);
 
   // Surface the habits matching the user's feeling goal(s) first.
@@ -481,6 +490,27 @@ export default function HomeScreen() {
     if (nudgeDate === todayKey(yesterday) && now.getHours() < 2) return mostRecent;
     return null;
   }, [nudgesLoaded, nudges, ctxMeals?.length]);
+
+  // Reveal a brand-new nudge in the hero (once per nudge) like a new habit: it starts
+  // collapsed, the card shimmers + the eyebrow bounces, the border pulses, it slides
+  // down, then pulses again. Collapse happens before paint so there's no flicker.
+  useIsoLayoutEffect(() => {
+    if (!habitLoaded || heroHabit.status !== "hidden" || trial.isFree || isDemoMode || !user || !currentWindowNudge) return;
+    if (nudgeRevealedRef.current) return;
+    const key = `wya_nudge_seen_${user.id}`;
+    const nid = String(currentWindowNudge.created_at ?? "");
+    if (!nid || localStorage.getItem(key) === nid) return; // already revealed this nudge
+    nudgeRevealedRef.current = true;
+    localStorage.setItem(key, nid);
+    setNudgeExpanded(false);
+    const t1 = setTimeout(() => setHeroPulse(true), 800);
+    const t2 = setTimeout(() => setHeroPulse(false), 2050);
+    const t3 = setTimeout(() => setNudgeExpanded(true), 1700);
+    const t4 = setTimeout(() => setHeroPulse(true), 2350);
+    const t5 = setTimeout(() => setHeroPulse(false), 3850);
+    return () => { [t1, t2, t3, t4, t5].forEach(clearTimeout); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [habitLoaded, heroHabit.status, currentWindowNudge, trial.isFree, isDemoMode, user]);
   const appliedGoalHabitRef = useRef(false);
   // Mirror of the persisted habit state, kept in a ref so the save/cadence effects
   // can read the latest without re-running on it.
@@ -764,8 +794,6 @@ export default function HomeScreen() {
 
   const workout = useWorkout(user, onError, setEditRecents, []);
   const meals = useMeals(user, onError, setEditRecents, []);
-
-  const trial = useTrialStatus();
 
   const handleFeelLog = async (tag: string, ts: number) => {
     if (!user) return;
@@ -2600,7 +2628,7 @@ export default function HomeScreen() {
 
         <Card className="mt-2" style={riseIn(barsReady && habitLoaded, 0)}>
           {/* Hero — dynamic slot. Priority: active habit builder > suggestion > reflection reminder > discovery > wins > greeting (default). Sample habit wired locally for now. */}
-          <div className={`-mx-4 rounded-2xl border-2 border-primary/25 px-4 ${heroHabit.status === "done" || heroHabit.status === "accepting" ? "bg-primary/10" : "bg-primary/[0.05]"} ${heroHabit.status === "hidden" ? "py-7" : heroHabit.status === "done" && doneStep === "rested" ? "pt-5 pb-3" : "py-5"} ${heroHabit.status === "done" && (doneStep === "celebrate" || doneStep === "feedback") ? "animate-habit-built" : ""} ${(heroHabit.status === "done" && doneStep === "rested") || heroHabit.status === "accepting" ? "animate-habit-glow" : ""} ${(heroHabit.status === "active" && heroHabit.holdDay != null) || (heroHabit.status === "suggested" && !heroExpanded) ? "animate-habit-shimmer" : ""} ${heroPulse ? "animate-card-pulse" : ""}`}>
+          <div className={`-mx-4 rounded-2xl border-2 border-primary/25 px-4 ${heroHabit.status === "done" || heroHabit.status === "accepting" ? "bg-primary/10" : "bg-primary/[0.05]"} ${heroHabit.status === "hidden" ? "py-7" : heroHabit.status === "done" && doneStep === "rested" ? "pt-5 pb-3" : "py-5"} ${heroHabit.status === "done" && (doneStep === "celebrate" || doneStep === "feedback") ? "animate-habit-built" : ""} ${(heroHabit.status === "done" && doneStep === "rested") || heroHabit.status === "accepting" ? "animate-habit-glow" : ""} ${(heroHabit.status === "active" && heroHabit.holdDay != null) || (heroHabit.status === "suggested" && !heroExpanded) || (heroHabit.status === "hidden" && !!currentWindowNudge && !nudgeExpanded) ? "animate-habit-shimmer" : ""} ${heroPulse ? "animate-card-pulse" : ""}`}>
             {heroHabit.status === "suggested" ? (
               <div className={heroExpanded ? "" : "animate-habit-note"}>
                 {/* Tap the eyebrow to cycle templates (demo/testing). On first appearance
@@ -2871,21 +2899,23 @@ export default function HomeScreen() {
             ) : currentWindowNudge && !trial.isFree && !isDemoMode ? (
               // No habit builder in the slot: hold the current coach nudge (matches the
               // Patterns headline-clue style). Greeting only shows before today's nudge exists.
-              <div>
-                <div className="-mt-1 flex items-center justify-between">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-primary">Nudge</p>
-                  {currentWindowNudge.created_at && (
-                    <span className="text-[10px] text-muted/50">
-                      {(() => {
-                        const d = new Date(currentWindowNudge.created_at);
-                        return sameLocalDay(currentWindowNudge.created_at, new Date())
-                          ? d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }).toLowerCase()
-                          : d.toLocaleDateString([], { month: "short", day: "numeric" });
-                      })()}
-                    </span>
-                  )}
+              <div className={`relative ${nudgeExpanded ? "" : "animate-habit-note"}`}>
+                <p className={`-mt-2 text-center text-xs font-semibold uppercase tracking-wide text-primary ${nudgeExpanded ? "" : "animate-habit-bounce"}`}>Nudge</p>
+                {currentWindowNudge.created_at && (
+                  <span className="absolute -top-2 right-0 text-[10px] text-muted/50">
+                    {(() => {
+                      const d = new Date(currentWindowNudge.created_at);
+                      return sameLocalDay(currentWindowNudge.created_at, new Date())
+                        ? d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }).toLowerCase()
+                        : d.toLocaleDateString([], { month: "short", day: "numeric" });
+                    })()}
+                  </span>
+                )}
+                <div className={`grid transition-all duration-[800ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${nudgeExpanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
+                  <div className="min-h-0 overflow-hidden">
+                    <p className="mt-2 text-[15px] font-medium leading-relaxed text-ink/90">{currentWindowNudge.message.replace(/\n+/g, " ")}</p>
+                  </div>
                 </div>
-                <p className="mt-2 text-[15px] font-medium leading-relaxed text-ink/90">{currentWindowNudge.message.replace(/\n+/g, " ")}</p>
               </div>
             ) : (
               <div className="text-center">
