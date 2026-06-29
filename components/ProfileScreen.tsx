@@ -9,7 +9,7 @@ import type { ActivityLevel, FeelingGoal, GoalDirection, SupplementEntry, Supple
 import { suppLabel, suppName } from "../lib/types";
 import { matchSupplementNutrients, NUTRIENT_UNITS, NUTRIENT_DISPLAY_NAMES } from "../lib/rda";
 import { HABIT_TEMPLATES } from "../lib/habits";
-import { clearAllData, saveProfile, saveDailySupplements, clearProfileCache, addWeightLog, deleteWeightLog, saveHabitState, saveHabitHistory, LOCAL_MODE } from "../lib/supabaseDb";
+import { clearAllData, saveProfile, saveDailySupplements, clearProfileCache, addWeightLog, deleteWeightLog, saveHabitState, saveHabitHistory, fetchHabitState, LOCAL_MODE } from "../lib/supabaseDb";
 import { EMPTY_HABIT_STATE } from "../lib/habitState";
 import { getDailySupplements, setDailySupplements, clearDailySuppsLoggedToday, clearAllFoodCaches } from "../lib/foodCache";
 import { clearMealsCache } from "../lib/supabaseDb";
@@ -91,6 +91,24 @@ export default function ProfileScreen() {
     await saveHabitHistory(user.id, []);
     setHabitReset(true);
     setTimeout(() => setHabitReset(false), 2500);
+  };
+  // Testing: backdate the active builder a day so Home's rollover thinks a day passed.
+  const [simDayMsg, setSimDayMsg] = useState(false);
+  const simulateNextDay = async () => {
+    if (!user) return;
+    const state = await fetchHabitState(user.id);
+    if (!state?.builder) return;
+    const b = state.builder;
+    const shiftIso = (iso: string) => { const d = new Date(iso); d.setDate(d.getDate() - 1); return d.toISOString(); };
+    const shiftKey = (k: string) => { const d = new Date(k + "T00:00:00"); d.setDate(d.getDate() - 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
+    const next = { ...state, builder: { ...b,
+      startedAt: b.startedAt ? shiftIso(b.startedAt) : b.startedAt,
+      lastCompletedDate: b.lastCompletedDate ? shiftKey(b.lastCompletedDate) : b.lastCompletedDate,
+      finishedAt: b.finishedAt ? shiftIso(b.finishedAt) : b.finishedAt,
+    } };
+    await saveHabitState(user.id, next);
+    setSimDayMsg(true);
+    setTimeout(() => setSimDayMsg(false), 2500);
   };
   const profileTapCount = useRef(0);
   const profileTapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1482,6 +1500,10 @@ export default function ProfileScreen() {
           {/* Wipes the active/completed builder + history so the flow can be re-tested. */}
           <button type="button" onClick={handleResetHabitData} className="mt-2 w-full rounded-xl border border-ink/10 px-4 py-2 text-xs font-semibold text-ink/55 transition active:opacity-60">
             {habitReset ? "Reset ✓ — reopen Home" : "Reset Habit Builder Data"}
+          </button>
+          {/* Backdates the active builder a day to test rollover / missed / lapse. */}
+          <button type="button" onClick={simulateNextDay} className="mt-2 w-full rounded-xl border border-ink/10 px-4 py-2 text-xs font-semibold text-ink/55 transition active:opacity-60">
+            {simDayMsg ? "Shifted a day ✓ — reopen Home" : "Simulate Next Day"}
           </button>
         </Card>
 
