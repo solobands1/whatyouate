@@ -26,7 +26,6 @@ import { EMPTY_HABIT_STATE, pickSuggestionId, snoozeSuggestion, declineSuggestio
 import BottomNav from "./BottomNav";
 import Card from "./Card";
 import WaterBar from "./WaterBar";
-import WyaaAvatar from "./WyaaAvatar";
 import { useAuth } from "./AuthProvider";
 import { useAppData } from "./AppDataProvider";
 import {
@@ -2870,20 +2869,11 @@ export default function HomeScreen() {
                 </div>
               )
             ) : currentWindowNudge && !trial.isFree && !isDemoMode ? (
-              // No habit builder in the slot: hold the current coach nudge instead of the
-              // greeting. The greeting only shows in the gap before today's nudge exists.
+              // No habit builder in the slot: hold the current coach nudge (matches the
+              // Patterns headline-clue style). Greeting only shows before today's nudge exists.
               <div>
-                <div className="flex items-start gap-3 text-left">
-                  <WyaaAvatar size={40} />
-                  <p className="flex-1 text-[15px] leading-relaxed text-ink/90">{currentWindowNudge.message.replace(/\n+/g, " ")}</p>
-                </div>
-                <div className="mt-3 flex items-center justify-between">
-                  <span className="text-[11px] font-medium text-primary/70">— Coach</span>
-                  <button type="button" onClick={startHabitManually} className="inline-flex items-center gap-1 text-xs font-semibold text-primary/80 transition active:opacity-60">
-                    Start a Habit
-                    <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
-                  </button>
-                </div>
+                <p className="text-[15px] font-medium leading-relaxed text-ink/90">{currentWindowNudge.message.replace(/\n+/g, " ")}</p>
+                <p className="mt-2 text-[11px] font-medium text-primary/70">— Coach</p>
               </div>
             ) : (
               <div className="text-center">
