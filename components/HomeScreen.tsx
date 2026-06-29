@@ -2900,7 +2900,7 @@ export default function HomeScreen() {
               // No habit builder in the slot: hold the current coach nudge (matches the
               // Patterns headline-clue style). Greeting only shows before today's nudge exists.
               <div className={`relative ${nudgeExpanded ? "" : "animate-habit-note"}`}>
-                <p className={`-mt-2 text-center text-xs font-semibold uppercase tracking-wide text-primary ${nudgeExpanded ? "" : "animate-habit-bounce"}`}>Nudge</p>
+                <p className={`-mt-1 text-center text-xs font-semibold uppercase tracking-wide text-primary ${nudgeExpanded ? "" : "animate-habit-bounce"}`}>Nudge</p>
                 {currentWindowNudge.created_at && (
                   <span className="absolute -top-2 right-0 text-[10px] text-muted/50">
                     {(() => {
