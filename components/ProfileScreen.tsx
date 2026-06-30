@@ -84,12 +84,28 @@ export default function ProfileScreen() {
     setHistoryWeightInput("");
     setHistoryWeightDate(todayStr());
   };
-  // Lock the page behind the weight history modal while it's open.
+  // Lock the page behind the weight history modal while it's open. Pin the body with
+  // position:fixed (iOS WKWebView ignores overflow:hidden for touch scrolling) and
+  // restore the scroll position on close.
   useEffect(() => {
     if (!showWeightHistory) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = prev; };
+    const scrollY = window.scrollY;
+    const { body } = document;
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.left = "0";
+    body.style.right = "0";
+    body.style.width = "100%";
+    body.style.overflow = "hidden";
+    return () => {
+      body.style.position = "";
+      body.style.top = "";
+      body.style.left = "";
+      body.style.right = "";
+      body.style.width = "";
+      body.style.overflow = "";
+      window.scrollTo(0, scrollY);
+    };
   }, [showWeightHistory]);
   const handleResetHabitData = async () => {
     if (!user) return;
@@ -2037,8 +2053,8 @@ export default function ProfileScreen() {
       )}
 
       {showWeightHistory && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5" onClick={() => setShowWeightHistory(false)}>
-          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/30 px-5 pt-[8vh]" onClick={() => setShowWeightHistory(false)}>
+          <div className="max-h-[80vh] w-full max-w-sm overflow-y-auto rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
             <div className="mb-4 flex items-center justify-between">
               <p className="text-base font-semibold text-ink">Weight History</p>
               <button type="button" className="text-sm font-semibold text-ink/50 transition active:opacity-60" onClick={() => setShowWeightHistory(false)}>Close</button>
