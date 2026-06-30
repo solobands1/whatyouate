@@ -57,7 +57,6 @@ export default function ProfileScreen() {
   const initialWeightKgRef = useRef<number | null>(null);
   const [mounted, setMounted] = useState(false);
   const [showWeightHistory, setShowWeightHistory] = useState(false);
-  const [vvHeight, setVvHeight] = useState<number | undefined>(undefined);
   const [habitPreviewIdx, setHabitPreviewIdx] = useState(0);
   const [habitReset, setHabitReset] = useState(false);
   const [historyWeightInput, setHistoryWeightInput] = useState("");
@@ -106,22 +105,6 @@ export default function ProfileScreen() {
       body.style.width = "";
       body.style.overflow = "";
       window.scrollTo(0, scrollY);
-    };
-  }, [showWeightHistory]);
-
-  // Track the visual viewport so the modal sizes to the area above the keyboard and
-  // sits just above it when one opens (rather than getting pushed off-screen).
-  useEffect(() => {
-    if (!showWeightHistory || typeof window === "undefined" || !window.visualViewport) return;
-    const vv = window.visualViewport;
-    const update = () => setVvHeight(vv.height);
-    update();
-    vv.addEventListener("resize", update);
-    vv.addEventListener("scroll", update);
-    return () => {
-      vv.removeEventListener("resize", update);
-      vv.removeEventListener("scroll", update);
-      setVvHeight(undefined);
     };
   }, [showWeightHistory]);
   const handleResetHabitData = async () => {
@@ -2070,8 +2053,8 @@ export default function ProfileScreen() {
       )}
 
       {showWeightHistory && (
-        <div className="fixed inset-x-0 top-0 z-50 flex items-center justify-center bg-black/30 px-5 py-[5vh]" style={{ height: vvHeight ? `${vvHeight}px` : "100%" }} onClick={() => setShowWeightHistory(false)}>
-          <div className="max-h-full w-full max-w-sm overflow-y-auto rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-x-0 top-0 z-50 flex items-start justify-center bg-black/30 px-5 pt-[7vh]" onClick={() => setShowWeightHistory(false)}>
+          <div className="max-h-[52vh] w-full max-w-sm overflow-y-auto rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
             <div className="mb-4 flex items-center justify-between">
               <p className="text-base font-semibold text-ink">Weight History</p>
               <button type="button" className="text-sm font-semibold text-ink/50 transition active:opacity-60" onClick={() => setShowWeightHistory(false)}>Close</button>
