@@ -1858,10 +1858,11 @@ export default function HomeScreen() {
     const anyModal = showQuickAdd || showLogFood || showReflection || showFeelingModal
       || waterModalOpen || quickConfirmMeal != null || failedMealPrompt != null
       || meals.editingMeal != null || editingFeelLog != null
+      || barcodeOpen || barcodeProduct != null || barcodeNotFound || barcodeLookingUp
       || workout.showStartWorkoutModal || workout.showEndWorkoutModal || pendingDelete != null;
     document.body.style.overflow = anyModal ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
-  }, [showQuickAdd, showLogFood, showReflection, showFeelingModal, waterModalOpen, quickConfirmMeal, failedMealPrompt, meals.editingMeal, editingFeelLog, workout.showStartWorkoutModal, workout.showEndWorkoutModal, pendingDelete]);
+  }, [showQuickAdd, showLogFood, showReflection, showFeelingModal, waterModalOpen, quickConfirmMeal, failedMealPrompt, meals.editingMeal, editingFeelLog, barcodeOpen, barcodeProduct, barcodeNotFound, barcodeLookingUp, workout.showStartWorkoutModal, workout.showEndWorkoutModal, pendingDelete]);
 
   // When a meal is still processing, the "Analyzing food…" label is time-gated
   // at render time (< 90s shows spinner text, >= 90s shows "Analysis failed").
