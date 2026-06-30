@@ -4466,7 +4466,7 @@ export default function HomeScreen() {
                 className="mb-3 w-full shrink-0 rounded-xl border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
               />
             )}
-            <div className="-mr-1 min-h-0 flex-1 overflow-y-auto pr-1">
+            <div className="-mr-1 max-h-[55vh] min-h-0 flex-1 overflow-y-auto pr-1">
             {quickAddAllItems.length === 0 ? (
               <p className="py-6 text-center text-sm text-muted/60">
                 No saved foods yet · log some meals first to use Quick Add.
