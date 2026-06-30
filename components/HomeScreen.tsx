@@ -567,7 +567,7 @@ export default function HomeScreen() {
     const key = `reflectionCueSeen-${todayDateStr()}`;
     if (!replay && localStorage.getItem(key)) return;
     if (!replay) localStorage.setItem(key, "1");
-    const RING_MS = 1900; // matches .animate-bell-ring duration
+    const RING_MS = 2600; // matches .animate-bell-ring duration
     let timers: ReturnType<typeof setTimeout>[] = [];
     const play = () => {
       timers = [

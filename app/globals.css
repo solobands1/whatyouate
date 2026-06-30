@@ -116,17 +116,20 @@ input, textarea, select {
 /* Reflection-card first-look cue: a hanging bell swings and rings, then settles. */
 @keyframes bellRing {
   0%   { transform: rotate(0deg); }
-  8%   { transform: rotate(22deg); }
-  19%  { transform: rotate(-18deg); }
-  30%  { transform: rotate(15deg); }
-  41%  { transform: rotate(-12deg); }
-  52%  { transform: rotate(9deg); }
-  63%  { transform: rotate(-6deg); }
-  74%  { transform: rotate(4deg); }
-  85%  { transform: rotate(-2deg); }
+  6%   { transform: rotate(22deg); }
+  15%  { transform: rotate(-19deg); }
+  24%  { transform: rotate(16deg); }
+  33%  { transform: rotate(-13deg); }
+  42%  { transform: rotate(11deg); }
+  51%  { transform: rotate(-9deg); }
+  60%  { transform: rotate(7deg); }
+  69%  { transform: rotate(-5deg); }
+  78%  { transform: rotate(4deg); }
+  87%  { transform: rotate(-2deg); }
+  94%  { transform: rotate(1deg); }
   100% { transform: rotate(0deg); }
 }
-.animate-bell-ring { animation: bellRing 1.9s ease-in-out both; transform-origin: top center; }
+.animate-bell-ring { animation: bellRing 2.6s ease-in-out both; transform-origin: top center; }
 
 @media (prefers-reduced-motion: reduce) {
   .animate-card-fade,
