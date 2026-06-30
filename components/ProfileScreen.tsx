@@ -2130,30 +2130,54 @@ export default function ProfileScreen() {
             </div>
 
             {/* Inline update so it works on iOS (a focus() from a timeout is ignored there). */}
-            <div className="mt-4 flex items-center gap-2">
-              <input
-                inputMode="decimal"
-                value={historyWeightInput}
-                onChange={(e) => setHistoryWeightInput(e.target.value.replace(/[^0-9.]/g, ""))}
-                onKeyDown={(e) => { if (e.key === "Enter") saveHistoryWeight(); }}
-                placeholder={units === "imperial" ? "New Weight (lb)" : "New Weight (kg)"}
-                className="flex-1 rounded-xl border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
-              />
-              <input
-                type="date"
-                value={historyWeightDate}
-                max={todayStr()}
-                onChange={(e) => setHistoryWeightDate(e.target.value)}
-                className="rounded-xl border border-ink/10 bg-white px-2 py-2 text-xs text-ink/70 focus:outline-none focus:ring-1 focus:ring-primary/30"
-              />
-              <button
-                type="button"
-                disabled={!historyWeightInput.trim()}
-                className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition active:opacity-70 disabled:opacity-40"
-                onClick={saveHistoryWeight}
-              >
-                Save
-              </button>
+            <div className="mt-4">
+              <div className="flex items-center gap-2">
+                <input
+                  inputMode="decimal"
+                  value={historyWeightInput}
+                  onChange={(e) => setHistoryWeightInput(e.target.value.replace(/[^0-9.]/g, ""))}
+                  onKeyDown={(e) => { if (e.key === "Enter") saveHistoryWeight(); }}
+                  placeholder={units === "imperial" ? "New Weight (lb)" : "New Weight (kg)"}
+                  className="flex-1 rounded-xl border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                />
+                <button
+                  type="button"
+                  disabled={!historyWeightInput.trim()}
+                  className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition active:opacity-70 disabled:opacity-40"
+                  onClick={saveHistoryWeight}
+                >
+                  Save
+                </button>
+              </div>
+              {(() => {
+                const isToday = historyWeightDate === todayStr();
+                const label = isToday
+                  ? "Today"
+                  : new Date(historyWeightDate + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                return (
+                  <div className="relative mt-2 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 transition"
+                    style={isToday
+                      ? { borderColor: "rgba(15,23,42,0.10)", background: "transparent" }
+                      : { borderColor: "rgba(99,133,255,0.35)", background: "rgba(99,133,255,0.06)" }
+                    }
+                  >
+                    <svg className={`h-3 w-3 shrink-0 ${isToday ? "text-ink/35" : "text-primary/70"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <rect x="3" y="4" width="18" height="18" rx="2" />
+                      <path d="M16 2v4M8 2v4M3 10h18" />
+                    </svg>
+                    <span className={`text-[11px] select-none ${isToday ? "text-ink/65" : "font-medium text-primary"}`}>
+                      {label}
+                    </span>
+                    <input
+                      type="date"
+                      className="absolute inset-0 cursor-pointer opacity-0"
+                      value={historyWeightDate}
+                      max={todayStr()}
+                      onChange={(e) => { if (e.target.value && e.target.value <= todayStr()) setHistoryWeightDate(e.target.value); }}
+                    />
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>
