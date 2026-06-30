@@ -1860,8 +1860,26 @@ export default function HomeScreen() {
       || meals.editingMeal != null || editingFeelLog != null
       || barcodeOpen || barcodeProduct != null || barcodeNotFound || barcodeLookingUp
       || workout.showStartWorkoutModal || workout.showEndWorkoutModal || pendingDelete != null;
-    document.body.style.overflow = anyModal ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
+    if (!anyModal) return;
+    // Pin the body so the page behind can't scroll (iOS WKWebView ignores
+    // `overflow: hidden` alone). Preserve and restore the scroll position.
+    const scrollY = window.scrollY;
+    const { body } = document;
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.left = "0";
+    body.style.right = "0";
+    body.style.width = "100%";
+    body.style.overflow = "hidden";
+    return () => {
+      body.style.position = "";
+      body.style.top = "";
+      body.style.left = "";
+      body.style.right = "";
+      body.style.width = "";
+      body.style.overflow = "";
+      window.scrollTo(0, scrollY);
+    };
   }, [showQuickAdd, showLogFood, showReflection, showFeelingModal, waterModalOpen, quickConfirmMeal, failedMealPrompt, meals.editingMeal, editingFeelLog, barcodeOpen, barcodeProduct, barcodeNotFound, barcodeLookingUp, workout.showStartWorkoutModal, workout.showEndWorkoutModal, pendingDelete]);
 
   // When a meal is still processing, the "Analyzing food…" label is time-gated
