@@ -2053,13 +2053,14 @@ export default function ProfileScreen() {
       )}
 
       {showWeightHistory && (
-        <div className="fixed inset-x-0 top-0 z-50 flex items-start justify-center bg-black/30 px-5 pt-[7vh]" onClick={() => setShowWeightHistory(false)}>
-          <div className="max-h-[52vh] w-full max-w-sm overflow-y-auto rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <div className="mb-4 flex items-center justify-between">
+        <div className="fixed inset-x-0 top-0 z-50 flex items-start justify-center bg-black/30 px-5 pt-[6vh]" onClick={() => setShowWeightHistory(false)}>
+          <div className="flex max-h-[50vh] w-full max-w-sm flex-col rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-4 flex shrink-0 items-center justify-between">
               <p className="text-base font-semibold text-ink">Weight History</p>
               <button type="button" className="text-sm font-semibold text-ink/50 transition active:opacity-60" onClick={() => setShowWeightHistory(false)}>Close</button>
             </div>
 
+            <div className="-mr-1 min-h-0 flex-1 overflow-y-auto pr-1">
             {/* Trend chart */}
             {weightLogs.length >= 2 && (() => {
               const points = [...weightLogs].reverse(); // oldest first
@@ -2111,7 +2112,7 @@ export default function ProfileScreen() {
             })()}
 
             {/* Entry list */}
-            <div className="max-h-64 space-y-1.5 overflow-y-auto">
+            <div className="space-y-1.5">
               {weightLogs.map((log, i) => {
                 const next = weightLogs[i + 1];
                 const delta = next ? log.weight_kg - next.weight_kg : null;
@@ -2145,8 +2146,10 @@ export default function ProfileScreen() {
               })}
             </div>
 
+            </div>
+
             {/* Inline update so it works on iOS (a focus() from a timeout is ignored there). */}
-            <div className="mt-4">
+            <div className="mt-4 shrink-0">
               <div className="flex items-center gap-2">
                 <input
                   inputMode="decimal"
