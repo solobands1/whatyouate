@@ -480,9 +480,10 @@ export default function HomeScreen() {
   // True once today's reflections have been fetched — gates the first-look cue so it
   // never fires before we know whether tonight's reflection is already done.
   const [reflectionsLoaded, setReflectionsLoaded] = useState(false);
-  // One-time-per-night attention cue on the reflection card icon: moon rises, a bell
-  // rings, then it settles back to a static moon. "idle" = static moon (or checkmark).
-  const [reflectionCue, setReflectionCue] = useState<"idle" | "moon" | "bell" | "moonBack">("idle");
+  // One-time-per-night attention cue on the reflection card icon: after the page has
+  // loaded and settled, the moon crossfades to a ringing bell, then back to the moon.
+  // "idle" = static moon (or checkmark), "bell" = ringing.
+  const [reflectionCue, setReflectionCue] = useState<"idle" | "bell">("idle");
   // Dev preview: append ?cue to the URL to force the reflection card to show and replay
   // the bell/moon cue any time of day (otherwise it's gated to after 7pm, once a night).
   const [cuePreview, setCuePreview] = useState(false);
@@ -532,31 +533,6 @@ export default function HomeScreen() {
     return () => { cancelled = true; };
   }, [user]);
 
-  // First time the nightly reflection becomes available each night (and isn't done yet),
-  // play a one-time cue on the card icon: moon rises, a bell rings, then it settles back
-  // to a static moon. localStorage-gated per day so it only ever plays once a night.
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    // ?cue is a pure visual preview: skip the loaded/done gates and loop so it's easy to catch.
-    if (!cuePreview && (!reflectionsLoaded || todayReflection)) return;
-    const available = isDemoMode || cuePreview || REFLECTION_AVAILABLE_ALL_DAY || new Date().getHours() >= 19;
-    if (!available) return;
-    const key = `reflectionCueSeen-${todayDateStr()}`;
-    if (!cuePreview && localStorage.getItem(key)) return;
-    if (!cuePreview) localStorage.setItem(key, "1");
-    let timers: ReturnType<typeof setTimeout>[] = [];
-    const play = () => {
-      timers = [
-        setTimeout(() => setReflectionCue("moon"), 300),
-        setTimeout(() => setReflectionCue("bell"), 1150),
-        setTimeout(() => setReflectionCue("moonBack"), 2050),
-        setTimeout(() => setReflectionCue("idle"), 2650),
-      ];
-    };
-    play();
-    const loop = cuePreview ? setInterval(play, 4000) : undefined;
-    return () => { timers.forEach(clearTimeout); if (loop) clearInterval(loop); };
-  }, [reflectionsLoaded, todayReflection, isDemoMode, cuePreview]);
   const [selectedFeelings, setSelectedFeelings] = useState<string[]>([]);
   const [heroHabit, setHeroHabit] = useState<{ status: "suggested" | "accepting" | "committed" | "active" | "dayComplete" | "done" | "missed" | "hidden"; days: boolean[][]; holdDay?: number | null }>(
     { status: "suggested", days: freshDays(FIRST_TEMPLATE) }
@@ -568,6 +544,32 @@ export default function HomeScreen() {
   // False until the persisted habit state has loaded, so the hero enters once with the
   // correct content (no flash of the default suggestion before an active builder).
   const [habitLoaded, setHabitLoaded] = useState(false);
+
+  // First time the nightly reflection is available each night (and isn't done yet), the
+  // card icon plays a cue: the moon crossfades to a ringing bell, then back. Waits for the
+  // page to finish loading + a settle pause first. localStorage-gated to once a night.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    // Wait for the page entrance to finish and sit still before ringing.
+    if (!barsReady || !habitLoaded) return;
+    // ?cue is a pure visual preview: skip the loaded/done gates and loop so it's easy to catch.
+    if (!cuePreview && (!reflectionsLoaded || todayReflection)) return;
+    const available = isDemoMode || cuePreview || REFLECTION_AVAILABLE_ALL_DAY || new Date().getHours() >= 19;
+    if (!available) return;
+    const key = `reflectionCueSeen-${todayDateStr()}`;
+    if (!cuePreview && localStorage.getItem(key)) return;
+    if (!cuePreview) localStorage.setItem(key, "1");
+    let timers: ReturnType<typeof setTimeout>[] = [];
+    const play = () => {
+      timers = [
+        setTimeout(() => setReflectionCue("bell"), 1100),  // settle pause after load, then ring
+        setTimeout(() => setReflectionCue("idle"), 2750),  // ring done, crossfade back to moon
+      ];
+    };
+    play();
+    const loop = cuePreview ? setInterval(play, 4200) : undefined;
+    return () => { timers.forEach(clearTimeout); if (loop) clearInterval(loop); };
+  }, [reflectionsLoaded, todayReflection, isDemoMode, cuePreview, barsReady, habitLoaded]);
   // Nudge hero reveal: a brand-new nudge animates in like a new habit (shimmer + bounce
   // -> pulse -> slide down -> pulse), once per nudge. Default expanded (seen nudges).
   const [nudgeExpanded, setNudgeExpanded] = useState(true);
@@ -3224,10 +3226,12 @@ export default function HomeScreen() {
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
                 {todayReflection && !cuePreview ? (
                   <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 6" /></svg>
-                ) : reflectionCue === "bell" ? (
-                  <svg viewBox="0 0 24 24" className="h-4 w-4 origin-top animate-bell-ring" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></svg>
                 ) : (
-                  <svg viewBox="0 0 24 24" className={`h-4 w-4 ${reflectionCue === "moon" || reflectionCue === "moonBack" ? "animate-moon-rise" : ""}`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z" /></svg>
+                  <span className="relative h-4 w-4">
+                    {/* Crossfade moon <-> ringing bell. */}
+                    <svg viewBox="0 0 24 24" className={`absolute inset-0 h-4 w-4 transition-opacity duration-300 ${reflectionCue === "bell" ? "opacity-0" : "opacity-100"}`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z" /></svg>
+                    <svg viewBox="0 0 24 24" className={`absolute inset-0 h-4 w-4 transition-opacity duration-300 ${reflectionCue === "bell" ? "opacity-100 animate-bell-ring" : "opacity-0"}`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></svg>
+                  </span>
                 )}
               </span>
               <span className="flex-1">
