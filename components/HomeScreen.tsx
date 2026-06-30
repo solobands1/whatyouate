@@ -532,19 +532,26 @@ export default function HomeScreen() {
   // play a one-time cue on the card icon: moon rises, a bell rings, then it settles back
   // to a static moon. localStorage-gated per day so it only ever plays once a night.
   useEffect(() => {
-    if (typeof window === "undefined" || !reflectionsLoaded || todayReflection) return;
+    if (typeof window === "undefined") return;
+    // ?cue is a pure visual preview: skip the loaded/done gates and loop so it's easy to catch.
+    if (!cuePreview && (!reflectionsLoaded || todayReflection)) return;
     const available = isDemoMode || cuePreview || new Date().getHours() >= 19;
     if (!available) return;
     const key = `reflectionCueSeen-${todayDateStr()}`;
-    if (!cuePreview && localStorage.getItem(key)) return; // ?cue replays every load
-    localStorage.setItem(key, "1");
-    const timers = [
-      setTimeout(() => setReflectionCue("moon"), 600),
-      setTimeout(() => setReflectionCue("bell"), 1450),
-      setTimeout(() => setReflectionCue("moonBack"), 2350),
-      setTimeout(() => setReflectionCue("idle"), 2950),
-    ];
-    return () => timers.forEach(clearTimeout);
+    if (!cuePreview && localStorage.getItem(key)) return;
+    if (!cuePreview) localStorage.setItem(key, "1");
+    let timers: ReturnType<typeof setTimeout>[] = [];
+    const play = () => {
+      timers = [
+        setTimeout(() => setReflectionCue("moon"), 300),
+        setTimeout(() => setReflectionCue("bell"), 1150),
+        setTimeout(() => setReflectionCue("moonBack"), 2050),
+        setTimeout(() => setReflectionCue("idle"), 2650),
+      ];
+    };
+    play();
+    const loop = cuePreview ? setInterval(play, 4000) : undefined;
+    return () => { timers.forEach(clearTimeout); if (loop) clearInterval(loop); };
   }, [reflectionsLoaded, todayReflection, isDemoMode, cuePreview]);
   const [selectedFeelings, setSelectedFeelings] = useState<string[]>([]);
   const [heroHabit, setHeroHabit] = useState<{ status: "suggested" | "accepting" | "committed" | "active" | "dayComplete" | "done" | "missed" | "hidden"; days: boolean[][]; holdDay?: number | null }>(
@@ -3211,7 +3218,7 @@ export default function HomeScreen() {
               className="flex w-full items-center gap-3 rounded-2xl border-2 border-primary/25 bg-primary/[0.05] px-4 py-3 text-left transition active:scale-[0.99]"
             >
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
-                {todayReflection ? (
+                {todayReflection && !cuePreview ? (
                   <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 6" /></svg>
                 ) : reflectionCue === "bell" ? (
                   <svg viewBox="0 0 24 24" className="h-4 w-4 origin-top animate-bell-ring" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></svg>
