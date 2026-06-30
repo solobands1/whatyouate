@@ -113,6 +113,17 @@ input, textarea, select {
   50%      { transform: translateY(-3px); }
 }
 .animate-moon-float { animation: moonFloat 7s ease-in-out infinite; }
+/* Reflection-card first-look cue: a hanging bell swings and rings, then settles. */
+@keyframes bellRing {
+  0%   { transform: rotate(0deg); }
+  15%  { transform: rotate(20deg); }
+  30%  { transform: rotate(-16deg); }
+  45%  { transform: rotate(11deg); }
+  60%  { transform: rotate(-7deg); }
+  75%  { transform: rotate(4deg); }
+  100% { transform: rotate(0deg); }
+}
+.animate-bell-ring { animation: bellRing 0.85s ease-in-out both; transform-origin: top center; }
 
 @media (prefers-reduced-motion: reduce) {
   .animate-card-fade,
@@ -121,7 +132,8 @@ input, textarea, select {
   .animate-card-pulse,
   .animate-clock-wind,
   .animate-moon-rise,
-  .animate-moon-float {
+  .animate-moon-float,
+  .animate-bell-ring {
     animation: none;
   }
 }

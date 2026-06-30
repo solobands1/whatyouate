@@ -473,6 +473,12 @@ export default function HomeScreen() {
   // editingKey: null = summary, a question key, or "note".
   const [reflectionEditMode, setReflectionEditMode] = useState(false);
   const [reflectionEditingKey, setReflectionEditingKey] = useState<string | null>(null);
+  // True once today's reflections have been fetched — gates the first-look cue so it
+  // never fires before we know whether tonight's reflection is already done.
+  const [reflectionsLoaded, setReflectionsLoaded] = useState(false);
+  // One-time-per-night attention cue on the reflection card icon: moon rises, a bell
+  // rings, then it settles back to a static moon. "idle" = static moon (or checkmark).
+  const [reflectionCue, setReflectionCue] = useState<"idle" | "moon" | "bell" | "moonBack">("idle");
   const closeReflection = () => { setShowReflection(false); setReflectionEditMode(false); setReflectionEditingKey(null); };
   const finishReflection = () => {
     // Persist the completed check-in so it feeds the coach and "Same As Last Night".
@@ -505,13 +511,35 @@ export default function HomeScreen() {
     if (!user) return;
     let cancelled = false;
     fetchReflections(user.id).then((rows) => {
-      if (cancelled || rows.length === 0) return;
-      setLastReflection({ reflection: rows[0].answers, note: rows[0].note }); // newest first
-      const today = rows.find((r) => r.date === todayDateStr());
-      if (today) setTodayReflection({ reflection: today.answers, note: today.note });
-    });
+      if (cancelled) return;
+      if (rows.length > 0) {
+        setLastReflection({ reflection: rows[0].answers, note: rows[0].note }); // newest first
+        const today = rows.find((r) => r.date === todayDateStr());
+        if (today) setTodayReflection({ reflection: today.answers, note: today.note });
+      }
+      setReflectionsLoaded(true);
+    }).catch(() => { if (!cancelled) setReflectionsLoaded(true); });
     return () => { cancelled = true; };
   }, [user]);
+
+  // First time the nightly reflection becomes available each night (and isn't done yet),
+  // play a one-time cue on the card icon: moon rises, a bell rings, then it settles back
+  // to a static moon. localStorage-gated per day so it only ever plays once a night.
+  useEffect(() => {
+    if (typeof window === "undefined" || !reflectionsLoaded || todayReflection) return;
+    const available = isDemoMode || new Date().getHours() >= 19;
+    if (!available) return;
+    const key = `reflectionCueSeen-${todayDateStr()}`;
+    if (localStorage.getItem(key)) return;
+    localStorage.setItem(key, "1");
+    const timers = [
+      setTimeout(() => setReflectionCue("moon"), 600),
+      setTimeout(() => setReflectionCue("bell"), 1450),
+      setTimeout(() => setReflectionCue("moonBack"), 2350),
+      setTimeout(() => setReflectionCue("idle"), 2950),
+    ];
+    return () => timers.forEach(clearTimeout);
+  }, [reflectionsLoaded, todayReflection, isDemoMode]);
   const [selectedFeelings, setSelectedFeelings] = useState<string[]>([]);
   const [heroHabit, setHeroHabit] = useState<{ status: "suggested" | "accepting" | "committed" | "active" | "dayComplete" | "done" | "missed" | "hidden"; days: boolean[][]; holdDay?: number | null }>(
     { status: "suggested", days: freshDays(FIRST_TEMPLATE) }
@@ -3179,8 +3207,10 @@ export default function HomeScreen() {
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
                 {todayReflection ? (
                   <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 6" /></svg>
+                ) : reflectionCue === "bell" ? (
+                  <svg viewBox="0 0 24 24" className="h-4 w-4 origin-top animate-bell-ring" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></svg>
                 ) : (
-                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z" /></svg>
+                  <svg viewBox="0 0 24 24" className={`h-4 w-4 ${reflectionCue === "moon" || reflectionCue === "moonBack" ? "animate-moon-rise" : ""}`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z" /></svg>
                 )}
               </span>
               <span className="flex-1">
