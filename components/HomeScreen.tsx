@@ -479,6 +479,12 @@ export default function HomeScreen() {
   // One-time-per-night attention cue on the reflection card icon: moon rises, a bell
   // rings, then it settles back to a static moon. "idle" = static moon (or checkmark).
   const [reflectionCue, setReflectionCue] = useState<"idle" | "moon" | "bell" | "moonBack">("idle");
+  // Dev preview: append ?cue to the URL to force the reflection card to show and replay
+  // the bell/moon cue any time of day (otherwise it's gated to after 7pm, once a night).
+  const [cuePreview, setCuePreview] = useState(false);
+  useEffect(() => {
+    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).has("cue")) setCuePreview(true);
+  }, []);
   const closeReflection = () => { setShowReflection(false); setReflectionEditMode(false); setReflectionEditingKey(null); };
   const finishReflection = () => {
     // Persist the completed check-in so it feeds the coach and "Same As Last Night".
@@ -527,10 +533,10 @@ export default function HomeScreen() {
   // to a static moon. localStorage-gated per day so it only ever plays once a night.
   useEffect(() => {
     if (typeof window === "undefined" || !reflectionsLoaded || todayReflection) return;
-    const available = isDemoMode || new Date().getHours() >= 19;
+    const available = isDemoMode || cuePreview || new Date().getHours() >= 19;
     if (!available) return;
     const key = `reflectionCueSeen-${todayDateStr()}`;
-    if (localStorage.getItem(key)) return;
+    if (!cuePreview && localStorage.getItem(key)) return; // ?cue replays every load
     localStorage.setItem(key, "1");
     const timers = [
       setTimeout(() => setReflectionCue("moon"), 600),
@@ -539,7 +545,7 @@ export default function HomeScreen() {
       setTimeout(() => setReflectionCue("idle"), 2950),
     ];
     return () => timers.forEach(clearTimeout);
-  }, [reflectionsLoaded, todayReflection, isDemoMode]);
+  }, [reflectionsLoaded, todayReflection, isDemoMode, cuePreview]);
   const [selectedFeelings, setSelectedFeelings] = useState<string[]>([]);
   const [heroHabit, setHeroHabit] = useState<{ status: "suggested" | "accepting" | "committed" | "active" | "dayComplete" | "done" | "missed" | "hidden"; days: boolean[][]; holdDay?: number | null }>(
     { status: "suggested", days: freshDays(FIRST_TEMPLATE) }
@@ -3197,7 +3203,7 @@ export default function HomeScreen() {
         {/* Nightly check-in entry. The big home button appears at 7pm (or once done,
             showing "Checked In" until midnight); 5-7pm it lives in the + menu. Demo
             always shows it. */}
-        {(isDemoMode || todayReflection || new Date().getHours() >= 19) && (
+        {(isDemoMode || todayReflection || cuePreview || new Date().getHours() >= 19) && (
           <div className="mt-2" style={riseIn(barsReady && habitLoaded, 1)}>
             <button
               type="button"
