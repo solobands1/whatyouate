@@ -821,6 +821,17 @@ export default function HomeScreen() {
   const [quickAddRecentItems, setQuickAddRecentItems] = useState<QuickAddItem[]>([]);
   const [quickAddAllItems, setQuickAddAllItems] = useState<QuickAddItem[]>([]);
   const [quickAddQuery, setQuickAddQuery] = useState("");
+  // Visual viewport height while Quick Add is open, so the modal shrinks above the keyboard.
+  const [vvHeight, setVvHeight] = useState<number | undefined>(undefined);
+  useEffect(() => {
+    if (!showQuickAdd || typeof window === "undefined" || !window.visualViewport) return;
+    const vv = window.visualViewport;
+    const update = () => setVvHeight(vv.height);
+    update();
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => { vv.removeEventListener("resize", update); vv.removeEventListener("scroll", update); };
+  }, [showQuickAdd]);
   const [quickAddSelected, setQuickAddSelected] = useState<Record<string, "small" | "medium" | "large">>({});
   const [quickAddAdding, setQuickAddAdding] = useState(false);
   const [quickAddDate, setQuickAddDate] = useState(todayDateStr);
@@ -4434,9 +4445,9 @@ export default function HomeScreen() {
 
       {/* Quick Add modal */}
       {showQuickAdd && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5">
-          <div className="w-full max-w-sm rounded-xl bg-white px-5 pb-6 pt-5 shadow-xl">
-            <div className="mb-4 flex items-center justify-between">
+        <div className="fixed inset-x-0 top-0 z-50 flex items-center justify-center bg-black/40 px-5" style={{ height: vvHeight ? `${vvHeight}px` : "100%" }}>
+          <div className="flex max-h-full w-full max-w-sm flex-col rounded-xl bg-white px-5 pb-6 pt-5 shadow-xl">
+            <div className="mb-4 flex shrink-0 items-center justify-between">
               <h2 className="text-base font-semibold text-ink">Quick Add</h2>
               <button
                 type="button"
@@ -4452,9 +4463,10 @@ export default function HomeScreen() {
                 value={quickAddQuery}
                 onChange={(e) => setQuickAddQuery(e.target.value)}
                 placeholder="Search your foods"
-                className="mb-3 w-full rounded-xl border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                className="mb-3 w-full shrink-0 rounded-xl border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
               />
             )}
+            <div className="-mr-1 min-h-0 flex-1 overflow-y-auto pr-1">
             {quickAddAllItems.length === 0 ? (
               <p className="py-6 text-center text-sm text-muted/60">
                 No saved foods yet · log some meals first to use Quick Add.
@@ -4464,7 +4476,7 @@ export default function HomeScreen() {
                 const query = quickAddQuery.trim().toLowerCase();
                 const results = quickAddAllItems.filter((i) => i.name.toLowerCase().includes(query));
                 return results.length ? (
-                  <div className="max-h-[55vh] overflow-y-auto space-y-2 pr-1">{results.map(renderQuickAddRow)}</div>
+                  <div className="space-y-2">{results.map(renderQuickAddRow)}</div>
                 ) : (
                   <div className="py-6 text-center">
                     <p className="text-sm text-muted/60">No matches found.</p>
@@ -4473,7 +4485,7 @@ export default function HomeScreen() {
                 );
               })()
             ) : (
-              <div className="max-h-[55vh] overflow-y-auto space-y-2 pr-1">
+              <div className="space-y-2">
                 {quickAddItems.map((item) => {
                   const isSelected = !!quickAddSelected[item.key];
                   const portion = quickAddSelected[item.key] ?? "medium";
@@ -4606,6 +4618,7 @@ export default function HomeScreen() {
                 )}
               </div>
             )}
+            </div>
             {quickAddAllItems.length > 0 && (
               <div className="mt-3"><ManualDateRow manualDate={quickAddDate} setManualDate={setQuickAddDate} /></div>
             )}
