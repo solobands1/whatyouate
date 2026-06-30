@@ -819,6 +819,8 @@ export default function HomeScreen() {
   const [ratingPicked, setRatingPicked] = useState<string | null>(null);
   const [quickAddItems, setQuickAddItems] = useState<QuickAddItem[]>([]);
   const [quickAddRecentItems, setQuickAddRecentItems] = useState<QuickAddItem[]>([]);
+  const [quickAddAllItems, setQuickAddAllItems] = useState<QuickAddItem[]>([]);
+  const [quickAddQuery, setQuickAddQuery] = useState("");
   const [quickAddSelected, setQuickAddSelected] = useState<Record<string, "small" | "medium" | "large">>({});
   const [quickAddAdding, setQuickAddAdding] = useState(false);
   const [quickAddDate, setQuickAddDate] = useState(todayDateStr);
@@ -866,12 +868,54 @@ export default function HomeScreen() {
 
   const handleOpenQuickAdd = () => {
     quickAddConfirmingRef.current = false;
-    const { frequent, recent } = getQuickAddFromMeals(meals.meals);
+    const { frequent, recent, all } = getQuickAddFromMeals(meals.meals);
     setQuickAddItems(frequent);
     setQuickAddRecentItems(recent);
+    setQuickAddAllItems(all);
+    setQuickAddQuery("");
     setQuickAddSelected({});
     setQuickAddDate(todayDateStr());
     setShowQuickAdd(true);
+  };
+
+  // One row in the Quick Add list (used by frequent, recent, and search results).
+  const renderQuickAddRow = (item: QuickAddItem) => {
+    const isSelected = !!quickAddSelected[item.key];
+    const portion = quickAddSelected[item.key] ?? "medium";
+    const mult = isSelected ? (portion === "small" ? 0.7 : portion === "large" ? 1.4 : 1) : 1;
+    const midCal = item.type === "text" && item.ranges
+      ? Math.round(((item.ranges.calories_min + item.ranges.calories_max) / 2) * mult)
+      : Math.round((item.calories ?? 0) * mult);
+    const midProt = item.type === "text" && item.ranges
+      ? Math.round(((item.ranges.protein_g_min + item.ranges.protein_g_max) / 2) * mult)
+      : Math.round((item.protein ?? 0) * mult);
+    return (
+      <div
+        key={item.key}
+        className={`cursor-pointer rounded-xl border px-3 py-2.5 transition ${isSelected ? "border-primary/30 bg-primary/8" : "border-ink/8 bg-ink/[0.02]"}`}
+        onClick={() => setQuickAddSelected((prev) => { if (prev[item.key]) { const next = { ...prev }; delete next[item.key]; return next; } return { ...prev, [item.key]: "medium" }; })}
+      >
+        <div className="flex items-start gap-2">
+          <div className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border transition ${isSelected ? "border-primary bg-primary" : "border-ink/20 bg-white"}`}>
+            {isSelected && (<svg viewBox="0 0 10 8" fill="none" stroke="white" strokeWidth="1.5" className="h-2.5 w-2.5"><path d="M1 4 L3.5 6.5 L9 1" strokeLinecap="round" strokeLinejoin="round" /></svg>)}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="truncate text-xs font-semibold text-ink">{formatTitle(item.name)}</p>
+            <p className="text-[10px] text-muted/80">{midCal} kcal · {midProt}g protein{item.type === "barcode" && item.brand ? ` · ${item.brand}` : ""}</p>
+          </div>
+          <button type="button" className="ml-1 shrink-0 text-ink/50 hover:text-ink/70 active:scale-90 transition text-base leading-none" onClick={(e) => { e.stopPropagation(); handleRemoveQuickAddItem(item); }}>×</button>
+        </div>
+        {isSelected && (
+          <div className="mt-2 flex gap-1.5">
+            {(["small", "medium", "large"] as const).map((p) => (
+              <button key={p} type="button" className={`flex-1 rounded-lg border py-1 text-[10px] font-semibold transition ${portion === p ? "border-primary/30 bg-primary/15 text-ink" : "border-ink/10 bg-white text-ink/60 hover:bg-ink/5"}`} onClick={(e) => { e.stopPropagation(); setQuickAddSelected((prev) => ({ ...prev, [item.key]: p })); }}>
+                {p === "medium" ? "Avg" : p === "small" ? "Small" : "Large"}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
   };
 
   const handleQuickAddConfirm = () => {
@@ -884,7 +928,7 @@ export default function HomeScreen() {
     // Build all meal data synchronously — no DB calls yet
     const pendingItems: Array<{ item: QuickAddItem; analysis: any }> = [];
     for (const [key, portion] of selected) {
-      const item = quickAddItems.find((i) => i.key === key) ?? quickAddRecentItems.find((i) => i.key === key);
+      const item = quickAddItems.find((i) => i.key === key) ?? quickAddRecentItems.find((i) => i.key === key) ?? quickAddAllItems.find((i) => i.key === key);
       if (!item) continue;
       const multiplier = portion === "small" ? 0.7 : portion === "large" ? 1.4 : 1;
       const scale = (v: number) => Math.round(v * multiplier);
@@ -4402,10 +4446,32 @@ export default function HomeScreen() {
                 Cancel
               </button>
             </div>
-            {quickAddItems.length === 0 && quickAddRecentItems.length === 0 ? (
+            {quickAddAllItems.length > 0 && (
+              <input
+                type="text"
+                value={quickAddQuery}
+                onChange={(e) => setQuickAddQuery(e.target.value)}
+                placeholder="Search your foods"
+                className="mb-3 w-full rounded-xl border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+              />
+            )}
+            {quickAddAllItems.length === 0 ? (
               <p className="py-6 text-center text-sm text-muted/60">
                 No saved foods yet · log some meals first to use Quick Add.
               </p>
+            ) : quickAddQuery.trim() ? (
+              (() => {
+                const query = quickAddQuery.trim().toLowerCase();
+                const results = quickAddAllItems.filter((i) => i.name.toLowerCase().includes(query));
+                return results.length ? (
+                  <div className="max-h-[55vh] overflow-y-auto space-y-2 pr-1">{results.map(renderQuickAddRow)}</div>
+                ) : (
+                  <div className="py-6 text-center">
+                    <p className="text-sm text-muted/60">No matches found.</p>
+                    <button type="button" onClick={() => { setShowQuickAdd(false); meals.openManualMealEntry(); }} className="mt-2 text-xs font-semibold text-primary/80 active:opacity-60">Log it fresh</button>
+                  </div>
+                );
+              })()
             ) : (
               <div className="max-h-[55vh] overflow-y-auto space-y-2 pr-1">
                 {quickAddItems.map((item) => {
@@ -4540,10 +4606,10 @@ export default function HomeScreen() {
                 )}
               </div>
             )}
-            {(quickAddItems.length > 0 || quickAddRecentItems.length > 0) && (
+            {quickAddAllItems.length > 0 && (
               <div className="mt-3"><ManualDateRow manualDate={quickAddDate} setManualDate={setQuickAddDate} /></div>
             )}
-            {(quickAddItems.length > 0 || quickAddRecentItems.length > 0) && (
+            {quickAddAllItems.length > 0 && (
               <button
                 type="button"
                 className="mt-3 w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
