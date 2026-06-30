@@ -4445,7 +4445,7 @@ export default function HomeScreen() {
 
       {/* Quick Add modal */}
       {showQuickAdd && (
-        <div className="fixed inset-x-0 top-0 z-50 flex items-center justify-center bg-black/40 px-5" style={{ height: vvHeight ? `${vvHeight}px` : "100%" }}>
+        <div className="fixed inset-x-0 top-0 z-50 flex items-start justify-center bg-black/40 px-5 pt-[12vh]" style={{ height: vvHeight ? `${vvHeight}px` : "100%" }}>
           <div className="flex max-h-full w-full max-w-sm flex-col rounded-xl bg-white px-5 pb-6 pt-5 shadow-xl">
             <div className="mb-4 flex shrink-0 items-center justify-between">
               <h2 className="text-base font-semibold text-ink">Quick Add</h2>
