@@ -277,6 +277,10 @@ const REFLECTION_AVAILABLE_ALL_DAY = true;
 // TEMP: replay the bell/moon cue on every load (skips the once-a-night gate). Flip to
 // false to restore "plays only the first time it's available each night".
 const REFLECTION_CUE_REPLAY = true;
+// How long after the page/hero finishes loading before the bell rings. The hero (habit
+// builder / nudge / greeting) settles ~3.9s after load (1.7s expand + ~2.2s pulse), so
+// this lands the ring ~1s after it's done. Tune this single number to taste.
+const REFLECTION_CUE_DELAY_MS = 4800;
 // True if an ISO timestamp falls on the same local calendar day as `d`.
 function sameLocalDay(iso: string, d: Date): boolean {
   const a = new Date(iso);
@@ -563,15 +567,16 @@ export default function HomeScreen() {
     const key = `reflectionCueSeen-${todayDateStr()}`;
     if (!replay && localStorage.getItem(key)) return;
     if (!replay) localStorage.setItem(key, "1");
+    const RING_MS = 1900; // matches .animate-bell-ring duration
     let timers: ReturnType<typeof setTimeout>[] = [];
     const play = () => {
       timers = [
-        setTimeout(() => setReflectionCue("bell"), 1100),  // settle pause after load, then ring
-        setTimeout(() => setReflectionCue("idle"), 2750),  // ring done, crossfade back to moon
+        setTimeout(() => setReflectionCue("bell"), REFLECTION_CUE_DELAY_MS),       // ring ~1s after hero settles
+        setTimeout(() => setReflectionCue("idle"), REFLECTION_CUE_DELAY_MS + RING_MS + 250), // ring done, crossfade back
       ];
     };
     play();
-    const loop = cuePreview ? setInterval(play, 4200) : undefined;
+    const loop = cuePreview ? setInterval(play, REFLECTION_CUE_DELAY_MS + RING_MS + 1500) : undefined;
     return () => { timers.forEach(clearTimeout); if (loop) clearInterval(loop); };
   }, [reflectionsLoaded, todayReflection, isDemoMode, cuePreview, barsReady, habitLoaded]);
   // Nudge hero reveal: a brand-new nudge animates in like a new habit (shimmer + bounce
@@ -3227,7 +3232,7 @@ export default function HomeScreen() {
               onClick={todayReflection ? editTodayReflection : () => setShowReflection(true)}
               className="flex w-full items-center gap-3 rounded-2xl border-2 border-primary/25 bg-primary/[0.05] px-4 py-3 text-left transition active:scale-[0.99]"
             >
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
+              <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary ${reflectionCue === "bell" ? "animate-card-pulse" : ""}`}>
                 {todayReflection && !cuePreview ? (
                   <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 6" /></svg>
                 ) : (

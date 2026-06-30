@@ -126,7 +126,7 @@ input, textarea, select {
   85%  { transform: rotate(-2deg); }
   100% { transform: rotate(0deg); }
 }
-.animate-bell-ring { animation: bellRing 1.4s ease-in-out both; transform-origin: top center; }
+.animate-bell-ring { animation: bellRing 1.9s ease-in-out both; transform-origin: top center; }
 
 @media (prefers-reduced-motion: reduce) {
   .animate-card-fade,
