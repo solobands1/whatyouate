@@ -270,6 +270,10 @@ function todayDateStr() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
+
+// TEMP: nightly reflection available all day for testing (was gated to hour >= 19).
+// Flip to false to restore the 7pm-only behavior before launch.
+const REFLECTION_AVAILABLE_ALL_DAY = true;
 // True if an ISO timestamp falls on the same local calendar day as `d`.
 function sameLocalDay(iso: string, d: Date): boolean {
   const a = new Date(iso);
@@ -535,7 +539,7 @@ export default function HomeScreen() {
     if (typeof window === "undefined") return;
     // ?cue is a pure visual preview: skip the loaded/done gates and loop so it's easy to catch.
     if (!cuePreview && (!reflectionsLoaded || todayReflection)) return;
-    const available = isDemoMode || cuePreview || new Date().getHours() >= 19;
+    const available = isDemoMode || cuePreview || REFLECTION_AVAILABLE_ALL_DAY || new Date().getHours() >= 19;
     if (!available) return;
     const key = `reflectionCueSeen-${todayDateStr()}`;
     if (!cuePreview && localStorage.getItem(key)) return;
@@ -3210,7 +3214,7 @@ export default function HomeScreen() {
         {/* Nightly check-in entry. The big home button appears at 7pm (or once done,
             showing "Checked In" until midnight); 5-7pm it lives in the + menu. Demo
             always shows it. */}
-        {(isDemoMode || todayReflection || cuePreview || new Date().getHours() >= 19) && (
+        {(isDemoMode || todayReflection || cuePreview || REFLECTION_AVAILABLE_ALL_DAY || new Date().getHours() >= 19) && (
           <div className="mt-2" style={riseIn(barsReady && habitLoaded, 1)}>
             <button
               type="button"
