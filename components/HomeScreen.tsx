@@ -274,6 +274,9 @@ function todayDateStr() {
 // TEMP: nightly reflection available all day for testing (was gated to hour >= 19).
 // Flip to false to restore the 7pm-only behavior before launch.
 const REFLECTION_AVAILABLE_ALL_DAY = true;
+// TEMP: replay the bell/moon cue on every load (skips the once-a-night gate). Flip to
+// false to restore "plays only the first time it's available each night".
+const REFLECTION_CUE_REPLAY = true;
 // True if an ISO timestamp falls on the same local calendar day as `d`.
 function sameLocalDay(iso: string, d: Date): boolean {
   const a = new Date(iso);
@@ -556,9 +559,10 @@ export default function HomeScreen() {
     if (!cuePreview && (!reflectionsLoaded || todayReflection)) return;
     const available = isDemoMode || cuePreview || REFLECTION_AVAILABLE_ALL_DAY || new Date().getHours() >= 19;
     if (!available) return;
+    const replay = cuePreview || REFLECTION_CUE_REPLAY;
     const key = `reflectionCueSeen-${todayDateStr()}`;
-    if (!cuePreview && localStorage.getItem(key)) return;
-    if (!cuePreview) localStorage.setItem(key, "1");
+    if (!replay && localStorage.getItem(key)) return;
+    if (!replay) localStorage.setItem(key, "1");
     let timers: ReturnType<typeof setTimeout>[] = [];
     const play = () => {
       timers = [
