@@ -173,9 +173,14 @@ export function useMeals(
 
     // DB writes in background
     const normalizedInput = normalizeFoodKey(manualText.trim());
+    // A manual meal already carries its full analysis, so create it "done" from the
+    // start. Otherwise a later step failing would strand the row at "processing",
+    // showing a pill that "analyzes" forever (across every device on the shared DB).
+    let created: Awaited<ReturnType<typeof addMeal>> | null = null;
+    const swapInPill = () => setMeals((prev) => prev.map((m) => m.id === optimisticId ? { ...created!, ts: optimisticTs, analysisJson: scaledAnalysis as any, userCorrection: capturedName, status: "done" as const } : m));
     try {
       setUpdatingMeal(true);
-      const created = await addMeal(user.id, scaledAnalysis as any);
+      created = await addMeal(user.id, scaledAnalysis as any, undefined, undefined, "done");
       if (capturedDate !== todayStr) {
         const d = new Date(capturedDate + "T12:00:00");
         if (d.getTime() < Date.now()) await updateMealTs(created.id, d.getTime()).catch(() => {});
@@ -188,10 +193,13 @@ export function useMeals(
       }).catch(() => {});
       incrementFoodTextLogCount(normalizedInput);
       // Replace optimistic pill with real DB record using correct timestamp
-      setMeals((prev) => prev.map((m) => m.id === optimisticId ? { ...created, ts: optimisticTs, analysisJson: scaledAnalysis as any, userCorrection: capturedName, status: "done" as const } : m));
+      swapInPill();
     } catch (err) {
       console.error("Manual meal save failed", err);
-      setMeals((prev) => prev.filter((m) => m.id !== optimisticId));
+      // The row was created "done" already — keep the saved meal visible rather than
+      // dropping it. Only remove the pill if creation itself never happened.
+      if (created) swapInPill();
+      else setMeals((prev) => prev.filter((m) => m.id !== optimisticId));
     } finally {
       setUpdatingMeal(false);
     }
