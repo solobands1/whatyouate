@@ -86,6 +86,25 @@ export function incrementFoodCacheLogCount(barcode: string): void {
  * so "Apple", "Apple (medium)", "apple, medium" and "Fresh apple" all
  * resolve to the same key: "apple".
  */
+const DISH_STOPWORDS = new Set(["with", "and", "the", "a", "an", "of", "on", "in", "or", "w", "plus", "topped", "side", "sides", "extra", "some", "served", "over", "to"]);
+const DISH_TRIVIAL = new Set(["small", "medium", "large", "fresh", "raw", "whole", "organic", "sliced", "diced", "chopped", "cooked", "uncooked", "baked", "grilled", "steamed", "boiled", "fried", "roasted", "plain", "ripe", "dried", "frozen", "canned", "homemade", "warm", "cold", "hot", "toasted", "mixed", "style", "classic"]);
+
+// A stable grouping key for "the same dish, just worded differently." Normalize, drop
+// filler + prep words, lightly singularize, then SORT the remaining words so order and
+// phrasing don't matter. "Goat cheese, pepperoni pizza, green peppers" and "Pepperoni
+// pizza with green pepper & goat cheese" collapse to one key; a dish with different
+// ingredients (e.g. plain pepperoni pizza) keeps its own key. Deterministic, so it works
+// on existing logs immediately — no dependence on the model naming things consistently.
+export function dishGroupKey(text: string): string {
+  const base = normalizeFoodKey(text);
+  const tokens = base
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .map((t) => (t.length > 3 ? t.replace(/s$/, "") : t))
+    .filter((t) => t && !DISH_STOPWORDS.has(t) && !DISH_TRIVIAL.has(t));
+  return Array.from(new Set(tokens)).sort().join(" ");
+}
+
 export function normalizeFoodKey(text: string): string {
   let s = text.toLowerCase().trim();
   // Strip parenthetical qualifiers: "apple (medium, ~182g)" → "apple"
@@ -391,11 +410,9 @@ export function getQuickAddFromMeals(meals: Array<{
     const name = meal.analysisJson.name!;
     const key = normalizeFoodKey(name);
     if (!key || removed.has(key)) continue;
-    // Group key: the AI's canonical name when present, else fall back to the variant key
-    // (old entries with no canonical_name simply group by their own name, as before).
-    const canonicalKey = meal.analysisJson.canonical_name
-      ? normalizeFoodKey(meal.analysisJson.canonical_name) || key
-      : key;
+    // Group key: same-dish-reworded collapse (order/phrasing independent). Works on old
+    // and new logs alike; falls back to the exact key if the name reduces to nothing.
+    const canonicalKey = dishGroupKey(name) || key;
     const existing = seen.get(key);
     if (existing) {
       existing.logCount += 1;
@@ -450,8 +467,11 @@ export function getQuickAddFromMeals(meals: Array<{
     .slice(0, 10)
     .map((g) => g.rep);
 
-  // Full history (newest first) at variant granularity, for searching everything logged.
-  const allSorted = [...variants].sort((a, b) => b.savedAt - a.savedAt);
+  // Search runs over the same deduped dish list (newest first): it still finds every
+  // distinct dish you've logged, but never shows the same dish more than once.
+  const allSorted = dishes
+    .map((g) => g.rep)
+    .sort((a, b) => b.savedAt - a.savedAt);
 
   return { frequent, recent, all: allSorted };
 }
