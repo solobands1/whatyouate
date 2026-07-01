@@ -988,7 +988,7 @@ export default function SummaryScreen() {
             </span>
             <div>
               <p className="text-sm font-semibold text-ink">Nutrition</p>
-              <p className="text-[11px] text-muted/65">Macros &amp; micronutrients</p>
+              <p className="text-[11px] text-muted/65">Macros &amp; Micronutrients</p>
             </div>
           </button>
           <button
@@ -1001,7 +1001,7 @@ export default function SummaryScreen() {
             </span>
             <div>
               <p className="text-sm font-semibold text-ink">Reflections</p>
-              <p className="text-[11px] text-muted/65">Energy, sleep &amp; mood</p>
+              <p className="text-[11px] text-muted/65">Energy, Sleep &amp; Mood</p>
             </div>
           </button>
         </div>
