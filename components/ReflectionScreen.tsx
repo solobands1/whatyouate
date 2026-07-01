@@ -19,9 +19,11 @@ const METRICS: { key: string; label: string; opts: string[] }[] = [
   { key: "digestion", label: "Digestion", opts: ["Poor", "Okay", "Good", "Great"] },
 ];
 const DIPS_OPTS = ["None", "Morning", "Afternoon", "Evening"];
+const WEEKDAY = ["S", "M", "T", "W", "T", "F", "S"];
 
+// Dark blue / light blue / grey — matches "Your Energy Lately" on the Patterns page.
 type Level = "good" | "ok" | "low";
-const DOT: Record<Level, string> = { good: "bg-emerald-500", ok: "bg-amber-400", low: "bg-rose-500" };
+const DOT: Record<Level, string> = { good: "bg-primary", ok: "bg-primary/35", low: "bg-ink/25" };
 const DOT_FAINT = "bg-ink/10";
 
 // Map an answer index to a good/ok/low band. Stress is inverted (None is good).
@@ -56,10 +58,7 @@ function dipsText(v: number | number[] | undefined): string | null {
   return times.length ? times.join(", ") : "None";
 }
 
-// ── Signals ────────────────────────────────────────────────────────────────
-// Interpretations of the raw history. All guarded on real data and shown with real
-// counts + hedged language so nothing is fabricated.
-
+// ── Derived signals (all guarded on real data, shown with real counts) ───────
 function recentWithin(sorted: ReflectionEntry[], days: number): ReflectionEntry[] {
   const cutoff = new Date();
   cutoff.setHours(0, 0, 0, 0);
@@ -67,17 +66,17 @@ function recentWithin(sorted: ReflectionEntry[], days: number): ReflectionEntry[
   return sorted.filter((e) => new Date(e.date + "T00:00:00") >= cutoff);
 }
 
-// Last 7 calendar days of energy, oldest→newest, null where no reflection exists.
-function last7Energy(sorted: ReflectionEntry[]): (Level | null)[] {
+// Last 7 calendar days, oldest→newest, with weekday label + whether a reflection exists.
+function last7Days(sorted: ReflectionEntry[]) {
   const byDate = new Map(sorted.map((e) => [e.date, e]));
-  const out: (Level | null)[] = [];
+  const out: { key: string; label: string; isToday: boolean; energy: Level | null; done: boolean }[] = [];
   for (let i = 6; i >= 0; i--) {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
     d.setDate(d.getDate() - i);
     const e = byDate.get(dateKey(d));
     const idx = e && typeof e.answers.energy === "number" ? (e.answers.energy as number) : null;
-    out.push(idx == null ? null : levelFor("energy", idx));
+    out.push({ key: dateKey(d), label: WEEKDAY[d.getDay()], isToday: i === 0, energy: idx == null ? null : levelFor("energy", idx), done: !!e });
   }
   return out;
 }
@@ -118,12 +117,16 @@ function watchArea(recent: ReflectionEntry[]): { label: string; low: number; n: 
   return worst;
 }
 
-function SignalCard({ eyebrow, children }: { eyebrow: string; children: React.ReactNode }) {
+function Legend() {
+  const items: [string, string][] = [["bg-primary", "Good"], ["bg-primary/35", "Okay"], ["bg-ink/25", "Low"]];
   return (
-    <Card>
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/70">{eyebrow}</p>
-      <div className="mt-2">{children}</div>
-    </Card>
+    <div className="flex items-center gap-3">
+      {items.map(([c, l]) => (
+        <span key={l} className="flex items-center gap-1.5 text-[10px] text-muted/60">
+          <span className={`h-2 w-2 rounded-full ${c}`} /> {l}
+        </span>
+      ))}
+    </div>
   );
 }
 
@@ -152,14 +155,13 @@ export default function ReflectionScreen() {
     [entries],
   );
 
-  const signals = useMemo(() => {
+  const week = useMemo(() => last7Days(sorted), [sorted]);
+  const reflectedCount = week.filter((d) => d.done).length;
+  const energyRead7 = useMemo(() => energyRead(week.map((d) => d.energy)), [week]);
+  const stands = useMemo(() => {
     if (sorted.length < 3) return null;
     const recent = recentWithin(sorted, 14);
-    return {
-      energy: { strip: last7Energy(sorted), read: energyRead(last7Energy(sorted)) },
-      dip: dipSignal(recent),
-      watch: watchArea(recent),
-    };
+    return { dip: dipSignal(recent), watch: watchArea(recent) };
   }, [sorted]);
 
   return (
@@ -196,53 +198,64 @@ export default function ReflectionScreen() {
           </Card>
         ) : (
           <>
-            {/* Signals — interpretations of the raw history. */}
+            {/* Signals — a couple of interpretations above the raw history. */}
             <section style={riseIn(barsReady, 0)} className="space-y-3">
-              <p className="px-1 text-xs uppercase tracking-wide text-muted/70">At a Glance</p>
-              {signals ? (
-                <>
-                  <SignalCard eyebrow="Energy This Week">
-                    <div className="flex items-center gap-1.5">
-                      {signals.energy.strip.map((lvl, i) => (
-                        <span key={i} className={`h-3 w-3 rounded-full ${lvl ? DOT[lvl] : DOT_FAINT}`} />
-                      ))}
+              {/* Consistency (reflection completion strip) */}
+              <Card>
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">This Week</p>
+                <div className="mt-3 flex items-start justify-between">
+                  {week.map((d, i) => (
+                    <div key={d.key} className="flex flex-col items-center gap-1.5">
+                      <span className={`h-2.5 w-2.5 rounded-full ${d.done ? "bg-primary/70" : "bg-ink/10"}`} style={{ opacity: barsReady ? 1 : 0, transform: barsReady ? "scale(1)" : "scale(0.3)", transition: `opacity 500ms ease ${250 + i * 70}ms, transform 500ms cubic-bezier(0.34,1.56,0.64,1) ${250 + i * 70}ms` }} />
+                      <p className={`text-[10px] ${d.isToday ? "font-bold text-ink/80" : "text-muted/60"}`}>{d.label}</p>
                     </div>
-                    {signals.energy.read && <p className="mt-2.5 text-sm font-medium text-ink">{signals.energy.read}</p>}
-                  </SignalCard>
+                  ))}
+                </div>
+                <p className="mt-3 text-sm text-ink/80">
+                  <span className="font-semibold text-ink">Reflected {reflectedCount} of 7</span> {reflectedCount === 7 ? "nights this week, every one." : "nights this week."}
+                </p>
+              </Card>
 
-                  {signals.dip && (
-                    <SignalCard eyebrow="Energy Dips">
-                      {"none" in signals.dip ? (
-                        <p className="text-sm font-medium text-ink">No real energy dips lately, nice.</p>
-                      ) : (
-                        <p className="text-sm font-medium text-ink">
-                          You dip most in the <span className="text-primary">{signals.dip.time.toLowerCase()}</span>
-                          <span className="text-muted/65"> — {signals.dip.count} of the last {signals.dip.days} nights.</span>
-                        </p>
-                      )}
-                    </SignalCard>
-                  )}
+              {/* Energy this week */}
+              <Card>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Energy This Week</p>
+                  <Legend />
+                </div>
+                <div className="mt-3 flex items-center gap-1.5">
+                  {week.map((d, i) => (
+                    <span key={d.key} className={`h-3 w-3 rounded-full ${d.energy ? DOT[d.energy] : DOT_FAINT}`} style={{ opacity: barsReady ? 1 : 0, transform: barsReady ? "scale(1)" : "scale(0.3)", transition: `opacity 900ms ease ${i * 120}ms, transform 900ms cubic-bezier(0.34,1.56,0.64,1) ${i * 120}ms` }} />
+                  ))}
+                </div>
+                <p className="mt-2.5 text-sm font-medium text-ink">{energyRead7 ?? "Keep reflecting to see your energy trend."}</p>
+              </Card>
 
-                  {signals.watch && (
-                    <SignalCard eyebrow="Worth a Look">
-                      <p className="text-sm font-medium text-ink">
-                        {signals.watch.label} has been low
-                        <span className="text-muted/65"> on {signals.watch.low} of the last {signals.watch.n} nights.</span>
-                      </p>
-                    </SignalCard>
-                  )}
-                </>
-              ) : (
+              {/* What stands out */}
+              {stands && (stands.dip || stands.watch) && (
                 <Card>
-                  <p className="text-sm font-medium text-ink">A few more nights and patterns will show up here.</p>
-                  <p className="mt-1 text-xs text-muted/65">Keep reflecting and this section will start reading your trends for you.</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Worth Noting</p>
+                  <div className="mt-2 space-y-1.5">
+                    {stands.dip && (
+                      "none" in stands.dip ? (
+                        <p className="text-sm text-ink">No real energy dips lately, nice.</p>
+                      ) : (
+                        <p className="text-sm text-ink">You dip most in the <span className="font-semibold">{stands.dip.time.toLowerCase()}</span><span className="text-muted/65"> — {stands.dip.count} of the last {stands.dip.days} nights.</span></p>
+                      )
+                    )}
+                    {stands.watch && (
+                      <p className="text-sm text-ink"><span className="font-semibold">{stands.watch.label}</span> has been low<span className="text-muted/65"> on {stands.watch.low} of the last {stands.watch.n} nights.</span></p>
+                    )}
+                  </div>
                 </Card>
               )}
             </section>
 
             {/* History — the raw timeline. */}
             <section style={riseIn(barsReady, 1)} className="mt-7">
-              <p className="mb-2 px-1 text-xs uppercase tracking-wide text-muted/70">History</p>
+              <div className="mb-2 flex items-center justify-between px-1">
+                <p className="text-xs uppercase tracking-wide text-muted/70">History</p>
+                <Legend />
+              </div>
               <div className="space-y-3">
                 {sorted.map((entry) => {
                   const dips = dipsText(entry.answers.dips);
@@ -252,23 +265,23 @@ export default function ReflectionScreen() {
                         <p className="text-sm font-semibold text-ink">{relLabel(entry.date)}</p>
                         <p className="text-[11px] text-muted/55">{fullDate(entry.date)}</p>
                       </div>
-                      <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2">
+                      <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2">
                         {METRICS.map((m) => {
                           const idx = entry.answers[m.key];
                           if (typeof idx !== "number") return null;
                           return (
-                            <div key={m.key} className="flex items-center gap-2">
+                            <div key={m.key} className="flex items-center gap-1.5">
                               <span className={`h-2 w-2 shrink-0 rounded-full ${DOT[levelFor(m.key, idx)]}`} />
-                              <span className="shrink-0 text-xs text-muted/65">{m.label}</span>
-                              <span className="ml-auto text-xs font-medium text-ink">{m.opts[idx]}</span>
+                              <span className="text-xs text-muted/65">{m.label}</span>
+                              <span className="text-xs font-medium text-ink">{m.opts[idx]}</span>
                             </div>
                           );
                         })}
                         {dips && (
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5">
                             <span className="h-2 w-2 shrink-0 rounded-full bg-ink/20" />
-                            <span className="shrink-0 text-xs text-muted/65">Dips</span>
-                            <span className="ml-auto truncate text-xs font-medium text-ink">{dips}</span>
+                            <span className="text-xs text-muted/65">Dips</span>
+                            <span className="truncate text-xs font-medium text-ink">{dips}</span>
                           </div>
                         )}
                       </div>
