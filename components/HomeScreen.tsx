@@ -20,7 +20,7 @@ import { formatApprox, formatDateShort, todayKey, dayKeyFromTs } from "../lib/ut
 import { supabase } from "../lib/supabaseClient";
 import "../lib/mealQueue";
 import BarcodeScannerOverlay from "./BarcodeScannerOverlay";
-import { getFoodCacheEntry, setFoodCacheEntry, deleteFoodCacheEntry, deleteFoodTextEntry, incrementFoodCacheLogCount, incrementFoodTextLogCount, getQuickAddFromMeals, addQuickAddRemoved, getDailySupplements, setDailySupplements, hasDailySuppsLoggedToday, markDailySuppsLoggedToday, clearDailySuppsLoggedToday, type QuickAddItem } from "../lib/foodCache";
+import { getFoodCacheEntry, setFoodCacheEntry, deleteFoodCacheEntry, deleteFoodTextEntry, incrementFoodCacheLogCount, incrementFoodTextLogCount, getQuickAddFromMeals, addQuickAddRemoved, getDailySupplements, setDailySupplements, hasDailySuppsLoggedToday, markDailySuppsLoggedToday, clearDailySuppsLoggedToday, dishGroupKey, type QuickAddItem } from "../lib/foodCache";
 import { addFeelLog, deleteFeelLog, updateFeelLog, fetchWaterLogs, upsertWaterLog, addWeightLog, saveProfile, addReflection, fetchReflections, fetchHabitState, saveHabitState, fetchHabitHistory, saveHabitHistory, type FeelLog } from "../lib/supabaseDb";
 import { EMPTY_HABIT_STATE, pickSuggestionId, snoozeSuggestion, declineSuggestion, markHabitEnded, endBuilderCompleted, resolveBuilderForToday, extendBuilder, type HabitState, type ActiveBuilder, type HabitHistoryEntry } from "../lib/habitState";
 import BottomNav from "./BottomNav";
@@ -494,8 +494,12 @@ export default function HomeScreen() {
   // Dev preview: append ?cue to the URL to force the reflection card to show and replay
   // the bell/moon cue any time of day (otherwise it's gated to after 7pm, once a night).
   const [cuePreview, setCuePreview] = useState(false);
+  const [fdebug, setFdebug] = useState(false);
   useEffect(() => {
-    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).has("cue")) setCuePreview(true);
+    if (typeof window === "undefined") return;
+    const p = new URLSearchParams(window.location.search);
+    if (p.has("cue")) setCuePreview(true);
+    if (p.has("fdebug")) setFdebug(true); // ?fdebug shows each Quick Add row's grouping key
   }, []);
   const closeReflection = () => { setShowReflection(false); setReflectionEditMode(false); setReflectionEditingKey(null); };
   const finishReflection = () => {
@@ -4555,7 +4559,14 @@ export default function HomeScreen() {
                 const query = quickAddQuery.trim().toLowerCase();
                 const results = quickAddAllItems.filter((i) => i.name.toLowerCase().includes(query));
                 return results.length ? (
-                  <div className="space-y-2">{results.map(renderQuickAddRow)}</div>
+                  <div className="space-y-2">{results.map((item) => (
+                    fdebug ? (
+                      <div key={item.key}>
+                        {renderQuickAddRow(item)}
+                        <p className="px-2 pt-0.5 text-[9px] leading-tight text-rose-400">key: [{dishGroupKey(item.name)}] · name: {item.name}</p>
+                      </div>
+                    ) : renderQuickAddRow(item)
+                  ))}</div>
                 ) : (
                   <div className="py-6 text-center">
                     <p className="text-sm text-muted/60">No matches found.</p>
