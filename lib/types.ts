@@ -65,6 +65,10 @@ export interface MicronutrientAmount {
 
 export interface MealAnalysis {
   name?: string;
+  // Short, generic dish label (e.g. "Pizza", "Burrito") that stays stable across repeat
+  // logs of the same food, ignoring toppings/brand/sides. Used only to group Quick Add
+  // browse rows — never to merge macros. Falls back to `name` when absent (old entries).
+  canonical_name?: string | null;
   detected_items: Array<{
     name: string;
     confidence_0_1: number;

@@ -3,6 +3,7 @@ export const FOOD_ANALYSIS_PROMPT = `You are a calm, non-judgmental food photo a
 Return STRICT JSON ONLY matching this schema:
 {
   "name": "string",
+  "canonical_name": "string",
   "detected_items": [{
     "name": "string",
     "confidence_0_1": number,
@@ -40,6 +41,7 @@ Rules:
 
 NAMING
 - Set "name" to a concise, natural label for the overall meal or food item.
+- Set "canonical_name" to a short, generic dish label (1-3 words) that would be IDENTICAL across repeat logs of the same kind of food, ignoring specific toppings, brand, sides, portion, and preparation. Examples: "Pepperoni Pizza" and "Pizza with mushrooms" → both "Pizza"; "Grilled Chicken Caesar Salad" → "Caesar Salad"; "Banana" → "Banana"; "Chicken, Rice & Broccoli" → "Chicken & Rice". For a simple single food, canonical_name may equal name. This is used only to group repeat logs together, so favour consistency over specificity.
 - Single identifiable dish: use its specific name (e.g., "Pepperoni Pizza", "Caesar Salad", "Banana").
   - For pizza: name the most prominent topping(s) visible, not just "Cheese Pizza" unless it is genuinely a plain cheese pizza with no other toppings.
 - Multiple distinct items on the same plate or tray: combine the main ones naturally (e.g., "Eggs, Bacon & Toast", "Chicken, Rice & Broccoli", "Steak, Fries & Salad").
@@ -145,6 +147,7 @@ export const TEXT_ANALYSIS_PROMPT = `You are a calm, non-judgmental food nutriti
 Return STRICT JSON ONLY matching this schema:
 {
   "name": "string",
+  "canonical_name": "string",
   "detected_items": [{
     "name": "string",
     "confidence_0_1": number,
@@ -188,6 +191,7 @@ GENERAL
 
 NAMING
 - Set "name" to a concise, natural label for the full meal.
+- Set "canonical_name" to a short, generic dish label (1-3 words) that would be IDENTICAL across repeat logs of the same kind of food, ignoring specific toppings, brand, sides, portion, and preparation. Examples: "Pepperoni Pizza" and "Pizza with mushrooms" → both "Pizza"; "Grilled Chicken Caesar Salad" → "Caesar Salad"; "Banana" → "Banana". For a simple single food, canonical_name may equal name. Favour consistency over specificity, since it is only used to group repeat logs together.
 - For multi-item meals, combine the main items: e.g. "Bacon, Eggs & Hash Browns" or "Chicken, Rice & Broccoli".
 - For a single item, use that item's name.
 - Do not use generic labels like "Meal" or "Food" unless the description is too vague to name.

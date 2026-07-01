@@ -331,6 +331,7 @@ export function clearAllFoodCaches(): void {
 
 export type QuickAddItem = {
   key: string;
+  canonicalKey?: string; // groups variants of the same dish for the browse lists
   name: string;
   type: "text" | "barcode";
   ranges?: FoodTextCacheEntry["ranges"];
@@ -371,12 +372,15 @@ export function getQuickAddFromMeals(meals: Array<{
   status?: string;
   analysisJson: {
     name?: string;
+    canonical_name?: string | null;
     source?: string;
     estimated_ranges: FoodTextCacheEntry["ranges"];
     micronutrient_signals?: FoodTextCacheEntry["micronutrient_signals"];
   };
 }>): { frequent: QuickAddItem[]; recent: QuickAddItem[]; all: QuickAddItem[] } {
   const removed = getQuickAddRemoved();
+  // Level 1: variants — dedup by exact (normalized) name. This is what search browses,
+  // so it stays granular (every distinct food you've logged is findable).
   const seen = new Map<string, QuickAddItem>();
 
   const valid = meals.filter(
@@ -387,6 +391,11 @@ export function getQuickAddFromMeals(meals: Array<{
     const name = meal.analysisJson.name!;
     const key = normalizeFoodKey(name);
     if (!key || removed.has(key)) continue;
+    // Group key: the AI's canonical name when present, else fall back to the variant key
+    // (old entries with no canonical_name simply group by their own name, as before).
+    const canonicalKey = meal.analysisJson.canonical_name
+      ? normalizeFoodKey(meal.analysisJson.canonical_name) || key
+      : key;
     const existing = seen.get(key);
     if (existing) {
       existing.logCount += 1;
@@ -398,6 +407,7 @@ export function getQuickAddFromMeals(meals: Array<{
     } else {
       seen.set(key, {
         key,
+        canonicalKey,
         name,
         type: "text",
         ranges: meal.analysisJson.estimated_ranges,
@@ -408,19 +418,40 @@ export function getQuickAddFromMeals(meals: Array<{
     }
   }
 
-  const all = Array.from(seen.values());
-  const frequent = [...all]
-    .sort((a, b) => b.logCount - a.logCount || b.savedAt - a.savedAt)
-    .slice(0, 15);
+  const variants = Array.from(seen.values());
 
-  const frequentKeys = new Set(frequent.map((f) => f.key));
-  const recent = all
-    .filter((item) => !frequentKeys.has(item.key))
-    .sort((a, b) => b.savedAt - a.savedAt)
-    .slice(0, 10);
+  // Level 2: canonical dishes — collapse variants of the same dish to a single browse
+  // row, represented by the most-logged variant (its real macros, never a blend).
+  const groups = new Map<string, { rep: QuickAddItem; total: number; latest: number }>();
+  for (const item of variants) {
+    const cKey = item.canonicalKey ?? item.key;
+    const g = groups.get(cKey);
+    if (!g) {
+      groups.set(cKey, { rep: item, total: item.logCount, latest: item.savedAt });
+    } else {
+      g.total += item.logCount;
+      g.latest = Math.max(g.latest, item.savedAt);
+      if (item.logCount > g.rep.logCount || (item.logCount === g.rep.logCount && item.savedAt > g.rep.savedAt)) {
+        g.rep = item;
+      }
+    }
+  }
+  const dishes = Array.from(groups.values());
 
-  // Full deduped history (newest first) for searching everything ever logged.
-  const allSorted = [...all].sort((a, b) => b.savedAt - a.savedAt);
+  const frequent = dishes
+    .sort((a, b) => b.total - a.total || b.latest - a.latest)
+    .slice(0, 15)
+    .map((g) => g.rep);
+
+  const frequentKeys = new Set(frequent.map((f) => f.canonicalKey ?? f.key));
+  const recent = dishes
+    .filter((g) => !frequentKeys.has(g.rep.canonicalKey ?? g.rep.key))
+    .sort((a, b) => b.latest - a.latest)
+    .slice(0, 10)
+    .map((g) => g.rep);
+
+  // Full history (newest first) at variant granularity, for searching everything logged.
+  const allSorted = [...variants].sort((a, b) => b.savedAt - a.savedAt);
 
   return { frequent, recent, all: allSorted };
 }

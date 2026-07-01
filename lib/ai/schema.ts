@@ -159,8 +159,10 @@ export function coerceAnalysis(input: any): MealAnalysis {
       : undefined;
 
     const displayName = overrideName ?? (input.name ? String(input.name) : undefined);
+    const canonicalName = input.canonical_name ? String(input.canonical_name).trim() : undefined;
     return {
       ...(displayName ? { name: displayName } : {}),
+      ...(canonicalName ? { canonical_name: canonicalName } : {}),
       detected_items,
       estimated_ranges,
       ...(micronutrient_amounts?.length ? { micronutrient_amounts } : {}),
