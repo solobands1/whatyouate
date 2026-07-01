@@ -117,6 +117,18 @@ function watchArea(recent: ReflectionEntry[]): { label: string; low: number; n: 
   return worst;
 }
 
+// Consecutive reflected nights ending today (or yesterday, since tonight's may not be
+// done yet). Walks the actual date set so it isn't capped at a week.
+function currentStreak(sorted: ReflectionEntry[]): number {
+  const set = new Set(sorted.map((e) => e.date));
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  if (!set.has(dateKey(d))) d.setDate(d.getDate() - 1);
+  let streak = 0;
+  while (set.has(dateKey(d))) { streak++; d.setDate(d.getDate() - 1); }
+  return streak;
+}
+
 function Legend({ withMissed }: { withMissed?: boolean }) {
   const items: [string, string][] = [["bg-primary", "Good"], ["bg-primary/35", "Okay"], ["bg-ink/25", "Low"]];
   return (
@@ -163,6 +175,7 @@ export default function ReflectionScreen() {
   const week = useMemo(() => last7Days(sorted), [sorted]);
   const reflectedCount = week.filter((d) => d.done).length;
   const energyPhrase7 = useMemo(() => energyPhrase(week.map((d) => d.energy)), [week]);
+  const streak = useMemo(() => currentStreak(sorted), [sorted]);
   const stands = useMemo(() => {
     if (sorted.length < 3) return null;
     const recent = recentWithin(sorted, 14);
@@ -208,12 +221,19 @@ export default function ReflectionScreen() {
               {/* This week: one strip that carries both consistency (solid vs hollow) and
                   energy level (dot colour). */}
               <Card>
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">This Week</p>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">This Week</p>
+                  {streak >= 2 && (
+                    <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
+                      {streak}-night streak
+                    </span>
+                  )}
+                </div>
                 <div className="mt-3 flex items-start justify-between">
                   {week.map((d, i) => (
                     <div key={d.key} className="flex flex-col items-center gap-1.5">
                       <span
-                        className={`h-3 w-3 rounded-full ${d.done ? (d.energy ? DOT[d.energy] : "bg-primary/50") : "border-2 border-ink/15"}`}
+                        className={`h-3 w-3 rounded-full ${d.done ? (d.energy ? DOT[d.energy] : "bg-primary/50") : "border-2 border-ink/15"} ${d.isToday ? "ring-2 ring-primary/25 ring-offset-1 ring-offset-white" : ""}`}
                         style={{ opacity: barsReady ? 1 : 0, transform: barsReady ? "scale(1)" : "scale(0.3)", transition: `opacity 700ms ease ${250 + i * 80}ms, transform 700ms cubic-bezier(0.34,1.56,0.64,1) ${250 + i * 80}ms` }}
                       />
                       <p className={`text-[10px] ${d.isToday ? "font-bold text-ink/80" : "text-muted/60"}`}>{d.label}</p>
@@ -248,16 +268,16 @@ export default function ReflectionScreen() {
             </section>
 
             {/* History — the raw timeline. */}
-            <section style={riseIn(barsReady, 1)} className="mt-7">
-              <div className="mb-2 flex items-center justify-between px-1">
+            <section className="mt-7">
+              <div className="mb-2 flex items-center justify-between px-1" style={riseIn(barsReady, 1)}>
                 <p className="text-xs uppercase tracking-wide text-muted/70">History</p>
                 <Legend />
               </div>
               <div className="space-y-3">
-                {sorted.map((entry) => {
+                {sorted.map((entry, idx) => {
                   const dips = dipsText(entry.answers.dips);
                   return (
-                    <Card key={entry.date}>
+                    <Card key={entry.date} style={riseIn(barsReady, 2 + Math.min(idx, 4))}>
                       <div className="flex items-baseline justify-between">
                         <p className="text-sm font-semibold text-ink">{relLabel(entry.date)}</p>
                         <p className="text-[11px] text-muted/55">{fullDate(entry.date)}</p>
