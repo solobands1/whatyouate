@@ -195,7 +195,7 @@ export default function ReflectionScreen() {
             Insights
           </button>
           <h1 className="text-2xl font-semibold text-ink">Reflections</h1>
-          <p className="mt-1 text-sm text-muted/70">How you&apos;ve felt over time, from your nightly reflections</p>
+          <p className="mt-1 text-sm text-muted/70">How your energy, sleep, and mood have trended, night by night.</p>
         </header>
 
         {entries === null ? (
