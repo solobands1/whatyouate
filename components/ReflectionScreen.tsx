@@ -24,7 +24,6 @@ const WEEKDAY = ["S", "M", "T", "W", "T", "F", "S"];
 // Dark blue / light blue / grey — matches "Your Energy Lately" on the Patterns page.
 type Level = "good" | "ok" | "low";
 const DOT: Record<Level, string> = { good: "bg-primary", ok: "bg-primary/35", low: "bg-ink/25" };
-const DOT_FAINT = "bg-ink/10";
 
 // Map an answer index to a good/ok/low band. Stress is inverted (None is good).
 function levelFor(key: string, idx: number): Level {
@@ -81,14 +80,15 @@ function last7Days(sorted: ReflectionEntry[]) {
   return out;
 }
 
-function energyRead(levels: (Level | null)[]): string | null {
+// Short fragment (not a full sentence) so it can tack onto the "Reflected X of 7" line.
+function energyPhrase(levels: (Level | null)[]): string | null {
   const vals = levels.filter((l): l is Level => l !== null);
   if (vals.length < 3) return null;
   const good = vals.filter((l) => l === "good").length;
   const low = vals.filter((l) => l === "low").length;
-  if (good >= Math.ceil(vals.length * 0.6)) return "Your energy has held up well lately.";
-  if (low >= Math.ceil(vals.length * 0.5)) return "Your energy has been running low lately.";
-  return "Your energy has been up and down lately.";
+  if (good >= Math.ceil(vals.length * 0.6)) return "energy held up well";
+  if (low >= Math.ceil(vals.length * 0.5)) return "energy ran low";
+  return "energy was up and down";
 }
 
 function dipSignal(recent: ReflectionEntry[]): { time: string; count: number; days: number } | { none: true } | null {
@@ -117,15 +117,20 @@ function watchArea(recent: ReflectionEntry[]): { label: string; low: number; n: 
   return worst;
 }
 
-function Legend() {
+function Legend({ withMissed }: { withMissed?: boolean }) {
   const items: [string, string][] = [["bg-primary", "Good"], ["bg-primary/35", "Okay"], ["bg-ink/25", "Low"]];
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
       {items.map(([c, l]) => (
         <span key={l} className="flex items-center gap-1.5 text-[10px] text-muted/60">
           <span className={`h-2 w-2 rounded-full ${c}`} /> {l}
         </span>
       ))}
+      {withMissed && (
+        <span className="flex items-center gap-1.5 text-[10px] text-muted/60">
+          <span className="h-2 w-2 rounded-full border border-ink/25" /> Missed
+        </span>
+      )}
     </div>
   );
 }
@@ -157,7 +162,7 @@ export default function ReflectionScreen() {
 
   const week = useMemo(() => last7Days(sorted), [sorted]);
   const reflectedCount = week.filter((d) => d.done).length;
-  const energyRead7 = useMemo(() => energyRead(week.map((d) => d.energy)), [week]);
+  const energyPhrase7 = useMemo(() => energyPhrase(week.map((d) => d.energy)), [week]);
   const stands = useMemo(() => {
     if (sorted.length < 3) return null;
     const recent = recentWithin(sorted, 14);
@@ -200,34 +205,26 @@ export default function ReflectionScreen() {
           <>
             {/* Signals — a couple of interpretations above the raw history. */}
             <section style={riseIn(barsReady, 0)} className="space-y-3">
-              {/* Consistency (reflection completion strip) */}
+              {/* This week: one strip that carries both consistency (solid vs hollow) and
+                  energy level (dot colour). */}
               <Card>
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">This Week</p>
                 <div className="mt-3 flex items-start justify-between">
                   {week.map((d, i) => (
                     <div key={d.key} className="flex flex-col items-center gap-1.5">
-                      <span className={`h-2.5 w-2.5 rounded-full ${d.done ? "bg-primary/70" : "bg-ink/10"}`} style={{ opacity: barsReady ? 1 : 0, transform: barsReady ? "scale(1)" : "scale(0.3)", transition: `opacity 500ms ease ${250 + i * 70}ms, transform 500ms cubic-bezier(0.34,1.56,0.64,1) ${250 + i * 70}ms` }} />
+                      <span
+                        className={`h-3 w-3 rounded-full ${d.done ? (d.energy ? DOT[d.energy] : "bg-primary/50") : "border-2 border-ink/15"}`}
+                        style={{ opacity: barsReady ? 1 : 0, transform: barsReady ? "scale(1)" : "scale(0.3)", transition: `opacity 700ms ease ${250 + i * 80}ms, transform 700ms cubic-bezier(0.34,1.56,0.64,1) ${250 + i * 80}ms` }}
+                      />
                       <p className={`text-[10px] ${d.isToday ? "font-bold text-ink/80" : "text-muted/60"}`}>{d.label}</p>
                     </div>
                   ))}
                 </div>
                 <p className="mt-3 text-sm text-ink/80">
-                  <span className="font-semibold text-ink">Reflected {reflectedCount} of 7</span> {reflectedCount === 7 ? "nights this week, every one." : "nights this week."}
+                  <span className="font-semibold text-ink">Reflected {reflectedCount} of 7</span>
+                  <span className="text-muted/70"> nights{energyPhrase7 ? ` · ${energyPhrase7}` : " this week"}.</span>
                 </p>
-              </Card>
-
-              {/* Energy this week */}
-              <Card>
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Energy This Week</p>
-                  <Legend />
-                </div>
-                <div className="mt-3 flex items-center gap-1.5">
-                  {week.map((d, i) => (
-                    <span key={d.key} className={`h-3 w-3 rounded-full ${d.energy ? DOT[d.energy] : DOT_FAINT}`} style={{ opacity: barsReady ? 1 : 0, transform: barsReady ? "scale(1)" : "scale(0.3)", transition: `opacity 900ms ease ${i * 120}ms, transform 900ms cubic-bezier(0.34,1.56,0.64,1) ${i * 120}ms` }} />
-                  ))}
-                </div>
-                <p className="mt-2.5 text-sm font-medium text-ink">{energyRead7 ?? "Keep reflecting to see your energy trend."}</p>
+                <div className="mt-2.5"><Legend withMissed /></div>
               </Card>
 
               {/* What stands out */}
