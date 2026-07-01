@@ -4541,7 +4541,7 @@ export default function HomeScreen() {
                 type="text"
                 value={quickAddQuery}
                 onChange={(e) => setQuickAddQuery(e.target.value)}
-                placeholder="Search your foods"
+                placeholder="Search"
                 className="mb-3 w-full shrink-0 rounded-xl border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
               />
             )}
