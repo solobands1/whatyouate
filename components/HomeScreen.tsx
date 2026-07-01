@@ -3245,7 +3245,7 @@ export default function HomeScreen() {
               </span>
               <span className="flex-1">
                 <span className="block text-sm font-semibold text-ink">{todayReflection ? "Reflection Complete" : "How Was Your Day?"}</span>
-                <span className="block text-[12px] text-ink/55">{todayReflection ? "Tap to edit your reflection" : "A quick nightly reflection"}</span>
+                <span className="block text-[12px] text-ink/55">{todayReflection ? "Tap to edit your reflection" : "A minute to check in with yourself"}</span>
               </span>
               <svg viewBox="0 0 24 24" className="h-4 w-4 text-ink/30" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
             </button>
