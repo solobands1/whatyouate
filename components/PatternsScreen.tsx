@@ -136,19 +136,36 @@ export default function PatternsScreen() {
 
   if (!user) return null;
 
-  // Preview until there are enough real reflections to say anything. Example data shows
-  // what each card becomes; "preview" adds the label + unlock hint (demo shows it unlabeled).
-  const enough = facts.total >= 3;
-  const showExample = isDemoMode || !enough;
-  const preview = !isDemoMode && !enough;
+  // Each card decides real-vs-preview from ITS OWN data (reflection volume for the trend
+  // cards, completed habits for the habits card, etc.), so no card ever just disappears.
+  // Example data + a "Preview" label until that card has enough; demo shows it unlabeled.
+  const demo = isDemoMode;
 
-  const weekCells = showExample ? facts.week.map((d, i) => ({ ...d, energy: EX_LEVELS.energy[i] ?? null, done: true })) : facts.week;
-  const metricLevels = (key: string): (Level | null)[] => (showExample ? (EX_LEVELS[key] ?? []) : (facts.metricWeeks[key] ?? []));
-  const dips = showExample ? EX_DIPS : facts.dipsDist;
-  const changes = showExample ? EX_CHANGES : facts.changes;
-  const shownDiscoveries = showExample ? EX_DISCOVERIES : discoveries;
-  const habits = showExample ? EX_HABITS : keptHabits;
-  const headlineText = showExample ? EX_HEADLINE : headline;
+  // Trend cards (headline, energy, this week) need a few reflections to not look sparse.
+  const fewRefl = facts.total < 3;
+  const trendEx = demo || fewRefl;
+  const preview = !demo && fewRefl;
+  const weekCells = trendEx ? facts.week.map((d, i) => ({ ...d, energy: EX_LEVELS.energy[i] ?? null, done: true })) : facts.week;
+  const metricLevels = (key: string): (Level | null)[] => (trendEx ? (EX_LEVELS[key] ?? []) : (facts.metricWeeks[key] ?? []));
+  const headlineText = trendEx ? EX_HEADLINE : headline;
+
+  // Discoveries — need enough co-occurrence data (may be empty even with some reflections).
+  const discPreview = !demo && discoveries.length === 0;
+  const shownDiscoveries = demo || discoveries.length === 0 ? EX_DISCOVERIES : discoveries;
+
+  // Energy dips — need a few nights that actually logged dips.
+  const realDips = facts.dipsDist && facts.dipsDist.morning + facts.dipsDist.afternoon + facts.dipsDist.evening > 0 ? facts.dipsDist : null;
+  const dipsPreview = !demo && !realDips;
+  const dips = demo || !realDips ? EX_DIPS : realDips;
+
+  // Compared to last week — needs two weeks of data.
+  const realChanges = facts.changes && facts.changes.length ? facts.changes : null;
+  const changesPreview = !demo && !realChanges;
+  const changes = demo || !realChanges ? EX_CHANGES : realChanges;
+
+  // Habits that stuck — independent of reflections; needs a completed, kept habit.
+  const habitsPreview = !demo && keptHabits.length === 0;
+  const habits = demo || keptHabits.length === 0 ? EX_HABITS : keptHabits;
 
   return (
     <div className="min-h-screen bg-surface">
@@ -180,7 +197,7 @@ export default function PatternsScreen() {
         {/* Discoveries */}
         {shownDiscoveries.length > 0 && (
           <Card className="mt-6" style={riseIn(ready, 1)}>
-            <Eyebrow preview={preview}>What The Coach Is Noticing</Eyebrow>
+            <Eyebrow preview={discPreview}>What The Coach Is Noticing</Eyebrow>
             <div className="mt-3 space-y-2.5">
               {shownDiscoveries.map((d, i) => (
                 <div key={i} className="rounded-xl border border-primary/15 bg-primary/[0.05] px-3 py-2.5">
@@ -197,7 +214,7 @@ export default function PatternsScreen() {
         <Card className="mt-6" style={riseIn(ready, 2)}>
           <Eyebrow preview={preview}>Your Energy Lately</Eyebrow>
           <p className="mt-2 text-sm text-ink/80">
-            {showExample ? (
+            {trendEx ? (
               <>Your <span className="font-semibold text-ink">energy held up well</span> this week.</>
             ) : facts.energyPhrase ? (
               <>Your <span className="font-semibold text-ink">{facts.energyPhrase}</span> this week.</>
@@ -235,9 +252,9 @@ export default function PatternsScreen() {
         </Card>
 
         {/* When energy dips */}
-        {dips && (dips.morning + dips.afternoon + dips.evening > 0) && (
+        {(
           <Card className="mt-6" style={riseIn(ready, 4)}>
-            <Eyebrow preview={preview}>When Your Energy Dips</Eyebrow>
+            <Eyebrow preview={dipsPreview}>When Your Energy Dips</Eyebrow>
             <p className="mt-1 text-sm text-muted/65">Across your last {dips.days} nights.</p>
             <div className="mt-4 space-y-2.5">
               {([["Morning", dips.morning], ["Afternoon", dips.afternoon], ["Evening", dips.evening]] as [string, number][]).map(([label, count], i) => {
@@ -257,9 +274,9 @@ export default function PatternsScreen() {
         )}
 
         {/* Compared to last week */}
-        {changes && changes.length > 0 && (
+        {(
           <Card className="mt-6" style={riseIn(ready, 5)}>
-            <Eyebrow preview={preview}>Compared To Last Week</Eyebrow>
+            <Eyebrow preview={changesPreview}>Compared To Last Week</Eyebrow>
             <div className="mt-3 space-y-2">
               {changes.map((c) => (
                 <div key={c.key} className="flex items-center gap-2.5">
@@ -274,9 +291,9 @@ export default function PatternsScreen() {
         )}
 
         {/* Habits that stuck */}
-        {habits.length > 0 && (
+        {(
           <Card className="mt-6" style={riseIn(ready, 6)}>
-            <Eyebrow preview={preview}>Habits That Stuck</Eyebrow>
+            <Eyebrow preview={habitsPreview}>Habits That Stuck</Eyebrow>
             <p className="mt-1 text-sm text-muted/65">The ones you decided were worth keeping.</p>
             <div className="mt-3 space-y-2">
               {habits.map((h) => (
