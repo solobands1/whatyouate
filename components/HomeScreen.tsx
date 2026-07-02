@@ -507,7 +507,8 @@ export default function HomeScreen() {
     if (user && Object.keys(reflection).length > 0) {
       setLastReflection({ reflection, note: reflectionNote });
       setTodayReflection({ reflection, note: reflectionNote });
-      void addReflection(user.id, { date: todayDateStr(), answers: reflection, note: reflectionNote, ts: Date.now() });
+      // Refresh AppDataProvider so the new reflection flows into Patterns/Reflections live.
+      addReflection(user.id, { date: todayDateStr(), answers: reflection, note: reflectionNote, ts: Date.now() }).then(() => reload()).catch(() => {});
     }
     setShowReflection(false); setReflectionStep(0); setReflection({}); setReflectionNote("");
   };
@@ -525,7 +526,7 @@ export default function HomeScreen() {
     if (user && Object.keys(reflection).length > 0) {
       setTodayReflection({ reflection, note: reflectionNote });
       setLastReflection({ reflection, note: reflectionNote });
-      void addReflection(user.id, { date: todayDateStr(), answers: reflection, note: reflectionNote, ts: Date.now() });
+      addReflection(user.id, { date: todayDateStr(), answers: reflection, note: reflectionNote, ts: Date.now() }).then(() => reload()).catch(() => {});
     }
     setShowReflection(false); setReflectionEditMode(false); setReflectionEditingKey(null);
   };
