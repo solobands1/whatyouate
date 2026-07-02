@@ -4923,7 +4923,7 @@ export default function HomeScreen() {
                       className="mt-3 w-full max-w-xs rounded-xl border border-primary/30 bg-white py-4 text-sm font-semibold text-primary transition active:opacity-80"
                       onClick={() => { setReflection(lastReflection.reflection); setReflectionNote(lastReflection.note); setReflectionStep(total + 2); }}
                     >
-                      Same As Last Night
+                      Same As Last Entry
                     </button>
                   )}
                   <button type="button" className="mt-3 text-xs font-semibold text-ink/45 active:opacity-60" onClick={closeReflection}>Maybe Later</button>
