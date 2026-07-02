@@ -9,6 +9,9 @@ import { useAppData } from "./AppDataProvider";
 import { hasEnoughDataForPatterns } from "../lib/trial";
 import { riseIn } from "../lib/motion";
 import { computeReflectionFacts, REFLECTION_DOT, type ReflectionFacts } from "../lib/reflectionFacts";
+import { computeDiscoveryCandidates } from "../lib/discoveries";
+
+type Discovery = { text: string; confidence: "Building" | "Moderate" };
 
 // A real, deterministic one-line clue in the coach's voice — only ever states true counts.
 function patternsHeadline(facts: ReflectionFacts): string {
@@ -51,6 +54,31 @@ export default function PatternsScreen() {
       .sort((a, b) => (b.finishedAt || "").localeCompare(a.finishedAt || ""))
       .filter((h) => { const k = h.title.toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; });
   }, [habitHistory]);
+
+  // AI discoveries: the coach phrases the strongest real co-occurrence counts. Cached per
+  // day + data signature so we don't re-hit the API on every visit.
+  const candidates = useMemo(() => computeDiscoveryCandidates(reflections), [reflections]);
+  const [discoveries, setDiscoveries] = useState<Discovery[]>([]);
+  useEffect(() => {
+    if (!user || candidates.length === 0) { setDiscoveries([]); return; }
+    const sig = candidates.map((c) => `${c.id}:${c.n}:${c.hits}`).join("|");
+    const cacheKey = `wya_discoveries_${user.id}`;
+    try {
+      const cached = JSON.parse(localStorage.getItem(cacheKey) || "null");
+      if (cached && cached.sig === sig && Array.isArray(cached.discoveries)) { setDiscoveries(cached.discoveries); return; }
+    } catch {}
+    let cancelled = false;
+    fetch("/api/discoveries", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ candidates }) })
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled) return;
+        const d: Discovery[] = Array.isArray(data?.discoveries) ? data.discoveries : [];
+        setDiscoveries(d);
+        try { localStorage.setItem(cacheKey, JSON.stringify({ sig, discoveries: d })); } catch {}
+      })
+      .catch(() => { if (!cancelled) setDiscoveries(candidates.slice(0, 3).map((c) => ({ text: c.text, confidence: c.confidence }))); });
+    return () => { cancelled = true; };
+  }, [user, candidates]);
   const [isDemoMode, setIsDemoMode] = useState(false);
   // Flips true just after mount so bars/dots animate in from zero on load.
   const [ready, setReady] = useState(false);
@@ -107,8 +135,24 @@ export default function PatternsScreen() {
               </div>
             </Card>
 
+            {/* Discoveries — AI phrases the strongest real co-occurrence counts */}
+            {discoveries.length > 0 && (
+              <Card className="mt-6" style={riseIn(ready, 1)}>
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">What The Coach Is Noticing</p>
+                <div className="mt-3 space-y-2.5">
+                  {discoveries.map((d, i) => (
+                    <div key={i} className="rounded-xl border border-primary/15 bg-primary/[0.05] px-3 py-2.5">
+                      <p className="text-sm text-ink/90">{d.text}</p>
+                      <span className="mt-1.5 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary/70">Confidence: {d.confidence}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-3 text-[11px] leading-relaxed text-muted/50">These are associations in your check-ins, not proven causes.</p>
+              </Card>
+            )}
+
             {/* Energy trend */}
-            <Card className="mt-6" style={riseIn(ready, 1)}>
+            <Card className="mt-6" style={riseIn(ready, 2)}>
               <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Your Energy Lately</p>
               <p className="mt-2 text-sm text-ink/80">
                 {energyDays.length === 0 ? (
