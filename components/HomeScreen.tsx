@@ -1068,15 +1068,17 @@ export default function HomeScreen() {
     (async () => {
       const results = await Promise.allSettled(
         pendingItems.map(async ({ item, analysis }, i) => {
-          const created = await addMeal(user.id, analysis);
+          const created = await addMeal(user.id, analysis, undefined, undefined, "done");
           if (!created?.id) throw new Error(`addMeal failed for ${item.name}`);
           await updateMeal(created.id, analysis, { userCorrection: item.name }, user.id);
-          // Replace optimistic pill with real DB record so ctxMeals sync doesn't create a duplicate
-          meals.setMeals((prev) => prev.map((m) =>
-            m.id === `optimistic-${now}-${i}`
-              ? { ...created, ts: now - i, analysisJson: analysis, userCorrection: item.name, status: "done" as const }
-              : m
-          ));
+          // Replace optimistic pill with the real DB record, then dedupe by id in case a
+          // realtime ctxMeals sync already added that same record (was showing it twice).
+          meals.setMeals((prev) => {
+            const realMeal = { ...created, ts: now - i, analysisJson: analysis, userCorrection: item.name, status: "done" as const };
+            const mapped = prev.map((m) => (m.id === `optimistic-${now}-${i}` ? realMeal : m));
+            const seen = new Set<string>();
+            return mapped.filter((m) => (seen.has(m.id) ? false : (seen.add(m.id), true)));
+          });
           if (capturedDate !== todayDateStr()) {
             const d = new Date(capturedDate + "T12:00:00");
             if (d.getTime() < Date.now()) await updateMealTs(created.id, d.getTime()).catch(() => {});
@@ -1128,7 +1130,10 @@ export default function HomeScreen() {
     meals.setMeals((prev) => {
       const optimistic = prev.filter((m) => m.id.startsWith("optimistic-"));
       const optimisticIds = new Set(optimistic.map((m) => m.id));
-      return [...optimistic, ...ctxMeals.filter((m) => !optimisticIds.has(m.id))];
+      const merged = [...optimistic, ...ctxMeals.filter((m) => !optimisticIds.has(m.id))];
+      // Dedupe by id — guards against an optimistic->real replace racing a realtime sync.
+      const seen = new Set<string>();
+      return merged.filter((m) => (seen.has(m.id) ? false : (seen.add(m.id), true)));
     });
   }, [ctxMeals]);
 
