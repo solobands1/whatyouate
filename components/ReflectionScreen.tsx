@@ -5,36 +5,10 @@ import { useRouter } from "next/navigation";
 import { riseIn } from "../lib/motion";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
-import { useAuth } from "./AuthProvider";
-import { fetchReflections } from "../lib/supabaseDb";
-import type { ReflectionEntry } from "../lib/habitState";
+import { useAppData } from "./AppDataProvider";
+import { computeReflectionFacts, levelFor, REFLECTION_METRICS, REFLECTION_DIPS_OPTS, REFLECTION_DOT } from "../lib/reflectionFacts";
 
-// Metric metadata mirrors REFLECTION_QUESTIONS in HomeScreen. Kept local so this screen
-// stays self-contained. `opts` index maps to the stored answer number.
-const METRICS: { key: string; label: string; opts: string[] }[] = [
-  { key: "energy", label: "Energy", opts: ["Drained", "Low", "Okay", "Good", "Great"] },
-  { key: "sleep", label: "Sleep", opts: ["Poor", "Okay", "Good", "Great"] },
-  { key: "mood", label: "Mood", opts: ["Poor", "Okay", "Good", "Great"] },
-  { key: "stress", label: "Stress", opts: ["None", "Mild", "Moderate", "High"] },
-  { key: "digestion", label: "Digestion", opts: ["Poor", "Okay", "Good", "Great"] },
-];
-const DIPS_OPTS = ["None", "Morning", "Afternoon", "Evening"];
-const WEEKDAY = ["S", "M", "T", "W", "T", "F", "S"];
-
-// Dark blue / light blue / grey — matches "Your Energy Lately" on the Patterns page.
-type Level = "good" | "ok" | "low";
-const DOT: Record<Level, string> = { good: "bg-primary", ok: "bg-primary/35", low: "bg-ink/25" };
-
-// Map an answer index to a good/ok/low band. Stress is inverted (None is good).
-function levelFor(key: string, idx: number): Level {
-  if (key === "energy") return idx <= 1 ? "low" : idx === 2 ? "ok" : "good";
-  if (key === "stress") return idx === 0 ? "good" : idx <= 2 ? "ok" : "low";
-  return idx === 0 ? "low" : idx === 1 ? "ok" : "good"; // sleep / mood / digestion
-}
-
-function pad(n: number) { return String(n).padStart(2, "0"); }
-function dateKey(d: Date) { return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; }
-
+// Display-only helpers (the derivation lives in lib/reflectionFacts).
 function relLabel(dateStr: string): string {
   const d = new Date(dateStr + "T00:00:00");
   const today = new Date();
@@ -53,80 +27,8 @@ function fullDate(dateStr: string): string {
 
 function dipsText(v: number | number[] | undefined): string | null {
   if (!Array.isArray(v) || v.length === 0) return null;
-  const times = v.filter((i) => i > 0).map((i) => DIPS_OPTS[i]).filter(Boolean);
+  const times = v.filter((i) => i > 0).map((i) => REFLECTION_DIPS_OPTS[i]).filter(Boolean);
   return times.length ? times.join(", ") : "None";
-}
-
-// ── Derived signals (all guarded on real data, shown with real counts) ───────
-function recentWithin(sorted: ReflectionEntry[], days: number): ReflectionEntry[] {
-  const cutoff = new Date();
-  cutoff.setHours(0, 0, 0, 0);
-  cutoff.setDate(cutoff.getDate() - (days - 1));
-  return sorted.filter((e) => new Date(e.date + "T00:00:00") >= cutoff);
-}
-
-// Last 7 calendar days, oldest→newest, with weekday label + whether a reflection exists.
-function last7Days(sorted: ReflectionEntry[]) {
-  const byDate = new Map(sorted.map((e) => [e.date, e]));
-  const out: { key: string; label: string; isToday: boolean; energy: Level | null; done: boolean }[] = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    d.setDate(d.getDate() - i);
-    const e = byDate.get(dateKey(d));
-    const idx = e && typeof e.answers.energy === "number" ? (e.answers.energy as number) : null;
-    out.push({ key: dateKey(d), label: WEEKDAY[d.getDay()], isToday: i === 0, energy: idx == null ? null : levelFor("energy", idx), done: !!e });
-  }
-  return out;
-}
-
-// Short fragment (not a full sentence) so it can tack onto the "Reflected X of 7" line.
-function energyPhrase(levels: (Level | null)[]): string | null {
-  const vals = levels.filter((l): l is Level => l !== null);
-  if (vals.length < 3) return null;
-  const good = vals.filter((l) => l === "good").length;
-  const low = vals.filter((l) => l === "low").length;
-  if (good >= Math.ceil(vals.length * 0.6)) return "energy held up well";
-  if (low >= Math.ceil(vals.length * 0.5)) return "energy ran low";
-  return "energy was up and down";
-}
-
-function dipSignal(recent: ReflectionEntry[]): { time: string; count: number; days: number } | { none: true } | null {
-  const counts = [0, 0, 0, 0];
-  let days = 0;
-  recent.forEach((e) => {
-    const v = e.answers.dips;
-    if (Array.isArray(v)) { days++; v.forEach((i) => { if (i > 0 && i < 4) counts[i]++; }); }
-  });
-  if (days < 3) return null;
-  const max = Math.max(counts[1], counts[2], counts[3]);
-  if (max === 0) return { none: true };
-  return { time: DIPS_OPTS[counts.indexOf(max)], count: max, days };
-}
-
-function watchArea(recent: ReflectionEntry[]): { label: string; low: number; n: number } | null {
-  let worst: { label: string; low: number; n: number } | null = null;
-  for (const m of METRICS) {
-    let low = 0, n = 0;
-    recent.forEach((e) => {
-      const idx = e.answers[m.key];
-      if (typeof idx === "number") { n++; if (levelFor(m.key, idx) === "low") low++; }
-    });
-    if (n >= 3 && low >= 2 && (!worst || low > worst.low)) worst = { label: m.label, low, n };
-  }
-  return worst;
-}
-
-// Consecutive reflected nights ending today (or yesterday, since tonight's may not be
-// done yet). Walks the actual date set so it isn't capped at a week.
-function currentStreak(sorted: ReflectionEntry[]): number {
-  const set = new Set(sorted.map((e) => e.date));
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  if (!set.has(dateKey(d))) d.setDate(d.getDate() - 1);
-  let streak = 0;
-  while (set.has(dateKey(d))) { streak++; d.setDate(d.getDate() - 1); }
-  return streak;
 }
 
 function Legend({ withMissed }: { withMissed?: boolean }) {
@@ -149,8 +51,7 @@ function Legend({ withMissed }: { withMissed?: boolean }) {
 
 export default function ReflectionScreen() {
   const router = useRouter();
-  const { user } = useAuth();
-  const [entries, setEntries] = useState<ReflectionEntry[] | null>(null);
+  const { reflections, loading } = useAppData();
   const [barsReady, setBarsReady] = useState(false);
 
   useEffect(() => {
@@ -158,29 +59,8 @@ export default function ReflectionScreen() {
     return () => cancelAnimationFrame(raf);
   }, []);
 
-  useEffect(() => {
-    if (!user) return;
-    let cancelled = false;
-    fetchReflections(user.id)
-      .then((rows) => { if (!cancelled) setEntries(rows); })
-      .catch(() => { if (!cancelled) setEntries([]); });
-    return () => { cancelled = true; };
-  }, [user]);
-
-  const sorted = useMemo(
-    () => (entries ? [...entries].sort((a, b) => b.date.localeCompare(a.date)) : []),
-    [entries],
-  );
-
-  const week = useMemo(() => last7Days(sorted), [sorted]);
-  const reflectedCount = week.filter((d) => d.done).length;
-  const energyPhrase7 = useMemo(() => energyPhrase(week.map((d) => d.energy)), [week]);
-  const streak = useMemo(() => currentStreak(sorted), [sorted]);
-  const stands = useMemo(() => {
-    if (sorted.length < 3) return null;
-    const recent = recentWithin(sorted, 14);
-    return { dip: dipSignal(recent), watch: watchArea(recent) };
-  }, [sorted]);
+  const sorted = useMemo(() => [...reflections].sort((a, b) => b.date.localeCompare(a.date)), [reflections]);
+  const facts = useMemo(() => computeReflectionFacts(reflections), [reflections]);
 
   return (
     <div className="min-h-screen bg-surface">
@@ -198,7 +78,7 @@ export default function ReflectionScreen() {
           <p className="mt-1 text-sm text-muted/70">Your nightly reflections and how you&apos;ve felt.</p>
         </header>
 
-        {entries === null ? (
+        {loading && sorted.length === 0 ? (
           <div className="space-y-3">
             {[0, 1, 2].map((i) => (
               <div key={i} className="h-28 animate-pulse rounded-2xl bg-ink/[0.04]" />
@@ -223,17 +103,17 @@ export default function ReflectionScreen() {
               <Card>
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">This Week</p>
-                  {streak >= 2 && (
+                  {facts.streak >= 2 && (
                     <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
-                      {streak}-night streak
+                      {facts.streak}-night streak
                     </span>
                   )}
                 </div>
                 <div className="mt-3 flex items-start justify-between">
-                  {week.map((d, i) => (
+                  {facts.week.map((d, i) => (
                     <div key={d.key} className="flex flex-col items-center gap-1.5">
                       <span
-                        className={`h-3 w-3 rounded-full ${d.done ? (d.energy ? DOT[d.energy] : "bg-primary/50") : "border-2 border-ink/15"} ${d.isToday ? "ring-2 ring-primary/25 ring-offset-1 ring-offset-white" : ""}`}
+                        className={`h-3 w-3 rounded-full ${d.done ? (d.energy ? REFLECTION_DOT[d.energy] : "bg-primary/50") : "border-2 border-ink/15"} ${d.isToday ? "ring-2 ring-primary/25 ring-offset-1 ring-offset-white" : ""}`}
                         style={{ opacity: barsReady ? 1 : 0, transform: barsReady ? "scale(1)" : "scale(0.3)", transition: `opacity 700ms ease ${250 + i * 80}ms, transform 700ms cubic-bezier(0.34,1.56,0.64,1) ${250 + i * 80}ms` }}
                       />
                       <p className={`text-[10px] ${d.isToday ? "font-bold text-ink/80" : "text-muted/60"}`}>{d.label}</p>
@@ -241,26 +121,26 @@ export default function ReflectionScreen() {
                   ))}
                 </div>
                 <p className="mt-3 text-sm text-ink/80">
-                  <span className="font-semibold text-ink">Reflected {reflectedCount} of 7</span>
-                  <span className="text-muted/70"> nights{energyPhrase7 ? ` · ${energyPhrase7}` : " this week"}.</span>
+                  <span className="font-semibold text-ink">Reflected {facts.reflectedCount} of 7</span>
+                  <span className="text-muted/70"> nights{facts.energyPhrase ? ` · ${facts.energyPhrase}` : " this week"}.</span>
                 </p>
                 <div className="mt-2.5"><Legend withMissed /></div>
               </Card>
 
               {/* What stands out */}
-              {stands && (stands.dip || stands.watch) && (
+              {facts.hasSignals && (facts.dip || facts.watch) && (
                 <Card>
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Worth Noting</p>
                   <div className="mt-2 space-y-1.5">
-                    {stands.dip && (
-                      "none" in stands.dip ? (
+                    {facts.dip && (
+                      "none" in facts.dip ? (
                         <p className="text-sm text-ink">No real energy dips lately, nice.</p>
                       ) : (
-                        <p className="text-sm text-ink">You dip most in the <span className="font-semibold">{stands.dip.time.toLowerCase()}</span><span className="text-muted/65"> — {stands.dip.count} of the last {stands.dip.days} nights.</span></p>
+                        <p className="text-sm text-ink">You dip most in the <span className="font-semibold">{facts.dip.time.toLowerCase()}</span><span className="text-muted/65"> — {facts.dip.count} of the last {facts.dip.days} nights.</span></p>
                       )
                     )}
-                    {stands.watch && (
-                      <p className="text-sm text-ink"><span className="font-semibold">{stands.watch.label}</span> has been low<span className="text-muted/65"> on {stands.watch.low} of the last {stands.watch.n} nights.</span></p>
+                    {facts.watch && (
+                      <p className="text-sm text-ink"><span className="font-semibold">{facts.watch.label}</span> has been low<span className="text-muted/65"> on {facts.watch.low} of the last {facts.watch.n} nights.</span></p>
                     )}
                   </div>
                 </Card>
@@ -283,12 +163,12 @@ export default function ReflectionScreen() {
                         <p className="text-[11px] text-muted/55">{fullDate(entry.date)}</p>
                       </div>
                       <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2">
-                        {METRICS.map((m) => {
+                        {REFLECTION_METRICS.map((m) => {
                           const idx = entry.answers[m.key];
                           if (typeof idx !== "number") return null;
                           return (
                             <div key={m.key} className="flex items-center gap-1.5">
-                              <span className={`h-2 w-2 shrink-0 rounded-full ${DOT[levelFor(m.key, idx)]}`} />
+                              <span className={`h-2 w-2 shrink-0 rounded-full ${REFLECTION_DOT[levelFor(m.key, idx)]}`} />
                               <span className="text-xs text-muted/65">{m.label}</span>
                               <span className="text-xs font-medium text-ink">{m.opts[idx]}</span>
                             </div>

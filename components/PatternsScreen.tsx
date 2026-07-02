@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
@@ -9,6 +9,7 @@ import { useAuth } from "./AuthProvider";
 import { useAppData } from "./AppDataProvider";
 import { hasEnoughDataForPatterns } from "../lib/trial";
 import { riseIn } from "../lib/motion";
+import { computeReflectionFacts, REFLECTION_DOT } from "../lib/reflectionFacts";
 
 // Sample/placeholder content until the pattern engine + persisted reflections exist.
 const FACTORS = [
@@ -40,19 +41,13 @@ const CLUES: { text: string; confidence: string; habit: string }[] = [
   { text: "Afternoon dips have lined up with later, heavier lunches.", confidence: "Building", habit: "lunch timing" },
 ];
 
-// 7-day energy trend (sample).
-const ENERGY_WEEK: ("high" | "avg" | "low")[] = ["avg", "high", "low", "avg", "high", "high", "avg"];
-const ENERGY_DAY_LABELS = ["T", "W", "T", "F", "S", "S", "M"];
-const ENERGY_DOT: Record<"high" | "avg" | "low", string> = {
-  high: "bg-primary",
-  avg: "bg-primary/35",
-  low: "bg-ink/25",
-};
-
 export default function PatternsScreen() {
   const router = useRouter();
   const { user } = useAuth();
-  const { meals } = useAppData();
+  const { meals, reflections } = useAppData();
+  const facts = useMemo(() => computeReflectionFacts(reflections), [reflections]);
+  const energyDays = facts.week.filter((d) => d.energy !== null);
+  const lowDays = facts.week.filter((d) => d.energy === "low").length;
   const [isDemoMode, setIsDemoMode] = useState(false);
   // Flips true just after mount so bars/dots animate in from zero on load.
   const [ready, setReady] = useState(false);
@@ -112,19 +107,21 @@ export default function PatternsScreen() {
 
             {/* Energy trend */}
             <Card className="mt-6" style={riseIn(ready, 1)}>
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Your Energy Lately</p>
-                <span className="inline-flex items-center gap-1 rounded-full bg-primary-dark/15 px-2 py-0.5 text-[10px] font-semibold text-primary-dark">
-                  <svg viewBox="0 0 24 24" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 15l7-7 7 7" /></svg>
-                  Improving
-                </span>
-              </div>
-              <p className="mt-2 text-sm text-ink/80"><span className="font-semibold text-ink">2 Low-Energy Days</span> this week, down from 4 last week.</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Your Energy Lately</p>
+              <p className="mt-2 text-sm text-ink/80">
+                {energyDays.length === 0 ? (
+                  "Do your nightly check-ins to start seeing your energy here."
+                ) : facts.energyPhrase ? (
+                  <>Your <span className="font-semibold text-ink">{facts.energyPhrase}</span> this week.</>
+                ) : (
+                  <><span className="font-semibold text-ink">{lowDays} low-energy {lowDays === 1 ? "day" : "days"}</span> this week.</>
+                )}
+              </p>
               <div className="mt-3 flex items-end justify-between">
-                {ENERGY_WEEK.map((lvl, i) => (
-                  <div key={i} className="flex flex-col items-center gap-1.5">
-                    <span className={`h-2.5 w-2.5 rounded-full ${ENERGY_DOT[lvl]}`} style={{ opacity: ready ? 1 : 0, transform: ready ? "scale(1)" : "scale(0.3)", transition: `opacity 900ms ease ${i * 180}ms, transform 900ms cubic-bezier(0.34,1.56,0.64,1) ${i * 180}ms` }} />
-                    <span className="text-[10px] text-muted/60">{ENERGY_DAY_LABELS[i]}</span>
+                {facts.week.map((d, i) => (
+                  <div key={d.key} className="flex flex-col items-center gap-1.5">
+                    <span className={`h-2.5 w-2.5 rounded-full ${d.energy ? REFLECTION_DOT[d.energy] : "border border-ink/15"}`} style={{ opacity: ready ? 1 : 0, transform: ready ? "scale(1)" : "scale(0.3)", transition: `opacity 900ms ease ${i * 180}ms, transform 900ms cubic-bezier(0.34,1.56,0.64,1) ${i * 180}ms` }} />
+                    <span className="text-[10px] text-muted/60">{d.label}</span>
                   </div>
                 ))}
               </div>
