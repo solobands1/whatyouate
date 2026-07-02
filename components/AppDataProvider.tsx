@@ -3,9 +3,9 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import type { MealLog, UserProfile, WorkoutSession } from "../lib/types";
 import { useAuth } from "./AuthProvider";
-import { getProfile, listMeals, listWorkouts, listNudges, getFeelLogs, getWeightLogs, updateMeal, saveStreak, saveTimezoneOffset, fetchReflections } from "../lib/supabaseDb";
+import { getProfile, listMeals, listWorkouts, listNudges, getFeelLogs, getWeightLogs, updateMeal, saveStreak, saveTimezoneOffset, fetchReflections, fetchHabitHistory } from "../lib/supabaseDb";
 import type { FeelLog, WeightLog } from "../lib/supabaseDb";
-import type { ReflectionEntry } from "../lib/habitState";
+import type { ReflectionEntry, HabitHistoryEntry } from "../lib/habitState";
 import { dayKeyFromTs, todayKey } from "../lib/utils";
 import { computeStreakFromMeals } from "../lib/digestEngine";
 import { MEALS_UPDATED_EVENT, NUDGES_UPDATED_EVENT, PROFILE_UPDATED_EVENT, WORKOUTS_UPDATED_EVENT, notifyMealsFailed } from "../lib/dataEvents";
@@ -54,6 +54,7 @@ type AppDataContextValue = {
   feelLogs: FeelLog[];
   weightLogs: WeightLog[];
   reflections: ReflectionEntry[];
+  habitHistory: HabitHistoryEntry[];
   loading: boolean;
   setMeals: React.Dispatch<React.SetStateAction<MealLog[]>>;
   setWorkouts: React.Dispatch<React.SetStateAction<WorkoutSession[]>>;
@@ -74,6 +75,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const [feelLogs, setFeelLogs] = useState<FeelLog[]>([]);
   const [weightLogs, setWeightLogs] = useState<WeightLog[]>([]);
   const [reflections, setReflections] = useState<ReflectionEntry[]>([]);
+  const [habitHistory, setHabitHistory] = useState<HabitHistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const mountedRef = useRef(true);
 
@@ -106,13 +108,14 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
 
   const load = useCallback(async (userId: string, isInitial = false) => {
     try {
-      const [profileData, mealsData, workoutsData, feelLogsData, weightLogsData, reflectionsData] = await Promise.all([
+      const [profileData, mealsData, workoutsData, feelLogsData, weightLogsData, reflectionsData, habitHistoryData] = await Promise.all([
         getProfile(userId),
         listMeals(userId, 400),
         listWorkouts(userId, 50),
         getFeelLogs(userId, 50),
         getWeightLogs(userId, 60),
         fetchReflections(userId),
+        fetchHabitHistory(userId),
       ]);
       if (!mountedRef.current) return;
 
@@ -193,6 +196,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       setFeelLogs(feelLogsData);
       setWeightLogs(weightLogsData);
       setReflections(reflectionsData);
+      setHabitHistory(habitHistoryData);
     } catch {
       // silently fail — screens handle empty state gracefully
     } finally {
@@ -247,7 +251,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AppDataContext.Provider
-      value={{ profile, meals, workouts, nudges, nudgesLoaded, feelLogs, weightLogs, reflections, loading, setMeals, setWorkouts, setProfile, setWeightLogs, reload }}
+      value={{ profile, meals, workouts, nudges, nudgesLoaded, feelLogs, weightLogs, reflections, habitHistory, loading, setMeals, setWorkouts, setProfile, setWeightLogs, reload }}
     >
       {children}
     </AppDataContext.Provider>
