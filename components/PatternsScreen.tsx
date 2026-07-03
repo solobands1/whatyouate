@@ -25,12 +25,10 @@ const KEEP_CHIP: Record<"yes" | "maybe", { label: string; cls: string }> = {
   maybe: { label: "Might Keep", cls: "bg-primary/15 text-primary" },
 };
 
-const TREND_METRICS: { key: string; label: string }[] = [
-  { key: "sleep", label: "Sleep" },
-  { key: "mood", label: "Mood" },
-  { key: "stress", label: "Stress" },
-  { key: "digestion", label: "Digestion" },
-];
+// Behavioural comparison (Your Days Compared) — example data until we compute the real
+// food/movement/sleep vs energy correlations. Shown as Preview like the nutrients page.
+const EX_BETTER = ["Breakfast before 9am", "A walk or workout", "In bed before 11pm", "Steady meals through the day"];
+const EX_LOWER = ["First meal after noon", "Long gaps without eating", "Caffeine after 2pm", "Little movement"];
 const CHANGE_VERB: Record<"up" | "down" | "same", { verb: string; cls: string; arrow: string }> = {
   up: { verb: "improved", cls: "text-primary-dark", arrow: "M5 15l7-7 7 7" },
   down: { verb: "slipped", cls: "text-ink/45", arrow: "M19 9l-7 7-7-7" },
@@ -146,8 +144,10 @@ export default function PatternsScreen() {
   const trendEx = demo || fewRefl;
   const preview = !demo && fewRefl;
   const weekCells = trendEx ? facts.week.map((d, i) => ({ ...d, energy: EX_LEVELS.energy[i] ?? null, done: true })) : facts.week;
-  const metricLevels = (key: string): (Level | null)[] => (trendEx ? (EX_LEVELS[key] ?? []) : (facts.metricWeeks[key] ?? []));
   const headlineText = trendEx ? EX_HEADLINE : headline;
+
+  // Your Days Compared — behavioural correlations aren't computed yet, so always Preview.
+  const daysPreview = !demo;
 
   // Discoveries — need enough co-occurrence data (may be empty even with some reflections).
   const discPreview = !demo && discoveries.length === 0;
@@ -233,22 +233,33 @@ export default function PatternsScreen() {
           {DOT_LEGEND}
         </Card>
 
-        {/* This week's other trends */}
+        {/* What tends to help vs not — behavioral comparison (preview until we compute it) */}
         <Card className="mt-6" style={riseIn(ready, 3)}>
-          <Eyebrow preview={preview}>This Week</Eyebrow>
-          <div className="mt-3 space-y-2.5">
-            {TREND_METRICS.map((m) => (
-              <div key={m.key} className="flex items-center gap-3">
-                <span className="w-16 shrink-0 text-xs text-muted/65">{m.label}</span>
-                <div className="flex flex-1 items-center justify-between">
-                  {metricLevels(m.key).map((lvl, i) => (
-                    <span key={i} className={`h-2.5 w-2.5 rounded-full ${lvl ? REFLECTION_DOT[lvl] : "border border-ink/15"}`} style={{ opacity: ready ? 1 : 0, transform: ready ? "scale(1)" : "scale(0.3)", transition: `opacity 800ms ease ${i * 90}ms, transform 800ms cubic-bezier(0.34,1.56,0.64,1) ${i * 90}ms` }} />
-                  ))}
-                </div>
-              </div>
-            ))}
+          <Eyebrow preview={daysPreview}>Your Days Compared</Eyebrow>
+          <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-primary-dark/80">Better Days</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/70">Low-Energy Days</p>
+            <ul className="space-y-1.5">
+              {EX_BETTER.map((d) => (
+                <li key={d} className="flex items-start gap-2 text-[13px] text-ink/80">
+                  <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary-dark/15 text-primary-dark">
+                    <svg viewBox="0 0 24 24" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l4 4L19 7" /></svg>
+                  </span>
+                  {d}
+                </li>
+              ))}
+            </ul>
+            <ul className="space-y-1.5">
+              {EX_LOWER.map((d) => (
+                <li key={d} className="flex items-start gap-2 text-[13px] text-ink/80">
+                  <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-ink/[0.08] text-ink/45">
+                    <svg viewBox="0 0 24 24" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8v5M12 16.5v.5" /></svg>
+                  </span>
+                  {d}
+                </li>
+              ))}
+            </ul>
           </div>
-          {DOT_LEGEND}
         </Card>
 
         {/* When energy dips */}
