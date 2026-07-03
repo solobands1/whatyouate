@@ -2066,6 +2066,21 @@ export default function HomeScreen() {
     }
   }, [user, homeNotifyNotes]);
 
+  // When the nudge is actually showing on the home hero (no active habit builder taking the
+  // slot), the user is already seeing it — so mark it seen and don't light the Insights nav
+  // dot. The dot should only appear when the nudge lives solely on the Insights screen.
+  useEffect(() => {
+    if (!user || !habitLoaded) return;
+    const nudgeOnHero = heroHabit.status === "hidden" && !!currentWindowNudge && !trial.isFree && !isDemoMode;
+    if (!nudgeOnHero) return;
+    const nudgeTs = parseInt(localStorage.getItem("wya_nudge_ts") ?? "0");
+    const seenTs = parseInt(localStorage.getItem("wya_nudge_seen_ts") ?? "0");
+    if (nudgeTs > seenTs) {
+      localStorage.setItem("wya_nudge_seen_ts", Date.now().toString());
+      window.dispatchEvent(new Event("wya_nudge_update"));
+    }
+  }, [user, habitLoaded, heroHabit.status, currentWindowNudge, trial.isFree, isDemoMode]);
+
 
   const homeMarkers = useMemo(
     () => computeHomeMarkers(displayMeals, displayWorkouts, profile),
