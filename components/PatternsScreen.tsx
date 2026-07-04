@@ -10,6 +10,7 @@ import { riseIn } from "../lib/motion";
 import { computeReflectionFacts, REFLECTION_DOT, type ReflectionFacts, type Level, type MetricChange } from "../lib/reflectionFacts";
 import { computeDiscoveryCandidates } from "../lib/discoveries";
 import { computeDaysCompared } from "../lib/dayCompare";
+import { computeFoodFeelingLinks, type FoodFeelingLink } from "../lib/foodFeeling";
 import { computeActiveChanges, type ActiveChange } from "../lib/changes";
 import { getChangeStatuses, setChangeStatus } from "../lib/changeStatus";
 
@@ -73,6 +74,15 @@ const EX_DISCOVERIES: Discovery[] = [
   { text: "Your higher-stress days have often lined up with poorer sleep.", confidence: "Building" },
 ];
 const EX_HEADLINE = "Your best-energy days have tended to follow nights you slept well.";
+const EX_FOOD_LINKS: FoodFeelingLink[] = [
+  { tag: "fried_greasy", label: "fried or greasy food", lag: "next_day", lowWith: 0.6, lowWithout: 0.2, nWith: 6, confidence: "Building" },
+  { tag: "heavy_large", label: "a large, heavy meal", lag: "same_day", lowWith: 0.55, lowWithout: 0.25, nWith: 7, confidence: "Building" },
+];
+function foodLinkSentence(l: Pick<FoodFeelingLink, "label" | "lag">): string {
+  return l.lag === "next_day"
+    ? `Your lower-energy days have more often followed ${l.label} the night before.`
+    : `On days with ${l.label}, your energy has more often run low.`;
+}
 
 function Eyebrow({ children, preview }: { children: React.ReactNode; preview?: boolean }) {
   return (
@@ -96,6 +106,7 @@ export default function PatternsScreen() {
   const { reflections, habitHistory, meals, workouts } = useAppData();
   const facts = useMemo(() => computeReflectionFacts(reflections), [reflections]);
   const daysCompared = useMemo(() => computeDaysCompared(reflections, meals, workouts), [reflections, meals, workouts]);
+  const foodLinks = useMemo(() => computeFoodFeelingLinks(meals, reflections), [meals, reflections]);
   const headline = useMemo(() => patternsHeadline(facts), [facts]);
 
   // AI discoveries: the coach phrases the strongest real co-occurrence counts. Cached per
@@ -159,6 +170,12 @@ export default function PatternsScreen() {
   const daysPreview = !demo && !daysReal;
   const betterList = demo || !daysReal ? EX_BETTER : daysCompared.better;
   const lowList = demo || !daysReal ? EX_LOWER : daysCompared.low;
+
+  // Food -> feeling links (attribute correlations). Real when there's enough tagged
+  // history, else example data as a Preview like the other cards.
+  const foodReal = foodLinks.length > 0;
+  const foodPreview = !demo && !foodReal;
+  const shownFoodLinks = demo || !foodReal ? EX_FOOD_LINKS : foodLinks;
 
   // Discoveries — need enough co-occurrence data (may be empty even with some reflections).
   const discPreview = !demo && discoveries.length === 0;
@@ -275,6 +292,23 @@ export default function PatternsScreen() {
               ))}
             </ul>
           </div>
+        </Card>
+
+        {/* Food -> how you feel — attribute correlations (preview until enough tagged data) */}
+        <Card className="mt-6" style={riseIn(ready, 4)}>
+          <Eyebrow preview={foodPreview}>Food &amp; How You Feel</Eyebrow>
+          <div className="mt-3 space-y-2.5">
+            {shownFoodLinks.map((l, i) => (
+              <div key={i} className="rounded-xl border border-primary/15 bg-primary/[0.05] px-3 py-2.5">
+                <p className="text-sm text-ink/90">{foodLinkSentence(l)}</p>
+                <div className="mt-1.5 flex items-center gap-2">
+                  <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary/70">Confidence: {l.confidence}</span>
+                  <span className="text-[10px] text-muted/55">seen on {l.nWith} of your days</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 text-[11px] leading-relaxed text-muted/50">Associations from your check-ins, not proven causes. Worth noticing, not a rule.</p>
         </Card>
 
         {/* When energy dips */}
