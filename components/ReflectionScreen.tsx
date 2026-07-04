@@ -126,25 +126,6 @@ export default function ReflectionScreen() {
                 </p>
                 <div className="mt-2.5"><Legend withMissed /></div>
               </Card>
-
-              {/* What stands out */}
-              {facts.hasSignals && (facts.dip || facts.watch) && (
-                <Card>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Worth Noting</p>
-                  <div className="mt-2 space-y-1.5">
-                    {facts.dip && (
-                      "none" in facts.dip ? (
-                        <p className="text-sm text-ink">No real energy dips lately, nice.</p>
-                      ) : (
-                        <p className="text-sm text-ink">You dip most in the <span className="font-semibold">{facts.dip.time.toLowerCase()}</span><span className="text-muted/65"> — {facts.dip.count} of the last {facts.dip.days} nights.</span></p>
-                      )
-                    )}
-                    {facts.watch && (
-                      <p className="text-sm text-ink"><span className="font-semibold">{facts.watch.label}</span> has been low<span className="text-muted/65"> on {facts.watch.low} of the last {facts.watch.n} nights.</span></p>
-                    )}
-                  </div>
-                </Card>
-              )}
             </section>
 
             {/* History — the raw timeline. */}
