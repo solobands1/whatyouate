@@ -73,7 +73,7 @@ const DEMO_NUDGE = "Your protein has been strong this week, but your last two da
 export default function SummaryScreen() {
   const router = useRouter();
   const { user, loading } = useAuth();
-  const { profile, meals, workouts, nudges, nudgesLoaded, feelLogs: recentFeelLogs, loading: loadingData } = useAppData();
+  const { profile, meals, workouts, nudges, nudgesLoaded, feelLogs: recentFeelLogs, habitHistory, loading: loadingData } = useAppData();
   const trial = useTrialStatus();
   const [hydrated, setHydrated] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
@@ -1159,17 +1159,28 @@ export default function SummaryScreen() {
           <div data-tour="nudges-inner" className="pointer-events-none absolute inset-x-1 -top-4 bottom-2" />
 
           {(() => {
-            // The full archive of completed builders. The keep-this-up status lives
-            // on the Patterns "Habits That Stuck" card, so this stays a clean record.
-            const builtHabits = [
+            // Real archive of completed habit builders (demo shows a sample so the page
+            // looks alive). Keep-this-up status lives on the Patterns "Changes You're
+            // Making" card, so this stays a clean record.
+            const whenLabel = (iso: string): string => {
+              const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
+              if (days <= 6) return "This week";
+              const weeks = Math.floor(days / 7);
+              return weeks <= 1 ? "Last week" : `${weeks} weeks ago`;
+            };
+            const SAMPLE = [
               { title: "Hydration", days: 5, when: "This week" },
               { title: "Walk After Lunch", days: 3, when: "Last week" },
               { title: "Protein At Breakfast", days: 3, when: "2 weeks ago" },
               { title: "Earlier Dinner", days: 5, when: "3 weeks ago" },
             ];
-            if (builtHabits.length === 0) {
-              return <p className="mt-3 text-sm text-muted/65">Your completed habit builders will collect here, one win at a time.</p>;
-            }
+            const builtHabits = isDemoMode
+              ? SAMPLE
+              : [...habitHistory]
+                  .filter((h) => h.finishedAt)
+                  .sort((a, b) => b.finishedAt.localeCompare(a.finishedAt))
+                  .map((h) => ({ title: h.title, days: h.days, when: whenLabel(h.finishedAt) }));
+            const isEmpty = builtHabits.length === 0;
             return (
               <>
                 <div className="absolute -top-6 -right-1 z-10">
@@ -1187,30 +1198,63 @@ export default function SummaryScreen() {
                 </div>
                 <div className="pr-24">
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Your Progress</p>
-                  <p className="mt-1 text-sm text-ink/70"><span className="font-semibold text-ink">{builtHabits.length} Habits</span> built so far. Keep stacking them.</p>
+                  <p className="mt-1 text-sm text-ink/70">
+                    {isEmpty
+                      ? "Your habit wins will stack up here."
+                      : <><span className="font-semibold text-ink">{builtHabits.length} Habit{builtHabits.length === 1 ? "" : "s"}</span> built so far. Keep stacking them.</>}
+                  </p>
                 </div>
-                <div className="mt-4">
-                  {builtHabits.map((h, i) => (
-                    <div key={h.title} className="relative flex gap-3 pb-4 last:pb-0" style={{ opacity: hydrated ? 1 : 0, transform: hydrated ? "translateY(0)" : "translateY(10px)", transition: `opacity 500ms ease ${450 + i * 130}ms, transform 500ms cubic-bezier(0.22,1,0.36,1) ${450 + i * 130}ms` }}>
+                {isEmpty ? (
+                  <div className="mt-4">
+                    {/* Explainer row — the real completed-habit shape, teaching the mechanic. */}
+                    <div className="relative flex gap-3 pb-4">
                       <div className="relative flex flex-col items-center">
                         <span className="z-10 flex h-7 w-7 items-center justify-center rounded-full border-2 border-primary/40 bg-primary/15 text-primary">
                           <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l4 4L19 7" /></svg>
                         </span>
-                        {i < builtHabits.length - 1 && <span className="absolute top-7 bottom-0 w-0.5 bg-primary/15" />}
+                        <span className="absolute top-7 bottom-0 w-0.5 bg-primary/10" />
                       </div>
                       <div className="flex-1 rounded-xl border border-primary/15 bg-primary/[0.05] px-3 py-2.5">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="text-sm font-semibold text-ink">{h.title}</p>
-                          <span className="shrink-0 text-[10px] text-muted/60">{h.when}</span>
-                        </div>
-                        <div className="mt-1 flex items-center gap-2">
-                          <span className="text-[11px] text-muted/70">{h.days}-Day Builder</span>
-                        </div>
+                        <p className="text-sm font-semibold text-ink">Your completed habits show up here</p>
+                        <p className="mt-1 text-[12px] leading-relaxed text-muted/70">Keep an eye out for a suggested habit on your home screen — we tailor them to how you&apos;ve been feeling.</p>
                       </div>
                     </div>
-                  ))}
-                </div>
-
+                    {/* Ghost row — the same shape, dimmed, to show another can land here. */}
+                    <div className="relative flex gap-3 opacity-45">
+                      <div className="relative flex flex-col items-center">
+                        <span className="z-10 flex h-7 w-7 items-center justify-center rounded-full border-2 border-dashed border-ink/20 bg-ink/[0.02] text-ink/25">
+                          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l4 4L19 7" /></svg>
+                        </span>
+                      </div>
+                      <div className="flex-1 rounded-xl border border-dashed border-ink/15 bg-ink/[0.02] px-3 py-2.5">
+                        <div className="h-2.5 w-28 rounded-full bg-ink/10" />
+                        <div className="mt-2 h-2 w-16 rounded-full bg-ink/[0.07]" />
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-4">
+                    {builtHabits.map((h, i) => (
+                      <div key={h.title} className="relative flex gap-3 pb-4 last:pb-0" style={{ opacity: hydrated ? 1 : 0, transform: hydrated ? "translateY(0)" : "translateY(10px)", transition: `opacity 500ms ease ${450 + i * 130}ms, transform 500ms cubic-bezier(0.22,1,0.36,1) ${450 + i * 130}ms` }}>
+                        <div className="relative flex flex-col items-center">
+                          <span className="z-10 flex h-7 w-7 items-center justify-center rounded-full border-2 border-primary/40 bg-primary/15 text-primary">
+                            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l4 4L19 7" /></svg>
+                          </span>
+                          {i < builtHabits.length - 1 && <span className="absolute top-7 bottom-0 w-0.5 bg-primary/15" />}
+                        </div>
+                        <div className="flex-1 rounded-xl border border-primary/15 bg-primary/[0.05] px-3 py-2.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-sm font-semibold text-ink">{h.title}</p>
+                            <span className="shrink-0 text-[10px] text-muted/60">{h.when}</span>
+                          </div>
+                          <div className="mt-1 flex items-center gap-2">
+                            <span className="text-[11px] text-muted/70">{h.days}-Day Builder</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </>
             );
           })()}
