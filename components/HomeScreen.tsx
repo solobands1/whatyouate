@@ -8,7 +8,8 @@ import type { MealLog, UserProfile, WorkoutSession } from "../lib/types";
 import { suppName, suppLabel } from "../lib/types";
 import { matchSupplementNutrients } from "../lib/rda";
 import { celebrateDaily, celebrateBuilt, celebrateAccepted, unlockAudio } from "../lib/celebrate";
-import { HABIT_TEMPLATES, habitsForGoals, type HabitTemplate } from "../lib/habits";
+import { HABIT_TEMPLATES, habitsForSignals, type HabitTemplate } from "../lib/habits";
+import { computeReflectionFacts } from "../lib/reflectionFacts";
 import { riseIn } from "../lib/motion";
 import {
   PROFILE_UPDATED_EVENT,
@@ -326,7 +327,7 @@ function ManualDateRow({ manualDate, setManualDate }: { manualDate: string; setM
 export default function HomeScreen() {
   const router = useRouter();
   const { user, loading } = useAuth();
-  const { profile: ctxProfile, meals: ctxMeals, workouts: ctxWorkouts, feelLogs: ctxFeelLogs, weightLogs: ctxWeightLogs, setWeightLogs, nudges, nudgesLoaded, loading: dataLoading, reload } = useAppData();
+  const { profile: ctxProfile, meals: ctxMeals, workouts: ctxWorkouts, feelLogs: ctxFeelLogs, weightLogs: ctxWeightLogs, reflections: ctxReflections, setWeightLogs, nudges, nudgesLoaded, loading: dataLoading, reload } = useAppData();
   const trial = useTrialStatus();
 
   const [profile, setProfile] = useState<UserProfile | undefined>(undefined);
@@ -590,7 +591,21 @@ export default function HomeScreen() {
   const heroRevealedRef = useRef(false);
 
   // Surface the habits matching the user's feeling goal(s) first.
-  const goalHabits = useMemo(() => habitsForGoals(profile?.feelingGoals, profile?.goalDirection), [profile?.feelingGoals, profile?.goalDirection]);
+  // Route habits by what the nightly reflections actually show (the metric most often low,
+  // plus the energy dip time), then fall back to the user's stated goals. This is what makes
+  // the suggestion respond to "you dip in the afternoon" instead of just the onboarding goal.
+  const reflectionFacts = useMemo(() => computeReflectionFacts(ctxReflections ?? []), [ctxReflections]);
+  const observedProblem = useMemo(() => {
+    const w = reflectionFacts.watch;
+    const dipTime = reflectionFacts.dip && !("none" in reflectionFacts.dip) ? reflectionFacts.dip.time : undefined;
+    if (w) return { key: w.key, dipTime: w.key === "energy" ? dipTime : undefined };
+    if (dipTime) return { key: "energy", dipTime };
+    return null;
+  }, [reflectionFacts]);
+  const goalHabits = useMemo(
+    () => habitsForSignals(observedProblem, profile?.feelingGoals, profile?.goalDirection),
+    [observedProblem, profile?.feelingGoals, profile?.goalDirection],
+  );
 
   // The current coach nudge (today's, or yesterday's before 2am) — shown in the hero
   // whenever no habit builder is occupying it. Mirrors the Insights selection.

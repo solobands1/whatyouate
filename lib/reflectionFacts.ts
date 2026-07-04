@@ -53,7 +53,7 @@ export interface ReflectionFacts {
   streak: number;                   // consecutive reflected nights
   dip: DipSignal;                   // most common energy-dip time
   dipsDist: DipsDistribution | null;// full morning/afternoon/evening distribution
-  watch: { label: string; low: number; n: number } | null; // the area most often low
+  watch: { key: string; label: string; low: number; n: number } | null; // the area most often low
   changes: MetricChange[] | null;   // improved/worsened vs last week
 }
 
@@ -152,15 +152,15 @@ function dipSignal(recent: ReflectionEntry[]): DipSignal {
   return { time: REFLECTION_DIPS_OPTS[counts.indexOf(max)], count: max, days };
 }
 
-function watchArea(recent: ReflectionEntry[]): { label: string; low: number; n: number } | null {
-  let worst: { label: string; low: number; n: number } | null = null;
+function watchArea(recent: ReflectionEntry[]): { key: string; label: string; low: number; n: number } | null {
+  let worst: { key: string; label: string; low: number; n: number } | null = null;
   for (const m of REFLECTION_METRICS) {
     let low = 0, n = 0;
     recent.forEach((e) => {
       const idx = e.answers[m.key];
       if (typeof idx === "number") { n++; if (levelFor(m.key, idx) === "low") low++; }
     });
-    if (n >= 3 && low >= 2 && (!worst || low > worst.low)) worst = { label: m.label, low, n };
+    if (n >= 3 && low >= 2 && (!worst || low > worst.low)) worst = { key: m.key, label: m.label, low, n };
   }
   return worst;
 }

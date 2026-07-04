@@ -427,3 +427,39 @@ export function habitsForGoals(
   const rest = eligible.filter((t) => !matches(t));
   return [...matched, ...rest];
 }
+
+// Which habit categories address each OBSERVED problem (the reflection metric most often
+// low). Distinct from FEELING_GOAL_CATEGORIES (what the user *said* they want) — this routes
+// what the app actually *sees* in the nightly reflections.
+export const PROBLEM_CATEGORIES: Record<string, HabitCategory[]> = {
+  energy:    ["movement", "protein", "hydration", "sleep", "caffeine", "micronutrient"],
+  sleep:     ["sleep", "caffeine", "timing", "mind"],
+  mood:      ["mind", "movement", "sleep", "micronutrient"],
+  stress:    ["mind", "movement", "sleep"],
+  digestion: ["produce", "timing", "hydration", "mind"],
+};
+
+// Energy dips by time of day → the specific habits most likely to help, boosted to the top.
+const DIP_HABITS: Record<string, string[]> = {
+  Morning:   ["daylight-3", "protein-breakfast-3", "sleep-steady-3"],
+  Afternoon: ["protein-breakfast-3", "walk-10-3", "move-often-3", "hydration-3"],
+  Evening:   ["move-often-3", "caffeine-curfew-3", "daylight-3"],
+};
+
+// Rank habits by the user's OBSERVED problem first, then their stated goals. `problem` is
+// the reflection metric most often low (+ dip time for energy). Falls back to goal-only
+// ranking when there's no observed problem yet.
+export function habitsForSignals(
+  problem: { key: string; dipTime?: string } | null,
+  goals: FeelingGoal[] | undefined,
+  goalDirection?: GoalDirection,
+  templates: HabitTemplate[] = HABIT_TEMPLATES,
+): HabitTemplate[] {
+  const base = habitsForGoals(goals, goalDirection, templates);
+  if (!problem) return base;
+  const cats = new Set(PROBLEM_CATEGORIES[problem.key] ?? []);
+  const dipIds = new Set(problem.key === "energy" && problem.dipTime ? (DIP_HABITS[problem.dipTime] ?? []) : []);
+  const score = (t: HabitTemplate) => (dipIds.has(t.id) ? 2 : cats.has(t.category) ? 1 : 0);
+  // Stable sort: the goal-based order is preserved within equal problem scores.
+  return base.map((t, i) => ({ t, i })).sort((a, b) => score(b.t) - score(a.t) || a.i - b.i).map((x) => x.t);
+}
