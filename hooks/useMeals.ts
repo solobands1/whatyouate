@@ -143,7 +143,9 @@ export function useMeals(
     if (!user || !manualResult) return;
 
     const multiplier = manualPortion === "small" ? 0.7 : manualPortion === "large" ? 1.4 : 1;
-    const scale = (v: number) => Math.round(v * multiplier);
+    // Coerce missing/NaN bounds to 0 so a partial analysis can't write NaN into
+    // the stored ranges (which then poisons the DB numeric payload and drops the meal).
+    const scale = (v: number) => Math.round((Number.isFinite(v) ? v : 0) * multiplier);
     const r = manualResult.estimated_ranges;
     const scaledAnalysis = {
       ...manualResult,

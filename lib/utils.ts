@@ -42,8 +42,13 @@ export function clampNumber(value: number, min: number, max: number) {
 }
 
 export function approxFromRange(min: number, max: number) {
-  if (!min && !max) return 0;
-  return Math.round((min + max) / 2);
+  // Guard against undefined/NaN bounds. A missing bound used to poison the
+  // average into NaN, which serializes to null and gets rejected by NOT NULL
+  // numeric columns — silently dropping the whole meal on save.
+  const a = Number.isFinite(min) ? min : 0;
+  const b = Number.isFinite(max) ? max : 0;
+  if (!a && !b) return 0;
+  return Math.round((a + b) / 2);
 }
 
 export function formatApprox(min: number, max: number, unit = "") {
