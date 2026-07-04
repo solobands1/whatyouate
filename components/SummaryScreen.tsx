@@ -1035,7 +1035,7 @@ export default function SummaryScreen() {
 
 
         <Card data-tour="summary-week" style={riseIn(hydrated, 0)}>
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">This week</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Week Overview</p>
 
           {/* 7-day dot strip */}
           <div className="mt-3 flex items-start justify-between">
@@ -1180,7 +1180,7 @@ export default function SummaryScreen() {
                   />
                 </div>
                 <div className="pr-24">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Habit Builder History</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Your Progress</p>
                   <p className="mt-1 text-sm text-ink/70"><span className="font-semibold text-ink">{builtHabits.length} Habits</span> built so far. Keep stacking them.</p>
                 </div>
                 <div className="mt-4">
