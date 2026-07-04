@@ -35,6 +35,7 @@ export interface ActiveChange {
   keep: "yes" | "maybe";
   effect: ChangeEffect | null; // null until there's enough before/after data
   stopped: boolean;    // user said they stopped (from changeStatus)
+  regressed: boolean;  // stopped AND the target metric got worse after stopping (re-engage)
 }
 
 function effectFor(startDate: string, targetKey: string, reflections: ReflectionEntry[]): ChangeEffect | null {
@@ -60,6 +61,24 @@ function effectFor(startDate: string, targetKey: string, reflections: Reflection
   return { direction, beforePerWeek: Math.round(bRate * 7), afterPerWeek: Math.round(aRate * 7), n: after.length };
 }
 
+// Did the target metric get WORSE after the user stopped the habit? (more low days after
+// the stop than before). A yes is strong within-person evidence the habit was helping.
+function stopRegressed(stopTs: number, targetKey: string, reflections: ReflectionEntry[]): boolean {
+  const before: number[] = [];
+  const after: number[] = [];
+  for (const e of reflections) {
+    const idx = e.answers[targetKey];
+    if (typeof idx !== "number") continue;
+    const t = new Date(e.date + "T00:00:00").getTime();
+    const isLow = levelFor(targetKey, idx) === "low" ? 1 : 0;
+    if (t < stopTs && t >= stopTs - 28 * DAY) before.push(isLow);
+    else if (t >= stopTs) after.push(isLow);
+  }
+  if (before.length < 4 || after.length < 4) return false;
+  const mean = (a: number[]) => a.reduce((x, y) => x + y, 0) / a.length;
+  return mean(after) - mean(before) >= 0.2;
+}
+
 export function computeActiveChanges(
   history: HabitHistoryEntry[],
   reflections: ReflectionEntry[],
@@ -72,11 +91,13 @@ export function computeActiveChanges(
     const dedupe = h.title.toLowerCase();
     if (seen.has(dedupe)) continue;
     seen.add(dedupe);
-    const st = statuses[h.templateId]?.status;
+    const stEntry = statuses[h.templateId];
+    const st = stEntry?.status;
     if (st === "not_for_me") continue; // the user retired this one
     const tmpl = HABIT_TEMPLATES.find((t) => t.id === h.templateId);
     const targetKey = tmpl ? (CATEGORY_TARGET[tmpl.category] ?? "energy") : "energy";
     const startDate = (h.finishedAt || "").slice(0, 10);
+    const stopped = st === "stopped";
     out.push({
       id: h.templateId + (h.finishedAt || ""),
       templateId: h.templateId,
@@ -85,7 +106,8 @@ export function computeActiveChanges(
       targetKey,
       keep: h.keep,
       effect: startDate ? effectFor(startDate, targetKey, reflections) : null,
-      stopped: st === "stopped",
+      stopped,
+      regressed: stopped && stEntry ? stopRegressed(stEntry.ts, targetKey, reflections) : false,
     });
   }
   // Active ones first, stopped ones after.

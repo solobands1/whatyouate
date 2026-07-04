@@ -11,7 +11,7 @@ import { computeReflectionFacts, REFLECTION_DOT, type ReflectionFacts, type Leve
 import { computeDiscoveryCandidates } from "../lib/discoveries";
 import { computeDaysCompared } from "../lib/dayCompare";
 import { computeActiveChanges, type ActiveChange } from "../lib/changes";
-import { getChangeStatuses } from "../lib/changeStatus";
+import { getChangeStatuses, setChangeStatus } from "../lib/changeStatus";
 
 const METRIC_LABEL: Record<string, string> = { energy: "energy", sleep: "sleep", mood: "mood", stress: "stress", digestion: "digestion" };
 function changeEffectLine(c: Pick<ActiveChange, "targetKey" | "effect">): string | null {
@@ -22,9 +22,9 @@ function changeEffectLine(c: Pick<ActiveChange, "targetKey" | "effect">): string
   return `No clear change in ${m} yet.`;
 }
 // Example ledger for Preview / demo.
-const EX_LEDGER: Pick<ActiveChange, "id" | "label" | "targetKey" | "keep" | "effect" | "stopped">[] = [
-  { id: "exl1", label: "Walk After Lunch", targetKey: "energy", keep: "yes", effect: { direction: "better", beforePerWeek: 4, afterPerWeek: 1, n: 12 }, stopped: false },
-  { id: "exl2", label: "Wind Down", targetKey: "sleep", keep: "yes", effect: null, stopped: false },
+const EX_LEDGER: Pick<ActiveChange, "id" | "templateId" | "label" | "targetKey" | "keep" | "effect" | "stopped" | "regressed">[] = [
+  { id: "exl1", templateId: "exl1", label: "Walk After Lunch", targetKey: "energy", keep: "yes", effect: { direction: "better", beforePerWeek: 4, afterPerWeek: 1, n: 12 }, stopped: false, regressed: false },
+  { id: "exl2", templateId: "exl2", label: "Wind Down", targetKey: "sleep", keep: "yes", effect: null, stopped: false, regressed: false },
 ];
 
 type Discovery = { text: string; confidence: "Building" | "Moderate" };
@@ -176,7 +176,9 @@ export default function PatternsScreen() {
 
   // Changes you're making — kept habits, each with a before/after read on the metric it
   // targets. Independent of reflection volume; needs a completed, kept habit.
-  const activeChanges = useMemo(() => computeActiveChanges(habitHistory, reflections, user ? getChangeStatuses(user.id) : {}), [habitHistory, reflections, user]);
+  const [ledgerVersion, setLedgerVersion] = useState(0);
+  const activeChanges = useMemo(() => computeActiveChanges(habitHistory, reflections, user ? getChangeStatuses(user.id) : {}), [habitHistory, reflections, user, ledgerVersion]);
+  const restartChange = (templateId: string) => { if (user) { setChangeStatus(user.id, templateId, "active"); setLedgerVersion((v) => v + 1); } };
   const changesLedgerPreview = !demo && activeChanges.length === 0;
   const ledger = demo || activeChanges.length === 0 ? EX_LEDGER : activeChanges;
 
@@ -332,9 +334,19 @@ export default function PatternsScreen() {
                         <span className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${KEEP_CHIP[c.keep as "yes" | "maybe"].cls}`}>{KEEP_CHIP[c.keep as "yes" | "maybe"].label}</span>
                       )}
                     </div>
-                    <p className={`mt-1 text-xs ${!c.stopped && c.effect?.direction === "better" ? "text-primary-dark" : "text-muted/65"}`}>
-                      {c.stopped ? "Paused. It'll come back around if you want to try it again." : (line ?? "Still gathering data on this one.")}
-                    </p>
+                    {c.stopped && c.regressed ? (
+                      <div className="mt-1">
+                        <p className="text-xs text-ink/80">Your {METRIC_LABEL[c.targetKey] ?? "energy"} slipped since you stopped this.</p>
+                        <button type="button" onClick={() => restartChange(c.templateId)} className="mt-1.5 inline-flex items-center gap-0.5 text-[11px] font-semibold text-primary transition active:opacity-60">
+                          Pick it back up
+                          <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
+                        </button>
+                      </div>
+                    ) : (
+                      <p className={`mt-1 text-xs ${!c.stopped && c.effect?.direction === "better" ? "text-primary-dark" : "text-muted/65"}`}>
+                        {c.stopped ? "Paused. It'll come back around if you want to try it again." : (line ?? "Still gathering data on this one.")}
+                      </p>
+                    )}
                   </div>
                 );
               })}
