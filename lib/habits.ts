@@ -178,7 +178,7 @@ export const HABIT_TEMPLATES: HabitTemplate[] = [
   {
     id: "veg-3", kind: "standard", title: "Add a Vegetable", noun: "vegetables", category: "produce",
     ask: "Add an extra vegetable to any meal each day for 3 days. A side of whatever's easy, frozen counts.",
-    whyTemplate: "Your produce-driven nutrients have been running low, which usually means light vegetables. One extra vegetable a day is the simplest fix.",
+    whyTemplate: "Vegetables carry a lot of the nutrients that keep energy steady, and they're an easy thing to come up short on. One extra a day is the simplest fix.",
     durationDays: 3, checkpoints: ["Added Vegetable"],
     ideas: ["Broccoli", "Spinach", "Bell Peppers", "Carrots", "Frozen Peas", "Zucchini", "Tomatoes", "Mixed Greens", "Green Beans", "Cauliflower"],
     triggers: [{ signal: "micronutrient_pct", nutrient: "vitamin c", op: "<", value: 0.7, ofTarget: true, windowDays: 7, minDataDays: 4 }],
@@ -189,7 +189,7 @@ export const HABIT_TEMPLATES: HabitTemplate[] = [
   {
     id: "magnesium-3", kind: "standard", title: "Magnesium Boost", noun: "magnesium", category: "micronutrient",
     ask: "Add a magnesium-rich food each day for 3 days. A handful of nuts or seeds, or a square of dark chocolate.",
-    whyTemplate: "Your magnesium has been low this week. It's involved in sleep quality, muscle recovery, and energy, and it's easy to top up through food.",
+    whyTemplate: "Magnesium is involved in sleep quality, muscle recovery, and energy, and it's one of the easier nutrients to fall short on. A little more through food covers it.",
     durationDays: 3, checkpoints: ["Magnesium-Rich Food"],
     ideas: ["Pumpkin Seeds", "Almonds", "Dark Chocolate", "Black Beans", "Spinach", "Cashews", "Avocado", "Edamame", "Peanut Butter", "Quinoa"],
     triggers: [{ signal: "micronutrient_pct", nutrient: "magnesium", op: "<", value: 0.7, ofTarget: true, windowDays: 7, minDataDays: 4 }],
@@ -198,7 +198,7 @@ export const HABIT_TEMPLATES: HabitTemplate[] = [
   {
     id: "iron-3", kind: "standard", title: "Iron Boost", noun: "iron", category: "micronutrient",
     ask: "Add an iron-rich food to one meal each day for 3 days. Spinach, lentils, red meat, or fortified cereal.",
-    whyTemplate: "Your iron has been running low, which can quietly drag down energy and focus. A daily iron-rich food is an easy correction.",
+    whyTemplate: "Iron can quietly drag down energy and focus when it runs low. A daily iron-rich food is an easy way to keep it topped up.",
     durationDays: 3, checkpoints: ["Iron-Rich Food"],
     ideas: ["Lentils", "Spinach", "Chickpeas", "Canned Beans", "Tofu", "Fortified Cereal", "Pumpkin Seeds", "Dark Chocolate", "Red Meat", "Eggs"],
     triggers: [{ signal: "micronutrient_pct", nutrient: "iron", op: "<", value: 0.7, ofTarget: true, windowDays: 7, minDataDays: 4 }],
@@ -207,7 +207,7 @@ export const HABIT_TEMPLATES: HabitTemplate[] = [
   {
     id: "omega3-3", kind: "standard", title: "Omega-3 Boost", noun: "omega-3", category: "micronutrient",
     ask: "Add an omega-3 source each day for 3 days. Walnuts, chia, flax, or a portion of fish.",
-    whyTemplate: "Your omega-3 intake has been low this week. It supports mood, focus, and recovery, and a small daily source covers it.",
+    whyTemplate: "Omega-3s support mood, focus, and recovery, and they're easy to miss day to day. A small daily source covers it.",
     durationDays: 3, checkpoints: ["Omega-3-Rich Food"],
     ideas: ["Walnuts", "Chia Seeds", "Ground Flaxseed", "Canned Tuna", "Salmon", "Edamame", "Soybeans", "Hemp Seeds", "Omega-3 Eggs", "Sardines"],
     triggers: [{ signal: "micronutrient_pct", nutrient: "omega-3", op: "<", value: 0.7, ofTarget: true, windowDays: 7, minDataDays: 4 }],

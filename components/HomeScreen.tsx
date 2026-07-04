@@ -220,11 +220,10 @@ function freshDays(t: HabitTemplate): boolean[][] {
   return Array.from({ length: t.durationDays }, () => Array(t.checkpoints.length).fill(false));
 }
 
-// Demo only: fill the {slots} in a whyTemplate with sample values. Real values
-// come from the digest context once wired.
+// The habit "why" is a fixed, always-true template (no fabricated personal claims). If a
+// template ever includes a {slot} we don't have a real value for, drop it gracefully.
 function fillWhy(t: HabitTemplate): string {
-  const demo: Record<string, string> = { energyLowCount: "3", proteinShortDays: "4" };
-  return t.whyTemplate.replace(/\{(\w+)\}/g, (_m, k: string) => demo[k] ?? "several");
+  return t.whyTemplate.replace(/\s*\{(\w+)\}/g, "").replace(/\s{2,}/g, " ").trim();
 }
 
 // Varied streak-progress lines so the feedback doesn't feel repetitive. Picked
