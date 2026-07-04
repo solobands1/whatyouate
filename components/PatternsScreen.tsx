@@ -9,6 +9,7 @@ import { useAppData } from "./AppDataProvider";
 import { riseIn } from "../lib/motion";
 import { computeReflectionFacts, REFLECTION_DOT, type ReflectionFacts, type Level, type MetricChange } from "../lib/reflectionFacts";
 import { computeDiscoveryCandidates } from "../lib/discoveries";
+import { computeDaysCompared } from "../lib/dayCompare";
 
 type Discovery = { text: string; confidence: "Building" | "Moderate" };
 
@@ -80,8 +81,9 @@ const DOT_LEGEND = (
 
 export default function PatternsScreen() {
   const { user } = useAuth();
-  const { reflections, habitHistory } = useAppData();
+  const { reflections, habitHistory, meals, workouts } = useAppData();
   const facts = useMemo(() => computeReflectionFacts(reflections), [reflections]);
+  const daysCompared = useMemo(() => computeDaysCompared(reflections, meals, workouts), [reflections, meals, workouts]);
   const headline = useMemo(() => patternsHeadline(facts), [facts]);
   const keptHabits = useMemo(() => {
     const seen = new Set<string>();
@@ -146,8 +148,12 @@ export default function PatternsScreen() {
   const weekCells = trendEx ? facts.week.map((d, i) => ({ ...d, energy: EX_LEVELS.energy[i] ?? null, done: true })) : facts.week;
   const headlineText = trendEx ? EX_HEADLINE : headline;
 
-  // Your Days Compared — behavioural correlations aren't computed yet, so always Preview.
-  const daysPreview = !demo;
+  // Your Days Compared — real behavioural difference between high/low energy days when we
+  // have enough of both, else example data as a Preview.
+  const daysReal = daysCompared.hasData;
+  const daysPreview = !demo && !daysReal;
+  const betterList = demo || !daysReal ? EX_BETTER : daysCompared.better;
+  const lowList = demo || !daysReal ? EX_LOWER : daysCompared.low;
 
   // Discoveries — need enough co-occurrence data (may be empty even with some reflections).
   const discPreview = !demo && discoveries.length === 0;
@@ -240,7 +246,7 @@ export default function PatternsScreen() {
             <p className="text-[11px] font-semibold uppercase tracking-wide text-primary-dark/80">Better Days</p>
             <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/70">Low-Energy Days</p>
             <ul className="space-y-1.5">
-              {EX_BETTER.map((d) => (
+              {betterList.map((d) => (
                 <li key={d} className="flex items-start gap-2 text-[13px] text-ink/80">
                   <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary-dark/15 text-primary-dark">
                     <svg viewBox="0 0 24 24" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l4 4L19 7" /></svg>
@@ -250,7 +256,7 @@ export default function PatternsScreen() {
               ))}
             </ul>
             <ul className="space-y-1.5">
-              {EX_LOWER.map((d) => (
+              {lowList.map((d) => (
                 <li key={d} className="flex items-start gap-2 text-[13px] text-ink/80">
                   <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-ink/[0.08] text-ink/45">
                     <svg viewBox="0 0 24 24" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8v5M12 16.5v.5" /></svg>
