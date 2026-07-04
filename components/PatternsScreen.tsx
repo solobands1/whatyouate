@@ -10,6 +10,21 @@ import { riseIn } from "../lib/motion";
 import { computeReflectionFacts, REFLECTION_DOT, type ReflectionFacts, type Level, type MetricChange } from "../lib/reflectionFacts";
 import { computeDiscoveryCandidates } from "../lib/discoveries";
 import { computeDaysCompared } from "../lib/dayCompare";
+import { computeActiveChanges, type ActiveChange } from "../lib/changes";
+
+const METRIC_LABEL: Record<string, string> = { energy: "energy", sleep: "sleep", mood: "mood", stress: "stress", digestion: "digestion" };
+function changeEffectLine(c: Pick<ActiveChange, "targetKey" | "effect">): string | null {
+  if (!c.effect) return null;
+  const m = METRIC_LABEL[c.targetKey] ?? "how you feel";
+  if (c.effect.direction === "better") return `Your ${m} looks better since — about ${c.effect.beforePerWeek} to ${c.effect.afterPerWeek} low days a week.`;
+  if (c.effect.direction === "worse") return `Your ${m} hasn't picked up since this yet.`;
+  return `No clear change in ${m} yet.`;
+}
+// Example ledger for Preview / demo.
+const EX_LEDGER: Pick<ActiveChange, "id" | "label" | "targetKey" | "keep" | "effect">[] = [
+  { id: "exl1", label: "Walk After Lunch", targetKey: "energy", keep: "yes", effect: { direction: "better", beforePerWeek: 4, afterPerWeek: 1, n: 12 } },
+  { id: "exl2", label: "Wind Down", targetKey: "sleep", keep: "yes", effect: null },
+];
 
 type Discovery = { text: string; confidence: "Building" | "Moderate" };
 
@@ -56,10 +71,6 @@ const EX_DISCOVERIES: Discovery[] = [
   { text: "On the nights you slept well, your energy tended to be good the next day too.", confidence: "Building" },
   { text: "Your higher-stress days have often lined up with poorer sleep.", confidence: "Building" },
 ];
-const EX_HABITS = [
-  { templateId: "ex1", finishedAt: "ex1", title: "Walk After Lunch", keep: "yes" as const },
-  { templateId: "ex2", finishedAt: "ex2", title: "Morning Water", keep: "yes" as const },
-];
 const EX_HEADLINE = "Your best-energy days have tended to follow nights you slept well.";
 
 function Eyebrow({ children, preview }: { children: React.ReactNode; preview?: boolean }) {
@@ -85,13 +96,6 @@ export default function PatternsScreen() {
   const facts = useMemo(() => computeReflectionFacts(reflections), [reflections]);
   const daysCompared = useMemo(() => computeDaysCompared(reflections, meals, workouts), [reflections, meals, workouts]);
   const headline = useMemo(() => patternsHeadline(facts), [facts]);
-  const keptHabits = useMemo(() => {
-    const seen = new Set<string>();
-    return habitHistory
-      .filter((h) => h.keep === "yes" || h.keep === "maybe")
-      .sort((a, b) => (b.finishedAt || "").localeCompare(a.finishedAt || ""))
-      .filter((h) => { const k = h.title.toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; });
-  }, [habitHistory]);
 
   // AI discoveries: the coach phrases the strongest real co-occurrence counts. Cached per
   // day + data signature so we don't re-hit the API on every visit.
@@ -169,9 +173,11 @@ export default function PatternsScreen() {
   const changesPreview = !demo && !realChanges;
   const changes = demo || !realChanges ? EX_CHANGES : realChanges;
 
-  // Habits that stuck — independent of reflections; needs a completed, kept habit.
-  const habitsPreview = !demo && keptHabits.length === 0;
-  const habits = demo || keptHabits.length === 0 ? EX_HABITS : keptHabits;
+  // Changes you're making — kept habits, each with a before/after read on the metric it
+  // targets. Independent of reflection volume; needs a completed, kept habit.
+  const activeChanges = useMemo(() => computeActiveChanges(habitHistory, reflections), [habitHistory, reflections]);
+  const changesLedgerPreview = !demo && activeChanges.length === 0;
+  const ledger = demo || activeChanges.length === 0 ? EX_LEDGER : activeChanges;
 
   return (
     <div className="min-h-screen bg-surface">
@@ -307,18 +313,26 @@ export default function PatternsScreen() {
           </Card>
         )}
 
-        {/* Habits that stuck */}
+        {/* Changes you're making — kept habits + whether the metric they target improved */}
         {(
           <Card className="mt-6" style={riseIn(ready, 6)}>
-            <Eyebrow preview={habitsPreview}>Habits That Stuck</Eyebrow>
-            <p className="mt-1 text-sm text-muted/65">The ones you decided were worth keeping.</p>
+            <Eyebrow preview={changesLedgerPreview}>Changes You&apos;re Making</Eyebrow>
+            <p className="mt-1 text-sm text-muted/65">Habits you kept, and whether they seem to be helping.</p>
             <div className="mt-3 space-y-2">
-              {habits.map((h) => (
-                <div key={h.templateId + h.finishedAt} className="flex items-center justify-between gap-2 rounded-xl border border-primary/15 bg-primary/[0.05] px-3 py-2.5">
-                  <p className="text-sm font-semibold text-ink">{h.title}</p>
-                  <span className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${KEEP_CHIP[h.keep as "yes" | "maybe"].cls}`}>{KEEP_CHIP[h.keep as "yes" | "maybe"].label}</span>
-                </div>
-              ))}
+              {ledger.map((c) => {
+                const line = changeEffectLine(c);
+                return (
+                  <div key={c.id} className="rounded-xl border border-primary/15 bg-primary/[0.05] px-3 py-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-semibold text-ink">{c.label}</p>
+                      <span className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${KEEP_CHIP[c.keep as "yes" | "maybe"].cls}`}>{KEEP_CHIP[c.keep as "yes" | "maybe"].label}</span>
+                    </div>
+                    <p className={`mt-1 text-xs ${c.effect?.direction === "better" ? "text-primary-dark" : "text-muted/65"}`}>
+                      {line ?? "Still gathering data on this one."}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
           </Card>
         )}
