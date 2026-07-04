@@ -10,6 +10,7 @@ import { matchSupplementNutrients } from "../lib/rda";
 import { celebrateDaily, celebrateBuilt, celebrateAccepted, unlockAudio } from "../lib/celebrate";
 import { HABIT_TEMPLATES, habitsForSignals, type HabitTemplate } from "../lib/habits";
 import { computeReflectionFacts } from "../lib/reflectionFacts";
+import { getChangeStatuses, setChangeStatus, markChangeAsked, getNotForMe } from "../lib/changeStatus";
 import { riseIn } from "../lib/motion";
 import {
   PROFILE_UPDATED_EVENT,
@@ -327,7 +328,7 @@ function ManualDateRow({ manualDate, setManualDate }: { manualDate: string; setM
 export default function HomeScreen() {
   const router = useRouter();
   const { user, loading } = useAuth();
-  const { profile: ctxProfile, meals: ctxMeals, workouts: ctxWorkouts, feelLogs: ctxFeelLogs, weightLogs: ctxWeightLogs, reflections: ctxReflections, setWeightLogs, nudges, nudgesLoaded, loading: dataLoading, reload } = useAppData();
+  const { profile: ctxProfile, meals: ctxMeals, workouts: ctxWorkouts, feelLogs: ctxFeelLogs, weightLogs: ctxWeightLogs, reflections: ctxReflections, habitHistory: ctxHabitHistory, setWeightLogs, nudges, nudgesLoaded, loading: dataLoading, reload } = useAppData();
   const trial = useTrialStatus();
 
   const [profile, setProfile] = useState<UserProfile | undefined>(undefined);
@@ -511,6 +512,8 @@ export default function HomeScreen() {
       addReflection(user.id, { date: todayDateStr(), answers: reflection, note: reflectionNote, ts: Date.now() }).then(() => reload()).catch(() => {});
     }
     setShowReflection(false); setReflectionStep(0); setReflection({}); setReflectionNote("");
+    // After a reflection, occasionally check in on one active change (throttled, one at a time).
+    if (user && dueCheckin) { markChangeAsked(user.id, dueCheckin.templateId); setCheckinStopped(false); setChangeCheckin(dueCheckin); }
   };
   // Reopen today's check-in as an editable summary.
   const editTodayReflection = () => {
@@ -602,10 +605,43 @@ export default function HomeScreen() {
     if (dipTime) return { key: "energy", dipTime };
     return null;
   }, [reflectionFacts]);
-  const goalHabits = useMemo(
-    () => habitsForSignals(observedProblem, profile?.feelingGoals, profile?.goalDirection),
-    [observedProblem, profile?.feelingGoals, profile?.goalDirection],
-  );
+  // Bumped whenever a change status is set, so goalHabits re-filters "not for me" habits.
+  const [changeStatusVersion, setChangeStatusVersion] = useState(0);
+  const goalHabits = useMemo(() => {
+    const list = habitsForSignals(observedProblem, profile?.feelingGoals, profile?.goalDirection);
+    const notForMe = user ? getNotForMe(user.id) : new Set<string>();
+    return notForMe.size ? list.filter((h) => !notForMe.has(h.id)) : list;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [observedProblem, profile?.feelingGoals, profile?.goalDirection, user, changeStatusVersion]);
+
+  // "Still doing it?" check-in: pick one kept habit that's been going a while and we haven't
+  // asked about recently. Surfaced after a reflection so it never feels like homework.
+  const dueCheckin = useMemo(() => {
+    if (!user || !ctxHabitHistory?.length) return null;
+    const statuses = getChangeStatuses(user.id);
+    const TEN_DAYS = 10 * 86_400_000;
+    const seen = new Set<string>();
+    const kept = [...ctxHabitHistory]
+      .filter((h) => h.keep === "yes" || h.keep === "maybe")
+      .sort((a, b) => (b.finishedAt || "").localeCompare(a.finishedAt || ""))
+      .filter((h) => { const k = h.title.toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; });
+    for (const h of kept) {
+      const st = statuses[h.templateId];
+      if (st?.status === "stopped" || st?.status === "not_for_me") continue;
+      const finishedTs = new Date(h.finishedAt).getTime();
+      if (Number.isNaN(finishedTs) || Date.now() - finishedTs < TEN_DAYS) continue; // give it time first
+      const lastAsked = st?.lastAsked ?? finishedTs;
+      if (Date.now() - lastAsked < TEN_DAYS) continue;
+      return { templateId: h.templateId, label: h.title };
+    }
+    return null;
+  }, [user, ctxHabitHistory, changeStatusVersion]);
+  const [changeCheckin, setChangeCheckin] = useState<{ templateId: string; label: string } | null>(null);
+  const [checkinStopped, setCheckinStopped] = useState(false);
+  const resolveCheckin = (status: "active" | "stopped" | "not_for_me") => {
+    if (user && changeCheckin) { setChangeStatus(user.id, changeCheckin.templateId, status); setChangeStatusVersion((v) => v + 1); }
+    setChangeCheckin(null); setCheckinStopped(false);
+  };
 
   // The current coach nudge (today's, or yesterday's before 2am) — shown in the hero
   // whenever no habit builder is occupying it. Mirrors the Insights selection.
@@ -5052,6 +5088,32 @@ export default function HomeScreen() {
           </div>
         );
       })()}
+
+      {changeCheckin && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-6">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+            {!checkinStopped ? (
+              <>
+                <p className="text-base font-semibold text-ink">Still doing it?</p>
+                <p className="mt-2 text-sm text-ink/70">Are you still keeping up <span className="font-semibold text-ink">{changeCheckin.label}</span>?</p>
+                <div className="mt-5 space-y-2">
+                  <button type="button" onClick={() => resolveCheckin("active")} className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-white transition active:opacity-80">Yes, still on it</button>
+                  <button type="button" onClick={() => setCheckinStopped(true)} className="w-full rounded-xl border border-ink/10 bg-white py-3 text-sm font-semibold text-ink/70 transition active:opacity-70">Not anymore</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-base font-semibold text-ink">No worries.</p>
+                <p className="mt-2 text-sm text-ink/70">Want to try <span className="font-semibold text-ink">{changeCheckin.label}</span> again down the road?</p>
+                <div className="mt-5 space-y-2">
+                  <button type="button" onClick={() => resolveCheckin("stopped")} className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-white transition active:opacity-80">Maybe later</button>
+                  <button type="button" onClick={() => resolveCheckin("not_for_me")} className="w-full rounded-xl border border-ink/10 bg-white py-3 text-sm font-semibold text-ink/70 transition active:opacity-70">It&apos;s not for me</button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {showWaterUndo && waterData && (
         <div className="fixed bottom-24 left-1/2 z-40 -translate-x-1/2 animate-pill-in">

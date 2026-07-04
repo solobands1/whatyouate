@@ -11,6 +11,7 @@ import { computeReflectionFacts, REFLECTION_DOT, type ReflectionFacts, type Leve
 import { computeDiscoveryCandidates } from "../lib/discoveries";
 import { computeDaysCompared } from "../lib/dayCompare";
 import { computeActiveChanges, type ActiveChange } from "../lib/changes";
+import { getChangeStatuses } from "../lib/changeStatus";
 
 const METRIC_LABEL: Record<string, string> = { energy: "energy", sleep: "sleep", mood: "mood", stress: "stress", digestion: "digestion" };
 function changeEffectLine(c: Pick<ActiveChange, "targetKey" | "effect">): string | null {
@@ -21,9 +22,9 @@ function changeEffectLine(c: Pick<ActiveChange, "targetKey" | "effect">): string
   return `No clear change in ${m} yet.`;
 }
 // Example ledger for Preview / demo.
-const EX_LEDGER: Pick<ActiveChange, "id" | "label" | "targetKey" | "keep" | "effect">[] = [
-  { id: "exl1", label: "Walk After Lunch", targetKey: "energy", keep: "yes", effect: { direction: "better", beforePerWeek: 4, afterPerWeek: 1, n: 12 } },
-  { id: "exl2", label: "Wind Down", targetKey: "sleep", keep: "yes", effect: null },
+const EX_LEDGER: Pick<ActiveChange, "id" | "label" | "targetKey" | "keep" | "effect" | "stopped">[] = [
+  { id: "exl1", label: "Walk After Lunch", targetKey: "energy", keep: "yes", effect: { direction: "better", beforePerWeek: 4, afterPerWeek: 1, n: 12 }, stopped: false },
+  { id: "exl2", label: "Wind Down", targetKey: "sleep", keep: "yes", effect: null, stopped: false },
 ];
 
 type Discovery = { text: string; confidence: "Building" | "Moderate" };
@@ -175,7 +176,7 @@ export default function PatternsScreen() {
 
   // Changes you're making — kept habits, each with a before/after read on the metric it
   // targets. Independent of reflection volume; needs a completed, kept habit.
-  const activeChanges = useMemo(() => computeActiveChanges(habitHistory, reflections), [habitHistory, reflections]);
+  const activeChanges = useMemo(() => computeActiveChanges(habitHistory, reflections, user ? getChangeStatuses(user.id) : {}), [habitHistory, reflections, user]);
   const changesLedgerPreview = !demo && activeChanges.length === 0;
   const ledger = demo || activeChanges.length === 0 ? EX_LEDGER : activeChanges;
 
@@ -322,13 +323,17 @@ export default function PatternsScreen() {
               {ledger.map((c) => {
                 const line = changeEffectLine(c);
                 return (
-                  <div key={c.id} className="rounded-xl border border-primary/15 bg-primary/[0.05] px-3 py-2.5">
+                  <div key={c.id} className={`rounded-xl border px-3 py-2.5 ${c.stopped ? "border-ink/10 bg-ink/[0.02] opacity-70" : "border-primary/15 bg-primary/[0.05]"}`}>
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-sm font-semibold text-ink">{c.label}</p>
-                      <span className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${KEEP_CHIP[c.keep as "yes" | "maybe"].cls}`}>{KEEP_CHIP[c.keep as "yes" | "maybe"].label}</span>
+                      {c.stopped ? (
+                        <span className="inline-flex shrink-0 items-center rounded-full bg-ink/[0.06] px-2 py-0.5 text-[10px] font-semibold text-ink/50">Paused</span>
+                      ) : (
+                        <span className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${KEEP_CHIP[c.keep as "yes" | "maybe"].cls}`}>{KEEP_CHIP[c.keep as "yes" | "maybe"].label}</span>
+                      )}
                     </div>
-                    <p className={`mt-1 text-xs ${c.effect?.direction === "better" ? "text-primary-dark" : "text-muted/65"}`}>
-                      {line ?? "Still gathering data on this one."}
+                    <p className={`mt-1 text-xs ${!c.stopped && c.effect?.direction === "better" ? "text-primary-dark" : "text-muted/65"}`}>
+                      {c.stopped ? "Paused. It'll come back around if you want to try it again." : (line ?? "Still gathering data on this one.")}
                     </p>
                   </div>
                 );

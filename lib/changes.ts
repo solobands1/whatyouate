@@ -7,6 +7,7 @@
 import type { HabitHistoryEntry, ReflectionEntry } from "./habitState";
 import { HABIT_TEMPLATES } from "./habits";
 import { levelFor } from "./reflectionFacts";
+import type { ChangeStatusEntry } from "./changeStatus";
 
 const DAY = 86_400_000;
 
@@ -33,6 +34,7 @@ export interface ActiveChange {
   targetKey: string;   // reflection metric it targets
   keep: "yes" | "maybe";
   effect: ChangeEffect | null; // null until there's enough before/after data
+  stopped: boolean;    // user said they stopped (from changeStatus)
 }
 
 function effectFor(startDate: string, targetKey: string, reflections: ReflectionEntry[]): ChangeEffect | null {
@@ -58,7 +60,11 @@ function effectFor(startDate: string, targetKey: string, reflections: Reflection
   return { direction, beforePerWeek: Math.round(bRate * 7), afterPerWeek: Math.round(aRate * 7), n: after.length };
 }
 
-export function computeActiveChanges(history: HabitHistoryEntry[], reflections: ReflectionEntry[]): ActiveChange[] {
+export function computeActiveChanges(
+  history: HabitHistoryEntry[],
+  reflections: ReflectionEntry[],
+  statuses: Record<string, ChangeStatusEntry> = {},
+): ActiveChange[] {
   const seen = new Set<string>();
   const out: ActiveChange[] = [];
   for (const h of [...history].sort((a, b) => (b.finishedAt || "").localeCompare(a.finishedAt || ""))) {
@@ -66,6 +72,8 @@ export function computeActiveChanges(history: HabitHistoryEntry[], reflections: 
     const dedupe = h.title.toLowerCase();
     if (seen.has(dedupe)) continue;
     seen.add(dedupe);
+    const st = statuses[h.templateId]?.status;
+    if (st === "not_for_me") continue; // the user retired this one
     const tmpl = HABIT_TEMPLATES.find((t) => t.id === h.templateId);
     const targetKey = tmpl ? (CATEGORY_TARGET[tmpl.category] ?? "energy") : "energy";
     const startDate = (h.finishedAt || "").slice(0, 10);
@@ -77,7 +85,9 @@ export function computeActiveChanges(history: HabitHistoryEntry[], reflections: 
       targetKey,
       keep: h.keep,
       effect: startDate ? effectFor(startDate, targetKey, reflections) : null,
+      stopped: st === "stopped",
     });
   }
-  return out;
+  // Active ones first, stopped ones after.
+  return out.sort((a, b) => Number(a.stopped) - Number(b.stopped));
 }
