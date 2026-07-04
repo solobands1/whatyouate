@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { buildSmartNudgeContext } from "../../../../lib/digestEngine";
+import { buildReflectionSummary } from "../../../../lib/changes";
 import { buildSmartPrompt, sanitizeNudgeFields, SMART_NUDGE_SYSTEM_PROMPT } from "../../../../lib/nudgeGen";
 import { sendPush } from "../../../../lib/apns";
 import type { MealLog, WorkoutSession, UserProfile, SupplementEntry } from "../../../../lib/types";
@@ -309,6 +310,15 @@ export async function GET(req: Request) {
         freshFeelLogs, lastNudgeRecord, weightRes.data ?? [], undefined, timezoneOffset
       ) as unknown as Record<string, unknown>;
       if (recentSuggestedFoods.length) ctx.recentSuggestedFoods = recentSuggestedFoods;
+
+      // Reflection-aware coaching: attach a summary of the user's nightly reflections so the
+      // nudge can speak to how they feel + whether their kept habits are helping.
+      const profileRow = profileRes.data as Record<string, unknown> | null;
+      const reflections = Array.isArray(profileRow?.reflections_json) ? (profileRow!.reflections_json as any[]) : [];
+      const habitHistory = Array.isArray(profileRow?.habit_history_json) ? (profileRow!.habit_history_json as any[]) : [];
+      if (reflections.length >= 3) {
+        ctx.reflectionSummary = buildReflectionSummary(reflections, habitHistory);
+      }
 
       const stepLogs = (stepsRes.data ?? []) as Array<{ date: string; steps: number }>;
       if (stepLogs.length > 0) {

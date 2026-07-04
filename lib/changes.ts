@@ -6,7 +6,7 @@
 
 import type { HabitHistoryEntry, ReflectionEntry } from "./habitState";
 import { HABIT_TEMPLATES } from "./habits";
-import { levelFor } from "./reflectionFacts";
+import { levelFor, computeReflectionFacts } from "./reflectionFacts";
 import type { ChangeStatusEntry } from "./changeStatus";
 
 const DAY = 86_400_000;
@@ -112,4 +112,26 @@ export function computeActiveChanges(
   }
   // Active ones first, stopped ones after.
   return out.sort((a, b) => Number(a.stopped) - Number(b.stopped));
+}
+
+// A compact, coach-ready summary of the user's reflections for the nudge pipeline: the
+// area most often low, the energy dip time, and how their kept habits are tracking. Real
+// counts only — the AI is told to use these as-is and never invent.
+export interface ReflectionSummary {
+  topProblem: { label: string; low: number; n: number } | null;
+  dip: { time: string; count: number; days: number } | null;
+  changes: Array<{ label: string; direction: "better" | "worse" | "flat" | null }>;
+  reflectionsLogged: number;
+}
+
+export function buildReflectionSummary(reflections: ReflectionEntry[], history: HabitHistoryEntry[]): ReflectionSummary {
+  const facts = computeReflectionFacts(reflections);
+  const dip = facts.dip && !("none" in facts.dip) ? facts.dip : null;
+  const changes = computeActiveChanges(history, reflections).map((c) => ({ label: c.label, direction: c.effect?.direction ?? null }));
+  return {
+    topProblem: facts.watch ? { label: facts.watch.label, low: facts.watch.low, n: facts.watch.n } : null,
+    dip,
+    changes,
+    reflectionsLogged: facts.total,
+  };
 }

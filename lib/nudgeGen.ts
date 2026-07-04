@@ -313,6 +313,25 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
     }
   }
 
+  const refl = ctx.reflectionSummary as {
+    topProblem: { label: string; low: number; n: number } | null;
+    dip: { time: string; count: number; days: number } | null;
+    changes: Array<{ label: string; direction: "better" | "worse" | "flat" | null }>;
+    reflectionsLogged: number;
+  } | undefined;
+  if (refl && refl.reflectionsLogged >= 3) {
+    const parts: string[] = [];
+    if (refl.topProblem) parts.push(`${refl.topProblem.label} is the area they most often rate low (${refl.topProblem.low} of ${refl.topProblem.n} nights)`);
+    if (refl.dip) parts.push(`energy dips most in the ${refl.dip.time.toLowerCase()} (${refl.dip.count} of ${refl.dip.days} nights)`);
+    if (refl.changes.length) {
+      const cs = refl.changes.map((c) => `${c.label}${c.direction === "better" ? " (seems to be helping)" : c.direction === "worse" ? " (not helping yet)" : ""}`).join(", ");
+      parts.push(`habits they've kept: ${cs}`);
+    }
+    if (parts.length) {
+      lines.push(`\nNightly reflections (the user's OWN self-reported feelings — use these EXACT counts, never invent, treat as self-report not measurement, and hedge as association not cause): ${parts.join("; ")}.`);
+    }
+  }
+
   lines.push(`\nTRACKED NUTRIENTS: The app only measures these vitamins and minerals: ${Object.values(NUTRIENT_DISPLAY_NAMES).join(", ")}. Only ever reference nutrients from this list, never any outside it.`);
 
   const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];

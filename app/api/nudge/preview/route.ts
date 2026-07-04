@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { buildSmartNudgeContext } from "../../../../lib/digestEngine";
+import { buildReflectionSummary } from "../../../../lib/changes";
 import { buildSmartPrompt, sanitizeNudgeFields, SMART_NUDGE_SYSTEM_PROMPT } from "../../../../lib/nudgeGen";
 import type { MealLog, WorkoutSession, UserProfile } from "../../../../lib/types";
 
@@ -169,6 +170,11 @@ export async function GET(req: Request) {
     recentFeelLogs, lastNudgeRecord, weightRes.data ?? [], undefined, timezoneOffset
   ) as unknown as Record<string, unknown>;
   if (recentSuggestedFoods.length) ctx.recentSuggestedFoods = recentSuggestedFoods;
+
+  const profileRow = profileRes.data as Record<string, unknown> | null;
+  const reflections = Array.isArray(profileRow?.reflections_json) ? (profileRow!.reflections_json as any[]) : [];
+  const habitHistory = Array.isArray(profileRow?.habit_history_json) ? (profileRow!.habit_history_json as any[]) : [];
+  if (reflections.length >= 3) ctx.reflectionSummary = buildReflectionSummary(reflections, habitHistory);
 
   const isEvening = windowParam === "evening";
   delete ctx.timeOfDay;

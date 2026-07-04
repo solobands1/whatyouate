@@ -118,6 +118,7 @@ export interface SmartNudgeContext {
     totalMidpoint: number;
     topSources: string[];
   }>;
+  reflectionSummary?: import("./changes").ReflectionSummary;
 }
 
 export interface NudgeData {
@@ -866,7 +867,8 @@ export function buildSmartNudgeContext(
   lastNudgeRecord?: { type: string; message: string; created_at: string },
   rawWeightLogs?: Array<{ weight_kg: number; logged_at: string }>,
   waterConsumedMl?: number,
-  timezoneOffsetMinutes?: number
+  timezoneOffsetMinutes?: number,
+  reflectionSummary?: import("./changes").ReflectionSummary,
 ): SmartNudgeContext {
   // Convert a UTC timestamp to the user's local hour.
   // offsetMinutes = getTimezoneOffset() — positive west of UTC (ET=300, PT=480).
@@ -1223,5 +1225,6 @@ export function buildSmartNudgeContext(
     todayDayOfWeek: DOW[new Date(todayKeyLocal + "T12:00:00Z").getUTCDay()],
     daysSinceLastLog,
     micronutrientWeeklySummary,
+    reflectionSummary,
   };
 }
