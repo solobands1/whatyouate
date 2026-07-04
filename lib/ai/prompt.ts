@@ -34,7 +34,8 @@ Return STRICT JSON ONLY matching this schema:
     "rationale_short": "string"
   }],
   "confidence_overall_0_1": number,
-  "optional_quick_confirm_options": ["string"]
+  "optional_quick_confirm_options": ["string"],
+  "feeling_tags": ["string"]
 }
 
 Rules:
@@ -140,6 +141,20 @@ ADDITIONAL CONTEXT
   - Item counts + types (e.g. "one chicken, one chorizo, one birria"): treat each as a distinct item. Estimate the portion weight for each individually based on typical size, calculate macros for each, then sum them for the total.
   - Full description (e.g. "grilled salmon no sauce, steamed broccoli on the side"): trust the description as ground truth. Use the photo only to confirm portion sizes.
   - Never add items not visible in the photo AND not mentioned. Never contradict what the user stated.
+
+FEELING TAGS
+- Also return "feeling_tags": an array of 0 to 4 tags describing how this food itself tends to affect energy and how someone feels. Use ONLY these exact values, and only when they clearly apply:
+  - "fried_greasy" — deep-fried, oily, or greasy (fries, fried chicken, chips).
+  - "high_sugar" — sweet / added-sugar heavy (dessert, candy, pastries, sugary drinks).
+  - "refined_carbs" — white/refined starch heavy (white bread, white pasta, white rice, crackers).
+  - "heavy_large" — a large, rich, or heavy portion likely to feel filling or sluggish.
+  - "alcohol" — contains alcohol (beer, wine, cocktails).
+  - "caffeine" — contains caffeine (coffee, espresso, energy drink, strong tea, cola).
+  - "highly_processed" — fast food or packaged/ultra-processed items.
+  - "low_protein" — little to no protein (mostly carbs, veg, or sweets).
+  - "dairy_heavy" — dominated by dairy (lots of cheese, cream, milk, ice cream).
+  - "very_spicy" — noticeably hot or spicy.
+- Judge only the food, never the time of day. Omit tags you are unsure about. Return [] if none clearly apply. Do not invent tags outside this list.
 `;
 
 export const TEXT_ANALYSIS_PROMPT = `You are a calm, non-judgmental food nutrition estimator.
@@ -178,7 +193,8 @@ Return STRICT JSON ONLY matching this schema:
     "rationale_short": "string"
   }],
   "confidence_overall_0_1": number,
-  "optional_quick_confirm_options": ["string"]
+  "optional_quick_confirm_options": ["string"],
+  "feeling_tags": ["string"]
 }
 
 Rules:
@@ -248,4 +264,18 @@ CONFIDENCE
 - A vague description ("some food", "lunch") warrants 0.3–0.4.
 - If < 0.55, include 2–4 clarifying quick_confirm_options (e.g. portion sizes, preparation methods).
 - If ≥ 0.55, omit optional_quick_confirm_options.
+
+FEELING TAGS
+- Also return "feeling_tags": an array of 0 to 4 tags describing how this food itself tends to affect energy and how someone feels. Use ONLY these exact values, and only when they clearly apply:
+  - "fried_greasy" — deep-fried, oily, or greasy (fries, fried chicken, chips).
+  - "high_sugar" — sweet / added-sugar heavy (dessert, candy, pastries, sugary drinks).
+  - "refined_carbs" — white/refined starch heavy (white bread, white pasta, white rice, crackers).
+  - "heavy_large" — a large, rich, or heavy portion likely to feel filling or sluggish.
+  - "alcohol" — contains alcohol (beer, wine, cocktails).
+  - "caffeine" — contains caffeine (coffee, espresso, energy drink, strong tea, cola).
+  - "highly_processed" — fast food or packaged/ultra-processed items.
+  - "low_protein" — little to no protein (mostly carbs, veg, or sweets).
+  - "dairy_heavy" — dominated by dairy (lots of cheese, cream, milk, ice cream).
+  - "very_spicy" — noticeably hot or spicy.
+- Judge only the food, never the time of day. Omit tags you are unsure about. Return [] if none clearly apply. Do not invent tags outside this list.
 `;

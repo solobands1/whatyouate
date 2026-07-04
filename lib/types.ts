@@ -84,6 +84,10 @@ export interface MealAnalysis {
     fat_g_min: number;
     fat_g_max: number;
   };
+  // Food-intrinsic "feeling" attributes from the fixed vocab in lib/foodTags.ts
+  // (e.g. "fried_greasy", "high_sugar"). Captured on every meal so the food->feeling
+  // correlation engine has tagged history to analyze. Sanitized to known tags in coerce.
+  feeling_tags?: string[];
   micronutrient_amounts?: MicronutrientAmount[];
   micronutrient_signals: Array<{
     nutrient: string;

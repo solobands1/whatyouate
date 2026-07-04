@@ -160,6 +160,7 @@ export type FoodTextCacheEntry = {
     fat_g_min: number; fat_g_max: number;
   };
   micronutrient_signals: Array<{ nutrient: string; signal: string; notes?: string }>;
+  feeling_tags?: string[];
   source: "ai" | "user_corrected";
   savedAt: number;
   logCount?: number;

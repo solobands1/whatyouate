@@ -1,5 +1,6 @@
 import type { MealAnalysis, MicronutrientAmount } from "../types";
 import { clampNumber } from "../utils";
+import { sanitizeFeelingTags } from "../foodTags";
 
 export const LOW_CONFIDENCE_THRESHOLD = 0.55;
 const GENERIC_ITEM_NAMES = new Set([
@@ -160,11 +161,13 @@ export function coerceAnalysis(input: any): MealAnalysis {
 
     const displayName = overrideName ?? (input.name ? String(input.name) : undefined);
     const canonicalName = input.canonical_name ? String(input.canonical_name).trim() : undefined;
+    const feeling_tags = sanitizeFeelingTags(input.feeling_tags);
     return {
       ...(displayName ? { name: displayName } : {}),
       ...(canonicalName ? { canonical_name: canonicalName } : {}),
       detected_items,
       estimated_ranges,
+      ...(feeling_tags.length ? { feeling_tags } : {}),
       ...(micronutrient_amounts?.length ? { micronutrient_amounts } : {}),
       micronutrient_signals,
       confidence_overall_0_1,
