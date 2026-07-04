@@ -127,6 +127,10 @@ export default function SummaryScreen() {
   };
   const [showNudgeInfo, setShowNudgeInfo] = useState(false);
   const [showNudgeHistory, setShowNudgeHistory] = useState(false);
+  // Whether the nudge is currently on the home hero (set by Home). If not (a habit builder
+  // is occupying the hero), Insights shows the full nudge instead of just a pointer.
+  const [nudgeOnHome, setNudgeOnHome] = useState(true);
+  useEffect(() => { try { setNudgeOnHome(localStorage.getItem("wya_nudge_on_home") !== "0"); } catch {} }, []);
   const [nudgeHistoryClosing, setNudgeHistoryClosing] = useState(false);
   // Animate the sheet down before unmounting, instead of it vanishing.
   const closeNudgeHistory = () => {
@@ -1126,7 +1130,9 @@ export default function SummaryScreen() {
                     </div>
                   </div>
                 ) : message ? (
-                  isDemoMode ? (
+                  isDemoMode || !nudgeOnHome ? (
+                    // Show the full nudge when it isn't on the home hero (e.g. a habit builder
+                    // is occupying it) so it's still prominent in exactly one place.
                     <div className="mt-3 rounded-xl border border-primary/60 bg-primary/5 px-4 py-3">
                       <p className="text-sm font-medium text-ink/90">{message}</p>
                       <p className="mt-2 text-[11px] font-medium text-primary/70">— Coach</p>

@@ -2122,6 +2122,9 @@ export default function HomeScreen() {
   useEffect(() => {
     if (!user || !habitLoaded) return;
     const nudgeOnHero = heroHabit.status === "hidden" && !!currentWindowNudge && !trial.isFree && !isDemoMode;
+    // Let Insights know whether the nudge is currently on the home hero, so it shows the
+    // full nudge (habit builder occupying the hero) vs. just a pointer (nudge is on home).
+    try { localStorage.setItem("wya_nudge_on_home", nudgeOnHero ? "1" : "0"); } catch {}
     if (!nudgeOnHero) return;
     const nudgeTs = parseInt(localStorage.getItem("wya_nudge_ts") ?? "0");
     const seenTs = parseInt(localStorage.getItem("wya_nudge_seen_ts") ?? "0");
