@@ -117,7 +117,9 @@ export interface MealLog {
   carbs?: number;
   fat?: number;
   userCorrection?: string;
-  status?: "processing" | "done" | "failed";
+  // "unsaved" is a client-only state: an optimistic pill whose DB write failed.
+  // It has no row in the database and offers a tap-to-retry.
+  status?: "processing" | "done" | "failed" | "unsaved";
 }
 
 export interface WorkoutSession {

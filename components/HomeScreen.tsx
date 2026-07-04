@@ -3385,12 +3385,17 @@ export default function HomeScreen() {
                       const isReanalyzing = reanalyzingMealIds.has(meal.id);
                       const isShimmer = isReanalyzing || (meal.status === "processing" && Date.now() - meal.ts < 90_000);
                       const isStaleOrFailed = !isReanalyzing && ((meal.status === "processing" && Date.now() - meal.ts >= 90_000) || meal.status === "failed");
+                      const isUnsaved = meal.status === "unsaved";
                       const isRecentQuickAdd = recentQuickAddRef.current > 0
                         && Math.abs(meal.ts - recentQuickAddRef.current) < 30_000;
                       return (
                       <div
                         key={`${meal.id}-${meal.calories}-${meal.protein}`}
                         onClick={() => {
+                          if (isUnsaved) {
+                            meals.retryManualSave(meal.id);
+                            return;
+                          }
                           if (isStaleOrFailed) {
                             setFailedMealText(meal.analysisJson?.name ?? "");
                             setFailedMealPrompt({ mealId: meal.id, thumb: meal.imageThumb ?? undefined });
@@ -3403,7 +3408,7 @@ export default function HomeScreen() {
                             meals.openMealEditor(meal);
                           }
                         }}
-                        className={`inline-flex w-full items-start justify-between rounded-full border border-primary/25 px-3 py-1.5 text-xs text-ink/80 ${editRecents ? "cursor-pointer animate-wiggle bg-primary/10" : isStaleOrFailed ? "cursor-pointer animate-pill-in bg-ink/5 border-ink/10" : (isShimmer ? "animate-shimmer" : isRecentQuickAdd ? "bg-primary/10" : "animate-pill-in bg-primary/10")}`}
+                        className={`inline-flex w-full items-start justify-between rounded-full border border-primary/25 px-3 py-1.5 text-xs text-ink/80 ${editRecents ? "cursor-pointer animate-wiggle bg-primary/10" : isUnsaved ? "cursor-pointer animate-pill-in bg-ink/5 border-ink/10" : isStaleOrFailed ? "cursor-pointer animate-pill-in bg-ink/5 border-ink/10" : (isShimmer ? "animate-shimmer" : isRecentQuickAdd ? "bg-primary/10" : "animate-pill-in bg-primary/10")}`}
                         style={{
                           ...(isShimmer ? { background: "linear-gradient(90deg, #eff6ff 0%, #dbeafe 40%, #eff6ff 60%, #eff6ff 100%)", backgroundSize: "200% 100%" } : {}),
                           ...(!editRecents && !isShimmer ? { animationDelay: `${idx * 80}ms` } : {})
@@ -3425,6 +3430,13 @@ export default function HomeScreen() {
                                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                               </svg>
                               Couldn't Analyze
+                            </span>
+                          ) : isUnsaved ? (
+                            <span className="flex items-center gap-1.5 text-ink/50">
+                              <svg className="h-3 w-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M1 4v6h6" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+                              </svg>
+                              Not Saved · Tap to Retry
                             </span>
                           ) : (
                             <>

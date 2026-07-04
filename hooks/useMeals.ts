@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import type { MealAnalysis, MealLog } from "../lib/types";
 import { addMeal, listMeals, updateMeal, updateMealTs } from "../lib/supabaseDb";
@@ -23,6 +23,8 @@ export function useMeals(
     fat: "",
   });
   const [updatingMeal, setUpdatingMeal] = useState(false);
+  // Retry thunks for optimistic manual pills whose DB write failed, keyed by pill id.
+  const manualRetries = useRef<Map<string, () => void>>(new Map());
 
   // Manual text entry state
   const [manualText, setManualText] = useState("");
@@ -178,33 +180,53 @@ export function useMeals(
     // A manual meal already carries its full analysis, so create it "done" from the
     // start. Otherwise a later step failing would strand the row at "processing",
     // showing a pill that "analyzes" forever (across every device on the shared DB).
-    let created: Awaited<ReturnType<typeof addMeal>> | null = null;
-    const swapInPill = () => setMeals((prev) => prev.map((m) => m.id === optimisticId ? { ...created!, ts: optimisticTs, analysisJson: scaledAnalysis as any, userCorrection: capturedName, status: "done" as const } : m));
-    try {
-      setUpdatingMeal(true);
-      created = await addMeal(user.id, scaledAnalysis as any, undefined, undefined, "done");
-      if (capturedDate !== todayStr) {
-        const d = new Date(capturedDate + "T12:00:00");
-        if (d.getTime() < Date.now()) await updateMealTs(created.id, d.getTime()).catch(() => {});
+    const runSave = async () => {
+      let created: Awaited<ReturnType<typeof addMeal>> | null = null;
+      const swapInPill = () => setMeals((prev) => prev.map((m) => m.id === optimisticId ? { ...created!, ts: optimisticTs, analysisJson: scaledAnalysis as any, userCorrection: capturedName, status: "done" as const } : m));
+      try {
+        setUpdatingMeal(true);
+        created = await addMeal(user.id, scaledAnalysis as any, undefined, undefined, "done");
+        if (capturedDate !== todayStr) {
+          const d = new Date(capturedDate + "T12:00:00");
+          if (d.getTime() < Date.now()) await updateMealTs(created.id, d.getTime()).catch(() => {});
+        }
+        await updateMeal(created.id, scaledAnalysis as any, { userCorrection: capturedName }, user.id);
+        fetch("/api/analyze-food", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mealId: created.id, existingAnalysis: scaledAnalysis, userId: user.id })
+        }).catch(() => {});
+        incrementFoodTextLogCount(normalizedInput);
+        // Replace optimistic pill with real DB record using correct timestamp
+        swapInPill();
+        manualRetries.current.delete(optimisticId);
+      } catch (err) {
+        console.error("Manual meal save failed", err);
+        // The row was created "done" already — keep the saved meal visible rather than
+        // dropping it.
+        if (created) {
+          swapInPill();
+          manualRetries.current.delete(optimisticId);
+        } else {
+          // Nothing persisted. Don't drop it silently — keep the pill in an "unsaved"
+          // state (grey, tap-to-retry) and remember how to re-run the save.
+          setMeals((prev) => prev.map((m) => m.id === optimisticId ? { ...m, status: "unsaved" as const } : m));
+          manualRetries.current.set(optimisticId, runSave);
+        }
+      } finally {
+        setUpdatingMeal(false);
       }
-      await updateMeal(created.id, scaledAnalysis as any, { userCorrection: capturedName }, user.id);
-      fetch("/api/analyze-food", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mealId: created.id, existingAnalysis: scaledAnalysis, userId: user.id })
-      }).catch(() => {});
-      incrementFoodTextLogCount(normalizedInput);
-      // Replace optimistic pill with real DB record using correct timestamp
-      swapInPill();
-    } catch (err) {
-      console.error("Manual meal save failed", err);
-      // The row was created "done" already — keep the saved meal visible rather than
-      // dropping it. Only remove the pill if creation itself never happened.
-      if (created) swapInPill();
-      else setMeals((prev) => prev.filter((m) => m.id !== optimisticId));
-    } finally {
-      setUpdatingMeal(false);
-    }
+    };
+    runSave();
+  };
+
+  // Re-run the save for an optimistic pill whose write failed (tap-to-retry).
+  const retryManualSave = (optimisticId: string) => {
+    const fn = manualRetries.current.get(optimisticId);
+    if (!fn) return;
+    // Flip back to a normal pill while the retry is in flight.
+    setMeals((prev) => prev.map((m) => m.id === optimisticId ? { ...m, status: "done" as const } : m));
+    fn();
   };
 
   const openMealEditor = (meal: MealLog) => {
@@ -312,6 +334,7 @@ export function useMeals(
     analyzeManualText,
     clearManualTextCache,
     confirmManualMeal,
+    retryManualSave,
     manualDate,
     setManualDate,
     openMealEditor,
