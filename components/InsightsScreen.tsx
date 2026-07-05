@@ -814,7 +814,7 @@ export default function InsightsScreen() {
                       {/* Gap + Day label */}
                       <div style={{ height: 6 }} />
                       <div className="flex justify-center" style={{ height: 14 }}>
-                        <span className={`text-[9px] ${isToday ? "font-bold text-ink/80" : d.hasData ? "text-ink/70" : "text-ink/45"}`}>
+                        <span className={`text-[9px] ${isToday ? "font-bold text-primary" : d.hasData ? "text-ink/70" : "text-ink/45"}`}>
                           {dayLabel}
                         </span>
                       </div>

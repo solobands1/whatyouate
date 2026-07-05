@@ -93,8 +93,8 @@ export default function ReflectionScreen() {
                 <div className="mt-3 flex items-start justify-between">
                   {facts.week.map((d) => (
                     <div key={d.key} className="flex flex-col items-center gap-1.5">
-                      <span className={`h-3 w-3 rounded-full border-2 border-ink/15 ${d.isToday ? "ring-2 ring-primary/25 ring-offset-1 ring-offset-white" : ""}`} />
-                      <p className={`text-[10px] ${d.isToday ? "font-bold text-ink/80" : "text-muted/60"}`}>{d.label}</p>
+                      <span className="h-3 w-3 rounded-full border-2 border-ink/15" />
+                      <p className={`text-[10px] ${d.isToday ? "font-bold text-primary" : "text-muted/60"}`}>{d.label}</p>
                     </div>
                   ))}
                 </div>
@@ -146,10 +146,10 @@ export default function ReflectionScreen() {
                   {facts.week.map((d, i) => (
                     <div key={d.key} className="flex flex-col items-center gap-1.5">
                       <span
-                        className={`h-3 w-3 rounded-full ${d.done ? (d.energy ? REFLECTION_DOT[d.energy] : "bg-primary/50") : "border-2 border-ink/15"} ${d.isToday ? "ring-2 ring-primary/25 ring-offset-1 ring-offset-white" : ""}`}
+                        className={`h-3 w-3 rounded-full ${d.done ? (d.energy ? REFLECTION_DOT[d.energy] : "bg-primary/50") : "border-2 border-ink/15"}`}
                         style={{ opacity: barsReady ? 1 : 0, transform: barsReady ? "scale(1)" : "scale(0.3)", transition: `opacity 700ms ease ${250 + i * 80}ms, transform 700ms cubic-bezier(0.34,1.56,0.64,1) ${250 + i * 80}ms` }}
                       />
-                      <p className={`text-[10px] ${d.isToday ? "font-bold text-ink/80" : "text-muted/60"}`}>{d.label}</p>
+                      <p className={`text-[10px] ${d.isToday ? "font-bold text-primary" : "text-muted/60"}`}>{d.label}</p>
                     </div>
                   ))}
                 </div>
