@@ -3530,21 +3530,24 @@ export default function HomeScreen() {
               </button>
             )}
             {!loadingData && recentFiltered.length === 0 ? (
-              <div className="grid grid-cols-3 gap-2">
-                <div className="col-span-2">
-                  <div className="inline-flex w-full items-center rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5">
-                    <span className="flex flex-col gap-1.5">
-                      <span className="h-2 w-24 rounded-full bg-primary/25" />
-                      <span className="h-2 w-16 rounded-full bg-primary/15" />
-                    </span>
+              <div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="col-span-2">
+                    <div className="inline-flex w-full items-center rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5">
+                      <span className="flex flex-col gap-1.5">
+                        <span className="h-2 w-24 rounded-full bg-primary/25" />
+                        <span className="h-2 w-16 rounded-full bg-primary/15" />
+                      </span>
+                    </div>
+                  </div>
+                  <div className="col-span-1 border-l border-ink/5 pl-2">
+                    <div className="flex w-full flex-col items-center justify-center gap-1 rounded-full border border-ink/10 bg-white px-3 py-1.5 shadow-[0_0_8px_rgba(111,168,255,0.12)]">
+                      <span className="h-2 w-10 rounded-full bg-ink/15" />
+                      <span className="h-1.5 w-7 rounded-full bg-ink/10" />
+                    </div>
                   </div>
                 </div>
-                <div className="col-span-1 border-l border-ink/5 pl-2">
-                  <div className="flex w-full flex-col items-center justify-center gap-1 rounded-full border border-ink/10 bg-white px-3 py-1.5 shadow-[0_0_8px_rgba(111,168,255,0.12)]">
-                    <span className="h-2 w-10 rounded-full bg-ink/15" />
-                    <span className="h-1.5 w-7 rounded-full bg-ink/10" />
-                  </div>
-                </div>
+                <p className="mt-3 text-center text-xs text-muted/60">Your meals and activity will show up here as you log.</p>
               </div>
             ) : null}
           </div>
