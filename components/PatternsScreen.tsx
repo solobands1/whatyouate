@@ -88,16 +88,11 @@ const EX_INSIGHTS: Discovery[] = [
   { text: foodLinkSentence(EX_FOOD_LINKS[0]), confidence: "Building" },
   EX_DISCOVERIES[0],
 ];
-// Muted look for cards showing Example (not-yet-real) data: desaturated + softened so it
-// reads as illustrative, clearly distinct from real data — without an overlay, which would
-// collide with the pay-to-unlock blur used elsewhere ("log more" vs "pay" must stay crisp).
-const EX_MUTE = "saturate-[.55] opacity-80";
-
 function Eyebrow({ children, preview }: { children: React.ReactNode; preview?: boolean }) {
   return (
     <div className="flex items-center justify-between">
       <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">{children}</p>
-      {preview && <span className="text-[10px] font-semibold uppercase tracking-wide text-primary/60">Example</span>}
+      {preview && <span className="text-[11px] uppercase tracking-wide text-muted/70">Preview</span>}
     </div>
   );
 }
@@ -218,18 +213,16 @@ export default function PatternsScreen() {
         <header className="mb-6">
           <h1 className="text-2xl font-semibold text-ink">Patterns</h1>
           <p className="mt-1 text-sm text-muted/70">What seems to affect how you feel</p>
-          {preview ? (
+          {anyExample && (
             <div className="mt-2 inline-flex items-center rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-[11px] text-primary/80">
-              Do 3 nightly check-ins to unlock your real patterns
+              Cards marked Preview show sample data until you&apos;ve logged enough
             </div>
-          ) : anyExample ? (
-            <p className="mt-2 text-[12px] leading-relaxed text-primary/70">Some of these are examples — yours will fill in here as you keep logging.</p>
-          ) : null}
+          )}
         </header>
 
         {/* What the coach is noticing — the headline plus the strongest observed
             associations (food->feeling links + reflection discoveries), capped at 2. */}
-        <Card className={`relative ${coachPreview ? EX_MUTE : ""}`} style={riseIn(ready, 0)}>
+        <Card className="relative" style={riseIn(ready, 0)}>
           <Eyebrow preview={coachPreview}>What The Coach Is Noticing</Eyebrow>
           <div className="mt-3 flex items-start gap-3">
             <div className="-mt-1 shrink-0"><WyaaAvatar size={40} /></div>
@@ -249,7 +242,7 @@ export default function PatternsScreen() {
         </Card>
 
         {/* Energy trend */}
-        <Card className={`mt-6 ${preview ? EX_MUTE : ""}`} style={riseIn(ready, 2)}>
+        <Card className="mt-6" style={riseIn(ready, 2)}>
           <Eyebrow preview={preview}>Your Energy Lately</Eyebrow>
           <p className="mt-2 text-sm text-ink/80">
             {trendEx ? (
@@ -273,7 +266,7 @@ export default function PatternsScreen() {
 
         {/* Compared to last week */}
         {(
-          <Card className={`mt-6 ${changesPreview ? EX_MUTE : ""}`} style={riseIn(ready, 3)}>
+          <Card className="mt-6" style={riseIn(ready, 3)}>
             <Eyebrow preview={changesPreview}>Compared To Last Week</Eyebrow>
             <div className="mt-3 space-y-2">
               {changes.map((c) => (
@@ -289,7 +282,7 @@ export default function PatternsScreen() {
         )}
 
         {/* What tends to help vs not — behavioral comparison (preview until we compute it) */}
-        <Card className={`mt-6 ${daysPreview ? EX_MUTE : ""}`} style={riseIn(ready, 3)}>
+        <Card className="mt-6" style={riseIn(ready, 3)}>
           <Eyebrow preview={daysPreview}>Your Days Compared</Eyebrow>
           <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-primary-dark/80">Better Days</p>
@@ -319,7 +312,7 @@ export default function PatternsScreen() {
 
         {/* When energy dips */}
         {(
-          <Card className={`mt-6 ${dipsPreview ? EX_MUTE : ""}`} style={riseIn(ready, 4)}>
+          <Card className="mt-6" style={riseIn(ready, 4)}>
             <Eyebrow preview={dipsPreview}>When Your Energy Dips</Eyebrow>
             <p className="mt-1 text-sm text-muted/65">Across your last {dips.days} nights.</p>
             <div className="mt-4 space-y-2.5">
@@ -348,7 +341,7 @@ export default function PatternsScreen() {
 
         {/* Changes you're making — kept habits + whether the metric they target improved */}
         {(
-          <Card className={`mt-6 ${changesLedgerPreview ? EX_MUTE : ""}`} style={riseIn(ready, 6)}>
+          <Card className="mt-6" style={riseIn(ready, 6)}>
             <Eyebrow preview={changesLedgerPreview}>Changes You&apos;re Making</Eyebrow>
             <p className="mt-1 text-sm text-muted/65">Habits you kept, and whether they seem to be helping.</p>
             <div className="mt-3 space-y-2">
@@ -385,9 +378,7 @@ export default function PatternsScreen() {
         )}
 
         <p className="mt-4 px-1 text-[11px] leading-relaxed text-muted/50">
-          {preview
-            ? "These are examples. Do your nightly check-ins and they become your real patterns."
-            : "These are observations from your data, not medical advice. The more you log and check in, the sharper they get."}
+          These are observations from your data, not medical advice. The more you log and check in, the sharper they get.
         </p>
       </div>
       <BottomNav current="patterns" />
