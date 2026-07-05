@@ -991,8 +991,8 @@ export default function SummaryScreen() {
           const allMilestones = [
             { label: "First Meal", sub: mealCount >= 1 ? "" : "log 1 meal", desc: "Log your first meal to get started.", unlocked: mealCount >= 1 },
             { label: "Nudges", sub: nudgesUnlocked ? "" : `${5 - mealCount} more meal${5 - mealCount !== 1 ? "s" : ""}`, desc: "Personalized nudges based on what you've been eating.", unlocked: nudgesUnlocked },
-            { label: "First Check-In", sub: firstCheckinUnlocked ? "" : "1 check-in", desc: "Do your first nightly check-in to start tracking how you feel.", unlocked: firstCheckinUnlocked },
-            { label: "Your Patterns", sub: patternsUnlocked ? "" : `${3 - reflCount} more check-in${3 - reflCount !== 1 ? "s" : ""}`, desc: "Your coach starts connecting your food to how you feel.", unlocked: patternsUnlocked },
+            { label: "First Reflection", sub: firstCheckinUnlocked ? "" : "1 reflection", desc: "Do your first nightly reflection to start tracking how you feel.", unlocked: firstCheckinUnlocked },
+            { label: "Your Patterns", sub: patternsUnlocked ? "" : `${3 - reflCount} more reflection${3 - reflCount !== 1 ? "s" : ""}`, desc: "Your coach starts connecting your food to how you feel.", unlocked: patternsUnlocked },
             { label: "Full Trends", sub: fullTrendsUnlocked ? "" : `${14 - dayCount} more day${14 - dayCount !== 1 ? "s" : ""}`, desc: "Two weeks unlocks full trends and week-to-week comparisons.", unlocked: fullTrendsUnlocked },
           ];
           // Only show the countdown on the next locked milestone, not all future ones

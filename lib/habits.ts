@@ -103,9 +103,9 @@ export const HABIT_TEMPLATES: HabitTemplate[] = [
   {
     id: "logging-starter", kind: "onboarding", title: "Find Your Footing",
     noun: "logging", category: "logging",
-    ask: "Log at least one thing each day for 5 days. A meal, a feeling, a glass of water, anything counts.",
+    ask: "Log at least one thing each day for 3 days. A meal, a feeling, a glass of water, anything counts.",
     whyTemplate: "You're just getting started, and every log helps your coach learn what works for you. It only gets better from here.",
-    durationDays: 5, checkpoints: ["I Logged Something!"], autoCompleteOnLog: true,
+    durationDays: 3, checkpoints: ["I Logged Something!"], autoCompleteOnLog: true,
     triggers: [], friction: "low", priorityWeight: 100, cooldownDays: 30, maxExtensions: 3,
   },
   {
