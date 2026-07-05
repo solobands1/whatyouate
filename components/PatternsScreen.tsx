@@ -208,17 +208,23 @@ export default function PatternsScreen() {
   const changesLedgerPreview = !demo && activeChanges.length === 0;
   const ledger = demo || activeChanges.length === 0 ? EX_LEDGER : activeChanges;
 
+  // Any card currently showing example (not-yet-real) data — used to explain the "Example"
+  // tags even once the page is past the brand-new-user (full preview) state.
+  const anyExample = coachPreview || preview || changesPreview || daysPreview || dipsPreview || changesLedgerPreview;
+
   return (
     <div className="min-h-screen bg-surface">
       <div className="mx-auto flex min-h-screen max-w-md flex-col px-5 pb-24 safe-top">
         <header className="mb-6">
           <h1 className="text-2xl font-semibold text-ink">Patterns</h1>
           <p className="mt-1 text-sm text-muted/70">What seems to affect how you feel</p>
-          {preview && (
+          {preview ? (
             <div className="mt-2 inline-flex items-center rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-[11px] text-primary/80">
               Do 3 nightly check-ins to unlock your real patterns
             </div>
-          )}
+          ) : anyExample ? (
+            <p className="mt-2 text-[12px] leading-relaxed text-primary/70">Some of these are examples — yours will fill in here as you keep logging.</p>
+          ) : null}
         </header>
 
         {/* What the coach is noticing — the headline plus the strongest observed
@@ -380,7 +386,7 @@ export default function PatternsScreen() {
 
         <p className="mt-4 px-1 text-[11px] leading-relaxed text-muted/50">
           {preview
-            ? "This is a preview. Do your nightly check-ins and these become your real patterns."
+            ? "These are examples. Do your nightly check-ins and they become your real patterns."
             : "These are observations from your data, not medical advice. The more you log and check in, the sharper they get."}
         </p>
       </div>
