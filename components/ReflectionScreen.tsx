@@ -94,7 +94,7 @@ export default function ReflectionScreen() {
                   {facts.week.map((d) => (
                     <div key={d.key} className="flex flex-col items-center gap-1.5">
                       <span className="h-3 w-3 rounded-full border-2 border-ink/15" />
-                      <p className={`text-[10px] ${d.isToday ? "font-bold text-primary" : "text-muted/60"}`}>{d.label}</p>
+                      <p className={`${d.isToday ? "text-[11px] font-bold text-ink/80" : "text-[10px] text-muted/60"}`}>{d.label}</p>
                     </div>
                   ))}
                 </div>
@@ -149,7 +149,7 @@ export default function ReflectionScreen() {
                         className={`h-3 w-3 rounded-full ${d.done ? (d.energy ? REFLECTION_DOT[d.energy] : "bg-primary/50") : "border-2 border-ink/15"}`}
                         style={{ opacity: barsReady ? 1 : 0, transform: barsReady ? "scale(1)" : "scale(0.3)", transition: `opacity 700ms ease ${250 + i * 80}ms, transform 700ms cubic-bezier(0.34,1.56,0.64,1) ${250 + i * 80}ms` }}
                       />
-                      <p className={`text-[10px] ${d.isToday ? "font-bold text-primary" : "text-muted/60"}`}>{d.label}</p>
+                      <p className={`${d.isToday ? "text-[11px] font-bold text-ink/80" : "text-[10px] text-muted/60"}`}>{d.label}</p>
                     </div>
                   ))}
                 </div>
