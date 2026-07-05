@@ -2831,7 +2831,7 @@ export default function HomeScreen() {
           <p className="mt-1 pl-0.5 text-[13px] text-muted/70">Eat Confidently | Feel Better</p>
           {!loadingData && mealCount === 0 && !isDemoMode && (
             <p className="mt-3 text-[11px] text-muted/60">
-              Take a photo of your first meal to get started.
+              Log your first meal to get started.
             </p>
           )}
           {loadError && <p className="mt-2 text-[11px] text-muted/60">{loadError}</p>}
@@ -3243,7 +3243,7 @@ export default function HomeScreen() {
             className="mt-2 flex items-center gap-1 text-left text-[10px] text-muted/70 transition active:opacity-60"
             onClick={() => setShowTargetInfo((v) => !v)}
           >
-            <span>Target Range<span className="text-muted/65">{!loadingData && mealCount === 0 && !profile ? " (preview)" : ""}</span>: {gentleTargetsDisplay.calories} kcal · {gentleTargetsDisplay.protein}g protein · {homeMarkers.gentleTargets?.carbs ?? 277}g carbs · {homeMarkers.gentleTargets?.fat ?? 77}g fat</span>
+            <span>Target Range: {gentleTargetsDisplay.calories} kcal · {gentleTargetsDisplay.protein}g protein · {homeMarkers.gentleTargets?.carbs ?? 277}g carbs · {homeMarkers.gentleTargets?.fat ?? 77}g fat</span>
             <span className="inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border border-muted/40 text-[8px] text-muted/65">i</span>
           </button>
           {showTargetInfo && (
@@ -3531,11 +3531,8 @@ export default function HomeScreen() {
             )}
             {!loadingData && recentItems.length === 0 ? (
               mealCount === 0 && displayWorkouts.length === 0 ? (
-                <div className="inline-flex items-start rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5 text-xs text-ink/80">
-                  <span className="flex flex-col">
-                    <span>Chicken Bowl <span className="text-ink/35">(example)</span></span>
-                    <span className="text-ink/50">600 kcal · 40g protein</span>
-                  </span>
+                <div className="inline-flex items-center rounded-full border border-dashed border-ink/15 bg-ink/[0.03] px-3 py-1.5 text-xs text-muted/60">
+                  Your logged meals will show up here.
                 </div>
               ) : (
                 <p className="text-muted/70">No food or workouts yet.</p>

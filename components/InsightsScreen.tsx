@@ -443,9 +443,7 @@ export default function InsightsScreen() {
     };
   })();
 
-  const displayMicronutrients = hasEnoughData
-    ? micronutrientPatterns
-    : [
+  const EXAMPLE_MICROS = [
         { name: "Iron",      label: "Sometimes detected",  foodPct: 38, suppPct: 0,  hasSupplement: false, overRda: false, usingAmounts: false },
         { name: "B12",       label: "Well covered",        foodPct: 62, suppPct: 18, hasSupplement: true,  overRda: false, usingAmounts: false },
         { name: "Magnesium", label: "Rarely detected",     foodPct: 12, suppPct: 0,  hasSupplement: false, overRda: false, usingAmounts: false },
@@ -459,7 +457,14 @@ export default function InsightsScreen() {
         { name: "Calcium",   label: "Frequently detected", foodPct: 74, suppPct: 0,  hasSupplement: false, overRda: false, usingAmounts: false },
         { name: "Potassium", label: "Sometimes detected",  foodPct: 32, suppPct: 0,  hasSupplement: false, overRda: false, usingAmounts: false },
         { name: "Fiber",     label: "Building pattern",    foodPct: 48, suppPct: 0,  hasSupplement: false, overRda: false, usingAmounts: false },
-      ];
+  ];
+  // Real users with no data yet see the nutrient list with empty bars (no fake percentages);
+  // demo mode keeps the curated example for the walkthrough.
+  const displayMicronutrients = hasEnoughData
+    ? micronutrientPatterns
+    : isDemoMode
+      ? EXAMPLE_MICROS
+      : EXAMPLE_MICROS.map((m) => ({ ...m, label: "", foodPct: 0, suppPct: 0, hasSupplement: false }));
 
   const insightsTourSteps = [
     {
@@ -623,7 +628,6 @@ export default function InsightsScreen() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <p className="text-xs uppercase tracking-wide text-muted/70">Macros</p>
-              {!hasEnoughData && <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/70">Example</p>}
               <button
                 type="button"
                 className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-ink/10 text-[10px] font-semibold text-ink/60"
@@ -847,7 +851,6 @@ export default function InsightsScreen() {
               Micronutrients
             </p>
             <div className="flex items-center gap-3">
-              {!hasEnoughData && <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/70">Example</p>}
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1">
                   <div className="h-2 w-4 rounded-sm bg-primary/70" />
@@ -860,7 +863,7 @@ export default function InsightsScreen() {
               </div>
             </div>
           </div>
-          {!hasEnoughData && <p className="mt-2 text-sm text-muted/65">Keep logging and these will fill out over time.</p>}
+          {!hasEnoughData && <p className="mt-2 text-sm text-muted/65">These will fill out as you log.</p>}
           <div className="mt-4">
             {NUTRIENT_CATEGORIES.map((category, catIdx) => {
               const catNutrients = displayMicronutrients.filter((p) => category.nutrients.includes(p.name));
