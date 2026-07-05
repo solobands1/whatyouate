@@ -251,9 +251,10 @@ export function computeGentleTargets(meals: MealLog[], profile?: UserProfile) {
     loggedDays.map((d) => d.totals.protein_g_min),
     loggedDays.map((d) => d.totals.protein_g_max)
   );
-  if (!avgLoggedCalories && !avgLoggedProtein) return null;
-
+  // Fall back to the profile-based estimate when there's no recent logged data (e.g. old
+  // meals but nothing in the last 7 days) instead of dropping to no target at all.
   const maintenance = estimateMaintenance(profile);
+  if (!maintenance && !avgLoggedCalories && !avgLoggedProtein) return null;
   const rawCalories = maintenance
     ? Math.round(maintenance * (1 + calNudge))
     : Math.max(0, Math.round(avgLoggedCalories * (1 + calNudge)));

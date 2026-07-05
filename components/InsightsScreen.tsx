@@ -672,10 +672,6 @@ export default function InsightsScreen() {
           <p className="mt-4 text-xs text-muted/70">
             Suggested range: {gentleTargetsDisplay.calories} kcal · {gentleTargetsDisplay.carbs}g carbs · {gentleTargetsDisplay.fat}g fat · {gentleTargetsDisplay.protein}g protein
           </p>
-          {/* TEMP DEBUG — remove after diagnosing the null maintenance calc */}
-          <p className="mt-1 text-[10px] text-rose-500">
-            debug · height={String(profile?.height)} · weight={String(profile?.weight)} · age={String(profile?.age)} · dob={String(profile?.dateOfBirth)} · units={String(profile?.units)} · sex={String(profile?.sex)} · maintenance={String(gentleTargets)}
-          </p>
         </Card>
 
         <Card className="mt-6" style={riseIn(barsReady, 1)}>
