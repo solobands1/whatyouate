@@ -3530,17 +3530,8 @@ export default function HomeScreen() {
               </button>
             )}
             {!loadingData && recentFiltered.length === 0 ? (
-              <div className="grid grid-cols-3 gap-2">
-                <div className="col-span-2">
-                  <div className="inline-flex w-full items-center rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-xs text-ink/80">
-                    Your logged meals will show up here.
-                  </div>
-                </div>
-                <div className="col-span-1 border-l border-ink/5 pl-2">
-                  <div className="flex w-full items-center justify-center rounded-full border border-ink/10 bg-white px-3 py-1.5 text-center text-[11px] leading-tight text-ink/60 shadow-[0_0_8px_rgba(111,168,255,0.12)]">
-                    Activity and energy check-ins show up here.
-                  </div>
-                </div>
+              <div className="py-5 text-center text-xs text-muted/60">
+                Your meals and activity will show up here as you log.
               </div>
             ) : null}
           </div>
