@@ -166,6 +166,7 @@ export default function PatternsScreen() {
   const trendEx = demo || fewRefl;
   const preview = !demo && fewRefl;
   const weekCells = trendEx ? facts.week.map((d, i) => ({ ...d, energy: EX_LEVELS.energy[i] ?? null, done: true })) : facts.week;
+  const headlineText = trendEx ? EX_HEADLINE : headline;
 
   // Your Days Compared — real behavioural difference between high/low energy days when we
   // have enough of both, else example data as a Preview.
@@ -175,23 +176,13 @@ export default function PatternsScreen() {
   const lowList = demo || !daysReal ? EX_LOWER : daysCompared.low;
 
   // Unified coach card: the headline plus up to 2 observed associations, drawn from both
-  // food->feeling links and reflection discoveries. Instead of fake example data when
-  // there's nothing yet, the card describes what it will show and invites more logging.
+  // food->feeling links and reflection discoveries. Real when either has data, else Preview.
   const realInsights: Discovery[] = [
     ...foodLinks.map((l) => ({ text: foodLinkSentence(l), confidence: l.confidence })),
     ...discoveries,
   ].slice(0, 2);
-  const coachInsights = demo ? EX_INSIGHTS : realInsights; // non-demo: only real, never fake
-  const coachLead = demo
-    ? EX_HEADLINE
-    : fewRefl
-      ? "As you log meals and check in, I'll connect what you eat to how you feel — like whether late dinners tend to cost you energy the next day. Your first patterns will show up here."
-      : headline;
-  const coachFootnote = demo || realInsights.length > 0
-    ? "Associations from your check-ins and meals, not proven causes."
-    : fewRefl
-      ? "Keep logging and these become real, personal to you."
-      : "More patterns show up here as you keep logging.";
+  const coachPreview = !demo && realInsights.length === 0;
+  const shownInsights = demo || realInsights.length === 0 ? EX_INSIGHTS : realInsights;
 
 
   // Energy dips — need a few nights that actually logged dips.
@@ -214,7 +205,7 @@ export default function PatternsScreen() {
 
   // Any card currently showing example (not-yet-real) data — used to explain the "Example"
   // tags even once the page is past the brand-new-user (full preview) state.
-  const anyExample = preview || changesPreview || daysPreview || dipsPreview || changesLedgerPreview;
+  const anyExample = coachPreview || preview || changesPreview || daysPreview || dipsPreview || changesLedgerPreview;
 
   return (
     <div className="min-h-screen bg-surface">
@@ -233,14 +224,14 @@ export default function PatternsScreen() {
         {/* What the coach is noticing — the headline plus the strongest observed
             associations (food->feeling links + reflection discoveries), capped at 2. */}
         <Card className="relative" style={riseIn(ready, 0)}>
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">What The Coach Is Noticing</p>
+          <Eyebrow preview={coachPreview}>What The Coach Is Noticing</Eyebrow>
           <div className="mt-3 flex items-start gap-3">
             <div className="-mt-1 shrink-0"><WyaaAvatar size={40} /></div>
-            <p className="text-[15px] font-medium leading-relaxed text-ink/90">{coachLead}</p>
+            <p className="text-[15px] font-medium leading-relaxed text-ink/90">{headlineText}</p>
           </div>
-          {coachInsights.length > 0 && (
+          {shownInsights.length > 0 && (
             <div className="mt-4 space-y-2.5">
-              {coachInsights.map((d, i) => (
+              {shownInsights.map((d, i) => (
                 <div key={i} className="rounded-xl border border-primary/15 bg-primary/[0.05] px-3 py-2.5">
                   <p className="text-sm text-ink/90">{d.text}</p>
                   <span className="mt-1.5 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary/70">Confidence: {d.confidence}</span>
@@ -248,7 +239,7 @@ export default function PatternsScreen() {
               ))}
             </div>
           )}
-          <p className="mt-3 text-[11px] leading-relaxed text-muted/50">{coachFootnote}</p>
+          <p className="mt-3 text-[11px] leading-relaxed text-muted/50">Associations from your check-ins and meals, not proven causes.</p>
         </Card>
 
         {/* Energy trend */}
