@@ -265,6 +265,7 @@ export default function PatternsScreen() {
         {(
           <Card className="mt-6" style={riseIn(ready, 3)}>
             <Eyebrow>Compared To Last Week</Eyebrow>
+            <p className="mt-1 text-sm text-muted/65">How your energy, sleep, and mood compare to last week.</p>
             {changes.length > 0 ? (
               <div className="mt-3 space-y-2">
                 {changes.map((c) => (
@@ -278,12 +279,12 @@ export default function PatternsScreen() {
               </div>
             ) : (
               <div className="mt-3 space-y-2">
-                {["w-24", "w-20", "w-16"].map((w, i) => (
+                {[{ up: true, w: "w-24" }, { up: true, w: "w-20" }, { up: false, w: "w-16" }].map((r, i) => (
                   <div key={i} className="flex items-center gap-2.5">
-                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ink/[0.04] text-muted/40">
-                      <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /></svg>
+                    <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ink/[0.04] ${r.up ? "text-primary-dark" : "text-muted/40"}`}>
+                      <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d={r.up ? "M5 15l7-7 7 7" : "M5 12h14"} /></svg>
                     </span>
-                    <span className={`h-2.5 ${w} rounded-full bg-ink/10`} />
+                    <span className={`h-2.5 ${r.w} rounded-full ${r.up ? "bg-primary-dark/15" : "bg-ink/10"}`} />
                   </div>
                 ))}
               </div>
