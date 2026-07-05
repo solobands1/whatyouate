@@ -1235,12 +1235,12 @@ export default function SummaryScreen() {
                 ) : (
                   <div className="mt-4">
                     {builtHabits.map((h, i) => (
-                      <div key={h.title} className="relative flex gap-3 pb-4 last:pb-0" style={{ opacity: hydrated ? 1 : 0, transform: hydrated ? "translateY(0)" : "translateY(10px)", transition: `opacity 500ms ease ${450 + i * 130}ms, transform 500ms cubic-bezier(0.22,1,0.36,1) ${450 + i * 130}ms` }}>
+                      <div key={h.title} className="relative flex gap-3 pb-4" style={{ opacity: hydrated ? 1 : 0, transform: hydrated ? "translateY(0)" : "translateY(10px)", transition: `opacity 500ms ease ${450 + i * 130}ms, transform 500ms cubic-bezier(0.22,1,0.36,1) ${450 + i * 130}ms` }}>
                         <div className="relative flex flex-col items-center">
                           <span className="z-10 flex h-7 w-7 items-center justify-center rounded-full border-2 border-primary/40 bg-primary/15 text-primary">
                             <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l4 4L19 7" /></svg>
                           </span>
-                          {i < builtHabits.length - 1 && <span className="absolute top-7 bottom-0 w-0.5 bg-primary/15" />}
+                          <span className="absolute top-7 bottom-0 w-0.5 bg-primary/15" />
                         </div>
                         <div className="flex-1 rounded-xl border border-primary/15 bg-primary/[0.05] px-3 py-2.5">
                           <div className="flex items-center justify-between gap-2">
@@ -1253,6 +1253,18 @@ export default function SummaryScreen() {
                         </div>
                       </div>
                     ))}
+                    {/* Trailing ghost — there's always room for the next one. */}
+                    <div className="relative flex gap-3 opacity-45">
+                      <div className="relative flex flex-col items-center">
+                        <span className="z-10 flex h-7 w-7 items-center justify-center rounded-full border-2 border-dashed border-ink/20 bg-ink/[0.02] text-ink/25">
+                          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l4 4L19 7" /></svg>
+                        </span>
+                      </div>
+                      <div className="flex-1 rounded-xl border border-dashed border-ink/15 bg-ink/[0.02] px-3 py-2.5">
+                        <div className="h-2.5 w-28 rounded-full bg-ink/10" />
+                        <div className="mt-2 h-2 w-16 rounded-full bg-ink/[0.07]" />
+                      </div>
+                    </div>
                   </div>
                 )}
               </>

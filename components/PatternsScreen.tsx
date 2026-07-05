@@ -83,6 +83,11 @@ function foodLinkSentence(l: Pick<FoodFeelingLink, "label" | "lag">): string {
     ? `Your lower-energy days have more often followed ${l.label} the night before.`
     : `On days with ${l.label}, your energy has more often run low.`;
 }
+// Preview insights for the unified coach card (one food link + one reflection discovery).
+const EX_INSIGHTS: Discovery[] = [
+  { text: foodLinkSentence(EX_FOOD_LINKS[0]), confidence: "Building" },
+  EX_DISCOVERIES[0],
+];
 
 function Eyebrow({ children, preview }: { children: React.ReactNode; preview?: boolean }) {
   return (
@@ -171,15 +176,15 @@ export default function PatternsScreen() {
   const betterList = demo || !daysReal ? EX_BETTER : daysCompared.better;
   const lowList = demo || !daysReal ? EX_LOWER : daysCompared.low;
 
-  // Food -> feeling links (attribute correlations). Real when there's enough tagged
-  // history, else example data as a Preview like the other cards.
-  const foodReal = foodLinks.length > 0;
-  const foodPreview = !demo && !foodReal;
-  const shownFoodLinks = demo || !foodReal ? EX_FOOD_LINKS : foodLinks;
+  // Unified coach card: the headline plus up to 2 observed associations, drawn from both
+  // food->feeling links and reflection discoveries. Real when either has data, else Preview.
+  const realInsights: Discovery[] = [
+    ...foodLinks.map((l) => ({ text: foodLinkSentence(l), confidence: l.confidence })),
+    ...discoveries,
+  ].slice(0, 2);
+  const coachPreview = !demo && realInsights.length === 0;
+  const shownInsights = demo || realInsights.length === 0 ? EX_INSIGHTS : realInsights;
 
-  // Discoveries — need enough co-occurrence data (may be empty even with some reflections).
-  const discPreview = !demo && discoveries.length === 0;
-  const shownDiscoveries = demo || discoveries.length === 0 ? EX_DISCOVERIES : discoveries;
 
   // Energy dips — need a few nights that actually logged dips.
   const realDips = facts.dipsDist && facts.dipsDist.morning + facts.dipsDist.afternoon + facts.dipsDist.evening > 0 ? facts.dipsDist : null;
@@ -212,35 +217,26 @@ export default function PatternsScreen() {
           )}
         </header>
 
-        {/* Headline clue, in the coach's voice */}
+        {/* What the coach is noticing — the headline plus the strongest observed
+            associations (food->feeling links + reflection discoveries), capped at 2. */}
         <Card className="relative" style={riseIn(ready, 0)}>
-          <div className="flex items-start gap-3">
+          <Eyebrow preview={coachPreview}>What The Coach Is Noticing</Eyebrow>
+          <div className="mt-3 flex items-start gap-3">
             <div className="-mt-1 shrink-0"><WyaaAvatar size={40} /></div>
-            <div>
-              <p className="text-[15px] font-medium leading-relaxed text-ink/90">{headlineText}</p>
-              <div className="mt-2 flex items-center gap-2">
-                <span className="text-[11px] font-medium text-primary/70">— Coach</span>
-                {preview && <span className="text-[10px] font-semibold uppercase tracking-wide text-primary/60">Preview</span>}
-              </div>
-            </div>
+            <p className="text-[15px] font-medium leading-relaxed text-ink/90">{headlineText}</p>
           </div>
-        </Card>
-
-        {/* Discoveries */}
-        {shownDiscoveries.length > 0 && (
-          <Card className="mt-6" style={riseIn(ready, 1)}>
-            <Eyebrow preview={discPreview}>What The Coach Is Noticing</Eyebrow>
-            <div className="mt-3 space-y-2.5">
-              {shownDiscoveries.map((d, i) => (
+          {shownInsights.length > 0 && (
+            <div className="mt-4 space-y-2.5">
+              {shownInsights.map((d, i) => (
                 <div key={i} className="rounded-xl border border-primary/15 bg-primary/[0.05] px-3 py-2.5">
                   <p className="text-sm text-ink/90">{d.text}</p>
                   <span className="mt-1.5 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary/70">Confidence: {d.confidence}</span>
                 </div>
               ))}
             </div>
-            <p className="mt-3 text-[11px] leading-relaxed text-muted/50">These are associations in your check-ins, not proven causes.</p>
-          </Card>
-        )}
+          )}
+          <p className="mt-3 text-[11px] leading-relaxed text-muted/50">Associations from your check-ins and meals, not proven causes.</p>
+        </Card>
 
         {/* Energy trend */}
         <Card className="mt-6" style={riseIn(ready, 2)}>
@@ -264,6 +260,23 @@ export default function PatternsScreen() {
           </div>
           {DOT_LEGEND}
         </Card>
+
+        {/* Compared to last week */}
+        {(
+          <Card className="mt-6" style={riseIn(ready, 3)}>
+            <Eyebrow preview={changesPreview}>Compared To Last Week</Eyebrow>
+            <div className="mt-3 space-y-2">
+              {changes.map((c) => (
+                <div key={c.key} className="flex items-center gap-2.5">
+                  <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ink/[0.04] ${CHANGE_VERB[c.dir].cls}`}>
+                    <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d={CHANGE_VERB[c.dir].arrow} /></svg>
+                  </span>
+                  <span className="text-sm text-ink/80"><span className="font-semibold text-ink">{c.label}</span> {CHANGE_VERB[c.dir].verb}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
 
         {/* What tends to help vs not — behavioral comparison (preview until we compute it) */}
         <Card className="mt-6" style={riseIn(ready, 3)}>
@@ -294,23 +307,6 @@ export default function PatternsScreen() {
           </div>
         </Card>
 
-        {/* Food -> how you feel — attribute correlations (preview until enough tagged data) */}
-        <Card className="mt-6" style={riseIn(ready, 4)}>
-          <Eyebrow preview={foodPreview}>Food &amp; How You Feel</Eyebrow>
-          <div className="mt-3 space-y-2.5">
-            {shownFoodLinks.map((l, i) => (
-              <div key={i} className="rounded-xl border border-primary/15 bg-primary/[0.05] px-3 py-2.5">
-                <p className="text-sm text-ink/90">{foodLinkSentence(l)}</p>
-                <div className="mt-1.5 flex items-center gap-2">
-                  <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary/70">Confidence: {l.confidence}</span>
-                  <span className="text-[10px] text-muted/55">seen on {l.nWith} of your days</span>
-                </div>
-              </div>
-            ))}
-          </div>
-          <p className="mt-3 text-[11px] leading-relaxed text-muted/50">Associations from your check-ins, not proven causes. Worth noticing, not a rule.</p>
-        </Card>
-
         {/* When energy dips */}
         {(
           <Card className="mt-6" style={riseIn(ready, 4)}>
@@ -329,23 +325,6 @@ export default function PatternsScreen() {
                   </div>
                 );
               })}
-            </div>
-          </Card>
-        )}
-
-        {/* Compared to last week */}
-        {(
-          <Card className="mt-6" style={riseIn(ready, 5)}>
-            <Eyebrow preview={changesPreview}>Compared To Last Week</Eyebrow>
-            <div className="mt-3 space-y-2">
-              {changes.map((c) => (
-                <div key={c.key} className="flex items-center gap-2.5">
-                  <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ink/[0.04] ${CHANGE_VERB[c.dir].cls}`}>
-                    <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d={CHANGE_VERB[c.dir].arrow} /></svg>
-                  </span>
-                  <span className="text-sm text-ink/80"><span className="font-semibold text-ink">{c.label}</span> {CHANGE_VERB[c.dir].verb}</span>
-                </div>
-              ))}
             </div>
           </Card>
         )}
