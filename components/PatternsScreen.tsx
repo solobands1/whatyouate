@@ -313,18 +313,25 @@ export default function PatternsScreen() {
             <Eyebrow preview={dipsPreview}>When Your Energy Dips</Eyebrow>
             <p className="mt-1 text-sm text-muted/65">Across your last {dips.days} nights.</p>
             <div className="mt-4 space-y-2.5">
-              {([["Morning", dips.morning], ["Afternoon", dips.afternoon], ["Evening", dips.evening]] as [string, number][]).map(([label, count], i) => {
-                const max = Math.max(dips.morning, dips.afternoon, dips.evening, 1);
-                return (
-                  <div key={label} className="flex items-center gap-3">
-                    <span className="w-16 shrink-0 text-xs text-muted/65">{label}</span>
-                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-ink/5">
-                      <div className="h-full rounded-full bg-primary" style={{ width: ready ? `${Math.round((count / max) * 100)}%` : "0%", transition: `width 1400ms cubic-bezier(0.22,1,0.36,1) ${i * 200}ms` }} />
+              {(() => {
+                // Scale bars to the number of nights (not the max) so the length reflects
+                // true prevalence — "6 of 9 nights" reads as ~two-thirds, not a full bar.
+                const nights = Math.max(dips.days, 1);
+                const peak = Math.max(dips.morning, dips.afternoon, dips.evening);
+                const rows: [string, number][] = [["Morning", dips.morning], ["Afternoon", dips.afternoon], ["Evening", dips.evening]];
+                return rows.map(([label, count], i) => {
+                  const isPeak = peak > 0 && count === peak;
+                  return (
+                    <div key={label} className="flex items-center gap-3">
+                      <span className={`w-16 shrink-0 text-xs ${isPeak ? "font-semibold text-ink/80" : "text-muted/60"}`}>{label}</span>
+                      <div className="h-2 flex-1 overflow-hidden rounded-full bg-ink/5">
+                        <div className={`h-full rounded-full ${isPeak ? "bg-primary" : "bg-primary/35"}`} style={{ width: ready ? `${Math.round((count / nights) * 100)}%` : "0%", transition: `width 1400ms cubic-bezier(0.22,1,0.36,1) ${i * 200}ms` }} />
+                      </div>
+                      <span className={`w-14 shrink-0 text-right text-[11px] ${isPeak ? "font-semibold text-ink/80" : "font-medium text-ink/50"}`}>{count} of {dips.days}</span>
                     </div>
-                    <span className="w-4 shrink-0 text-right text-[11px] font-medium text-ink/70">{count}</span>
-                  </div>
-                );
-              })}
+                  );
+                });
+              })()}
             </div>
           </Card>
         )}
