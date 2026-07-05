@@ -7,6 +7,12 @@ const UNLIMITED_USER_IDS = new Set([
   "973c0886-cd6f-4813-8a3c-4ded80bfa09c", // Apple review demo
 ]);
 
+// Same free/unlimited access, but matched by email (lowercased) when the user id
+// isn't handy.
+const UNLIMITED_USER_EMAILS = new Set([
+  "solobands1@gmail.com",
+]);
+
 const TRIAL_DAYS = 7;
 
 export interface TrialStatus {
@@ -19,8 +25,10 @@ export interface TrialStatus {
   daysLeft: number;       // days remaining in trial
 }
 
-export function computeTrialStatus(meals: MealLog[], userId: string | null): TrialStatus {
-  const isPro = userId ? UNLIMITED_USER_IDS.has(userId) : false;
+export function computeTrialStatus(meals: MealLog[], userId: string | null, email?: string | null): TrialStatus {
+  const isPro =
+    (userId ? UNLIMITED_USER_IDS.has(userId) : false) ||
+    (email ? UNLIMITED_USER_EMAILS.has(email.toLowerCase()) : false);
 
   const firstRealMeal = [...meals]
     .filter((m) => m.analysisJson?.source !== "supplement" && m.status !== "failed")

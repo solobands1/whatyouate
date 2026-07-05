@@ -28,10 +28,10 @@ export function useTrialStatus(): TrialStatus {
   }, []);
 
   return useMemo(() => {
-    const status = computeTrialStatus(meals, user?.id ?? null);
+    const status = computeTrialStatus(meals, user?.id ?? null, user?.email ?? null);
     if (rcIsPro && !status.isPro) {
       return { ...status, isPro: true, isFree: false, isTrialActive: false, isExpired: false };
     }
     return status;
-  }, [meals, user?.id, rcIsPro]);
+  }, [meals, user?.id, user?.email, rcIsPro]);
 }
