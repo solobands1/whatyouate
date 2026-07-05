@@ -203,22 +203,12 @@ export default function PatternsScreen() {
   const changesLedgerPreview = !demo && activeChanges.length === 0;
   const ledger = demo || activeChanges.length === 0 ? EX_LEDGER : activeChanges;
 
-  // Any card currently showing example (not-yet-real) data — used to explain the "Example"
-  // tags even once the page is past the brand-new-user (full preview) state.
-  const anyExample = coachPreview || preview || changesPreview || daysPreview || dipsPreview || changesLedgerPreview;
-
   return (
     <div className="min-h-screen bg-surface">
       <div className="mx-auto flex min-h-screen max-w-md flex-col px-5 pb-24 safe-top">
         <header className="mb-6">
           <h1 className="text-2xl font-semibold text-ink">Patterns</h1>
           <p className="mt-1 text-sm text-muted/70">What seems to affect how you feel</p>
-          {anyExample && (
-            <div className="mt-3 flex flex-col items-center gap-1 rounded-2xl border border-primary/25 bg-primary/10 px-4 py-5 text-center text-[13px] text-primary/80">
-              <span>Sections With EXAMPLE Are For Illustration Only</span>
-              <span className="font-semibold">Log Meals And Check-In To Unlock Real Results</span>
-            </div>
-          )}
         </header>
 
         {/* What the coach is noticing — the headline plus the strongest observed
