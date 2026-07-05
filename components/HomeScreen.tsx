@@ -493,7 +493,7 @@ export default function HomeScreen() {
   // "idle" = static moon (or checkmark), "bell" = ringing.
   const [reflectionCue, setReflectionCue] = useState<"idle" | "bell">("idle");
   // Dev preview: append ?cue to the URL to force the reflection card to show and replay
-  // the bell/moon cue any time of day (otherwise it's gated to after 7pm, once a night).
+  // the bell/moon cue any time of day (otherwise it's gated to after 5pm, once a night).
   const [cuePreview, setCuePreview] = useState(false);
   const [fdebug, setFdebug] = useState(false);
   useEffect(() => {
@@ -569,7 +569,7 @@ export default function HomeScreen() {
     if (!barsReady || !habitLoaded) return;
     // ?cue is a pure visual preview: skip the loaded/done gates and loop so it's easy to catch.
     if (!cuePreview && (!reflectionsLoaded || todayReflection)) return;
-    const available = isDemoMode || cuePreview || REFLECTION_AVAILABLE_ALL_DAY || new Date().getHours() >= 19;
+    const available = isDemoMode || cuePreview || REFLECTION_AVAILABLE_ALL_DAY || new Date().getHours() >= 17;
     if (!available) return;
     const replay = cuePreview || REFLECTION_CUE_REPLAY;
     const key = `reflectionCueSeen-${todayDateStr()}`;
@@ -3300,10 +3300,9 @@ export default function HomeScreen() {
           </div>
         )}
 
-        {/* Nightly check-in entry. The big home button appears at 7pm (or once done,
-            showing "Checked In" until midnight); 5-7pm it lives in the + menu. Demo
-            always shows it. */}
-        {(isDemoMode || todayReflection || cuePreview || REFLECTION_AVAILABLE_ALL_DAY || new Date().getHours() >= 19) && (
+        {/* Nightly check-in entry. The big home button appears at 5pm (or once done,
+            showing "Checked In" until midnight). Demo always shows it. */}
+        {(isDemoMode || todayReflection || cuePreview || REFLECTION_AVAILABLE_ALL_DAY || new Date().getHours() >= 17) && (
           <div className="mt-2" style={riseIn(barsReady && habitLoaded, 1)}>
             <button
               type="button"
@@ -3911,7 +3910,7 @@ export default function HomeScreen() {
                   <span>Water</span>
                 </button>
               )}
-              {/* Nightly check-in lives here from 5pm; the big home button takes over at 7pm. */}
+              {/* Nightly check-in also accessible from the + menu at 5pm (the big home button is the main prompt). */}
               {new Date().getHours() >= 17 && (
                 <button
                   type="button"
