@@ -88,12 +88,16 @@ const EX_INSIGHTS: Discovery[] = [
   { text: foodLinkSentence(EX_FOOD_LINKS[0]), confidence: "Building" },
   EX_DISCOVERIES[0],
 ];
+// Muted look for cards showing Example (not-yet-real) data: desaturated + softened so it
+// reads as illustrative, clearly distinct from real data — without an overlay, which would
+// collide with the pay-to-unlock blur used elsewhere ("log more" vs "pay" must stay crisp).
+const EX_MUTE = "saturate-[.55] opacity-80";
 
 function Eyebrow({ children, preview }: { children: React.ReactNode; preview?: boolean }) {
   return (
     <div className="flex items-center justify-between">
       <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">{children}</p>
-      {preview && <span className="text-[10px] font-semibold uppercase tracking-wide text-primary/60">Preview</span>}
+      {preview && <span className="text-[10px] font-semibold uppercase tracking-wide text-primary/60">Example</span>}
     </div>
   );
 }
@@ -219,7 +223,7 @@ export default function PatternsScreen() {
 
         {/* What the coach is noticing — the headline plus the strongest observed
             associations (food->feeling links + reflection discoveries), capped at 2. */}
-        <Card className="relative" style={riseIn(ready, 0)}>
+        <Card className={`relative ${coachPreview ? EX_MUTE : ""}`} style={riseIn(ready, 0)}>
           <Eyebrow preview={coachPreview}>What The Coach Is Noticing</Eyebrow>
           <div className="mt-3 flex items-start gap-3">
             <div className="-mt-1 shrink-0"><WyaaAvatar size={40} /></div>
@@ -239,7 +243,7 @@ export default function PatternsScreen() {
         </Card>
 
         {/* Energy trend */}
-        <Card className="mt-6" style={riseIn(ready, 2)}>
+        <Card className={`mt-6 ${preview ? EX_MUTE : ""}`} style={riseIn(ready, 2)}>
           <Eyebrow preview={preview}>Your Energy Lately</Eyebrow>
           <p className="mt-2 text-sm text-ink/80">
             {trendEx ? (
@@ -263,7 +267,7 @@ export default function PatternsScreen() {
 
         {/* Compared to last week */}
         {(
-          <Card className="mt-6" style={riseIn(ready, 3)}>
+          <Card className={`mt-6 ${changesPreview ? EX_MUTE : ""}`} style={riseIn(ready, 3)}>
             <Eyebrow preview={changesPreview}>Compared To Last Week</Eyebrow>
             <div className="mt-3 space-y-2">
               {changes.map((c) => (
@@ -279,7 +283,7 @@ export default function PatternsScreen() {
         )}
 
         {/* What tends to help vs not — behavioral comparison (preview until we compute it) */}
-        <Card className="mt-6" style={riseIn(ready, 3)}>
+        <Card className={`mt-6 ${daysPreview ? EX_MUTE : ""}`} style={riseIn(ready, 3)}>
           <Eyebrow preview={daysPreview}>Your Days Compared</Eyebrow>
           <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-primary-dark/80">Better Days</p>
@@ -309,7 +313,7 @@ export default function PatternsScreen() {
 
         {/* When energy dips */}
         {(
-          <Card className="mt-6" style={riseIn(ready, 4)}>
+          <Card className={`mt-6 ${dipsPreview ? EX_MUTE : ""}`} style={riseIn(ready, 4)}>
             <Eyebrow preview={dipsPreview}>When Your Energy Dips</Eyebrow>
             <p className="mt-1 text-sm text-muted/65">Across your last {dips.days} nights.</p>
             <div className="mt-4 space-y-2.5">
@@ -338,7 +342,7 @@ export default function PatternsScreen() {
 
         {/* Changes you're making — kept habits + whether the metric they target improved */}
         {(
-          <Card className="mt-6" style={riseIn(ready, 6)}>
+          <Card className={`mt-6 ${changesLedgerPreview ? EX_MUTE : ""}`} style={riseIn(ready, 6)}>
             <Eyebrow preview={changesLedgerPreview}>Changes You&apos;re Making</Eyebrow>
             <p className="mt-1 text-sm text-muted/65">Habits you kept, and whether they seem to be helping.</p>
             <div className="mt-3 space-y-2">
