@@ -73,7 +73,7 @@ const DEMO_NUDGE = "Your protein has been strong this week, but your last two da
 export default function SummaryScreen() {
   const router = useRouter();
   const { user, loading } = useAuth();
-  const { profile, meals, workouts, nudges, nudgesLoaded, feelLogs: recentFeelLogs, habitHistory, loading: loadingData } = useAppData();
+  const { profile, meals, workouts, nudges, nudgesLoaded, feelLogs: recentFeelLogs, habitHistory, reflections, loading: loadingData } = useAppData();
   const trial = useTrialStatus();
   const [hydrated, setHydrated] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
@@ -188,6 +188,7 @@ export default function SummaryScreen() {
   );
   const dayCount = summaryMarkers.dayCount;
   const mealCount = summaryMarkers.mealCount;
+  const reflCount = reflections.length;
   const gentleTargetsDisplay = summaryMarkers.gentleTargets ?? { calories: 2300, protein: 125, fat: 77, carbs: 277 };
   const workoutSummary = summaryMarkers.workoutSummary;
   const avgWeekCalories = summaryMarkers.avgWeekCalories;
@@ -982,19 +983,17 @@ export default function SummaryScreen() {
         </header>
 
         {/* Unlock progress timeline — only shown until all milestones are reached (14 logged days) */}
-        {!isDemoMode && dayCount < 14 && (() => {
+        {!isDemoMode && !(mealCount >= 5 && reflCount >= 3 && dayCount >= 14) && (() => {
           const nudgesUnlocked = mealCount >= 5;
-          const patternsUnlocked = dayCount >= 5 && mealCount >= 5;
-          const smartTargetsUnlocked = dayCount >= 7;
-          const weeklyComparisonUnlocked = dayCount >= 10;
+          const firstCheckinUnlocked = reflCount >= 1;
+          const patternsUnlocked = reflCount >= 3;
           const fullTrendsUnlocked = dayCount >= 14;
           const allMilestones = [
-            { label: "First Meal", sub: "", desc: "Log your first meal to get started.", unlocked: mealCount >= 1 },
-            { label: "Nudges", sub: nudgesUnlocked ? "" : `${5 - mealCount} more meal${5 - mealCount !== 1 ? "s" : ""}`, desc: "Personalized suggestions based on what you've been eating.", unlocked: nudgesUnlocked },
-            { label: "Patterns", sub: patternsUnlocked ? "" : `${Math.max(0, 5 - dayCount)} more day${Math.max(0, 5 - dayCount) !== 1 ? "s" : ""}`, desc: "See recurring habits and timing patterns across your week.", unlocked: patternsUnlocked },
-            { label: "Smart Targets", sub: smartTargetsUnlocked ? "" : `${7 - dayCount} more day${7 - dayCount !== 1 ? "s" : ""}`, desc: "Personalized calorie and protein goals based on your profile and history.", unlocked: smartTargetsUnlocked },
-            { label: "Weekly Compare", sub: weeklyComparisonUnlocked ? "" : `${10 - dayCount} more day${10 - dayCount !== 1 ? "s" : ""}`, desc: "Compare this week to last week to see how you're trending.", unlocked: weeklyComparisonUnlocked },
-            { label: "Full Trends", sub: fullTrendsUnlocked ? "" : `${14 - dayCount} more day${14 - dayCount !== 1 ? "s" : ""}`, desc: "Two weeks of data unlocks full macro and habit trend charts.", unlocked: fullTrendsUnlocked },
+            { label: "First Meal", sub: mealCount >= 1 ? "" : "log 1 meal", desc: "Log your first meal to get started.", unlocked: mealCount >= 1 },
+            { label: "Nudges", sub: nudgesUnlocked ? "" : `${5 - mealCount} more meal${5 - mealCount !== 1 ? "s" : ""}`, desc: "Personalized nudges based on what you've been eating.", unlocked: nudgesUnlocked },
+            { label: "First Check-In", sub: firstCheckinUnlocked ? "" : "1 check-in", desc: "Do your first nightly check-in to start tracking how you feel.", unlocked: firstCheckinUnlocked },
+            { label: "Your Patterns", sub: patternsUnlocked ? "" : `${3 - reflCount} more check-in${3 - reflCount !== 1 ? "s" : ""}`, desc: "Your coach starts connecting your food to how you feel.", unlocked: patternsUnlocked },
+            { label: "Full Trends", sub: fullTrendsUnlocked ? "" : `${14 - dayCount} more day${14 - dayCount !== 1 ? "s" : ""}`, desc: "Two weeks unlocks full trends and week-to-week comparisons.", unlocked: fullTrendsUnlocked },
           ];
           // Only show the countdown on the next locked milestone, not all future ones
           let nextUnlockFound = false;
