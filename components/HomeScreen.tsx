@@ -2855,7 +2855,7 @@ export default function HomeScreen() {
                       <span className="text-[12px] font-medium text-ink/60">
                         Free Trial · Day {trial.currentDay} of 7
                       </span>
-                      <span className="text-[11px] text-primary/70 font-medium">See plans</span>
+                      <span className="text-[11px] text-primary/70 font-medium">See Plans</span>
                     </div>
                     <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-ink/10">
                       <div
@@ -2884,7 +2884,7 @@ export default function HomeScreen() {
                 <div className="mt-2 flex items-center justify-between gap-3 rounded-xl border border-primary/15 bg-primary/[0.06] px-4 py-2.5">
                   <p className="text-[12px] text-ink/60">Fill Out Your Profile For Better Results</p>
                   <Link href="/profile" className="shrink-0 text-[11px] font-semibold text-primary">
-                    Set up →
+                    Set Up →
                   </Link>
                 </div>
               )}
@@ -3526,7 +3526,7 @@ export default function HomeScreen() {
                 className="mt-1 text-[11px] font-semibold text-ink/50 underline transition active:opacity-50"
                 onClick={() => setVisibleGroupCount((prev) => prev + 3)}
               >
-                Show more
+                Show More
               </button>
             )}
             {!loadingData && recentFiltered.length === 0 ? (

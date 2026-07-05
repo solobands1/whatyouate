@@ -75,7 +75,7 @@ export default function ReflectionScreen() {
             Insights
           </button>
           <h1 className="text-2xl font-semibold text-ink">Reflections</h1>
-          <p className="mt-1 text-sm text-muted/70">Your nightly reflections and how you&apos;ve felt.</p>
+          <p className="mt-1 text-sm text-muted/70">Your nightly reflections and how you&apos;ve felt</p>
         </header>
 
         {loading && sorted.length === 0 ? (

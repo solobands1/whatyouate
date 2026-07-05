@@ -265,7 +265,7 @@ export default function PatternsScreen() {
         {(
           <Card className="mt-6" style={riseIn(ready, 3)}>
             <Eyebrow>Compared To Last Week</Eyebrow>
-            <p className="mt-1 text-sm text-muted/65">How your energy, sleep, and mood compare to last week.</p>
+            <p className="mt-1 text-sm text-muted/65">How your energy, sleep, and mood compare to last week</p>
             {changes.length > 0 ? (
               <div className="mt-3 space-y-2">
                 {changes.map((c) => (
@@ -295,7 +295,7 @@ export default function PatternsScreen() {
         {/* What tends to help vs not — behavioral comparison (preview until we compute it) */}
         <Card className="mt-6" style={riseIn(ready, 3)}>
           <Eyebrow>Your Days Compared</Eyebrow>
-          <p className="mt-1 text-sm text-muted/65">What tends to set your better days apart.</p>
+          <p className="mt-1 text-sm text-muted/65">What tends to set your better days apart</p>
           <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-primary-dark/80">Better Days</p>
             <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/70">Low-Energy Days</p>
@@ -344,7 +344,7 @@ export default function PatternsScreen() {
         {(
           <Card className="mt-6" style={riseIn(ready, 4)}>
             <Eyebrow>When Your Energy Dips</Eyebrow>
-            <p className="mt-1 text-sm text-muted/65">{demo || realDips ? `Across your last ${dips.days} nights.` : "Spot the times your energy tends to dip."}</p>
+            <p className="mt-1 text-sm text-muted/65">{demo || realDips ? `Across your last ${dips.days} nights` : "Spot the times your energy tends to dip."}</p>
             <div className="mt-4 space-y-2.5">
               {(() => {
                 // Scale bars to the number of nights (not the max) so the length reflects
@@ -373,7 +373,7 @@ export default function PatternsScreen() {
         {(
           <Card className="mt-6" style={riseIn(ready, 6)}>
             <Eyebrow>Changes You&apos;re Making</Eyebrow>
-            <p className="mt-1 text-sm text-muted/65">Habits you kept, and whether they seem to be helping.</p>
+            <p className="mt-1 text-sm text-muted/65">Habits you kept, and whether they seem to be helping</p>
             {changesLedgerPreview ? (
               <div className="mt-3 space-y-2.5">
                 <div className="rounded-xl border border-primary/15 bg-primary/[0.05] px-3 py-3">
