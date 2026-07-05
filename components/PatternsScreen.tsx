@@ -179,7 +179,7 @@ export default function PatternsScreen() {
   ].slice(0, 2);
   const coachEmpty = !demo && realInsights.length === 0;
   const coachInsights = demo ? EX_INSIGHTS : realInsights; // non-demo: only real, never fake
-  const coachHeadline = demo ? EX_HEADLINE : fewRefl ? "This is where you'll see your most confident pattern insight." : headline;
+  const coachHeadline = demo ? EX_HEADLINE : fewRefl ? "Your clearest pattern will land here first." : headline;
 
   // Energy dips — need a few nights that actually logged dips. Empty shows blank bars (0 of 0).
   const realDips = facts.dipsDist && facts.dipsDist.morning + facts.dipsDist.afternoon + facts.dipsDist.evening > 0 ? facts.dipsDist : null;
@@ -216,7 +216,7 @@ export default function PatternsScreen() {
           {coachEmpty ? (
             <>
               <div className="mt-4 rounded-xl border border-primary/20 bg-primary/[0.05] px-3 py-3">
-                <p className="text-sm leading-relaxed text-ink/75">This is where you&apos;ll see your second and third pattern insights, as your coach builds confidence in the patterns from your food and reflection logs.</p>
+                <p className="text-sm leading-relaxed text-ink/70">A couple more will follow as your coach gets to know your food and check-in patterns.</p>
               </div>
               <div className="mt-2.5 rounded-xl border border-dashed border-ink/15 bg-ink/[0.02] px-3 py-3 opacity-70">
                 <div className="h-2.5 w-2/3 rounded-full bg-ink/10" />
@@ -247,7 +247,7 @@ export default function PatternsScreen() {
             ) : facts.energyPhrase ? (
               <>Your <span className="font-semibold text-ink">{facts.energyPhrase}</span> this week.</>
             ) : (
-              "This is where your energy logs will show."
+              "Your energy across the week will fill in here."
             )}
           </p>
           <div className="mt-3 flex items-end justify-between">
@@ -295,7 +295,7 @@ export default function PatternsScreen() {
         {/* What tends to help vs not — behavioral comparison (preview until we compute it) */}
         <Card className="mt-6" style={riseIn(ready, 3)}>
           <Eyebrow>Your Days Compared</Eyebrow>
-          <p className="mt-1 text-sm text-muted/65">This compares your better days and your low-energy days.</p>
+          <p className="mt-1 text-sm text-muted/65">What tends to set your better days apart.</p>
           <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-primary-dark/80">Better Days</p>
             <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/70">Low-Energy Days</p>
@@ -344,7 +344,7 @@ export default function PatternsScreen() {
         {(
           <Card className="mt-6" style={riseIn(ready, 4)}>
             <Eyebrow>When Your Energy Dips</Eyebrow>
-            <p className="mt-1 text-sm text-muted/65">{demo || realDips ? `Across your last ${dips.days} nights.` : "Watch when your energy dips to spot patterns."}</p>
+            <p className="mt-1 text-sm text-muted/65">{demo || realDips ? `Across your last ${dips.days} nights.` : "Spot the times your energy tends to dip."}</p>
             <div className="mt-4 space-y-2.5">
               {(() => {
                 // Scale bars to the number of nights (not the max) so the length reflects
@@ -378,7 +378,7 @@ export default function PatternsScreen() {
               <div className="mt-3 space-y-2.5">
                 <div className="rounded-xl border border-primary/15 bg-primary/[0.05] px-3 py-3">
                   <p className="text-sm font-semibold text-ink">Your kept habits show up here</p>
-                  <p className="mt-1 text-[12px] leading-relaxed text-muted/70">Keep a habit builder going and I&apos;ll track whether what it targets — like your energy — actually improves.</p>
+                  <p className="mt-1 text-[12px] leading-relaxed text-muted/70">Stick with a habit builder and I&apos;ll track whether it actually helps how you feel.</p>
                 </div>
                 <div className="rounded-xl border border-dashed border-ink/15 bg-ink/[0.02] px-3 py-3 opacity-70">
                   <div className="h-2.5 w-1/2 rounded-full bg-ink/10" />
