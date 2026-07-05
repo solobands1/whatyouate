@@ -91,7 +91,7 @@ export default function ReflectionScreen() {
               <span className="mt-0.5 shrink-0 text-primary">
                 <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z" /></svg>
               </span>
-              <p className="text-[13px] leading-relaxed text-ink/80">Your nightly check-in opens at 5pm each evening. Complete your first one to start seeing your data here.</p>
+              <p className="text-[13px] leading-relaxed text-ink/80">Your nightly check-in opens at 5pm each evening, and we&apos;ll remind you at 7pm. Complete your first one to start seeing your data here.</p>
             </div>
             {/* This Week — the real strip with empty dots + an explainer */}
             <section style={riseIn(barsReady, 0)} className="space-y-3">
