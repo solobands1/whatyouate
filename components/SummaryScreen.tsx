@@ -995,12 +995,17 @@ export default function SummaryScreen() {
             { label: "Your Patterns", sub: patternsUnlocked ? "" : `${3 - reflCount} more reflection${3 - reflCount !== 1 ? "s" : ""}`, desc: "Your coach starts connecting your food to how you feel.", unlocked: patternsUnlocked },
             { label: "Full Trends", sub: fullTrendsUnlocked ? "" : `${14 - dayCount} more day${14 - dayCount !== 1 ? "s" : ""}`, desc: "Two weeks unlocks full trends and week-to-week comparisons.", unlocked: fullTrendsUnlocked },
           ];
-          // Only show the countdown on the next locked milestone, not all future ones
+          // Fill left-to-right: a step only shows unlocked once it AND every step before it
+          // are met, so the chain never checks off out of order (e.g. a night-1 reflection
+          // won't tick before the meal milestones). Countdown shows on the next step only.
+          let cumulative = true;
           let nextUnlockFound = false;
           const milestones = allMilestones.map((m) => {
-            if (m.unlocked || !m.sub) return m;
-            if (!nextUnlockFound) { nextUnlockFound = true; return m; }
-            return { ...m, sub: "" };
+            const unlocked = cumulative && m.unlocked;
+            cumulative = unlocked;
+            if (unlocked) return { ...m, unlocked, sub: "" };
+            if (!nextUnlockFound && m.sub) { nextUnlockFound = true; return { ...m, unlocked }; }
+            return { ...m, unlocked, sub: "" };
           });
           return (
             <UnlockTimeline milestones={milestones} />
