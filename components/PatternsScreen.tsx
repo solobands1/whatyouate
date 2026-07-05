@@ -277,7 +277,16 @@ export default function PatternsScreen() {
                 ))}
               </div>
             ) : (
-              <p className="mt-2 text-sm text-muted/65">This is where you&apos;ll see how your energy, sleep, and mood compare to last week.</p>
+              <div className="mt-3 space-y-2">
+                {["w-24", "w-20", "w-16"].map((w, i) => (
+                  <div key={i} className="flex items-center gap-2.5">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ink/[0.04] text-muted/40">
+                      <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /></svg>
+                    </span>
+                    <span className={`h-2.5 ${w} rounded-full bg-ink/10`} />
+                  </div>
+                ))}
+              </div>
             )}
           </Card>
         )}
