@@ -368,7 +368,7 @@ export default function InsightsScreen() {
     const padL = 20, padR = 20, padT = 8, padB = 4;
     const cW = W - padL - padR;
     const cH = H - padT - padB;
-    const target = gentleTargets?.calories;
+    const target = gentleTargets?.calories ?? 2300; // always show the recommended band
     const vals = sparklineData.map((d) => (d.hasData ? d.calories : null));
     const maxVal = Math.max(...(vals.filter((v) => v !== null) as number[]), target ? target * 1.25 : 0, 1500);
     const xPos = (i: number) => padL + (i / (DAYS - 1)) * cW;
@@ -415,7 +415,9 @@ export default function InsightsScreen() {
     };
   }, [sparklineData, gentleTargets]);
 
-  const gentleTargetsDisplay = gentleTargets;
+  // Mirror Home: always show a suggested range — the personalized value when we can compute
+  // it, else a sensible default — rather than a "complete your profile" dead end.
+  const gentleTargetsDisplay = gentleTargets ?? { calories: 2300, carbs: 277, fat: 77, protein: 125 };
 
   // Average daily water over the last 14 days (days with a log), styled like the home water bar.
   const waterTrend = (() => {
@@ -667,13 +669,9 @@ export default function InsightsScreen() {
               caption="avg"
             />
           </div>
-          {gentleTargetsDisplay ? (
-            <p className="mt-4 text-xs text-muted/70">
-              Suggested range: {gentleTargetsDisplay.calories} kcal · {gentleTargetsDisplay.carbs}g carbs · {gentleTargetsDisplay.fat}g fat · {gentleTargetsDisplay.protein}g protein
-            </p>
-          ) : (
-            <p className="mt-2 text-xs text-muted/70">Complete Your Profile For A Personalized Range</p>
-          )}
+          <p className="mt-4 text-xs text-muted/70">
+            Suggested range: {gentleTargetsDisplay.calories} kcal · {gentleTargetsDisplay.carbs}g carbs · {gentleTargetsDisplay.fat}g fat · {gentleTargetsDisplay.protein}g protein
+          </p>
         </Card>
 
         <Card className="mt-6" style={riseIn(barsReady, 1)}>
@@ -835,10 +833,9 @@ export default function InsightsScreen() {
               {waterTrend.days > 0 && <p className="text-[11px] text-muted/70">{waterTrend.days} day{waterTrend.days !== 1 ? "s" : ""} logged</p>}
             </div>
             <div className="mt-4">
-              {waterTrend.has ? (
-                <WaterBar pct={waterTrend.pct} displayCurrent={waterTrend.displayCurrent} displayGoal={waterTrend.displayGoal} />
-              ) : (
-                <p className="text-sm text-muted/65">Start logging water on the home screen to see your 2-week average here.</p>
+              <WaterBar pct={waterTrend.pct} displayCurrent={waterTrend.has ? waterTrend.displayCurrent : "—"} displayGoal={waterTrend.displayGoal} />
+              {!waterTrend.has && (
+                <p className="mt-2 text-sm text-muted/65">Your average will show up here after 2 weeks of logging.</p>
               )}
             </div>
           </Card>
@@ -863,6 +860,7 @@ export default function InsightsScreen() {
               </div>
             </div>
           </div>
+          {!hasEnoughData && <p className="mt-2 text-sm text-muted/65">Keep logging and these will fill out over time.</p>}
           <div className="mt-4">
             {NUTRIENT_CATEGORIES.map((category, catIdx) => {
               const catNutrients = displayMicronutrients.filter((p) => category.nutrients.includes(p.name));
