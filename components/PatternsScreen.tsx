@@ -88,13 +88,10 @@ const EX_INSIGHTS: Discovery[] = [
   { text: foodLinkSentence(EX_FOOD_LINKS[0]), confidence: "Building" },
   EX_DISCOVERIES[0],
 ];
-function Eyebrow({ children, preview }: { children: React.ReactNode; preview?: boolean }) {
-  return (
-    <div className="flex items-center justify-between">
-      <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">{children}</p>
-      {preview && <span className="text-[11px] font-semibold uppercase tracking-wide text-primary/70">Example</span>}
-    </div>
-  );
+function Eyebrow({ children }: { children: React.ReactNode; preview?: boolean }) {
+  // The "Example" tag was retired in favour of descriptive empty states; callers may still
+  // pass `preview` (used elsewhere to decide empty-vs-real), it's just no longer rendered.
+  return <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">{children}</p>;
 }
 
 const DOT_LEGEND = (
@@ -161,39 +158,36 @@ export default function PatternsScreen() {
   // Example data + a "Preview" label until that card has enough; demo shows it unlabeled.
   const demo = isDemoMode;
 
-  // Trend cards (headline, energy, this week) need a few reflections to not look sparse.
+  // Trend cards (headline, energy) need a few reflections before there's anything real.
   const fewRefl = facts.total < 3;
-  const trendEx = demo || fewRefl;
-  const preview = !demo && fewRefl;
-  const weekCells = trendEx ? facts.week.map((d, i) => ({ ...d, energy: EX_LEVELS.energy[i] ?? null, done: true })) : facts.week;
-  const headlineText = trendEx ? EX_HEADLINE : headline;
+  // Non-demo shows the user's REAL week (empty days render as outline dots — no fake data);
+  // demo shows the curated example.
+  const weekCells = demo ? facts.week.map((d, i) => ({ ...d, energy: EX_LEVELS.energy[i] ?? null, done: true })) : facts.week;
 
   // Your Days Compared — real behavioural difference between high/low energy days when we
-  // have enough of both, else example data as a Preview.
+  // have enough of both. Empty (non-demo) shows placeholder pills, never fake items.
   const daysReal = daysCompared.hasData;
   const daysPreview = !demo && !daysReal;
-  const betterList = demo || !daysReal ? EX_BETTER : daysCompared.better;
-  const lowList = demo || !daysReal ? EX_LOWER : daysCompared.low;
+  const betterList = demo ? EX_BETTER : daysReal ? daysCompared.better : [];
+  const lowList = demo ? EX_LOWER : daysReal ? daysCompared.low : [];
 
-  // Unified coach card: the headline plus up to 2 observed associations, drawn from both
-  // food->feeling links and reflection discoveries. Real when either has data, else Preview.
+  // Coach card: the headline plus up to 2 observed associations (food->feeling links +
+  // reflection discoveries). Empty state describes what will appear instead of faking it.
   const realInsights: Discovery[] = [
     ...foodLinks.map((l) => ({ text: foodLinkSentence(l), confidence: l.confidence })),
     ...discoveries,
   ].slice(0, 2);
-  const coachPreview = !demo && realInsights.length === 0;
-  const shownInsights = demo ? EX_INSIGHTS : realInsights; // non-demo: only real, never fake
+  const coachEmpty = !demo && realInsights.length === 0;
+  const coachInsights = demo ? EX_INSIGHTS : realInsights; // non-demo: only real, never fake
+  const coachHeadline = demo ? EX_HEADLINE : fewRefl ? "This is where you'll see your most confident pattern insight." : headline;
 
-
-  // Energy dips — need a few nights that actually logged dips.
+  // Energy dips — need a few nights that actually logged dips. Empty shows blank bars (0 of 0).
   const realDips = facts.dipsDist && facts.dipsDist.morning + facts.dipsDist.afternoon + facts.dipsDist.evening > 0 ? facts.dipsDist : null;
-  const dipsPreview = !demo && !realDips;
-  const dips = demo || !realDips ? EX_DIPS : realDips;
+  const dips = demo ? EX_DIPS : (realDips ?? { morning: 0, afternoon: 0, evening: 0, days: 0 });
 
-  // Compared to last week — needs two weeks of data.
+  // Compared to last week — needs two weeks of data. Empty shows a descriptive line.
   const realChanges = facts.changes && facts.changes.length ? facts.changes : null;
-  const changesPreview = !demo && !realChanges;
-  const changes = demo || !realChanges ? EX_CHANGES : realChanges;
+  const changes = demo ? EX_CHANGES : (realChanges ?? []);
 
   // Changes you're making — kept habits, each with a before/after read on the metric it
   // targets. Independent of reflection volume; needs a completed, kept habit.
@@ -201,7 +195,7 @@ export default function PatternsScreen() {
   const activeChanges = useMemo(() => computeActiveChanges(habitHistory, reflections, user ? getChangeStatuses(user.id) : {}), [habitHistory, reflections, user, ledgerVersion]);
   const restartChange = (templateId: string) => { if (user) { setChangeStatus(user.id, templateId, "active"); setLedgerVersion((v) => v + 1); } };
   const changesLedgerPreview = !demo && activeChanges.length === 0;
-  const ledger = demo || activeChanges.length === 0 ? EX_LEDGER : activeChanges;
+  const ledger = demo ? EX_LEDGER : activeChanges;
 
   return (
     <div className="min-h-screen bg-surface">
@@ -214,38 +208,46 @@ export default function PatternsScreen() {
         {/* What the coach is noticing — the headline plus the strongest observed
             associations (food->feeling links + reflection discoveries), capped at 2. */}
         <Card className="relative" style={riseIn(ready, 0)}>
-          <Eyebrow preview={coachPreview}>What The Coach Is Noticing</Eyebrow>
+          <Eyebrow>What Your Coach Is Noticing</Eyebrow>
           <div className="mt-3 flex items-start gap-3">
             <div className="-mt-1 shrink-0"><WyaaAvatar size={40} /></div>
-            <p className="text-[15px] font-medium leading-relaxed text-ink/90">{headlineText}</p>
+            <p className="text-[15px] font-medium leading-relaxed text-ink/90">{coachHeadline}</p>
           </div>
-          {shownInsights.length > 0 ? (
+          {coachEmpty ? (
+            <>
+              <div className="mt-4 rounded-xl border border-primary/20 bg-primary/[0.05] px-3 py-3">
+                <p className="text-sm leading-relaxed text-ink/75">This is where you&apos;ll see your second and third pattern insights, as your coach builds confidence in the patterns from your food and reflection logs.</p>
+              </div>
+              <div className="mt-2.5 rounded-xl border border-dashed border-ink/15 bg-ink/[0.02] px-3 py-3 opacity-70">
+                <div className="h-2.5 w-2/3 rounded-full bg-ink/10" />
+                <div className="mt-2 h-2 w-1/3 rounded-full bg-ink/[0.07]" />
+              </div>
+            </>
+          ) : (
             <div className="mt-4 space-y-2.5">
-              {shownInsights.map((d, i) => (
+              {coachInsights.map((d, i) => (
                 <div key={i} className="rounded-xl border border-primary/15 bg-primary/[0.05] px-3 py-2.5">
                   <p className="text-sm text-ink/90">{d.text}</p>
                   <span className="mt-1.5 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary/70">Confidence: {d.confidence}</span>
                 </div>
               ))}
             </div>
-          ) : (
-            <div className="mt-4 rounded-xl border border-dashed border-primary/20 bg-primary/[0.03] px-3 py-3">
-              <p className="text-sm leading-relaxed text-ink/70">As you log meals and check in, I&apos;ll show which foods and habits line up with how you feel here — like whether late dinners tend to cost you energy the next day.</p>
-            </div>
           )}
-          <p className="mt-3 text-[11px] leading-relaxed text-muted/50">Associations from your check-ins and meals, not proven causes.</p>
+          {(demo || realInsights.length > 0) && (
+            <p className="mt-3 text-[11px] leading-relaxed text-muted/50">Associations from your check-ins and meals, not proven causes.</p>
+          )}
         </Card>
 
         {/* Energy trend */}
         <Card className="mt-6" style={riseIn(ready, 2)}>
-          <Eyebrow preview={preview}>Your Energy Lately</Eyebrow>
+          <Eyebrow>Your Energy Lately</Eyebrow>
           <p className="mt-2 text-sm text-ink/80">
-            {trendEx ? (
+            {demo ? (
               <>Your <span className="font-semibold text-ink">energy held up well</span> this week.</>
             ) : facts.energyPhrase ? (
               <>Your <span className="font-semibold text-ink">{facts.energyPhrase}</span> this week.</>
             ) : (
-              <><span className="font-semibold text-ink">{facts.week.filter((d) => d.energy === "low").length} low-energy days</span> this week.</>
+              "This is where your energy logs will show."
             )}
           </p>
           <div className="mt-3 flex items-end justify-between">
@@ -262,45 +264,68 @@ export default function PatternsScreen() {
         {/* Compared to last week */}
         {(
           <Card className="mt-6" style={riseIn(ready, 3)}>
-            <Eyebrow preview={changesPreview}>Compared To Last Week</Eyebrow>
-            <div className="mt-3 space-y-2">
-              {changes.map((c) => (
-                <div key={c.key} className="flex items-center gap-2.5">
-                  <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ink/[0.04] ${CHANGE_VERB[c.dir].cls}`}>
-                    <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d={CHANGE_VERB[c.dir].arrow} /></svg>
-                  </span>
-                  <span className="text-sm text-ink/80"><span className="font-semibold text-ink">{c.label}</span> {CHANGE_VERB[c.dir].verb}</span>
-                </div>
-              ))}
-            </div>
+            <Eyebrow>Compared To Last Week</Eyebrow>
+            {changes.length > 0 ? (
+              <div className="mt-3 space-y-2">
+                {changes.map((c) => (
+                  <div key={c.key} className="flex items-center gap-2.5">
+                    <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ink/[0.04] ${CHANGE_VERB[c.dir].cls}`}>
+                      <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d={CHANGE_VERB[c.dir].arrow} /></svg>
+                    </span>
+                    <span className="text-sm text-ink/80"><span className="font-semibold text-ink">{c.label}</span> {CHANGE_VERB[c.dir].verb}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-2 text-sm text-muted/65">This is where you&apos;ll see how your energy, sleep, and mood compare to last week.</p>
+            )}
           </Card>
         )}
 
         {/* What tends to help vs not — behavioral comparison (preview until we compute it) */}
         <Card className="mt-6" style={riseIn(ready, 3)}>
-          <Eyebrow preview={daysPreview}>Your Days Compared</Eyebrow>
+          <Eyebrow>Your Days Compared</Eyebrow>
+          <p className="mt-1 text-sm text-muted/65">This compares your better days and your low-energy days.</p>
           <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-primary-dark/80">Better Days</p>
             <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/70">Low-Energy Days</p>
             <ul className="space-y-1.5">
-              {betterList.map((d) => (
-                <li key={d} className="flex items-start gap-2 text-[13px] text-ink/80">
-                  <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary-dark/15 text-primary-dark">
-                    <svg viewBox="0 0 24 24" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l4 4L19 7" /></svg>
-                  </span>
-                  {d}
-                </li>
-              ))}
+              {daysPreview
+                ? ["w-24", "w-16", "w-20"].map((w, i) => (
+                    <li key={i} className="flex items-center gap-2">
+                      <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary-dark/15 text-primary-dark">
+                        <svg viewBox="0 0 24 24" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l4 4L19 7" /></svg>
+                      </span>
+                      <span className={`h-2.5 ${w} rounded-full bg-primary-dark/10`} />
+                    </li>
+                  ))
+                : betterList.map((d) => (
+                    <li key={d} className="flex items-start gap-2 text-[13px] text-ink/80">
+                      <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary-dark/15 text-primary-dark">
+                        <svg viewBox="0 0 24 24" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l4 4L19 7" /></svg>
+                      </span>
+                      {d}
+                    </li>
+                  ))}
             </ul>
             <ul className="space-y-1.5">
-              {lowList.map((d) => (
-                <li key={d} className="flex items-start gap-2 text-[13px] text-ink/80">
-                  <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-ink/[0.08] text-ink/45">
-                    <svg viewBox="0 0 24 24" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8v5M12 16.5v.5" /></svg>
-                  </span>
-                  {d}
-                </li>
-              ))}
+              {daysPreview
+                ? ["w-20", "w-24", "w-16"].map((w, i) => (
+                    <li key={i} className="flex items-center gap-2">
+                      <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-ink/[0.08] text-ink/45">
+                        <svg viewBox="0 0 24 24" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8v5M12 16.5v.5" /></svg>
+                      </span>
+                      <span className={`h-2.5 ${w} rounded-full bg-ink/10`} />
+                    </li>
+                  ))
+                : lowList.map((d) => (
+                    <li key={d} className="flex items-start gap-2 text-[13px] text-ink/80">
+                      <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-ink/[0.08] text-ink/45">
+                        <svg viewBox="0 0 24 24" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8v5M12 16.5v.5" /></svg>
+                      </span>
+                      {d}
+                    </li>
+                  ))}
             </ul>
           </div>
         </Card>
@@ -308,8 +333,8 @@ export default function PatternsScreen() {
         {/* When energy dips */}
         {(
           <Card className="mt-6" style={riseIn(ready, 4)}>
-            <Eyebrow preview={dipsPreview}>When Your Energy Dips</Eyebrow>
-            <p className="mt-1 text-sm text-muted/65">Across your last {dips.days} nights.</p>
+            <Eyebrow>When Your Energy Dips</Eyebrow>
+            <p className="mt-1 text-sm text-muted/65">{demo || realDips ? `Across your last ${dips.days} nights.` : "Watch when your energy dips to spot patterns."}</p>
             <div className="mt-4 space-y-2.5">
               {(() => {
                 // Scale bars to the number of nights (not the max) so the length reflects
@@ -337,8 +362,20 @@ export default function PatternsScreen() {
         {/* Changes you're making — kept habits + whether the metric they target improved */}
         {(
           <Card className="mt-6" style={riseIn(ready, 6)}>
-            <Eyebrow preview={changesLedgerPreview}>Changes You&apos;re Making</Eyebrow>
+            <Eyebrow>Changes You&apos;re Making</Eyebrow>
             <p className="mt-1 text-sm text-muted/65">Habits you kept, and whether they seem to be helping.</p>
+            {changesLedgerPreview ? (
+              <div className="mt-3 space-y-2.5">
+                <div className="rounded-xl border border-primary/15 bg-primary/[0.05] px-3 py-3">
+                  <p className="text-sm font-semibold text-ink">Your kept habits show up here</p>
+                  <p className="mt-1 text-[12px] leading-relaxed text-muted/70">Keep a habit builder going and I&apos;ll track whether what it targets — like your energy — actually improves.</p>
+                </div>
+                <div className="rounded-xl border border-dashed border-ink/15 bg-ink/[0.02] px-3 py-3 opacity-70">
+                  <div className="h-2.5 w-1/2 rounded-full bg-ink/10" />
+                  <div className="mt-2 h-2 w-1/3 rounded-full bg-ink/[0.07]" />
+                </div>
+              </div>
+            ) : (
             <div className="mt-3 space-y-2">
               {ledger.map((c) => {
                 const line = changeEffectLine(c);
@@ -369,6 +406,7 @@ export default function PatternsScreen() {
                 );
               })}
             </div>
+            )}
           </Card>
         )}
 
