@@ -85,15 +85,48 @@ export default function ReflectionScreen() {
             ))}
           </div>
         ) : sorted.length === 0 ? (
-          <Card>
-            <div className="flex flex-col items-center py-6 text-center">
-              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-                <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z" /></svg>
-              </span>
-              <p className="mt-3 text-sm font-semibold text-ink">No Reflections Yet</p>
-              <p className="mt-1 max-w-[16rem] text-xs text-muted/65">Your nightly reflections will show up here so you can see how you&apos;ve been feeling over time.</p>
-            </div>
-          </Card>
+          <>
+            {/* This Week — the real strip with empty dots + an explainer */}
+            <section style={riseIn(barsReady, 0)} className="space-y-3">
+              <Card>
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">This Week</p>
+                <div className="mt-3 flex items-start justify-between">
+                  {facts.week.map((d) => (
+                    <div key={d.key} className="flex flex-col items-center gap-1.5">
+                      <span className={`h-3 w-3 rounded-full border-2 border-ink/15 ${d.isToday ? "ring-2 ring-primary/25 ring-offset-1 ring-offset-white" : ""}`} />
+                      <p className={`text-[10px] ${d.isToday ? "font-bold text-ink/80" : "text-muted/60"}`}>{d.label}</p>
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-3 text-sm text-muted/70">Your nightly check-ins will show up here.</p>
+                <div className="mt-2.5"><Legend withMissed /></div>
+              </Card>
+            </section>
+
+            {/* History — the shape of an entry, greyed until you check in */}
+            <section className="mt-7">
+              <div className="mb-2 flex items-center justify-between px-1" style={riseIn(barsReady, 1)}>
+                <p className="text-xs uppercase tracking-wide text-muted/70">History</p>
+                <Legend />
+              </div>
+              <Card style={riseIn(barsReady, 2)}>
+                <div className="flex items-baseline justify-between">
+                  <p className="text-sm font-semibold text-ink/70">Tonight</p>
+                  <span className="h-2.5 w-14 rounded-full bg-ink/10" />
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2">
+                  {REFLECTION_METRICS.map((m) => (
+                    <div key={m.key} className="flex items-center gap-1.5">
+                      <span className="h-2 w-2 shrink-0 rounded-full bg-ink/15" />
+                      <span className="text-xs text-muted/65">{m.label}</span>
+                      <span className="h-2.5 w-10 rounded-full bg-ink/10" />
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-3 text-xs leading-relaxed text-muted/65">Each night you check in, that day lands here — energy, sleep, mood and more, so you can look back over how you&apos;ve felt.</p>
+              </Card>
+            </section>
+          </>
         ) : (
           <>
             {/* Signals — a couple of interpretations above the raw history. */}
