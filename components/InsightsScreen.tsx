@@ -621,7 +621,7 @@ export default function InsightsScreen() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <p className="text-xs uppercase tracking-wide text-muted/70">Macros</p>
-              {!hasEnoughData && <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/70">Preview</p>}
+              {!hasEnoughData && <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/70">Example</p>}
               <button
                 type="button"
                 className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-ink/10 text-[10px] font-semibold text-ink/60"
@@ -850,7 +850,7 @@ export default function InsightsScreen() {
               Micronutrients
             </p>
             <div className="flex items-center gap-3">
-              {!hasEnoughData && <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/70">Preview</p>}
+              {!hasEnoughData && <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/70">Example</p>}
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1">
                   <div className="h-2 w-4 rounded-sm bg-primary/70" />
