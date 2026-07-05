@@ -35,7 +35,7 @@ function patternsHeadline(facts: ReflectionFacts): string {
   if (facts.watch) return `${facts.watch.label} has been your low point lately, low on ${facts.watch.low} of the last ${facts.watch.n} nights.`;
   if (facts.dip && !("none" in facts.dip)) return `Your energy dips most in the ${facts.dip.time.toLowerCase()}, ${facts.dip.count} of the last ${facts.dip.days} nights.`;
   if (facts.energyPhrase) return `Your ${facts.energyPhrase} this week.`;
-  return "Your check-ins are starting to build a picture. The clearer patterns will show up here.";
+  return "Your reflections are starting to build a picture. The clearer patterns will show up here.";
 }
 
 const KEEP_CHIP: Record<"yes" | "maybe", { label: string; cls: string }> = {
@@ -216,7 +216,7 @@ export default function PatternsScreen() {
           {coachEmpty ? (
             <>
               <div className="mt-4 rounded-xl border border-primary/20 bg-primary/[0.05] px-3 py-3">
-                <p className="text-sm leading-relaxed text-ink/70">A couple more will follow as your coach gets to know your food and check-in patterns.</p>
+                <p className="text-sm leading-relaxed text-ink/70">A couple more will follow as your coach gets to know your food and reflection patterns.</p>
               </div>
               <div className="mt-2.5 rounded-xl border border-dashed border-ink/15 bg-ink/[0.02] px-3 py-3 opacity-70">
                 <div className="h-2.5 w-2/3 rounded-full bg-ink/10" />
@@ -234,7 +234,7 @@ export default function PatternsScreen() {
             </div>
           )}
           {(demo || realInsights.length > 0) && (
-            <p className="mt-3 text-[11px] leading-relaxed text-muted/50">Associations from your check-ins and meals, not proven causes.</p>
+            <p className="mt-3 text-[11px] leading-relaxed text-muted/50">Associations from your reflections and meals, not proven causes.</p>
           )}
         </Card>
 

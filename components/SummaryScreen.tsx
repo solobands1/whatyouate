@@ -1454,7 +1454,7 @@ export default function SummaryScreen() {
                 <div>
                   <p className="text-base font-semibold text-ink">I&apos;m Your AI Coach</p>
                   <p className="mt-2.5 text-sm leading-relaxed text-muted/80">
-                    I read your meals and your nightly check-ins to learn how food affects your energy and how you feel, then send you honest, specific nudges through the day.
+                    I read your meals and your nightly reflections to learn how food affects your energy and how you feel, then send you honest, specific nudges through the day.
                   </p>
                   <p className="mt-2.5 text-sm leading-relaxed text-muted/80">
                     When something&apos;s worth working on, I&apos;ll build a small habit with you, one easy step at a time. The more you share, the more useful I get!
