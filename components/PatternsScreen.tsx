@@ -377,7 +377,7 @@ export default function PatternsScreen() {
             {changesLedgerPreview ? (
               <div className="mt-3 space-y-2.5">
                 <div className="rounded-xl border border-primary/15 bg-primary/[0.05] px-3 py-3">
-                  <p className="text-sm font-semibold text-ink">Your Kept Habits Show Up Here</p>
+                  <p className="text-[13px] font-semibold text-ink/80">Your Kept Habits Show Up Here</p>
                   <p className="mt-1 text-[12px] leading-relaxed text-muted/70">Stick with a habit builder and I&apos;ll track whether it actually helps how you feel.</p>
                 </div>
                 <div className="rounded-xl border border-dashed border-ink/15 bg-ink/[0.02] px-3 py-3 opacity-70">
