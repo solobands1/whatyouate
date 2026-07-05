@@ -92,7 +92,7 @@ function Eyebrow({ children, preview }: { children: React.ReactNode; preview?: b
   return (
     <div className="flex items-center justify-between">
       <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">{children}</p>
-      {preview && <span className="text-[11px] uppercase tracking-wide text-muted/70">Preview</span>}
+      {preview && <span className="text-[11px] font-semibold uppercase tracking-wide text-primary/70">Preview</span>}
     </div>
   );
 }
@@ -214,8 +214,8 @@ export default function PatternsScreen() {
           <h1 className="text-2xl font-semibold text-ink">Patterns</h1>
           <p className="mt-1 text-sm text-muted/70">What seems to affect how you feel</p>
           {anyExample && (
-            <div className="mt-2 inline-flex items-center rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-[11px] text-primary/80">
-              Cards marked Preview show sample data until you&apos;ve logged enough
+            <div className="mt-3 flex items-center justify-center rounded-2xl border border-primary/25 bg-primary/10 px-4 py-4 text-center text-[13px] font-medium text-primary/80">
+              Log Meals And Check In To Unlock Real Data
             </div>
           )}
         </header>
