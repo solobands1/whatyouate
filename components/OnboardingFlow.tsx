@@ -643,7 +643,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
                 </svg>
               </div>
               <h1 className="text-2xl font-semibold text-ink text-center">Any Foods You Avoid?</h1>
-              <p className="mt-2 text-sm text-muted/70 text-center">We'll make sure your coach never suggests these — tap all that apply</p>
+              <p className="mt-2 text-sm text-muted/70 text-center">We'll make sure your coach never suggests these. Tap all that apply</p>
               <div className="mt-12 flex flex-wrap justify-center gap-2">
                 {DIETARY_OPTIONS.map((d) => {
                   const active = dietaryRestrictions.includes(d);

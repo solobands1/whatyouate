@@ -130,7 +130,7 @@ export default function ReflectionScreen() {
                     </div>
                   ))}
                 </div>
-                <p className="mt-3 text-xs leading-relaxed text-muted/65">Each night you check in, that day lands here — energy, sleep, mood and more, so you can look back over how you&apos;ve felt.</p>
+                <p className="mt-3 text-xs leading-relaxed text-muted/65">Each night you check in, that day lands here with energy, sleep, mood and more, so you can look back over how you&apos;ve felt.</p>
               </Card>
             </section>
           </>

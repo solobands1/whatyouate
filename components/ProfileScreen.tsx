@@ -1375,7 +1375,7 @@ export default function ProfileScreen() {
                       const reMatched = matchSupplementNutrients(val.trim());
                       const canonMatched = data.canonical_name ? matchSupplementNutrients(data.canonical_name) : [];
                       const allMatched = [...new Set([...reMatched, ...canonMatched])];
-                      setSuppMatchHint(allMatched.length ? `Tracks: ${allMatched.join(", ")}` : "No nutrient data found — add manually");
+                      setSuppMatchHint(allMatched.length ? `Tracks: ${allMatched.join(", ")}` : "No nutrient data found, add manually");
                     } catch {
                       // silently fail — hint stays as keyword match
                     } finally {
@@ -1540,11 +1540,11 @@ export default function ProfileScreen() {
           </div>
           {/* Wipes the active/completed builder + history so the flow can be re-tested. */}
           <button type="button" onClick={handleResetHabitData} className="mt-2 w-full rounded-xl border border-ink/10 px-4 py-2 text-xs font-semibold text-ink/55 transition active:opacity-60">
-            {habitReset ? "Reset ✓ — reopen Home" : "Reset Habit Builder Data"}
+            {habitReset ? "Reset ✓, reopen Home" : "Reset Habit Builder Data"}
           </button>
           {/* Backdates the active builder a day to test rollover / missed / lapse. */}
           <button type="button" onClick={simulateNextDay} className="mt-2 w-full rounded-xl border border-ink/10 px-4 py-2 text-xs font-semibold text-ink/55 transition active:opacity-60">
-            {simDayMsg ? "Shifted a day ✓ — reopen Home" : "Simulate Next Day"}
+            {simDayMsg ? "Shifted a day ✓, reopen Home" : "Simulate Next Day"}
           </button>
         </Card>
 
@@ -1703,7 +1703,7 @@ export default function ProfileScreen() {
               <div>
                 <p className="text-sm font-semibold text-ink">Goal Direction</p>
                 <p className="mt-2 text-sm text-muted/70">
-                  Sets a soft bias for your calorie and protein ranges. Not a strict plan — just a direction.
+                  Sets a soft bias for your calorie and protein ranges. Not a strict plan, just a direction.
                 </p>
                 <div className="mt-3 space-y-1.5 text-xs text-muted/70">
                   <p><span className="font-semibold text-ink/70">Gain:</span> nudges intake and protein up.</p>

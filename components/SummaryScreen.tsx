@@ -68,7 +68,7 @@ function UnlockTimeline({ milestones }: { milestones: MilestoneItem[] }) {
 }
 
 
-const DEMO_NUDGE = "Your protein has been strong this week, but your last two days have been lighter on calories overall. If you're training today, consider a bigger lunch or an extra snack before your session — your body will make better use of what you eat around activity.";
+const DEMO_NUDGE = "Your protein has been strong this week, but your last two days have been lighter on calories overall. If you're training today, consider a bigger lunch or an extra snack before your session, your body will make better use of what you eat around activity.";
 
 export default function SummaryScreen() {
   const router = useRouter();
@@ -258,7 +258,7 @@ export default function SummaryScreen() {
       "More Data, Better Picture",
     ]);
     return weeklyVariant([
-      "Getting Started",
+      "Your Picture Is Forming",
       "The First Few Logs Are The Hardest",
       "Early Days",
       "A Few Logs In",
@@ -721,12 +721,12 @@ export default function SummaryScreen() {
       case "momentum":
         return weeklyVariant([
           "Consistency is what separates short-term results from lasting change. You're building the harder thing.",
-          "Streaks matter because they reflect real daily decisions — not just intention but follow-through.",
+          "Streaks matter because they reflect real daily decisions, not just intention but follow-through.",
         ]);
       case "pattern":
         return weeklyVariant([
           "Patterns show up slowly but shape results steadily. Catching one early is usually the cheapest time to adjust.",
-          "Most nutrition outcomes aren't caused by one bad day — they're caused by patterns that went unnoticed.",
+          "Most nutrition outcomes aren't caused by one bad day. They're caused by patterns that went unnoticed.",
         ]);
       case "meal_timing":
         return weeklyVariant([
@@ -736,17 +736,17 @@ export default function SummaryScreen() {
       case "food_insight":
         return weeklyVariant([
           "Small shifts in what you eat regularly tend to have more impact than occasional big changes.",
-          "Food choices accumulate over time — a small recurring addition or swap can shift your weekly averages noticeably.",
+          "Food choices accumulate over time. A small recurring addition or swap can shift your weekly averages noticeably.",
         ]);
       case "variety":
         return weeklyVariant([
           "Eating a wide range of foods is one of the most consistent predictors of better micronutrient coverage.",
-          "Variety reduces the risk of consistent gaps — no single food or food group covers everything.",
+          "Variety reduces the risk of consistent gaps. No single food or food group covers everything.",
         ]);
       case "rest_day_fuel":
         return weeklyVariant([
           "Rest days are when your body actually repairs. Underfuelling them can slow recovery between sessions.",
-          "Recovery nutrition matters as much as workout nutrition — the repair happens on the days in between.",
+          "Recovery nutrition matters as much as workout nutrition. The repair happens on the days in between.",
         ]);
       case "workout_recovery":
         return weeklyVariant([
@@ -880,7 +880,7 @@ export default function SummaryScreen() {
       case "win":
         return weeklyVariant([
           "Keep the same approach tomorrow. The goal is to make today's choices feel ordinary.",
-          "Note what made today easier — whether it was prep, timing, or just circumstance. It's worth repeating.",
+          "Note what made today easier, whether it was prep, timing, or just circumstance. It's worth repeating.",
         ]);
       case "momentum":
         return weeklyVariant([
@@ -895,12 +895,12 @@ export default function SummaryScreen() {
       case "meal_timing":
         return weeklyVariant([
           "Try shifting one meal slightly earlier or later and see how it affects energy and hunger later in the day.",
-          "Experimenting with meal spacing tends to reveal what works for your routine — start with one change.",
+          "Experimenting with meal spacing tends to reveal what works for your routine. Start with one change.",
         ]);
       case "food_insight":
         return weeklyVariant([
           "Try swapping or adding one food this week and see what it does to your daily numbers.",
-          "Small recurring additions are usually easier to maintain than full meal changes — start with one.",
+          "Small recurring additions are usually easier to maintain than full meal changes. Start with one.",
         ]);
       case "variety":
         return weeklyVariant([
@@ -914,7 +914,7 @@ export default function SummaryScreen() {
         ]);
       case "workout_recovery":
         return weeklyVariant([
-          "Aim for a meal with protein and carbs within a couple of hours after training — that window matters.",
+          "Aim for a meal with protein and carbs within a couple of hours after training. That window matters.",
           "A small protein-and-carb snack right after a session is usually enough to support recovery even if a full meal isn't ready.",
         ]);
       case "check_in":
@@ -1056,7 +1056,7 @@ export default function SummaryScreen() {
               <p className="mt-3 text-sm font-semibold text-ink/80">Strong week overall</p>
               <div className="mt-1.5 space-y-1">
                 <p className="text-sm text-muted/60">5 of 7 days logged. Protein consistent across all logged days.</p>
-                <p className="text-sm text-muted/60">Averaging 1,840 kcal — slightly under your suggested range on lighter days.</p>
+                <p className="text-sm text-muted/60">Averaging 1,840 kcal, slightly under your suggested range on lighter days.</p>
               </div>
             </>
           ) : dayCount === 0 ? (
@@ -1216,7 +1216,7 @@ export default function SummaryScreen() {
                       </div>
                       <div className="flex-1 rounded-xl border border-primary/15 bg-primary/[0.05] px-3 py-2.5">
                         <p className="text-[13px] font-semibold text-ink/80">Your Completed Habits Show Up Here</p>
-                        <p className="mt-1 text-[12px] leading-relaxed text-muted/70">Keep an eye out for a suggested habit on your home screen — we tailor them to how you&apos;ve been feeling.</p>
+                        <p className="mt-1 text-[12px] leading-relaxed text-muted/70">Keep an eye out for a suggested habit on your home screen. We tailor them based on how you&apos;ve been feeling and your food logs.</p>
                       </div>
                     </div>
                     {/* Ghost row — the same shape, dimmed, to show another can land here. */}
@@ -1315,7 +1315,7 @@ export default function SummaryScreen() {
                 </div>
               ) : mealCount < 5 ? (
                 <div className="space-y-1">
-                  <p className="text-sm text-ink/70">Getting Started — Log {5 - mealCount} more meal{5 - mealCount !== 1 ? "s" : ""} and I’ll have my first read on your patterns.</p>
+                  <p className="text-sm text-ink/70">Getting Started. Log {5 - mealCount} more meal{5 - mealCount !== 1 ? "s" : ""} and I’ll have my first read on your patterns.</p>
                   <div className="mt-2 flex gap-1">
                     {Array.from({ length: 5 }).map((_, i) => (
                       <div key={i} className={`h-1.5 flex-1 rounded-full ${i < mealCount ? "bg-primary/60" : "bg-ink/10"}`} />

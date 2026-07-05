@@ -2358,7 +2358,7 @@ export default function HomeScreen() {
       content: (
         <div>
           <p style={{ fontWeight: 600, marginBottom: 10 }}>Log Anything Here</p>
-          <p>Tap the + to log food — by photo, barcode, or typing it — plus water and activity, all in one place.</p>
+          <p>Tap the + to log food by photo, barcode, or typing it, plus water and activity, all in one place.</p>
         </div>
       ),
     },

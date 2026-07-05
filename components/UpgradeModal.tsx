@@ -167,7 +167,7 @@ export default function UpgradeModal() {
             Unlock WhatYouAte Pro
           </h1>
           <p className="mt-1.5 max-w-xs text-center text-sm text-muted/70">
-            AI photo logging, personalized coaching, and micronutrient insights — all in one place.
+            AI photo logging, personalized coaching, and micronutrient insights, all in one place.
           </p>
 
           {/* What's included */}
