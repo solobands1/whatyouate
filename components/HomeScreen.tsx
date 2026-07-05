@@ -3529,14 +3529,10 @@ export default function HomeScreen() {
                 Show more
               </button>
             )}
-            {!loadingData && recentItems.length === 0 ? (
-              mealCount === 0 && displayWorkouts.length === 0 ? (
-                <div className="inline-flex items-center rounded-full border border-dashed border-ink/15 bg-ink/[0.03] px-3 py-1.5 text-xs text-muted/60">
-                  Your logged meals will show up here.
-                </div>
-              ) : (
-                <p className="text-muted/70">No food or workouts yet.</p>
-              )
+            {!loadingData && recentFiltered.length === 0 ? (
+              <div className="inline-flex items-center rounded-full border border-dashed border-ink/15 bg-ink/[0.03] px-3 py-1.5 text-xs text-muted/60">
+                Your logged meals will show up here.
+              </div>
             ) : null}
           </div>
         </Card>
