@@ -1215,7 +1215,7 @@ export default function SummaryScreen() {
                         <span className="absolute top-7 bottom-0 w-0.5 bg-primary/10" />
                       </div>
                       <div className="flex-1 rounded-xl border border-primary/15 bg-primary/[0.05] px-3 py-2.5">
-                        <p className="text-sm font-semibold text-ink">Your completed habits show up here</p>
+                        <p className="text-sm font-semibold text-ink">Your Completed Habits Show Up Here</p>
                         <p className="mt-1 text-[12px] leading-relaxed text-muted/70">Keep an eye out for a suggested habit on your home screen — we tailor them to how you&apos;ve been feeling.</p>
                       </div>
                     </div>
