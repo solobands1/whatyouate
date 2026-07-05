@@ -182,7 +182,7 @@ export default function PatternsScreen() {
     ...discoveries,
   ].slice(0, 2);
   const coachPreview = !demo && realInsights.length === 0;
-  const shownInsights = demo || realInsights.length === 0 ? EX_INSIGHTS : realInsights;
+  const shownInsights = demo ? EX_INSIGHTS : realInsights; // non-demo: only real, never fake
 
 
   // Energy dips — need a few nights that actually logged dips.
@@ -219,7 +219,7 @@ export default function PatternsScreen() {
             <div className="-mt-1 shrink-0"><WyaaAvatar size={40} /></div>
             <p className="text-[15px] font-medium leading-relaxed text-ink/90">{headlineText}</p>
           </div>
-          {shownInsights.length > 0 && (
+          {shownInsights.length > 0 ? (
             <div className="mt-4 space-y-2.5">
               {shownInsights.map((d, i) => (
                 <div key={i} className="rounded-xl border border-primary/15 bg-primary/[0.05] px-3 py-2.5">
@@ -227,6 +227,10 @@ export default function PatternsScreen() {
                   <span className="mt-1.5 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary/70">Confidence: {d.confidence}</span>
                 </div>
               ))}
+            </div>
+          ) : (
+            <div className="mt-4 rounded-xl border border-dashed border-primary/20 bg-primary/[0.03] px-3 py-3">
+              <p className="text-sm leading-relaxed text-ink/70">As you log meals and check in, I&apos;ll show which foods and habits line up with how you feel here — like whether late dinners tend to cost you energy the next day.</p>
             </div>
           )}
           <p className="mt-3 text-[11px] leading-relaxed text-muted/50">Associations from your check-ins and meals, not proven causes.</p>
