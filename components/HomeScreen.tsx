@@ -3300,9 +3300,26 @@ export default function HomeScreen() {
           </div>
         )}
 
-        {/* Nightly check-in entry. The big home button appears at 5pm (or once done,
-            showing "Checked In" until midnight). Demo always shows it. */}
-        {(isDemoMode || todayReflection || cuePreview || REFLECTION_AVAILABLE_ALL_DAY || new Date().getHours() >= 17) && (
+        {/* Nightly reflection entry. Locked (explainer only) until the user has logged 5
+            meals, so they focus on logging first; then it becomes the live button, which
+            appears at 5pm (or shows "Reflection Complete" until midnight). Demo always live. */}
+        {!isDemoMode && mealCount < 5 && !todayReflection ? (
+          <div className="mt-2" style={riseIn(barsReady && habitLoaded, 1)}>
+            <div className="flex w-full items-start gap-3 rounded-2xl border-2 border-dashed border-primary/20 bg-primary/[0.04] px-4 py-3">
+              <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary/60">
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z" /></svg>
+              </span>
+              <span className="flex-1">
+                <span className="flex items-center gap-1.5">
+                  <span className="text-sm font-semibold text-ink/70">Nightly Reflection</span>
+                  <span className="rounded-full bg-ink/[0.06] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-ink/45">Locked</span>
+                </span>
+                <span className="mt-0.5 block text-[12px] leading-relaxed text-ink/55">Each evening from 5pm you&apos;ll check in on your energy, sleep, and mood. We&apos;ll remind you at 7pm.</span>
+                <span className="mt-1 block text-[11px] font-medium text-primary/70">Unlocks after you log {5 - mealCount} more meal{5 - mealCount !== 1 ? "s" : ""}.</span>
+              </span>
+            </div>
+          </div>
+        ) : (isDemoMode || todayReflection || cuePreview || REFLECTION_AVAILABLE_ALL_DAY || new Date().getHours() >= 17) ? (
           <div className="mt-2" style={riseIn(barsReady && habitLoaded, 1)}>
             <button
               type="button"
@@ -3327,7 +3344,7 @@ export default function HomeScreen() {
               <svg viewBox="0 0 24 24" className="h-4 w-4 text-ink/30" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
             </button>
           </div>
-        )}
+        ) : null}
 
         {workout.activeWorkout && (
           <p className="mt-3 text-center text-[11px] text-muted/60">Workout in progress</p>
