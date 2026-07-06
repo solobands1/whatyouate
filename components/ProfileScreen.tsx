@@ -609,6 +609,9 @@ export default function ProfileScreen() {
     setUnits("imperial");
     setDailySupplementsState([]);
     setStatusWithAutoDismiss("All data cleared.");
+    // Full reload so the shared data provider re-fetches the now-empty account and no
+    // stale profile/supplements linger from the in-memory cache.
+    setTimeout(() => { try { window.location.reload(); } catch {} }, 700);
   };
 
   const handleSignOut = async () => {

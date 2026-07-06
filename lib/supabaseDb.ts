@@ -970,8 +970,12 @@ export async function clearAllData(userId: string) {
   const workouts = await supabase.from("workouts").delete().eq("user_id", userId);
   const profile = await supabase.from("profiles").delete().eq("user_id", userId);
   const nudges = await supabase.from("nudges").delete().eq("user_id", userId);
-  if (meals.error || workouts.error || profile.error || nudges.error) {
-    throw meals.error || workouts.error || profile.error || nudges.error;
+  const feelLogs = await supabase.from("feel_logs").delete().eq("user_id", userId);
+  const weightLogs = await supabase.from("weight_logs").delete().eq("user_id", userId);
+  // Evict the cached profile so callers don't resurrect stale data (e.g. daily supplements).
+  profileCache.delete(userId);
+  if (meals.error || workouts.error || profile.error || nudges.error || feelLogs.error || weightLogs.error) {
+    throw meals.error || workouts.error || profile.error || nudges.error || feelLogs.error || weightLogs.error;
   }
 }
 
