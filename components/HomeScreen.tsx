@@ -214,9 +214,10 @@ function NightlyMoonsBg() {
   );
 }
 
-// Habit templates wired locally so we can flip through and test how each one
-// renders before the engine/persistence exist. Starts on hydration (the reference).
-const FIRST_TEMPLATE: HabitTemplate = HABIT_TEMPLATES.find((t) => t.id === "hydration-3") ?? HABIT_TEMPLATES[0];
+// Initial placeholder before the habit engine/persistence resolve. A brand-new user
+// starts on "Find Your Footing" (the onboarding logging habit); the real selection in
+// goalHabits + the load effect replaces this once meals load.
+const FIRST_TEMPLATE: HabitTemplate = HABIT_TEMPLATES.find((t) => t.id === "logging-starter") ?? HABIT_TEMPLATES[0];
 
 function freshDays(t: HabitTemplate): boolean[][] {
   return Array.from({ length: t.durationDays }, () => Array(t.checkpoints.length).fill(false));
@@ -610,9 +611,19 @@ export default function HomeScreen() {
   const goalHabits = useMemo(() => {
     const list = habitsForSignals(observedProblem, profile?.feelingGoals, profile?.goalDirection);
     const notForMe = user ? getNotForMe(user.id) : new Set<string>();
-    return notForMe.size ? list.filter((h) => !notForMe.has(h.id)) : list;
+    const filtered = notForMe.size ? list.filter((h) => !notForMe.has(h.id)) : list;
+    // Cold start: a brand-new user's very first habit is always "Find Your Footing" (the
+    // onboarding logging habit), which habitsForGoals otherwise filters out. Once they've
+    // logged a handful of real meals, the standard goal-based habits take over. Decline/
+    // cooldown still applies downstream via pickSuggestionId, so it won't nag if dismissed.
+    const realMeals = (ctxMeals ?? []).filter((m) => m.analysisJson?.source !== "supplement" && m.status !== "failed").length;
+    const onboarding = HABIT_TEMPLATES.find((t) => t.id === "logging-starter");
+    if (realMeals < 5 && onboarding && !notForMe.has(onboarding.id)) {
+      return [onboarding, ...filtered.filter((h) => h.id !== onboarding.id)];
+    }
+    return filtered;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [observedProblem, profile?.feelingGoals, profile?.goalDirection, user, changeStatusVersion]);
+  }, [observedProblem, profile?.feelingGoals, profile?.goalDirection, user, changeStatusVersion, ctxMeals]);
 
   // "Still doing it?" check-in: pick one kept habit that's been going a while and we haven't
   // asked about recently. Surfaced after a reflection so it never feels like homework.
@@ -683,7 +694,9 @@ export default function HomeScreen() {
   // can read the latest without re-running on it.
   const habitStateRef = useRef<HabitState>(EMPTY_HABIT_STATE);
   useEffect(() => {
-    if (appliedGoalHabitRef.current || !profile || goalHabits.length === 0) return;
+    // Wait for meals to finish loading so the cold-start count (Find Your Footing vs a
+    // standard habit) is decided on real data, not a mid-load empty list.
+    if (appliedGoalHabitRef.current || !profile || dataLoading || goalHabits.length === 0) return;
     appliedGoalHabitRef.current = true;
     // Demo/walkthrough stays in-memory and never touches persistence.
     if (isDemoMode || !user) {
@@ -753,7 +766,7 @@ export default function HomeScreen() {
       setHabitLoaded(true);
     })();
     return () => { cancelled = true; };
-  }, [profile, goalHabits, user, isDemoMode]);
+  }, [profile, goalHabits, user, isDemoMode, dataLoading]);
 
   // Persist the in-progress builder whenever it changes. "done" is handled by its own
   // effect below (it carries finishedAt + the keep answer); transient states
@@ -3301,19 +3314,22 @@ export default function HomeScreen() {
             appears at 5pm (or shows "Reflection Complete" until midnight). Demo always live. */}
         {!isDemoMode && mealCount < 5 && !todayReflection ? (
           <div className="mt-2" style={riseIn(barsReady && habitLoaded, 1)}>
-            <div className="flex w-full items-start gap-3 rounded-2xl border-2 border-dashed border-primary/20 bg-primary/[0.04] px-4 py-3">
-              <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary/60">
+            <div className="flex w-full items-center gap-3 rounded-2xl border-2 border-primary/15 bg-primary/[0.04] px-4 py-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary/50">
                 <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z" /></svg>
               </span>
-              <span className="flex-1">
+              <span className="min-w-0 flex-1">
                 <span className="flex items-center gap-1.5">
-                  <span className="text-sm font-semibold text-ink/70">Nightly Reflection</span>
+                  <span className="text-sm font-semibold text-ink/75">Nightly Reflection</span>
                   <span className="rounded-full bg-ink/[0.06] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-ink/45">Locked</span>
                 </span>
-                <span className="mt-0.5 block text-[12px] leading-relaxed text-ink/55">Each evening from 5pm you&apos;ll check in on your energy, sleep, and mood. We&apos;ll remind you at 7pm.</span>
-                <span className="mt-1 block text-[11px] font-medium text-primary/70">Unlocks after you log {5 - mealCount} more meal{5 - mealCount !== 1 ? "s" : ""}.</span>
+                <span className="mt-0.5 block text-[12px] leading-snug text-ink/55">A minute each evening on your energy, sleep, and mood. Opens at 5pm, with a 7pm reminder.</span>
+              </span>
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ink/[0.05] text-ink/35">
+                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
               </span>
             </div>
+            <p className="mt-1.5 text-center text-[11px] font-medium text-primary/70">Unlocks after you log {5 - mealCount} more meal{5 - mealCount !== 1 ? "s" : ""}</p>
           </div>
         ) : (isDemoMode || todayReflection || cuePreview || REFLECTION_AVAILABLE_ALL_DAY || new Date().getHours() >= 17) ? (
           <div className="mt-2" style={riseIn(barsReady && habitLoaded, 1)}>
