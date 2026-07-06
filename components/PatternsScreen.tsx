@@ -203,6 +203,21 @@ export default function PatternsScreen() {
         <header className="mb-6">
           <h1 className="text-2xl font-semibold text-ink">Patterns</h1>
           <p className="mt-1 text-sm text-muted/70">What seems to affect how you feel</p>
+          {!demo && fewRefl && (
+            <div className="mt-3 rounded-2xl border border-primary/20 bg-primary/[0.06] px-4 py-3">
+              <div className="flex items-center gap-2">
+                <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-primary/80" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" />
+                </svg>
+                <p className="text-[13px] font-semibold text-primary/90">
+                  {3 - facts.total} More Reflection{3 - facts.total !== 1 ? "s" : ""} to Unlock
+                </p>
+              </div>
+              <p className="mt-1 text-[11.5px] leading-snug text-muted/75">
+                Your energy trends and the patterns your coach spots appear once you&apos;ve logged 3 reflections.
+              </p>
+            </div>
+          )}
         </header>
 
         {/* What the coach is noticing — the headline plus the strongest observed
