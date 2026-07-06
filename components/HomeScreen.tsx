@@ -2399,8 +2399,19 @@ export default function HomeScreen() {
       disableBeacon: true,
       content: (
         <div>
-          <p style={{ fontWeight: 600, marginBottom: 10 }}>Log Anything Here</p>
-          <p>Tap the + to log food by photo, barcode, or typing it, plus water and activity, all in one place.</p>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Start By Logging</p>
+          <p>Tap the + to log food by photo, barcode, or typing it, plus water and activity, all in one place. This is where it all begins.</p>
+        </div>
+      ),
+    },
+    {
+      target: '[data-tour="habit-hero"]',
+      placement: "bottom" as const,
+      disableBeacon: true,
+      content: (
+        <div>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Build One Small Habit</p>
+          <p>Each habit builder is a tiny, doable change. Complete it a few days in a row and it sticks, no willpower required.</p>
         </div>
       ),
     },
@@ -2412,6 +2423,17 @@ export default function HomeScreen() {
         <div>
           <p style={{ fontWeight: 600, marginBottom: 10 }}>Your Water Intake</p>
           <p>This tracks how much water you've had today relative to your daily goal.</p>
+        </div>
+      ),
+    },
+    {
+      target: '[data-tour="reflection-entry"]',
+      placement: "bottom" as const,
+      disableBeacon: true,
+      content: (
+        <div>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Reflect Each Evening</p>
+          <p>A quick nightly check-in on your energy, sleep, and mood. This is what lets your coach connect how you eat to how you feel.</p>
         </div>
       ),
     },
@@ -2934,7 +2956,7 @@ export default function HomeScreen() {
           );
         })()}
 
-        <Card className="mt-2" style={riseIn(barsReady && habitLoaded, 0)}>
+        <Card className="mt-2" data-tour="habit-hero" style={riseIn(barsReady && habitLoaded, 0)}>
           {/* Hero — dynamic slot. Priority: active habit builder > suggestion > reflection reminder > discovery > wins > greeting (default). Sample habit wired locally for now. */}
           <div className={`-mx-4 rounded-2xl border-2 border-primary/25 px-4 ${heroHabit.status === "done" || heroHabit.status === "accepting" ? "bg-primary/10" : "bg-primary/[0.05]"} ${heroHabit.status === "hidden" ? (currentWindowNudge && !trial.isFree && !isDemoMode ? "py-5" : "py-7") : heroHabit.status === "done" && doneStep === "rested" ? "pt-5 pb-3" : "py-5"} ${heroHabit.status === "done" && (doneStep === "celebrate" || doneStep === "feedback") ? "animate-habit-built" : ""} ${(heroHabit.status === "done" && doneStep === "rested") || heroHabit.status === "accepting" ? "animate-habit-glow" : ""} ${(heroHabit.status === "active" && heroHabit.holdDay != null) || (heroHabit.status === "suggested" && !heroExpanded) || (heroHabit.status === "hidden" && !!currentWindowNudge && !nudgeExpanded) ? "animate-habit-shimmer" : ""} ${heroPulse ? "animate-card-pulse" : ""}`}>
             {heroHabit.status === "suggested" ? (
@@ -3361,7 +3383,7 @@ export default function HomeScreen() {
             <p className="mt-1.5 text-center text-[11px] font-medium text-primary/70">Unlocks after you log {5 - mealCount} more meal{5 - mealCount !== 1 ? "s" : ""}</p>
           </div>
         ) : (isDemoMode || todayReflection || cuePreview || REFLECTION_AVAILABLE_ALL_DAY || new Date().getHours() >= 17) ? (
-          <div className="mt-2" style={riseIn(barsReady && habitLoaded, 1)}>
+          <div className="mt-2" data-tour="reflection-entry" style={riseIn(barsReady && habitLoaded, 1)}>
             <button
               type="button"
               onClick={todayReflection ? editTodayReflection : () => setShowReflection(true)}

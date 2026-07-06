@@ -563,6 +563,18 @@ export default function SummaryScreen() {
         </div>
       ),
     },
+    {
+      target: "body",
+      placement: "center" as const,
+      disableBeacon: true,
+      content: (
+        <div>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>It Unlocks As You Go</p>
+          <p>The more you log and reflect, the more opens up: personalized nudges, your patterns, and full weekly trends.</p>
+          <p style={{ marginTop: 10 }}>A little each day is all it takes. It only gets sharper from here.</p>
+        </div>
+      ),
+    },
   ];
 
   const handleSummaryTour = (data: CallBackProps) => {
