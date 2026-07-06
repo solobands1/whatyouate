@@ -580,6 +580,7 @@ export default function ProfileScreen() {
       `wya_walkthrough_profile_${user.id}`,
       `wya_onboarding_done_${user.id}`,
       `wya_nudge_view_count_${user.id}`,
+      `wya_habit_intro_seen_${user.id}`,
       `wya_dob_${user.id}`,
     ];
     keysToRemove.forEach((k) => localStorage.removeItem(k));

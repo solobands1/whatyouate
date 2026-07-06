@@ -557,6 +557,11 @@ export default function HomeScreen() {
   const [showHabitIdeas, setShowHabitIdeas] = useState(false);
   const [heroExpanded, setHeroExpanded] = useState(false);
   const [heroPulse, setHeroPulse] = useState(false);
+  // One-time theatrical intro the first time the onboarding habit ("Find Your Footing")
+  // is offered. A focused moment over a scrim, then it hands off to the real card below.
+  const [showHabitSpotlight, setShowHabitSpotlight] = useState(false);
+  const [spotlightIn, setSpotlightIn] = useState(false);
+  const habitSpotlightCheckedRef = useRef(false);
   // False until the persisted habit state has loaded, so the hero enters once with the
   // correct content (no flash of the default suggestion before an active builder).
   const [habitLoaded, setHabitLoaded] = useState(false);
@@ -767,6 +772,30 @@ export default function HomeScreen() {
     })();
     return () => { cancelled = true; };
   }, [profile, goalHabits, user, isDemoMode, dataLoading]);
+
+  // First-habit spotlight: when "Find Your Footing" is first offered to a real user,
+  // play a one-time theatrical intro (guarded by a per-user localStorage flag).
+  useEffect(() => {
+    if (habitSpotlightCheckedRef.current) return;
+    if (!habitLoaded || !barsReady || isDemoMode || !user) return;
+    if (heroHabit.status !== "suggested" || activeTemplate.id !== "logging-starter") return;
+    habitSpotlightCheckedRef.current = true;
+    try { if (localStorage.getItem(`wya_habit_intro_seen_${user.id}`) === "true") return; } catch {}
+    const t = setTimeout(() => setShowHabitSpotlight(true), 550);
+    return () => clearTimeout(t);
+  }, [habitLoaded, barsReady, isDemoMode, user, heroHabit.status, activeTemplate.id]);
+
+  // Gentle entrance/exit for the spotlight (opacity + slight scale).
+  useEffect(() => {
+    if (!showHabitSpotlight) { setSpotlightIn(false); return; }
+    const r = requestAnimationFrame(() => setSpotlightIn(true));
+    return () => cancelAnimationFrame(r);
+  }, [showHabitSpotlight]);
+
+  const dismissHabitSpotlight = () => {
+    setShowHabitSpotlight(false);
+    try { if (user) localStorage.setItem(`wya_habit_intro_seen_${user.id}`, "true"); } catch {}
+  };
 
   // Persist the in-progress builder whenever it changes. "done" is handled by its own
   // effect below (it carries finishedAt + the keep answer); transient states
@@ -1984,7 +2013,7 @@ export default function HomeScreen() {
   }, [user, reload]);
 
   useEffect(() => {
-    const anyModal = showQuickAdd || showLogFood || showReflection || showFeelingModal
+    const anyModal = showQuickAdd || showLogFood || showReflection || showFeelingModal || showHabitSpotlight
       || waterModalOpen || quickConfirmMeal != null || failedMealPrompt != null
       || meals.editingMeal != null || editingFeelLog != null
       || barcodeOpen || barcodeProduct != null || barcodeNotFound || barcodeLookingUp
@@ -2009,7 +2038,7 @@ export default function HomeScreen() {
       body.style.overflow = "";
       window.scrollTo(0, scrollY);
     };
-  }, [showQuickAdd, showLogFood, showReflection, showFeelingModal, waterModalOpen, quickConfirmMeal, failedMealPrompt, meals.editingMeal, editingFeelLog, barcodeOpen, barcodeProduct, barcodeNotFound, barcodeLookingUp, workout.showStartWorkoutModal, workout.showEndWorkoutModal, pendingDelete]);
+  }, [showQuickAdd, showLogFood, showReflection, showFeelingModal, showHabitSpotlight, waterModalOpen, quickConfirmMeal, failedMealPrompt, meals.editingMeal, editingFeelLog, barcodeOpen, barcodeProduct, barcodeNotFound, barcodeLookingUp, workout.showStartWorkoutModal, workout.showEndWorkoutModal, pendingDelete]);
 
   // When a meal is still processing, the "Analyzing food…" label is time-gated
   // at render time (< 90s shows spinner text, >= 90s shows "Analysis failed").
@@ -3961,6 +3990,37 @@ export default function HomeScreen() {
                 </button>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* First-habit spotlight — a one-time theatrical intro that hands off to the real card. */}
+      {showHabitSpotlight && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center px-6" role="dialog" aria-modal="true">
+          <div
+            className={`absolute inset-0 bg-ink/70 backdrop-blur-sm transition-opacity duration-500 ${spotlightIn ? "opacity-100" : "opacity-0"}`}
+            onClick={dismissHabitSpotlight}
+          />
+          <div
+            className={`relative w-full max-w-sm rounded-3xl border-2 border-primary/25 bg-white px-6 py-8 text-center shadow-[0_24px_64px_rgba(15,23,42,0.35)] transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${spotlightIn ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-95 translate-y-3"}`}
+          >
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/12 text-primary animate-habit-glow">
+              <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1" opacity="0.5" />
+                <circle cx="12" cy="12" r="3.4" />
+              </svg>
+            </div>
+            <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.22em] text-primary/70">Your First Habit</p>
+            <h2 className="mt-1.5 text-xl font-semibold text-ink">{activeTemplate.title}</h2>
+            <p className="mt-2 text-[13px] leading-relaxed text-ink/65">{activeTemplate.ask}</p>
+            <p className="mt-3 text-[12px] leading-relaxed text-ink/55">Small, daily, and yours. This is where WhatYouAte starts learning what helps you feel your best.</p>
+            <button
+              type="button"
+              onClick={dismissHabitSpotlight}
+              className="mt-6 w-full rounded-2xl bg-primary py-3 text-sm font-semibold text-white transition active:scale-[0.98]"
+            >
+              Let&apos;s Begin
+            </button>
           </div>
         </div>
       )}
