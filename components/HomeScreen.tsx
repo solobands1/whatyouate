@@ -3207,22 +3207,19 @@ export default function HomeScreen() {
                 <span className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Protein</span>
               </div>
             </div>
-            {mealCount > 0 && (
-              <div className="mt-2.5 flex gap-3">
-                <div className="flex-1">
-                  <div className="h-1.5 overflow-hidden rounded-full bg-ink/5">
-                    <div className="h-full rounded-full bg-primary" style={{ width: `${barsReady ? calPct : 0}%`, transition: "width 700ms cubic-bezier(0.22,1,0.36,1)" }} />
-                  </div>
-                </div>
-                <div className="flex-1">
-                  <div className="h-1.5 overflow-hidden rounded-full bg-ink/5">
-                    <div className="h-full rounded-full bg-primary" style={{ width: `${barsReady ? protPct : 0}%`, transition: "width 700ms cubic-bezier(0.22,1,0.36,1) 80ms" }} />
-                  </div>
+            <div className="mt-2.5 flex gap-3">
+              <div className="flex-1">
+                <div className="h-1.5 overflow-hidden rounded-full bg-ink/5">
+                  <div className="h-full rounded-full bg-primary" style={{ width: `${barsReady ? calPct : 0}%`, transition: "width 700ms cubic-bezier(0.22,1,0.36,1)" }} />
                 </div>
               </div>
-            )}
-            {mealCount > 0 && (
-              <div className="mt-2.5 flex gap-3">
+              <div className="flex-1">
+                <div className="h-1.5 overflow-hidden rounded-full bg-ink/5">
+                  <div className="h-full rounded-full bg-primary" style={{ width: `${barsReady ? protPct : 0}%`, transition: "width 700ms cubic-bezier(0.22,1,0.36,1) 80ms" }} />
+                </div>
+              </div>
+            </div>
+            <div className="mt-2.5 flex gap-3">
                 <div className="flex flex-1 items-center gap-2">
                   <span className="whitespace-nowrap text-[11px] text-muted/55"><span className="font-semibold text-ink/65">{formatClean(homeMarkers.todayTotals.carbs_g_min, homeMarkers.todayTotals.carbs_g_max, "g")}</span> Carbs</span>
                   <div className="h-1 flex-1 overflow-hidden rounded-full bg-ink/5">
@@ -3236,8 +3233,7 @@ export default function HomeScreen() {
                   </div>
                 </div>
               </div>
-            )}
-          </div>
+            </div>
           <button
             type="button"
             className="mt-2 flex items-center gap-1 text-left text-[10px] text-muted/70 transition active:opacity-60"
@@ -3936,8 +3932,9 @@ export default function HomeScreen() {
                   <span>Water</span>
                 </button>
               )}
-              {/* Nightly check-in also accessible from the + menu at 5pm (the big home button is the main prompt). */}
-              {new Date().getHours() >= 17 && (
+              {/* Nightly check-in also accessible from the + menu at 5pm, but only once reflections are unlocked
+                  (5 meals) so it stays consistent with the locked reflection card on the home screen. */}
+              {(isDemoMode || mealCount >= 5 || todayReflection) && new Date().getHours() >= 17 && (
                 <button
                   type="button"
                   className="flex w-[calc((100%-1.5rem)/4)] shrink-0 flex-col items-center justify-center gap-1.5 rounded-xl border border-ink/10 bg-white px-1 py-3 text-center text-[11px] font-semibold leading-tight text-ink/80 transition active:scale-[0.97] active:bg-primary/5"

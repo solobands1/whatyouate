@@ -43,7 +43,7 @@ function UnlockTimeline({ milestones }: { milestones: MilestoneItem[] }) {
       )}
       {/* Dot row */}
       <div className="relative flex items-start justify-between">
-        <div className="absolute inset-x-0 top-[6px] h-px bg-ink/10" />
+        <div className="absolute inset-x-0 top-[6px] h-px bg-ink/15" />
         {milestones.map((m) => (
           <button
             key={m.label}
@@ -51,9 +51,9 @@ function UnlockTimeline({ milestones }: { milestones: MilestoneItem[] }) {
             style={{ width: colWidth }}
             onClick={() => setActiveTip(activeTip === m.label ? null : m.label)}
           >
-            <div className={`h-3 w-3 rounded-full transition-colors ${m.unlocked ? "bg-primary/80" : activeTip === m.label ? "bg-ink/35" : "bg-ink/20"}`} />
-            <p className={`mt-1.5 text-center text-[10px] leading-tight ${m.unlocked ? "text-primary/70" : "text-muted/45"}`}>{m.label}</p>
-            {m.sub && <p className="mt-0.5 text-center text-[10px] leading-tight text-primary/60">{m.sub}</p>}
+            <div className={`h-3 w-3 rounded-full transition-colors ${m.unlocked ? "bg-primary" : activeTip === m.label ? "bg-ink/50" : "bg-ink/30"}`} />
+            <p className={`mt-1.5 text-center text-[10px] leading-tight ${m.unlocked ? "text-primary/90" : "text-ink/55"}`}>{m.label}</p>
+            {m.sub && <p className="mt-0.5 text-center text-[10px] font-medium leading-tight text-primary/75">{m.sub}</p>}
           </button>
         ))}
       </div>
@@ -989,11 +989,11 @@ export default function SummaryScreen() {
           const patternsUnlocked = reflCount >= 3;
           const fullTrendsUnlocked = dayCount >= 14;
           const allMilestones = [
-            { label: "First Meal", sub: mealCount >= 1 ? "" : "log 1 meal", desc: "Log your first meal to get started.", unlocked: mealCount >= 1 },
-            { label: "Nudges", sub: nudgesUnlocked ? "" : `${5 - mealCount} more meal${5 - mealCount !== 1 ? "s" : ""}`, desc: "Personalized nudges based on what you've been eating.", unlocked: nudgesUnlocked },
-            { label: "First Reflection", sub: firstCheckinUnlocked ? "" : "1 reflection", desc: "Do your first nightly reflection to start tracking how you feel.", unlocked: firstCheckinUnlocked },
-            { label: "Your Patterns", sub: patternsUnlocked ? "" : `${3 - reflCount} more reflection${3 - reflCount !== 1 ? "s" : ""}`, desc: "Your coach starts connecting your food to how you feel.", unlocked: patternsUnlocked },
-            { label: "Full Trends", sub: fullTrendsUnlocked ? "" : `${14 - dayCount} more day${14 - dayCount !== 1 ? "s" : ""}`, desc: "Two weeks unlocks full trends and week-to-week comparisons.", unlocked: fullTrendsUnlocked },
+            { label: "First Meal", sub: mealCount >= 1 ? "" : "Log 1 Meal", desc: "Log your first meal to get started.", unlocked: mealCount >= 1 },
+            { label: "Nudges", sub: nudgesUnlocked ? "" : `${5 - mealCount} More Meal${5 - mealCount !== 1 ? "s" : ""}`, desc: "Personalized nudges based on what you've been eating.", unlocked: nudgesUnlocked },
+            { label: "First Reflection", sub: firstCheckinUnlocked ? "" : "1 Reflection", desc: "Do your first nightly reflection to start tracking how you feel.", unlocked: firstCheckinUnlocked },
+            { label: "Your Patterns", sub: patternsUnlocked ? "" : `${3 - reflCount} More Reflection${3 - reflCount !== 1 ? "s" : ""}`, desc: "Your coach starts connecting your food to how you feel.", unlocked: patternsUnlocked },
+            { label: "Full Trends", sub: fullTrendsUnlocked ? "" : `${14 - dayCount} More Day${14 - dayCount !== 1 ? "s" : ""}`, desc: "Two weeks unlocks full trends and week-to-week comparisons.", unlocked: fullTrendsUnlocked },
           ];
           // Fill left-to-right: a step only shows unlocked once it AND every step before it
           // are met, so the chain never checks off out of order (e.g. a night-1 reflection

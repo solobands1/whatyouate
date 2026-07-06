@@ -345,6 +345,11 @@ export default function InsightsScreen() {
   }, [meals, profile]);
 
   const hasEnoughData = hasEnoughDataForPatterns(meals);
+  // Countdown to the nutrition unlock (needs 5 logged days + 5 real meals).
+  const nutritionLoggedDays = countLoggedDays(meals);
+  const nutritionRealMeals = meals.filter((m) => m.analysisJson?.source !== "supplement" && m.status !== "failed").length;
+  const nutritionDaysLeft = Math.max(0, 5 - nutritionLoggedDays);
+  const nutritionMealsLeft = Math.max(0, 5 - nutritionRealMeals);
 
   // Delegate to the single source of truth in digestEngine
   const gentleTargets = useMemo(() => computeGentleTargets(meals, profile), [meals, profile]);
@@ -617,8 +622,20 @@ export default function InsightsScreen() {
             <h1 className="text-2xl font-semibold text-ink">Nutrition</h1>
             <p className="mt-1 text-sm text-muted/70">Your macros, micronutrients, and intake from your logged meals</p>
             {!hasEnoughData && !isDemoMode && (
-              <div className="mt-2 inline-flex items-center rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-[11px] text-primary/80">
-                Log Meals Across 5 Days To Unlock Real Data
+              <div className="mt-3 rounded-2xl border border-primary/20 bg-primary/[0.06] px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-primary/80" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" />
+                  </svg>
+                  <p className="text-[13px] font-semibold text-primary/90">
+                    {nutritionDaysLeft > 0
+                      ? `${nutritionDaysLeft} More Day${nutritionDaysLeft !== 1 ? "s" : ""} of Logging to Unlock`
+                      : `${nutritionMealsLeft} More Meal${nutritionMealsLeft !== 1 ? "s" : ""} to Unlock`}
+                  </p>
+                </div>
+                <p className="mt-1 text-[11.5px] leading-snug text-muted/75">
+                  Your real macro and micronutrient averages appear once you've logged meals across 5 days.
+                </p>
               </div>
             )}
           </div>
