@@ -3410,7 +3410,7 @@ export default function HomeScreen() {
             <button
               type="button"
               onClick={todayReflection ? editTodayReflection : () => setShowReflection(true)}
-              className="flex w-full items-center gap-3 rounded-2xl border-2 border-primary/25 bg-primary/[0.05] px-4 py-3 text-left transition active:scale-[0.99]"
+              className={`flex w-full items-center gap-3 rounded-2xl border-2 border-primary/25 bg-primary/[0.05] px-4 py-3 text-left transition active:scale-[0.99] ${reflectionCue === "bell" ? "animate-card-pulse" : ""}`}
             >
               <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary ${reflectionCue === "bell" ? "animate-card-pulse" : ""}`}>
                 {todayReflection && !cuePreview ? (
@@ -3441,7 +3441,7 @@ export default function HomeScreen() {
                   <span className="text-sm font-semibold text-ink/75">Nightly Reflection</span>
                   <span className="rounded-full bg-ink/[0.06] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-ink/45">This Evening</span>
                 </span>
-                <span className="mt-0.5 block text-[12px] leading-snug text-ink/55">A minute on your energy, sleep, and mood. Opens at 5pm, with a 7pm reminder.</span>
+                <span className="mt-0.5 block text-[12px] leading-snug text-ink/55">Available to do at 5pm, with a 7pm reminder</span>
               </span>
               <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ink/[0.05] text-ink/45">
                 <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7.5V12l3 1.5" /></svg>
