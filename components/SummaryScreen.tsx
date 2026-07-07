@@ -59,7 +59,7 @@ function UnlockTimeline({ milestones }: { milestones: MilestoneItem[] }) {
             ) : (
               <div className={`h-3 w-3 rounded-full transition-colors ${m.unlocked ? "bg-primary" : activeTip === m.label ? "bg-ink/50" : "bg-ink/30"}`} />
             )}
-            <p className={`mt-1.5 text-center text-[10px] leading-tight ${m.unlocked ? "text-primary/90" : "text-ink/55"}`}>{m.label}</p>
+            <p className={`mt-1.5 text-center text-[10px] leading-tight ${m.unlocked ? "text-primary/90" : m.isNext ? "font-medium text-ink/80" : "text-ink/55"}`}>{m.label}</p>
             {m.sub && <p className="mt-0.5 text-center text-[10px] font-medium leading-tight text-primary/75">{m.sub}</p>}
           </button>
         ))}
