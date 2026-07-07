@@ -65,17 +65,35 @@ export function UnlockCelebrationBanner({ title, sub, icon = "unlock", onDismiss
     return () => { cancelAnimationFrame(r); clearTimeout(t); };
   }, [close]);
 
-  // Swipe up to dismiss: follow the finger upward, and close if flicked past a threshold.
+  // Swipe up to dismiss. Uses native NON-passive touch listeners so touchmove can
+  // preventDefault the page scroll behind the banner (React's onTouchMove is passive and
+  // can't, and iOS WKWebView ignores touch-action:none here).
   const [dragY, setDragY] = useState(0);
   const [dragging, setDragging] = useState(false);
-  const startYRef = useRef(0);
-  const onTouchStart = (e: React.TouchEvent) => { startYRef.current = e.touches[0].clientY; setDragging(true); };
-  const onTouchMove = (e: React.TouchEvent) => { setDragY(Math.min(0, e.touches[0].clientY - startYRef.current)); };
-  const onTouchEnd = () => {
-    setDragging(false);
-    if (dragY < -40) close();
-    setDragY(0);
-  };
+  const bannerRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef(close);
+  closeRef.current = close;
+  useEffect(() => {
+    const el = bannerRef.current;
+    if (!el) return;
+    let startY = 0;
+    let dy = 0;
+    const onStart = (e: TouchEvent) => { startY = e.touches[0].clientY; dy = 0; setDragging(true); };
+    const onMove = (e: TouchEvent) => {
+      e.preventDefault();
+      dy = Math.min(0, e.touches[0].clientY - startY);
+      setDragY(dy);
+    };
+    const onEnd = () => { setDragging(false); if (dy < -40) closeRef.current(); setDragY(0); };
+    el.addEventListener("touchstart", onStart, { passive: true });
+    el.addEventListener("touchmove", onMove, { passive: false });
+    el.addEventListener("touchend", onEnd, { passive: true });
+    return () => {
+      el.removeEventListener("touchstart", onStart);
+      el.removeEventListener("touchmove", onMove);
+      el.removeEventListener("touchend", onEnd);
+    };
+  }, []);
 
   if (typeof document === "undefined") return null;
   const visible = state === "shown";
@@ -85,10 +103,8 @@ export function UnlockCelebrationBanner({ title, sub, icon = "unlock", onDismiss
       style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 8px)" }}
     >
       <div
+        ref={bannerRef}
         role="status"
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
         style={dragging ? { transform: `translateY(${dragY}px)`, transition: "none" } : undefined}
         className={`pointer-events-auto w-full max-w-md touch-none rounded-2xl border border-white/40 bg-white/80 px-4 pt-3 pb-2 shadow-[0_14px_36px_rgba(15,23,42,0.20)] backdrop-blur-xl transition-all duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${visible ? "translate-y-0 opacity-100" : "-translate-y-[160%] opacity-0"}`}
       >
