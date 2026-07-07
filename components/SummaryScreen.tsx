@@ -53,13 +53,13 @@ function UnlockTimeline({ milestones }: { milestones: MilestoneItem[] }) {
           >
             {m.isNext ? (
               <span className="relative flex h-3 w-3 items-center justify-center">
-                <span className="absolute inline-flex h-full w-full rounded-full bg-primary/40 opacity-75 animate-ping motion-reduce:animate-none" />
+                <span className="absolute inline-flex h-full w-full rounded-full bg-primary/40 opacity-70 animate-ping [animation-duration:2.6s] motion-reduce:animate-none" />
                 <span className="relative inline-flex h-3 w-3 rounded-full bg-primary/50" />
               </span>
             ) : (
               <div className={`h-3 w-3 rounded-full transition-colors ${m.unlocked ? "bg-primary" : activeTip === m.label ? "bg-ink/50" : "bg-ink/30"}`} />
             )}
-            <p className={`mt-1.5 text-center text-[10px] leading-tight ${m.unlocked ? "text-primary/90" : m.isNext ? "font-medium text-primary/80" : "text-ink/55"}`}>{m.label}</p>
+            <p className={`mt-1.5 text-center text-[10px] leading-tight ${m.unlocked ? "text-primary/90" : "text-ink/55"}`}>{m.label}</p>
             {m.sub && <p className="mt-0.5 text-center text-[10px] font-medium leading-tight text-primary/75">{m.sub}</p>}
           </button>
         ))}
@@ -1009,8 +1009,8 @@ export default function SummaryScreen() {
           const fullTrendsUnlocked = dayCount >= 14;
           const allMilestones = [
             { label: "First Meal", sub: mealCount >= 1 ? "" : "Log 1 Meal", desc: "Log your first meal to get started.", unlocked: mealCount >= 1 },
-            { label: "Nudges", sub: nudgesUnlocked ? "" : `${5 - mealCount} More Meal${5 - mealCount !== 1 ? "s" : ""}`, desc: "Personalized nudges based on what you've been eating.", unlocked: nudgesUnlocked },
             { label: "First Reflection", sub: firstCheckinUnlocked ? "" : "1 Reflection", desc: "Do your first nightly reflection to start tracking how you feel.", unlocked: firstCheckinUnlocked },
+            { label: "Nudges", sub: nudgesUnlocked ? "" : `${5 - mealCount} More Meal${5 - mealCount !== 1 ? "s" : ""}`, desc: "Personalized nudges based on what you've been eating.", unlocked: nudgesUnlocked },
             { label: "Your Patterns", sub: patternsUnlocked ? "" : `${3 - reflCount} More Reflection${3 - reflCount !== 1 ? "s" : ""}`, desc: "Your coach starts connecting your food to how you feel.", unlocked: patternsUnlocked },
             { label: "Full Trends", sub: fullTrendsUnlocked ? "" : `${14 - dayCount} More Day${14 - dayCount !== 1 ? "s" : ""}`, desc: "Two weeks unlocks full trends and week-to-week comparisons.", unlocked: fullTrendsUnlocked },
           ];
