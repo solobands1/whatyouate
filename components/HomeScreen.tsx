@@ -1943,9 +1943,15 @@ export default function HomeScreen() {
   }, []);
 
   // Haptic + chime on the two celebration beats. (Haptics fire only in the app.)
-  // Daily: when the "Done For Today" confirmation appears for a mid-habit day.
+  // Daily: only on a LIVE completion (active → dayComplete). Requiring the previous status to
+  // be "active" is what stops the sound/haptic from firing when a persisted dayComplete state
+  // is restored on reload (the async load can land after the arm timeout, so that guard alone
+  // wasn't enough).
+  const prevHabitStatusRef = useRef<string | null>(null);
   useEffect(() => {
-    if (celebrationArmedRef.current && heroHabit.status === "dayComplete") celebrateDaily();
+    const prev = prevHabitStatusRef.current;
+    prevHabitStatusRef.current = heroHabit.status;
+    if (prev === "active" && heroHabit.status === "dayComplete") celebrateDaily();
   }, [heroHabit.status]);
   // Final day: the daily beat on "dayDone", the big one on "celebrate".
   useEffect(() => {
