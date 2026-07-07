@@ -179,7 +179,7 @@ export default function PatternsScreen() {
   ].slice(0, 2);
   const coachEmpty = !demo && realInsights.length === 0;
   const coachInsights = demo ? EX_INSIGHTS : realInsights; // non-demo: only real, never fake
-  const coachHeadline = demo ? EX_HEADLINE : fewRefl ? "Your clearest pattern will land here first." : headline;
+  const coachHeadline = demo ? EX_HEADLINE : fewRefl ? "Your clearest pattern will land here first" : headline;
 
   // Energy dips — need a few nights that actually logged dips. Empty shows blank bars (0 of 0).
   const realDips = facts.dipsDist && facts.dipsDist.morning + facts.dipsDist.afternoon + facts.dipsDist.evening > 0 ? facts.dipsDist : null;
@@ -231,7 +231,7 @@ export default function PatternsScreen() {
           {coachEmpty ? (
             <>
               <div className="mt-4 rounded-xl border border-primary/20 bg-primary/[0.05] px-3 py-3">
-                <p className="text-sm leading-relaxed text-ink/70">A couple more will follow as your coach gets to know your food and reflection patterns.</p>
+                <p className="text-sm leading-relaxed text-ink/70">A couple more will follow as your coach gets to know your food and reflection patterns</p>
               </div>
               <div className="mt-2.5 rounded-xl border border-dashed border-ink/15 bg-ink/[0.02] px-3 py-3 opacity-70">
                 <div className="h-2.5 w-2/3 rounded-full bg-ink/10" />
