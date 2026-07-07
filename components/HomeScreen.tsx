@@ -564,6 +564,9 @@ export default function HomeScreen() {
   const [showHabitSpotlight, setShowHabitSpotlight] = useState(false);
   const [spotlightIn, setSpotlightIn] = useState(false);
   const habitSpotlightCheckedRef = useRef(false);
+  // When the spotlight starts the habit, this overrides the time-of-day routing so the
+  // onboarding habit can start TODAY even after 10am (or explicitly tomorrow).
+  const startChoiceRef = useRef<"today" | "tomorrow" | null>(null);
   // False until the persisted habit state has loaded, so the hero enters once with the
   // correct content (no flash of the default suggestion before an active builder).
   const [habitLoaded, setHabitLoaded] = useState(false);
@@ -816,6 +819,14 @@ export default function HomeScreen() {
   const dismissHabitSpotlight = () => {
     setShowHabitSpotlight(false);
     try { if (user) localStorage.setItem(`wya_habit_intro_seen_${user.id}`, "true"); } catch {}
+  };
+  // Spotlight "Start Today / Start Tomorrow" — commits the habit (via the "accepting" flourish)
+  // with the chosen start day, closing the popup so there's no redundant second accept.
+  const startHabitFromSpotlight = (choice: "today" | "tomorrow") => {
+    startChoiceRef.current = choice;
+    dismissHabitSpotlight();
+    unlockAudio();
+    setHeroHabit((h) => ({ ...h, status: "accepting" }));
   };
 
   // Persist the in-progress builder whenever it changes. "done" is handled by its own
@@ -1900,7 +1911,10 @@ export default function HomeScreen() {
     if (heroHabit.status !== "accepting") return;
     celebrateAccepted();
     const t = setTimeout(() => {
-      setHeroHabit((h) => ({ ...h, status: new Date().getHours() < 10 ? "active" : "committed" }));
+      const choice = startChoiceRef.current;
+      startChoiceRef.current = null;
+      const nextStatus = choice === "today" ? "active" : choice === "tomorrow" ? "committed" : (new Date().getHours() < 10 ? "active" : "committed");
+      setHeroHabit((h) => ({ ...h, status: nextStatus }));
     }, 2800);
     return () => clearTimeout(t);
   }, [heroHabit.status]);
@@ -4072,10 +4086,17 @@ export default function HomeScreen() {
             <p className="mt-3 text-[12px] leading-relaxed text-ink/55">Small, daily, and yours. This is where WhatYouAte starts learning what helps you feel your best.</p>
             <button
               type="button"
-              onClick={dismissHabitSpotlight}
+              onClick={() => startHabitFromSpotlight("today")}
               className="mt-6 w-full rounded-2xl bg-primary py-3 text-sm font-semibold text-white transition active:scale-[0.98]"
             >
-              Let&apos;s Begin
+              Start Today
+            </button>
+            <button
+              type="button"
+              onClick={() => startHabitFromSpotlight("tomorrow")}
+              className="mt-2 w-full rounded-2xl border border-primary/25 bg-white py-3 text-sm font-semibold text-primary transition active:scale-[0.98]"
+            >
+              Start Tomorrow
             </button>
           </div>
         </div>
