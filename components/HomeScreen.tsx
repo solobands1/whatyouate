@@ -4083,7 +4083,7 @@ export default function HomeScreen() {
             <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.22em] text-primary/70">Build Your First Habit</p>
             <h2 className="mt-1.5 text-xl font-semibold text-ink">{activeTemplate.title}</h2>
             <p className="mt-2 text-[13px] leading-relaxed text-ink/65">{activeTemplate.ask}</p>
-            <p className="mt-3 text-[12px] leading-relaxed text-ink/55">Small, daily, and yours. This is where WhatYouAte starts learning what helps you feel your best.</p>
+            <p className="mt-3 text-[12px] leading-relaxed text-ink/55">This is where WhatYouAte starts learning what helps you feel your best.</p>
             <button
               type="button"
               onClick={() => startHabitFromSpotlight("today")}

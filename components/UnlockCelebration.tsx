@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 
 // A one-time celebratory banner shown the first time a user reaches a milestone on the surface
 // where it makes sense (a feature "opening up", or a "first X" moment). Per-key baseline logic
@@ -76,35 +77,42 @@ export function UnlockCelebrationBanner({ title, sub, icon = "unlock", onDismiss
     const t = setTimeout(close, 10000);
     return () => { cancelAnimationFrame(r); clearTimeout(t); };
   }, [close]);
+  if (typeof document === "undefined") return null;
   const visible = state === "shown";
-  return (
+  return createPortal(
     <div
-      role="status"
-      className={`mb-4 flex items-center gap-3 rounded-2xl border border-primary/25 bg-primary/[0.07] px-4 py-3 shadow-[0_8px_24px_rgba(15,23,42,0.10)] transition-all duration-[340ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${visible ? "translate-y-0 opacity-100" : "-translate-y-3 opacity-0"}`}
+      className="pointer-events-none fixed inset-x-0 top-0 z-[70] flex justify-center px-3"
+      style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 8px)" }}
     >
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
-        {icon === "spark" ? (
-          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 3l1.8 4.9L19 9.6l-4.2 2.9L15.5 18 12 15.2 8.5 18l.7-5.5L5 9.6l5.2-1.7L12 3z" />
-          </svg>
-        ) : (
-          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V7a4 4 0 0 1 7.5-2" />
-          </svg>
-        )}
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-ink">{title}</p>
-        {sub && <p className="text-[12px] leading-snug text-ink/60">{sub}</p>}
-      </div>
-      <button
-        type="button"
-        onClick={close}
-        aria-label="Dismiss"
-        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-ink/40 transition active:opacity-60"
+      <div
+        role="status"
+        className={`pointer-events-auto flex w-full max-w-md items-center gap-3 rounded-2xl border border-white/40 bg-white/80 px-4 py-3 shadow-[0_14px_36px_rgba(15,23,42,0.20)] backdrop-blur-xl transition-all duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${visible ? "translate-y-0 opacity-100" : "-translate-y-[160%] opacity-0"}`}
       >
-        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
-      </button>
-    </div>
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
+          {icon === "spark" ? (
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 3l1.8 4.9L19 9.6l-4.2 2.9L15.5 18 12 15.2 8.5 18l.7-5.5L5 9.6l5.2-1.7L12 3z" />
+            </svg>
+          ) : (
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V7a4 4 0 0 1 7.5-2" />
+            </svg>
+          )}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-ink">{title}</p>
+          {sub && <p className="text-[12px] leading-snug text-ink/60">{sub}</p>}
+        </div>
+        <button
+          type="button"
+          onClick={close}
+          aria-label="Dismiss"
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-ink/40 transition active:opacity-60"
+        >
+          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+        </button>
+      </div>
+    </div>,
+    document.body,
   );
 }
