@@ -3355,29 +3355,11 @@ export default function HomeScreen() {
           </div>
         )}
 
-        {/* Nightly reflection entry. Locked (explainer only) until the user has logged 5
-            meals, so they focus on logging first; then it becomes the live button, which
-            appears at 5pm (or shows "Reflection Complete" until midnight). Demo always live. */}
-        {!isDemoMode && mealCount < 5 && !todayReflection ? (
-          <div className="mt-2" style={riseIn(barsReady && habitLoaded, 1)}>
-            <div className="flex w-full items-center gap-3 rounded-2xl border-2 border-primary/15 bg-primary/[0.04] px-4 py-3">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary/50">
-                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z" /></svg>
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="flex items-center gap-1.5">
-                  <span className="text-sm font-semibold text-ink/75">Nightly Reflection</span>
-                  <span className="rounded-full bg-ink/[0.06] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-ink/45">Locked</span>
-                </span>
-                <span className="mt-0.5 block text-[12px] leading-snug text-ink/55">A minute each evening on your energy, sleep, and mood. Opens at 5pm, with a 7pm reminder.</span>
-              </span>
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ink/[0.05] text-ink/35">
-                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
-              </span>
-            </div>
-            <p className="mt-1.5 text-center text-[11px] font-medium text-primary/70">Unlocks after you log {5 - mealCount} more meal{5 - mealCount !== 1 ? "s" : ""}</p>
-          </div>
-        ) : (isDemoMode || todayReflection || cuePreview || REFLECTION_AVAILABLE_ALL_DAY || new Date().getHours() >= 17) ? (
+        {/* Nightly reflection entry. Available from day one — paced only by the evening
+            time-gate (not meal count). Before 5pm (and before today's reflection) it shows a
+            gentle "Opens this evening" state; from 5pm it's the live button (or "Reflection
+            Complete" once done). Demo always live. */}
+        {(isDemoMode || todayReflection || cuePreview || REFLECTION_AVAILABLE_ALL_DAY || new Date().getHours() >= 17) ? (
           <div className="mt-2" data-tour="reflection-entry" style={riseIn(barsReady && habitLoaded, 1)}>
             <button
               type="button"
@@ -3402,7 +3384,25 @@ export default function HomeScreen() {
               <svg viewBox="0 0 24 24" className="h-4 w-4 text-ink/30" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
             </button>
           </div>
-        ) : null}
+        ) : (
+          <div className="mt-2" style={riseIn(barsReady && habitLoaded, 1)}>
+            <div className="flex w-full items-center gap-3 rounded-2xl border-2 border-primary/15 bg-primary/[0.04] px-4 py-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary/50">
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z" /></svg>
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center gap-1.5">
+                  <span className="text-sm font-semibold text-ink/75">Nightly Reflection</span>
+                  <span className="rounded-full bg-ink/[0.06] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-ink/45">This Evening</span>
+                </span>
+                <span className="mt-0.5 block text-[12px] leading-snug text-ink/55">A minute on your energy, sleep, and mood. Opens at 5pm, with a 7pm reminder.</span>
+              </span>
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ink/[0.05] text-ink/45">
+                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7.5V12l3 1.5" /></svg>
+              </span>
+            </div>
+          </div>
+        )}
 
         {workout.activeWorkout && (
           <p className="mt-3 text-center text-[11px] text-muted/60">Workout in progress</p>
@@ -3994,9 +3994,9 @@ export default function HomeScreen() {
                   <span>Water</span>
                 </button>
               )}
-              {/* Nightly check-in also accessible from the + menu at 5pm, but only once reflections are unlocked
-                  (5 meals) so it stays consistent with the locked reflection card on the home screen. */}
-              {(isDemoMode || mealCount >= 5 || todayReflection) && new Date().getHours() >= 17 && (
+              {/* Nightly check-in also accessible from the + menu once it's live for the day
+                  (5pm), matching the home reflection card. No meal gate. */}
+              {(isDemoMode || todayReflection || new Date().getHours() >= 17) && (
                 <button
                   type="button"
                   className="flex w-[calc((100%-1.5rem)/4)] shrink-0 flex-col items-center justify-center gap-1.5 rounded-xl border border-ink/10 bg-white px-1 py-3 text-center text-[11px] font-semibold leading-tight text-ink/80 transition active:scale-[0.97] active:bg-primary/5"
