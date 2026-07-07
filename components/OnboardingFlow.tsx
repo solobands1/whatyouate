@@ -167,7 +167,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
       <div className="fixed inset-0 z-50 flex flex-col bg-white safe-top px-6">
         <div className="flex flex-1 flex-col items-center text-center pt-[18vh]">
           <div style={animStyle(introAnimStep >= 1)} className="mb-6 h-24 w-24 overflow-hidden rounded-[22px] border border-ink/10 shadow-md">
-            <img src="/icon-512.png" alt="WhatYouAte" className="h-full w-full object-cover" />
+            <img src="/icon.svg" alt="WhatYouAte" className="h-full w-full object-cover" />
           </div>
           <div style={animStyle(introAnimStep >= 2)}>
             <h1 className="text-xl font-semibold text-ink">Welcome to WhatYouAte!</h1>
