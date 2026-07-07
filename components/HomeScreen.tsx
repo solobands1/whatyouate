@@ -3702,8 +3702,8 @@ export default function HomeScreen() {
                       </button>
                       <button
                         type="button"
-                        className={`rounded-xl px-4 py-2 text-xs font-semibold text-white transition disabled:opacity-50 ${meals.manualAnalysing ? "animate-shimmer" : "bg-primary hover:bg-primary/90"}`}
-                        style={meals.manualAnalysing ? { background: "linear-gradient(90deg, #6FA8FF 0%, #93c5fd 40%, #6FA8FF 60%, #6FA8FF 100%)", backgroundSize: "200% 100%" } : undefined}
+                        className={`rounded-xl px-4 py-2 text-xs font-semibold text-white transition disabled:opacity-50 bg-primary ${meals.manualAnalysing ? "animate-shimmer" : "hover:bg-primary/90"}`}
+                        style={meals.manualAnalysing ? { backgroundImage: "linear-gradient(90deg, #6FA8FF 0%, #93c5fd 40%, #6FA8FF 60%, #6FA8FF 100%)", backgroundSize: "200% 100%" } : undefined}
                         onClick={meals.analyzeManualText}
                         disabled={meals.manualAnalysing || !meals.manualText.trim()}
                       >
