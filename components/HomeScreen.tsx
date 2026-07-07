@@ -30,6 +30,7 @@ import Card from "./Card";
 import WaterBar from "./WaterBar";
 import { useAuth } from "./AuthProvider";
 import { useAppData } from "./AppDataProvider";
+import { useUnlockCelebration, UnlockCelebrationBanner } from "./UnlockCelebration";
 import {
   addMeal,
   clearMealsCache,
@@ -2346,6 +2347,11 @@ export default function HomeScreen() {
   const gentleTargetsDisplay = homeMarkers.gentleTargets ?? { calories: 2300, protein: 125 };
   const mealCount = homeMarkers.mealCount;
   const streak = homeMarkers.streak ?? 0;
+  // One-time "first X" celebration banners on Home (fired the moment the count crosses 1).
+  const { pending: firstCel, dismiss: dismissFirstCel } = useUnlockCelebration(user?.id, [
+    { key: "firstMeal", title: "You logged your first meal!", sub: "Nice start. Every log teaches your coach what works for you.", unlocked: !isDemoMode && mealCount >= 1, icon: "spark" },
+    { key: "firstReflection", title: "You finished your first nightly reflection!", sub: "This is how your coach learns to connect your food to how you feel.", unlocked: !isDemoMode && (ctxReflections?.length ?? 0) >= 1, icon: "spark" },
+  ]);
 
   const todayHasActivity = (() => {
     const key = todayKey();
@@ -2917,6 +2923,8 @@ export default function HomeScreen() {
             <p className="mt-2 text-[11px] text-muted/60">One or more meals couldn't be analysed and were removed from your log.</p>
           )}
         </header>
+
+        {firstCel && <UnlockCelebrationBanner title={firstCel.title} sub={firstCel.sub} icon={firstCel.icon} onDismiss={dismissFirstCel} />}
 
         {/* Trial progress / expired banner + optional profile nudge */}
         {(() => {

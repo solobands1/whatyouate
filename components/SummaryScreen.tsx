@@ -199,8 +199,8 @@ export default function SummaryScreen() {
   const reflCount = reflections.length;
   // One-time "just opened up" celebration for features that live on this hub.
   const { pending: unlockCel, dismiss: dismissUnlock } = useUnlockCelebration(user?.id, [
-    { key: "nudges", label: "Nudges", unlocked: !isDemoMode && mealCount >= 5, sub: "Your coach can now send you personalized nudges." },
-    { key: "fullTrends", label: "Full Trends", unlocked: !isDemoMode && dayCount >= 14, sub: "Two weeks in — full week-to-week trends are here." },
+    { key: "nudges", title: "Nudges just opened up", unlocked: !isDemoMode && mealCount >= 5, sub: "Your coach can now send you personalized nudges." },
+    { key: "fullTrends", title: "Full Trends just opened up", unlocked: !isDemoMode && dayCount >= 14, sub: "Two weeks in — full week-to-week trends are here." },
   ]);
   const gentleTargetsDisplay = summaryMarkers.gentleTargets ?? { calories: 2300, protein: 125, fat: 77, carbs: 277 };
   const workoutSummary = summaryMarkers.workoutSummary;
@@ -1007,7 +1007,7 @@ export default function SummaryScreen() {
           <p className="mt-1 text-sm text-muted/70">Daily snapshot and weekly insights at a glance</p>
         </header>
 
-        {unlockCel && <UnlockCelebrationBanner label={unlockCel.label} sub={unlockCel.sub} onDismiss={dismissUnlock} />}
+        {unlockCel && <UnlockCelebrationBanner title={unlockCel.title} sub={unlockCel.sub} icon={unlockCel.icon} onDismiss={dismissUnlock} />}
 
         {/* Unlock progress timeline — only shown until all milestones are reached (14 logged days) */}
         {!isDemoMode && !(mealCount >= 5 && reflCount >= 3 && dayCount >= 14) && (() => {

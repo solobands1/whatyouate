@@ -160,7 +160,7 @@ export default function PatternsScreen() {
   const demo = isDemoMode;
   // One-time "Your Patterns just opened up" celebration when patterns unlocks (3 reflections).
   const { pending: unlockCel, dismiss: dismissUnlock } = useUnlockCelebration(user?.id, [
-    { key: "patterns", label: "Your Patterns", unlocked: !demo && reflections.length >= 3, sub: "Your coach is starting to connect your food to how you feel." },
+    { key: "patterns", title: "Your Patterns just opened up", unlocked: !demo && reflections.length >= 3, sub: "Your coach is starting to connect your food to how you feel." },
   ]);
 
   // Trend cards (headline, energy) need a few reflections before there's anything real.
@@ -225,7 +225,7 @@ export default function PatternsScreen() {
           )}
         </header>
 
-        {unlockCel && <UnlockCelebrationBanner label={unlockCel.label} sub={unlockCel.sub} onDismiss={dismissUnlock} />}
+        {unlockCel && <UnlockCelebrationBanner title={unlockCel.title} sub={unlockCel.sub} icon={unlockCel.icon} onDismiss={dismissUnlock} />}
 
         {/* What the coach is noticing — the headline plus the strongest observed
             associations (food->feeling links + reflection discoveries), capped at 2. */}

@@ -587,6 +587,10 @@ export default function ProfileScreen() {
       `wya_unlock_seen_fullTrends_${user.id}`,
       `wya_unlock_init_patterns_${user.id}`,
       `wya_unlock_seen_patterns_${user.id}`,
+      `wya_unlock_init_firstMeal_${user.id}`,
+      `wya_unlock_seen_firstMeal_${user.id}`,
+      `wya_unlock_init_firstReflection_${user.id}`,
+      `wya_unlock_seen_firstReflection_${user.id}`,
       `wya_dob_${user.id}`,
     ];
     keysToRemove.forEach((k) => localStorage.removeItem(k));
