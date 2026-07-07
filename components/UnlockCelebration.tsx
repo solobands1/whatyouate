@@ -90,7 +90,7 @@ export function UnlockCelebrationBanner({ title, sub, icon = "unlock", onDismiss
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
         style={dragging ? { transform: `translateY(${dragY}px)`, transition: "none" } : undefined}
-        className={`pointer-events-auto w-full max-w-md rounded-2xl border border-white/40 bg-white/80 px-4 pt-3 pb-2 shadow-[0_14px_36px_rgba(15,23,42,0.20)] backdrop-blur-xl transition-all duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${visible ? "translate-y-0 opacity-100" : "-translate-y-[160%] opacity-0"}`}
+        className={`pointer-events-auto w-full max-w-md touch-none rounded-2xl border border-white/40 bg-white/80 px-4 pt-3 pb-2 shadow-[0_14px_36px_rgba(15,23,42,0.20)] backdrop-blur-xl transition-all duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${visible ? "translate-y-0 opacity-100" : "-translate-y-[160%] opacity-0"}`}
       >
         <div className="flex items-center gap-3">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
