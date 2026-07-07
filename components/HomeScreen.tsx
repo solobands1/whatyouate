@@ -30,7 +30,8 @@ import Card from "./Card";
 import WaterBar from "./WaterBar";
 import { useAuth } from "./AuthProvider";
 import { useAppData } from "./AppDataProvider";
-import { useUnlockCelebration, UnlockCelebrationBanner } from "./UnlockCelebration";
+import { useUnlockCelebration, UnlockCelebrationBanner, armCelebrations } from "./UnlockCelebration";
+import { countLoggedDays } from "../lib/trial";
 import {
   addMeal,
   clearMealsCache,
@@ -2349,9 +2350,20 @@ export default function HomeScreen() {
   const streak = homeMarkers.streak ?? 0;
   // One-time "first X" celebration banners on Home (fired the moment the count crosses 1).
   const { pending: firstCel, dismiss: dismissFirstCel } = useUnlockCelebration(user?.id, [
-    { key: "firstMeal", title: "You logged your first meal!", sub: "Nice start. Every log teaches your coach what works for you.", unlocked: !isDemoMode && mealCount >= 1, icon: "spark" },
-    { key: "firstReflection", title: "You finished your first nightly reflection!", sub: "This is how your coach learns to connect your food to how you feel.", unlocked: !isDemoMode && (ctxReflections?.length ?? 0) >= 1, icon: "spark" },
+    { key: "firstMeal", title: "You Logged Your First Meal!", sub: "Nice start. Every log teaches your coach what works for you.", unlocked: !isDemoMode && mealCount >= 1, icon: "spark" },
+    { key: "firstReflection", title: "You Finished Your First Nightly Reflection!", sub: "This is how your coach learns to connect your food to how you feel.", unlocked: !isDemoMode && (ctxReflections?.length ?? 0) >= 1, icon: "spark" },
   ]);
+  // Arm the cross-surface unlocks (celebrated on Insights/Patterns) here on Home while they're
+  // still locked, so hitting the threshold is recognized even if that tab wasn't opened first.
+  useEffect(() => {
+    if (!user || isDemoMode || loadingData) return;
+    const loggedDays = countLoggedDays(ctxMeals ?? []);
+    armCelebrations(user.id, [
+      { key: "nudges", unlocked: mealCount >= 5 },
+      { key: "patterns", unlocked: (ctxReflections?.length ?? 0) >= 3 },
+      { key: "fullTrends", unlocked: loggedDays >= 14 },
+    ]);
+  }, [user, isDemoMode, loadingData, mealCount, ctxReflections?.length, ctxMeals]);
 
   const todayHasActivity = (() => {
     const key = todayKey();
@@ -5241,7 +5253,7 @@ export default function HomeScreen() {
                     {reflectionStreak >= 2
                       ? `${reflectionStreak} nights in a row`
                       : reflectionTotal <= 1
-                        ? "Your first reflection"
+                        ? "Your First Reflection"
                         : `${reflectionTotal} nights reflected`}
                   </div>
                   <p className="mt-3 max-w-xs text-center text-sm text-ink/65">That's today, noted. Showing up for yourself like this is how feeling better slowly stops being a goal and just becomes your normal.</p>

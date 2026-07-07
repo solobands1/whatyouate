@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 // A one-time celebratory banner shown the first time a user reaches a milestone on the surface
 // where it makes sense (a feature "opening up", or a "first X" moment). Per-key baseline logic
@@ -9,11 +9,26 @@ import { useEffect, useMemo, useState } from "react";
 type CelebrationIcon = "unlock" | "spark";
 type CelebrationEntry = { key: string; title: string; sub?: string; unlocked: boolean; icon?: CelebrationIcon };
 
-function initKey(userId: string, key: string) { return `wya_unlock_init_${key}_${userId}`; }
-function seenKey(userId: string, key: string) { return `wya_unlock_seen_${key}_${userId}`; }
+// Per-key state in localStorage: absent | "armed" (seen while locked) | "done" (celebrated or
+// baselined). A celebration only fires on a locked→unlocked transition we actually witnessed,
+// so a key must be "armed" (seen locked) first. First-ever eval while already unlocked is
+// treated as pre-existing and baselined to "done" (no retroactive pop).
+function celKey(userId: string, key: string) { return `wya_cel_${key}_${userId}`; }
 
-// Returns the first entry that just became true and hasn't been celebrated yet. Records a
-// baseline the first time each key is evaluated so pre-existing milestones stay silent.
+// Arm keys while they may still be locked — call on a frequently-visited surface (Home) so a
+// later unlock on ANOTHER surface (Insights/Patterns) is still recognized as a real transition.
+export function armCelebrations(userId: string | undefined, entries: { key: string; unlocked: boolean }[]) {
+  if (!userId || typeof window === "undefined") return;
+  for (const e of entries) {
+    try {
+      const k = celKey(userId, e.key);
+      if (localStorage.getItem(k)) continue; // already armed or done
+      localStorage.setItem(k, e.unlocked ? "done" : "armed");
+    } catch { /* ignore */ }
+  }
+}
+
+// Returns the first armed entry that just became unlocked and hasn't been celebrated yet.
 export function useUnlockCelebration(
   userId: string | undefined,
   entries: CelebrationEntry[],
@@ -27,18 +42,16 @@ export function useUnlockCelebration(
   useEffect(() => {
     if (!userId || typeof window === "undefined") return;
     for (const e of entries) {
-      let firstEval = false;
       try {
-        if (!localStorage.getItem(initKey(userId, e.key))) {
-          firstEval = true;
-          localStorage.setItem(initKey(userId, e.key), "true");
-          if (e.unlocked) localStorage.setItem(seenKey(userId, e.key), "true");
+        const k = celKey(userId, e.key);
+        const cur = localStorage.getItem(k);
+        if (!cur) {
+          // First eval on this surface: arm if locked, baseline if already unlocked.
+          localStorage.setItem(k, e.unlocked ? "done" : "armed");
+          continue;
         }
-      } catch { /* ignore */ }
-      if (firstEval) continue;
-      try {
-        if (e.unlocked && !localStorage.getItem(seenKey(userId, e.key))) {
-          localStorage.setItem(seenKey(userId, e.key), "true"); // fire once
+        if (cur === "armed" && e.unlocked) {
+          localStorage.setItem(k, "done"); // fire once
           setPending(e);
           return;
         }
@@ -51,15 +64,23 @@ export function useUnlockCelebration(
 }
 
 export function UnlockCelebrationBanner({ title, sub, icon = "unlock", onDismiss }: { title: string; sub?: string; icon?: CelebrationIcon; onDismiss: () => void }) {
-  const [shown, setShown] = useState(false);
+  // enter → shown → exit. Slides down from the top on show and up off the top on dismiss,
+  // like an iOS notification banner. Auto-dismisses after 10s.
+  const [state, setState] = useState<"enter" | "shown" | "exit">("enter");
+  const close = useCallback(() => {
+    setState("exit");
+    setTimeout(onDismiss, 340);
+  }, [onDismiss]);
   useEffect(() => {
-    const r = requestAnimationFrame(() => setShown(true));
-    return () => cancelAnimationFrame(r);
-  }, []);
+    const r = requestAnimationFrame(() => setState("shown"));
+    const t = setTimeout(close, 10000);
+    return () => { cancelAnimationFrame(r); clearTimeout(t); };
+  }, [close]);
+  const visible = state === "shown";
   return (
     <div
       role="status"
-      className={`mb-4 flex items-center gap-3 rounded-2xl border border-primary/25 bg-primary/[0.07] px-4 py-3 shadow-[0_8px_24px_rgba(15,23,42,0.10)] transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${shown ? "translate-y-0 opacity-100" : "-translate-y-1 opacity-0"}`}
+      className={`mb-4 flex items-center gap-3 rounded-2xl border border-primary/25 bg-primary/[0.07] px-4 py-3 shadow-[0_8px_24px_rgba(15,23,42,0.10)] transition-all duration-[340ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${visible ? "translate-y-0 opacity-100" : "-translate-y-3 opacity-0"}`}
     >
       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
         {icon === "spark" ? (
@@ -78,7 +99,7 @@ export function UnlockCelebrationBanner({ title, sub, icon = "unlock", onDismiss
       </div>
       <button
         type="button"
-        onClick={onDismiss}
+        onClick={close}
         aria-label="Dismiss"
         className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-ink/40 transition active:opacity-60"
       >
