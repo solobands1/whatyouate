@@ -2893,11 +2893,6 @@ export default function HomeScreen() {
             </div>
           </div>
           <p className="mt-1 pl-0.5 text-[13px] text-muted/70">Eat Confidently | Feel Better</p>
-          {!loadingData && mealCount === 0 && !isDemoMode && (
-            <p className="mt-3 text-[11px] text-muted/60">
-              Log your first meal to get started.
-            </p>
-          )}
           {loadError && <p className="mt-2 text-[11px] text-muted/60">{loadError}</p>}
           {failedMealNotice && (
             <p className="mt-2 text-[11px] text-muted/60">One or more meals couldn't be analysed and were removed from your log.</p>
