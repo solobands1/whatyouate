@@ -794,11 +794,15 @@ export default function HomeScreen() {
     if (habitSpotlightCheckedRef.current) return;
     if (!habitLoaded || !barsReady || isDemoMode || !user) return;
     if (heroHabit.status !== "suggested" || activeTemplate.id !== "logging-starter") return;
+    // Wait until onboarding + the walkthrough are finished/skipped (and nothing tour-related is
+    // on screen) so the intro never collides with the tour, then let the home settle first.
+    if (showOnboarding || showTourGate || runTour) return;
+    try { if (localStorage.getItem(`wya_walkthrough_${user.id}`) !== "true") return; } catch { return; }
     habitSpotlightCheckedRef.current = true;
     try { if (localStorage.getItem(`wya_habit_intro_seen_${user.id}`) === "true") return; } catch {}
-    const t = setTimeout(() => setShowHabitSpotlight(true), 550);
+    const t = setTimeout(() => setShowHabitSpotlight(true), 2200);
     return () => clearTimeout(t);
-  }, [habitLoaded, barsReady, isDemoMode, user, heroHabit.status, activeTemplate.id]);
+  }, [habitLoaded, barsReady, isDemoMode, user, heroHabit.status, activeTemplate.id, showOnboarding, showTourGate, runTour]);
 
   // Gentle entrance/exit for the spotlight (opacity + slight scale).
   useEffect(() => {
@@ -4034,7 +4038,7 @@ export default function HomeScreen() {
             onClick={dismissHabitSpotlight}
           />
           <div
-            className={`relative w-full max-w-sm rounded-3xl border-2 border-primary/25 bg-white px-6 py-8 text-center shadow-[0_24px_64px_rgba(15,23,42,0.35)] transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${spotlightIn ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-95 translate-y-3"}`}
+            className={`relative w-full max-w-sm rounded-3xl border-2 border-primary/25 bg-white px-6 py-8 text-center shadow-[0_24px_64px_rgba(15,23,42,0.35)] transition-all duration-[650ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] motion-reduce:transition-none ${spotlightIn ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-[0.96] translate-y-12"}`}
           >
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/12 text-primary animate-habit-glow">
               <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
