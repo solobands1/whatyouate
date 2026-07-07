@@ -13,6 +13,7 @@ import { computeDaysCompared } from "../lib/dayCompare";
 import { computeFoodFeelingLinks, type FoodFeelingLink } from "../lib/foodFeeling";
 import { computeActiveChanges, type ActiveChange } from "../lib/changes";
 import { getChangeStatuses, setChangeStatus } from "../lib/changeStatus";
+import { useUnlockCelebration, UnlockCelebrationBanner } from "./UnlockCelebration";
 
 const METRIC_LABEL: Record<string, string> = { energy: "energy", sleep: "sleep", mood: "mood", stress: "stress", digestion: "digestion" };
 function changeEffectLine(c: Pick<ActiveChange, "targetKey" | "effect">): string | null {
@@ -157,6 +158,10 @@ export default function PatternsScreen() {
   // cards, completed habits for the habits card, etc.), so no card ever just disappears.
   // Example data + a "Preview" label until that card has enough; demo shows it unlabeled.
   const demo = isDemoMode;
+  // One-time "Your Patterns just opened up" celebration when patterns unlocks (3 reflections).
+  const { pending: unlockCel, dismiss: dismissUnlock } = useUnlockCelebration(user?.id, [
+    { key: "patterns", label: "Your Patterns", unlocked: !demo && reflections.length >= 3, sub: "Your coach is starting to connect your food to how you feel." },
+  ]);
 
   // Trend cards (headline, energy) need a few reflections before there's anything real.
   const fewRefl = facts.total < 3;
@@ -219,6 +224,8 @@ export default function PatternsScreen() {
             </div>
           )}
         </header>
+
+        {unlockCel && <UnlockCelebrationBanner label={unlockCel.label} sub={unlockCel.sub} onDismiss={dismissUnlock} />}
 
         {/* What the coach is noticing — the headline plus the strongest observed
             associations (food->feeling links + reflection discoveries), capped at 2. */}

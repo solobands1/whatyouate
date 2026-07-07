@@ -581,6 +581,12 @@ export default function ProfileScreen() {
       `wya_onboarding_done_${user.id}`,
       `wya_nudge_view_count_${user.id}`,
       `wya_habit_intro_seen_${user.id}`,
+      `wya_unlock_init_nudges_${user.id}`,
+      `wya_unlock_seen_nudges_${user.id}`,
+      `wya_unlock_init_fullTrends_${user.id}`,
+      `wya_unlock_seen_fullTrends_${user.id}`,
+      `wya_unlock_init_patterns_${user.id}`,
+      `wya_unlock_seen_patterns_${user.id}`,
       `wya_dob_${user.id}`,
     ];
     keysToRemove.forEach((k) => localStorage.removeItem(k));

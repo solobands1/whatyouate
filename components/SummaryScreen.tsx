@@ -14,6 +14,7 @@ import { computeSummaryMarkers, type ComputedNudge, type NudgeType } from "../li
 import { useTrialStatus } from "../hooks/useTrialStatus";
 import { openUpgradeModal } from "./UpgradeModal";
 import WyaaAvatar from "./WyaaAvatar";
+import { useUnlockCelebration, UnlockCelebrationBanner } from "./UnlockCelebration";
 
 
 type MilestoneItem = { label: string; sub: string; desc: string; unlocked: boolean; isNext?: boolean };
@@ -196,6 +197,11 @@ export default function SummaryScreen() {
   const dayCount = summaryMarkers.dayCount;
   const mealCount = summaryMarkers.mealCount;
   const reflCount = reflections.length;
+  // One-time "just opened up" celebration for features that live on this hub.
+  const { pending: unlockCel, dismiss: dismissUnlock } = useUnlockCelebration(user?.id, [
+    { key: "nudges", label: "Nudges", unlocked: !isDemoMode && mealCount >= 5, sub: "Your coach can now send you personalized nudges." },
+    { key: "fullTrends", label: "Full Trends", unlocked: !isDemoMode && dayCount >= 14, sub: "Two weeks in — full week-to-week trends are here." },
+  ]);
   const gentleTargetsDisplay = summaryMarkers.gentleTargets ?? { calories: 2300, protein: 125, fat: 77, carbs: 277 };
   const workoutSummary = summaryMarkers.workoutSummary;
   const avgWeekCalories = summaryMarkers.avgWeekCalories;
@@ -1000,6 +1006,8 @@ export default function SummaryScreen() {
           <h1 className="text-2xl font-semibold text-ink">Insights</h1>
           <p className="mt-1 text-sm text-muted/70">Daily snapshot and weekly insights at a glance</p>
         </header>
+
+        {unlockCel && <UnlockCelebrationBanner label={unlockCel.label} sub={unlockCel.sub} onDismiss={dismissUnlock} />}
 
         {/* Unlock progress timeline — only shown until all milestones are reached (14 logged days) */}
         {!isDemoMode && !(mealCount >= 5 && reflCount >= 3 && dayCount >= 14) && (() => {
