@@ -604,6 +604,21 @@ export default function HomeScreen() {
   // plus the energy dip time), then fall back to the user's stated goals. This is what makes
   // the suggestion respond to "you dip in the afternoon" instead of just the onboarding goal.
   const reflectionFacts = useMemo(() => computeReflectionFacts(ctxReflections ?? []), [ctxReflections]);
+  // Reflection streak (consecutive nights, counting today which is being completed now) and
+  // total nights — both real, for the completion reward. Streak leads; total is the fallback.
+  const reflectionStreak = useMemo(() => {
+    const dates = new Set((ctxReflections ?? []).map((r) => r.date));
+    dates.add(todayDateStr());
+    let streak = 0;
+    const d = new Date();
+    while (dates.has(todayKey(d))) { streak++; d.setDate(d.getDate() - 1); }
+    return streak;
+  }, [ctxReflections]);
+  const reflectionTotal = useMemo(() => {
+    const dates = new Set((ctxReflections ?? []).map((r) => r.date));
+    dates.add(todayDateStr());
+    return dates.size;
+  }, [ctxReflections]);
   const observedProblem = useMemo(() => {
     const w = reflectionFacts.watch;
     const dipTime = reflectionFacts.dip && !("none" in reflectionFacts.dip) ? reflectionFacts.dip.time : undefined;
@@ -5209,7 +5224,15 @@ export default function HomeScreen() {
                     <svg viewBox="0 0 24 24" className="h-10 w-10" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 6" /></svg>
                   </span>
                   <p className="mt-6 text-center text-2xl font-semibold text-ink">Thanks For Reflecting</p>
-                  <p className="mt-2 max-w-xs text-center text-sm text-ink/65">That's today, noted. Showing up for yourself like this is how feeling better slowly stops being a goal and just becomes your normal.</p>
+                  <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-3.5 py-1.5 text-[13px] font-semibold text-primary/90 animate-habit-pop">
+                    <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z" /></svg>
+                    {reflectionStreak >= 2
+                      ? `${reflectionStreak} nights in a row`
+                      : reflectionTotal <= 1
+                        ? "Your first reflection"
+                        : `${reflectionTotal} nights reflected`}
+                  </div>
+                  <p className="mt-3 max-w-xs text-center text-sm text-ink/65">That's today, noted. Showing up for yourself like this is how feeling better slowly stops being a goal and just becomes your normal.</p>
                   <button type="button" className="mt-10 w-full max-w-xs rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80" onClick={finishReflection}>Done</button>
                 </div>
               )}
