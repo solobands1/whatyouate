@@ -798,7 +798,7 @@ export default function ProfileScreen() {
                     key={unit}
                     type="button"
                     className={`rounded-full px-2.5 py-0.5 font-medium ${
-                      units === unit ? "bg-white text-ink" : "text-muted/60"
+                      units === unit ? "bg-white text-ink" : "text-ink/55"
                     }`}
                     onClick={() => {
                       if (unit === units) return;
@@ -979,7 +979,7 @@ export default function ProfileScreen() {
                     className={`rounded-xl border px-3 py-1.5 text-xs font-medium transition ${
                       sex === option.value
                         ? "border-primary/60 bg-primary/10 text-ink/80"
-                        : "border-ink/10 text-muted/65"
+                        : "border-ink/20 text-ink/55"
                     }`}
                     onClick={() => setSex(option.value)}
                   >
@@ -1017,7 +1017,7 @@ export default function ProfileScreen() {
                   onClick={() => setFeelingGoals((prev) =>
                     prev.includes(value) ? prev.filter((v) => v !== value) : prev.length >= 2 ? prev : [...prev, value]
                   )}
-                  className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${active ? "border-primary/60 bg-primary/10 text-ink/80" : atCap ? "border-ink/10 text-muted/35" : "border-ink/10 text-muted/65"}`}
+                  className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${active ? "border-primary/60 bg-primary/10 text-ink/80" : atCap ? "border-ink/15 text-ink/40" : "border-ink/20 text-ink/55"}`}
                 >
                   {label}
                 </button>
@@ -1048,7 +1048,7 @@ export default function ProfileScreen() {
                   className={`rounded-xl border px-3 py-1.5 text-xs font-medium transition ${
                     goalDirection === value || (goalDirection === "balance" && value === "maintain")
                       ? "border-primary/60 bg-primary/10 text-ink/80"
-                      : "border-ink/10 text-muted/65"
+                      : "border-ink/20 text-ink/55"
                   }`}
                   onClick={() => setGoalDirection(value)}
                   type="button"
@@ -1076,7 +1076,7 @@ export default function ProfileScreen() {
                   className={`rounded-xl border px-3 py-2.5 text-left transition ${
                     activityLevel === option.value
                       ? "border-primary/60 bg-primary/10 text-ink/80"
-                      : "border-ink/10 text-muted/65"
+                      : "border-ink/20 text-ink/55"
                   }`}
                   onClick={() => setActivityLevel(option.value)}
                 >
@@ -1112,7 +1112,7 @@ export default function ProfileScreen() {
                     className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
                       active
                         ? "border-primary/60 bg-primary/10 text-ink/80"
-                        : "border-ink/10 text-muted/65"
+                        : "border-ink/20 text-ink/55"
                     }`}
                     onClick={() =>
                       setDietaryRestrictions((prev) =>
