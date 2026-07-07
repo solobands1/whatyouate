@@ -30,7 +30,7 @@ import Card from "./Card";
 import WaterBar from "./WaterBar";
 import { useAuth } from "./AuthProvider";
 import { useAppData } from "./AppDataProvider";
-import { useUnlockCelebration, UnlockCelebrationBanner, armCelebrations } from "./UnlockCelebration";
+import { useUnlockCelebration, UnlockCelebrationBanner } from "./UnlockCelebration";
 import { countLoggedDays } from "../lib/trial";
 import {
   addMeal,
@@ -2362,22 +2362,15 @@ export default function HomeScreen() {
   const gentleTargetsDisplay = homeMarkers.gentleTargets ?? { calories: 2300, protein: 125 };
   const mealCount = homeMarkers.mealCount;
   const streak = homeMarkers.streak ?? 0;
-  // One-time "first X" celebration banners on Home (fired the moment the count crosses 1).
+  // All milestone celebrations surface on Home as top notifications (fired the moment the
+  // relevant count crosses its threshold), including the feature unlocks.
   const { pending: firstCel, dismiss: dismissFirstCel } = useUnlockCelebration(user?.id, [
     { key: "firstMeal", title: "You Logged Your First Meal!", sub: "Nice start. Every log teaches your coach what works for you.", unlocked: !isDemoMode && mealCount >= 1, icon: "spark" },
     { key: "firstReflection", title: "You Finished Your First Nightly Reflection!", sub: "This is how your coach learns to connect your food to how you feel.", unlocked: !isDemoMode && (ctxReflections?.length ?? 0) >= 1, icon: "spark" },
+    { key: "nudges", title: "Nudges Just Opened Up", sub: "Your coach can now send you personalized nudges.", unlocked: !isDemoMode && mealCount >= 5, icon: "unlock" },
+    { key: "patterns", title: "Your Patterns Just Opened Up", sub: "Your coach is starting to connect your food to how you feel.", unlocked: !isDemoMode && (ctxReflections?.length ?? 0) >= 3, icon: "unlock" },
+    { key: "fullTrends", title: "Full Trends Just Opened Up", sub: "Two weeks in. Full week-to-week trends are here.", unlocked: !isDemoMode && countLoggedDays(ctxMeals ?? []) >= 14, icon: "unlock" },
   ]);
-  // Arm the cross-surface unlocks (celebrated on Insights/Patterns) here on Home while they're
-  // still locked, so hitting the threshold is recognized even if that tab wasn't opened first.
-  useEffect(() => {
-    if (!user || isDemoMode || loadingData) return;
-    const loggedDays = countLoggedDays(ctxMeals ?? []);
-    armCelebrations(user.id, [
-      { key: "nudges", unlocked: mealCount >= 5 },
-      { key: "patterns", unlocked: (ctxReflections?.length ?? 0) >= 3 },
-      { key: "fullTrends", unlocked: loggedDays >= 14 },
-    ]);
-  }, [user, isDemoMode, loadingData, mealCount, ctxReflections?.length, ctxMeals]);
 
   const todayHasActivity = (() => {
     const key = todayKey();

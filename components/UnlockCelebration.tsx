@@ -16,19 +16,6 @@ type CelebrationEntry = { key: string; title: string; sub?: string; unlocked: bo
 // treated as pre-existing and baselined to "done" (no retroactive pop).
 function celKey(userId: string, key: string) { return `wya_cel_${key}_${userId}`; }
 
-// Arm keys while they may still be locked — call on a frequently-visited surface (Home) so a
-// later unlock on ANOTHER surface (Insights/Patterns) is still recognized as a real transition.
-export function armCelebrations(userId: string | undefined, entries: { key: string; unlocked: boolean }[]) {
-  if (!userId || typeof window === "undefined") return;
-  for (const e of entries) {
-    try {
-      const k = celKey(userId, e.key);
-      if (localStorage.getItem(k)) continue; // already armed or done
-      localStorage.setItem(k, e.unlocked ? "done" : "armed");
-    } catch { /* ignore */ }
-  }
-}
-
 // Returns the first armed entry that just became unlocked and hasn't been celebrated yet.
 export function useUnlockCelebration(
   userId: string | undefined,
