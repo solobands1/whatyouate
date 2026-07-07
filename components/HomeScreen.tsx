@@ -3018,11 +3018,11 @@ export default function HomeScreen() {
               >
                 <p className="-mt-1 text-center text-xs font-semibold uppercase tracking-wide text-primary">Habit Builder</p>
                 <div className="flex flex-col items-center py-1">
-                  <span className="mt-1.5 flex h-12 w-12 items-center justify-center rounded-full bg-primary/15 text-primary">
-                    <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><g className="animate-clock-wind"><path d="M12 7.5V12l3 1.5" /></g></svg>
+                  <span className="mt-1.5 flex h-16 w-16 items-center justify-center rounded-full bg-primary/15 text-primary">
+                    <svg viewBox="0 0 24 24" className="h-9 w-9" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><g className="animate-clock-wind"><path d="M12 7.5V12l3 1.5" /></g></svg>
                   </span>
-                  <p className="mt-1.5 text-base font-semibold text-ink">Starts Tomorrow</p>
-                  <p className="mt-1 text-[13px] leading-relaxed text-ink/70">{activeTemplate.title}. We&apos;ll nudge you in the morning to begin.</p>
+                  <p className="mt-2 text-base font-semibold text-ink">Starts Tomorrow</p>
+                  <p className="mt-1 text-[13px] leading-relaxed text-ink/70">We&apos;ll nudge you in the morning to begin.</p>
                 </div>
               </div>
             ) : heroHabit.status === "missed" ? (
