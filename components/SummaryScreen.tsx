@@ -16,7 +16,7 @@ import { openUpgradeModal } from "./UpgradeModal";
 import WyaaAvatar from "./WyaaAvatar";
 
 
-type MilestoneItem = { label: string; sub: string; desc: string; unlocked: boolean };
+type MilestoneItem = { label: string; sub: string; desc: string; unlocked: boolean; isNext?: boolean };
 
 function UnlockTimeline({ milestones }: { milestones: MilestoneItem[] }) {
   const [activeTip, setActiveTip] = useState<string | null>(null);
@@ -51,8 +51,15 @@ function UnlockTimeline({ milestones }: { milestones: MilestoneItem[] }) {
             style={{ width: colWidth }}
             onClick={() => setActiveTip(activeTip === m.label ? null : m.label)}
           >
-            <div className={`h-3 w-3 rounded-full transition-colors ${m.unlocked ? "bg-primary" : activeTip === m.label ? "bg-ink/50" : "bg-ink/30"}`} />
-            <p className={`mt-1.5 text-center text-[10px] leading-tight ${m.unlocked ? "text-primary/90" : "text-ink/55"}`}>{m.label}</p>
+            {m.isNext ? (
+              <span className="relative flex h-3 w-3 items-center justify-center">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-primary/40 opacity-75 animate-ping motion-reduce:animate-none" />
+                <span className="relative inline-flex h-3 w-3 rounded-full bg-primary/50" />
+              </span>
+            ) : (
+              <div className={`h-3 w-3 rounded-full transition-colors ${m.unlocked ? "bg-primary" : activeTip === m.label ? "bg-ink/50" : "bg-ink/30"}`} />
+            )}
+            <p className={`mt-1.5 text-center text-[10px] leading-tight ${m.unlocked ? "text-primary/90" : m.isNext ? "font-medium text-primary/80" : "text-ink/55"}`}>{m.label}</p>
             {m.sub && <p className="mt-0.5 text-center text-[10px] font-medium leading-tight text-primary/75">{m.sub}</p>}
           </button>
         ))}
@@ -1016,7 +1023,7 @@ export default function SummaryScreen() {
             const unlocked = cumulative && m.unlocked;
             cumulative = unlocked;
             if (unlocked) return { ...m, unlocked, sub: "" };
-            if (!nextUnlockFound && m.sub) { nextUnlockFound = true; return { ...m, unlocked }; }
+            if (!nextUnlockFound && m.sub) { nextUnlockFound = true; return { ...m, unlocked, isNext: true }; }
             return { ...m, unlocked, sub: "" };
           });
           return (
