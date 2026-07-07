@@ -1931,7 +1931,7 @@ export default function ProfileScreen() {
 
       {showFeedbackToast && (
         <div className="fixed inset-x-0 bottom-6 z-50 flex justify-center px-5">
-          <div className="rounded-full border border-primary/25 bg-[#EAF1FF] backdrop-blur-md px-4 py-2 text-[13px] font-medium text-ink/80 shadow-[0_8px_24px_rgba(15,23,42,0.15)]">
+          <div className="rounded-full bg-primary px-4 py-1.5 text-[13px] font-semibold text-white shadow-[0_8px_24px_rgba(15,23,42,0.15)]">
             Thanks for the feedback!
           </div>
         </div>
@@ -1939,7 +1939,7 @@ export default function ProfileScreen() {
 
       {showSavedToast && (
         <div className="fixed inset-x-0 bottom-6 z-50 flex justify-center px-5">
-          <div className="rounded-full border border-primary/25 bg-[#EAF1FF] backdrop-blur-md px-4 py-2 text-center text-[13px] font-medium text-ink/80 shadow-[0_8px_24px_rgba(15,23,42,0.15)]">
+          <div className="rounded-full bg-primary px-4 py-1.5 text-center text-[13px] font-semibold text-white shadow-[0_8px_24px_rgba(15,23,42,0.15)]">
             Saved
           </div>
         </div>
