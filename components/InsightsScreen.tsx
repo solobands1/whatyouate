@@ -647,7 +647,7 @@ export default function InsightsScreen() {
               <p className="text-xs uppercase tracking-wide text-muted/70">Macros</p>
               <button
                 type="button"
-                className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-ink/10 text-[10px] font-semibold text-ink/60"
+                className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-ink/20 text-[9px] font-semibold text-muted/60"
                 onClick={() => setActiveNutrient("Macros")}
                 aria-label="About energy, protein, and fats"
               >
@@ -761,7 +761,7 @@ export default function InsightsScreen() {
                 <p className="text-xs uppercase tracking-wide text-muted/70">Energy</p>
                 <button
                   type="button"
-                  className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-ink/10 text-[10px] font-semibold text-ink/60"
+                  className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-ink/20 text-[9px] font-semibold text-muted/60"
                   onClick={() => setActiveNutrient("Energy Check-Ins")}
                   aria-label="About energy check-ins"
                 >
@@ -904,7 +904,7 @@ export default function InsightsScreen() {
                             <p className="text-sm text-ink/80">{pattern.name}</p>
                             <button
                               type="button"
-                              className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-ink/10 text-[10px] font-semibold text-ink/60"
+                              className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-ink/20 text-[9px] font-semibold text-muted/60"
                               onClick={() => setActiveNutrient(pattern.name)}
                               aria-label={`About ${pattern.name}`}
                               data-tour={isFirst ? "insights-i-icon" : undefined}

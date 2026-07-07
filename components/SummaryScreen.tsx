@@ -32,7 +32,7 @@ function UnlockTimeline({ milestones }: { milestones: MilestoneItem[] }) {
           className="flex h-4 w-4 items-center justify-center rounded-full border border-ink/20 transition hover:border-ink/40 active:opacity-60 focus:outline-none"
           onClick={() => setActiveTip(activeTip === "__info" ? null : "__info")}
         >
-          <span className="text-[9px] leading-none text-muted/50">i</span>
+          <span className="text-[9px] font-semibold leading-none text-muted/60">i</span>
         </button>
       </div>
       {/* Info tooltip */}
@@ -1447,7 +1447,7 @@ export default function SummaryScreen() {
             </div>
 
             <button type="button" onClick={() => setShowNudgeInfo((v) => !v)} className="mt-5 flex items-center gap-1 text-[11px] text-muted/60 active:opacity-60">
-              <span className="flex h-4 w-4 items-center justify-center rounded-full border border-ink/20 text-[9px]">i</span>
+              <span className="flex h-4 w-4 items-center justify-center rounded-full border border-ink/20 text-[9px] font-semibold text-muted/60">i</span>
               How nudges work
             </button>
             {showNudgeInfo && (
