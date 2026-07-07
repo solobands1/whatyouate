@@ -101,7 +101,7 @@ export interface HabitTemplate {
 export const HABIT_TEMPLATES: HabitTemplate[] = [
   // ---------- logging (cold start + re-engagement) ----------
   {
-    id: "logging-starter", kind: "onboarding", title: "Find Your Footing",
+    id: "logging-starter", kind: "onboarding", title: "Find Your Rhythm",
     noun: "logging", category: "logging",
     ask: "Log at least one thing each day for 3 days. A meal, a feeling, a glass of water, anything counts.",
     whyTemplate: "You're just getting started, and every log helps your coach learn what works for you. It only gets better from here.",

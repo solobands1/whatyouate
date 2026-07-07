@@ -215,7 +215,7 @@ function NightlyMoonsBg() {
 }
 
 // Initial placeholder before the habit engine/persistence resolve. A brand-new user
-// starts on "Find Your Footing" (the onboarding logging habit); the real selection in
+// starts on "Find Your Rhythm" (the onboarding logging habit); the real selection in
 // goalHabits + the load effect replaces this once meals load.
 const FIRST_TEMPLATE: HabitTemplate = HABIT_TEMPLATES.find((t) => t.id === "logging-starter") ?? HABIT_TEMPLATES[0];
 
@@ -557,7 +557,7 @@ export default function HomeScreen() {
   const [showHabitIdeas, setShowHabitIdeas] = useState(false);
   const [heroExpanded, setHeroExpanded] = useState(false);
   const [heroPulse, setHeroPulse] = useState(false);
-  // One-time theatrical intro the first time the onboarding habit ("Find Your Footing")
+  // One-time theatrical intro the first time the onboarding habit ("Find Your Rhythm")
   // is offered. A focused moment over a scrim, then it hands off to the real card below.
   const [showHabitSpotlight, setShowHabitSpotlight] = useState(false);
   const [spotlightIn, setSpotlightIn] = useState(false);
@@ -617,7 +617,7 @@ export default function HomeScreen() {
     const list = habitsForSignals(observedProblem, profile?.feelingGoals, profile?.goalDirection);
     const notForMe = user ? getNotForMe(user.id) : new Set<string>();
     const filtered = notForMe.size ? list.filter((h) => !notForMe.has(h.id)) : list;
-    // Cold start: a brand-new user's very first habit is always "Find Your Footing" (the
+    // Cold start: a brand-new user's very first habit is always "Find Your Rhythm" (the
     // onboarding logging habit), which habitsForGoals otherwise filters out. Once they've
     // logged a handful of real meals, the standard goal-based habits take over. Decline/
     // cooldown still applies downstream via pickSuggestionId, so it won't nag if dismissed.
@@ -699,7 +699,7 @@ export default function HomeScreen() {
   // can read the latest without re-running on it.
   const habitStateRef = useRef<HabitState>(EMPTY_HABIT_STATE);
   useEffect(() => {
-    // Wait for meals to finish loading so the cold-start count (Find Your Footing vs a
+    // Wait for meals to finish loading so the cold-start count (Find Your Rhythm vs a
     // standard habit) is decided on real data, not a mid-load empty list.
     if (appliedGoalHabitRef.current || !profile || dataLoading || goalHabits.length === 0) return;
     appliedGoalHabitRef.current = true;
@@ -773,7 +773,7 @@ export default function HomeScreen() {
     return () => { cancelled = true; };
   }, [profile, goalHabits, user, isDemoMode, dataLoading]);
 
-  // First-habit spotlight: when "Find Your Footing" is first offered to a real user,
+  // First-habit spotlight: when "Find Your Rhythm" is first offered to a real user,
   // play a one-time theatrical intro (guarded by a per-user localStorage flag).
   useEffect(() => {
     if (habitSpotlightCheckedRef.current) return;
@@ -1884,7 +1884,7 @@ export default function HomeScreen() {
     return () => clearTimeout(t);
   }, [heroHabit.status]);
 
-  // Logging habits (Find Your Footing / Pick Back Up) auto-tick the day when the
+  // Logging habits (Find Your Rhythm / Pick Back Up) auto-tick the day when the
   // user logs anything (a meal or feeling), then the confirmation appears on its
   // own a beat later — no button to press.
   const prevLogCountRef = useRef<number | null>(null);
