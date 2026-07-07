@@ -105,14 +105,24 @@ export function useMeals(
 
     setManualAnalysing(true);
     setManualError(null);
-    try {
+    const attempt = async () => {
       const res = await fetch("/api/analyze-food", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ textDescription: manualText.trim() })
       });
       if (!res.ok) throw new Error("Analysis failed");
-      const data = await res.json();
+      return res.json();
+    };
+    try {
+      let data;
+      try {
+        data = await attempt();
+      } catch {
+        // The first call can fail on a cold serverless start; a brief warm retry usually works.
+        await new Promise((r) => setTimeout(r, 900));
+        data = await attempt();
+      }
       const analysis: MealAnalysis | null = data.analysis ?? null;
       setManualResult(analysis);
       setManualPortion("medium");
