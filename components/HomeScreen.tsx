@@ -4076,7 +4076,6 @@ export default function HomeScreen() {
         <div className="fixed inset-0 z-[80] flex items-center justify-center px-6" role="dialog" aria-modal="true">
           <div
             className={`absolute inset-0 bg-ink/70 backdrop-blur-sm transition-opacity duration-[600ms] ${scrimIn ? "opacity-100" : "opacity-0"}`}
-            onClick={dismissHabitSpotlight}
           />
           <div
             className={`relative w-full max-w-sm rounded-3xl border-2 border-primary/25 bg-white px-6 py-8 text-center shadow-[0_24px_64px_rgba(15,23,42,0.35)] transition-all duration-[650ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] motion-reduce:transition-none ${cardIn ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-[0.96] translate-y-12"}`}
