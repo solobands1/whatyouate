@@ -531,19 +531,18 @@ export default function SummaryScreen() {
       content: (
         <div>
           <p style={{ fontWeight: 600, marginBottom: 10 }}>Welcome To Insights</p>
-          <p>Here you'll see today's nutrition totals, your week at a glance, and personal messages from your AI coach.</p>
+          <p>Here you'll see your week at a glance, personal messages from your Coach, and your habit progress.</p>
         </div>
       ),
     },
     {
-      target: "body",
-      placement: "center" as const,
+      target: String.raw`[data-tour="nutrition-reflections"]`,
+      placement: "bottom" as const,
       disableBeacon: true,
       content: (
         <div>
-          <p style={{ fontWeight: 600, marginBottom: 10 }}>It Unlocks As You Go</p>
-          <p>The more you log and reflect, the more opens up: personalized nudges, your patterns, and full weekly trends.</p>
-          <p style={{ marginTop: 10 }}>A little each day is all it takes.</p>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Nutrition & Reflections</p>
+          <p>Tap these to take a deeper dive: your full nutrition including vitamins and minerals, and your nightly reflection history.</p>
         </div>
       ),
     },
@@ -554,7 +553,7 @@ export default function SummaryScreen() {
       content: (
         <div>
           <p style={{ fontWeight: 600, marginBottom: 10 }}>Your Week At A Glance</p>
-          <p>Which days you logged, your streaks and averages, and any energy patterns that stand out.</p>
+          <p>Which days you logged, plus a few insights about your food and energy.</p>
         </div>
       ),
     },
@@ -564,8 +563,8 @@ export default function SummaryScreen() {
       disableBeacon: true,
       content: (
         <div>
-          <p style={{ fontWeight: 600, marginBottom: 10 }}>Meet Your Coach</p>
-          <p>Your coach keeps an eye on your meals, activity, and how you're feeling, and sends honest, personal observations. No generic tips.</p>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Meet Your AI Coach</p>
+          <p>Your Coach watches your meals, activity, and reflections, and it&apos;s what powers your Patterns, your Habit Builders, and your personal nudges. Honest observations, no generic tips.</p>
         </div>
       ),
     },
@@ -969,6 +968,7 @@ export default function SummaryScreen() {
         }}
         styles={{
           tooltip: { borderRadius: 16 },
+          spotlight: { borderRadius: 16 },
           options: {
             primaryColor: "#6FA8FF",
             textColor: "#1F2937",
@@ -1019,7 +1019,7 @@ export default function SummaryScreen() {
           );
         })()}
 
-        <div className="mb-6 grid grid-cols-2 gap-3">
+        <div data-tour="nutrition-reflections" className="mb-6 grid grid-cols-2 gap-3">
           <button
             type="button"
             onClick={() => router.push("/summary/nutrition")}

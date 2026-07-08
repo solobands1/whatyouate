@@ -159,13 +159,13 @@ export default function PatternsScreen() {
   const [runPatternsTour, setRunPatternsTour] = useState(false);
   const patternsTourSteps: Step[] = [
     {
-      target: `[data-tour="patterns-coach"]`,
+      target: String.raw`[data-tour="patterns-intro"]`,
       placement: "bottom" as const,
       disableBeacon: true,
       content: (
         <div>
-          <p style={{ fontWeight: 600, marginBottom: 10 }}>This Is The Heart Of It</p>
-          <p>Your coach connects what you eat to how you feel, perform, and recover, and surfaces the patterns worth paying attention to. It sharpens the more you log and reflect.</p>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Welcome To Patterns</p>
+          <p>This is where you&apos;ll see your longer-term patterns, to help you understand what&apos;s affecting how you feel. Your Coach highlights a few insights based on what you&apos;ve logged.</p>
         </div>
       ),
     },
@@ -260,6 +260,7 @@ export default function PatternsScreen() {
           locale={{ skip: "Skip", back: "Back", last: "Next", close: "Skip" }}
           styles={{
             tooltip: { borderRadius: 16 },
+            spotlight: { borderRadius: 16 },
             options: { primaryColor: "#6FA8FF", textColor: "#1F2937", backgroundColor: "#FFFFFF", arrowColor: "#FFFFFF" },
             buttonClose: { display: "none" },
             buttonSkip: { display: "block" },
@@ -267,6 +268,7 @@ export default function PatternsScreen() {
         />
       )}
       <div className="mx-auto flex min-h-screen max-w-md flex-col px-5 pb-24 safe-top">
+        <div data-tour="patterns-intro">
         <header className="mb-6">
           <h1 className="text-2xl font-semibold text-ink">Patterns</h1>
           <p className="mt-1 text-sm text-muted/70">What seems to affect how you feel</p>
@@ -319,6 +321,7 @@ export default function PatternsScreen() {
             <p className="mt-3 text-[11px] leading-relaxed text-muted/50">Associations from your reflections and meals, not proven causes.</p>
           )}
         </Card>
+        </div>
 
         {/* Energy trend */}
         <Card className="mt-6" style={riseIn(ready, 2)}>

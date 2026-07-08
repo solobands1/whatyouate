@@ -403,8 +403,7 @@ export default function ProfileScreen() {
       content: (
         <div>
           <p style={{ fontWeight: 600, marginBottom: 10 }}>Round Out Your Profile</p>
-          <p>Add your focus, body priority, supplements, and water tracking below. The more your coach knows, the sharper its patterns and suggestions get.</p>
-          <p style={{ marginTop: 10 }}>You can change any of this anytime. That&apos;s the tour, you&apos;re all set!</p>
+          <p>There are a few things that weren&apos;t in your initial questions. Take a quick look and update as much as you can. The more complete your profile, the more we have to help you!</p>
         </div>
       ),
       disableBeacon: true,
@@ -728,6 +727,7 @@ export default function ProfileScreen() {
             }}
             styles={{
               tooltip: { borderRadius: 16 },
+              spotlight: { borderRadius: 16 },
               options: {
                 primaryColor: "#6FA8FF",
                 textColor: "#1F2937",

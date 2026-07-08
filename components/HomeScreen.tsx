@@ -2489,7 +2489,18 @@ export default function HomeScreen() {
       content: (
         <div>
           <p style={{ fontWeight: 600, marginBottom: 10 }}>Build One Small Habit</p>
-          <p>Each habit builder is a tiny, doable change. Complete it a few days in a row and it sticks, no willpower required.</p>
+          <p>Each Habit Builder is a tiny, doable change. Complete it a few days in a row and it sticks, no willpower required.</p>
+        </div>
+      ),
+    },
+    {
+      target: '[data-tour="macros-water"]',
+      placement: "bottom" as const,
+      disableBeacon: true,
+      content: (
+        <div>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Your Daily Intake</p>
+          <p>This is where you see your daily water and macronutrient intake. Log them by tapping the + button at the bottom.</p>
         </div>
       ),
     },
@@ -2500,18 +2511,7 @@ export default function HomeScreen() {
       content: (
         <div>
           <p style={{ fontWeight: 600, marginBottom: 10 }}>Reflect Each Evening</p>
-          <p>A quick nightly check-in on your energy, sleep, and mood. This is what lets your coach connect how you eat to how you feel.</p>
-        </div>
-      ),
-    },
-    {
-      target: '[data-tour="bottom-nav"]',
-      placement: "top" as const,
-      disableBeacon: true,
-      content: (
-        <div>
-          <p style={{ fontWeight: 600, marginBottom: 10 }}>Find Your Way Around</p>
-          <p>Everything you build lives down here: your Insights, your Patterns, and your Profile. Explore them anytime.</p>
+          <p>A quick nightly reflection on your energy, sleep, and mood. This is what lets your Coach connect how you eat to how you feel.</p>
         </div>
       ),
     },
@@ -2595,6 +2595,7 @@ export default function HomeScreen() {
           }}
           styles={{
             tooltip: { borderRadius: 16 },
+            spotlight: { borderRadius: 16 },
             options: {
               primaryColor: "#6FA8FF",
               textColor: "#1F2937",
@@ -3031,9 +3032,9 @@ export default function HomeScreen() {
           );
         })()}
 
-        <Card className="mt-2" data-tour="habit-hero" style={riseIn(barsReady && habitLoaded, 0)}>
+        <Card className="mt-2" style={riseIn(barsReady && habitLoaded, 0)}>
           {/* Hero — dynamic slot. Priority: active habit builder > suggestion > reflection reminder > discovery > wins > greeting (default). Sample habit wired locally for now. */}
-          <div className={`-mx-4 rounded-2xl border-2 border-primary/25 px-4 ${heroHabit.status === "done" || heroHabit.status === "accepting" ? "bg-primary/10" : "bg-primary/[0.05]"} ${heroHabit.status === "hidden" ? (currentWindowNudge && !trial.isFree && !isDemoMode ? "py-5" : "py-7") : heroHabit.status === "done" && doneStep === "rested" ? "pt-5 pb-3" : "py-5"} ${heroHabit.status === "done" && (doneStep === "celebrate" || doneStep === "feedback") ? "animate-habit-built" : ""} ${(heroHabit.status === "done" && doneStep === "rested") || heroHabit.status === "accepting" ? "animate-habit-glow" : ""} ${(heroHabit.status === "active" && heroHabit.holdDay != null) || (heroHabit.status === "suggested" && !heroExpanded) || (heroHabit.status === "hidden" && !!currentWindowNudge && !nudgeExpanded) ? "animate-habit-shimmer" : ""} ${heroPulse ? "animate-card-pulse" : ""}`}>
+          <div data-tour="habit-hero" className={`-mx-4 rounded-2xl border-2 border-primary/25 px-4 ${heroHabit.status === "done" || heroHabit.status === "accepting" ? "bg-primary/10" : "bg-primary/[0.05]"} ${heroHabit.status === "hidden" ? (currentWindowNudge && !trial.isFree && !isDemoMode ? "py-5" : "py-7") : heroHabit.status === "done" && doneStep === "rested" ? "pt-5 pb-3" : "py-5"} ${heroHabit.status === "done" && (doneStep === "celebrate" || doneStep === "feedback") ? "animate-habit-built" : ""} ${(heroHabit.status === "done" && doneStep === "rested") || heroHabit.status === "accepting" ? "animate-habit-glow" : ""} ${(heroHabit.status === "active" && heroHabit.holdDay != null) || (heroHabit.status === "suggested" && !heroExpanded) || (heroHabit.status === "hidden" && !!currentWindowNudge && !nudgeExpanded) ? "animate-habit-shimmer" : ""} ${heroPulse ? "animate-card-pulse" : ""}`}>
             {heroHabit.status === "suggested" ? (
               <div className={heroExpanded ? "" : "animate-habit-note"}>
                 {/* Tap the eyebrow to cycle templates (demo/testing). On first appearance
@@ -3335,6 +3336,7 @@ export default function HomeScreen() {
             )}
           </div>
 
+          <div data-tour="macros-water">
           <div className="mt-4 border-t border-ink/8 pt-3">
             <div className="flex gap-3">
               <div className="flex flex-1 items-baseline gap-1.5">
@@ -3399,6 +3401,7 @@ export default function HomeScreen() {
               />
             </div>
           )}
+          </div>
         </Card>
 
         {showWeightPrompt && (
