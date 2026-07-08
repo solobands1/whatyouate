@@ -3683,9 +3683,9 @@ export default function HomeScreen() {
         </Card>
 
         {!loadingData && !isDemoMode && recentFiltered.length === 0 && (
-          <div className="mt-3 rounded-2xl border border-primary/15 bg-primary/[0.04] px-5 py-6 text-center">
-            <p className="text-base font-semibold text-ink">Welcome to WhatYouAte!</p>
-            <p className="mt-2 text-[13.5px] leading-relaxed text-ink/65">We know it looks a little bare right now, but trust us: the more you log and reflect each night, the more it comes to life.</p>
+          <div className="mt-3 rounded-2xl border border-primary/15 bg-primary/[0.04] px-5 py-5 text-center">
+            <p className="text-[13px] font-semibold text-ink">Welcome to WhatYouAte!</p>
+            <p className="mt-1.5 text-[12px] leading-relaxed text-ink/60">We know it looks a little bare right now, but trust us: the more you log and reflect each night, the more it comes to life.</p>
           </div>
         )}
       </div>
