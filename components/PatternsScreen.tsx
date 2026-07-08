@@ -106,7 +106,7 @@ const DOT_LEGEND = (
 
 export default function PatternsScreen() {
   const { user } = useAuth();
-  const { reflections, habitHistory, meals, workouts } = useAppData();
+  const { reflections, habitHistory, meals, workouts, loading: loadingData } = useAppData();
   const facts = useMemo(() => computeReflectionFacts(reflections), [reflections]);
   const daysCompared = useMemo(() => computeDaysCompared(reflections, meals, workouts), [reflections, meals, workouts]);
   const foodLinks = useMemo(() => computeFoodFeelingLinks(meals, reflections), [meals, reflections]);
@@ -244,6 +244,22 @@ export default function PatternsScreen() {
   const restartChange = (templateId: string) => { if (user) { setChangeStatus(user.id, templateId, "active"); setLedgerVersion((v) => v + 1); } };
   const changesLedgerPreview = !demo && activeChanges.length === 0;
   const ledger = demo ? EX_LEDGER : activeChanges;
+
+  // Skeleton fallback so a mid-load navigation never shows blank white (data is normally
+  // preloaded behind the splash, so this is only for a background reload window).
+  if (loadingData) {
+    return (
+      <div className="min-h-screen bg-surface">
+        <div className="mx-auto flex min-h-screen max-w-md flex-col px-5 pb-24 safe-top">
+          <div className="mb-6 h-8 w-28 animate-pulse rounded-lg bg-ink/10" />
+          <div className="mb-4 animate-pulse rounded-2xl bg-ink/10 p-5" style={{ height: 150 }} />
+          <div className="mb-4 animate-pulse rounded-2xl bg-ink/10 p-5" style={{ height: 120 }} />
+          <div className="animate-pulse rounded-2xl bg-ink/10 p-5" style={{ height: 120 }} />
+        </div>
+        <BottomNav current="patterns" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-surface">
