@@ -2642,10 +2642,7 @@ export default function HomeScreen() {
             <div className="mt-3 space-y-3 text-sm text-ink/70">
               <p className="text-[15px] font-semibold text-ink/80">Welcome to WhatYouAte!</p>
               <p>
-                Log your meals, activity, and how you feel.
-              </p>
-              <p>
-                Your AI Coach connects the dots and helps you spot patterns between what you eat and how you feel, perform, and recover.
+                We&apos;re excited to help you understand how food and other factors affect the way you feel. Let us show you around.
               </p>
             </div>
           </div>
@@ -2664,7 +2661,7 @@ export default function HomeScreen() {
                 setRunTour(true);
               }}
             >
-              Start Walkthrough
+              Show Me Around
             </button>
             <button
               type="button"
