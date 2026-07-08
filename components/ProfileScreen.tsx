@@ -404,7 +404,7 @@ export default function ProfileScreen() {
         <div>
           <p style={{ fontWeight: 700, fontSize: 16, marginBottom: 2 }}>That&apos;s It!</p>
           <p style={{ fontWeight: 600, fontSize: 13, color: "#6B7280", marginBottom: 10 }}>Round Out Your Profile</p>
-          <p>There are a few things that weren&apos;t in your initial questions. Take a quick look and update as much as you can. The more complete your profile, the more we have to help you!</p>
+          <p>There are a few things on your profile to be filled out. Take a quick look and update as much as you can. The more complete your profile, the more we can help you!</p>
         </div>
       ),
       disableBeacon: true,
