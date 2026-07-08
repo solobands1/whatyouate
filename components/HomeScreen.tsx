@@ -3681,6 +3681,16 @@ export default function HomeScreen() {
             ) : null}
           </div>
         </Card>
+
+        {!loadingData && !isDemoMode && recentFiltered.length === 0 && (
+          <div className="mt-3 rounded-2xl border border-primary/15 bg-primary/[0.04] px-5 py-5 text-center">
+            <div className="mx-auto mb-2.5 h-10 w-10 overflow-hidden rounded-2xl border border-ink/10 shadow-sm">
+              <img src="/icon.svg" alt="" className="h-full w-full object-cover" />
+            </div>
+            <p className="text-sm font-semibold text-ink">Welcome to WhatYouAte!</p>
+            <p className="mt-1.5 text-[12.5px] leading-relaxed text-ink/60">We know it looks a little bare right now, but trust us: the more you log and reflect each night, the more it comes to life.</p>
+          </div>
+        )}
       </div>
 
       {meals.editingMeal && (
