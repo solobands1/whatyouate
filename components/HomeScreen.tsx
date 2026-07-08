@@ -797,7 +797,8 @@ export default function HomeScreen() {
             if (raw) { const [d, n] = raw.split("|"); lastDate = d ?? ""; count = parseInt(n ?? "0", 10) || 0; }
           } catch {}
           const shown = lastDate === today ? count : count + 1; // only bump on a new day
-          if (suggestId !== "logging-starter" && shown >= 4) {
+          // Shown on day 1 and day 2; on the 3rd day it snoozes.
+          if (suggestId !== "logging-starter" && shown >= 3) {
             try { localStorage.removeItem(ignoreKey); } catch {}
             const snoozed = snoozeSuggestion(state, suggestId, t.cooldownDays);
             habitStateRef.current = snoozed;
