@@ -2594,6 +2594,7 @@ export default function HomeScreen() {
             close: "Skip"
           }}
           styles={{
+            tooltip: { borderRadius: 16 },
             options: {
               primaryColor: "#6FA8FF",
               textColor: "#1F2937",
