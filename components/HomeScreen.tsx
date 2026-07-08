@@ -23,7 +23,7 @@ import { supabase } from "../lib/supabaseClient";
 import "../lib/mealQueue";
 import BarcodeScannerOverlay from "./BarcodeScannerOverlay";
 import { getFoodCacheEntry, setFoodCacheEntry, deleteFoodCacheEntry, deleteFoodTextEntry, incrementFoodCacheLogCount, incrementFoodTextLogCount, getQuickAddFromMeals, addQuickAddRemoved, getDailySupplements, setDailySupplements, hasDailySuppsLoggedToday, markDailySuppsLoggedToday, clearDailySuppsLoggedToday, dishGroupKey, type QuickAddItem } from "../lib/foodCache";
-import { addFeelLog, deleteFeelLog, updateFeelLog, fetchWaterLogs, upsertWaterLog, addWeightLog, saveProfile, addReflection, fetchReflections, fetchHabitState, saveHabitState, fetchHabitHistory, saveHabitHistory, type FeelLog } from "../lib/supabaseDb";
+import { addFeelLog, deleteFeelLog, updateFeelLog, upsertWaterLog, addWeightLog, saveProfile, addReflection, saveHabitState, fetchHabitHistory, saveHabitHistory, type FeelLog } from "../lib/supabaseDb";
 import { EMPTY_HABIT_STATE, pickSuggestionId, snoozeSuggestion, declineSuggestion, markHabitEnded, endBuilderCompleted, resolveBuilderForToday, extendBuilder, type HabitState, type ActiveBuilder, type HabitHistoryEntry } from "../lib/habitState";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
@@ -331,7 +331,7 @@ function ManualDateRow({ manualDate, setManualDate }: { manualDate: string; setM
 export default function HomeScreen() {
   const router = useRouter();
   const { user, loading } = useAuth();
-  const { profile: ctxProfile, meals: ctxMeals, workouts: ctxWorkouts, feelLogs: ctxFeelLogs, weightLogs: ctxWeightLogs, reflections: ctxReflections, habitHistory: ctxHabitHistory, setWeightLogs, nudges, nudgesLoaded, loading: dataLoading, reload } = useAppData();
+  const { profile: ctxProfile, meals: ctxMeals, workouts: ctxWorkouts, feelLogs: ctxFeelLogs, weightLogs: ctxWeightLogs, reflections: ctxReflections, habitHistory: ctxHabitHistory, waterLogs: ctxWaterLogs, habitState: ctxHabitState, setWeightLogs, nudges, nudgesLoaded, loading: dataLoading, reload } = useAppData();
   const trial = useTrialStatus();
 
   const [profile, setProfile] = useState<UserProfile | undefined>(undefined);
@@ -390,22 +390,20 @@ export default function HomeScreen() {
     }
   }, [waterModalOpen]);
 
-  // Seed water data from Supabase into localStorage on load (restores data after cache clear)
+  // Seed water data (preloaded by AppDataProvider) into localStorage — restores after cache clear.
   useEffect(() => {
     if (!user || !profile?.trackWater) return;
-    fetchWaterLogs(user.id).then((logs) => {
-      let changed = false;
-      for (const [dayKey, ml] of Object.entries(logs)) {
-        if (ml <= 0) continue;
-        const key = `wya_water_${user.id}_${dayKey}`;
-        try {
-          const local = parseInt(localStorage.getItem(key) ?? "0", 10) || 0;
-          if (local === 0) { localStorage.setItem(key, String(ml)); changed = true; }
-        } catch {}
-      }
-      if (changed) setWaterTick((t) => t + 1);
-    }).catch(() => {});
-  }, [user?.id, profile?.trackWater]);
+    let changed = false;
+    for (const [dayKey, ml] of Object.entries(ctxWaterLogs)) {
+      if (ml <= 0) continue;
+      const key = `wya_water_${user.id}_${dayKey}`;
+      try {
+        const local = parseInt(localStorage.getItem(key) ?? "0", 10) || 0;
+        if (local === 0) { localStorage.setItem(key, String(ml)); changed = true; }
+      } catch {}
+    }
+    if (changed) setWaterTick((t) => t + 1);
+  }, [user?.id, profile?.trackWater, ctxWaterLogs]);
 
   const [waterInputAmount, setWaterInputAmount] = useState("");
   const [waterInputUnit, setWaterInputUnit] = useState<"ml" | "oz" | "cups" | "L">("ml");
@@ -538,18 +536,16 @@ export default function HomeScreen() {
   };
   useEffect(() => {
     if (!user) return;
-    let cancelled = false;
-    fetchReflections(user.id).then((rows) => {
-      if (cancelled) return;
-      if (rows.length > 0) {
-        setLastReflection({ reflection: rows[0].answers, note: rows[0].note }); // newest first
-        const today = rows.find((r) => r.date === todayDateStr());
-        if (today) setTodayReflection({ reflection: today.answers, note: today.note });
-      }
-      setReflectionsLoaded(true);
-    }).catch(() => { if (!cancelled) setReflectionsLoaded(true); });
-    return () => { cancelled = true; };
-  }, [user]);
+    // Reflections are preloaded by AppDataProvider — no separate fetch. Re-runs when they
+    // change (e.g. after saving one + reload) so today's reflection stays in sync.
+    const rows = ctxReflections ?? [];
+    if (rows.length > 0) {
+      setLastReflection({ reflection: rows[0].answers, note: rows[0].note }); // newest first
+      const today = rows.find((r) => r.date === todayDateStr());
+      if (today) setTodayReflection({ reflection: today.answers, note: today.note });
+    }
+    setReflectionsLoaded(true);
+  }, [user, ctxReflections]);
 
   const [selectedFeelings, setSelectedFeelings] = useState<string[]>([]);
   const [heroHabit, setHeroHabit] = useState<{ status: "suggested" | "accepting" | "committed" | "active" | "dayComplete" | "done" | "missed" | "hidden"; days: boolean[][]; holdDay?: number | null }>(
@@ -735,7 +731,9 @@ export default function HomeScreen() {
     }
     let cancelled = false;
     (async () => {
-      const loaded = (await fetchHabitState(user.id)) ?? EMPTY_HABIT_STATE;
+      // Habit state is preloaded by AppDataProvider (behind the splash), so the hero is ready
+      // the moment Home mounts — no on-mount fetch / late pop-in.
+      const loaded = ctxHabitState ?? EMPTY_HABIT_STATE;
       if (cancelled) return;
       // A finished "done" confirmation only lives until the day rolls over.
       let state = loaded;

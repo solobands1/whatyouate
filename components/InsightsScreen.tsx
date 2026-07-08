@@ -10,7 +10,6 @@ import BottomNav from "./BottomNav";
 import Card from "./Card";
 import MacroRing from "./MacroRing";
 import WaterBar from "./WaterBar";
-import { fetchWaterLogs } from "../lib/supabaseDb";
 import { useAuth } from "./AuthProvider";
 import { useAppData } from "./AppDataProvider";
 import { dayKeyFromTs } from "../lib/utils";
@@ -78,7 +77,7 @@ const NUTRIENT_INFO: Record<string, string | string[]> = {
 export default function InsightsScreen() {
   const router = useRouter();
   const { user, loading } = useAuth();
-  const { profile: ctxProfile, meals, feelLogs, loading: loadingData } = useAppData();
+  const { profile: ctxProfile, meals, feelLogs, waterLogs, loading: loadingData } = useAppData();
   const profile = ctxProfile ?? undefined;
   const trial = useTrialStatus();
   const [activeNutrient, setActiveNutrient] = useState<string | null>(null);
@@ -86,12 +85,7 @@ export default function InsightsScreen() {
   const mountedRef = useRef(true);
   const [runInsightsTour, setRunInsightsTour] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
-  const [waterLogs, setWaterLogs] = useState<Record<string, number>>({});
-
-  useEffect(() => {
-    if (!user || !profile?.trackWater) return;
-    fetchWaterLogs(user.id).then(setWaterLogs).catch(() => {});
-  }, [user, profile?.trackWater]);
+  // waterLogs is preloaded by AppDataProvider (no separate fetch here).
 
   const demoFeelLogs = useMemo<FeelLog[]>(() => {
     const day = (offsetDays: number, h: number, m: number) => {
