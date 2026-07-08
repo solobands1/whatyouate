@@ -166,7 +166,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
     return (
       <div className="fixed inset-0 z-50 flex flex-col bg-white safe-top px-6">
         <div className="flex flex-1 flex-col items-center text-center pt-[18vh]">
-          <div style={animStyle(introAnimStep >= 1)} className="mb-6 h-20 w-20 overflow-hidden rounded-[18px] border border-ink/10 shadow-md">
+          <div style={animStyle(introAnimStep >= 1)} className="mb-6 h-[88px] w-[88px] overflow-hidden rounded-[20px] border border-ink/10 shadow-md">
             <img src="/icon.svg" alt="WhatYouAte" className="h-full w-full object-cover" />
           </div>
           <div style={animStyle(introAnimStep >= 2)}>
@@ -180,7 +180,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
               You can update everything anytime from your profile.
             </p>
           </div>
-          <div style={animStyle(introAnimStep >= 4)} className="w-1/2 mt-20">
+          <div style={animStyle(introAnimStep >= 4)} className="w-1/2 mt-10">
             <button
               type="button"
               className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80"
