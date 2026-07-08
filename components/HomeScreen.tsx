@@ -3684,7 +3684,7 @@ export default function HomeScreen() {
 
         {!loadingData && !isDemoMode && recentFiltered.length === 0 && (
           <div className="mt-3 rounded-2xl border border-primary/15 bg-primary/[0.04] px-5 py-5 text-center">
-            <p className="text-[13px] leading-relaxed text-ink/65">We know your screen looks a little bare right now, but trust us: the more you log and reflect each night, the more it comes to life.</p>
+            <p className="text-[13px] leading-relaxed text-ink/65">We know everything looks a little bare right now, but trust us: the more you log and reflect each night, the more it comes to life.</p>
           </div>
         )}
       </div>
