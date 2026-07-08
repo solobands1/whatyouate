@@ -2865,23 +2865,25 @@ export default function HomeScreen() {
                   </span>
                 </span>
               </h1>
-              {streak >= 1 && (() => {
+              {(() => {
                 const todayMeals = meals.meals.filter((m) => m.analysisJson?.source !== "supplement" && m.status !== "failed" && dayKeyFromTs(m.ts) === todayKey());
                 const atRisk = todayMeals.length === 0 && new Date().getHours() >= 18;
                 const saveable = !!streakSaverInfo;
+                const cold = streak < 1; // no streak yet — show a muted flame + 0
                 return (
                   <button
                     type="button"
-                    aria-label={`Streak: ${streak} days`}
+                    aria-label={cold ? "Start your streak" : `Streak: ${streak} days`}
                     onClick={() => {
+                      if (cold) { window.dispatchEvent(new Event("wya_open_log_menu")); return; }
                       if (!streakSaverInfo) return;
                       setStreakSaverMode(true);
                       meals.openManualMealEntry();
                       meals.setManualDate(streakSaverInfo.yesterdayStr);
                     }}
-                    className={`ml-2 flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 ${(saveable || atRisk) ? "animate-wiggle" : ""} ${streakBouncing ? "animate-streak-bounce" : ""}`}
+                    className={`ml-2 flex items-center gap-1 rounded-full px-2 py-0.5 ${cold ? "bg-ink/[0.05]" : "bg-primary/10"} ${(!cold && (saveable || atRisk)) ? "animate-wiggle" : ""} ${streakBouncing ? "animate-streak-bounce" : ""}`}
                   >
-                    <svg width="14" height="16" viewBox="0 0 13 15" fill="none" aria-hidden="true" className="animate-flame">
+                    <svg width="14" height="16" viewBox="0 0 13 15" fill="none" aria-hidden="true" className={cold ? "" : "animate-flame"}>
                       <defs>
                         <linearGradient id="flame-grad" x1="0" y1="15" x2="0" y2="0" gradientUnits="userSpaceOnUse">
                           <stop offset="0%" stopColor="#ea580c" />
@@ -2893,10 +2895,10 @@ export default function HomeScreen() {
                           <stop offset="100%" stopColor="#ffffff" stopOpacity="0.9" />
                         </linearGradient>
                       </defs>
-                      <path d="M6.5 0C6.5 0 4 3.5 4 6C4 6.5 4.1 7 4.3 7.4C3.5 6.6 3.2 5.5 3.2 5.5C1.8 7 1 8.8 1 11C1 13.2 3.5 15 6.5 15C9.5 15 12 13.2 12 11C12 8.2 9.5 5.5 9.5 5.5C9.5 7 8.8 8 8 8.5C8.2 8 8.3 7.4 8.3 6.8C8.3 4.2 6.5 0 6.5 0Z" fill="url(#flame-grad)"/>
-                      <path d="M6.5 7.5C6.2 8.5 6 9.2 6 10C6 11.1 6.2 11.8 6.5 12C6.8 11.8 7 11.1 7 10C7 9.2 6.8 8.5 6.5 7.5Z" fill="url(#flame-inner)"/>
+                      <path d="M6.5 0C6.5 0 4 3.5 4 6C4 6.5 4.1 7 4.3 7.4C3.5 6.6 3.2 5.5 3.2 5.5C1.8 7 1 8.8 1 11C1 13.2 3.5 15 6.5 15C9.5 15 12 13.2 12 11C12 8.2 9.5 5.5 9.5 5.5C9.5 7 8.8 8 8 8.5C8.2 8 8.3 7.4 8.3 6.8C8.3 4.2 6.5 0 6.5 0Z" fill={cold ? "#cbd5e1" : "url(#flame-grad)"}/>
+                      {!cold && <path d="M6.5 7.5C6.2 8.5 6 9.2 6 10C6 11.1 6.2 11.8 6.5 12C6.8 11.8 7 11.1 7 10C7 9.2 6.8 8.5 6.5 7.5Z" fill="url(#flame-inner)"/>}
                     </svg>
-                    <span className="text-[13px] font-semibold text-primary">{streak}</span>
+                    <span className={`text-[13px] font-semibold ${cold ? "text-ink/40" : "text-primary"}`}>{cold ? "0" : streak}</span>
                   </button>
                 );
               })()}
