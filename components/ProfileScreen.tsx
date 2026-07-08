@@ -589,6 +589,13 @@ export default function ProfileScreen() {
       `wya_dob_${user.id}`,
     ];
     keysToRemove.forEach((k) => localStorage.removeItem(k));
+    // Passive-ignore impression counts are per-habit-template — sweep them all for this user.
+    try {
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith("wya_habit_ignored_") && k.endsWith(`_${user.id}`)) localStorage.removeItem(k);
+      }
+    } catch {}
     clearDailySuppsLoggedToday(user.id);
     // Clear shared food caches (not user-specific, but tied to their logged foods)
     localStorage.removeItem("wya_food_cache_v1");

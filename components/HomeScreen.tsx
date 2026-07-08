@@ -784,8 +784,22 @@ export default function HomeScreen() {
         const suggestId = pickSuggestionId(state, goalHabits.map((g) => g.id));
         if (suggestId) {
           const t = HABIT_TEMPLATES.find((x) => x.id === suggestId) ?? goalHabits[0];
-          setActiveTemplate(t);
-          setHeroHabit({ status: "suggested", days: freshDays(t) });
+          // Passive-ignore: count how many times this suggestion has been shown (once per app
+          // open) with no action. After a few, snooze it so the hero rolls to the nudge (or
+          // greeting) instead of nagging. The onboarding habit is exempt.
+          const ignoreKey = `wya_habit_ignored_${suggestId}_${user.id}`;
+          const shown = (parseInt(localStorage.getItem(ignoreKey) ?? "0", 10) || 0) + 1;
+          if (suggestId !== "logging-starter" && shown >= 4) {
+            try { localStorage.removeItem(ignoreKey); } catch {}
+            const snoozed = snoozeSuggestion(state, suggestId, t.cooldownDays);
+            habitStateRef.current = snoozed;
+            void saveHabitState(user.id, snoozed);
+            setHeroHabit((h) => ({ ...h, status: "hidden" }));
+          } else {
+            if (suggestId !== "logging-starter") { try { localStorage.setItem(ignoreKey, String(shown)); } catch {} }
+            setActiveTemplate(t);
+            setHeroHabit({ status: "suggested", days: freshDays(t) });
+          }
         } else {
           setHeroHabit((h) => ({ ...h, status: "hidden" }));
         }
@@ -913,6 +927,8 @@ export default function HomeScreen() {
   const dismissSuggestion = (hard: boolean) => {
     setHeroHabit((h) => ({ ...h, status: "hidden" }));
     if (isDemoMode || !user) return;
+    // The user engaged — reset the passive-ignore impression count for this habit.
+    try { localStorage.removeItem(`wya_habit_ignored_${activeTemplate.id}_${user.id}`); } catch {}
     const next = hard
       ? declineSuggestion(habitStateRef.current, activeTemplate.id, activeTemplate.cooldownDays)
       : snoozeSuggestion(habitStateRef.current, activeTemplate.id, activeTemplate.cooldownDays);
@@ -3037,7 +3053,7 @@ export default function HomeScreen() {
                     <button
                       type="button"
                       className="mt-5 w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white transition active:scale-[0.98]"
-                      onClick={() => { unlockAudio(); setHeroHabit((h) => ({ ...h, status: "accepting" })); }}
+                      onClick={() => { unlockAudio(); try { if (user) localStorage.removeItem(`wya_habit_ignored_${activeTemplate.id}_${user.id}`); } catch {} setHeroHabit((h) => ({ ...h, status: "accepting" })); }}
                     >
                       Let&apos;s Do It!
                     </button>
