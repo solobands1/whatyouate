@@ -562,7 +562,9 @@ export default function HomeScreen() {
   // One-time theatrical intro the first time the onboarding habit ("Find Your Rhythm")
   // is offered. A focused moment over a scrim, then it hands off to the real card below.
   const [showHabitSpotlight, setShowHabitSpotlight] = useState(false);
-  const [spotlightIn, setSpotlightIn] = useState(false);
+  // Two-beat entrance: the scrim dims/blurs the home first, then the card rises in.
+  const [scrimIn, setScrimIn] = useState(false);
+  const [cardIn, setCardIn] = useState(false);
   const habitSpotlightCheckedRef = useRef(false);
   // When the spotlight starts the habit, this overrides the time-of-day routing so the
   // onboarding habit can start TODAY even after 10am (or explicitly tomorrow).
@@ -809,11 +811,12 @@ export default function HomeScreen() {
     return () => clearTimeout(t);
   }, [habitLoaded, barsReady, isDemoMode, user, heroHabit.status, activeTemplate.id, showOnboarding, showTourGate, runTour]);
 
-  // Gentle entrance/exit for the spotlight (opacity + slight scale).
+  // Two-beat entrance: dim/blur the home first, hold, then the card rises in.
   useEffect(() => {
-    if (!showHabitSpotlight) { setSpotlightIn(false); return; }
-    const r = requestAnimationFrame(() => setSpotlightIn(true));
-    return () => cancelAnimationFrame(r);
+    if (!showHabitSpotlight) { setScrimIn(false); setCardIn(false); return; }
+    const r = requestAnimationFrame(() => setScrimIn(true));
+    const t = setTimeout(() => setCardIn(true), 380);
+    return () => { cancelAnimationFrame(r); clearTimeout(t); };
   }, [showHabitSpotlight]);
 
   const dismissHabitSpotlight = () => {
@@ -4064,11 +4067,11 @@ export default function HomeScreen() {
       {showHabitSpotlight && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center px-6" role="dialog" aria-modal="true">
           <div
-            className={`absolute inset-0 bg-ink/70 backdrop-blur-sm transition-opacity duration-500 ${spotlightIn ? "opacity-100" : "opacity-0"}`}
+            className={`absolute inset-0 bg-ink/70 backdrop-blur-sm transition-opacity duration-[600ms] ${scrimIn ? "opacity-100" : "opacity-0"}`}
             onClick={dismissHabitSpotlight}
           />
           <div
-            className={`relative w-full max-w-sm rounded-3xl border-2 border-primary/25 bg-white px-6 py-8 text-center shadow-[0_24px_64px_rgba(15,23,42,0.35)] transition-all duration-[650ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] motion-reduce:transition-none ${spotlightIn ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-[0.96] translate-y-12"}`}
+            className={`relative w-full max-w-sm rounded-3xl border-2 border-primary/25 bg-white px-6 py-8 text-center shadow-[0_24px_64px_rgba(15,23,42,0.35)] transition-all duration-[650ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] motion-reduce:transition-none ${cardIn ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-[0.96] translate-y-12"}`}
           >
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/12 text-primary animate-habit-glow">
               <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
