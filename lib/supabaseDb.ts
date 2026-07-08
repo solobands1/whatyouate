@@ -253,7 +253,7 @@ export async function saveProfile(userId: string, profile: UserProfile) {
     dietary_restrictions: profile.dietaryRestrictions ?? [],
     units: profile.units,
     daily_supplements: (profile.dailySupplements ?? []).map((e) => typeof e === "string" ? e : JSON.stringify(e)),
-    track_water: profile.trackWater ?? false,
+    track_water: profile.trackWater ?? true,
     water_unit: profile.waterUnit ?? "ml",
     timezone_offset_minutes: profile.timezoneOffsetMinutes ?? null,
     date_of_birth: profile.dateOfBirth ?? null,

@@ -301,7 +301,7 @@ export default function ProfileScreen() {
         }
       }
 
-      setTrackWater(data.trackWater ?? false);
+      setTrackWater(data.trackWater ?? true);
       setWaterUnit(data.waterUnit ?? "ml");
       const storedGoal = typeof window !== "undefined" ? localStorage.getItem(`wya_water_goal_ml_${user.id}`) : null;
       if (storedGoal) setCustomWaterGoalMl(parseInt(storedGoal, 10));

@@ -132,6 +132,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
         activity_level: activityLevel || null,
         dietary_restrictions: dietaryRestrictions,
         units,
+        track_water: true,
         onboarding_done: true,
         updated_at: new Date().toISOString(),
       }, { onConflict: "user_id" });
