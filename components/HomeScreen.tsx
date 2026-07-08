@@ -3683,9 +3683,7 @@ export default function HomeScreen() {
         </Card>
 
         {!loadingData && !isDemoMode && recentFiltered.length === 0 && (
-          <div className="mt-3 rounded-2xl border border-primary/15 bg-primary/[0.04] px-5 py-5 text-center">
-            <p className="text-[11.5px] leading-relaxed text-ink/60">We know everything looks a little bare right now, but trust us: the more you log and reflect each night, the more it comes to life.</p>
-          </div>
+          <p className="mt-6 px-8 text-center text-[11.5px] leading-relaxed text-muted/55">We know everything looks a little bare right now, but trust us: the more you log and reflect each night, the more it comes to life.</p>
         )}
       </div>
 
