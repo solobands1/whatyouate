@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import Joyride, { CallBackProps, STATUS, type Step } from "react-joyride";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
 import WyaaAvatar from "./WyaaAvatar";
@@ -151,6 +153,51 @@ export default function PatternsScreen() {
     return () => window.removeEventListener("wya_demo_mode_on", handler);
   }, [user]);
 
+  // Walkthrough: this page is the "Patterns" tab (/summary/insights). The Insights-hub tour
+  // hands off here with stage "insights"; we show one step on the coach card, then go to Profile.
+  const router = useRouter();
+  const [runPatternsTour, setRunPatternsTour] = useState(false);
+  const patternsTourSteps: Step[] = [
+    {
+      target: `[data-tour="patterns-coach"]`,
+      placement: "bottom" as const,
+      disableBeacon: true,
+      content: (
+        <div>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>This Is The Heart Of It</p>
+          <p>Your coach connects what you eat to how you feel, perform, and recover, and surfaces the patterns worth paying attention to. It sharpens the more you log and reflect.</p>
+        </div>
+      ),
+    },
+  ];
+  useEffect(() => {
+    if (!user) return;
+    const active = localStorage.getItem(`wya_walkthrough_active_${user.id}`) === "true";
+    const stage = localStorage.getItem(`wya_walkthrough_stage_${user.id}`);
+    if (active && stage === "insights") {
+      setIsDemoMode(true);
+      const t = window.setTimeout(() => setRunPatternsTour(true), 400);
+      return () => window.clearTimeout(t);
+    }
+  }, [user]);
+  const handlePatternsTour = (data: CallBackProps) => {
+    if (!user) return;
+    const end = () => {
+      localStorage.removeItem(`wya_demo_mode_${user.id}`);
+      setIsDemoMode(false);
+      localStorage.setItem(`wya_walkthrough_${user.id}`, "true");
+      localStorage.removeItem(`wya_walkthrough_active_${user.id}`);
+      localStorage.removeItem(`wya_walkthrough_stage_${user.id}`);
+      setRunPatternsTour(false);
+    };
+    if (data.status === STATUS.SKIPPED) { end(); return; }
+    if (data.type === "step:after" && data.index === patternsTourSteps.length - 1) {
+      end();
+      localStorage.setItem(`wya_walkthrough_profile_${user.id}`, "true");
+      router.push("/profile");
+    }
+  };
+
   if (!user) return null;
 
   // Each card decides real-vs-preview from ITS OWN data (reflection volume for the trend
@@ -199,6 +246,26 @@ export default function PatternsScreen() {
 
   return (
     <div className="min-h-screen bg-surface">
+      {typeof window !== "undefined" && (
+        <Joyride
+          steps={patternsTourSteps}
+          run={runPatternsTour}
+          continuous
+          showSkipButton
+          hideCloseButton
+          disableOverlayClose
+          scrollToFirstStep
+          scrollOffset={80}
+          callback={handlePatternsTour}
+          locale={{ skip: "Skip", back: "Back", last: "Next", close: "Skip" }}
+          styles={{
+            tooltip: { borderRadius: 16 },
+            options: { primaryColor: "#6FA8FF", textColor: "#1F2937", backgroundColor: "#FFFFFF", arrowColor: "#FFFFFF" },
+            buttonClose: { display: "none" },
+            buttonSkip: { display: "block" },
+          }}
+        />
+      )}
       <div className="mx-auto flex min-h-screen max-w-md flex-col px-5 pb-24 safe-top">
         <header className="mb-6">
           <h1 className="text-2xl font-semibold text-ink">Patterns</h1>
@@ -222,7 +289,7 @@ export default function PatternsScreen() {
 
         {/* What the coach is noticing — the headline plus the strongest observed
             associations (food->feeling links + reflection discoveries), capped at 2. */}
-        <Card className="relative" style={riseIn(ready, 0)}>
+        <Card className="relative" data-tour="patterns-coach" style={riseIn(ready, 0)}>
           <Eyebrow>What Your Coach Is Noticing</Eyebrow>
           <div className="mt-3 flex items-start gap-3">
             <div className="-mt-1 shrink-0"><WyaaAvatar size={40} /></div>

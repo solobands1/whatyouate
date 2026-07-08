@@ -536,14 +536,14 @@ export default function SummaryScreen() {
       ),
     },
     {
-      target: String.raw`[data-tour="summary-today"]`,
-      placement: "auto" as const,
+      target: "body",
+      placement: "center" as const,
       disableBeacon: true,
       content: (
         <div>
-          <p style={{ fontWeight: 600, marginBottom: 10 }}>Your Daily Intake Card</p>
-          <p>This shows your calories, protein, carbs, and fat for today compared to your personal targets.</p>
-          <p style={{ marginTop: 10 }}>The rings fill up as you log, so the more accurate your logging, the more useful this gets.</p>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>It Unlocks As You Go</p>
+          <p>The more you log and reflect, the more opens up: personalized nudges, your patterns, and full weekly trends.</p>
+          <p style={{ marginTop: 10 }}>A little each day is all it takes.</p>
         </div>
       ),
     },
@@ -553,32 +553,19 @@ export default function SummaryScreen() {
       disableBeacon: true,
       content: (
         <div>
-          <p style={{ fontWeight: 600, marginBottom: 10 }}>Here Is A Quick Read On How Your Week Is Going</p>
-          <p>This shows you which days you logged, your averages, streaks, and any energy patterns that stand out.</p>
-          <p style={{ marginTop: 10 }}>The more you log, the more insight this gives you.</p>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Your Week At A Glance</p>
+          <p>Which days you logged, your streaks and averages, and any energy patterns that stand out.</p>
         </div>
       ),
     },
     {
-      target: String.raw`[data-tour="nudges-inner"]`,
-      placement: "top" as const,
+      target: String.raw`[data-tour="coach-orb"]`,
+      placement: "bottom" as const,
       disableBeacon: true,
       content: (
         <div>
-          <p style={{ fontWeight: 600, marginBottom: 10 }}>Meet Your AI Coach</p>
-          <p>Coach keeps an eye on your meals, workouts, and how you're feeling, to send you honest observations. No generic tips. Just something relevant to what you've actually been doing.</p>
-        </div>
-      ),
-    },
-    {
-      target: "body",
-      placement: "center" as const,
-      disableBeacon: true,
-      content: (
-        <div>
-          <p style={{ fontWeight: 600, marginBottom: 10 }}>It Unlocks As You Go</p>
-          <p>The more you log and reflect, the more opens up: personalized nudges, your patterns, and full weekly trends.</p>
-          <p style={{ marginTop: 10 }}>A little each day is all it takes. It only gets sharper from here.</p>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Meet Your Coach</p>
+          <p>Your coach keeps an eye on your meals, activity, and how you're feeling, and sends honest, personal observations. No generic tips.</p>
         </div>
       ),
     },
@@ -1208,7 +1195,7 @@ export default function SummaryScreen() {
             const isEmpty = builtHabits.length === 0;
             return (
               <>
-                <div className="absolute -top-6 -right-1 z-10">
+                <div data-tour="coach-orb" className="absolute -top-6 -right-1 z-10">
                   <WyaaAvatar
                     size={72}
                     onClick={openCoach}

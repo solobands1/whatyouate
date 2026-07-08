@@ -402,8 +402,9 @@ export default function ProfileScreen() {
       target: '[data-tour="profile-header"]',
       content: (
         <div>
-          <p style={{ fontWeight: 600, marginBottom: 10 }}>A Few More Details</p>
-          <p>Your core profile is set. Fill in anything else below: your personal focus, body priority, daily supplements, and water tracking to get even more out of your coach.</p>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Round Out Your Profile</p>
+          <p>Add your focus, body priority, supplements, and water tracking below. The more your coach knows, the sharper its patterns and suggestions get.</p>
+          <p style={{ marginTop: 10 }}>You can change any of this anytime. That&apos;s the tour, you&apos;re all set!</p>
         </div>
       ),
       disableBeacon: true,

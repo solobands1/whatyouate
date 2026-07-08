@@ -2494,17 +2494,6 @@ export default function HomeScreen() {
       ),
     },
     {
-      target: '[data-tour="water-bar"]',
-      placement: "bottom" as const,
-      disableBeacon: true,
-      content: (
-        <div>
-          <p style={{ fontWeight: 600, marginBottom: 10 }}>Your Water Intake</p>
-          <p>This tracks how much water you've had today relative to your daily goal.</p>
-        </div>
-      ),
-    },
-    {
       target: '[data-tour="reflection-entry"]',
       placement: "bottom" as const,
       disableBeacon: true,
@@ -2512,6 +2501,17 @@ export default function HomeScreen() {
         <div>
           <p style={{ fontWeight: 600, marginBottom: 10 }}>Reflect Each Evening</p>
           <p>A quick nightly check-in on your energy, sleep, and mood. This is what lets your coach connect how you eat to how you feel.</p>
+        </div>
+      ),
+    },
+    {
+      target: '[data-tour="bottom-nav"]',
+      placement: "top" as const,
+      disableBeacon: true,
+      content: (
+        <div>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Find Your Way Around</p>
+          <p>Everything you build lives down here: your Insights, your Patterns, and your Profile. Explore them anytime.</p>
         </div>
       ),
     },
