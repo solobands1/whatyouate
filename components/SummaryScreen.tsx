@@ -564,7 +564,7 @@ export default function SummaryScreen() {
       content: (
         <div>
           <p style={{ fontWeight: 600, marginBottom: 10 }}>Meet Your AI Coach</p>
-          <p>Your Coach watches your meals, activity, and reflections, and it&apos;s what powers your Patterns, your Habit Builders, and your personal nudges. Honest observations, no generic tips.</p>
+          <p>Your Coach watches your meals, activity, and reflections, and it&apos;s what powers your Patterns, your Habit Builders, and your Personal Nudges. Honest observations, no generic tips.</p>
         </div>
       ),
     },

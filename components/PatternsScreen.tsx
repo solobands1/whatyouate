@@ -165,7 +165,8 @@ export default function PatternsScreen() {
       content: (
         <div>
           <p style={{ fontWeight: 600, marginBottom: 10 }}>Welcome To Patterns</p>
-          <p>This is where you&apos;ll see your longer-term patterns, to help you understand what&apos;s affecting how you feel. Your Coach highlights a few insights based on what you&apos;ve logged.</p>
+          <p>This is where you&apos;ll see your longer-term patterns to help you understand what&apos;s affecting how you feel.</p>
+          <p style={{ marginTop: 10 }}>Your Coach will highlight a few insights based on what you&apos;ve logged on this page. Check back in on this page frequently to learn more about your patterns.</p>
         </div>
       ),
     },
