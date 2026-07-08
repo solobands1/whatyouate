@@ -3683,7 +3683,9 @@ export default function HomeScreen() {
         </Card>
 
         {!loadingData && !isDemoMode && recentFiltered.length === 0 && (
-          <p className="mt-6 text-center text-[11.5px] leading-relaxed text-muted/55" style={riseIn(barsReady && habitLoaded, 3)}>We know everything looks a little bare right now, but trust us, the more you log and reflect each night, the more things come to life.</p>
+          <div className="flex flex-1 flex-col justify-center py-6">
+            <p className="text-center text-[11.5px] leading-relaxed text-muted/55" style={riseIn(barsReady && habitLoaded, 3)}>We know everything looks a little bare right now, but trust us, the more you log and reflect each night, the more things come to life.</p>
+          </div>
         )}
       </div>
 
