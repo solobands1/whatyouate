@@ -548,7 +548,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
               </div>
               <h1 className="text-2xl font-semibold text-ink text-center">What Do You Want To Feel Better About?</h1>
               <p className="mt-2 text-sm text-muted/70 text-center">This shapes the habits we suggest and how your coach talks to you. Pick up to two.</p>
-              <div className="mt-8 flex flex-wrap justify-center gap-2.5">
+              <div className="mt-8 flex flex-wrap justify-center gap-2">
                 {FEELING_GOALS.map(({ value, label }) => {
                   const active = feelingGoals.includes(value);
                   const atCap = !active && feelingGoals.length >= 2;
@@ -558,7 +558,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
                       type="button"
                       disabled={atCap}
                       onClick={() => setFeelingGoals((prev) => prev.includes(value) ? prev.filter((v) => v !== value) : prev.length >= 2 ? prev : [...prev, value])}
-                      className={`rounded-full border px-4 py-2 text-sm font-medium transition ${active ? "border-primary bg-primary/10 text-primary" : atCap ? "border-ink/10 text-muted/35" : "border-ink/10 text-ink/80"}`}
+                      className={`rounded-full border px-3.5 py-1.5 text-[13px] font-medium transition ${active ? "border-primary bg-primary/10 text-primary" : atCap ? "border-ink/10 text-muted/35" : "border-ink/10 text-ink/80"}`}
                     >
                       {label}
                     </button>
