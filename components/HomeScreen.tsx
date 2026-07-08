@@ -784,11 +784,19 @@ export default function HomeScreen() {
         const suggestId = pickSuggestionId(state, goalHabits.map((g) => g.id));
         if (suggestId) {
           const t = HABIT_TEMPLATES.find((x) => x.id === suggestId) ?? goalHabits[0];
-          // Passive-ignore: count how many times this suggestion has been shown (once per app
-          // open) with no action. After a few, snooze it so the hero rolls to the nudge (or
-          // greeting) instead of nagging. The onboarding habit is exempt.
+          // Passive-ignore: count how many DAYS this suggestion has been shown with no action
+          // (at most one per calendar day, so tab-switching within a session can't misfire).
+          // After a few days, snooze it so the hero rolls to the nudge (or greeting) instead of
+          // nagging. The onboarding habit is exempt. Stored as "YYYY-MM-DD|count".
           const ignoreKey = `wya_habit_ignored_${suggestId}_${user.id}`;
-          const shown = (parseInt(localStorage.getItem(ignoreKey) ?? "0", 10) || 0) + 1;
+          const today = todayKey();
+          let count = 0;
+          let lastDate = "";
+          try {
+            const raw = localStorage.getItem(ignoreKey);
+            if (raw) { const [d, n] = raw.split("|"); lastDate = d ?? ""; count = parseInt(n ?? "0", 10) || 0; }
+          } catch {}
+          const shown = lastDate === today ? count : count + 1; // only bump on a new day
           if (suggestId !== "logging-starter" && shown >= 4) {
             try { localStorage.removeItem(ignoreKey); } catch {}
             const snoozed = snoozeSuggestion(state, suggestId, t.cooldownDays);
@@ -796,7 +804,7 @@ export default function HomeScreen() {
             void saveHabitState(user.id, snoozed);
             setHeroHabit((h) => ({ ...h, status: "hidden" }));
           } else {
-            if (suggestId !== "logging-starter") { try { localStorage.setItem(ignoreKey, String(shown)); } catch {} }
+            if (suggestId !== "logging-starter") { try { localStorage.setItem(ignoreKey, `${today}|${shown}`); } catch {} }
             setActiveTemplate(t);
             setHeroHabit({ status: "suggested", days: freshDays(t) });
           }
