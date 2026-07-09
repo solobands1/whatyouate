@@ -1999,7 +1999,7 @@ export default function HomeScreen() {
       // A beat after the completion chime + animation, drop a top notification that nudges the
       // user to keep logging (so "Done For Today" never reads as "stop for the day").
       if (!isDemoMode) {
-        const t = setTimeout(() => { setDailyHabitBanner(true); notificationPing(); }, 1000);
+        const t = setTimeout(() => { setDailyHabitBanner(true); notificationPing(); }, 2000);
         return () => clearTimeout(t);
       }
     }
@@ -3002,7 +3002,7 @@ export default function HomeScreen() {
         </header>
 
         {firstCel && <UnlockCelebrationBanner title={firstCel.title} sub={firstCel.sub} icon={firstCel.icon} onDismiss={dismissFirstCel} />}
-        {dailyHabitBanner && <UnlockCelebrationBanner title="Habit Done For Today!" sub="Keep logging everything else — it all helps your coach learn." icon="spark" onDismiss={() => setDailyHabitBanner(false)} />}
+        {dailyHabitBanner && <UnlockCelebrationBanner title="Habit Done For Today!" sub="Keep logging everything else · it helps your Coach learn" icon="spark" onDismiss={() => setDailyHabitBanner(false)} />}
 
         {/* Trial progress / expired banner + optional profile nudge */}
         {(() => {
