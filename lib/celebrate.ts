@@ -119,6 +119,29 @@ function playChime(kind: "daily" | "built" | "accepted") {
   }
 }
 
+// A short, subtle two-note "ping" for the top notification banner — same timbre family as the
+// chimes but quieter and briefer, so it reads as a gentle notification (like a new-email ping),
+// not a celebration.
+function playPing() {
+  const c = ctx();
+  if (!c) return;
+  if (c.state === "suspended") c.resume().catch(() => {});
+  const t = c.currentTime + 0.01;
+  const bus = c.createGain();
+  bus.gain.value = 0.4; // quieter than the chimes (0.6)
+  const lp = c.createBiquadFilter();
+  lp.type = "lowpass";
+  lp.frequency.value = 4200;
+  lp.Q.value = 0.2;
+  bus.connect(lp).connect(c.destination);
+  const wet = c.createGain();
+  wet.gain.value = 0.18;
+  bus.connect(makeReverb(c, 0.8, 3)).connect(wet).connect(c.destination);
+  // A light rising "di-ding" that lands and rings out briefly.
+  voice(c, bus, 987.77, t, 0.65, 0.06, 0.02);         // B5
+  voice(c, bus, 1318.51, t + 0.10, 0.9, 0.06, 0.03);  // E6 — small lift, rings out
+}
+
 // Native haptics via the Capacitor bridge global — undefined (no-op) until the
 // plugin is compiled into the app, so this never breaks the web build.
 function nativeHaptics(): { impact?: (o: { style: string }) => void; notification?: (o: { type: string }) => void } | null {
@@ -134,6 +157,12 @@ export function celebrateAccepted() {
 export function celebrateDaily() {
   try { nativeHaptics()?.impact?.({ style: "MEDIUM" }); } catch { /* no-op */ }
   playChime("daily");
+}
+
+// Subtle ping for a top notification banner (e.g. "keep logging" after a daily habit).
+export function notificationPing() {
+  try { nativeHaptics()?.impact?.({ style: "LIGHT" }); } catch { /* no-op */ }
+  playPing();
 }
 
 export function celebrateBuilt() {

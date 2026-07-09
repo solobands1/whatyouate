@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import type { MealLog, UserProfile, WorkoutSession } from "../lib/types";
 import { suppName, suppLabel } from "../lib/types";
 import { matchSupplementNutrients } from "../lib/rda";
-import { celebrateDaily, celebrateBuilt, celebrateAccepted, unlockAudio } from "../lib/celebrate";
+import { celebrateDaily, celebrateBuilt, celebrateAccepted, unlockAudio, notificationPing } from "../lib/celebrate";
 import { HABIT_TEMPLATES, habitsForSignals, type HabitTemplate } from "../lib/habits";
 import { computeReflectionFacts } from "../lib/reflectionFacts";
 import { getChangeStatuses, setChangeStatus, markChangeAsked, getNotForMe } from "../lib/changeStatus";
@@ -1999,7 +1999,7 @@ export default function HomeScreen() {
       // A beat after the completion chime + animation, drop a top notification that nudges the
       // user to keep logging (so "Done For Today" never reads as "stop for the day").
       if (!isDemoMode) {
-        const t = setTimeout(() => setDailyHabitBanner(true), 1000);
+        const t = setTimeout(() => { setDailyHabitBanner(true); notificationPing(); }, 1000);
         return () => clearTimeout(t);
       }
     }
