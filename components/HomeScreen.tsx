@@ -3002,7 +3002,7 @@ export default function HomeScreen() {
         </header>
 
         {firstCel && <UnlockCelebrationBanner title={firstCel.title} sub={firstCel.sub} icon={firstCel.icon} onDismiss={dismissFirstCel} />}
-        {dailyHabitBanner && <UnlockCelebrationBanner title="Habit Done For Today!" sub="Keep logging everything else · it helps your Coach learn" icon="spark" onDismiss={() => setDailyHabitBanner(false)} />}
+        {dailyHabitBanner && <UnlockCelebrationBanner title="Habit Done For Today!" sub="Keep logging everything else · It helps your Coach learn" icon="spark" onDismiss={() => setDailyHabitBanner(false)} />}
 
         {/* Trial progress / expired banner + optional profile nudge */}
         {(() => {
