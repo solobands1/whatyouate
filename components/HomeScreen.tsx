@@ -1989,12 +1989,21 @@ export default function HomeScreen() {
   // be "active" is what stops the sound/haptic from firing when a persisted dayComplete state
   // is restored on reload (the async load can land after the arm timeout, so that guard alone
   // wasn't enough).
+  const [dailyHabitBanner, setDailyHabitBanner] = useState(false);
   const prevHabitStatusRef = useRef<string | null>(null);
   useEffect(() => {
     const prev = prevHabitStatusRef.current;
     prevHabitStatusRef.current = heroHabit.status;
-    if (prev === "active" && heroHabit.status === "dayComplete") celebrateDaily();
-  }, [heroHabit.status]);
+    if (prev === "active" && heroHabit.status === "dayComplete") {
+      celebrateDaily();
+      // A beat after the completion chime + animation, drop a top notification that nudges the
+      // user to keep logging (so "Done For Today" never reads as "stop for the day").
+      if (!isDemoMode) {
+        const t = setTimeout(() => setDailyHabitBanner(true), 1000);
+        return () => clearTimeout(t);
+      }
+    }
+  }, [heroHabit.status, isDemoMode]);
   // Final day: the daily beat on "dayDone", the big one on "celebrate".
   useEffect(() => {
     if (!celebrationArmedRef.current || heroHabit.status !== "done") return;
@@ -2993,6 +3002,7 @@ export default function HomeScreen() {
         </header>
 
         {firstCel && <UnlockCelebrationBanner title={firstCel.title} sub={firstCel.sub} icon={firstCel.icon} onDismiss={dismissFirstCel} />}
+        {dailyHabitBanner && <UnlockCelebrationBanner title="Habit Done For Today!" sub="Keep logging everything else — it all helps your coach learn." icon="spark" onDismiss={() => setDailyHabitBanner(false)} />}
 
         {/* Trial progress / expired banner + optional profile nudge */}
         {(() => {
@@ -3244,7 +3254,7 @@ export default function HomeScreen() {
                       <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white animate-habit-pop">
                         <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 6" /></svg>
                       </span>
-                      <p className="mt-3 text-base font-semibold text-ink">Done For Today</p>
+                      <p className="mt-3 text-base font-semibold text-ink">Done For Today!</p>
                       <p className="mt-1 text-[13px] text-ink/70">{line}</p>
                       <div className="mt-2.5 flex items-center justify-center gap-1.5">
                         {heroHabit.days.map((day, d) => (
@@ -3262,7 +3272,7 @@ export default function HomeScreen() {
                     <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white animate-habit-pop">
                       <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 6" /></svg>
                     </span>
-                    <p className="mt-3 text-base font-semibold text-ink">Done For Today</p>
+                    <p className="mt-3 text-base font-semibold text-ink">Done For Today!</p>
                     <p className="mt-1 text-[13px] text-ink/70">{pickLine(HABIT_DONE_LINES, activeTemplate.id + "-done").replace(/\{n\}/g, String(activeTemplate.durationDays))}</p>
                     <div className="mt-2.5 flex items-center justify-center gap-1.5">
                       {heroHabit.days.map((day, d) => (
