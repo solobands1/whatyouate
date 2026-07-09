@@ -2253,18 +2253,31 @@ export default function HomeScreen() {
   // When the nudge is actually showing on the home hero (no active habit builder taking the
   // slot), the user is already seeing it — so mark it seen and don't light the Insights nav
   // dot. The dot should only appear when the nudge lives solely on the Insights screen.
+  const [nudgeBanner, setNudgeBanner] = useState(false);
   useEffect(() => {
     if (!user || !habitLoaded) return;
     const nudgeOnHero = heroHabit.status === "hidden" && !!currentWindowNudge && !trial.isFree && !isDemoMode;
     // Let Insights know whether the nudge is currently on the home hero, so it shows the
     // full nudge (habit builder occupying the hero) vs. just a pointer (nudge is on home).
     try { localStorage.setItem("wya_nudge_on_home", nudgeOnHero ? "1" : "0"); } catch {}
-    if (!nudgeOnHero) return;
     const nudgeTs = parseInt(localStorage.getItem("wya_nudge_ts") ?? "0");
     const seenTs = parseInt(localStorage.getItem("wya_nudge_seen_ts") ?? "0");
-    if (nudgeTs > seenTs) {
-      localStorage.setItem("wya_nudge_seen_ts", Date.now().toString());
-      window.dispatchEvent(new Event("wya_nudge_update"));
+    if (nudgeOnHero) {
+      // The user is already seeing it on the hero — mark seen, clear the nav bell.
+      if (nudgeTs > seenTs) {
+        localStorage.setItem("wya_nudge_seen_ts", Date.now().toString());
+        window.dispatchEvent(new Event("wya_nudge_update"));
+      }
+      return;
+    }
+    // A habit builder occupies the hero, so the nudge lives only on Insights. If it's unseen,
+    // drop a top banner pointing there (once per nudge) — the nav bell is already lit too.
+    if (nudgeTs > seenTs && !trial.isFree && !isDemoMode && !!currentWindowNudge) {
+      const bannerTs = parseInt(localStorage.getItem("wya_nudge_banner_ts") ?? "0");
+      if (bannerTs < nudgeTs) {
+        try { localStorage.setItem("wya_nudge_banner_ts", String(nudgeTs)); } catch {}
+        setNudgeBanner(true);
+      }
     }
   }, [user, habitLoaded, heroHabit.status, currentWindowNudge, trial.isFree, isDemoMode]);
 
@@ -3003,6 +3016,7 @@ export default function HomeScreen() {
 
         {firstCel && <UnlockCelebrationBanner title={firstCel.title} sub={firstCel.sub} icon={firstCel.icon} onDismiss={dismissFirstCel} />}
         {dailyHabitBanner && <UnlockCelebrationBanner title="Habit Done For Today!" sub="Keep logging everything else · It helps your Coach learn" icon="spark" onDismiss={() => setDailyHabitBanner(false)} />}
+        {nudgeBanner && <UnlockCelebrationBanner title="New Nudge Available" sub="Your Coach spotted something · See it on Insights" icon="spark" onDismiss={() => setNudgeBanner(false)} />}
 
         {/* Trial progress / expired banner + optional profile nudge */}
         {(() => {
