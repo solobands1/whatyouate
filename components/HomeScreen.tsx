@@ -2398,7 +2398,7 @@ export default function HomeScreen() {
   // relevant count crosses its threshold), including the feature unlocks.
   const { pending: firstCel, dismiss: dismissFirstCel } = useUnlockCelebration(user?.id, [
     { key: "firstMeal", title: "You Logged Your First Meal!", sub: "Nice start. Every log teaches your coach what works for you.", unlocked: !isDemoMode && mealCount >= 1, icon: "spark" },
-    { key: "firstReflection", title: "You Finished Your First Nightly Reflection!", sub: "This is how your coach learns to connect your food to how you feel.", unlocked: !isDemoMode && (ctxReflections?.length ?? 0) >= 1, icon: "spark" },
+    { key: "firstReflection", title: "You Finished Your First Nightly Reflection!", sub: "This is how your coach learns to connect your food to how you feel.", unlocked: !isDemoMode && ((ctxReflections?.length ?? 0) >= 1 || !!todayReflection), icon: "spark" },
     { key: "nudges", title: "Nudges Just Opened Up", sub: "Your coach can now send you personalized nudges.", unlocked: !isDemoMode && mealCount >= 5, icon: "unlock" },
     { key: "patterns", title: "Your Patterns Just Opened Up", sub: "Your coach is starting to connect your food to how you feel.", unlocked: !isDemoMode && (ctxReflections?.length ?? 0) >= 3, icon: "unlock" },
     { key: "fullTrends", title: "Full Trends Just Opened Up", sub: "Two weeks in. Full week-to-week trends are here.", unlocked: !isDemoMode && countLoggedDays(ctxMeals ?? []) >= 14, icon: "unlock" },
@@ -5302,7 +5302,7 @@ export default function HomeScreen() {
                     <svg viewBox="0 0 24 24" className="h-10 w-10" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 6" /></svg>
                   </span>
                   <p className="mt-6 text-center text-2xl font-semibold text-ink">Thanks For Reflecting</p>
-                  <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-3.5 py-1.5 text-[13px] font-semibold text-primary/90 animate-habit-pop">
+                  <div className={`mt-3 inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-3.5 py-1.5 text-[13px] font-semibold text-primary/90 ${reflectionTotal <= 1 ? "animate-habit-pop" : ""}`}>
                     <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z" /></svg>
                     {reflectionStreak >= 2
                       ? `${reflectionStreak} nights in a row`
