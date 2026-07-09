@@ -969,24 +969,29 @@ export default function HomeScreen() {
   // On the very first habit prompt, show a compact "Habit Builder" notification, then
   // smoothly expand into the full card. Only runs once (later prompts/cycles are
   // already expanded).
-  // The expand/reveal only plays the FIRST time the user sees a particular suggestion
-  // (persisted per templateId). On any later view — reload, tab nav, a new day of the same
-  // active builder — it loads already expanded with no animation. A layout effect sets the
-  // expanded state before paint so a seen suggestion never flashes collapsed.
+  // The expand/reveal plays the first time the user sees a particular suggestion, and again
+  // if they return to it after a real gap (> 7 days since they last saw it). On normal views —
+  // reload, tab nav, a new day of the same active builder — it loads already expanded with no
+  // animation. We track last-seen per templateId; a layout effect sets the expanded state
+  // before paint so a recently-seen suggestion never flashes collapsed.
   useIsoLayoutEffect(() => {
     if (!habitLoaded || heroHabit.status !== "suggested" || !user) return;
     if (heroRevealedRef.current) return; // handle once per mount
     heroRevealedRef.current = true;
     const tplId = activeTemplate.id;
     const key = `wya_habit_hero_seen_${user.id}`;
-    let seen: string[] = [];
-    try { seen = (localStorage.getItem(key) ?? "").split(",").filter(Boolean); } catch {}
-    if (seen.includes(tplId)) {
-      setHeroExpanded(true); // seen before — load expanded, no reveal
+    const GAP_MS = 7 * 24 * 60 * 60 * 1000; // re-reveal if not seen in over a week
+    let map: Record<string, number> = {};
+    try { const raw = localStorage.getItem(key); if (raw) map = JSON.parse(raw); } catch {}
+    const lastSeen = typeof map[tplId] === "number" ? map[tplId] : 0;
+    const now = Date.now();
+    const isGap = !lastSeen || now - lastSeen > GAP_MS;
+    try { map[tplId] = now; localStorage.setItem(key, JSON.stringify(map)); } catch {} // always refresh last-seen
+    if (!isGap) {
+      setHeroExpanded(true); // seen recently — load expanded, no reveal
       return;
     }
-    // Genuinely new suggestion — mark it seen and play the reveal (shimmer + bounce, then expand).
-    try { localStorage.setItem(key, [...seen, tplId].join(",")); } catch {}
+    // New, or returning after a gap — play the reveal (shimmer + bounce, then expand).
     const tExpand = setTimeout(() => setHeroExpanded(true), 1700);
     return () => clearTimeout(tExpand);
   }, [heroHabit.status, habitLoaded, activeTemplate.id, user]);
