@@ -3557,8 +3557,12 @@ export default function HomeScreen() {
                       const isShimmer = isReanalyzing || (meal.status === "processing" && Date.now() - meal.ts < 90_000);
                       const isStaleOrFailed = !isReanalyzing && ((meal.status === "processing" && Date.now() - meal.ts >= 90_000) || meal.status === "failed");
                       const isUnsaved = meal.status === "unsaved";
-                      const isRecentQuickAdd = recentQuickAddRef.current > 0
-                        && Math.abs(meal.ts - recentQuickAddRef.current) < 30_000;
+                      // Skip the entrance animation for any just-added done meal (quick add,
+                      // manual add) so the optimistic→real DB swap doesn't remount + re-animate
+                      // the pill (the "jolt"). Its macros are already final, so nothing changes.
+                      const isRecentQuickAdd = (recentQuickAddRef.current > 0
+                        && Math.abs(meal.ts - recentQuickAddRef.current) < 30_000)
+                        || (meal.status === "done" && meal.ts <= Date.now() && Date.now() - meal.ts < 20_000);
                       return (
                       <div
                         key={`${meal.id}-${meal.calories}-${meal.protein}`}
