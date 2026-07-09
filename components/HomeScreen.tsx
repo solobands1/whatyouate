@@ -969,16 +969,27 @@ export default function HomeScreen() {
   // On the very first habit prompt, show a compact "Habit Builder" notification, then
   // smoothly expand into the full card. Only runs once (later prompts/cycles are
   // already expanded).
-  useEffect(() => {
-    if (!habitLoaded) return; // wait for the real state before any reveal
-    if (heroRevealedRef.current) return;
-    if (heroHabit.status !== "suggested") return;
+  // The expand/reveal only plays the FIRST time the user sees a particular suggestion
+  // (persisted per templateId). On any later view — reload, tab nav, a new day of the same
+  // active builder — it loads already expanded with no animation. A layout effect sets the
+  // expanded state before paint so a seen suggestion never flashes collapsed.
+  useIsoLayoutEffect(() => {
+    if (!habitLoaded || heroHabit.status !== "suggested" || !user) return;
+    if (heroRevealedRef.current) return; // handle once per mount
     heroRevealedRef.current = true;
-    // First-appearance sequence: card shimmers + title bounces on mount (CSS), then the
-    // card expands (which pulses its border once it settles).
+    const tplId = activeTemplate.id;
+    const key = `wya_habit_hero_seen_${user.id}`;
+    let seen: string[] = [];
+    try { seen = (localStorage.getItem(key) ?? "").split(",").filter(Boolean); } catch {}
+    if (seen.includes(tplId)) {
+      setHeroExpanded(true); // seen before — load expanded, no reveal
+      return;
+    }
+    // Genuinely new suggestion — mark it seen and play the reveal (shimmer + bounce, then expand).
+    try { localStorage.setItem(key, [...seen, tplId].join(",")); } catch {}
     const tExpand = setTimeout(() => setHeroExpanded(true), 1700);
     return () => clearTimeout(tExpand);
-  }, [heroHabit.status, habitLoaded]);
+  }, [heroHabit.status, habitLoaded, activeTemplate.id, user]);
 
   // Once the card finishes dropping down, pulse its border again like a finished habit.
   useEffect(() => {

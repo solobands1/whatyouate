@@ -582,6 +582,8 @@ export default function ProfileScreen() {
       `wya_onboarding_done_${user.id}`,
       `wya_nudge_view_count_${user.id}`,
       `wya_habit_intro_seen_${user.id}`,
+      `wya_habit_hero_seen_${user.id}`,
+      `wya_nudge_seen_${user.id}`,
       `wya_cel_nudges_${user.id}`,
       `wya_cel_fullTrends_${user.id}`,
       `wya_cel_patterns_${user.id}`,
