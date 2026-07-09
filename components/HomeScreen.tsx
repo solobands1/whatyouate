@@ -3244,8 +3244,13 @@ export default function HomeScreen() {
                       <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white animate-habit-pop">
                         <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 6" /></svg>
                       </span>
-                      <p className="mt-3 text-base font-semibold text-ink">Done For Today</p>
+                      <p className="mt-3 text-base font-semibold text-ink">Day {completedDays} Done!</p>
                       <p className="mt-1 text-[13px] text-ink/70">{line}</p>
+                      <div className="mt-2.5 flex items-center justify-center gap-1.5">
+                        {heroHabit.days.map((day, d) => (
+                          <span key={d} className={`h-2 w-2 rounded-full ${day.every(Boolean) ? "bg-primary" : "bg-ink/15"}`} />
+                        ))}
+                      </div>
                     </div>
                   </div>
                 );
@@ -3257,8 +3262,13 @@ export default function HomeScreen() {
                     <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white animate-habit-pop">
                       <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 6" /></svg>
                     </span>
-                    <p className="mt-3 text-base font-semibold text-ink">Done For Today</p>
+                    <p className="mt-3 text-base font-semibold text-ink">Day {activeTemplate.durationDays} Done!</p>
                     <p className="mt-1 text-[13px] text-ink/70">{pickLine(HABIT_DONE_LINES, activeTemplate.id + "-done").replace(/\{n\}/g, String(activeTemplate.durationDays))}</p>
+                    <div className="mt-2.5 flex items-center justify-center gap-1.5">
+                      {heroHabit.days.map((day, d) => (
+                        <span key={d} className={`h-2 w-2 rounded-full ${day.every(Boolean) ? "bg-primary" : "bg-ink/15"}`} />
+                      ))}
+                    </div>
                   </div>
                 </div>
               ) : doneStep === "started" ? (
