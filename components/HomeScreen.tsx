@@ -3197,7 +3197,10 @@ export default function HomeScreen() {
               (() => {
                 // During the post-completion pause, holdDay keeps the just-finished day
                 // on screen (all buttons blue) instead of jumping to the next day.
-                const current = heroHabit.holdDay != null ? heroHabit.holdDay : heroHabit.days.findIndex((day) => !day.every(Boolean));
+                // findIndex returns -1 when every day is already complete (or the array is
+                // empty) — clamp to a valid day so the label never reads "Day 0".
+                const nextIncomplete = heroHabit.days.findIndex((day) => !day.every(Boolean));
+                const current = heroHabit.holdDay != null ? heroHabit.holdDay : (nextIncomplete === -1 ? Math.max(heroHabit.days.length - 1, 0) : nextIncomplete);
                 return (
                   <>
                     <div className="flex items-center justify-between">
