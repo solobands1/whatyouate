@@ -984,23 +984,23 @@ export default function SummaryScreen() {
         }}
       />
       <div className="mx-auto flex min-h-screen max-w-md flex-col px-5 pb-24 safe-top">
-        <header className={`${!isDemoMode && dayCount < 14 ? "mb-3" : "mb-6"}`} data-tour="summary-header">
+        <header className={`${!isDemoMode && !(mealCount >= 5 && dayCount >= 5 && reflCount >= 3) ? "mb-3" : "mb-6"}`} data-tour="summary-header">
           <h1 className="text-2xl font-semibold text-ink">Insights</h1>
           <p className="mt-1 text-sm text-muted/70">Daily snapshot and weekly insights at a glance</p>
         </header>
 
-        {/* Unlock progress timeline — only shown until all milestones are reached (14 logged days) */}
-        {!isDemoMode && !(mealCount >= 5 && reflCount >= 3 && dayCount >= 14) && (() => {
+        {/* Unlock progress timeline — shown until the core picture is built (5 days + 5 meals + 3 reflections) */}
+        {!isDemoMode && !(mealCount >= 5 && dayCount >= 5 && reflCount >= 3) && (() => {
           const nudgesUnlocked = mealCount >= 5;
           const firstCheckinUnlocked = reflCount >= 1;
-          const patternsUnlocked = reflCount >= 3;
-          const fullTrendsUnlocked = dayCount >= 14;
+          const nutritionUnlocked = dayCount >= 5 && mealCount >= 5;
+          const feelingUnlocked = reflCount >= 3;
           const allMilestones = [
             { label: "First Meal", sub: mealCount >= 1 ? "" : "Log 1 Meal", desc: "Log your first meal to get started.", unlocked: mealCount >= 1 },
             { label: "First Reflection", sub: firstCheckinUnlocked ? "" : "1 Reflection", desc: "Do your first nightly reflection to start tracking how you feel.", unlocked: firstCheckinUnlocked },
             { label: "Nudges", sub: nudgesUnlocked ? "" : `${5 - mealCount} More Meal${5 - mealCount !== 1 ? "s" : ""}`, desc: "Personalized nudges based on what you've been eating.", unlocked: nudgesUnlocked },
-            { label: "Your Patterns", sub: patternsUnlocked ? "" : `${3 - reflCount} More Reflection${3 - reflCount !== 1 ? "s" : ""}`, desc: "Your coach starts connecting your food to how you feel.", unlocked: patternsUnlocked },
-            { label: "Full Trends", sub: fullTrendsUnlocked ? "" : `${14 - dayCount} More Day${14 - dayCount !== 1 ? "s" : ""}`, desc: "Two weeks unlocks full trends and week-to-week comparisons.", unlocked: fullTrendsUnlocked },
+            { label: "Your Nutrition", sub: nutritionUnlocked ? "" : `${5 - dayCount} More Day${5 - dayCount !== 1 ? "s" : ""}`, desc: "Your macros, micronutrients, and trends fill in across your week.", unlocked: nutritionUnlocked },
+            { label: "Food & Feeling", sub: feelingUnlocked ? "" : `${3 - reflCount} More Reflection${3 - reflCount !== 1 ? "s" : ""}`, desc: "Your coach starts connecting your food to how you feel.", unlocked: feelingUnlocked },
           ];
           // Fill left-to-right: a step only shows unlocked once it AND every step before it
           // are met, so the chain never checks off out of order (e.g. a night-1 reflection
