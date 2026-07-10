@@ -499,6 +499,7 @@ export default function HomeScreen() {
   const [fdebug, setFdebug] = useState(false);
   const [forceGreeting, setForceGreeting] = useState(false);
   const [forceGreetingPhase, setForceGreetingPhase] = useState<"morning" | "afternoon" | "evening" | null>(null);
+  const [previewPhase, setPreviewPhase] = useState<"morning" | "afternoon" | "evening">("morning");
   useEffect(() => {
     if (typeof window === "undefined") return;
     const p = new URLSearchParams(window.location.search);
@@ -2497,14 +2498,23 @@ export default function HomeScreen() {
   };
   const greetingPhase = forceGreetingPhase ?? welcomeMessage.phase;
   const greetingBlock = makeGreeting(greetingPhase);
-  // TEMP preview: render all three greetings stacked so the morning/afternoon/evening look can
-  // be confirmed on dev regardless of the clock/nudge. Flip PREVIEW_GREETINGS to false to restore.
+  // TEMP preview: render the real greeting (exactly as it will look) with a small Next toggle to
+  // cycle morning → afternoon → evening on dev, regardless of the clock/nudge. Flip
+  // PREVIEW_GREETINGS to false to restore.
   const PREVIEW_GREETINGS = true;
   const greetingPreviewAll = (
-    <div className="space-y-8 py-2">
-      {(["morning", "afternoon", "evening"] as const).map((p) => (
-        <div key={p}>{makeGreeting(p)}</div>
-      ))}
+    <div>
+      {makeGreeting(previewPhase)}
+      <div className="mt-5 flex justify-center">
+        <button
+          type="button"
+          onClick={() => setPreviewPhase((p) => (p === "morning" ? "afternoon" : p === "afternoon" ? "evening" : "morning"))}
+          className="inline-flex items-center gap-1 rounded-full border border-ink/10 bg-ink/[0.03] px-3 py-1 text-[11px] font-medium capitalize text-muted/70 transition active:opacity-60"
+        >
+          {previewPhase} · Next
+          <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
+        </button>
+      </div>
     </div>
   );
 
