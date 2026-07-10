@@ -2476,7 +2476,7 @@ export default function HomeScreen() {
   // The time-of-day greeting is a fallback (rarely shown when a habit/nudge holds the hero).
   const greetingIcon = (phase: "morning" | "afternoon" | "evening") =>
     phase === "morning" ? (
-      <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v3M4.2 10.2l1.4 1.4M1.5 18h2M20.5 18h2M18.4 11.6l1.4-1.4M22.5 22H1.5M8 6l4-4 4 4M16 18a4 4 0 0 0-8 0" /></svg>
+      <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 4v2M5.9 9.6l1.4 1.4M18.1 9.6l-1.4 1.4M3.5 16h1.5M19 16h1.5M8 16a4 4 0 0 1 8 0M2.5 20h19M8 23h8" /></svg>
     ) : phase === "afternoon" ? (
       <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4" /></svg>
     ) : (
@@ -2489,10 +2489,6 @@ export default function HomeScreen() {
         <span className="mx-auto mb-1.5 flex h-9 w-9 items-center justify-center text-primary">{greetingIcon(phase)}</span>
         <p className="text-lg font-semibold text-ink">{copy.greeting}{firstName ? `, ${firstName}` : ""}</p>
         <p className="mt-1 text-sm text-muted/60">{copy.sub}</p>
-        <button type="button" onClick={startHabitManually} className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-primary/80 transition active:opacity-60">
-          Start a Habit
-          <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
-        </button>
       </div>
     );
   };
@@ -2503,18 +2499,16 @@ export default function HomeScreen() {
   // PREVIEW_GREETINGS to false to restore.
   const PREVIEW_GREETINGS = true;
   const greetingPreviewAll = (
-    <div>
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setPreviewPhase((p) => (p === "morning" ? "afternoon" : p === "afternoon" ? "evening" : "morning"))}
+        aria-label="Preview next time of day"
+        className="absolute -top-2 right-0 flex h-7 w-7 items-center justify-center rounded-full text-muted/50 transition active:opacity-60"
+      >
+        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
+      </button>
       {makeGreeting(previewPhase)}
-      <div className="mt-5 flex justify-center">
-        <button
-          type="button"
-          onClick={() => setPreviewPhase((p) => (p === "morning" ? "afternoon" : p === "afternoon" ? "evening" : "morning"))}
-          className="inline-flex items-center gap-1 rounded-full border border-ink/10 bg-ink/[0.03] px-3 py-1 text-[11px] font-medium capitalize text-muted/70 transition active:opacity-60"
-        >
-          {previewPhase} · Next
-          <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
-        </button>
-      </div>
     </div>
   );
 
