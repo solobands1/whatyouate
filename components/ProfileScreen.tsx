@@ -1297,8 +1297,14 @@ export default function ProfileScreen() {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="flex items-center gap-1.5">
-                  <svg viewBox="0 0 16 16" className="h-3 w-3 text-rose-400" fill="currentColor">
-                    <path d="M8 13.7C7.7 13.5 1 9.2 1 5.5 1 3.6 2.6 2 4.5 2c1 0 2 .5 2.7 1.3L8 4.2l.8-.9C9.5 2.5 10.5 2 11.5 2 13.4 2 15 3.6 15 5.5c0 3.7-6.7 8-7 8.2z"/>
+                  <svg viewBox="0 0 16 16" className="h-4 w-4">
+                    <defs>
+                      <linearGradient id="ahHeart" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0" stopColor="#FF6482" />
+                        <stop offset="1" stopColor="#FF2D55" />
+                      </linearGradient>
+                    </defs>
+                    <path fill="url(#ahHeart)" d="M8 13.7C7.7 13.5 1 9.2 1 5.5 1 3.6 2.6 2 4.5 2c1 0 2 .5 2.7 1.3L8 4.2l.8-.9C9.5 2.5 10.5 2 11.5 2 13.4 2 15 3.6 15 5.5c0 3.7-6.7 8-7 8.2z" />
                   </svg>
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Apple Health</p>
                 </div>
@@ -1447,6 +1453,17 @@ export default function ProfileScreen() {
                   Add
                 </button>
               </div>
+              <button
+                type="button"
+                className="mt-1 self-start text-[11px] font-semibold text-primary/80 underline underline-offset-2 transition active:opacity-60"
+                onClick={() => {
+                  setMultiSuppName(newSuppInput.trim());
+                  setMultiSuppNutrients({});
+                  setShowMultiSuppModal(true);
+                }}
+              >
+                Pick nutrients manually
+              </button>
             </div>
           </label>
         </Card>
@@ -1837,8 +1854,14 @@ export default function ProfileScreen() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-6 text-center">
-              <svg viewBox="0 0 16 16" className="mx-auto mb-3 h-8 w-8 text-rose-400" fill="currentColor">
-                <path d="M8 13.7C7.7 13.5 1 9.2 1 5.5 1 3.6 2.6 2 4.5 2c1 0 2 .5 2.7 1.3L8 4.2l.8-.9C9.5 2.5 10.5 2 11.5 2 13.4 2 15 3.6 15 5.5c0 3.7-6.7 8-7 8.2z"/>
+              <svg viewBox="0 0 16 16" className="mx-auto mb-3 h-8 w-8">
+                <defs>
+                  <linearGradient id="ahHeartLg" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stopColor="#FF6482" />
+                    <stop offset="1" stopColor="#FF2D55" />
+                  </linearGradient>
+                </defs>
+                <path fill="url(#ahHeartLg)" d="M8 13.7C7.7 13.5 1 9.2 1 5.5 1 3.6 2.6 2 4.5 2c1 0 2 .5 2.7 1.3L8 4.2l.8-.9C9.5 2.5 10.5 2 11.5 2 13.4 2 15 3.6 15 5.5c0 3.7-6.7 8-7 8.2z"/>
               </svg>
               <h2 className="text-base font-semibold text-ink">
                 {healthKitModalState === "connect" ? "Connect Apple Health" : "To Connect Apple Health"}
@@ -1925,7 +1948,7 @@ export default function ProfileScreen() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
             <h2 className="text-base font-semibold text-ink">{multiSuppName || "Supplement"}</h2>
-            <p className="mt-1 text-xs text-muted/60">Tap a nutrient to enter the amount from the label.</p>
+            <p className="mt-1 text-xs text-muted/60">These are the nutrients we track. Tap any this supplement contains and enter the amount from the label.</p>
             <div className="mt-4 space-y-2 max-h-[55vh] overflow-y-auto">
               {Object.entries(NUTRIENT_DISPLAY_NAMES).map(([key, displayName]) => {
                 const entry = multiSuppNutrients[key];
