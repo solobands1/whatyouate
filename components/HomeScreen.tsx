@@ -946,13 +946,6 @@ export default function HomeScreen() {
   // Manually surface a habit (from the greeting during the breather / after finishing
   // one). Shows it expanded right away — no first-appearance reveal. The eyebrow then
   // cycles through the rest for testing.
-  const startHabitManually = () => {
-    const t = goalHabits[0] ?? HABIT_TEMPLATES[0];
-    setActiveTemplate(t);
-    setHeroExpanded(true);
-    setHeroHabit({ status: "suggested", days: freshDays(t) });
-  };
-
   // Make up missed day(s): consume the extension(s), re-anchor the schedule to today,
   // and resume the tracker.
   const extendHabit = () => {
