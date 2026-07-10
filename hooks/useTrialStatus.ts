@@ -16,9 +16,15 @@ export function useTrialStatus(): TrialStatus {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const p = new URLSearchParams(window.location.search);
-    const t = p.get("trial");
+    let t = p.get("trial");
     const dayRaw = parseInt(p.get("trialday") ?? "", 10);
     const hasDay = !Number.isNaN(dayRaw);
+    // Persist across client-side navigation (which drops the query param). ?trial=off clears it.
+    try {
+      if (t === "off") { sessionStorage.removeItem("wya_trial_override"); setOverride(null); return; }
+      if (t) sessionStorage.setItem("wya_trial_override", t);
+      else if (!hasDay) t = sessionStorage.getItem("wya_trial_override");
+    } catch {}
     if (t === "pro") {
       setOverride({ hasStarted: true, isTrialActive: false, isExpired: false, isPro: true, isFree: false, currentDay: 0, daysLeft: 7 });
     } else if (t === "expired") {
