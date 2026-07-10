@@ -8,10 +8,9 @@ const UNLIMITED_USER_IDS = new Set([
 ]);
 
 // Same free/unlimited access, but matched by email (lowercased) when the user id
-// isn't handy.
-const UNLIMITED_USER_EMAILS = new Set([
-  "solobands1@gmail.com",
-]);
+// isn't handy. Empty right now so these accounts see the real trial/paywall flow —
+// add an address here to grant a specific tester unlimited access.
+const UNLIMITED_USER_EMAILS = new Set<string>();
 
 const DAY_MS = 1000 * 60 * 60 * 24;
 const TRIAL_DAYS = 7;            // interim: still drives currentDay/daysLeft for the Home "Day X of 7" banner (Phase 2 replaces that UI)
