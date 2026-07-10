@@ -52,7 +52,8 @@ export default function BottomNav({ current }: { current: "home" | "summary" | "
   }, [current, trial.isFree]);
 
   useEffect(() => {
-    if (current === "summary") {
+    // Walled users don't get new nudges and can't open them, so don't ping them about one.
+    if (current === "summary" || trial.isFree) {
       setHasUnseenNudge(false);
       return;
     }
@@ -60,7 +61,7 @@ export default function BottomNav({ current }: { current: "home" | "summary" | "
     const handler = () => setHasUnseenNudge(checkUnseen());
     window.addEventListener("wya_nudge_update", handler);
     return () => window.removeEventListener("wya_nudge_update", handler);
-  }, [current]);
+  }, [current, trial.isFree]);
 
   // Prefetch all nav routes so tapping feels instant.
   useEffect(() => {
