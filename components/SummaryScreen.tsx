@@ -193,9 +193,19 @@ export default function SummaryScreen() {
     () => computeSummaryMarkers(meals, workouts, profile ?? undefined),
     [meals, workouts, profile]
   );
-  const dayCount = summaryMarkers.dayCount;
-  const mealCount = summaryMarkers.mealCount;
-  const reflCount = reflections.length;
+  // Dev-only ladder count override (strip pre-merge): ?days=N&meals=N&refl=N previews any
+  // ladder state without logging for real days.
+  const [countOverride, setCountOverride] = useState<{ days?: number; meals?: number; refl?: number }>({});
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const p = new URLSearchParams(window.location.search);
+    const n = (k: string) => { const v = parseInt(p.get(k) ?? "", 10); return Number.isNaN(v) ? undefined : v; };
+    const o = { days: n("days"), meals: n("meals"), refl: n("refl") };
+    if (o.days !== undefined || o.meals !== undefined || o.refl !== undefined) setCountOverride(o);
+  }, []);
+  const dayCount = countOverride.days ?? summaryMarkers.dayCount;
+  const mealCount = countOverride.meals ?? summaryMarkers.mealCount;
+  const reflCount = countOverride.refl ?? reflections.length;
   const gentleTargetsDisplay = summaryMarkers.gentleTargets ?? { calories: 2300, protein: 125, fat: 77, carbs: 277 };
   const workoutSummary = summaryMarkers.workoutSummary;
   const avgWeekCalories = summaryMarkers.avgWeekCalories;
@@ -1002,17 +1012,14 @@ export default function SummaryScreen() {
             { label: "Your Nutrition", sub: nutritionUnlocked ? "" : `${5 - dayCount} More Day${5 - dayCount !== 1 ? "s" : ""}`, desc: "Your macros, micronutrients, and trends fill in across your week.", unlocked: nutritionUnlocked },
             { label: "Food & Feeling", sub: feelingUnlocked ? "" : `${3 - reflCount} More Reflection${3 - reflCount !== 1 ? "s" : ""}`, desc: "Your coach starts connecting your food to how you feel.", unlocked: feelingUnlocked },
           ];
-          // Fill left-to-right: a step only shows unlocked once it AND every step before it
-          // are met, so the chain never checks off out of order (e.g. a night-1 reflection
-          // won't tick before the meal milestones). Countdown shows on the next step only.
-          let cumulative = true;
+          // Each rung lights on its OWN condition (meals and reflections are independent
+          // tracks) so one action never unlocks two rungs at once, and the ladder matches
+          // the per-milestone celebrations. Countdown shows on the first still-locked step.
           let nextUnlockFound = false;
           const milestones = allMilestones.map((m) => {
-            const unlocked = cumulative && m.unlocked;
-            cumulative = unlocked;
-            if (unlocked) return { ...m, unlocked, sub: "" };
-            if (!nextUnlockFound && m.sub) { nextUnlockFound = true; return { ...m, unlocked, isNext: true }; }
-            return { ...m, unlocked, sub: "" };
+            if (m.unlocked) return { ...m, sub: "" };
+            if (!nextUnlockFound && m.sub) { nextUnlockFound = true; return { ...m, isNext: true }; }
+            return { ...m, sub: "" };
           });
           return (
             <UnlockTimeline milestones={milestones} />
