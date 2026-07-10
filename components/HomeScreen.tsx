@@ -2487,7 +2487,7 @@ export default function HomeScreen() {
     return (
       <div className="text-center">
         <span className="mx-auto mb-1.5 flex h-10 w-10 items-center justify-center text-primary">{greetingIcon(phase)}</span>
-        <p className="text-lg font-semibold text-ink">{copy.greeting}{firstName ? `, ${firstName}` : ""}</p>
+        <p className="text-lg font-semibold text-ink">{copy.greeting}{firstName ? ` ${firstName}` : ""}</p>
         <p className="mt-1 text-sm text-muted/60">{copy.sub}</p>
       </div>
     );
