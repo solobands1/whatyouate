@@ -498,12 +498,19 @@ export default function HomeScreen() {
   const [cuePreview, setCuePreview] = useState(false);
   const [fdebug, setFdebug] = useState(false);
   const [forceGreeting, setForceGreeting] = useState(false);
+  const [forceGreetingPhase, setForceGreetingPhase] = useState<"morning" | "afternoon" | "evening" | null>(null);
   useEffect(() => {
     if (typeof window === "undefined") return;
     const p = new URLSearchParams(window.location.search);
     if (p.has("cue")) setCuePreview(true);
     if (p.has("fdebug")) setFdebug(true); // ?fdebug shows each Quick Add row's grouping key
-    if (p.has("greeting")) setForceGreeting(true); // ?greeting forces the time-of-day greeting (dev preview)
+    if (p.has("greeting")) {
+      // ?greeting forces the time-of-day greeting (dev preview). ?greeting=morning|afternoon|
+      // evening pins the phase so all three icons can be previewed regardless of the clock.
+      setForceGreeting(true);
+      const g = p.get("greeting");
+      if (g === "morning" || g === "afternoon" || g === "evening") setForceGreetingPhase(g);
+    }
   }, []);
   const closeReflection = () => { setShowReflection(false); setReflectionEditMode(false); setReflectionEditingKey(null); };
   const finishReflection = () => {
@@ -2464,12 +2471,13 @@ export default function HomeScreen() {
   const firstName = profile?.firstName || (user as { user_metadata?: Record<string, string> })?.user_metadata?.first_name || "";
   // The time-of-day greeting is a fallback (rarely shown when a habit/nudge holds the hero).
   // Extracted so ?greeting can force it for design tweaking.
+  const greetingPhase = forceGreetingPhase ?? welcomeMessage.phase;
   const greetingBlock = (
     <div className="text-center">
       <span className="mx-auto mb-1.5 flex h-9 w-9 items-center justify-center text-primary">
-        {welcomeMessage.phase === "morning" ? (
+        {greetingPhase === "morning" ? (
           <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v3M4.2 10.2l1.4 1.4M1.5 18h2M20.5 18h2M18.4 11.6l1.4-1.4M22.5 22H1.5M8 6l4-4 4 4M16 18a4 4 0 0 0-8 0" /></svg>
-        ) : welcomeMessage.phase === "afternoon" ? (
+        ) : greetingPhase === "afternoon" ? (
           <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4" /></svg>
         ) : (
           <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z" /></svg>
