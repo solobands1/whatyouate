@@ -2462,7 +2462,7 @@ export default function HomeScreen() {
 
   const hasEverLogged = displayMeals.some((m) => m.analysisJson?.source !== "supplement" && m.status !== "failed");
   const greetingCopyFor = (phase: "morning" | "afternoon" | "evening") => {
-    if (!hasEverLogged) return { greeting: "Welcome", sub: "Log Your First Meal!", exclaim: true };
+    if (!hasEverLogged) return { greeting: "Welcome", sub: "Log Your First Meal", exclaim: true };
     if (phase === "morning") return { greeting: "Good Morning", sub: "Let's make today count!", exclaim: false };
     if (phase === "afternoon") return { greeting: "Good Afternoon", sub: "Let's log and improve!", exclaim: false };
     return { greeting: "Good Evening", sub: "Better late than never!", exclaim: false };
