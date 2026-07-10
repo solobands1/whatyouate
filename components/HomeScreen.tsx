@@ -497,21 +497,11 @@ export default function HomeScreen() {
   // the bell/moon cue any time of day (otherwise it's gated to after 5pm, once a night).
   const [cuePreview, setCuePreview] = useState(false);
   const [fdebug, setFdebug] = useState(false);
-  const [forceGreeting, setForceGreeting] = useState(false);
-  const [forceGreetingPhase, setForceGreetingPhase] = useState<"morning" | "afternoon" | "evening" | null>(null);
-  const [previewPhase, setPreviewPhase] = useState<"morning" | "afternoon" | "evening">("morning");
   useEffect(() => {
     if (typeof window === "undefined") return;
     const p = new URLSearchParams(window.location.search);
     if (p.has("cue")) setCuePreview(true);
     if (p.has("fdebug")) setFdebug(true); // ?fdebug shows each Quick Add row's grouping key
-    if (p.has("greeting")) {
-      // ?greeting forces the time-of-day greeting (dev preview). ?greeting=morning|afternoon|
-      // evening pins the phase so all three icons can be previewed regardless of the clock.
-      setForceGreeting(true);
-      const g = p.get("greeting");
-      if (g === "morning" || g === "afternoon" || g === "evening") setForceGreetingPhase(g);
-    }
   }, []);
   const closeReflection = () => { setShowReflection(false); setReflectionEditMode(false); setReflectionEditingKey(null); };
   const finishReflection = () => {
@@ -2492,25 +2482,7 @@ export default function HomeScreen() {
       </div>
     );
   };
-  const greetingPhase = forceGreetingPhase ?? welcomeMessage.phase;
-  const greetingBlock = makeGreeting(greetingPhase);
-  // TEMP preview: render the real greeting (exactly as it will look) with a small Next toggle to
-  // cycle morning → afternoon → evening on dev, regardless of the clock/nudge. Flip
-  // PREVIEW_GREETINGS to false to restore.
-  const PREVIEW_GREETINGS = true;
-  const greetingPreviewAll = (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={() => setPreviewPhase((p) => (p === "morning" ? "afternoon" : p === "afternoon" ? "evening" : "morning"))}
-        aria-label="Preview next time of day"
-        className="absolute -top-2 right-0 flex h-7 w-7 items-center justify-center rounded-full text-muted/50 transition active:opacity-60"
-      >
-        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
-      </button>
-      {makeGreeting(previewPhase)}
-    </div>
-  );
+  const greetingBlock = makeGreeting(welcomeMessage.phase);
 
   // Streak saver: detect if yesterday was missed but there's still a saveable streak
   const streakSaverInfo = (() => {
@@ -3125,7 +3097,7 @@ export default function HomeScreen() {
         <Card className="mt-2" style={riseIn(barsReady && habitLoaded, 0)}>
           {/* Hero — dynamic slot. Priority: active habit builder > suggestion > reflection reminder > discovery > wins > greeting (default). Sample habit wired locally for now. */}
           <div data-tour="habit-hero" className={`-mx-4 rounded-2xl border-2 border-primary/25 px-4 ${heroHabit.status === "done" || heroHabit.status === "accepting" ? "bg-primary/10" : "bg-primary/[0.05]"} ${heroHabit.status === "hidden" ? (currentWindowNudge && !trial.isFree && !isDemoMode ? "py-5" : "py-7") : heroHabit.status === "done" && doneStep === "rested" ? "pt-5 pb-3" : "py-5"} ${heroHabit.status === "done" && (doneStep === "celebrate" || doneStep === "feedback") ? "animate-habit-built" : ""} ${(heroHabit.status === "done" && doneStep === "rested") || heroHabit.status === "accepting" ? "animate-habit-glow" : ""} ${(heroHabit.status === "active" && heroHabit.holdDay != null) || (heroHabit.status === "suggested" && !heroExpanded) || (heroHabit.status === "hidden" && !!currentWindowNudge && !nudgeExpanded) ? "animate-habit-shimmer" : ""} ${heroPulse ? "animate-card-pulse" : ""}`}>
-            {PREVIEW_GREETINGS ? greetingPreviewAll : forceGreeting ? greetingBlock : heroHabit.status === "suggested" ? (
+            {heroHabit.status === "suggested" ? (
               <div className={heroExpanded ? "" : "animate-habit-note"}>
                 {/* Tap the eyebrow to cycle templates (demo/testing). On first appearance
                     the word bounces once while the card shimmers. */}
