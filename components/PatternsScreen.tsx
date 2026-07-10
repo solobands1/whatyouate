@@ -328,11 +328,16 @@ export default function PatternsScreen() {
               </p>
             </div>
             <div className="mt-4 rounded-xl border border-primary/20 bg-primary/[0.06] px-4 py-3.5">
-              <p className="text-sm leading-relaxed text-ink/80">
-                {connectionCount > 0
-                  ? "Unlock Pro to see them, plus your weekly trends and what sets your best days apart. They keep sharpening the more you log."
-                  : "Keep logging and reflecting, then unlock Pro to see the connections as your coach finds them."}
-              </p>
+              <div className="flex items-start gap-2.5">
+                <svg viewBox="0 0 24 24" className="mt-0.5 h-4 w-4 shrink-0 text-primary/70" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+                <p className="text-sm leading-relaxed text-ink/80">
+                  {connectionCount > 0
+                    ? "Unlock Pro to see them, plus your weekly trends and what sets your best days apart. They keep sharpening the more you log."
+                    : "Keep logging and reflecting, then unlock Pro to see the connections as your coach finds them."}
+                </p>
+              </div>
               <button
                 type="button"
                 onClick={openUpgradeModal}

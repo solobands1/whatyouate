@@ -177,20 +177,23 @@ export default function UpgradeModal() {
               "Daily coaching nudges",
               "Macro & micronutrient trends",
               "AI photo logging",
-            ].map((item, i) => (
+            ].map((item, i) => {
+              const hero = i === 0; // the differentiator — the headline reason to pay, so it stands out
+              return (
               <div
                 key={item}
                 className="flex items-center gap-3 animate-fade-slide-up"
                 style={{ animationDelay: `${i * 140}ms`, animationFillMode: "both" }}
               >
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/15">
+                <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${hero ? "bg-primary text-white" : "bg-primary/15 text-primary"}`}>
                   <svg viewBox="0 0 12 12" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M2 6l3 3 5-5" />
                   </svg>
                 </span>
-                <span className="text-sm text-ink/80">{item}</span>
+                <span className={hero ? "text-sm font-semibold text-ink" : "text-sm text-ink/80"}>{item}</span>
               </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Plan toggle */}
