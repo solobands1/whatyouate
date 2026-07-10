@@ -9,6 +9,26 @@ export function useTrialStatus(): TrialStatus {
   const { meals } = useAppData();
   const [rcIsPro, setRcIsPro] = useState(false);
 
+  // Dev-only state override (strip pre-merge): ?trial=pro | ?trial=expired |
+  // ?trial=active | ?trialday=N (active trial forced to day N) to preview every
+  // trial/paywall state on any account without juggling data.
+  const [override, setOverride] = useState<TrialStatus | null>(null);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const p = new URLSearchParams(window.location.search);
+    const t = p.get("trial");
+    const dayRaw = parseInt(p.get("trialday") ?? "", 10);
+    const hasDay = !Number.isNaN(dayRaw);
+    if (t === "pro") {
+      setOverride({ hasStarted: true, isTrialActive: false, isExpired: false, isPro: true, isFree: false, currentDay: 0, daysLeft: 7 });
+    } else if (t === "expired") {
+      setOverride({ hasStarted: true, isTrialActive: false, isExpired: true, isPro: false, isFree: true, currentDay: 7, daysLeft: 0 });
+    } else if (t === "active" || hasDay) {
+      const d = Math.min(Math.max(hasDay ? dayRaw : 3, 1), 7);
+      setOverride({ hasStarted: true, isTrialActive: true, isExpired: false, isPro: false, isFree: false, currentDay: d, daysLeft: Math.max(0, 8 - d) });
+    }
+  }, []);
+
   useEffect(() => {
     if (!user) return;
     initializePurchases(user.id)
@@ -28,10 +48,11 @@ export function useTrialStatus(): TrialStatus {
   }, []);
 
   return useMemo(() => {
+    if (override) return override; // dev-only ?trial / ?trialday override
     const status = computeTrialStatus(meals, user?.id ?? null, user?.email ?? null);
     if (rcIsPro && !status.isPro) {
       return { ...status, isPro: true, isFree: false, isTrialActive: false, isExpired: false };
     }
     return status;
-  }, [meals, user?.id, user?.email, rcIsPro]);
+  }, [override, meals, user?.id, user?.email, rcIsPro]);
 }
