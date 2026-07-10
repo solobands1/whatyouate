@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { riseIn } from "../lib/motion";
-import Joyride, { CallBackProps, STATUS, type Step } from "react-joyride";
 import { useRouter } from "next/navigation";
 import { summarizeLoggedDays, summarizeWeek } from "../lib/summary";
 import { computeGentleTargets } from "../lib/digestEngine";
@@ -21,7 +20,6 @@ import { triggerValueMoment } from "./ValueMomentSheet";
 import { hasEnoughDataForPatterns, countLoggedDays } from "../lib/trial";
 import { checkAndSetMilestoneFlag, getPendingReviewFlag, canShowReviewPrompt } from "../lib/reviewPrompt";
 import { openReviewPrompt } from "./ReviewPromptModal";
-import type { FeelLog } from "../lib/supabaseDb";
 
 const INSIGHT_NUTRIENTS = [
   // Energy & Focus
@@ -83,26 +81,9 @@ export default function InsightsScreen() {
   const [activeNutrient, setActiveNutrient] = useState<string | null>(null);
   const [barsReady, setBarsReady] = useState(false);
   const mountedRef = useRef(true);
-  const [runInsightsTour, setRunInsightsTour] = useState(false);
-  const [isDemoMode, setIsDemoMode] = useState(false);
   // waterLogs is preloaded by AppDataProvider (no separate fetch here).
 
-  const demoFeelLogs = useMemo<FeelLog[]>(() => {
-    const day = (offsetDays: number, h: number, m: number) => {
-      const d = new Date(); d.setDate(d.getDate() - offsetDays); d.setHours(h, m, 0, 0); return d.getTime();
-    };
-    return [
-      { id: "df-1", ts: day(0, 8, 15), tag: "good_energy" },
-      { id: "df-2", ts: day(0, 14, 30), tag: "low_energy" },
-      { id: "df-3", ts: day(1, 9, 0), tag: "good_energy" },
-      { id: "df-4", ts: day(2, 13, 45), tag: "low_energy" },
-      { id: "df-5", ts: day(3, 8, 30), tag: "good_energy" },
-      { id: "df-6", ts: day(4, 16, 0), tag: "good_energy" },
-      { id: "df-7", ts: day(5, 11, 0), tag: "low_energy" },
-    ];
-  }, []);
-
-  const displayFeelLogs = isDemoMode ? demoFeelLogs : feelLogs;
+  const displayFeelLogs = feelLogs;
 
   const feelLogsByDay = useMemo(() => {
     const map: Record<string, { ts: number; tag: string }[]> = {};
@@ -133,17 +114,6 @@ export default function InsightsScreen() {
       router.replace("/login");
     }
   }, [loading, user, router]);
-
-  useEffect(() => {
-    if (!user) return;
-    const active = localStorage.getItem(`wya_walkthrough_active_${user.id}`) === "true";
-    const stage = localStorage.getItem(`wya_walkthrough_stage_${user.id}`);
-    if (active && stage === "insights") {
-      setIsDemoMode(true);
-      const timer = window.setTimeout(() => setRunInsightsTour(true), 400);
-      return () => window.clearTimeout(timer);
-    }
-  }, [user]);
 
   // Value moment: trigger the "your patterns are ready" sheet once per session
   // Only fires during an active trial — if expired, user will hit paywall instead
@@ -422,9 +392,6 @@ export default function InsightsScreen() {
   const waterTrend = (() => {
     const unit = profile?.waterUnit ?? "ml";
     const fmt = (ml: number) => unit === "oz" ? `${Math.round(ml / 29.5735)} oz` : `${ml} ml`;
-    if (isDemoMode) {
-      return { has: true, days: 12, pct: 72, displayCurrent: fmt(1800), displayGoal: fmt(2500) };
-    }
     if (!user || !profile?.trackWater) return { has: false, days: 0, pct: 0, displayCurrent: "", displayGoal: "" };
     const cutoff = Date.now() - 14 * 24 * 60 * 60 * 1000;
     const recent = Object.entries(waterLogs).filter(([k, ml]) => ml > 0 && new Date(`${k}T12:00:00`).getTime() >= cutoff);
@@ -457,101 +424,10 @@ export default function InsightsScreen() {
         { name: "Potassium", label: "Sometimes detected",  foodPct: 32, suppPct: 0,  hasSupplement: false, overRda: false, usingAmounts: false },
         { name: "Fiber",     label: "Building pattern",    foodPct: 48, suppPct: 0,  hasSupplement: false, overRda: false, usingAmounts: false },
   ];
-  // Real users with no data yet see the nutrient list with empty bars (no fake percentages);
-  // demo mode keeps the curated example for the walkthrough.
+  // Real users with no data yet see the nutrient list with empty bars (no fake percentages).
   const displayMicronutrients = hasEnoughData
     ? micronutrientPatterns
-    : isDemoMode
-      ? EXAMPLE_MICROS
-      : EXAMPLE_MICROS.map((m) => ({ ...m, label: "", foodPct: 0, suppPct: 0, hasSupplement: false }));
-
-  const insightsTourSteps = [
-    {
-      target: '[data-tour="insights-header"]',
-      placement: "bottom" as const,
-      disableBeacon: true,
-      content: (
-        <div>
-          <p style={{ fontWeight: 600, marginBottom: 10 }}>Patterns Is Your Long-Term View</p>
-          <p>While Insights shows you today and this week, Patterns shows you what's happening over time. Your macro averages, micronutrients, and energy trends get more useful the more you log.</p>
-        </div>
-      ),
-    },
-    {
-      target: '[data-tour="insights-energy"]',
-      placement: "auto" as const,
-      disableBeacon: true,
-      content: (
-        <div>
-          <p style={{ fontWeight: 600, marginBottom: 10 }}>Your Energy Chart</p>
-          <p>This shows when you logged your energy throughout the day.</p>
-          <div style={{ marginTop: 22, display: "flex", flexDirection: "column", gap: 5 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ display: "inline-block", width: 10, height: 10, borderRadius: "50%", background: "#3B82F6", flexShrink: 0 }} />
-              <span style={{ fontSize: 12 }}>= High Energy Logged</span>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ display: "inline-block", width: 10, height: 10, borderRadius: "50%", background: "#93C5FD", flexShrink: 0 }} />
-              <span style={{ fontSize: 12 }}>= Low Energy Logged</span>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ display: "inline-block", width: 2, height: 16, background: "#9CA3AF", flexShrink: 0, borderRadius: 1, marginLeft: 4 }} />
-              <span style={{ fontSize: 12 }}>No Check-In = Average Energy Assumed</span>
-            </div>
-          </div>
-          <p style={{ marginTop: 22 }}>The dot's position on the chart shows the time of day it was logged.</p>
-          <p style={{ marginTop: 16, fontSize: 12 }}>Look For Patterns: When do you feel low energy, and what did you eat before?</p>
-        </div>
-      ),
-    },
-    {
-      target: '[data-tour="insights-micro"]',
-      placement: "auto" as const,
-      disableBeacon: true,
-      content: (
-        <div>
-          <p style={{ fontWeight: 600, marginBottom: 10 }}>Your Micronutrient Bars</p>
-          <p>These bars track your micronutrients over time. They build up from your logged meals and supplements.</p>
-          <p style={{ marginTop: 10 }}>Tap any nutrient to learn why it matters and where to get more of it from food.</p>
-        </div>
-      ),
-    },
-    {
-      target: '[data-tour="insights-i-icon"]',
-      placement: "left" as const,
-      disableBeacon: true,
-      content: (
-        <div>
-          <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 24, height: 24, borderRadius: "50%", border: "1px solid rgba(0,0,0,0.1)", fontSize: 13, fontWeight: 600, color: "rgba(0,0,0,0.5)", marginBottom: 10 }}>i</div>
-          <p>You'll see buttons like this throughout the app.</p>
-          <p style={{ marginTop: 10 }}>Tap them anytime you want to learn more about that section.</p>
-        </div>
-      ),
-    },
-  ] as Step[];
-
-  const handleInsightsTour = (data: CallBackProps) => {
-    if (!user) return;
-    if (data.status === STATUS.SKIPPED) {
-      localStorage.removeItem(`wya_demo_mode_${user.id}`);
-      setIsDemoMode(false);
-      localStorage.setItem(`wya_walkthrough_${user.id}`, "true");
-      localStorage.removeItem(`wya_walkthrough_active_${user.id}`);
-      localStorage.removeItem(`wya_walkthrough_stage_${user.id}`);
-      setRunInsightsTour(false);
-      return;
-    }
-    if (data.type === "step:after" && data.index === insightsTourSteps.length - 1) {
-      localStorage.removeItem(`wya_demo_mode_${user.id}`);
-      setIsDemoMode(false);
-      localStorage.setItem(`wya_walkthrough_${user.id}`, "true");
-      localStorage.removeItem(`wya_walkthrough_active_${user.id}`);
-      localStorage.removeItem(`wya_walkthrough_stage_${user.id}`);
-      localStorage.setItem(`wya_walkthrough_profile_${user.id}`, "true");
-      setRunInsightsTour(false);
-      router.push("/profile");
-    }
-  };
+    : EXAMPLE_MICROS.map((m) => ({ ...m, label: "", foodPct: 0, suppPct: 0, hasSupplement: false }));
 
   if (!user) return null;
 
@@ -571,40 +447,8 @@ export default function InsightsScreen() {
 
   return (
     <div className="relative min-h-screen bg-surface">
-      <Joyride
-        steps={insightsTourSteps}
-        run={runInsightsTour && !loadingData}
-        continuous
-        showSkipButton
-        hideCloseButton
-        disableOverlayClose
-        scrollToFirstStep
-        scrollOffset={80}
-        callback={handleInsightsTour}
-        locale={{
-          skip: "Skip",
-          back: "Back",
-          last: "Next",
-          close: "Skip"
-        }}
-        styles={{
-          tooltip: { borderRadius: 16 },
-          options: {
-            primaryColor: "#6FA8FF",
-            textColor: "#1F2937",
-            backgroundColor: "#FFFFFF",
-            arrowColor: "#FFFFFF"
-          },
-          buttonClose: {
-            display: "none"
-          },
-          buttonSkip: {
-            display: "block"
-          }
-        }}
-      />
-      <div className={`mx-auto flex min-h-screen max-w-md flex-col px-5 pb-24 safe-top ${trial.isFree && !isDemoMode ? "blur-sm pointer-events-none select-none" : ""}`}>
-        <header className="mb-6" data-tour="insights-header">
+      <div className={`mx-auto flex min-h-screen max-w-md flex-col px-5 pb-24 safe-top ${trial.isFree ? "blur-sm pointer-events-none select-none" : ""}`}>
+        <header className="mb-6">
           <button
             type="button"
             onClick={() => router.push("/summary")}
@@ -616,7 +460,7 @@ export default function InsightsScreen() {
           <div>
             <h1 className="text-2xl font-semibold text-ink">Nutrition</h1>
             <p className="mt-1 text-sm text-muted/70">Your macros, micronutrients, and intake from your logged meals</p>
-            {!hasEnoughData && !isDemoMode && (
+            {!hasEnoughData && (
               <div className="mt-3 rounded-2xl border border-primary/20 bg-primary/[0.06] px-4 py-3">
                 <div className="flex items-center gap-2">
                   <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-primary/80" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
@@ -651,11 +495,11 @@ export default function InsightsScreen() {
             </div>
             <p className="text-[11px] uppercase tracking-wide text-muted/70">Avg trend</p>
           </div>
-          <div className={`mt-5 flex justify-between${!hasEnoughData && !isDemoMode ? " opacity-50" : ""}`}>
+          <div className={`mt-5 flex justify-between${!hasEnoughData ? " opacity-50" : ""}`}>
             <MacroRing
               label="Calories"
               unit=""
-              value={hasEnoughData ? avgCalories : isDemoMode ? 1840 : 0}
+              value={hasEnoughData ? avgCalories : 0}
               target={gentleTargetsDisplay?.calories ?? 2300}
               animate={barsReady}
               caption="avg"
@@ -663,7 +507,7 @@ export default function InsightsScreen() {
             <MacroRing
               label="Carbs"
               unit="g"
-              value={hasEnoughData ? avgCarbs : isDemoMode ? 180 : 0}
+              value={hasEnoughData ? avgCarbs : 0}
               target={gentleTargetsDisplay?.carbs ?? 277}
               animate={barsReady}
               caption="avg"
@@ -671,7 +515,7 @@ export default function InsightsScreen() {
             <MacroRing
               label="Fats"
               unit="g"
-              value={hasEnoughData ? avgFat : isDemoMode ? 62 : 0}
+              value={hasEnoughData ? avgFat : 0}
               target={gentleTargetsDisplay?.fat ?? 77}
               animate={barsReady}
               caption="avg"
@@ -679,7 +523,7 @@ export default function InsightsScreen() {
             <MacroRing
               label="Protein"
               unit="g"
-              value={hasEnoughData ? avgProtein : isDemoMode ? 148 : 0}
+              value={hasEnoughData ? avgProtein : 0}
               target={gentleTargetsDisplay?.protein ?? 125}
               animate={barsReady}
               caption="avg"
@@ -750,7 +594,7 @@ export default function InsightsScreen() {
         {/* Archived: time-of-day energy chart. Energy is captured once nightly via the
             check-in, so a time-of-day view stays sparse. Kept (disabled) in case it's revived. */}
         {false && (
-        <Card className="mt-3 py-3" data-tour="insights-energy">
+        <Card className="mt-3 py-3">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <p className="text-xs uppercase tracking-wide text-muted/70">Energy</p>
@@ -842,7 +686,7 @@ export default function InsightsScreen() {
           </Card>
         )}
 
-        {(profile?.trackWater || isDemoMode) && (
+        {profile?.trackWater && (
           <Card className="mt-3" style={riseIn(barsReady, 2)}>
             <div className="flex items-center justify-between">
               <p className="text-xs uppercase tracking-wide text-muted/70">Water &middot; 2-Week Average</p>
@@ -857,9 +701,9 @@ export default function InsightsScreen() {
           </Card>
         )}
 
-        <Card className="mt-6" data-tour="insights-micro" style={riseIn(barsReady, 3)}>
+        <Card className="mt-6" style={riseIn(barsReady, 3)}>
           <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-wide text-muted/70" data-tour="insights-micro-title">
+            <p className="text-xs uppercase tracking-wide text-muted/70">
               Micronutrients
             </p>
             <div className="flex items-center gap-3">
@@ -892,9 +736,8 @@ export default function InsightsScreen() {
                   <div className="space-y-4">
                     {catNutrients.map((pattern) => {
                       const globalIdx = displayMicronutrients.findIndex((p) => p.name === pattern.name);
-                      const isFirst = globalIdx === 0;
                       return (
-                        <div key={pattern.name} data-tour={isFirst ? "insights-micro" : undefined}>
+                        <div key={pattern.name}>
                           <div className="flex items-center justify-between">
                             <p className="text-sm text-ink/80">{pattern.name}</p>
                             <button
@@ -902,7 +745,6 @@ export default function InsightsScreen() {
                               className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-ink/20 text-[9px] font-semibold text-muted/60"
                               onClick={() => setActiveNutrient(pattern.name)}
                               aria-label={`About ${pattern.name}`}
-                              data-tour={isFirst ? "insights-i-icon" : undefined}
                             >
                               i
                             </button>
@@ -943,7 +785,7 @@ export default function InsightsScreen() {
       </div>
 
       {/* Paywall overlay — fixed but stops above the nav so nav stays clickable */}
-      {trial.isFree && !isDemoMode && (
+      {trial.isFree && (
         <div className="fixed inset-x-0 top-0 z-20 flex flex-col items-center justify-center px-8 text-center" style={{ bottom: "73px" }}>
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-ink/8 mb-5">
             <svg viewBox="0 0 24 24" className="h-7 w-7 text-ink/40" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
