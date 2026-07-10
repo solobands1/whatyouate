@@ -497,11 +497,13 @@ export default function HomeScreen() {
   // the bell/moon cue any time of day (otherwise it's gated to after 5pm, once a night).
   const [cuePreview, setCuePreview] = useState(false);
   const [fdebug, setFdebug] = useState(false);
+  const [forceGreeting, setForceGreeting] = useState(false);
   useEffect(() => {
     if (typeof window === "undefined") return;
     const p = new URLSearchParams(window.location.search);
     if (p.has("cue")) setCuePreview(true);
     if (p.has("fdebug")) setFdebug(true); // ?fdebug shows each Quick Add row's grouping key
+    if (p.has("greeting")) setForceGreeting(true); // ?greeting forces the time-of-day greeting (dev preview)
   }, []);
   const closeReflection = () => { setShowReflection(false); setReflectionEditMode(false); setReflectionEditingKey(null); };
   const finishReflection = () => {
@@ -2460,6 +2462,27 @@ export default function HomeScreen() {
     return { greeting: "Good Evening", sub: "Better late than never!", phase };
   })();
   const firstName = profile?.firstName || (user as { user_metadata?: Record<string, string> })?.user_metadata?.first_name || "";
+  // The time-of-day greeting is a fallback (rarely shown when a habit/nudge holds the hero).
+  // Extracted so ?greeting can force it for design tweaking.
+  const greetingBlock = (
+    <div className="text-center">
+      <span className="mx-auto mb-1.5 flex h-9 w-9 items-center justify-center text-primary">
+        {welcomeMessage.phase === "morning" ? (
+          <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v3M4.2 10.2l1.4 1.4M1.5 18h2M20.5 18h2M18.4 11.6l1.4-1.4M22.5 22H1.5M8 6l4-4 4 4M16 18a4 4 0 0 0-8 0" /></svg>
+        ) : welcomeMessage.phase === "afternoon" ? (
+          <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4" /></svg>
+        ) : (
+          <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z" /></svg>
+        )}
+      </span>
+      <p className="text-lg font-semibold text-ink">{welcomeMessage.greeting}{firstName ? `, ${firstName}` : ""}</p>
+      <p className="mt-1 text-sm text-muted/60">{welcomeMessage.sub}</p>
+      <button type="button" onClick={startHabitManually} className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-primary/80 transition active:opacity-60">
+        Start a Habit
+        <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
+      </button>
+    </div>
+  );
 
   // Streak saver: detect if yesterday was missed but there's still a saveable streak
   const streakSaverInfo = (() => {
@@ -3074,7 +3097,7 @@ export default function HomeScreen() {
         <Card className="mt-2" style={riseIn(barsReady && habitLoaded, 0)}>
           {/* Hero — dynamic slot. Priority: active habit builder > suggestion > reflection reminder > discovery > wins > greeting (default). Sample habit wired locally for now. */}
           <div data-tour="habit-hero" className={`-mx-4 rounded-2xl border-2 border-primary/25 px-4 ${heroHabit.status === "done" || heroHabit.status === "accepting" ? "bg-primary/10" : "bg-primary/[0.05]"} ${heroHabit.status === "hidden" ? (currentWindowNudge && !trial.isFree && !isDemoMode ? "py-5" : "py-7") : heroHabit.status === "done" && doneStep === "rested" ? "pt-5 pb-3" : "py-5"} ${heroHabit.status === "done" && (doneStep === "celebrate" || doneStep === "feedback") ? "animate-habit-built" : ""} ${(heroHabit.status === "done" && doneStep === "rested") || heroHabit.status === "accepting" ? "animate-habit-glow" : ""} ${(heroHabit.status === "active" && heroHabit.holdDay != null) || (heroHabit.status === "suggested" && !heroExpanded) || (heroHabit.status === "hidden" && !!currentWindowNudge && !nudgeExpanded) ? "animate-habit-shimmer" : ""} ${heroPulse ? "animate-card-pulse" : ""}`}>
-            {heroHabit.status === "suggested" ? (
+            {forceGreeting ? greetingBlock : heroHabit.status === "suggested" ? (
               <div className={heroExpanded ? "" : "animate-habit-note"}>
                 {/* Tap the eyebrow to cycle templates (demo/testing). On first appearance
                     the word bounces once while the card shimmers. */}
@@ -3373,28 +3396,7 @@ export default function HomeScreen() {
                   </div>
                 </div>
               </div>
-            ) : (
-              <div className="text-center">
-                <span className="mx-auto mb-1.5 flex h-9 w-9 items-center justify-center text-primary">
-                  {welcomeMessage.phase === "morning" ? (
-                    // Sunrise
-                    <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v3M4.2 10.2l1.4 1.4M1.5 18h2M20.5 18h2M18.4 11.6l1.4-1.4M22.5 22H1.5M8 6l4-4 4 4M16 18a4 4 0 0 0-8 0" /></svg>
-                  ) : welcomeMessage.phase === "afternoon" ? (
-                    // Full sun
-                    <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4" /></svg>
-                  ) : (
-                    // Moon
-                    <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z" /></svg>
-                  )}
-                </span>
-                <p className="text-lg font-semibold text-ink">{welcomeMessage.greeting}{firstName ? `, ${firstName}` : ""}</p>
-                <p className="mt-1 text-sm text-muted/60">{welcomeMessage.sub}</p>
-                <button type="button" onClick={startHabitManually} className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-primary/80 transition active:opacity-60">
-                  Start a Habit
-                  <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
-                </button>
-              </div>
-            )}
+            ) : greetingBlock}
           </div>
 
           <div data-tour="macros-water">
