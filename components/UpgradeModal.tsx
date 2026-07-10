@@ -173,10 +173,10 @@ export default function UpgradeModal() {
           {/* What's included */}
           <div className="mt-4 w-full rounded-2xl border border-ink/8 bg-white px-5 py-3 space-y-2">
             {[
-              "Food & feeling connections",
-              "Daily coaching nudges",
-              "Macro & micronutrient trends",
-              "AI photo logging",
+              "Food & Feeling Connections",
+              "Daily Coaching Nudges",
+              "Macro & Micronutrient Trends",
+              "AI Photo Logging",
             ].map((item, i) => {
               const hero = i === 0; // the differentiator — the headline reason to pay, so it stands out
               return (
