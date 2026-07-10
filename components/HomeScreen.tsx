@@ -3031,9 +3031,16 @@ export default function HomeScreen() {
           )}
         </header>
 
-        {firstCel && <UnlockCelebrationBanner title={firstCel.title} sub={firstCel.sub} icon={firstCel.icon} onDismiss={dismissFirstCel} />}
-        {dailyHabitBanner && <UnlockCelebrationBanner title="Habit Done For Today!" sub="Keep logging everything else · It helps your Coach learn" icon="spark" onDismiss={() => setDailyHabitBanner(false)} />}
-        {nudgeBanner && <UnlockCelebrationBanner title="New Nudge Available" sub="Your Coach spotted something · See it on Insights" icon="spark" onDismiss={() => setNudgeBanner(false)} />}
+        {/* One top banner at a time, queued by precedence — so e.g. "First Meal" and
+            "Habit Done" don't compete for the same spot. The lower-priority banner's state
+            persists and it slides in the moment the one ahead of it clears. */}
+        {firstCel ? (
+          <UnlockCelebrationBanner title={firstCel.title} sub={firstCel.sub} icon={firstCel.icon} onDismiss={dismissFirstCel} />
+        ) : dailyHabitBanner ? (
+          <UnlockCelebrationBanner title="Habit Done For Today!" sub="Keep logging everything else · It helps your Coach learn" icon="spark" onDismiss={() => setDailyHabitBanner(false)} />
+        ) : nudgeBanner ? (
+          <UnlockCelebrationBanner title="New Nudge Available" sub="Your Coach spotted something · See it on Insights" icon="spark" onDismiss={() => setNudgeBanner(false)} />
+        ) : null}
 
         {/* Trial progress / expired banner + optional profile nudge */}
         {(() => {
