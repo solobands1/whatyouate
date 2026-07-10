@@ -331,7 +331,7 @@ function ManualDateRow({ manualDate, setManualDate }: { manualDate: string; setM
 export default function HomeScreen() {
   const router = useRouter();
   const { user, loading } = useAuth();
-  const { profile: ctxProfile, meals: ctxMeals, workouts: ctxWorkouts, feelLogs: ctxFeelLogs, weightLogs: ctxWeightLogs, reflections: ctxReflections, habitHistory: ctxHabitHistory, waterLogs: ctxWaterLogs, habitState: ctxHabitState, setWeightLogs, nudges, nudgesLoaded, loading: dataLoading, reload } = useAppData();
+  const { profile: ctxProfile, meals: ctxMeals, workouts: ctxWorkouts, feelLogs: ctxFeelLogs, weightLogs: ctxWeightLogs, reflections: ctxReflections, habitHistory: ctxHabitHistory, waterLogs: ctxWaterLogs, habitState: ctxHabitState, setHabitState, setWeightLogs, nudges, nudgesLoaded, loading: dataLoading, reload } = useAppData();
   const trial = useTrialStatus();
 
   const [profile, setProfile] = useState<UserProfile | undefined>(undefined);
@@ -881,6 +881,7 @@ export default function HomeScreen() {
     }
     const next: HabitState = { ...habitStateRef.current, builder };
     habitStateRef.current = next;
+    setHabitState(next); // keep the shared context in sync so a nav-away + back doesn't revert
     void saveHabitState(user.id, next);
   }, [heroHabit, activeTemplate, isDemoMode, user]);
 
@@ -904,6 +905,7 @@ export default function HomeScreen() {
     };
     const next: HabitState = { ...markHabitEnded(habitStateRef.current, tmpl.id, tmpl.cooldownDays), builder: doneBuilder };
     habitStateRef.current = next;
+    setHabitState(next); // keep the shared context in sync so a nav-away + back doesn't revert
     void saveHabitState(user.id, next);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [heroHabit.status, isDemoMode, user]);
@@ -925,6 +927,7 @@ export default function HomeScreen() {
       if (cur.builder?.status === "done") {
         const next: HabitState = { ...cur, builder: { ...cur.builder, keptAnswer: keep } };
         habitStateRef.current = next;
+        setHabitState(next);
         await saveHabitState(user.id, next);
       }
     })();
@@ -940,6 +943,7 @@ export default function HomeScreen() {
       ? declineSuggestion(habitStateRef.current, activeTemplate.id, activeTemplate.cooldownDays)
       : snoozeSuggestion(habitStateRef.current, activeTemplate.id, activeTemplate.cooldownDays);
     habitStateRef.current = next;
+    setHabitState(next); // keep the shared context in sync so a nav-away + back doesn't revert
     void saveHabitState(user.id, next);
   };
 
@@ -956,6 +960,7 @@ export default function HomeScreen() {
     const r = resolveBuilderForToday(b, activeTemplate.durationDays, activeTemplate.maxExtensions, todayKey());
     const next: HabitState = { ...habitStateRef.current, builder: extendBuilder(b, Math.max(1, r.missed), todayKey()) };
     habitStateRef.current = next;
+    setHabitState(next); // keep the shared context in sync so a nav-away + back doesn't revert
     void saveHabitState(user.id, next);
   };
 
