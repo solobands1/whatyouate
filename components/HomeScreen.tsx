@@ -2452,11 +2452,12 @@ export default function HomeScreen() {
 
   const welcomeMessage = (() => {
     const hasEverLogged = displayMeals.some((m) => m.analysisJson?.source !== "supplement" && m.status !== "failed");
-    if (!hasEverLogged) return { greeting: "Welcome!", sub: "Log Your First Meal!" };
     const hour = new Date().getHours();
-    if (hour < 12) return { greeting: "Good Morning", sub: "Let's make today count!" };
-    if (hour < 17) return { greeting: "Good Afternoon", sub: "Let's log and improve!" };
-    return { greeting: "Good Evening", sub: "Better late than never!" };
+    const phase: "morning" | "afternoon" | "evening" = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
+    if (!hasEverLogged) return { greeting: "Welcome!", sub: "Log Your First Meal!", phase };
+    if (hour < 12) return { greeting: "Good Morning", sub: "Let's make today count!", phase };
+    if (hour < 17) return { greeting: "Good Afternoon", sub: "Let's log and improve!", phase };
+    return { greeting: "Good Evening", sub: "Better late than never!", phase };
   })();
   const firstName = profile?.firstName || (user as { user_metadata?: Record<string, string> })?.user_metadata?.first_name || "";
 
@@ -3356,7 +3357,7 @@ export default function HomeScreen() {
               <div className={`relative ${nudgeExpanded ? "" : "animate-habit-note"}`}>
                 <p className={`-mt-2 text-center text-xs font-semibold uppercase tracking-wide text-primary ${nudgeExpanded ? "" : "animate-habit-bounce"}`}>Nudge</p>
                 {currentWindowNudge.created_at && (
-                  <span className="absolute -top-2 right-0 text-[10px] text-muted/50">
+                  <span className="absolute -top-1 right-0 text-[10px] text-muted/50">
                     {(() => {
                       const d = new Date(currentWindowNudge.created_at);
                       return sameLocalDay(currentWindowNudge.created_at, new Date())
@@ -3374,6 +3375,18 @@ export default function HomeScreen() {
               </div>
             ) : (
               <div className="text-center">
+                <span className="mx-auto mb-1.5 flex h-9 w-9 items-center justify-center text-primary">
+                  {welcomeMessage.phase === "morning" ? (
+                    // Sunrise
+                    <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v3M4.2 10.2l1.4 1.4M1.5 18h2M20.5 18h2M18.4 11.6l1.4-1.4M22.5 22H1.5M8 6l4-4 4 4M16 18a4 4 0 0 0-8 0" /></svg>
+                  ) : welcomeMessage.phase === "afternoon" ? (
+                    // Full sun
+                    <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4" /></svg>
+                  ) : (
+                    // Moon
+                    <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z" /></svg>
+                  )}
+                </span>
                 <p className="text-lg font-semibold text-ink">{welcomeMessage.greeting}{firstName ? `, ${firstName}` : ""}</p>
                 <p className="mt-1 text-sm text-muted/60">{welcomeMessage.sub}</p>
                 <button type="button" onClick={startHabitManually} className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-primary/80 transition active:opacity-60">
