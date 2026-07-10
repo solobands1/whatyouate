@@ -2462,10 +2462,10 @@ export default function HomeScreen() {
 
   const hasEverLogged = displayMeals.some((m) => m.analysisJson?.source !== "supplement" && m.status !== "failed");
   const greetingCopyFor = (phase: "morning" | "afternoon" | "evening") => {
-    if (!hasEverLogged) return { greeting: "Welcome!", sub: "Log Your First Meal!" };
-    if (phase === "morning") return { greeting: "Good Morning", sub: "Let's make today count!" };
-    if (phase === "afternoon") return { greeting: "Good Afternoon", sub: "Let's log and improve!" };
-    return { greeting: "Good Evening", sub: "Better late than never!" };
+    if (!hasEverLogged) return { greeting: "Welcome", sub: "Log Your First Meal!", exclaim: true };
+    if (phase === "morning") return { greeting: "Good Morning", sub: "Let's make today count!", exclaim: false };
+    if (phase === "afternoon") return { greeting: "Good Afternoon", sub: "Let's log and improve!", exclaim: false };
+    return { greeting: "Good Evening", sub: "Better late than never!", exclaim: false };
   };
   const welcomeMessage = (() => {
     const hour = new Date().getHours();
@@ -2487,7 +2487,7 @@ export default function HomeScreen() {
     return (
       <div className="text-center">
         <span className="mx-auto mb-1.5 flex h-10 w-10 items-center justify-center text-primary">{greetingIcon(phase)}</span>
-        <p className="text-lg font-semibold text-ink">{copy.greeting}{firstName ? ` ${firstName}` : ""}</p>
+        <p className="text-lg font-semibold text-ink">{copy.greeting}{firstName ? ` ${firstName}` : ""}{copy.exclaim ? "!" : ""}</p>
         <p className="mt-1 text-sm text-muted/60">{copy.sub}</p>
       </div>
     );
