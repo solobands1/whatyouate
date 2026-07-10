@@ -4,6 +4,8 @@ import { buildSmartNudgeContext } from "../../../../lib/digestEngine";
 import { buildWeeklySummaryPrompt, sanitizeNudgeFields, WEEKLY_SUMMARY_SYSTEM_PROMPT } from "../../../../lib/nudgeGen";
 import { sendPush } from "../../../../lib/apns";
 import type { MealLog, WorkoutSession, UserProfile, SupplementEntry } from "../../../../lib/types";
+import { isTrialEligible } from "../../../../lib/trial";
+import { checkProEntitlement } from "../../../../lib/entitlement";
 
 export const maxDuration = 300;
 
@@ -89,35 +91,6 @@ function mapProfileRow(data: Record<string, unknown>): UserProfile {
   };
 }
 
-const UNLIMITED_USER_IDS = new Set([
-  "4ef35614-32ec-4a17-b410-f4c31437c1bc", // Dillon
-  "b2d6d7a6-a147-4dfb-9750-375d070cccbf", // Andrea
-  "973c0886-cd6f-4813-8a3c-4ded80bfa09c", // Apple review demo
-]);
-
-async function checkProEntitlement(userId: string): Promise<boolean> {
-  if (UNLIMITED_USER_IDS.has(userId)) return true;
-  try {
-    const res = await fetch(
-      `https://api.revenuecat.com/v1/subscribers/${encodeURIComponent(userId)}`,
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.REVENUECAT_SECRET_KEY}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-    if (!res.ok) return false;
-    const data = await res.json();
-    const entitlement = data.subscriber?.entitlements?.pro;
-    if (!entitlement) return false;
-    const expires = entitlement.expires_date;
-    if (!expires) return true;
-    return new Date(expires) > new Date();
-  } catch {
-    return false;
-  }
-}
 
 async function generateWeeklySummary(ctx: Record<string, unknown>): Promise<{ message: string } | null> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -218,12 +191,17 @@ export async function GET(req: Request) {
         .limit(1);
       if (existingWeeklySummary?.length) continue;
 
-      const isPro = await checkProEntitlement(userId);
-      if (!isPro) continue;
+      // Load meals up front so we can check free-trial eligibility from them.
+      const { data: mealRows } = await supabase.from("meals").select("*").eq("user_id", userId).gte("created_at", sixtyDaysAgo).order("ts", { ascending: false });
+      const meals = (mealRows ?? []).map(mapMealRow).filter(Boolean) as MealLog[];
+
+      // Weekly summary runs for active free-trial users OR paid users. Trial is
+      // derived from meals and checked first, skipping the RevenueCat call for them.
+      const eligible = isTrialEligible(meals, Date.now()) || (await checkProEntitlement(userId));
+      if (!eligible) continue;
 
       const sevenDaysAgoDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-      const [mealsRes, workoutsRes, profileRes, feelRes, weightRes, stepsRes, sleepRes] = await Promise.all([
-        supabase.from("meals").select("*").eq("user_id", userId).gte("created_at", sixtyDaysAgo).order("ts", { ascending: false }),
+      const [workoutsRes, profileRes, feelRes, weightRes, stepsRes, sleepRes] = await Promise.all([
         supabase.from("workouts").select("*").eq("user_id", userId).gte("created_at", sixtyDaysAgo),
         supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle(),
         supabase.from("feel_logs").select("ts, tag").eq("user_id", userId).order("ts", { ascending: false }).limit(10),
@@ -233,8 +211,6 @@ export async function GET(req: Request) {
       ]);
 
       if (!profileRes.data) continue;
-
-      const meals = (mealsRes.data ?? []).map(mapMealRow).filter(Boolean) as MealLog[];
 
       // Require at least 3 logged days in the past 7 days
       const sevenDaysAgoMs = Date.now() - 7 * 24 * 60 * 60 * 1000;

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { sendPush } from "../../../../lib/apns";
+import { isTrialEligible, type TrialMeal } from "../../../../lib/trial";
+import { checkProEntitlement } from "../../../../lib/entitlement";
 
 export const maxDuration = 60;
 
@@ -29,27 +31,14 @@ function getUserLocalHour(timezoneOffsetMinutes: number | undefined): number {
   return new Date(localMs).getUTCHours();
 }
 
-async function checkProEntitlement(userId: string): Promise<boolean> {
-  try {
-    const res = await fetch(
-      `https://api.revenuecat.com/v1/subscribers/${encodeURIComponent(userId)}`,
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.REVENUECAT_SECRET_KEY}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-    if (!res.ok) return false;
-    const data = await res.json();
-    const entitlement = data.subscriber?.entitlements?.pro;
-    if (!entitlement) return false;
-    const expires = entitlement.expires_date;
-    if (!expires) return true;
-    return new Date(expires) > new Date();
-  } catch {
-    return false;
-  }
+// Minimal row → TrialMeal mapping (matches the other crons: requires an analyzed
+// meal). Only the fields the trial math needs (ts, status, source) are selected.
+function mapReminderMeal(row: Record<string, unknown>): TrialMeal | null {
+  const analysis = row.analysis_json as Record<string, unknown> | null;
+  if (!analysis?.estimated_ranges) return null;
+  const tsRaw = Number(row.ts);
+  const ts = Number.isFinite(tsRaw) && tsRaw > 0 ? tsRaw : new Date(row.created_at as string).getTime();
+  return { ts, status: (row.status as string) ?? "done", analysisJson: { source: (analysis.source as string) ?? undefined } };
 }
 
 // Compute start-of-today in the user's local timezone using their stored offset.
@@ -76,6 +65,7 @@ export async function GET(req: Request) {
   const supabase = adminClient();
   const now = new Date();
   const eightHoursAgo = new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString();
+  const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
 
   const { data: tokens } = await supabase
     .from("push_tokens")
@@ -88,9 +78,6 @@ export async function GET(req: Request) {
 
   for (const userId of userIds) {
     try {
-      const isPro = await checkProEntitlement(userId);
-      if (!isPro) continue;
-
       // Skip if any nudge (smart or reminder) was sent in the last 8 hours
       const { data: recentReminder } = await supabase
         .from("nudges")
@@ -122,6 +109,19 @@ export async function GET(req: Request) {
         .neq("status", "failed")
         .limit(1);
       if (todayMeals?.length) continue;
+
+      // Eligibility last (most expensive): the reminder goes to active free-trial
+      // users OR paid users. Trial is derived from meal history and checked first,
+      // skipping the RevenueCat call for trial-active users.
+      const { data: histRows } = await supabase
+        .from("meals")
+        .select("ts, created_at, status, analysis_json")
+        .eq("user_id", userId)
+        .gte("created_at", sixtyDaysAgo)
+        .order("ts", { ascending: false });
+      const histMeals = (histRows ?? []).map(mapReminderMeal).filter(Boolean) as TrialMeal[];
+      const eligible = isTrialEligible(histMeals, Date.now()) || (await checkProEntitlement(userId));
+      if (!eligible) continue;
 
       const message = getRandomReminder();
 

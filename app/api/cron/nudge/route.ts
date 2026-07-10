@@ -5,6 +5,8 @@ import { buildReflectionSummary } from "../../../../lib/changes";
 import { buildSmartPrompt, sanitizeNudgeFields, SMART_NUDGE_SYSTEM_PROMPT } from "../../../../lib/nudgeGen";
 import { sendPush } from "../../../../lib/apns";
 import type { MealLog, WorkoutSession, UserProfile, SupplementEntry } from "../../../../lib/types";
+import { isTrialEligible } from "../../../../lib/trial";
+import { checkProEntitlement } from "../../../../lib/entitlement";
 
 export const maxDuration = 300;
 
@@ -81,36 +83,6 @@ function mapProfileRow(data: Record<string, unknown>): UserProfile {
     trackWater: (data.track_water as boolean) ?? false,
     waterUnit: data.water_unit === "oz" ? "oz" : "ml",
   };
-}
-
-const UNLIMITED_USER_IDS = new Set([
-  "4ef35614-32ec-4a17-b410-f4c31437c1bc", // Dillon
-  "b2d6d7a6-a147-4dfb-9750-375d070cccbf", // Andrea
-  "973c0886-cd6f-4813-8a3c-4ded80bfa09c", // Apple review demo
-]);
-
-async function checkProEntitlement(userId: string): Promise<boolean> {
-  if (UNLIMITED_USER_IDS.has(userId)) return true;
-  try {
-    const res = await fetch(
-      `https://api.revenuecat.com/v1/subscribers/${encodeURIComponent(userId)}`,
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.REVENUECAT_SECRET_KEY}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-    if (!res.ok) return false;
-    const data = await res.json();
-    const entitlement = data.subscriber?.entitlements?.pro;
-    if (!entitlement) return false;
-    const expires = entitlement.expires_date;
-    if (!expires) return true;
-    return new Date(expires) > new Date();
-  } catch {
-    return false;
-  }
 }
 
 function extractRecentFoods(meals: MealLog[]): string[] {
@@ -253,12 +225,19 @@ export async function GET(req: Request) {
         .limit(1);
       if (recentNudgeCheck?.length) { console.log(`[cron/nudge] skip ${userId.slice(0,8)}: nudge already sent in last 4h`); continue; }
 
-      const isPro = await checkProEntitlement(userId);
-      if (!isPro) { console.log(`[cron/nudge] skip ${userId.slice(0,8)}: not pro`); continue; }
+      // Load meals up front so we can check free-trial eligibility from them.
+      const { data: mealRows } = await supabase.from("meals").select("*").eq("user_id", userId).gte("created_at", sixtyDaysAgo).order("ts", { ascending: false });
+      const meals = (mealRows ?? []).map(mapMealRow).filter(Boolean) as MealLog[];
+
+      // The coach runs for active free-trial users OR paid users. Trial is derived
+      // from meals (free) and checked first, so we skip the RevenueCat call for them.
+      const eligible = isTrialEligible(meals, Date.now()) || (await checkProEntitlement(userId));
+      if (!eligible) { console.log(`[cron/nudge] skip ${userId.slice(0,8)}: not in trial and not pro`); continue; }
+
+      if (meals.length < 5) { console.log(`[cron/nudge] skip ${userId.slice(0,8)}: only ${meals.length} meals (need 5)`); continue; }
 
       const sevenDaysAgoDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-      const [mealsRes, workoutsRes, profileRes, nudgesRes, feelRes, weightRes, stepsRes, sleepRes] = await Promise.all([
-        supabase.from("meals").select("*").eq("user_id", userId).gte("created_at", sixtyDaysAgo).order("ts", { ascending: false }),
+      const [workoutsRes, profileRes, nudgesRes, feelRes, weightRes, stepsRes, sleepRes] = await Promise.all([
         supabase.from("workouts").select("*").eq("user_id", userId).gte("created_at", sixtyDaysAgo),
         supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle(),
         supabase.from("nudges").select("type, message, created_at, suggestions").eq("user_id", userId).order("created_at", { ascending: false }).limit(14),
@@ -269,9 +248,6 @@ export async function GET(req: Request) {
       ]);
 
       if (!profileRes.data) { console.log(`[cron/nudge] skip ${userId.slice(0,8)}: no profile row`); continue; }
-
-      const meals = (mealsRes.data ?? []).map(mapMealRow).filter(Boolean) as MealLog[];
-      if (meals.length < 5) { console.log(`[cron/nudge] skip ${userId.slice(0,8)}: only ${meals.length} meals (need 5)`); continue; }
 
       const workouts = (workoutsRes.data ?? []).map(mapWorkoutRow);
       const profile = mapProfileRow(profileRes.data as Record<string, unknown>);
