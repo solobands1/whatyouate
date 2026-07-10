@@ -3039,28 +3039,35 @@ export default function HomeScreen() {
         {(() => {
           return (
             <>
-              {!isDemoMode && trial.isTrialActive && (
-                <div className="mt-2">
-                  <button
-                    type="button"
-                    onClick={openUpgradeModal}
-                    className="w-full rounded-xl border border-primary/15 bg-primary/[0.08] px-4 py-2.5 text-left transition active:opacity-70"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-[12px] font-medium text-ink/60">
-                        Free Trial · Day {trial.currentDay} of 7
-                      </span>
-                      <span className="text-[11px] text-primary/70 font-medium">See Plans</span>
-                    </div>
-                    <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-ink/10">
-                      <div
-                        className="h-full rounded-full bg-primary/50 transition-all"
-                        style={{ width: `${(trial.currentDay / 7) * 100}%` }}
-                      />
-                    </div>
-                  </button>
-                </div>
-              )}
+              {!isDemoMode && trial.isTrialActive && (() => {
+                // Progress toward the "core picture" (5 logged days), not a fixed 7-day
+                // calendar — matches the behavior-based trial wall.
+                const loggedDays = countLoggedDays(ctxMeals);
+                const built = loggedDays >= 5;
+                const pct = Math.min(loggedDays / 5, 1) * 100;
+                return (
+                  <div className="mt-2">
+                    <button
+                      type="button"
+                      onClick={openUpgradeModal}
+                      className="w-full rounded-xl border border-primary/15 bg-primary/[0.08] px-4 py-2.5 text-left transition active:opacity-70"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-[12px] font-medium text-ink/60">
+                          {built ? "Free Trial · Your Picture Is Ready" : "Free Trial · Building Your Picture"}
+                        </span>
+                        <span className="text-[11px] text-primary/70 font-medium">See Plans</span>
+                      </div>
+                      <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-ink/10">
+                        <div
+                          className="h-full rounded-full bg-primary/50 transition-all"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </button>
+                  </div>
+                );
+              })()}
               {!isDemoMode && trial.isFree && (
                 <div className="mt-2">
                   <button
