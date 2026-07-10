@@ -2459,36 +2459,52 @@ export default function HomeScreen() {
     return hasMeal || hasWorkout || hasFeelLog;
   })();
 
+  const hasEverLogged = displayMeals.some((m) => m.analysisJson?.source !== "supplement" && m.status !== "failed");
+  const greetingCopyFor = (phase: "morning" | "afternoon" | "evening") => {
+    if (!hasEverLogged) return { greeting: "Welcome!", sub: "Log Your First Meal!" };
+    if (phase === "morning") return { greeting: "Good Morning", sub: "Let's make today count!" };
+    if (phase === "afternoon") return { greeting: "Good Afternoon", sub: "Let's log and improve!" };
+    return { greeting: "Good Evening", sub: "Better late than never!" };
+  };
   const welcomeMessage = (() => {
-    const hasEverLogged = displayMeals.some((m) => m.analysisJson?.source !== "supplement" && m.status !== "failed");
     const hour = new Date().getHours();
     const phase: "morning" | "afternoon" | "evening" = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
-    if (!hasEverLogged) return { greeting: "Welcome!", sub: "Log Your First Meal!", phase };
-    if (hour < 12) return { greeting: "Good Morning", sub: "Let's make today count!", phase };
-    if (hour < 17) return { greeting: "Good Afternoon", sub: "Let's log and improve!", phase };
-    return { greeting: "Good Evening", sub: "Better late than never!", phase };
+    return { ...greetingCopyFor(phase), phase };
   })();
   const firstName = profile?.firstName || (user as { user_metadata?: Record<string, string> })?.user_metadata?.first_name || "";
   // The time-of-day greeting is a fallback (rarely shown when a habit/nudge holds the hero).
-  // Extracted so ?greeting can force it for design tweaking.
+  const greetingIcon = (phase: "morning" | "afternoon" | "evening") =>
+    phase === "morning" ? (
+      <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v3M4.2 10.2l1.4 1.4M1.5 18h2M20.5 18h2M18.4 11.6l1.4-1.4M22.5 22H1.5M8 6l4-4 4 4M16 18a4 4 0 0 0-8 0" /></svg>
+    ) : phase === "afternoon" ? (
+      <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4" /></svg>
+    ) : (
+      <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z" /></svg>
+    );
+  const makeGreeting = (phase: "morning" | "afternoon" | "evening") => {
+    const copy = greetingCopyFor(phase);
+    return (
+      <div className="text-center">
+        <span className="mx-auto mb-1.5 flex h-9 w-9 items-center justify-center text-primary">{greetingIcon(phase)}</span>
+        <p className="text-lg font-semibold text-ink">{copy.greeting}{firstName ? `, ${firstName}` : ""}</p>
+        <p className="mt-1 text-sm text-muted/60">{copy.sub}</p>
+        <button type="button" onClick={startHabitManually} className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-primary/80 transition active:opacity-60">
+          Start a Habit
+          <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
+        </button>
+      </div>
+    );
+  };
   const greetingPhase = forceGreetingPhase ?? welcomeMessage.phase;
-  const greetingBlock = (
-    <div className="text-center">
-      <span className="mx-auto mb-1.5 flex h-9 w-9 items-center justify-center text-primary">
-        {greetingPhase === "morning" ? (
-          <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v3M4.2 10.2l1.4 1.4M1.5 18h2M20.5 18h2M18.4 11.6l1.4-1.4M22.5 22H1.5M8 6l4-4 4 4M16 18a4 4 0 0 0-8 0" /></svg>
-        ) : greetingPhase === "afternoon" ? (
-          <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4" /></svg>
-        ) : (
-          <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z" /></svg>
-        )}
-      </span>
-      <p className="text-lg font-semibold text-ink">{welcomeMessage.greeting}{firstName ? `, ${firstName}` : ""}</p>
-      <p className="mt-1 text-sm text-muted/60">{welcomeMessage.sub}</p>
-      <button type="button" onClick={startHabitManually} className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-primary/80 transition active:opacity-60">
-        Start a Habit
-        <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
-      </button>
+  const greetingBlock = makeGreeting(greetingPhase);
+  // TEMP preview: render all three greetings stacked so the morning/afternoon/evening look can
+  // be confirmed on dev regardless of the clock/nudge. Flip PREVIEW_GREETINGS to false to restore.
+  const PREVIEW_GREETINGS = true;
+  const greetingPreviewAll = (
+    <div className="space-y-8 py-2">
+      {(["morning", "afternoon", "evening"] as const).map((p) => (
+        <div key={p}>{makeGreeting(p)}</div>
+      ))}
     </div>
   );
 
@@ -3105,7 +3121,7 @@ export default function HomeScreen() {
         <Card className="mt-2" style={riseIn(barsReady && habitLoaded, 0)}>
           {/* Hero — dynamic slot. Priority: active habit builder > suggestion > reflection reminder > discovery > wins > greeting (default). Sample habit wired locally for now. */}
           <div data-tour="habit-hero" className={`-mx-4 rounded-2xl border-2 border-primary/25 px-4 ${heroHabit.status === "done" || heroHabit.status === "accepting" ? "bg-primary/10" : "bg-primary/[0.05]"} ${heroHabit.status === "hidden" ? (currentWindowNudge && !trial.isFree && !isDemoMode ? "py-5" : "py-7") : heroHabit.status === "done" && doneStep === "rested" ? "pt-5 pb-3" : "py-5"} ${heroHabit.status === "done" && (doneStep === "celebrate" || doneStep === "feedback") ? "animate-habit-built" : ""} ${(heroHabit.status === "done" && doneStep === "rested") || heroHabit.status === "accepting" ? "animate-habit-glow" : ""} ${(heroHabit.status === "active" && heroHabit.holdDay != null) || (heroHabit.status === "suggested" && !heroExpanded) || (heroHabit.status === "hidden" && !!currentWindowNudge && !nudgeExpanded) ? "animate-habit-shimmer" : ""} ${heroPulse ? "animate-card-pulse" : ""}`}>
-            {forceGreeting ? greetingBlock : heroHabit.status === "suggested" ? (
+            {PREVIEW_GREETINGS ? greetingPreviewAll : forceGreeting ? greetingBlock : heroHabit.status === "suggested" ? (
               <div className={heroExpanded ? "" : "animate-habit-note"}>
                 {/* Tap the eyebrow to cycle templates (demo/testing). On first appearance
                     the word bounces once while the card shimmers. */}
