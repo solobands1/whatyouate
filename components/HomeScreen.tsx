@@ -2476,7 +2476,7 @@ export default function HomeScreen() {
   // The time-of-day greeting is a fallback (rarely shown when a habit/nudge holds the hero).
   const greetingIcon = (phase: "morning" | "afternoon" | "evening") =>
     phase === "morning" ? (
-      <svg viewBox="0 0 24 24" className="h-9 w-9" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v2M4.9 7.9l1.4 1.4M19.1 7.9l-1.4 1.4M2 15h2M20 15h2M8.1 16A4 4 0 1 1 15.9 16" /><path strokeWidth="1.3" d="M1.5 16h21M7 19h10" /></svg>
+      <svg viewBox="0 0 24 24" className="h-9 w-9" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v2M4.9 7.9l1.4 1.4M19.1 7.9l-1.4 1.4M4.4 12.5l-1.9-0.6M19.6 12.5l1.9-0.6M8.1 16A4 4 0 1 1 15.9 16" /><path strokeWidth="1.3" d="M1.5 16h21M7 19h10" /></svg>
     ) : phase === "afternoon" ? (
       <svg viewBox="0 0 24 24" className="h-9 w-9" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4" /></svg>
     ) : (
