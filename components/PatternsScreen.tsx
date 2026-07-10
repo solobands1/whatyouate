@@ -15,6 +15,8 @@ import { computeDaysCompared } from "../lib/dayCompare";
 import { computeFoodFeelingLinks, type FoodFeelingLink } from "../lib/foodFeeling";
 import { computeActiveChanges, type ActiveChange } from "../lib/changes";
 import { getChangeStatuses, setChangeStatus } from "../lib/changeStatus";
+import { useTrialStatus } from "../hooks/useTrialStatus";
+import { openUpgradeModal } from "./UpgradeModal";
 
 const METRIC_LABEL: Record<string, string> = { energy: "energy", sleep: "sleep", mood: "mood", stress: "stress", digestion: "digestion" };
 function changeEffectLine(c: Pick<ActiveChange, "targetKey" | "effect">): string | null {
@@ -106,6 +108,7 @@ const DOT_LEGEND = (
 
 export default function PatternsScreen() {
   const { user } = useAuth();
+  const trial = useTrialStatus();
   const { reflections, habitHistory, meals, workouts, loading: loadingData } = useAppData();
   const facts = useMemo(() => computeReflectionFacts(reflections), [reflections]);
   const daysCompared = useMemo(() => computeDaysCompared(reflections, meals, workouts), [reflections, meals, workouts]);
@@ -205,6 +208,10 @@ export default function PatternsScreen() {
   // cards, completed habits for the habits card, etc.), so no card ever just disappears.
   // Example data + a "Preview" label until that card has enough; demo shows it unlabeled.
   const demo = isDemoMode;
+  // Post-trial (walled) users keep their own data (energy views) but the coach's
+  // food->feeling analysis is the paid product — locked, with the live connection count.
+  const locked = !demo && trial.isFree;
+  const connectionCount = foodLinks.length + discoveries.length;
 
   // Trend cards (headline, energy) need a few reflections before there's anything real.
   const fewRefl = facts.total < 3;
@@ -289,7 +296,7 @@ export default function PatternsScreen() {
         <header className="mb-6">
           <h1 className="text-2xl font-semibold text-ink">Patterns</h1>
           <p className="mt-1 text-sm text-muted/70">What seems to affect how you feel</p>
-          {!demo && fewRefl && (
+          {!demo && !locked && fewRefl && (
             <div className="mt-3 rounded-2xl border border-primary/20 bg-primary/[0.06] px-4 py-3">
               <div className="flex items-center gap-2">
                 <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-primary/80" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
@@ -307,7 +314,35 @@ export default function PatternsScreen() {
         </header>
 
         {/* What the coach is noticing — the headline plus the strongest observed
-            associations (food->feeling links + reflection discoveries), capped at 2. */}
+            associations. Walled (post-trial) users get a lock with the live connection
+            count instead: the coach's analysis is the paid product. */}
+        {locked ? (
+          <Card className="relative" style={riseIn(ready, 0)}>
+            <Eyebrow>Food &amp; Feeling</Eyebrow>
+            <div className="mt-3 flex items-start gap-3">
+              <div className="-mt-1 shrink-0"><WyaaAvatar size={40} /></div>
+              <p className="text-[15px] font-medium leading-relaxed text-ink/90">
+                {connectionCount > 0
+                  ? `Your coach has found ${connectionCount} connection${connectionCount !== 1 ? "s" : ""} between your food and how you feel.`
+                  : "Your coach is connecting your food to how you feel."}
+              </p>
+            </div>
+            <div className="mt-4 rounded-xl border border-primary/20 bg-primary/[0.06] px-4 py-3.5">
+              <p className="text-sm leading-relaxed text-ink/80">
+                {connectionCount > 0
+                  ? "Unlock Pro to see them, plus your weekly trends and what sets your best days apart. They keep sharpening the more you log."
+                  : "Keep logging and reflecting, then unlock Pro to see the connections as your coach finds them."}
+              </p>
+              <button
+                type="button"
+                onClick={openUpgradeModal}
+                className="mt-3 w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white transition active:scale-[0.98]"
+              >
+                Unlock Pro
+              </button>
+            </div>
+          </Card>
+        ) : (
         <Card className="relative" data-tour="patterns-coach" style={riseIn(ready, 0)}>
           <Eyebrow>What Your Coach Is Noticing</Eyebrow>
           <div className="mt-3 flex items-start gap-3">
@@ -338,6 +373,7 @@ export default function PatternsScreen() {
             <p className="mt-3 text-[11px] leading-relaxed text-muted/50">Associations from your reflections and meals, not proven causes.</p>
           )}
         </Card>
+        )}
         </div>
 
         {/* Energy trend */}
@@ -364,7 +400,7 @@ export default function PatternsScreen() {
         </Card>
 
         {/* Compared to last week */}
-        {(
+        {!locked && (
           <Card className="mt-6" style={riseIn(ready, 3)}>
             <Eyebrow>Compared To Last Week</Eyebrow>
             <p className="mt-1 text-sm text-muted/65">How your energy, sleep, and mood compare to last week</p>
@@ -395,6 +431,7 @@ export default function PatternsScreen() {
         )}
 
         {/* What tends to help vs not — behavioral comparison (preview until we compute it) */}
+        {!locked && (
         <Card className="mt-6" style={riseIn(ready, 3)}>
           <Eyebrow>Your Days Compared</Eyebrow>
           <p className="mt-1 text-sm text-muted/65">What tends to set your better days apart</p>
@@ -441,6 +478,7 @@ export default function PatternsScreen() {
             </ul>
           </div>
         </Card>
+        )}
 
         {/* When energy dips */}
         {(
@@ -472,7 +510,7 @@ export default function PatternsScreen() {
         )}
 
         {/* Changes you're making — kept habits + whether the metric they target improved */}
-        {(
+        {!locked && (
           <Card className="mt-6" style={riseIn(ready, 6)}>
             <Eyebrow>Changes You&apos;re Making</Eyebrow>
             <p className="mt-1 text-sm text-muted/65">Habits you kept, and whether they seem to be helping</p>
