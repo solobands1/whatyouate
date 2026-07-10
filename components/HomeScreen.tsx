@@ -31,7 +31,7 @@ import WaterBar from "./WaterBar";
 import { useAuth } from "./AuthProvider";
 import { useAppData } from "./AppDataProvider";
 import { useUnlockCelebration, UnlockCelebrationBanner } from "./UnlockCelebration";
-import { countLoggedDays } from "../lib/trial";
+import { countLoggedDays, hasEnoughDataForPatterns } from "../lib/trial";
 import {
   addMeal,
   clearMealsCache,
@@ -2431,8 +2431,8 @@ export default function HomeScreen() {
     { key: "firstMeal", title: "You Logged Your First Meal!", sub: "Nice start. Every log teaches your coach what works for you.", unlocked: !isDemoMode && mealCount >= 1, icon: "spark" },
     { key: "firstReflection", title: "You Finished Your First Nightly Reflection!", sub: "This is how your coach learns to connect your food to how you feel.", unlocked: !isDemoMode && ((ctxReflections?.length ?? 0) >= 1 || !!todayReflection), icon: "spark" },
     { key: "nudges", title: "Nudges Just Opened Up", sub: "Your coach can now send you personalized nudges.", unlocked: !isDemoMode && mealCount >= 5, icon: "unlock" },
-    { key: "patterns", title: "Your Patterns Just Opened Up", sub: "Your coach is starting to connect your food to how you feel.", unlocked: !isDemoMode && (ctxReflections?.length ?? 0) >= 3, icon: "unlock" },
-    { key: "fullTrends", title: "Full Trends Just Opened Up", sub: "Two weeks in. Full week-to-week trends are here.", unlocked: !isDemoMode && countLoggedDays(ctxMeals ?? []) >= 14, icon: "unlock" },
+    { key: "nutrition", title: "Your Nutrition Just Opened Up", sub: "Your macros, micronutrients, and trends are filling in.", unlocked: !isDemoMode && hasEnoughDataForPatterns(ctxMeals ?? []), icon: "unlock" },
+    { key: "feeling", title: "Food & Feeling Just Opened Up", sub: "Your coach is starting to connect your food to how you feel.", unlocked: !isDemoMode && (ctxReflections?.length ?? 0) >= 3, icon: "unlock" },
   ]);
 
   const todayHasActivity = (() => {
