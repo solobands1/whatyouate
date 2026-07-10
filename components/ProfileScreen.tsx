@@ -758,40 +758,27 @@ export default function ProfileScreen() {
             </svg>
             Back
           </button>
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-2xl font-semibold text-ink" onClick={handleProfileTitleTap}>Profile</h1>
-              <div className="mt-1 flex items-center gap-1.5">
-                <p className="text-sm text-muted/70">
-                  {[firstName, lastName].filter(Boolean).join(" ") || "Set name"}
-                </p>
-                <button
-                  type="button"
-                  aria-label="Edit name"
-                  className="flex h-5 w-5 items-center justify-center rounded-full border border-ink/10 text-muted/65 hover:border-ink/20 hover:text-muted/80 transition"
-                  onClick={() => {
-                    setEditFirstName(firstName);
-                    setEditLastName(lastName);
-                    setEditingName(true);
-                  }}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
-            <div className="flex flex-col items-end gap-1">
+          <div>
+            <h1 className="text-2xl font-semibold text-ink" onClick={handleProfileTitleTap}>Profile</h1>
+            <div className="mt-1 flex items-center gap-1.5">
+              <p className="text-sm text-muted/70">
+                {[firstName, lastName].filter(Boolean).join(" ") || "Set your name"}
+              </p>
               <button
                 type="button"
-                data-tour="feedback-button"
-                className="rounded-full bg-primary px-3 py-1 text-[10px] font-semibold text-white transition hover:bg-primary/90"
-                onClick={() => setShowFeedback(true)}
+                aria-label="Edit name"
+                className="flex h-5 w-5 items-center justify-center rounded-full border border-ink/10 text-muted/65 hover:border-ink/20 hover:text-muted/80 transition"
+                onClick={() => {
+                  setEditFirstName(firstName);
+                  setEditLastName(lastName);
+                  setEditingName(true);
+                }}
               >
-                Send Feedback
+                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
               </button>
-              <span className="text-[10px] text-muted/60">Share a quick suggestion</span>
             </div>
           </div>
           {(() => {
@@ -799,15 +786,15 @@ export default function ProfileScreen() {
             const missingHeight = units === "metric" ? (!heightCm || heightCm === "0") : (!heightFt || heightFt === "0");
             const missingDob = !dobYear || !dobMonth || !dobDay;
             return (missingWeight || missingHeight || missingDob) ? (
-              <p className="mt-3 text-center text-[12px] font-semibold text-primary">
-                Fill Out Profile For Best Results
+              <p className="mt-2.5 text-[12px] font-medium text-primary/90">
+                Fill out your profile below for the best results.
               </p>
             ) : null;
           })()}
           {loadError && <p className="mt-2 text-xs text-muted/70">{loadError}</p>}
         </header>
 
-        <Card className="mt-4 border border-primary/40">
+        <Card className="mt-6">
           <div className="mt-0 border-t-0 pt-0">
             <div className="flex items-center justify-between">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Body</p>
@@ -1010,9 +997,9 @@ export default function ProfileScreen() {
           </div>
         </Card>
 
-        <Card className="mt-4 border border-primary/40">
+        <Card className="mt-6">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] font-semibold uppercase tracking-wide text-ink/70">Feeling Goal</span>
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted/70">Feeling Goal</span>
             <button
               type="button"
               className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-ink/20 text-[9px] font-semibold text-muted/60"
@@ -1045,10 +1032,10 @@ export default function ProfileScreen() {
           </div>
         </Card>
 
-        <Card className="mt-4 border border-primary/40">
+        <Card className="mt-6">
           <label className="block text-xs text-muted/70">
             <span className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold uppercase tracking-wide text-ink/70">
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted/70">
                 Body Goal
               </span>
               <button
@@ -1079,7 +1066,7 @@ export default function ProfileScreen() {
           </label>
 
           <div className="mt-8 border-t border-ink/5 pt-7">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-ink/70">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">
               Activity level
             </p>
             <div className="mt-2 grid grid-cols-2 gap-2">
@@ -1107,7 +1094,7 @@ export default function ProfileScreen() {
           </div>
 
           <div className="mt-8 border-t border-ink/5 pt-7">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-ink/70">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">
               Foods I avoid
             </p>
             <p className="mt-1 text-[11px] text-muted/60">Select all that apply. Nudges won't suggest these foods.</p>
@@ -1147,7 +1134,7 @@ export default function ProfileScreen() {
           </div>
 
           <label className="mt-6 block text-xs text-muted/70">
-            <span className="text-[11px] font-semibold uppercase tracking-wide text-ink/70">
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted/70">
               What are you working toward? (optional)
             </span>
             <input
@@ -1161,7 +1148,7 @@ export default function ProfileScreen() {
 
           <label className="mt-8 block border-t border-ink/5 pt-7 text-xs text-muted/70">
             <span className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold uppercase tracking-wide text-ink/70">
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted/70">
                 Your eating habits (optional)
               </span>
               <button
@@ -1184,12 +1171,12 @@ export default function ProfileScreen() {
 
         </Card>
 
-        <Card className="mt-4 border border-primary/40">
+        <Card className="mt-6">
           {/* Water Tracking */}
           <div className="border-b border-ink/5 pb-5 mb-5">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-ink/70">Track Water Intake</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Track Water Intake</p>
                 <p className="mt-0.5 text-[11px] text-muted/60">When on, a water tracker appears on the home screen to log your daily intake.</p>
               </div>
               <div className="inline-flex rounded-full border border-ink/10 bg-ink/5 p-0.5 text-[10px]">
@@ -1323,7 +1310,7 @@ export default function ProfileScreen() {
                   <svg viewBox="0 0 16 16" className="h-3 w-3 text-rose-400" fill="currentColor">
                     <path d="M8 13.7C7.7 13.5 1 9.2 1 5.5 1 3.6 2.6 2 4.5 2c1 0 2 .5 2.7 1.3L8 4.2l.8-.9C9.5 2.5 10.5 2 11.5 2 13.4 2 15 3.6 15 5.5c0 3.7-6.7 8-7 8.2z"/>
                   </svg>
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-ink/70">Apple Health</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Apple Health</p>
                 </div>
                 <p className="mt-0.5 text-[11px] text-muted/60">Syncs steps, workouts, and sleep to make your coach smarter.</p>
               </div>
@@ -1340,7 +1327,7 @@ export default function ProfileScreen() {
           </div>
 
           <label className="block text-xs text-muted/70">
-            <span className="text-[11px] font-semibold uppercase tracking-wide text-ink/70">Daily supplements</span>
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted/70">Daily supplements</span>
             <p className="mt-1 text-[11px] text-muted/60">Added automatically every day in the background. Add a dose to track against recommended daily amounts.</p>
             <div className="mt-3 flex flex-wrap gap-2">
               {dailySupplements.map((entry, idx) => (
@@ -1474,7 +1461,7 @@ export default function ProfileScreen() {
           </label>
         </Card>
 
-        <Card className="mt-10">
+        <Card className="mt-6">
           <div>
           <button
             className="w-full rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] ring-1 ring-white/40 transition-colors hover:bg-primary/90 active:scale-[0.98] disabled:opacity-50"
@@ -1488,7 +1475,7 @@ export default function ProfileScreen() {
         </Card>
 
         <Card className="mt-6">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Account</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Account</p>
           <button
             className="mt-3 w-full rounded-xl border border-ink/10 bg-ink/5 px-4 py-2.5 text-xs font-semibold text-ink/70 transition active:opacity-60 active:scale-[0.98] disabled:opacity-50"
             onClick={handleSignOut}
@@ -1512,12 +1499,21 @@ export default function ProfileScreen() {
           >
             Replay Walkthrough
           </button>
+          <div className="mt-5 border-t border-ink/8" />
+          <button
+            type="button"
+            data-tour="feedback-button"
+            className="mt-5 w-full rounded-xl border border-ink/10 bg-ink/5 px-4 py-2.5 text-xs font-semibold text-ink/70 transition active:opacity-60 active:scale-[0.98]"
+            onClick={() => setShowFeedback(true)}
+          >
+            Send Feedback
+          </button>
         </Card>
 
         {/* Testing-only: browse every habit builder so the copy can be tweaked. */}
         <Card className="mt-6">
           <div className="flex items-center justify-between">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Habit Builders · Testing</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Habit Builders · Testing</p>
             <span className="text-[11px] text-muted/60">{habitPreviewIdx + 1} of {HABIT_TEMPLATES.length}</span>
           </div>
           <p className="mt-1 text-[11px] text-muted/50">Browse every template to review and tweak the wording.</p>
