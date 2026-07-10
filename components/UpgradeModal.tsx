@@ -167,16 +167,16 @@ export default function UpgradeModal() {
             Unlock WhatYouAte Pro
           </h1>
           <p className="mt-1.5 max-w-xs text-center text-sm text-muted/70">
-            AI photo logging, personalized coaching, and micronutrient insights, all in one place.
+            See how your food affects how you feel, with daily coaching and your full nutrition picture.
           </p>
 
           {/* What's included */}
           <div className="mt-4 w-full rounded-2xl border border-ink/8 bg-white px-5 py-3 space-y-2">
             {[
-              "AI-powered food photo logging",
-              "Daily AI-powered nudges",
-              "Micronutrient pattern tracking",
-              "Weekly insights and trends",
+              "Food & feeling connections",
+              "Daily coaching nudges",
+              "Macro & micronutrient trends",
+              "AI photo logging",
             ].map((item, i) => (
               <div
                 key={item}

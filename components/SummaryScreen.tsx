@@ -1095,7 +1095,7 @@ export default function SummaryScreen() {
                   <rect x="3" y="11" width="18" height="11" rx="2" />
                   <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                 </svg>
-                <span className="text-[10px] font-medium text-ink/50">Upgrade To Unlock</span>
+                <span className="text-[10px] font-medium text-ink/50">Unlock Pro</span>
               </div>
             </button>
           ) : (
@@ -1145,7 +1145,7 @@ export default function SummaryScreen() {
                   <div className="relative mt-3 overflow-hidden rounded-xl border border-primary/30 bg-primary/5 px-4 py-3">
                     <p className="text-sm font-medium text-ink/90 line-clamp-1">{smartNudge!.message.slice(0, 48)}{smartNudge!.message.length > 48 ? "..." : ""}</p>
                     <div className="absolute inset-0 flex items-center justify-center bg-surface/80 backdrop-blur-[3px]">
-                      <button type="button" onClick={openUpgradeModal} className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition active:opacity-80">Unlock To Read</button>
+                      <button type="button" onClick={openUpgradeModal} className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition active:opacity-80">Unlock Pro</button>
                     </div>
                   </div>
                 ) : message ? (
@@ -1363,7 +1363,7 @@ export default function SummaryScreen() {
                       </p>
                       <div className="absolute inset-0 flex flex-col items-center justify-center bg-surface/80 backdrop-blur-[3px]">
                         <button type="button" onClick={openUpgradeModal} className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition active:opacity-80">
-                          Unlock To Read
+                          Unlock Pro
                         </button>
                       </div>
                     </div>
@@ -1417,8 +1417,8 @@ export default function SummaryScreen() {
                   {trial.isFree && historyGroups.length > 0 && (
                     <button type="button" onClick={openUpgradeModal} className="mt-1 w-full rounded-lg bg-ink/5 px-3 py-2.5 text-left transition active:opacity-70">
                       <p className="text-xs text-ink/50">
-                        {historyGroups.reduce((n, g) => n + g.items.length, 0)} previous nudges are locked{" "}
-                        <span className="font-semibold text-primary/70">Upgrade To Read</span>
+                        {historyGroups.reduce((n, g) => n + g.items.length, 0)} previous nudges are locked ·{" "}
+                        <span className="font-semibold text-primary/70">Unlock Pro</span>
                       </p>
                     </button>
                   )}
