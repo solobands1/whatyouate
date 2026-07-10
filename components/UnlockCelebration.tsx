@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { notificationPing } from "../lib/celebrate";
 
 // A one-time celebratory banner shown the first time a user reaches a milestone on the surface
 // where it makes sense (a feature "opening up", or a "first X" moment). Per-key baseline logic
@@ -59,6 +60,9 @@ export function UnlockCelebrationBanner({ title, sub, icon = "unlock", onDismiss
     setState("exit");
     setTimeout(onDismiss, 340);
   }, [onDismiss]);
+  // Play the notification ping once when the banner appears (empty deps so it never
+  // repeats even if the caller passes an inline onDismiss that changes identity).
+  useEffect(() => { notificationPing(); }, []);
   useEffect(() => {
     const r = requestAnimationFrame(() => setState("shown"));
     const t = setTimeout(close, 10000);
