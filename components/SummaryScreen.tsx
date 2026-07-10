@@ -11,6 +11,7 @@ import { useAuth } from "./AuthProvider";
 import { useAppData } from "./AppDataProvider";
 import type { FeelLog } from "../lib/supabaseDb";
 import { computeSummaryMarkers, type ComputedNudge, type NudgeType } from "../lib/digestEngine";
+import { countLoggedDays } from "../lib/trial";
 import { useTrialStatus } from "../hooks/useTrialStatus";
 import { openUpgradeModal } from "./UpgradeModal";
 import WyaaAvatar from "./WyaaAvatar";
@@ -203,8 +204,10 @@ export default function SummaryScreen() {
     const o = { days: n("days"), meals: n("meals"), refl: n("refl") };
     if (o.days !== undefined || o.meals !== undefined || o.refl !== undefined) setCountOverride(o);
   }, []);
-  const dayCount = countOverride.days ?? summaryMarkers.dayCount;
-  const mealCount = countOverride.meals ?? summaryMarkers.mealCount;
+  // Count only real (analyzed, non-supplement, non-failed) meals — same rule as the Nutrition
+  // screen + unlock celebrations, so the ladder never unlocks a rung the screen still gates.
+  const dayCount = countOverride.days ?? countLoggedDays(meals);
+  const mealCount = countOverride.meals ?? meals.filter((m) => m.analysisJson?.source !== "supplement" && m.status !== "failed").length;
   const reflCount = countOverride.refl ?? reflections.length;
   const gentleTargetsDisplay = summaryMarkers.gentleTargets ?? { calories: 2300, protein: 125, fat: 77, carbs: 277 };
   const workoutSummary = summaryMarkers.workoutSummary;
