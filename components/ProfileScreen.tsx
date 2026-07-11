@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
 import Joyride, { STATUS, CallBackProps, type Step } from "react-joyride";
 import { notifyProfileUpdated } from "../lib/dataEvents";
@@ -47,6 +47,36 @@ const goals: { value: GoalDirection; label: string }[] = [
   { value: "maintain", label: "Stay Steady" },
   { value: "lose", label: "Lose Weight" },
 ];
+
+// Compress a picked image to a small square JPEG data URL (~240px) so it fits
+// comfortably in auth metadata — no storage bucket needed for a profile photo.
+async function fileToAvatarDataUrl(file: File): Promise<string> {
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = reject;
+    image.src = dataUrl;
+  });
+  // 200px square is crisp at the sizes we render (80px on Profile, 36px on Home) while
+  // staying a few KB — it lives in auth metadata, which rides along in the session token.
+  const size = 200;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return dataUrl;
+  const min = Math.min(img.width, img.height);
+  const sx = (img.width - min) / 2;
+  const sy = (img.height - min) / 2;
+  ctx.drawImage(img, sx, sy, min, min, 0, 0, size, size);
+  return canvas.toDataURL("image/jpeg", 0.78);
+}
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -184,6 +214,31 @@ export default function ProfileScreen() {
   const [showFeedbackToast, setShowFeedbackToast] = useState(false);
   const [showSavedToast, setShowSavedToast] = useState(false);
   const [editingName, setEditingName] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState("");
+  const [avatarBusy, setAvatarBusy] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Mirror the avatar from auth metadata; updates here propagate to Home too.
+  useEffect(() => {
+    const meta = (user as { user_metadata?: Record<string, string> })?.user_metadata ?? {};
+    setAvatarUrl(meta.avatar_url || "");
+  }, [user]);
+
+  async function handleAvatarPick(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // let the same file be re-picked later
+    if (!file) return;
+    setAvatarBusy(true);
+    try {
+      const url = await fileToAvatarDataUrl(file);
+      setAvatarUrl(url);
+      await supabase.auth.updateUser({ data: { avatar_url: url } }).catch(() => {});
+    } catch {
+      /* ignore an unreadable image */
+    } finally {
+      setAvatarBusy(false);
+    }
+  }
   const [trackWater, setTrackWater] = useState(true);
   const [waterUnit, setWaterUnit] = useState<"ml" | "oz">("ml");
   const [customWaterGoalMl, setCustomWaterGoalMl] = useState<number | null>(null);
@@ -537,21 +592,32 @@ export default function ProfileScreen() {
     }
   };
 
-  // Commit whatever supplement name is currently typed. Used on Enter and on blur,
-  // so a user who types a supplement then taps away (or taps Save) doesn't lose it —
-  // it gets added and auto-persisted just like pressing Enter.
-  const commitNewSupplement = () => {
+  // The single "add a supplement" path: open the nutrient picker for whatever name is
+  // typed, pre-selecting the tracked nutrients we recognize from that name. Because every
+  // supplement is saved through the picker, each carries tracked nutrients — nothing
+  // untracked (that would show nothing in your totals) can slip into the list.
+  const openSuppPicker = () => {
     const name = newSuppInput.trim();
-    if (!name) return;
     if (suppLookupTimer.current) clearTimeout(suppLookupTimer.current);
-    const dose = parseFloat(newSuppDose);
-    const entry: SupplementEntry = !isNaN(dose) && dose > 0
-      ? { name, dose, unit: newSuppUnit }
-      : name;
-    const updated = [...dailySupplements, entry];
-    setDailySupplementsState(updated);
-    if (user) { setDailySupplements(user.id, updated); saveDailySupplements(user.id, updated).then(() => notifyProfileUpdated()).catch(() => {}); }
-    setNewSuppInput(""); setNewSuppDose(""); setSuppMatchHint(null);
+    const displayToKey: Record<string, string> = {};
+    for (const [key, disp] of Object.entries(NUTRIENT_DISPLAY_NAMES)) displayToKey[disp] = key;
+    const keys = (name ? matchSupplementNutrients(name) : [])
+      .map((d) => displayToKey[d])
+      .filter(Boolean);
+    const aiDose = parseFloat(newSuppDose);
+    const seed: Record<string, { dose: string; unit: string; pct: string; mode: "dose" | "pct" }> = {};
+    keys.forEach((key) => {
+      const single = keys.length === 1;
+      seed[key] = {
+        dose: single && !isNaN(aiDose) && aiDose > 0 ? String(aiDose) : "",
+        unit: single && newSuppUnit ? newSuppUnit : (NUTRIENT_UNITS[key] ?? "mg"),
+        pct: "",
+        mode: "dose",
+      };
+    });
+    setMultiSuppName(name);
+    setMultiSuppNutrients(seed);
+    setShowMultiSuppModal(true);
   };
 
   const handleClear = async () => {
@@ -748,27 +814,62 @@ export default function ProfileScreen() {
             </svg>
             Back
           </button>
-          <div>
-            <h1 className="text-2xl font-semibold text-ink" onClick={handleProfileTitleTap}>Profile</h1>
-            <div className="mt-1 flex items-center gap-1.5">
-              <p className="text-sm text-muted/70">
-                {[firstName, lastName].filter(Boolean).join(" ") || "Set your name"}
-              </p>
-              <button
-                type="button"
-                aria-label="Edit name"
-                className="flex h-5 w-5 items-center justify-center rounded-full border border-ink/10 text-muted/65 hover:border-ink/20 hover:text-muted/80 transition"
-                onClick={() => {
-                  setEditFirstName(firstName);
-                  setEditLastName(lastName);
-                  setEditingName(true);
-                }}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              aria-label="Change profile photo"
+              onClick={() => avatarInputRef.current?.click()}
+              className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-primary/30 bg-primary/10 shadow-[0_2px_10px_rgba(111,168,255,0.20)] transition active:scale-95"
+            >
+              {avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={avatarUrl} alt="Profile" className="h-full w-full object-cover" />
+              ) : (
+                <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
+                  <circle cx="12" cy="8" r="4" />
+                  <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
                 </svg>
-              </button>
+              )}
+              <span className="absolute bottom-0 right-0 flex h-6 w-6 items-center justify-center rounded-full border-2 border-surface bg-primary text-white shadow-[0_2px_6px_rgba(15,23,42,0.2)]">
+                {avatarBusy ? (
+                  <span className="h-3 w-3 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                ) : (
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                    <circle cx="12" cy="13" r="4" />
+                  </svg>
+                )}
+              </span>
+            </button>
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleAvatarPick}
+            />
+            <div className="min-w-0 flex-1">
+              <h1 className="text-2xl font-semibold text-ink" onClick={handleProfileTitleTap}>Profile</h1>
+              <div className="mt-1 flex items-center gap-1.5">
+                <p className="text-sm text-muted/70">
+                  {[firstName, lastName].filter(Boolean).join(" ") || "Set your name"}
+                </p>
+                <button
+                  type="button"
+                  aria-label="Edit name"
+                  className="flex h-5 w-5 items-center justify-center rounded-full border border-ink/10 text-muted/65 hover:border-ink/20 hover:text-muted/80 transition"
+                  onClick={() => {
+                    setEditFirstName(firstName);
+                    setEditLastName(lastName);
+                    setEditingName(true);
+                  }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
           {(() => {
@@ -784,7 +885,7 @@ export default function ProfileScreen() {
           {loadError && <p className="mt-2 text-xs text-muted/70">{loadError}</p>}
         </header>
 
-        <Card className="mt-6">
+        <Card className="mt-6 border border-primary/15">
           <div className="mt-0 border-t-0 pt-0">
             <div className="flex items-center justify-between">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Body</p>
@@ -987,7 +1088,7 @@ export default function ProfileScreen() {
           </div>
         </Card>
 
-        <Card className="mt-6">
+        <Card className="mt-6 border border-primary/15">
           <div className="flex items-center justify-between gap-2">
             <span className="text-xs font-semibold uppercase tracking-wide text-muted/70">Feeling Goal</span>
             <button
@@ -1022,7 +1123,7 @@ export default function ProfileScreen() {
           </div>
         </Card>
 
-        <Card className="mt-6">
+        <Card className="mt-6 border border-primary/15">
           <label className="block text-xs text-muted/70">
             <span className="flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-wide text-muted/70">
@@ -1161,7 +1262,7 @@ export default function ProfileScreen() {
 
         </Card>
 
-        <Card className="mt-6">
+        <Card className="mt-6 border border-primary/15">
           {/* Water Tracking */}
           <div className="border-b border-ink/5 pb-5 mb-5">
             <div className="flex items-start justify-between gap-3">
@@ -1352,7 +1453,7 @@ export default function ProfileScreen() {
               <input
                 type="text"
                 className="w-full rounded-xl border border-ink/10 px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                placeholder="e.g. Vitamin D"
+                placeholder="e.g. Vitamin D, or your multivitamin"
                 value={newSuppInput}
                 onChange={(e) => {
                   const val = e.target.value;
@@ -1381,7 +1482,7 @@ export default function ProfileScreen() {
                       const reMatched = matchSupplementNutrients(val.trim());
                       const canonMatched = data.canonical_name ? matchSupplementNutrients(data.canonical_name) : [];
                       const allMatched = [...new Set([...reMatched, ...canonMatched])];
-                      setSuppMatchHint(allMatched.length ? `Tracks: ${allMatched.join(", ")}` : "No nutrient data found, add manually");
+                      setSuppMatchHint(allMatched.length ? `Tracks: ${allMatched.join(", ")}` : null);
                     } catch {
                       // silently fail — hint stays as keyword match
                     } finally {
@@ -1392,78 +1493,23 @@ export default function ProfileScreen() {
                 onKeyDown={(e) => {
                   if (e.key !== "Enter") return;
                   e.preventDefault();
-                  commitNewSupplement();
+                  if (newSuppInput.trim()) openSuppPicker();
                 }}
-                onBlur={() => commitNewSupplement()}
               />
               {(suppMatchHint || suppLookingUp) && (
-                <div className="-mt-0.5 flex items-center gap-2">
-                  <p className={`text-[11px] ${suppLookingUp ? "text-muted/55" : suppMatchHint?.startsWith("Tracks") ? "text-primary/70" : "text-muted/65"}`}>
-                    {suppLookingUp ? "Looking up..." : suppMatchHint}
-                  </p>
-                  {!suppLookingUp && suppMatchHint === "Not recognized for tracking" && (
-                    <button
-                      type="button"
-                      className="text-[11px] font-semibold text-primary/80 underline"
-                      onClick={() => {
-                        setMultiSuppName(newSuppInput.trim());
-                        setMultiSuppNutrients({});
-                        setShowMultiSuppModal(true);
-                      }}
-                    >
-                      Add nutrients manually
-                    </button>
-                  )}
-                </div>
+                <p className={`-mt-0.5 text-[11px] ${suppLookingUp ? "text-muted/55" : suppMatchHint?.startsWith("Tracks") ? "text-primary/70" : "text-muted/65"}`}>
+                  {suppLookingUp ? "Looking up..." : suppMatchHint}
+                </p>
               )}
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  className="min-w-0 flex-1 rounded-xl border border-ink/10 px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                  placeholder="dose (if available)"
-                  value={newSuppDose}
-                  onChange={(e) => setNewSuppDose(e.target.value)}
-                />
-                <select
-                  className="rounded-full border border-ink/10 bg-white px-3 py-1.5 text-xs text-ink/80"
-                  value={newSuppUnit}
-                  onChange={(e) => setNewSuppUnit(e.target.value)}
-                >
-                  {["mg", "mcg", "IU", "g", "mL"].map((u) => (
-                    <option key={u} value={u}>{u}</option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90 active:opacity-80"
-                  onClick={() => {
-                    const name = newSuppInput.trim();
-                    if (!name) return;
-                    const dose = parseFloat(newSuppDose);
-                    const entry: SupplementEntry = !isNaN(dose) && dose > 0
-                      ? { name, dose, unit: newSuppUnit }
-                      : name;
-                    const updated = [...dailySupplements, entry];
-                    setDailySupplementsState(updated);
-                    if (user) { setDailySupplements(user.id, updated); saveDailySupplements(user.id, updated).then(() => notifyProfileUpdated()).catch(() => {}); }
-                    setNewSuppInput(""); setNewSuppDose(""); setSuppMatchHint(null);
-                  }}
-                >
-                  Add
-                </button>
-              </div>
               <button
                 type="button"
-                className="mt-1 self-start text-[11px] font-semibold text-primary/80 underline underline-offset-2 transition active:opacity-60"
-                onClick={() => {
-                  setMultiSuppName(newSuppInput.trim());
-                  setMultiSuppNutrients({});
-                  setShowMultiSuppModal(true);
-                }}
+                disabled={!newSuppInput.trim()}
+                className="mt-1 self-start rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-white transition hover:bg-primary/90 active:opacity-80 disabled:opacity-40"
+                onClick={openSuppPicker}
               >
-                Pick nutrients manually
+                Add
               </button>
+              <p className="text-[11px] leading-relaxed text-muted/55">Next you pick which nutrients it contains, so it counts toward your daily totals.</p>
             </div>
           </label>
         </Card>
@@ -1482,7 +1528,7 @@ export default function ProfileScreen() {
         </Card>
 
         {/* Subscription */}
-        <Card className="mt-6">
+        <Card className="mt-6 border border-primary/15">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Subscription</p>
           <div className="mt-3 flex items-center justify-between gap-3">
             <div>
@@ -1517,7 +1563,7 @@ export default function ProfileScreen() {
         </Card>
 
         {/* Account */}
-        <Card className="mt-6">
+        <Card className="mt-6 border border-primary/15">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Account</p>
           <div className="mt-3 rounded-xl border border-ink/10 bg-ink/5 px-4 py-3">
             <p className="text-sm font-medium text-ink/80">Notifications</p>
@@ -1557,7 +1603,7 @@ export default function ProfileScreen() {
         </Card>
 
         <div className="mt-6">
-          <Card>
+          <Card className="border border-red-400/15">
             <p className="text-xs font-semibold uppercase tracking-wide text-red-400/70">Danger Zone</p>
             <div className="mt-3 space-y-2">
               <button
@@ -2042,10 +2088,10 @@ export default function ProfileScreen() {
               </button>
               <button
                 type="button"
-                className="flex-1 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white transition hover:bg-primary/90"
+                disabled={Object.values(multiSuppNutrients).filter((v) => (v.mode === "dose" ? parseFloat(v.dose) > 0 : parseFloat(v.pct) > 0)).length === 0}
+                className="flex-1 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white transition hover:bg-primary/90 disabled:opacity-40"
                 onClick={() => {
                   const name = multiSuppName;
-                  if (!name) return;
                   // Build nutrients array from filled entries
                   const nutrients: SupplementNutrient[] = Object.entries(multiSuppNutrients)
                     .filter(([, v]) => v.mode === "dose" ? parseFloat(v.dose) > 0 : parseFloat(v.pct) > 0)
@@ -2057,9 +2103,10 @@ export default function ProfileScreen() {
                       }
                       return { nutrient: key, dose: parseFloat(v.dose), unit: v.unit };
                     });
-                  const entry: SupplementEntry = nutrients.length > 0
-                    ? { name, nutrients }
-                    : name;
+                  // Save only with at least one tracked nutrient, so nothing that would
+                  // show nothing in your totals can end up in the list.
+                  if (nutrients.length === 0) return;
+                  const entry: SupplementEntry = { name: name || "Supplement", nutrients };
                   const updated = [...dailySupplements, entry];
                   setDailySupplementsState(updated);
                   if (user) { setDailySupplements(user.id, updated); saveDailySupplements(user.id, updated).then(() => notifyProfileUpdated()).catch(() => {}); }
@@ -2067,7 +2114,7 @@ export default function ProfileScreen() {
                   setShowMultiSuppModal(false); setMultiSuppNutrients({});
                 }}
               >
-                Add supplement
+                Add Supplement
               </button>
             </div>
           </div>
