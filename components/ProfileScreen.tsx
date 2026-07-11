@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Joyride, { STATUS, CallBackProps, type Step } from "react-joyride";
 import { notifyProfileUpdated } from "../lib/dataEvents";
@@ -47,36 +47,6 @@ const goals: { value: GoalDirection; label: string }[] = [
   { value: "maintain", label: "Stay Steady" },
   { value: "lose", label: "Lose Weight" },
 ];
-
-// Compress a picked image to a small square JPEG data URL (~240px) so it fits
-// comfortably in auth metadata — no storage bucket needed for a profile photo.
-async function fileToAvatarDataUrl(file: File): Promise<string> {
-  const dataUrl = await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-    const image = new Image();
-    image.onload = () => resolve(image);
-    image.onerror = reject;
-    image.src = dataUrl;
-  });
-  // 200px square is crisp at the sizes we render (80px on Profile, 36px on Home) while
-  // staying a few KB — it lives in auth metadata, which rides along in the session token.
-  const size = 200;
-  const canvas = document.createElement("canvas");
-  canvas.width = size;
-  canvas.height = size;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return dataUrl;
-  const min = Math.min(img.width, img.height);
-  const sx = (img.width - min) / 2;
-  const sy = (img.height - min) / 2;
-  ctx.drawImage(img, sx, sy, min, min, 0, 0, size, size);
-  return canvas.toDataURL("image/jpeg", 0.78);
-}
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -214,31 +184,6 @@ export default function ProfileScreen() {
   const [showFeedbackToast, setShowFeedbackToast] = useState(false);
   const [showSavedToast, setShowSavedToast] = useState(false);
   const [editingName, setEditingName] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState("");
-  const [avatarBusy, setAvatarBusy] = useState(false);
-  const avatarInputRef = useRef<HTMLInputElement | null>(null);
-
-  // Mirror the avatar from auth metadata; updates here propagate to Home too.
-  useEffect(() => {
-    const meta = (user as { user_metadata?: Record<string, string> })?.user_metadata ?? {};
-    setAvatarUrl(meta.avatar_url || "");
-  }, [user]);
-
-  async function handleAvatarPick(e: ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = ""; // let the same file be re-picked later
-    if (!file) return;
-    setAvatarBusy(true);
-    try {
-      const url = await fileToAvatarDataUrl(file);
-      setAvatarUrl(url);
-      await supabase.auth.updateUser({ data: { avatar_url: url } }).catch(() => {});
-    } catch {
-      /* ignore an unreadable image */
-    } finally {
-      setAvatarBusy(false);
-    }
-  }
   const [trackWater, setTrackWater] = useState(true);
   const [waterUnit, setWaterUnit] = useState<"ml" | "oz">("ml");
   const [customWaterGoalMl, setCustomWaterGoalMl] = useState<number | null>(null);
@@ -814,62 +759,27 @@ export default function ProfileScreen() {
             </svg>
             Back
           </button>
-          <div className="flex items-center gap-4">
-            <button
-              type="button"
-              aria-label="Change profile photo"
-              onClick={() => avatarInputRef.current?.click()}
-              className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-primary/30 bg-primary/10 shadow-[0_2px_10px_rgba(111,168,255,0.20)] transition active:scale-95"
-            >
-              {avatarUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={avatarUrl} alt="Profile" className="h-full w-full object-cover" />
-              ) : (
-                <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
-                  <circle cx="12" cy="8" r="4" />
-                  <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+          <div>
+            <h1 className="text-2xl font-semibold text-ink" onClick={handleProfileTitleTap}>Profile</h1>
+            <div className="mt-1 flex items-center gap-1.5">
+              <p className="text-sm text-muted/70">
+                {[firstName, lastName].filter(Boolean).join(" ") || "Set your name"}
+              </p>
+              <button
+                type="button"
+                aria-label="Edit name"
+                className="flex h-5 w-5 items-center justify-center rounded-full border border-ink/10 text-muted/65 hover:border-ink/20 hover:text-muted/80 transition"
+                onClick={() => {
+                  setEditFirstName(firstName);
+                  setEditLastName(lastName);
+                  setEditingName(true);
+                }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                 </svg>
-              )}
-              <span className="absolute bottom-0 right-0 flex h-6 w-6 items-center justify-center rounded-full border-2 border-surface bg-primary text-white shadow-[0_2px_6px_rgba(15,23,42,0.2)]">
-                {avatarBusy ? (
-                  <span className="h-3 w-3 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                ) : (
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                    <circle cx="12" cy="13" r="4" />
-                  </svg>
-                )}
-              </span>
-            </button>
-            <input
-              ref={avatarInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleAvatarPick}
-            />
-            <div className="min-w-0 flex-1">
-              <h1 className="text-2xl font-semibold text-ink" onClick={handleProfileTitleTap}>Profile</h1>
-              <div className="mt-1 flex items-center gap-1.5">
-                <p className="text-sm text-muted/70">
-                  {[firstName, lastName].filter(Boolean).join(" ") || "Set your name"}
-                </p>
-                <button
-                  type="button"
-                  aria-label="Edit name"
-                  className="flex h-5 w-5 items-center justify-center rounded-full border border-ink/10 text-muted/65 hover:border-ink/20 hover:text-muted/80 transition"
-                  onClick={() => {
-                    setEditFirstName(firstName);
-                    setEditLastName(lastName);
-                    setEditingName(true);
-                  }}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                  </svg>
-                </button>
-              </div>
+              </button>
             </div>
           </div>
           {(() => {
