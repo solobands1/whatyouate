@@ -48,6 +48,16 @@ const goals: { value: GoalDirection; label: string }[] = [
   { value: "lose", label: "Lose Weight" },
 ];
 
+// Which tracked-nutrient keys a typed supplement name maps to. Exactly one → it's a
+// specific tracked vitamin (add a dose inline); zero or many → open the picker.
+function matchedNutrientKeys(name: string): string[] {
+  const trimmed = name.trim();
+  if (trimmed.length < 2) return [];
+  const displayToKey: Record<string, string> = {};
+  for (const [key, disp] of Object.entries(NUTRIENT_DISPLAY_NAMES)) displayToKey[disp] = key;
+  return matchSupplementNutrients(trimmed).map((d) => displayToKey[d]).filter(Boolean);
+}
+
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, loading, signOut } = useAuth();
@@ -537,32 +547,35 @@ export default function ProfileScreen() {
     }
   };
 
-  // The single "add a supplement" path: open the nutrient picker for whatever name is
-  // typed, pre-selecting the tracked nutrients we recognize from that name. Because every
-  // supplement is saved through the picker, each carries tracked nutrients — nothing
-  // untracked (that would show nothing in your totals) can slip into the list.
+  // Open the nutrient picker for a multivitamin / unrecognized supplement — pre-selecting
+  // any tracked nutrients we recognize from the name. Everything saved through the picker
+  // carries tracked nutrients, so nothing that would show nothing in your totals gets in.
   const openSuppPicker = () => {
     const name = newSuppInput.trim();
     if (suppLookupTimer.current) clearTimeout(suppLookupTimer.current);
-    const displayToKey: Record<string, string> = {};
-    for (const [key, disp] of Object.entries(NUTRIENT_DISPLAY_NAMES)) displayToKey[disp] = key;
-    const keys = (name ? matchSupplementNutrients(name) : [])
-      .map((d) => displayToKey[d])
-      .filter(Boolean);
-    const aiDose = parseFloat(newSuppDose);
     const seed: Record<string, { dose: string; unit: string; pct: string; mode: "dose" | "pct" }> = {};
-    keys.forEach((key) => {
-      const single = keys.length === 1;
-      seed[key] = {
-        dose: single && !isNaN(aiDose) && aiDose > 0 ? String(aiDose) : "",
-        unit: single && newSuppUnit ? newSuppUnit : (NUTRIENT_UNITS[key] ?? "mg"),
-        pct: "",
-        mode: "dose",
-      };
+    matchedNutrientKeys(name).forEach((key) => {
+      seed[key] = { dose: "", unit: NUTRIENT_UNITS[key] ?? "mg", pct: "", mode: "dose" };
     });
     setMultiSuppName(name);
     setMultiSuppNutrients(seed);
     setShowMultiSuppModal(true);
+  };
+
+  // A supplement that maps to exactly one tracked nutrient (e.g. Vitamin D) is added
+  // inline with just a dose — no picker needed, like it worked before.
+  const commitSingleSupp = () => {
+    const name = newSuppInput.trim();
+    if (!name) return;
+    if (suppLookupTimer.current) clearTimeout(suppLookupTimer.current);
+    const key = matchedNutrientKeys(name)[0];
+    const dose = parseFloat(newSuppDose);
+    const nutrients = key && !isNaN(dose) && dose > 0 ? [{ nutrient: key, dose, unit: newSuppUnit }] : [];
+    const entry: SupplementEntry = nutrients.length ? { name, nutrients } : name;
+    const updated = [...dailySupplements, entry];
+    setDailySupplementsState(updated);
+    if (user) { setDailySupplements(user.id, updated); saveDailySupplements(user.id, updated).then(() => notifyProfileUpdated()).catch(() => {}); }
+    setNewSuppInput(""); setNewSuppDose(""); setSuppMatchHint(null);
   };
 
   const handleClear = async () => {
@@ -759,27 +772,35 @@ export default function ProfileScreen() {
             </svg>
             Back
           </button>
-          <div>
-            <h1 className="text-2xl font-semibold text-ink" onClick={handleProfileTitleTap}>Profile</h1>
-            <div className="mt-1 flex items-center gap-1.5">
-              <p className="text-sm text-muted/70">
-                {[firstName, lastName].filter(Boolean).join(" ") || "Set your name"}
-              </p>
-              <button
-                type="button"
-                aria-label="Edit name"
-                className="flex h-5 w-5 items-center justify-center rounded-full border border-ink/10 text-muted/65 hover:border-ink/20 hover:text-muted/80 transition"
-                onClick={() => {
-                  setEditFirstName(firstName);
-                  setEditLastName(lastName);
-                  setEditingName(true);
-                }}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                </svg>
-              </button>
+          <div className="flex items-center gap-4">
+            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border border-primary/30 bg-primary/10 shadow-[0_2px_10px_rgba(111,168,255,0.20)]">
+              <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
+                <circle cx="12" cy="8" r="4" />
+                <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+              </svg>
+            </div>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-2xl font-semibold text-ink" onClick={handleProfileTitleTap}>Profile</h1>
+              <div className="mt-1 flex items-center gap-1.5">
+                <p className="text-sm text-muted/70">
+                  {[firstName, lastName].filter(Boolean).join(" ") || "Set your name"}
+                </p>
+                <button
+                  type="button"
+                  aria-label="Edit name"
+                  className="flex h-5 w-5 items-center justify-center rounded-full border border-ink/10 text-muted/65 hover:border-ink/20 hover:text-muted/80 transition"
+                  onClick={() => {
+                    setEditFirstName(firstName);
+                    setEditLastName(lastName);
+                    setEditingName(true);
+                  }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
           {(() => {
@@ -1403,7 +1424,9 @@ export default function ProfileScreen() {
                 onKeyDown={(e) => {
                   if (e.key !== "Enter") return;
                   e.preventDefault();
-                  if (newSuppInput.trim()) openSuppPicker();
+                  if (!newSuppInput.trim()) return;
+                  if (matchedNutrientKeys(newSuppInput).length === 1) commitSingleSupp();
+                  else openSuppPicker();
                 }}
               />
               {(suppMatchHint || suppLookingUp) && (
@@ -1411,15 +1434,48 @@ export default function ProfileScreen() {
                   {suppLookingUp ? "Looking up..." : suppMatchHint}
                 </p>
               )}
-              <button
-                type="button"
-                disabled={!newSuppInput.trim()}
-                className="mt-1 self-start rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-white transition hover:bg-primary/90 active:opacity-80 disabled:opacity-40"
-                onClick={openSuppPicker}
-              >
-                Add
-              </button>
-              <p className="text-[11px] leading-relaxed text-muted/55">Next you pick which nutrients it contains, so it counts toward your daily totals.</p>
+              {matchedNutrientKeys(newSuppInput).length === 1 ? (
+                // A specific tracked vitamin (e.g. Vitamin D) — just a dose, no picker.
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    className="min-w-0 flex-1 rounded-xl border border-ink/10 px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    placeholder="dose (if available)"
+                    value={newSuppDose}
+                    onChange={(e) => setNewSuppDose(e.target.value)}
+                  />
+                  <select
+                    className="rounded-full border border-ink/10 bg-white px-3 py-1.5 text-xs text-ink/80"
+                    value={newSuppUnit}
+                    onChange={(e) => setNewSuppUnit(e.target.value)}
+                  >
+                    {["mg", "mcg", "IU", "g", "mL"].map((u) => (
+                      <option key={u} value={u}>{u}</option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90 active:opacity-80"
+                    onClick={commitSingleSupp}
+                  >
+                    Add
+                  </button>
+                </div>
+              ) : (
+                // A multivitamin or unrecognized supplement — pick what's in it next.
+                <>
+                  <button
+                    type="button"
+                    disabled={!newSuppInput.trim()}
+                    className="mt-1 self-start rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-white transition hover:bg-primary/90 active:opacity-80 disabled:opacity-40"
+                    onClick={openSuppPicker}
+                  >
+                    Add
+                  </button>
+                  <p className="text-[11px] leading-relaxed text-muted/55">Next you pick which nutrients it contains, so it counts toward your daily totals.</p>
+                </>
+              )}
             </div>
           </label>
         </Card>
@@ -1928,60 +1984,30 @@ export default function ProfileScreen() {
                     >
                       <span className="text-sm font-medium text-ink/80">{displayName}</span>
                       <span className={`text-xs font-semibold ${isOpen ? "text-primary/70" : "text-ink/50"}`}>
-                        {isOpen ? (entry.dose || entry.pct ? `${entry.mode === "pct" ? entry.pct + "% DV" : entry.dose + " " + entry.unit}` : "") : "+"}
+                        {isOpen ? (entry.dose ? `${entry.dose} ${entry.unit}` : "") : "+"}
                       </span>
                     </button>
                     {isOpen && (
-                      <div className="border-t border-ink/5 px-4 py-3 space-y-2">
-                        <div className="flex gap-2 text-[11px] font-semibold">
-                          <button
-                            type="button"
-                            className={`rounded-full px-3 py-1 transition ${entry.mode === "dose" ? "bg-primary/15 text-primary/80" : "bg-ink/5 text-ink/50"}`}
-                            onClick={() => setMultiSuppNutrients((prev) => ({ ...prev, [key]: { ...prev[key], mode: "dose" } }))}
+                      <div className="border-t border-ink/5 px-4 py-3">
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            placeholder="Amount"
+                            className="min-w-0 flex-1 rounded-xl border border-ink/10 px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                            value={entry.dose}
+                            onChange={(e) => setMultiSuppNutrients((prev) => ({ ...prev, [key]: { ...prev[key], dose: e.target.value } }))}
+                          />
+                          <select
+                            className="rounded-full border border-ink/10 bg-white px-3 py-1.5 text-xs text-ink/80"
+                            value={entry.unit}
+                            onChange={(e) => setMultiSuppNutrients((prev) => ({ ...prev, [key]: { ...prev[key], unit: e.target.value } }))}
                           >
-                            Dose
-                          </button>
-                          <button
-                            type="button"
-                            className={`rounded-full px-3 py-1 transition ${entry.mode === "pct" ? "bg-primary/15 text-primary/80" : "bg-ink/5 text-ink/50"}`}
-                            onClick={() => setMultiSuppNutrients((prev) => ({ ...prev, [key]: { ...prev[key], mode: "pct" } }))}
-                          >
-                            % Daily Value
-                          </button>
+                            {["mg", "mcg", "IU", "g", "mL"].map((u) => (
+                              <option key={u} value={u}>{u}</option>
+                            ))}
+                          </select>
                         </div>
-                        {entry.mode === "dose" ? (
-                          <div className="flex gap-2">
-                            <input
-                              type="text"
-                              inputMode="decimal"
-                              placeholder="Amount"
-                              className="min-w-0 flex-1 rounded-xl border border-ink/10 px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                              value={entry.dose}
-                              onChange={(e) => setMultiSuppNutrients((prev) => ({ ...prev, [key]: { ...prev[key], dose: e.target.value } }))}
-                            />
-                            <select
-                              className="rounded-full border border-ink/10 bg-white px-3 py-1.5 text-xs text-ink/80"
-                              value={entry.unit}
-                              onChange={(e) => setMultiSuppNutrients((prev) => ({ ...prev, [key]: { ...prev[key], unit: e.target.value } }))}
-                            >
-                              {["mg", "mcg", "IU", "g", "mL"].map((u) => (
-                                <option key={u} value={u}>{u}</option>
-                              ))}
-                            </select>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="text"
-                              inputMode="decimal"
-                              placeholder="% DV"
-                              className="w-24 rounded-xl border border-ink/10 px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                              value={entry.pct}
-                              onChange={(e) => setMultiSuppNutrients((prev) => ({ ...prev, [key]: { ...prev[key], pct: e.target.value } }))}
-                            />
-                            <span className="text-sm text-muted/60">% of daily value</span>
-                          </div>
-                        )}
                       </div>
                     )}
                   </div>
@@ -1998,21 +2024,14 @@ export default function ProfileScreen() {
               </button>
               <button
                 type="button"
-                disabled={Object.values(multiSuppNutrients).filter((v) => (v.mode === "dose" ? parseFloat(v.dose) > 0 : parseFloat(v.pct) > 0)).length === 0}
+                disabled={Object.values(multiSuppNutrients).filter((v) => parseFloat(v.dose) > 0).length === 0}
                 className="flex-1 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white transition hover:bg-primary/90 disabled:opacity-40"
                 onClick={() => {
                   const name = multiSuppName;
-                  // Build nutrients array from filled entries
+                  // Build nutrients array from filled doses
                   const nutrients: SupplementNutrient[] = Object.entries(multiSuppNutrients)
-                    .filter(([, v]) => v.mode === "dose" ? parseFloat(v.dose) > 0 : parseFloat(v.pct) > 0)
-                    .map(([key, v]) => {
-                      if (v.mode === "pct") {
-                        // Convert % DV to absolute dose using RDA as reference
-                        const pct = parseFloat(v.pct) / 100;
-                        return { nutrient: key, dose: pct, unit: "ratio" };
-                      }
-                      return { nutrient: key, dose: parseFloat(v.dose), unit: v.unit };
-                    });
+                    .filter(([, v]) => parseFloat(v.dose) > 0)
+                    .map(([key, v]) => ({ nutrient: key, dose: parseFloat(v.dose), unit: v.unit }));
                   // Save only with at least one tracked nutrient, so nothing that would
                   // show nothing in your totals can end up in the list.
                   if (nutrients.length === 0) return;
