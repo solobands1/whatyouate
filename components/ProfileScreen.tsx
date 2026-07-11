@@ -563,15 +563,14 @@ export default function ProfileScreen() {
   };
 
   // A supplement that maps to exactly one tracked nutrient (e.g. Vitamin D) is added
-  // inline with just a dose — no picker needed, like it worked before.
+  // inline with a dose. A dose is required, so the entry always counts toward that total.
   const commitSingleSupp = () => {
     const name = newSuppInput.trim();
-    if (!name) return;
-    if (suppLookupTimer.current) clearTimeout(suppLookupTimer.current);
     const key = matchedNutrientKeys(name)[0];
     const dose = parseFloat(newSuppDose);
-    const nutrients = key && !isNaN(dose) && dose > 0 ? [{ nutrient: key, dose, unit: newSuppUnit }] : [];
-    const entry: SupplementEntry = nutrients.length ? { name, nutrients } : name;
+    if (!name || !key || isNaN(dose) || dose <= 0) return;
+    if (suppLookupTimer.current) clearTimeout(suppLookupTimer.current);
+    const entry: SupplementEntry = { name, nutrients: [{ nutrient: key, dose, unit: newSuppUnit }] };
     const updated = [...dailySupplements, entry];
     setDailySupplementsState(updated);
     if (user) { setDailySupplements(user.id, updated); saveDailySupplements(user.id, updated).then(() => notifyProfileUpdated()).catch(() => {}); }
@@ -1441,7 +1440,7 @@ export default function ProfileScreen() {
                     type="text"
                     inputMode="decimal"
                     className="min-w-0 flex-1 rounded-xl border border-ink/10 px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                    placeholder="dose (if available)"
+                    placeholder="dose from label"
                     value={newSuppDose}
                     onChange={(e) => setNewSuppDose(e.target.value)}
                   />
@@ -1456,7 +1455,8 @@ export default function ProfileScreen() {
                   </select>
                   <button
                     type="button"
-                    className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90 active:opacity-80"
+                    disabled={!(parseFloat(newSuppDose) > 0)}
+                    className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90 active:opacity-80 disabled:opacity-40"
                     onClick={commitSingleSupp}
                   >
                     Add
