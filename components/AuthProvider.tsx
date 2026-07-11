@@ -54,6 +54,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     init();
 
+    // Watchdog: getSession() normally resolves instantly from local storage, but a stalled
+    // token refresh could hang it and pin the splash forever. Fail open after 10s — if a
+    // session does resolve later, onAuthStateChange still updates the user.
+    const watchdog = setTimeout(() => {
+      if (mounted) setLoading(false);
+    }, 10000);
+
     const {
       data: { subscription }
     } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -63,6 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       mounted = false;
+      clearTimeout(watchdog);
       subscription.unsubscribe();
     };
   }, []);

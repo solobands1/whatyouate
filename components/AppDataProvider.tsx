@@ -226,6 +226,17 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     load(user.id, true);
     loadNudges(user.id);
     initializePurchases(user.id).catch(() => {});
+    // Watchdog: never let the splash hang forever. A query that *errors* is fine — it
+    // rejects and load()'s finally recovers — but one that never settles would otherwise
+    // pin the splash indefinitely. After 12s, fail open: screens handle empty state, and
+    // real data still populates if the load eventually resolves.
+    const watchdog = setTimeout(() => {
+      if (!mountedRef.current) return;
+      _dataEverLoaded = true;
+      setLoading(false);
+      setNudgesLoaded(true);
+    }, 12000);
+    return () => clearTimeout(watchdog);
   }, [user, load, loadNudges]);
 
   useEffect(() => {
