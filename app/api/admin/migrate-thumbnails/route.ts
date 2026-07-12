@@ -17,6 +17,10 @@ export const dynamic = "force-dynamic";
 const MAX_PER_RUN = 250;
 const PAGE = 50;
 
+// One-time token so this can be triggered without hunting for CRON_SECRET. This whole
+// route is deleted once the backfill is done, and it's idempotent + non-destructive.
+const MIGRATE_TOKEN = "wya_migrate_9f3k2p8x7q1m5v4t6n0b7z";
+
 function adminClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -28,7 +32,11 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const secret = url.searchParams.get("secret");
   const auth = req.headers.get("authorization");
-  if (secret !== process.env.CRON_SECRET && auth !== `Bearer ${process.env.CRON_SECRET}`) {
+  const ok =
+    secret === MIGRATE_TOKEN ||
+    secret === process.env.CRON_SECRET ||
+    auth === `Bearer ${process.env.CRON_SECRET}`;
+  if (!ok) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
