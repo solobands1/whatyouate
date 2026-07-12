@@ -2,13 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
-import { useAuth } from "./AuthProvider";
 
-// TEMPORARY diagnostic. Renders only when the URL contains ?debug=1. Runs raw Supabase
-// probes and prints session + per-query status/errors on screen, so we can see why data
-// won't load on a specific device without needing a desktop Web Inspector. Remove after.
+// TEMPORARY diagnostic. Renders only when the URL contains ?debug=1. Probes the network
+// layer by layer with timeouts so a hang is reported instead of silently stalling. Remove
+// after diagnosis.
+const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SB_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+function timeout(ms: number): Promise<never> {
+  return new Promise((_, reject) => setTimeout(() => reject(new Error(`TIMEOUT ${ms}ms`)), ms));
+}
+
 export default function LoadDebugOverlay() {
-  const { user } = useAuth();
   const [on, setOn] = useState(false);
   const [lines, setLines] = useState<string[]>(["probing…"]);
 
@@ -20,42 +25,49 @@ export default function LoadDebugOverlay() {
     if (!on) return;
     let alive = true;
     const out: string[] = [];
-    const flush = () => { if (alive) setLines([...out]); };
+    const add = (s: string) => { out.push(s); if (alive) setLines([...out]); };
+
     (async () => {
+      add(`env url:${SB_URL ? "ok" : "MISSING"} anon:${SB_ANON ? "ok" : "MISSING"}`);
+
+      let token = "";
       try {
-        const { data } = await supabase.auth.getSession();
-        out.push(`session: ${data.session ? "yes" : "NONE"}  uid=${data.session?.user?.id?.slice(0, 8) ?? "-"}`);
+        const res = (await Promise.race([supabase.auth.getSession(), timeout(8000)])) as Awaited<
+          ReturnType<typeof supabase.auth.getSession>
+        >;
+        token = res.data?.session?.access_token ?? "";
+        add(`session: ${res.data?.session ? "yes" : "NONE"} token:${token ? token.length + "chars" : "none"}`);
       } catch (e) {
-        out.push(`session THREW: ${e instanceof Error ? e.message : String(e)}`);
+        add(`session: ${e instanceof Error ? e.message : String(e)}`);
       }
-      flush();
-      const uid = user?.id;
-      const probe = async (
-        label: string,
-        run: () => Promise<{ data: unknown; error: { message: string } | null; status?: number }>
-      ) => {
+
+      const probe = async (label: string, url: string, headers: Record<string, string>) => {
+        add(`${label}: sending…`);
         const t = Date.now();
         try {
-          const { data, error, status } = await run();
-          const n = Array.isArray(data) ? data.length : data ? 1 : 0;
-          out.push(`${label}: ${Date.now() - t}ms status=${status ?? "?"} ${error ? "ERR " + error.message : "rows=" + n}`);
+          const res = (await Promise.race([fetch(url, { headers }), timeout(15000)])) as Response;
+          const body = await res.text();
+          add(`${label}: ${Date.now() - t}ms status=${res.status} len=${body.length}`);
         } catch (e) {
-          out.push(`${label}: ${Date.now() - t}ms THREW ${e instanceof Error ? e.message : String(e)}`);
+          add(`${label}: ${Date.now() - t}ms ${e instanceof Error ? e.message : String(e)}`);
         }
-        flush();
       };
-      if (!uid) {
-        out.push("no user id (not logged in to the client)");
-        flush();
-      } else {
-        await probe("profiles", () => supabase.from("profiles").select("user_id").eq("user_id", uid).limit(1) as never);
-        await probe("meals", () => supabase.from("meals").select("id").eq("user_id", uid).limit(1) as never);
+
+      if (SB_URL && SB_ANON) {
+        await probe("health(noauth)", `${SB_URL}/auth/v1/health`, {});
+        await probe("rest(anon)", `${SB_URL}/rest/v1/profiles?select=user_id&limit=1`, { apikey: SB_ANON });
+        if (token) {
+          await probe("rest(auth)", `${SB_URL}/rest/v1/profiles?select=user_id&limit=1`, {
+            apikey: SB_ANON,
+            Authorization: `Bearer ${token}`,
+          });
+        }
       }
-      out.push("done");
-      flush();
+      add("done");
     })();
+
     return () => { alive = false; };
-  }, [on, user?.id]);
+  }, [on]);
 
   if (!on) return null;
 
@@ -67,13 +79,13 @@ export default function LoadDebugOverlay() {
         right: 8,
         bottom: 8,
         zIndex: 99999,
-        background: "rgba(0,0,0,0.88)",
+        background: "rgba(0,0,0,0.9)",
         color: "#4ade80",
         font: "11px/1.5 ui-monospace, Menlo, monospace",
         padding: 10,
         borderRadius: 8,
         whiteSpace: "pre-wrap",
-        maxHeight: "55vh",
+        maxHeight: "60vh",
         overflow: "auto",
       }}
     >
