@@ -47,7 +47,6 @@ import { openUpgradeModal } from "./UpgradeModal";
 import { getPendingReviewFlag, canShowReviewPrompt, checkAndSetMilestoneFlag } from "../lib/reviewPrompt";
 import { openReviewPrompt } from "./ReviewPromptModal";
 import OnboardingFlow from "./OnboardingFlow";
-import LoadDebugOverlay from "./LoadDebugOverlay";
 import { safeFallbackAnalysis } from "../lib/ai/schema";
 import { useWorkout, WORKOUT_TYPE_OPTIONS } from "../hooks/useWorkout";
 import { useMeals } from "../hooks/useMeals";
@@ -2709,7 +2708,6 @@ export default function HomeScreen() {
           </div>
         </div>
       )}
-      <LoadDebugOverlay />
       {showOnboarding && user && (
         <OnboardingFlow
           userId={user.id}
