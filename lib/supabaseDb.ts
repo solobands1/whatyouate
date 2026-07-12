@@ -550,9 +550,12 @@ export async function listMeals(userId: string, limit = 50) {
   if (cached && Date.now() - cached.ts < CACHE_TTL) return cached.data;
 
   if (DEBUG) console.debug("[supabase] listMeals -> meals");
+  // Deliberately exclude image_url: thumbnails are stored as base64 (~74 KB each), so
+  // pulling them for a long history is what stalls the app on slower connections. The
+  // photo is fetched on demand via getMealImage() only when one meal is shown/re-analyzed.
   const { data, error } = await supabase
     .from("meals")
-    .select("*")
+    .select("id, ts, created_at, analysis_json, calories, protein, carbs, fat, status")
     .eq("user_id", userId)
     .order("ts", { ascending: false, nullsFirst: false })
     .limit(limit);
@@ -560,6 +563,17 @@ export async function listMeals(userId: string, limit = 50) {
   const result = (data ?? []).map(mapMeal);
   mealsCache.set(cacheKey, { data: result, ts: Date.now() });
   return result;
+}
+
+// Fetch just the base64 thumbnail for a single meal, on demand — bulk loads skip it so
+// a long history stays light. Returns undefined if the meal has no photo.
+export async function getMealImage(mealId: string): Promise<string | undefined> {
+  if (useMemory) {
+    ensureLocalLoaded();
+    return memMeals.find((entry) => entry.meal.id === mealId)?.meal.imageThumb;
+  }
+  const { data } = await supabase.from("meals").select("image_url").eq("id", mealId).single();
+  return (data?.image_url as string | null | undefined) ?? undefined;
 }
 
 export async function markMealFailed(id: string): Promise<void> {

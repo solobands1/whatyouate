@@ -37,6 +37,7 @@ import {
   clearMealsCache,
   deleteMeal,
   deleteWorkout,
+  getMealImage,
   updateMeal,
   updateMealTs,
 } from "../lib/supabaseDb";
@@ -326,6 +327,21 @@ function ManualDateRow({ manualDate, setManualDate }: { manualDate: string; setM
       />
     </div>
   );
+}
+
+// Renders a meal photo, fetching the (base64) thumbnail on demand since bulk loads no
+// longer carry it. Uses an already-loaded thumb when present (e.g. a just-added meal).
+function LazyMealImage({ mealId, thumb, className }: { mealId: string; thumb?: string; className?: string }) {
+  const [src, setSrc] = useState<string | undefined>(thumb);
+  useEffect(() => {
+    if (thumb) { setSrc(thumb); return; }
+    let alive = true;
+    getMealImage(mealId).then((url) => { if (alive) setSrc(url); }).catch(() => {});
+    return () => { alive = false; };
+  }, [mealId, thumb]);
+  if (!src) return null;
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={src} alt="Meal photo" className={className} />;
 }
 
 export default function HomeScreen() {
@@ -1366,7 +1382,7 @@ export default function HomeScreen() {
     if (nameChanged && quickConfirmName.trim()) {
       // Close immediately; the recents pill shows "Analyzing Food…" while it re-analyzes.
       const mealId = quickConfirmMeal.id;
-      const imageThumb = quickConfirmMeal.imageThumb;
+      const imageThumb = quickConfirmMeal.imageThumb ?? await getMealImage(mealId);
       const newName = quickConfirmName.trim();
       const capturedUserId = user.id;
 
@@ -1438,7 +1454,7 @@ export default function HomeScreen() {
   const handleEditReanalyze = () => {
     if (!meals.editingMeal || !user) return;
     const mealId = meals.editingMeal.id;
-    const imageThumb = meals.editingMeal.imageThumb;
+    const existingThumb = meals.editingMeal.imageThumb;
     const newName = meals.editForm.name.trim();
     const capturedUserId = user.id;
     // Close immediately; the recents pill shows "Analyzing Food…" while it re-analyzes.
@@ -1447,6 +1463,7 @@ export default function HomeScreen() {
     setEditRecents(false);
     setStreakSaverMode(false);
     (async () => {
+      const imageThumb = existingThumb ?? await getMealImage(mealId);
       let imageBase64: string | undefined;
       if (imageThumb) {
         try {
@@ -1486,7 +1503,7 @@ export default function HomeScreen() {
     if (!failedMealPrompt || !failedMealText.trim() || !user) return;
     setFailedMealAnalyzing(true);
     const mealIdToUpdate = failedMealPrompt.mealId;
-    const imageThumb = failedMealPrompt.thumb;
+    const imageThumb = failedMealPrompt.thumb ?? await getMealImage(mealIdToUpdate);
     const text = failedMealText.trim();
     // Close immediately and force the recents pill into the "Analyzing Food…" shimmer.
     // reanalyzingMealIds overrides the meal's age — a stale failed photo is older than
@@ -3926,13 +3943,11 @@ export default function HomeScreen() {
             ) : (
               <>
                 <h2 className="text-base font-semibold text-ink">Edit Meal</h2>
-                {meals.editingMeal.imageThumb && (
-                  <img
-                    src={meals.editingMeal.imageThumb}
-                    alt="Meal photo"
-                    className="mt-3 h-32 w-full rounded-lg object-cover"
-                  />
-                )}
+                <LazyMealImage
+                  mealId={meals.editingMeal.id}
+                  thumb={meals.editingMeal.imageThumb}
+                  className="mt-3 h-32 w-full rounded-lg object-cover"
+                />
                 <div className="mt-3">
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Portion size</p>
                   <div className="mt-2 flex gap-2">
@@ -4219,9 +4234,11 @@ export default function HomeScreen() {
           <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
             <h2 className="text-base font-semibold text-ink">What did you eat?</h2>
             <p className="mt-1 text-xs text-muted/70">The photo was unclear. Type what you had and we'll estimate the nutrition.</p>
-            {failedMealPrompt.thumb && (
-              <img src={failedMealPrompt.thumb} alt="Meal photo" className="mt-3 h-28 w-full rounded-lg object-cover opacity-60" />
-            )}
+            <LazyMealImage
+              mealId={failedMealPrompt.mealId}
+              thumb={failedMealPrompt.thumb}
+              className="mt-3 h-28 w-full rounded-lg object-cover opacity-60"
+            />
             <div className="mt-4">
               <input
                 className="w-full rounded-lg border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
@@ -4267,13 +4284,11 @@ export default function HomeScreen() {
                 return "Does this look right? Correct anything that seems off.";
               })()}
             </p>
-            {quickConfirmMeal.imageThumb && (
-              <img
-                src={quickConfirmMeal.imageThumb}
-                alt="Meal photo"
-                className="mt-3 h-32 w-full rounded-lg object-cover"
-              />
-            )}
+            <LazyMealImage
+              mealId={quickConfirmMeal.id}
+              thumb={quickConfirmMeal.imageThumb}
+              className="mt-3 h-32 w-full rounded-lg object-cover"
+            />
             <div className="mt-4">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Food name</p>
               <input
