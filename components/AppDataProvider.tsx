@@ -58,6 +58,7 @@ type AppDataContextValue = {
   waterLogs: Record<string, number>;
   habitState: HabitState | null;
   loading: boolean;
+  profileResolved: boolean;
   setMeals: React.Dispatch<React.SetStateAction<MealLog[]>>;
   setWorkouts: React.Dispatch<React.SetStateAction<WorkoutSession[]>>;
   setProfile: React.Dispatch<React.SetStateAction<UserProfile | null>>;
@@ -68,6 +69,21 @@ type AppDataContextValue = {
 };
 
 const AppDataContext = createContext<AppDataContextValue | undefined>(undefined);
+
+// Retry a fetch a couple of times with backoff. Flaky connections drop requests
+// intermittently; without this a single dropped query fails the whole load.
+async function withRetry<T>(fn: () => Promise<T>, retries = 2, delayMs = 500): Promise<T> {
+  let lastErr: unknown;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      if (attempt < retries) await new Promise((r) => setTimeout(r, delayMs * (attempt + 1)));
+    }
+  }
+  throw lastErr;
+}
 
 export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
@@ -83,6 +99,10 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const [waterLogs, setWaterLogs] = useState<Record<string, number>>({});
   const [habitState, setHabitState] = useState<HabitState | null>(null);
   const [loading, setLoading] = useState(true);
+  // True only once getProfile has actually returned (even to null). Distinguishes a
+  // genuinely new user (no profile) from a load that failed/timed out — so onboarding
+  // never shows (and can't overwrite a real profile) just because the load didn't complete.
+  const [profileResolved, setProfileResolved] = useState(false);
   const mountedRef = useRef(true);
 
   useEffect(() => {
@@ -114,18 +134,32 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
 
   const load = useCallback(async (userId: string, isInitial = false) => {
     try {
-      const [profileData, mealsData, workoutsData, feelLogsData, weightLogsData, reflectionsData, habitHistoryData, waterLogsData, habitStateData] = await Promise.all([
-        getProfile(userId),
-        listMeals(userId, 400),
-        listWorkouts(userId, 50),
-        getFeelLogs(userId, 50),
-        getWeightLogs(userId, 60),
-        fetchReflections(userId),
-        fetchHabitHistory(userId),
-        fetchWaterLogs(userId),
-        fetchHabitState(userId),
+      const settled = await Promise.allSettled([
+        withRetry(() => getProfile(userId)),
+        withRetry(() => listMeals(userId, 400)),
+        withRetry(() => listWorkouts(userId, 50)),
+        withRetry(() => getFeelLogs(userId, 50)),
+        withRetry(() => getWeightLogs(userId, 60)),
+        withRetry(() => fetchReflections(userId)),
+        withRetry(() => fetchHabitHistory(userId)),
+        withRetry(() => fetchWaterLogs(userId)),
+        withRetry(() => fetchHabitState(userId)),
       ]);
       if (!mountedRef.current) return;
+
+      // A dropped query (flaky connection) must not blank the whole app — use whatever
+      // resolved. Crucially, only treat the profile as "resolved" if its query actually
+      // came back, so a failed load never masquerades as "new user → onboarding".
+      const profileData = settled[0].status === "fulfilled" ? settled[0].value : null;
+      const mealsData = settled[1].status === "fulfilled" ? settled[1].value : [];
+      const workoutsData = settled[2].status === "fulfilled" ? settled[2].value : [];
+      const feelLogsData = settled[3].status === "fulfilled" ? settled[3].value : [];
+      const weightLogsData = settled[4].status === "fulfilled" ? settled[4].value : [];
+      const reflectionsData = settled[5].status === "fulfilled" ? settled[5].value : [];
+      const habitHistoryData = settled[6].status === "fulfilled" ? settled[6].value : [];
+      const waterLogsData = settled[7].status === "fulfilled" ? settled[7].value : {};
+      const habitStateData = settled[8].status === "fulfilled" ? settled[8].value : null;
+      if (settled[0].status === "fulfilled") setProfileResolved(true);
 
       // Normalize existing text cache keys (one-time migration, idempotent)
       migrateTextCacheKeys();
@@ -218,6 +252,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    setProfileResolved(false);
     if (!user) {
       setLoading(false);
       return;
@@ -272,7 +307,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AppDataContext.Provider
-      value={{ profile, meals, workouts, nudges, nudgesLoaded, feelLogs, weightLogs, reflections, habitHistory, waterLogs, habitState, loading, setMeals, setWorkouts, setProfile, setWeightLogs, setWaterLogs, setHabitState, reload }}
+      value={{ profile, meals, workouts, nudges, nudgesLoaded, feelLogs, weightLogs, reflections, habitHistory, waterLogs, habitState, loading, profileResolved, setMeals, setWorkouts, setProfile, setWeightLogs, setWaterLogs, setHabitState, reload }}
     >
       {children}
     </AppDataContext.Provider>

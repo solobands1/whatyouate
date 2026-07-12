@@ -347,7 +347,7 @@ function LazyMealImage({ mealId, thumb, className }: { mealId: string; thumb?: s
 export default function HomeScreen() {
   const router = useRouter();
   const { user, loading } = useAuth();
-  const { profile: ctxProfile, meals: ctxMeals, workouts: ctxWorkouts, feelLogs: ctxFeelLogs, weightLogs: ctxWeightLogs, reflections: ctxReflections, habitHistory: ctxHabitHistory, waterLogs: ctxWaterLogs, habitState: ctxHabitState, setHabitState, setWeightLogs, nudges, nudgesLoaded, loading: dataLoading, reload } = useAppData();
+  const { profile: ctxProfile, meals: ctxMeals, workouts: ctxWorkouts, feelLogs: ctxFeelLogs, weightLogs: ctxWeightLogs, reflections: ctxReflections, habitHistory: ctxHabitHistory, waterLogs: ctxWaterLogs, habitState: ctxHabitState, setHabitState, setWeightLogs, nudges, nudgesLoaded, loading: dataLoading, profileResolved, reload } = useAppData();
   const trial = useTrialStatus();
 
   const [profile, setProfile] = useState<UserProfile | undefined>(undefined);
@@ -2211,7 +2211,10 @@ export default function HomeScreen() {
     const seen = localStorage.getItem(key);
     const gateSeen = localStorage.getItem(gateKey);
 
-    if (!seen && !active && !gateSeen) {
+    // Only decide new-user/onboarding once the profile has actually loaded. If the load
+    // failed or timed out (profileResolved stays false), never show onboarding — otherwise
+    // a flaky connection could show it to an existing user and overwrite their profile.
+    if (profileResolved && !seen && !active && !gateSeen) {
       if (!onboardingDone) {
         setShowOnboarding(true);
       } else {
@@ -2224,7 +2227,7 @@ export default function HomeScreen() {
     if (localStorage.getItem(`wya_streak_saver_dismissed_${user.id}_${todayKey()}`) === "true") {
       setStreakSaverDismissed(true);
     }
-  }, [user, loadingData, ctxProfile]);
+  }, [user, loadingData, ctxProfile, profileResolved]);
 
   const displayMeals = isDemoMode ? demoData.meals : meals.meals;
   const displayWorkouts = isDemoMode ? demoData.workouts : workout.workouts;
