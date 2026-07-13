@@ -2,10 +2,10 @@
 // a photo/data-URL would bloat the JWT). Default color is the WhatYouAte brand blue, and
 // picking blue is how you "revert". Initials come from the name we already store.
 
-export const DEFAULT_AVATAR_COLOR = "#6FA8FF"; // WhatYouAte primary blue
+export const DEFAULT_AVATAR_COLOR = "#DDEBFF"; // light blue — matches the original avatar
 export const AVATAR_COLORS = [
-  "#6FA8FF", // blue (default / revert)
-  "#DDEBFF", // light blue (the original tint)
+  "#DDEBFF", // light blue (default / revert — the original look)
+  "#6FA8FF", // brand blue
   "#FF6482", // coral
   "#FF9500", // orange
   "#34C759", // green
@@ -15,7 +15,6 @@ export const AVATAR_COLORS = [
   "#8E8E93", // gray
 ];
 
-// Dark initials on light swatches (e.g. the light blue), white on darker ones.
 function isLightColor(hex: string): boolean {
   const c = hex.replace("#", "");
   if (c.length < 6) return false;
@@ -23,6 +22,13 @@ function isLightColor(hex: string): boolean {
   const g = parseInt(c.slice(2, 4), 16);
   const b = parseInt(c.slice(4, 6), 16);
   return 0.299 * r + 0.587 * g + 0.114 * b > 175;
+}
+
+// Initials color: the light blue keeps the original darker-blue letters; other light
+// swatches use dark ink; the rest use white.
+function textColorFor(bg: string): string {
+  if (bg.toLowerCase() === "#ddebff") return "#4F88E8"; // darker blue on light blue
+  return isLightColor(bg) ? "#1F2937" : "#ffffff";
 }
 
 export function avatarInitials(firstName?: string, lastName?: string, email?: string): string {
@@ -51,7 +57,7 @@ export default function ProfileAvatar({
 }) {
   const initials = avatarInitials(firstName, lastName, email);
   const bg = color || DEFAULT_AVATAR_COLOR;
-  const textColor = isLightColor(bg) ? "#1F2937" : "#ffffff";
+  const textColor = textColorFor(bg);
   return (
     <div
       className={`flex shrink-0 items-center justify-center rounded-full font-semibold ${className}`}

@@ -372,6 +372,11 @@ export default function ProfileScreen() {
   }, [healthKitShowSettings]);
 
   useEffect(() => {
+    document.body.style.overflow = editingName ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [editingName]);
+
+  useEffect(() => {
     if (!healthKitShowSettings) return;
     getHealthKitAuthStatus().then(({ notDetermined }) => {
       setHealthKitModalState(notDetermined ? "connect" : "instructions");
