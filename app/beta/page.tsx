@@ -61,7 +61,7 @@ export default function BetaLandingPage() {
 
         <div className="mt-8 flex flex-col items-center">
           <div className="h-24 w-24 overflow-hidden rounded-2xl border border-ink/10 bg-white shadow-sm">
-            <img src="/icon-512.png" alt="App icon" className="h-full w-full object-cover" />
+            <img src="/icon.svg" alt="App icon" className="h-full w-full object-cover" />
           </div>
         </div>
 

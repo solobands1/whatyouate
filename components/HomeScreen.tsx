@@ -47,6 +47,7 @@ import { openUpgradeModal } from "./UpgradeModal";
 import { getPendingReviewFlag, canShowReviewPrompt, checkAndSetMilestoneFlag } from "../lib/reviewPrompt";
 import { openReviewPrompt } from "./ReviewPromptModal";
 import OnboardingFlow from "./OnboardingFlow";
+import ProfileAvatar from "./ProfileAvatar";
 import { safeFallbackAnalysis } from "../lib/ai/schema";
 import { useWorkout, WORKOUT_TYPE_OPTIONS } from "../hooks/useWorkout";
 import { useMeals } from "../hooks/useMeals";
@@ -3017,7 +3018,7 @@ export default function HomeScreen() {
             <Link
               href="/profile"
               data-tour="nav-profile"
-              className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-primary/30 bg-primary/10 shadow-[0_2px_8px_rgba(111,168,255,0.20)] hover:bg-primary/15 transition-colors"
+              className="relative flex h-9 w-9 items-center justify-center rounded-full shadow-[0_2px_8px_rgba(111,168,255,0.20)] transition active:opacity-80"
               onClick={() => {
                 if (!user || !showProfileBell) return;
                 const openedKey = `wya_profile_prompt_opened_${user.id}`;
@@ -3029,10 +3030,7 @@ export default function HomeScreen() {
                 window.dispatchEvent(new CustomEvent("profile-prompt-opened"));
               }}
             >
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
-                <circle cx="12" cy="8" r="4" />
-                <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
-              </svg>
+              <ProfileAvatar firstName={profile?.firstName} lastName={profile?.lastName} email={user?.email} color={profile?.avatarColor} size={36} />
               {showProfileBell && (
                 <span className="absolute -right-0.5 -top-0.5 inline-flex h-3.5 w-3.5 items-center justify-center rounded-full border border-primary/25 bg-primary text-[8px] text-white animate-pulse shadow-[0_4px_10px_rgba(15,23,42,0.18)]">
                   <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -3633,9 +3631,13 @@ export default function HomeScreen() {
                     {group.meals.map((meal) => {
                       const idx = pillIdx++;
                       const isReanalyzing = reanalyzingMealIds.has(meal.id);
-                      const isShimmer = isReanalyzing || (meal.status === "processing" && Date.now() - meal.ts < 90_000);
-                      const isStaleOrFailed = !isReanalyzing && ((meal.status === "processing" && Date.now() - meal.ts >= 90_000) || meal.status === "failed");
                       const isUnsaved = meal.status === "unsaved";
+                      // Optimistic pill (local id, DB write still in flight): keep it in the
+                      // "Analyzing" state until the real record swaps in, so we never flash an
+                      // interim estimate that then rounds/changes when the final value lands.
+                      const isPendingSave = meal.id.startsWith("optimistic") && !isUnsaved;
+                      const isShimmer = isReanalyzing || isPendingSave || (meal.status === "processing" && Date.now() - meal.ts < 90_000);
+                      const isStaleOrFailed = !isReanalyzing && ((meal.status === "processing" && Date.now() - meal.ts >= 90_000) || meal.status === "failed");
                       // Skip the entrance animation for any just-added done meal (quick add,
                       // manual add) so the optimistic→real DB swap doesn't remount + re-animate
                       // the pill (the "jolt"). Its macros are already final, so nothing changes.
@@ -3669,7 +3671,7 @@ export default function HomeScreen() {
                         }}
                       >
                         <span className="flex flex-col">
-                          {meal.status === "processing" || isReanalyzing ? (
+                          {meal.status === "processing" || isReanalyzing || isPendingSave ? (
                             isShimmer ? "Analyzing Food…" : (
                               <span className="flex items-center gap-1.5 text-ink/50">
                                 <svg className="h-3 w-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
@@ -4961,7 +4963,7 @@ export default function HomeScreen() {
                 ) : (
                   <div className="py-6 text-center">
                     <p className="text-sm text-muted/60">No matches found.</p>
-                    <button type="button" onClick={() => { setShowQuickAdd(false); meals.openManualMealEntry(); }} className="mt-2 text-xs font-semibold text-primary/80 active:opacity-60">Log it fresh</button>
+                    <button type="button" onClick={() => { setShowQuickAdd(false); meals.openManualMealEntry(); }} className="mt-2 text-xs font-semibold text-primary/80 active:opacity-60">Log It Fresh</button>
                   </div>
                 );
               })()

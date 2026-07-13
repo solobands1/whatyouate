@@ -196,6 +196,7 @@ export async function getProfile(userId: string): Promise<UserProfile | null> {
     id: data.user_id,
     firstName: data.first_name ?? "",
     lastName: data.last_name ?? "",
+    avatarColor: data.avatar_color ?? undefined,
     height: data.height ?? null,
     weight: data.weight ?? null,
     age: data.age ?? null,

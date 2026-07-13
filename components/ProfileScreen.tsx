@@ -16,6 +16,7 @@ import { requestHealthKitPermissions, checkHealthKitAuthorization, syncHealthKit
 import { openReviewPrompt } from "./ReviewPromptModal";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
+import ProfileAvatar, { AVATAR_COLORS, DEFAULT_AVATAR_COLOR } from "./ProfileAvatar";
 import { useAuth } from "./AuthProvider";
 import { useAppData } from "./AppDataProvider";
 import { useTrialStatus } from "../hooks/useTrialStatus";
@@ -155,6 +156,7 @@ export default function ProfileScreen() {
   const profileTapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [firstName, setFirstName] = useState("");
+  const [avatarColor, setAvatarColor] = useState<string | undefined>(undefined);
   const [lastName, setLastName] = useState("");
   const [heightCm, setHeightCm] = useState("");
   const [heightFt, setHeightFt] = useState("");
@@ -254,6 +256,7 @@ export default function ProfileScreen() {
       const meta = (user as { user_metadata?: Record<string, string> }).user_metadata ?? {};
       setFirstName(data.firstName || meta.first_name || "");
       setLastName(data.lastName || meta.last_name || "");
+      setAvatarColor(data.avatarColor ?? undefined);
       setSex(data.sex ?? "prefer_not");
       setGoalDirection(data.goalDirection ?? "maintain");
       setFeelingGoals(data.feelingGoals ?? []);
@@ -417,6 +420,21 @@ export default function ProfileScreen() {
     if (!finished || !user) return;
     localStorage.removeItem(`wya_walkthrough_profile_${user.id}`);
     setRunProfileTour(false);
+  };
+
+  // Save the avatar color on its own (not through the big Save button), wrapped so it can
+  // never break anything if the column isn't present yet. notifyProfileUpdated re-syncs Home.
+  const handleSelectAvatarColor = (color: string) => {
+    setAvatarColor(color);
+    if (!user) return;
+    (async () => {
+      try {
+        await supabase.from("profiles").update({ avatar_color: color }).eq("user_id", user.id);
+        notifyProfileUpdated();
+      } catch {
+        /* column may not exist yet — harmless */
+      }
+    })();
   };
 
   const handleProfileTitleTap = () => {
@@ -772,12 +790,14 @@ export default function ProfileScreen() {
             Back
           </button>
           <div className="flex items-center gap-4">
-            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border border-primary/30 bg-primary/10 shadow-[0_2px_10px_rgba(111,168,255,0.20)]">
-              <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
-                <circle cx="12" cy="8" r="4" />
-                <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
-              </svg>
-            </div>
+            <ProfileAvatar
+              firstName={firstName}
+              lastName={lastName}
+              email={user?.email}
+              color={avatarColor}
+              size={72}
+              className="shadow-[0_2px_10px_rgba(111,168,255,0.20)]"
+            />
             <div className="min-w-0 flex-1">
               <h1 className="text-2xl font-semibold text-ink" onClick={handleProfileTitleTap}>Profile</h1>
               <div className="mt-1 flex items-center gap-1.5">
@@ -814,6 +834,22 @@ export default function ProfileScreen() {
           })()}
           {loadError && <p className="mt-2 text-xs text-muted/70">{loadError}</p>}
         </header>
+
+        <div className="mt-4 flex items-center gap-2.5">
+          {AVATAR_COLORS.map((c) => {
+            const selected = (avatarColor || DEFAULT_AVATAR_COLOR) === c;
+            return (
+              <button
+                key={c}
+                type="button"
+                aria-label="Avatar color"
+                onClick={() => handleSelectAvatarColor(c)}
+                className={`h-6 w-6 rounded-full transition active:scale-90 ${selected ? "ring-2 ring-offset-2 ring-ink/25" : ""}`}
+                style={{ backgroundColor: c }}
+              />
+            );
+          })}
+        </div>
 
         <Card className="mt-6 border border-primary/15">
           <div className="mt-0 border-t-0 pt-0">

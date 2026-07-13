@@ -85,7 +85,7 @@ export default function LoginClient() {
       setSubmitting(false);
       return;
     }
-    setStatus("Code sent. Check your email.");
+    setStatus("Reset Email Sent");
     setSubmitting(false);
     setMode("reset");
   };
@@ -137,7 +137,7 @@ export default function LoginClient() {
         {(mode === "signin" || mode === "forgot") && (
           <div className="flex flex-col items-center mb-10">
             <div className="h-16 w-16 overflow-hidden rounded-2xl border border-ink/10 shadow-sm mb-4">
-              <img src="/icon-512.png" alt="WhatYouAte" className="h-full w-full object-cover" />
+              <img src="/icon.svg" alt="WhatYouAte" className="h-full w-full object-cover" />
             </div>
             <h1 className="text-2xl font-semibold tracking-tight text-ink">
               WhatYouAt<span className="relative inline-block">e
@@ -380,7 +380,7 @@ export default function LoginClient() {
                 />
                 <EyeToggle />
               </div>
-              {status && <p className="text-xs text-red-500/80">{status}</p>}
+              {status && <p className={`text-xs ${status === "Reset Email Sent" ? "text-green-600" : "text-red-500/80"}`}>{status}</p>}
               <button
                 type="button"
                 className="mt-1 w-full rounded-xl bg-primary py-3.5 text-sm font-semibold text-white transition active:opacity-80 disabled:opacity-50"

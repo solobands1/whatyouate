@@ -34,6 +34,7 @@ export interface UserProfile {
   id: string;
   firstName?: string;
   lastName?: string;
+  avatarColor?: string;
   height: number | null;
   weight: number | null;
   age: number | null;
