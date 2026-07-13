@@ -435,6 +435,7 @@ export default function ProfileScreen() {
     (async () => {
       try {
         await supabase.from("profiles").update({ avatar_color: color }).eq("user_id", user.id);
+        clearProfileCache(user.id);
         notifyProfileUpdated();
       } catch {
         /* column may not exist yet — harmless */
@@ -472,8 +473,9 @@ export default function ProfileScreen() {
     }
     setFirstName(first.trim());
     setLastName(last.trim());
-    // Refresh the shared profile context so the new name survives navigating away and back
-    // (without this the modal save only stuck until the next reload from stale context).
+    // Clear the cached profile + refresh the shared context so the new name survives
+    // navigating away and back — otherwise the reload returns the stale cached profile.
+    clearProfileCache(user.id);
     notifyProfileUpdated();
   };
 
