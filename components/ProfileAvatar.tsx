@@ -5,6 +5,7 @@
 export const DEFAULT_AVATAR_COLOR = "#6FA8FF"; // WhatYouAte primary blue
 export const AVATAR_COLORS = [
   "#6FA8FF", // blue (default / revert)
+  "#DDEBFF", // light blue (the original tint)
   "#FF6482", // coral
   "#FF9500", // orange
   "#34C759", // green
@@ -13,6 +14,16 @@ export const AVATAR_COLORS = [
   "#FF2D55", // pink
   "#8E8E93", // gray
 ];
+
+// Dark initials on light swatches (e.g. the light blue), white on darker ones.
+function isLightColor(hex: string): boolean {
+  const c = hex.replace("#", "");
+  if (c.length < 6) return false;
+  const r = parseInt(c.slice(0, 2), 16);
+  const g = parseInt(c.slice(2, 4), 16);
+  const b = parseInt(c.slice(4, 6), 16);
+  return 0.299 * r + 0.587 * g + 0.114 * b > 175;
+}
 
 export function avatarInitials(firstName?: string, lastName?: string, email?: string): string {
   const f = (firstName ?? "").trim();
@@ -39,10 +50,12 @@ export default function ProfileAvatar({
   className?: string;
 }) {
   const initials = avatarInitials(firstName, lastName, email);
+  const bg = color || DEFAULT_AVATAR_COLOR;
+  const textColor = isLightColor(bg) ? "#1F2937" : "#ffffff";
   return (
     <div
-      className={`flex shrink-0 items-center justify-center rounded-full font-semibold text-white ${className}`}
-      style={{ width: size, height: size, backgroundColor: color || DEFAULT_AVATAR_COLOR, fontSize: Math.round(size * 0.4) }}
+      className={`flex shrink-0 items-center justify-center rounded-full font-semibold ${className}`}
+      style={{ width: size, height: size, backgroundColor: bg, color: textColor, fontSize: Math.round(size * 0.4) }}
     >
       {initials || (
         <svg
