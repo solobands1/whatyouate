@@ -472,6 +472,9 @@ export default function ProfileScreen() {
     }
     setFirstName(first.trim());
     setLastName(last.trim());
+    // Refresh the shared profile context so the new name survives navigating away and back
+    // (without this the modal save only stuck until the next reload from stale context).
+    notifyProfileUpdated();
   };
 
   const handleSave = async () => {
