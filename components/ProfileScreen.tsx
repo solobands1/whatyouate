@@ -372,8 +372,24 @@ export default function ProfileScreen() {
   }, [healthKitShowSettings]);
 
   useEffect(() => {
-    document.body.style.overflow = editingName ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
+    if (!editingName) return;
+    // overflow:hidden doesn't reliably stop touch-scroll on iOS Safari — pin the body with
+    // position:fixed and restore the scroll position on close (no visual jump).
+    const scrollY = window.scrollY;
+    const body = document.body;
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.left = "0";
+    body.style.right = "0";
+    body.style.width = "100%";
+    return () => {
+      body.style.position = "";
+      body.style.top = "";
+      body.style.left = "";
+      body.style.right = "";
+      body.style.width = "";
+      window.scrollTo(0, scrollY);
+    };
   }, [editingName]);
 
   useEffect(() => {
