@@ -671,6 +671,11 @@ export default function HomeScreen() {
     if (!user || !ctxHabitHistory?.length) return null;
     const statuses = getChangeStatuses(user.id);
     const TEN_DAYS = 10 * 86_400_000;
+    // Global cooldown: never stack check-ins across multiple kept habits — surface at most
+    // one every 5 days, no matter how many are individually due.
+    const GLOBAL_COOLDOWN = 5 * 86_400_000;
+    const lastAskedAny = Math.max(0, ...Object.values(statuses).map((s) => s.lastAsked || 0));
+    if (Date.now() - lastAskedAny < GLOBAL_COOLDOWN) return null;
     const seen = new Set<string>();
     const kept = [...ctxHabitHistory]
       .filter((h) => h.keep === "yes" || h.keep === "maybe")
