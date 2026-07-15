@@ -18,7 +18,7 @@ import {
   notifyMealsUpdated,
   notifyWorkoutsUpdated
 } from "../lib/dataEvents";
-import { formatApprox, formatDateShort, todayKey, dayKeyFromTs } from "../lib/utils";
+import { approxFromRange, formatApprox, formatDateShort, todayKey, dayKeyFromTs } from "../lib/utils";
 import { supabase } from "../lib/supabaseClient";
 import "../lib/mealQueue";
 import BarcodeScannerOverlay from "./BarcodeScannerOverlay";
@@ -1232,12 +1232,19 @@ export default function HomeScreen() {
     recentQuickAddRef.current = now;
     quickAddBouncedRef.current = false;
     setTimeout(() => { if (recentQuickAddRef.current === now) recentQuickAddRef.current = 0; }, 60_000);
-    const optimisticMeals = pendingItems.map(({ analysis }, i) => ({
-      id: `optimistic-${now}-${i}`,
-      ts: now - i,
-      analysisJson: analysis,
-      status: "done" as const,
-    }));
+    const optimisticMeals = pendingItems.map(({ analysis }, i) => {
+      const r = analysis.estimated_ranges;
+      return {
+        id: `optimistic-${now}-${i}`,
+        ts: now - i,
+        analysisJson: analysis,
+        // Final rounded macros up front, so the pill shows the confirmed number once —
+        // never an interim value that rounds/changes when the DB record swaps in.
+        calories: approxFromRange(r.calories_min, r.calories_max),
+        protein: approxFromRange(r.protein_g_min, r.protein_g_max),
+        status: "done" as const,
+      };
+    });
     meals.setMeals((prev) => [...optimisticMeals, ...prev]);
     setShowQuickAdd(false);
     setQuickAddSelected({});
@@ -3632,11 +3639,7 @@ export default function HomeScreen() {
                       const idx = pillIdx++;
                       const isReanalyzing = reanalyzingMealIds.has(meal.id);
                       const isUnsaved = meal.status === "unsaved";
-                      // Optimistic pill (local id, DB write still in flight): keep it in the
-                      // "Analyzing" state until the real record swaps in, so we never flash an
-                      // interim estimate that then rounds/changes when the final value lands.
-                      const isPendingSave = meal.id.startsWith("optimistic") && !isUnsaved;
-                      const isShimmer = isReanalyzing || isPendingSave || (meal.status === "processing" && Date.now() - meal.ts < 90_000);
+                      const isShimmer = isReanalyzing || (meal.status === "processing" && Date.now() - meal.ts < 90_000);
                       const isStaleOrFailed = !isReanalyzing && ((meal.status === "processing" && Date.now() - meal.ts >= 90_000) || meal.status === "failed");
                       // Skip the entrance animation for any just-added done meal (quick add,
                       // manual add) so the optimistic→real DB swap doesn't remount + re-animate
@@ -3671,7 +3674,7 @@ export default function HomeScreen() {
                         }}
                       >
                         <span className="flex flex-col">
-                          {meal.status === "processing" || isReanalyzing || isPendingSave ? (
+                          {meal.status === "processing" || isReanalyzing ? (
                             isShimmer ? "Analyzing Food…" : (
                               <span className="flex items-center gap-1.5 text-ink/50">
                                 <svg className="h-3 w-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">

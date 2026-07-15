@@ -6,6 +6,7 @@ import type { MealAnalysis, MealLog } from "../lib/types";
 import { addMeal, listMeals, updateMeal, updateMealTs } from "../lib/supabaseDb";
 import { safeFallbackAnalysis } from "../lib/ai/schema";
 import { getFoodTextEntry, setFoodTextEntry, deleteFoodTextEntry, incrementFoodTextLogCount, seedTextCacheFromMeals, normalizeFoodKey } from "../lib/foodCache";
+import { approxFromRange } from "../lib/utils";
 
 export function useMeals(
   user: User | null,
@@ -180,7 +181,8 @@ export function useMeals(
     const today = new Date();
     const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
     const optimisticTs = capturedDate !== todayStr ? new Date(capturedDate + "T12:00:00").getTime() : Date.now();
-    setMeals((prev) => [{ id: optimisticId, ts: optimisticTs, analysisJson: scaledAnalysis as any, userCorrection: capturedName, status: "done" as const }, ...prev]);
+    const esc = scaledAnalysis.estimated_ranges;
+    setMeals((prev) => [{ id: optimisticId, ts: optimisticTs, analysisJson: scaledAnalysis as any, userCorrection: capturedName, calories: approxFromRange(esc.calories_min, esc.calories_max), protein: approxFromRange(esc.protein_g_min, esc.protein_g_max), status: "done" as const }, ...prev]);
     setManualText("");
     setManualResult(null);
     setManualPortion("medium");
