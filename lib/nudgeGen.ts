@@ -145,7 +145,7 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
         lines.push(`Still needed today: ${parts.join(" | ")}`);
       }
       if (todayMeals?.length) {
-        const mealStr = todayMeals.map((m) => `${m.name} (~${m.calories} kcal, ${m.protein}g protein)`).join(", ");
+        const mealStr = todayMeals.map((m) => `${m.name} — ${m.time} (~${m.calories} kcal, ${m.protein}g protein)`).join(", ");
         lines.push(`Food logged today: ${mealStr}`);
         if (mealsLoggedToday) lines.push(`Logs today: ${mealsLoggedToday}`);
       }
@@ -165,6 +165,8 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
   } else if (nudgeIntentWindow === "evening") {
     lines.push(`\nFRAMING NOTE: This is an evening nudge. Today's data is available — use it for a brief, specific, warm reflection on how the day went. If there's a meaningful gap still open and a simple food could help, mention it as an option, not a directive.`);
   }
+
+  lines.push(`\nTIME REFERENCES: When you mention when the user ate something, say "this morning", "this afternoon", or "this evening" — never a specific clock time (their logged times aren't precise).`);
 
   const daysSinceLastLog = ctx.daysSinceLastLog as number | undefined;
   if (daysSinceLastLog !== undefined && daysSinceLastLog >= 2) {
@@ -389,6 +391,7 @@ RULES:
 - CRITICAL: Never use em dashes (— or —). Use commas or rewrite as separate sentences.
 - No percentages. Say "most days", "the one strong day", "almost every time" instead.
 - ACTIVITY AND SLEEP: If activity or sleep data is present, weave it in naturally only when it adds genuine insight — "an active week" or "a few short nights" as supporting color, never as the main beat. Never use steps or sleep to adjust calorie framing or suggest eating more.
+- TIME REFERENCES: When mentioning when food was eaten, say "this morning", "this afternoon", or "this evening" (or a day) — never a specific clock time, since logged times aren't precise.
 
 Return ONLY valid JSON:
 {"message": "..."}`;

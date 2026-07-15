@@ -1008,15 +1008,11 @@ export function buildSmartNudgeContext(
     (m) => localDayKey(m.ts) === todayKeyStr && m.status !== "failed" && m.analysisJson?.source !== "supplement"
   ).sort((a, b) => a.ts - b.ts);
 
+  // Relative period, never a specific clock time — manual-logged meal times are unreliable,
+  // and the coach should only ever say "this morning / afternoon / evening".
   const formatMealTime = (ts: number) => {
     const localHour = tsToLocalHour(ts);
-    const localMin = timezoneOffsetMinutes !== undefined
-      ? new Date(ts - timezoneOffsetMinutes * 60 * 1000).getUTCMinutes()
-      : new Date(ts).getMinutes();
-    const h = localHour % 12 || 12;
-    const m = String(localMin).padStart(2, "0");
-    const period = localHour < 12 ? "am" : "pm";
-    return `${h}:${m}${period}`;
+    return localHour < 12 ? "this morning" : localHour < 17 ? "this afternoon" : "this evening";
   };
 
   const todayMeals: TodayMealEntry[] = todayMealsFull.map((m) => ({
