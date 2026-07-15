@@ -5427,20 +5427,20 @@ export default function HomeScreen() {
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
             {!checkinStopped ? (
               <>
-                <p className="text-base font-semibold text-ink">Still doing it?</p>
+                <p className="text-base font-semibold text-ink">Still Doing It?</p>
                 <p className="mt-2 text-sm text-ink/70">Are you still keeping up <span className="font-semibold text-ink">{changeCheckin.label}</span>?</p>
                 <div className="mt-5 space-y-2">
-                  <button type="button" onClick={() => resolveCheckin("active")} className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-white transition active:opacity-80">Yes, still on it</button>
-                  <button type="button" onClick={() => setCheckinStopped(true)} className="w-full rounded-xl border border-ink/10 bg-white py-3 text-sm font-semibold text-ink/70 transition active:opacity-70">Not anymore</button>
+                  <button type="button" onClick={() => resolveCheckin("active")} className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-white transition active:opacity-80">Yes, Still On It</button>
+                  <button type="button" onClick={() => setCheckinStopped(true)} className="w-full rounded-xl border border-ink/10 bg-white py-3 text-sm font-semibold text-ink/70 transition active:opacity-70">Not Anymore</button>
                 </div>
               </>
             ) : (
               <>
-                <p className="text-base font-semibold text-ink">No worries.</p>
+                <p className="text-base font-semibold text-ink">No Worries.</p>
                 <p className="mt-2 text-sm text-ink/70">Want to try <span className="font-semibold text-ink">{changeCheckin.label}</span> again down the road?</p>
                 <div className="mt-5 space-y-2">
-                  <button type="button" onClick={() => resolveCheckin("stopped")} className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-white transition active:opacity-80">Maybe later</button>
-                  <button type="button" onClick={() => resolveCheckin("not_for_me")} className="w-full rounded-xl border border-ink/10 bg-white py-3 text-sm font-semibold text-ink/70 transition active:opacity-70">It&apos;s not for me</button>
+                  <button type="button" onClick={() => resolveCheckin("stopped")} className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-white transition active:opacity-80">Maybe Later</button>
+                  <button type="button" onClick={() => resolveCheckin("not_for_me")} className="w-full rounded-xl border border-ink/10 bg-white py-3 text-sm font-semibold text-ink/70 transition active:opacity-70">It&apos;s Not For Me</button>
                 </div>
               </>
             )}
