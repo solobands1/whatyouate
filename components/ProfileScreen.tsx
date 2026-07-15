@@ -16,7 +16,7 @@ import { requestHealthKitPermissions, checkHealthKitAuthorization, syncHealthKit
 import { openReviewPrompt } from "./ReviewPromptModal";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
-import ProfileAvatar, { AVATAR_COLORS, DEFAULT_AVATAR_COLOR } from "./ProfileAvatar";
+import ProfileAvatar, { AVATAR_COLORS_DARK, AVATAR_COLORS_PASTEL, DEFAULT_AVATAR_COLOR } from "./ProfileAvatar";
 import { useAuth } from "./AuthProvider";
 import { useAppData } from "./AppDataProvider";
 import { useTrialStatus } from "../hooks/useTrialStatus";
@@ -1743,20 +1743,24 @@ export default function ProfileScreen() {
             </div>
             <div className="mt-4">
               <p className="text-[11px] text-muted/70">Avatar color</p>
-              <div className="mt-2 flex flex-wrap items-center gap-2.5">
-                {AVATAR_COLORS.map((c) => {
-                  const selected = (avatarColor || DEFAULT_AVATAR_COLOR) === c;
-                  return (
-                    <button
-                      key={c}
-                      type="button"
-                      aria-label="Avatar color"
-                      onClick={() => handleSelectAvatarColor(c)}
-                      className={`h-7 w-7 rounded-full transition active:scale-90 ${selected ? "ring-2 ring-offset-2 ring-ink/25" : ""}`}
-                      style={{ backgroundColor: c }}
-                    />
-                  );
-                })}
+              <div className="mt-2 space-y-2">
+                {[AVATAR_COLORS_DARK, AVATAR_COLORS_PASTEL].map((row, ri) => (
+                  <div key={ri} className="flex flex-wrap items-center gap-2.5">
+                    {row.map((c) => {
+                      const selected = (avatarColor || DEFAULT_AVATAR_COLOR) === c;
+                      return (
+                        <button
+                          key={c}
+                          type="button"
+                          aria-label="Avatar color"
+                          onClick={() => handleSelectAvatarColor(c)}
+                          className={`h-7 w-7 rounded-full transition active:scale-90 ${selected ? "ring-2 ring-offset-2 ring-ink/25" : ""}`}
+                          style={{ backgroundColor: c }}
+                        />
+                      );
+                    })}
+                  </div>
+                ))}
               </div>
             </div>
             <div className="mt-4 flex gap-2">

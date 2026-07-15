@@ -2,18 +2,22 @@
 // a photo/data-URL would bloat the JWT). Default color is the WhatYouAte brand blue, and
 // picking blue is how you "revert". Initials come from the name we already store.
 
-export const DEFAULT_AVATAR_COLOR = "#DDEBFF"; // light blue — matches the original avatar
-export const AVATAR_COLORS = [
-  "#DDEBFF", // light blue (default / revert — the original look)
-  "#6FA8FF", // brand blue
-  "#FF6482", // coral
-  "#FF9500", // orange
-  "#34C759", // green
-  "#30B0C7", // teal
-  "#AF52DE", // purple
-  "#FF2D55", // pink
-  "#8E8E93", // gray
+// Each hue has a saturated (row 1) and a pastel (row 2) variant. Pastels get a hue-matched
+// darker text so the initials stay readable and on-theme (like the original light-blue look).
+const PALETTE = [
+  { dark: "#6FA8FF", pastel: "#DDEBFF", pastelText: "#4F88E8" }, // blue (pastel = default)
+  { dark: "#FF6482", pastel: "#FFD8E0", pastelText: "#E23D5B" }, // coral
+  { dark: "#FF9500", pastel: "#FFE6C2", pastelText: "#C56A00" }, // orange
+  { dark: "#34C759", pastel: "#CDEFD6", pastelText: "#1E8E3E" }, // green
+  { dark: "#30B0C7", pastel: "#CBEBF1", pastelText: "#1E7E8E" }, // teal
+  { dark: "#AF52DE", pastel: "#EBD8F7", pastelText: "#8438B0" }, // purple
+  { dark: "#FF2D55", pastel: "#FFD3DB", pastelText: "#D4143A" }, // pink
+  { dark: "#8E8E93", pastel: "#E2E2E4", pastelText: "#5C5C60" }, // gray
 ];
+
+export const DEFAULT_AVATAR_COLOR = "#DDEBFF"; // light blue — the original avatar look
+export const AVATAR_COLORS_DARK = PALETTE.map((p) => p.dark);
+export const AVATAR_COLORS_PASTEL = PALETTE.map((p) => p.pastel);
 
 function isLightColor(hex: string): boolean {
   const c = hex.replace("#", "");
@@ -24,10 +28,12 @@ function isLightColor(hex: string): boolean {
   return 0.299 * r + 0.587 * g + 0.114 * b > 175;
 }
 
-// Initials color: the light blue keeps the original darker-blue letters; other light
-// swatches use dark ink; the rest use white.
+// Initials color: pastels use their hue-matched darker text; other light bgs use dark ink;
+// the rest use white.
 function textColorFor(bg: string): string {
-  if (bg.toLowerCase() === "#ddebff") return "#4F88E8"; // darker blue on light blue
+  const lower = bg.toLowerCase();
+  const pastel = PALETTE.find((p) => p.pastel.toLowerCase() === lower);
+  if (pastel) return pastel.pastelText;
   return isLightColor(bg) ? "#1F2937" : "#ffffff";
 }
 

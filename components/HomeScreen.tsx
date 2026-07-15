@@ -2479,9 +2479,9 @@ export default function HomeScreen() {
   const hasEverLogged = displayMeals.some((m) => m.analysisJson?.source !== "supplement" && m.status !== "failed");
   const greetingCopyFor = (phase: "morning" | "afternoon" | "evening") => {
     if (!hasEverLogged) return { greeting: "Welcome", sub: "Log Your First Meal", exclaim: true };
-    if (phase === "morning") return { greeting: "Good Morning", sub: "Let's make today count!", exclaim: false };
-    if (phase === "afternoon") return { greeting: "Good Afternoon", sub: "Let's log and improve!", exclaim: false };
-    return { greeting: "Good Evening", sub: "Better late than never!", exclaim: false };
+    if (phase === "morning") return { greeting: "Good Morning", sub: "Glad you're back", exclaim: false };
+    if (phase === "afternoon") return { greeting: "Good Afternoon", sub: "Glad you're back", exclaim: false };
+    return { greeting: "Good Evening", sub: "Glad you're back", exclaim: false };
   };
   const welcomeMessage = (() => {
     const hour = new Date().getHours();
@@ -5158,8 +5158,8 @@ export default function HomeScreen() {
                     type="button"
                     className={`rounded-full border px-4 py-2 text-sm font-medium transition active:scale-[0.96] ${
                       selected
-                        ? "border-primary/40 bg-primary/20 text-primary"
-                        : "border-primary/25 bg-primary/10 text-ink/80"
+                        ? "border-primary/30 bg-primary/10 text-ink"
+                        : "border-ink/10 bg-white text-ink/70 hover:bg-ink/5"
                     }`}
                     onClick={() => setSelectedFeelings((prev) => prev.includes(f.tag) ? prev.filter((t) => t !== f.tag) : [...prev, f.tag])}
                   >
