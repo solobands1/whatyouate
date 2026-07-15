@@ -143,7 +143,8 @@ ADDITIONAL CONTEXT
   - Never add items not visible in the photo AND not mentioned. Never contradict what the user stated.
 
 FEELING TAGS
-- Also return "feeling_tags": an array of 0 to 4 tags describing how this food itself tends to affect energy and how someone feels. Use ONLY these exact values, and only when they clearly apply:
+- Also return "feeling_tags": an array of 0 to 5 tags describing how this food itself tends to affect energy and how someone feels. Use ONLY these exact values, and only when they clearly apply. A meal can carry both kinds when both genuinely fit (e.g. a big grilled-chicken bowl is "heavy_large" AND "lean_protein"), but do not reach — omit anything you are unsure about.
+  Foods that tend to DRAG energy down:
   - "fried_greasy" — deep-fried, oily, or greasy (fries, fried chicken, chips).
   - "high_sugar" — sweet / added-sugar heavy (dessert, candy, pastries, sugary drinks).
   - "refined_carbs" — white/refined starch heavy (white bread, white pasta, white rice, crackers).
@@ -154,6 +155,13 @@ FEELING TAGS
   - "low_protein" — little to no protein (mostly carbs, veg, or sweets).
   - "dairy_heavy" — dominated by dairy (lots of cheese, cream, milk, ice cream).
   - "very_spicy" — noticeably hot or spicy.
+  Foods that tend to SUPPORT energy (tag only when clearly true):
+  - "vegetable_forward" — built around vegetables or leafy greens (salads, veggie bowls, plenty of greens).
+  - "lean_protein" — a clear lean-protein source (grilled chicken, fish, tofu, eggs, beans).
+  - "whole_food" — whole, minimally processed, home-style ingredients (not packaged or fast food).
+  - "complex_carbs" — slow-burning whole-grain or starchy carbs (oats, brown rice, quinoa, sweet potato).
+  - "light_fresh" — a light, fresh, not-heavy meal.
+  - "balanced_meal" — a well-rounded mix of protein, vegetables, and carbs.
 - Judge only the food, never the time of day. Omit tags you are unsure about. Return [] if none clearly apply. Do not invent tags outside this list.
 `;
 
@@ -266,7 +274,8 @@ CONFIDENCE
 - If ≥ 0.55, omit optional_quick_confirm_options.
 
 FEELING TAGS
-- Also return "feeling_tags": an array of 0 to 4 tags describing how this food itself tends to affect energy and how someone feels. Use ONLY these exact values, and only when they clearly apply:
+- Also return "feeling_tags": an array of 0 to 5 tags describing how this food itself tends to affect energy and how someone feels. Use ONLY these exact values, and only when they clearly apply. A meal can carry both kinds when both genuinely fit (e.g. a big grilled-chicken bowl is "heavy_large" AND "lean_protein"), but do not reach — omit anything you are unsure about.
+  Foods that tend to DRAG energy down:
   - "fried_greasy" — deep-fried, oily, or greasy (fries, fried chicken, chips).
   - "high_sugar" — sweet / added-sugar heavy (dessert, candy, pastries, sugary drinks).
   - "refined_carbs" — white/refined starch heavy (white bread, white pasta, white rice, crackers).
@@ -277,5 +286,12 @@ FEELING TAGS
   - "low_protein" — little to no protein (mostly carbs, veg, or sweets).
   - "dairy_heavy" — dominated by dairy (lots of cheese, cream, milk, ice cream).
   - "very_spicy" — noticeably hot or spicy.
+  Foods that tend to SUPPORT energy (tag only when clearly true):
+  - "vegetable_forward" — built around vegetables or leafy greens (salads, veggie bowls, plenty of greens).
+  - "lean_protein" — a clear lean-protein source (grilled chicken, fish, tofu, eggs, beans).
+  - "whole_food" — whole, minimally processed, home-style ingredients (not packaged or fast food).
+  - "complex_carbs" — slow-burning whole-grain or starchy carbs (oats, brown rice, quinoa, sweet potato).
+  - "light_fresh" — a light, fresh, not-heavy meal.
+  - "balanced_meal" — a well-rounded mix of protein, vegetables, and carbs.
 - Judge only the food, never the time of day. Omit tags you are unsure about. Return [] if none clearly apply. Do not invent tags outside this list.
 `;

@@ -7,13 +7,16 @@
 //   - next_day: an EVENING meal tagged X on day D  ->  energy on day D+1 (the "chips at
 //     night -> low energy tomorrow" case)
 //
-// We only surface the WORSE direction (a tag that lines up with MORE low-energy days),
-// since that's the actionable, honest signal. Data-gated: returns [] until there's enough
-// tagged history, so the UI shows a Preview until then. See project_food_feeling memory.
+// We only surface the WORSE direction (a NEGATIVE tag that lines up with MORE low-energy
+// days), since that's the actionable, honest signal. We scan ONLY NEGATIVE_FEELING_TAGS, so
+// a positive tag ("lean_protein", "vegetable_forward"…) can never be spuriously shamed on
+// thin/noisy data — positives are captured (lib/foodTags.ts) and wait for the Layer-2 engine
+// to surface "what lifts you." Data-gated: returns [] until there's enough tagged history, so
+// the UI shows a Preview until then. See project_food_feeling memory.
 
 import type { ReflectionEntry } from "./habitState";
 import type { MealLog } from "./types";
-import { FEELING_TAGS, FEELING_TAG_LABEL, type FeelingTag } from "./foodTags";
+import { NEGATIVE_FEELING_TAGS, FEELING_TAG_LABEL, type FeelingTag } from "./foodTags";
 
 const MIN_WITH = 4;       // need >=4 days WHERE the tag was present
 const MIN_WITHOUT = 4;    // and >=4 comparison days without it
@@ -77,7 +80,7 @@ export function computeFoodFeelingLinks(
   }
 
   const links: FoodFeelingLink[] = [];
-  for (const tag of FEELING_TAGS) {
+  for (const tag of NEGATIVE_FEELING_TAGS) {
     for (const lag of ["same_day", "next_day"] as const) {
       const src = lag === "same_day" ? dayTags : eveTags;
       let withLow = 0, withN = 0, woLow = 0, woN = 0;
