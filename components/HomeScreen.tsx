@@ -277,12 +277,12 @@ function todayDateStr() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-// TEMP: nightly reflection available all day for testing (was gated to hour >= 19).
-// Flip to false to restore the 7pm-only behavior before launch.
-const REFLECTION_AVAILABLE_ALL_DAY = true;
-// TEMP: replay the bell/moon cue on every load (skips the once-a-night gate). Flip to
-// false to restore "plays only the first time it's available each night".
-const REFLECTION_CUE_REPLAY = true;
+// When true, the nightly reflection is available all day (testing only). False = the real
+// gate, which opens the reflection from 5pm (hour >= 17).
+const REFLECTION_AVAILABLE_ALL_DAY = false;
+// When true, the bell/moon cue replays on every load (testing only). False = the real
+// behavior: it plays only the first time it's available each night.
+const REFLECTION_CUE_REPLAY = false;
 // How long after the page/hero finishes loading before the bell rings. The hero (habit
 // builder / nudge / greeting) settles ~3.9s after load (1.7s expand + ~2.2s pulse), so
 // this lands the ring ~1s after it's done. Tune this single number to taste.
