@@ -2964,7 +2964,7 @@ export default function HomeScreen() {
                 onClick={handleConfirmDelete}
                 disabled={deletingItem}
               >
-                {deletingItem ? "Deleting..." : "Delete"}
+                {deletingItem ? "Deleting…" : "Delete"}
               </button>
             </div>
           </div>
@@ -3848,7 +3848,7 @@ export default function HomeScreen() {
                     onClick={handleConfirmDelete}
                     disabled={deletingItem}
                   >
-                    {deletingItem ? "Deleting..." : "Delete"}
+                    {deletingItem ? "Deleting…" : "Delete"}
                   </button>
                 </div>
               </>
@@ -4059,7 +4059,7 @@ export default function HomeScreen() {
                       onClick={() => meals.handleUpdateMeal(editPortion)}
                       disabled={meals.updatingMeal}
                     >
-                      {meals.updatingMeal ? "Updating..." : "Update"}
+                      {meals.updatingMeal ? "Updating…" : "Update"}
                     </button>
                   </div>
                 </div>
@@ -4392,7 +4392,7 @@ export default function HomeScreen() {
                     onClick={handleConfirmDelete}
                     disabled={deletingItem}
                   >
-                    {deletingItem ? "Deleting..." : "Delete"}
+                    {deletingItem ? "Deleting…" : "Delete"}
                   </button>
                 </div>
               </>
@@ -4510,7 +4510,7 @@ export default function HomeScreen() {
                       onClick={workout.handleUpdateWorkout}
                       disabled={workout.updatingWorkout}
                     >
-                      {workout.updatingWorkout ? "Updating..." : "Update"}
+                      {workout.updatingWorkout ? "Updating…" : "Update"}
                     </button>
                   </div>
                 </div>
@@ -4647,7 +4647,7 @@ export default function HomeScreen() {
                 onClick={workout.handleAddManualWorkout}
                 disabled={workout.addingManual}
               >
-                {workout.addingManual ? "Saving..." : "Save activity"}
+                {workout.addingManual ? "Saving…" : "Save activity"}
               </button>
             </div>
           </div>

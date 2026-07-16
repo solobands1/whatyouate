@@ -1146,7 +1146,7 @@ export default function SummaryScreen() {
                 </div>
                 {locked ? (
                   <div className="relative mt-3 overflow-hidden rounded-xl border border-primary/30 bg-primary/5 px-4 py-3">
-                    <p className="text-sm font-medium text-ink/90 line-clamp-1">{smartNudge!.message.slice(0, 48)}{smartNudge!.message.length > 48 ? "..." : ""}</p>
+                    <p className="text-sm font-medium text-ink/90 line-clamp-1">{smartNudge!.message.slice(0, 48)}{smartNudge!.message.length > 48 ? "…" : ""}</p>
                     <div className="absolute inset-0 flex items-center justify-center bg-surface/80 backdrop-blur-[3px]">
                       <button type="button" onClick={openUpgradeModal} className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition active:opacity-80">Unlock Pro</button>
                     </div>
@@ -1362,7 +1362,7 @@ export default function SummaryScreen() {
                   {smartNudge && trial.isFree && !isDemoMode ? (
                     <div className="relative overflow-hidden rounded-xl border border-primary/30 bg-primary/5 px-4 py-3">
                       <p className="text-sm font-medium text-ink/90 line-clamp-1">
-                        {smartNudge.message.slice(0, 48)}{smartNudge.message.length > 48 ? "..." : ""}
+                        {smartNudge.message.slice(0, 48)}{smartNudge.message.length > 48 ? "…" : ""}
                       </p>
                       <div className="absolute inset-0 flex flex-col items-center justify-center bg-surface/80 backdrop-blur-[3px]">
                         <button type="button" onClick={openUpgradeModal} className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition active:opacity-80">

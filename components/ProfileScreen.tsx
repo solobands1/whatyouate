@@ -1489,7 +1489,7 @@ export default function ProfileScreen() {
               />
               {(suppMatchHint || suppLookingUp) && (
                 <p className={`-mt-0.5 text-[11px] ${suppLookingUp ? "text-muted/55" : suppMatchHint?.startsWith("Tracks") ? "text-primary/70" : "text-muted/65"}`}>
-                  {suppLookingUp ? "Looking up..." : suppMatchHint}
+                  {suppLookingUp ? "Looking up…" : suppMatchHint}
                 </p>
               )}
               {matchedNutrientKeys(newSuppInput).length === 1 ? (
@@ -1879,7 +1879,7 @@ export default function ProfileScreen() {
             </p>
             <textarea
               className="mt-4 h-28 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm text-ink/90"
-              placeholder="Type your feedback here..."
+              placeholder="Type your feedback here…"
               value={feedbackText}
               onChange={(event) => setFeedbackText(event.target.value)}
             />
