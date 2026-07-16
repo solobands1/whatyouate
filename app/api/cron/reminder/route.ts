@@ -25,6 +25,19 @@ function getRandomReminder(): string {
   return REMINDER_MESSAGES[Math.floor(Math.random() * REMINDER_MESSAGES.length)];
 }
 
+// The nightly reflection reminder (fires at 7pm local if the user hasn't reflected today).
+// One fixed message, unlike the rotating meal nag.
+const REFLECTION_REMINDER_TITLE = "Your Nightly Reflection Is Ready";
+const REFLECTION_REMINDER_BODY = "It only takes a minute, and it'll help a lot.";
+
+// The user's local calendar date ("YYYY-MM-DD") from their stored timezone offset, to compare
+// against reflections_json[].date (written as the device's local date at save time).
+function userLocalDateStr(offsetMinutes: number | null | undefined): string {
+  const offset = offsetMinutes ?? 0;
+  const local = new Date(Date.now() - offset * 60 * 1000);
+  return `${local.getUTCFullYear()}-${String(local.getUTCMonth() + 1).padStart(2, "0")}-${String(local.getUTCDate()).padStart(2, "0")}`;
+}
+
 function getUserLocalHour(timezoneOffsetMinutes: number | undefined): number {
   const offset = timezoneOffsetMinutes ?? 0;
   const localMs = Date.now() - offset * 60 * 1000;
@@ -64,7 +77,6 @@ export async function GET(req: Request) {
 
   const supabase = adminClient();
   const now = new Date();
-  const eightHoursAgo = new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString();
   const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
 
   const { data: tokens } = await supabase
@@ -78,69 +90,52 @@ export async function GET(req: Request) {
 
   for (const userId of userIds) {
     try {
-      // Skip if any nudge (smart or reminder) was sent in the last 8 hours
-      const { data: recentReminder } = await supabase
-        .from("nudges")
-        .select("id")
-        .eq("user_id", userId)
-        .gte("created_at", eightHoursAgo)
-        .limit(1);
-      if (recentReminder?.length) continue;
-
-      // Get user's timezone offset for accurate "today" window
+      // Timezone offset + reflection history drive both the 2pm meal nag and the 7pm reflection
+      // reminder. Fixed hours (14 / 19) keep them from colliding, so no cross-nudge cooldown.
       const { data: profileRow } = await supabase
         .from("profiles")
-        .select("timezone_offset_minutes")
+        .select("timezone_offset_minutes, reflections_json")
         .eq("user_id", userId)
         .maybeSingle();
       const offsetMinutes = (profileRow as Record<string, unknown> | null)?.timezone_offset_minutes as number | null | undefined;
-      const todayStartISO = userTodayStartISO(offsetMinutes);
-
-      // Only send between 10am and 8pm in the user's local timezone
       const localHour = getUserLocalHour(offsetMinutes ?? undefined);
-      if (localHour < 10 || localHour >= 20) continue;
-
-      // Skip if they've logged a meal today (in their local timezone)
-      const { data: todayMeals } = await supabase
-        .from("meals")
-        .select("id")
-        .eq("user_id", userId)
-        .gte("created_at", todayStartISO)
-        .neq("status", "failed")
-        .limit(1);
-      if (todayMeals?.length) continue;
-
-      // Eligibility last (most expensive): the reminder goes to active free-trial
-      // users OR paid users. Trial is derived from meal history and checked first,
-      // skipping the RevenueCat call for trial-active users.
-      const { data: histRows } = await supabase
-        .from("meals")
-        .select("ts, created_at, status, analysis_json")
-        .eq("user_id", userId)
-        .gte("created_at", sixtyDaysAgo)
-        .order("ts", { ascending: false });
-      const histMeals = (histRows ?? []).map(mapReminderMeal).filter(Boolean) as TrialMeal[];
-      const eligible = isTrialEligible(histMeals, Date.now()) || (await checkProEntitlement(userId));
-      if (!eligible) continue;
-
-      const message = getRandomReminder();
-
-      await supabase.from("nudges").insert({
-        user_id: userId,
-        type: "reminder",
-        message,
-        created_at: now.toISOString(),
-      });
-
       const userTokens = (tokens as Array<{ user_id: string; token: string }>).filter((t) => t.user_id === userId);
-      for (const t of userTokens) {
-        const ok = await sendPush(t.token, {
-          title: "WhatYouAte • Coach",
-          body: message,
-          data: { screen: "home" },
-          badge: 1,
-        });
-        if (ok) sent++;
+
+      if (localHour === 14) {
+        // 2pm MEAL NAG — only if they've logged nothing today. Goes to trial-active or paid users
+        // (unchanged eligibility from the original reminder).
+        const todayStartISO = userTodayStartISO(offsetMinutes);
+        const { data: todayMeals } = await supabase
+          .from("meals").select("id")
+          .eq("user_id", userId).gte("created_at", todayStartISO).neq("status", "failed").limit(1);
+        if (todayMeals?.length) continue;
+
+        const { data: histRows } = await supabase
+          .from("meals").select("ts, created_at, status, analysis_json")
+          .eq("user_id", userId).gte("created_at", sixtyDaysAgo).order("ts", { ascending: false });
+        const histMeals = (histRows ?? []).map(mapReminderMeal).filter(Boolean) as TrialMeal[];
+        const eligible = isTrialEligible(histMeals, Date.now()) || (await checkProEntitlement(userId));
+        if (!eligible) continue;
+
+        const message = getRandomReminder();
+        await supabase.from("nudges").insert({ user_id: userId, type: "reminder", message, created_at: now.toISOString() });
+        for (const t of userTokens) {
+          const ok = await sendPush(t.token, { title: "WhatYouAte • Coach", body: message, data: { screen: "home" }, badge: 1 });
+          if (ok) sent++;
+        }
+      } else if (localHour === 19) {
+        // 7pm REFLECTION REMINDER — only if they haven't reflected today. Reflection is free from
+        // day one, so this is NOT gated on trial/pro; every user with notifications on gets it.
+        const reflections = Array.isArray((profileRow as Record<string, unknown> | null)?.reflections_json)
+          ? ((profileRow as Record<string, unknown>).reflections_json as Array<{ date?: string }>)
+          : [];
+        const localToday = userLocalDateStr(offsetMinutes);
+        if (reflections.some((r) => r?.date === localToday)) continue; // already reflected today
+
+        for (const t of userTokens) {
+          const ok = await sendPush(t.token, { title: REFLECTION_REMINDER_TITLE, body: REFLECTION_REMINDER_BODY, data: { screen: "home" }, badge: 1 });
+          if (ok) sent++;
+        }
       }
     } catch (err) {
       console.error(`[cron/reminder] error for user ${userId}:`, err);

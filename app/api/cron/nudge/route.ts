@@ -217,10 +217,9 @@ export async function GET(req: Request) {
     try {
       const tzOffset = timezoneByUser.get(userId);
       const localHour = getUserLocalHour(tzOffset);
-      const isMorningWindow = localHour === 7;
-      const isEveningWindow = localHour === 19;
-      console.log(`[cron/nudge] check ${userId.slice(0,8)} tzOffset=${tzOffset ?? "null"} localHour=${localHour} morning=${isMorningWindow} evening=${isEveningWindow}`);
-      if (!isMorningWindow && !isEveningWindow) continue;
+      const isMorningWindow = localHour === 9;
+      console.log(`[cron/nudge] check ${userId.slice(0,8)} tzOffset=${tzOffset ?? "null"} localHour=${localHour} morning=${isMorningWindow}`);
+      if (!isMorningWindow) continue; // one coach nudge/day, in the morning — evening nudge removed (7pm is now the reflection reminder)
 
       const { data: recentNudgeCheck } = await supabase
         .from("nudges")
@@ -318,38 +317,32 @@ export async function GET(req: Request) {
         if (sleepLogs[0]) ctx.lastNightSleepHours = sleepLogs[0].hours;
       }
 
-      const isEvening = isEveningWindow;
       const sparseLogs = (ctx.daysSinceLastLog as number | undefined ?? 0) >= 3;
       delete ctx.timeOfDay; // replaced by nudgeIntentWindow
 
       // meal_timing is never valid in scheduled cron nudges — hard block always
       ctx.hardBlockedTypes = ["meal_timing"];
 
-      if (isEvening) {
-        // Evening nudge has today's actual data — keep it for a reflective day recap
-        // followThrough is especially useful: did they act on the morning nudge?
-        ctx.nudgeIntentWindow = "evening";
-        ctx.blockedNudgeTypes = [...new Set([...blockedNudgeTypes])].filter((t) => VALID_NUDGE_TYPES.has(t));
-      } else {
-        // Morning nudge: today's data is empty/stale — strip it, focus on patterns
-        delete ctx.todayCalories;
-        delete ctx.todayProtein;
-        delete ctx.todayFat;
-        delete ctx.todayCarbs;
-        delete ctx.todayMeals;
-        delete ctx.remainingCalories;
-        delete ctx.remainingProtein;
-        delete ctx.followThrough;
-        ctx.nudgeIntentWindow = "morning";
-        // Allow check_in when user hasn't logged in 3+ days — re-engagement > insight
-        const morningBlocked = sparseLogs ? [] : ["check_in"];
-        ctx.blockedNudgeTypes = [...new Set([...morningBlocked, ...blockedNudgeTypes])].filter((t) => VALID_NUDGE_TYPES.has(t));
-      }
+      // The single daily coach nudge is a MORNING one: today's data is empty/stale, so strip it
+      // and focus on durable multi-day patterns. (The evening nudge was removed — 7pm is now the
+      // reflection reminder, handled by the reminder cron.)
+      delete ctx.todayCalories;
+      delete ctx.todayProtein;
+      delete ctx.todayFat;
+      delete ctx.todayCarbs;
+      delete ctx.todayMeals;
+      delete ctx.remainingCalories;
+      delete ctx.remainingProtein;
+      delete ctx.followThrough;
+      ctx.nudgeIntentWindow = "morning";
+      // Allow check_in when user hasn't logged in 3+ days — re-engagement > insight
+      const morningBlocked = sparseLogs ? [] : ["check_in"];
+      ctx.blockedNudgeTypes = [...new Set([...morningBlocked, ...blockedNudgeTypes])].filter((t) => VALID_NUDGE_TYPES.has(t));
 
-      console.log(`[cron/nudge] generating for ${userId.slice(0,8)} localHour=${localHour} window=${isEveningWindow ? "evening" : "morning"} meals=${meals.length}`);
+      console.log(`[cron/nudge] generating for ${userId.slice(0,8)} localHour=${localHour} window=morning meals=${meals.length}`);
       let nudge = await generateNudge(ctx, userId);
 
-      if (nudge && !isEvening && nudge.type === "check_in" && !sparseLogs) { console.log(`[cron/nudge] skip ${userId.slice(0,8)}: check_in suppressed (not sparse)`); nudge = null; }
+      if (nudge && nudge.type === "check_in" && !sparseLogs) { console.log(`[cron/nudge] skip ${userId.slice(0,8)}: check_in suppressed (not sparse)`); nudge = null; }
 
       // Prevent consecutive streak openers (e.g. "54 days..." two nudges in a row)
       if (nudge?.message) {
