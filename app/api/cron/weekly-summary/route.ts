@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { buildSmartNudgeContext } from "../../../../lib/digestEngine";
-import { buildWeeklySummaryPrompt, sanitizeNudgeFields, WEEKLY_SUMMARY_SYSTEM_PROMPT } from "../../../../lib/nudgeGen";
+import { buildWeeklySummaryPrompt, sanitizeNudgeFields, WEEKLY_SUMMARY_SYSTEM_PROMPT, medicalRedFlag } from "../../../../lib/nudgeGen";
 import { sendPush } from "../../../../lib/apns";
 import type { MealLog, WorkoutSession, UserProfile, SupplementEntry } from "../../../../lib/types";
 import { isTrialEligible } from "../../../../lib/trial";
@@ -131,6 +131,11 @@ async function generateWeeklySummary(ctx: Record<string, unknown>): Promise<{ me
       return null;
     }
     if (!parsed.message || typeof parsed.message !== "string") return null;
+    // Output-side medical backstop: never push a recap that slipped a clear diagnosis/treatment claim.
+    if (medicalRedFlag(parsed.message as string)) {
+      console.warn("[cron/weekly-summary] suppressed summary with medical red-flag");
+      return null;
+    }
 
     // Strip em-dashes and trim to 80 words
     parsed.message = (parsed.message as string).replace(/\s*—\s*/g, " ").replace(/\s+/g, " ").trim();

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { SMART_NUDGE_SYSTEM_PROMPT, buildSmartPrompt } from "../../../lib/nudgeGen";
+import { SMART_NUDGE_SYSTEM_PROMPT, buildSmartPrompt, mentionsHealthContext, HEALTH_MEDICAL_GUARDRAIL } from "../../../lib/nudgeGen";
 
 export const maxDuration = 30;
 
@@ -40,7 +40,7 @@ Suggestion rules:
 
 function buildProfileSummary(profile: Record<string, unknown> | null): string {
   if (!profile) return "no profile";
-  return [
+  const summary = [
     profile.goalDirection && `goal: ${profile.goalDirection}`,
     profile.freeformFocus && `focus: ${profile.freeformFocus}`,
     profile.activityLevel && `activity: ${profile.activityLevel}`,
@@ -49,6 +49,12 @@ function buildProfileSummary(profile: Record<string, unknown> | null): string {
   ]
     .filter(Boolean)
     .join(", ") || "no profile";
+  // Append the medical guardrail only when the user has shared health context, so ordinary
+  // nudges on the legacy path are unchanged. See lib/nudgeGen.
+  if (mentionsHealthContext(profile.freeformFocus as string | undefined, (profile.dietaryRestrictions as string[] | undefined)?.join(" "))) {
+    return summary + HEALTH_MEDICAL_GUARDRAIL;
+  }
+  return summary;
 }
 
 export async function POST(req: Request) {

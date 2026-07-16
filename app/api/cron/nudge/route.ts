@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { buildSmartNudgeContext } from "../../../../lib/digestEngine";
 import { buildReflectionSummary } from "../../../../lib/changes";
-import { buildSmartPrompt, sanitizeNudgeFields, SMART_NUDGE_SYSTEM_PROMPT } from "../../../../lib/nudgeGen";
+import { buildSmartPrompt, sanitizeNudgeFields, SMART_NUDGE_SYSTEM_PROMPT, medicalRedFlag } from "../../../../lib/nudgeGen";
 import { sendPush } from "../../../../lib/apns";
 import type { MealLog, WorkoutSession, UserProfile, SupplementEntry } from "../../../../lib/types";
 import { isTrialEligible } from "../../../../lib/trial";
@@ -149,6 +149,11 @@ async function generateNudge(ctx: Record<string, unknown>, userId: string): Prom
       return null;
     }
     if (!parsed.message || typeof parsed.message !== "string") return null;
+    // Output-side medical backstop: never push a nudge that slipped a clear diagnosis/treatment claim.
+    if (medicalRedFlag(parsed.message as string)) {
+      console.warn(`[cron/nudge] suppressed nudge with medical red-flag for ${userId.slice(0, 8)}`);
+      return null;
+    }
     if (!parsed.type || !VALID_NUDGE_TYPES.has(parsed.type as string)) {
       console.error(`[cron/nudge] Invalid nudge type for ${userId.slice(0,8)}:`, parsed.type);
       return null;

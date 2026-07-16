@@ -76,6 +76,30 @@ const FEELING_GOAL_LABELS: Record<string, string> = {
   focus: "sharper focus", digestion: "better digestion", cravings: "fewer cravings",
 };
 
+// --- Medical safety guardrail (injected ONLY when a user has shared health context) ---
+// A user may type a health condition, symptom, or medication into a free-text field. When they
+// do, the coach must accommodate it warmly but NEVER name/confirm it, tailor food or nutrient
+// advice around it (adding is not safer than cutting), or make medical/causal claims. This block
+// is appended to the prompt ONLY when health context is detected, so nudges for everyone else are
+// byte-for-byte unchanged. Backed on the output side by medicalRedFlag(). See memory: project_coach_medical_guardrail.
+export const HEALTH_MEDICAL_GUARDRAIL = `\nHEALTH AND MEDICAL (important, this overrides the voice rules above): This person mentioned a health condition, symptom, or medication. You can warmly acknowledge they're navigating something and be a supportive presence, but do not name the specific condition, repeat it back, confirm it, or tell them a symptom "fits" or "points to" it. Never tailor a food, nutrient, or supplement suggestion to a health condition in either direction. Adding is not safer than cutting (more protein harms kidney disease, more iodine harms an overactive thyroid), so keep any food idea general and unconnected to their health. You can quietly go easier on them (expect less on low-energy days, soften your tone). On anything health-related, make no causal claim about what a food, symptom, or number does to the body. When the honest answer is a medical one, warmly point them to their doctor. You are a supportive friend who knows their limits, not a diagnostician.`;
+
+// Broad, err-toward-catching detector for health context in free text. Over-injecting the
+// guardrail is low-harm (the block is internally gated), while a miss risks an unguarded
+// condition reaching the model, so we cast wide; the output-side medicalRedFlag() backs it up.
+const HEALTH_SIGNAL_RE = /\b(?:disease|syndrome|disorder|condition|chronic|diagnos|autoimmune|thyroid|graves|hashimoto|diabet|insulin|ibs|ibd|crohn|colitis|celiac|coeliac|kidney|renal|hepat|hypertension|blood pressure|cholesterol|cardiac|arthritis|lupus|fibromyalgia|migraine|epilep|asthma|copd|anemia|anaemia|cancer|tumou?r|depress|anxiety|adhd|pcos|endometrios|menopaus|pregnan|allerg|intoleran|medication|meds|prescri|dosage|symptom|flare|deficien|disabilit)/i;
+export function mentionsHealthContext(...texts: (string | null | undefined)[]): boolean {
+  return texts.some((t) => typeof t === "string" && HEALTH_SIGNAL_RE.test(t));
+}
+
+// Output-side backstop for the unattended pushes: suppress a nudge whose text shows the clearest
+// medical leaks (explicit diagnosis/prescription verbs, or confirming a named condition). Kept
+// deliberately tight so it never nukes an ordinary nutrition nudge. Not the primary defense.
+const MEDICAL_REDFLAG_RE = /\b(?:diagnos|prescrib)\w*|\byou(?:'ve| have)\s+(?:got\s+)?(?:a\s+)?(?:diabetes|diabetic|graves|hyperthyroid|hypothyroid|kidney disease|crohn|colitis|ibs|celiac|coeliac|lupus)\b/i;
+export function medicalRedFlag(text: string | null | undefined): boolean {
+  return typeof text === "string" && MEDICAL_REDFLAG_RE.test(text);
+}
+
 export function buildSmartPrompt(ctx: Record<string, unknown>): string {
   const profile = ctx.profile as Record<string, unknown> | null;
   const lines: string[] = [];
@@ -350,6 +374,12 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
     lines.push(`\nAnalyze the data above. What is the single most useful, specific thing to tell this person right now? Theme overlap with recent nudges is not a reason to return null — find a fresh angle. Only return null if the user hasn't logged in several days and there is truly nothing in the data worth responding to.`);
   }
 
+  // Append the medical guardrail ONLY when the user has shared health context — otherwise this
+  // prompt is unchanged, so ordinary nudges are byte-for-byte identical to before.
+  if (mentionsHealthContext(profile?.freeformFocus as string | undefined, (profile?.dietaryRestrictions as string[] | undefined)?.join(" "))) {
+    lines.push(HEALTH_MEDICAL_GUARDRAIL);
+  }
+
   return lines.join("\n");
 }
 
@@ -467,6 +497,10 @@ export function buildWeeklySummaryPrompt(ctx: Record<string, unknown>): string {
 
   lines.push(`\nIMPORTANT: The calorie and protein numbers above are for your analysis only. Never quote any specific calorie or protein number in your message. Use relative language only: "strong day", "below average", "close to target", "more than usual", "the best day of the week".`);
   lines.push(`\nWrite a warm, reflective Sunday recap. Three beats woven naturally together: acknowledge their consistency or effort, surface one standout pattern or observation, leave them with one thing to carry into the coming week. No food suggestions. No lists.`);
+
+  if (mentionsHealthContext(profile?.freeformFocus)) {
+    lines.push(HEALTH_MEDICAL_GUARDRAIL);
+  }
 
   return lines.join("\n");
 }

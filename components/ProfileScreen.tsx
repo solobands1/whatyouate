@@ -1823,7 +1823,7 @@ export default function ProfileScreen() {
               <div>
                 <p className="text-sm font-semibold text-ink">Anything Else?</p>
                 <p className="mt-2 text-sm text-muted/70">
-                  Use this to share anything that doesn't fit the other fields, like a specific focus area, a health condition, or how you typically eat. It helps keep nudges more aligned with your life.
+                  Use this to share anything that doesn't fit the other fields, like a specific focus area or how you typically eat. It helps keep nudges more aligned with your life.
                 </p>
               </div>
               <button
