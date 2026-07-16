@@ -74,7 +74,7 @@ const EX_CHANGES: MetricChange[] = [
   { key: "stress", label: "Stress", dir: "same" },
 ];
 const EX_DISCOVERIES: Discovery[] = [
-  { text: "Your focus has tracked your mood more closely than your sleep.", confidence: "Building" },
+  { text: "Your lower-stress days have more often come with a better mood.", confidence: "Building" },
   { text: "Your higher-stress days have often lined up with poorer sleep.", confidence: "Building" },
 ];
 const EX_HEADLINE = "Your best-energy days have tended to follow nights you slept well.";
