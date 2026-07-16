@@ -32,6 +32,7 @@ import { useAuth } from "./AuthProvider";
 import { useAppData } from "./AppDataProvider";
 import { useUnlockCelebration, UnlockCelebrationBanner } from "./UnlockCelebration";
 import { countLoggedDays, hasEnoughDataForPatterns } from "../lib/trial";
+import { devHooksEnabled } from "../lib/devHooks";
 import {
   addMeal,
   clearMealsCache,
@@ -515,7 +516,7 @@ export default function HomeScreen() {
   const [cuePreview, setCuePreview] = useState(false);
   const [fdebug, setFdebug] = useState(false);
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (!devHooksEnabled()) return; // inert in any native (TestFlight/App Store) build
     const p = new URLSearchParams(window.location.search);
     if (p.has("cue")) setCuePreview(true);
     if (p.has("fdebug")) setFdebug(true); // ?fdebug shows each Quick Add row's grouping key

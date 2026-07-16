@@ -3,6 +3,7 @@ import { useAuth } from "../components/AuthProvider";
 import { useAppData } from "../components/AppDataProvider";
 import { computeTrialStatus, type TrialStatus } from "../lib/trial";
 import { initializePurchases, checkIsPro } from "../lib/purchases";
+import { devHooksEnabled } from "../lib/devHooks";
 
 export function useTrialStatus(): TrialStatus {
   const { user } = useAuth();
@@ -14,7 +15,7 @@ export function useTrialStatus(): TrialStatus {
   // trial/paywall state on any account without juggling data.
   const [override, setOverride] = useState<TrialStatus | null>(null);
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (!devHooksEnabled()) return; // inert in any native (TestFlight/App Store) build
     const p = new URLSearchParams(window.location.search);
     let t = p.get("trial");
     const dayRaw = parseInt(p.get("trialday") ?? "", 10);

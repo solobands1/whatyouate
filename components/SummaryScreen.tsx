@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { riseIn } from "../lib/motion";
+import { devHooksEnabled } from "../lib/devHooks";
 import Joyride, { CallBackProps, STATUS, type Step } from "react-joyride";
 import { useRouter } from "next/navigation";
 import { dayKeyFromTs, formatDateShort, todayKey } from "../lib/utils";
@@ -198,7 +199,7 @@ export default function SummaryScreen() {
   // ladder state without logging for real days.
   const [countOverride, setCountOverride] = useState<{ days?: number; meals?: number; refl?: number }>({});
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (!devHooksEnabled()) return; // inert in any native (TestFlight/App Store) build
     const p = new URLSearchParams(window.location.search);
     const n = (k: string) => { const v = parseInt(p.get(k) ?? "", 10); return Number.isNaN(v) ? undefined : v; };
     const o = { days: n("days"), meals: n("meals"), refl: n("refl") };
