@@ -3812,7 +3812,7 @@ export default function HomeScreen() {
                     </div>
                   </div>
                 </div>
-                <p className="mt-3 text-center text-xs text-muted/60">Your meals and activity will show up here as you log.</p>
+                <p className="mt-3 text-center text-xs text-muted/60">Your meals and activity will show up here as you log</p>
               </div>
             ) : null}
           </div>

@@ -390,7 +390,7 @@ export default function PatternsScreen() {
             ) : facts.energyPhrase ? (
               <>Your <span className="font-semibold text-ink">{facts.energyPhrase}</span> this week.</>
             ) : (
-              "Your energy across the week will fill in here."
+              "Your energy across the week will fill in here"
             )}
           </p>
           <div className="mt-3 flex items-end justify-between">

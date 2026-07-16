@@ -105,7 +105,7 @@ export default function ReflectionScreen() {
                     </div>
                   ))}
                 </div>
-                <p className="mt-3 text-sm text-muted/70">Your nightly reflections will show up here.</p>
+                <p className="mt-3 text-sm text-muted/70">Your nightly reflections will show up here</p>
                 <div className="mt-2.5"><Legend withMissed /></div>
               </Card>
             </section>

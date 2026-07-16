@@ -695,7 +695,7 @@ export default function InsightsScreen() {
             <div className="mt-4">
               <WaterBar pct={waterTrend.pct} displayCurrent={waterTrend.has ? waterTrend.displayCurrent : "—"} displayGoal={waterTrend.displayGoal} />
               {!waterTrend.has && (
-                <p className="mt-2 text-sm text-muted/65">Your average will show up here after 2 weeks of logging.</p>
+                <p className="mt-2 text-sm text-muted/65">Your average will show up here after 2 weeks of logging</p>
               )}
             </div>
           </Card>
@@ -719,7 +719,7 @@ export default function InsightsScreen() {
               </div>
             </div>
           </div>
-          {!hasEnoughData && <p className="mt-2 text-sm text-muted/65">These will fill out as you log.</p>}
+          {!hasEnoughData && <p className="mt-2 text-sm text-muted/65">These will fill out as you log</p>}
           <div className="mt-4">
             {NUTRIENT_CATEGORIES.map((category, catIdx) => {
               const catNutrients = displayMicronutrients.filter((p) => category.nutrients.includes(p.name));
