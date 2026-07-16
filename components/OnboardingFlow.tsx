@@ -5,6 +5,8 @@ import { supabase } from "../lib/supabaseClient";
 import { clearProfileCache } from "../lib/supabaseDb";
 import { notifyProfileUpdated } from "../lib/dataEvents";
 import { requestHealthKitPermissions, checkHealthKitAuthorization, syncHealthKitActivity } from "../lib/healthKit";
+import { Capacitor } from "@capacitor/core";
+import { initPush, PUSH_ASKED_KEY, PUSH_DECLINED_AT_KEY } from "../lib/push";
 import type { ActivityLevel, FeelingGoal, GoalDirection } from "../lib/types";
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -58,6 +60,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
+  const [showNotifPrompt, setShowNotifPrompt] = useState(false);
   const [animStep, setAnimStep] = useState(0);
   const [introAnimStep, setIntroAnimStep] = useState(0);
   const [dobMonth, setDobMonth] = useState("");
@@ -142,8 +145,25 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
       notifyProfileUpdated();
     } catch { /* proceed regardless */ } finally {
       setSaving(false);
-      setShowWelcome(true);
+      setShowNotifPrompt(true);
     }
+  };
+
+  // Notifications ask — the soft pre-prompt lives here in onboarding (peak intent). "Turn On"
+  // fires the real iOS dialog; "Maybe Later" defers. Both set the shared wya_push_permission_asked
+  // flag so the fallback banner (PushNotificationSetup) won't double-ask.
+  const handleEnableNotifs = async () => {
+    localStorage.setItem(PUSH_ASKED_KEY, "1");
+    localStorage.removeItem(PUSH_DECLINED_AT_KEY);
+    if (Capacitor.isNativePlatform()) { try { await initPush(userId); } catch { /* proceed regardless */ } }
+    setShowNotifPrompt(false);
+    setShowWelcome(true);
+  };
+  const handleSkipNotifs = () => {
+    localStorage.setItem(PUSH_ASKED_KEY, "declined");
+    localStorage.setItem(PUSH_DECLINED_AT_KEY, String(Date.now()));
+    setShowNotifPrompt(false);
+    setShowWelcome(true);
   };
 
   const next = () => setStep((s) => s + 1);
@@ -196,6 +216,33 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
   }
 
   // Welcome animation
+  if (showNotifPrompt) {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col items-center bg-white px-8 pt-[26vh]">
+        <div className="flex flex-col items-center gap-5 text-center">
+          <svg className="h-16 w-16 text-primary/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+          </svg>
+          <p className="text-2xl font-semibold text-ink">Turn On Notifications</p>
+          <p className="max-w-xs text-sm text-muted/65">Your coach checks in with a morning nudge and a reminder to reflect each evening. Notifications are how they reach you.</p>
+        </div>
+        <div className="mt-14 w-full space-y-3">
+          <button
+            type="button"
+            className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80"
+            onClick={handleEnableNotifs}
+          >
+            Turn On Notifications
+          </button>
+          <button type="button" className={skipCls} onClick={handleSkipNotifs}>
+            Maybe Later
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (showWelcome) {
     return (
       <div className="fixed inset-0 z-50 flex flex-col items-center bg-white px-8 pt-[28vh]">

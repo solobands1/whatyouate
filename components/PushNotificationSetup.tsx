@@ -4,10 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Capacitor } from "@capacitor/core";
 import { useAuth } from "./AuthProvider";
-
-const PERMISSION_ASKED_KEY = "wya_push_permission_asked";
-const DECLINED_AT_KEY = "wya_push_declined_at";
-const REDECLINE_DAYS = 3;
+import { initPush, setPushNavigate, PUSH_ASKED_KEY, PUSH_DECLINED_AT_KEY, PUSH_REDECLINE_DAYS } from "../lib/push";
 
 function BellIcon() {
   return (
@@ -30,89 +27,51 @@ export default function PushNotificationSetup() {
 
     initialized.current = true;
 
-    const asked = localStorage.getItem(PERMISSION_ASKED_KEY);
-    const declinedAt = localStorage.getItem(DECLINED_AT_KEY);
+    // Route a tapped notification in-app (the reflection/meal reminders open home; nudges open summary).
+    setPushNavigate((screen) => { if (screen === "summary") router.push("/summary"); });
 
-    // Always attempt silent registration — covers users who enabled via iOS Settings
-    // without going through the in-app banner. silentIfNotGranted means it's a no-op
-    // if permissions haven't been granted yet.
+    const asked = localStorage.getItem(PUSH_ASKED_KEY);
+    const declinedAt = localStorage.getItem(PUSH_DECLINED_AT_KEY);
+
+    // Always attempt silent registration — covers users who granted during onboarding or via iOS
+    // Settings. silentIfNotGranted means it's a no-op if permission hasn't been granted yet.
     initPush(user.id, /* silentIfNotGranted */ true);
 
-    // Decide whether to show the pre-prompt banner
     const declinedRecently = declinedAt
-      ? Date.now() - Number(declinedAt) < REDECLINE_DAYS * 24 * 60 * 60 * 1000
+      ? Date.now() - Number(declinedAt) < PUSH_REDECLINE_DAYS * 24 * 60 * 60 * 1000
       : false;
 
+    // The PRIMARY ask now lives in onboarding. This banner is only a fallback re-ask — for people
+    // who tapped "Maybe Later" (after the cooldown) or somehow skipped the onboarding step.
     if (!asked || (asked === "declined" && !declinedRecently)) {
-      const t = setTimeout(() => {
+      let cancelled = false;
+      const tryShow = (attempt: number) => {
+        if (cancelled || !user) return;
         const walkthroughActive = localStorage.getItem(`wya_walkthrough_active_${user.id}`) === "true";
         const onboardingDone = localStorage.getItem(`wya_onboarding_done_${user.id}`) === "true";
-        if (!walkthroughActive && onboardingDone) setShowPrePrompt(true);
-      }, 5000);
-      return () => clearTimeout(t);
-    }
-  }, [user]);
-
-  async function initPush(userId: string, silentIfNotGranted = false) {
-    try {
-      const { PushNotifications } = await import("@capacitor/push-notifications");
-
-      const permStatus = await PushNotifications.checkPermissions();
-
-      if (permStatus.receive === "prompt" || permStatus.receive === "prompt-with-rationale") {
-        if (silentIfNotGranted) return;
-        const result = await PushNotifications.requestPermissions();
-        if (result.receive !== "granted") return;
-      } else if (permStatus.receive !== "granted") {
-        return;
-      }
-
-      // Listeners must be added before register() — the token event can fire
-      // immediately after register() and would be missed if added after.
-      PushNotifications.addListener("registration", async (token) => {
-        try {
-          const res = await fetch("/api/push/register", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId, token: token.value }),
-          });
-          if (!res.ok) {
-            console.error("[push] Token registration failed:", res.status, await res.text());
-          } else {
-            localStorage.setItem("wya_push_token", token.value);
-          }
-        } catch (err) {
-          console.error("[push] Token registration error:", err);
+        if (walkthroughActive || !onboardingDone) return;
+        // Don't stack on a home celebration/nudge banner (same top slot) — wait for it to clear.
+        if (typeof document !== "undefined" && document.querySelector("[data-top-banner]") && attempt < 8) {
+          setTimeout(() => tryShow(attempt + 1), 5000);
+          return;
         }
-      });
-
-      PushNotifications.addListener("registrationError", (err) => {
-        console.error("[push] Registration error:", JSON.stringify(err));
-      });
-
-      PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
-        const screen = action.notification.data?.screen;
-        if (screen === "summary") {
-          router.push("/summary");
-        }
-      });
-
-      await PushNotifications.register();
-    } catch (err) {
-      console.error("[push] initPush error:", err);
+        setShowPrePrompt(true);
+      };
+      const t = setTimeout(() => tryShow(0), 5000);
+      return () => { cancelled = true; clearTimeout(t); };
     }
-  }
+  }, [user, router]);
 
   function handleAllow() {
-    localStorage.setItem(PERMISSION_ASKED_KEY, "1");
-    localStorage.removeItem(DECLINED_AT_KEY);
+    localStorage.setItem(PUSH_ASKED_KEY, "1");
+    localStorage.removeItem(PUSH_DECLINED_AT_KEY);
     setShowPrePrompt(false);
     if (user) initPush(user.id);
   }
 
   function handleDecline() {
-    localStorage.setItem(PERMISSION_ASKED_KEY, "declined");
-    localStorage.setItem(DECLINED_AT_KEY, String(Date.now()));
+    localStorage.setItem(PUSH_ASKED_KEY, "declined");
+    localStorage.setItem(PUSH_DECLINED_AT_KEY, String(Date.now()));
     setShowPrePrompt(false);
   }
 

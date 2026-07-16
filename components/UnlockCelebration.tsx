@@ -103,6 +103,7 @@ export function UnlockCelebrationBanner({ title, sub, icon = "unlock", onDismiss
   const visible = state === "shown";
   return createPortal(
     <div
+      data-top-banner
       className="pointer-events-none fixed inset-x-0 top-0 z-[70] flex justify-center px-3"
       style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 8px)" }}
     >
