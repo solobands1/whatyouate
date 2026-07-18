@@ -2033,7 +2033,7 @@ export default function ProfileScreen() {
           className="fixed inset-x-0 z-[51] flex items-start justify-center px-5 py-[2vh] transition-[top,height] duration-200 ease-out"
           style={{ top: vv ? `${vv.top}px` : 0, height: vv ? `${vv.height}px` : "100%" }}
         >
-          <div className={`flex w-full max-w-sm flex-col rounded-2xl bg-white p-6 shadow-xl ${keyboardOpen ? "max-h-full" : "min-h-[60vh] max-h-[85%]"}`}>
+          <div className={`flex w-full max-w-sm flex-col rounded-2xl bg-white p-6 shadow-xl ${keyboardOpen ? "max-h-full" : "max-h-[85%]"}`}>
             <h2 className="shrink-0 text-base font-semibold text-ink">Add Supplement</h2>
             <input
               type="text"
@@ -2093,14 +2093,14 @@ export default function ProfileScreen() {
                 <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted/55">
                   {Object.keys(multiSuppNutrients).length > 0 ? "Add another nutrient" : "Add a nutrient it contains"}
                 </p>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-2">
                   {Object.entries(NUTRIENT_DISPLAY_NAMES)
                     .filter(([key]) => !multiSuppNutrients[key])
                     .map(([key, displayName]) => (
                       <button
                         key={key}
                         type="button"
-                        className="rounded-full border border-ink/12 bg-white px-3 py-1.5 text-xs text-ink/70 transition hover:bg-primary/5 active:bg-primary/10"
+                        className="rounded-full border border-ink/15 bg-white px-4 py-2.5 text-sm text-ink/75 transition hover:bg-primary/5 active:bg-primary/10"
                         onClick={() => setMultiSuppNutrients((prev) => ({ ...prev, [key]: { dose: "", unit: NUTRIENT_UNITS[key] ?? "mg", pct: "", mode: "dose" } }))}
                       >
                         {displayName}
