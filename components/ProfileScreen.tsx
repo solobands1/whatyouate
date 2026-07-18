@@ -205,6 +205,7 @@ export default function ProfileScreen() {
   const [suppMatchHint, setSuppMatchHint] = useState<string | null>(null);
   const [suppLookingUp, setSuppLookingUp] = useState(false);
   const suppLookupTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const suppListRef = useRef<HTMLDivElement>(null);
   const [showMultiSuppModal, setShowMultiSuppModal] = useState(false);
   const [multiSuppName, setMultiSuppName] = useState("");
   const [multiSuppNutrients, setMultiSuppNutrients] = useState<Record<string, { dose: string; unit: string; pct: string; mode: "dose" | "pct" }>>({});
@@ -395,6 +396,20 @@ export default function ProfileScreen() {
       viewport.removeEventListener("scroll", update);
       setVv(undefined);
     };
+  }, [showMultiSuppModal]);
+
+  // Belt-and-suspenders: with the keyboard open, iOS keyboard-scrolling leaks past the
+  // position:fixed body lock. Also block touchmove everywhere EXCEPT inside the nutrient list,
+  // which stays scrollable.
+  useEffect(() => {
+    if (!showMultiSuppModal) return;
+    const onTouchMove = (e: TouchEvent) => {
+      const list = suppListRef.current;
+      if (list && e.target instanceof Node && list.contains(e.target)) return; // let the list scroll
+      e.preventDefault();
+    };
+    document.addEventListener("touchmove", onTouchMove, { passive: false });
+    return () => document.removeEventListener("touchmove", onTouchMove);
   }, [showMultiSuppModal]);
 
   useEffect(() => {
@@ -2032,7 +2047,7 @@ export default function ProfileScreen() {
               </p>
             )}
             <p className="mt-3 shrink-0 text-xs text-muted/60">Tap each tracked nutrient it contains and enter the amount from the label.</p>
-            <div className="mt-3 min-h-0 flex-1 space-y-2 overflow-y-auto">
+            <div ref={suppListRef} className="mt-3 min-h-0 flex-1 space-y-2 overflow-y-auto">
               {Object.entries(NUTRIENT_DISPLAY_NAMES).map(([key, displayName]) => {
                 const entry = multiSuppNutrients[key];
                 const isOpen = !!entry;
