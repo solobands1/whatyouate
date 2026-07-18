@@ -18,7 +18,7 @@ const DIETARY_OPTIONS = [
 const GOALS: { value: GoalDirection; label: string; sub: string }[] = [
   { value: "gain",     label: "Gain Weight",  sub: "We'll focus on fueling your growth and performance." },
   { value: "maintain", label: "Stay Steady",  sub: "We'll help you stay balanced and spot patterns over time." },
-  { value: "lose",     label: "Lose Weight",  sub: "We'll focus on calorie awareness and building a healthy deficit." },
+  { value: "lose",     label: "Lose Weight",  sub: "We'll help you do it steadily and keep your energy up." },
 ];
 
 const FEELING_GOALS: { value: FeelingGoal; label: string }[] = [
@@ -304,7 +304,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
                 </svg>
               </div>
               <h1 className="text-2xl font-semibold text-ink text-center">When Were You Born?</h1>
-              <p className="mt-2 text-sm text-muted/70 text-center">We use this to calibrate your calorie and nutrition targets</p>
+              <p className="mt-2 text-sm text-muted/70 text-center">This helps us personalize your energy and nutrition targets</p>
               <div className="mt-8 flex justify-center gap-2">
                 <select
                   className={`w-[120px] ${selectCls}`}
@@ -375,7 +375,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
                 </svg>
               </div>
               <h1 className="text-2xl font-semibold text-ink text-center">What's Your Biological Sex?</h1>
-              <p className="mt-2 text-sm text-muted/70 text-center">We use this to calibrate your nutritional targets accurately</p>
+              <p className="mt-2 text-sm text-muted/70 text-center">This helps us personalize your targets</p>
               <div className="mt-8 flex flex-col gap-3">
                 {(["male","female","prefer_not"] as const).map((v) => (
                   <button
@@ -422,7 +422,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
               </div>
               <h1 className="text-2xl font-semibold text-ink text-center">Height & Weight</h1>
               <div className="mt-2 flex items-center justify-center gap-3">
-                <p className="text-sm text-muted/70">We use this to calculate your personal calorie targets</p>
+                <p className="text-sm text-muted/70">This helps set your personal energy and nutrition baseline</p>
               </div>
               <div className="mt-3 flex justify-center">
                 <div className="inline-flex rounded-full border border-ink/10 bg-ink/5 p-0.5 text-[10px]">
@@ -642,7 +642,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
                 </svg>
               </div>
               <h1 className="text-2xl font-semibold text-ink text-center">How Active Are You?</h1>
-              <p className="mt-2 text-sm text-muted/70 text-center">We use this to estimate how many calories you need each day</p>
+              <p className="mt-2 text-sm text-muted/70 text-center">This helps us gauge your daily energy needs</p>
               <div className="mt-8 flex flex-col gap-3">
                 {ACTIVITY_LEVELS.map((a) => (
                   <button
