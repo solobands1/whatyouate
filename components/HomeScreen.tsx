@@ -24,7 +24,7 @@ import "../lib/mealQueue";
 import BarcodeScannerOverlay from "./BarcodeScannerOverlay";
 import { getFoodCacheEntry, setFoodCacheEntry, deleteFoodCacheEntry, deleteFoodTextEntry, incrementFoodCacheLogCount, incrementFoodTextLogCount, getQuickAddFromMeals, addQuickAddRemoved, getDailySupplements, setDailySupplements, hasDailySuppsLoggedToday, markDailySuppsLoggedToday, clearDailySuppsLoggedToday, dishGroupKey, type QuickAddItem } from "../lib/foodCache";
 import { addFeelLog, deleteFeelLog, updateFeelLog, upsertWaterLog, addWeightLog, saveProfile, addReflection, saveHabitState, fetchHabitHistory, saveHabitHistory, type FeelLog } from "../lib/supabaseDb";
-import { EMPTY_HABIT_STATE, pickSuggestionId, snoozeSuggestion, declineSuggestion, markHabitEnded, endBuilderCompleted, resolveBuilderForToday, extendBuilder, type HabitState, type ActiveBuilder, type HabitHistoryEntry } from "../lib/habitState";
+import { EMPTY_HABIT_STATE, pickSuggestionId, snoozeSuggestion, snoozeAllSuggestions, declineSuggestion, markHabitEnded, endBuilderCompleted, resolveBuilderForToday, extendBuilder, type HabitState, type ActiveBuilder, type HabitHistoryEntry } from "../lib/habitState";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
 import WaterBar from "./WaterBar";
@@ -967,6 +967,17 @@ export default function HomeScreen() {
       : snoozeSuggestion(habitStateRef.current, activeTemplate.id, activeTemplate.cooldownDays);
     habitStateRef.current = next;
     setHabitState(next); // keep the shared context in sync so a nav-away + back doesn't revert
+    void saveHabitState(user.id, next);
+  };
+
+  // Snooze suggestions: a user-chosen pause on all new habit suggestions for 5 days.
+  const snoozeAll = () => {
+    setHeroHabit((h) => ({ ...h, status: "hidden" }));
+    if (isDemoMode || !user) return;
+    try { localStorage.removeItem(`wya_habit_ignored_${activeTemplate.id}_${user.id}`); } catch {}
+    const next = snoozeAllSuggestions(habitStateRef.current, 5);
+    habitStateRef.current = next;
+    setHabitState(next);
     void saveHabitState(user.id, next);
   };
 
@@ -2492,9 +2503,9 @@ export default function HomeScreen() {
   const hasEverLogged = displayMeals.some((m) => m.analysisJson?.source !== "supplement" && m.status !== "failed");
   const greetingCopyFor = (phase: "morning" | "afternoon" | "evening") => {
     if (!hasEverLogged) return { greeting: "Welcome", sub: "Log Your First Meal", exclaim: true };
-    if (phase === "morning") return { greeting: "Good Morning", sub: "Glad you're back", exclaim: false };
-    if (phase === "afternoon") return { greeting: "Good Afternoon", sub: "Glad you're back", exclaim: false };
-    return { greeting: "Good Evening", sub: "Glad you're back", exclaim: false };
+    if (phase === "morning") return { greeting: "Good Morning", sub: "We're glad you're back", exclaim: false };
+    if (phase === "afternoon") return { greeting: "Good Afternoon", sub: "We're glad you're back", exclaim: false };
+    return { greeting: "Good Evening", sub: "We're glad you're back", exclaim: false };
   };
   const welcomeMessage = (() => {
     const hour = new Date().getHours();
@@ -3186,6 +3197,8 @@ export default function HomeScreen() {
                       <button type="button" className="text-xs font-medium text-ink/50 transition active:opacity-60" onClick={() => dismissSuggestion(false)}>Maybe Later</button>
                       <span className="text-ink/20">·</span>
                       <button type="button" className="text-xs font-medium text-ink/50 transition active:opacity-60" onClick={() => dismissSuggestion(true)}>No Thanks</button>
+                      <span className="text-ink/20">·</span>
+                      <button type="button" className="text-xs font-medium text-ink/50 transition active:opacity-60" onClick={snoozeAll}>Snooze 5 Days</button>
                     </div>
                   </div>
                 </div>

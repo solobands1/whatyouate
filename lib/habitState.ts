@@ -116,6 +116,21 @@ export function snoozeSuggestion(state: HabitState, templateId: string, cooldown
   };
 }
 
+// "Snooze suggestions": a user-chosen pause on ALL new habit suggestions for `days`
+// (distinct from the per-habit Maybe Later). Doesn't shelve or decline any template —
+// just holds everything until the date, so nothing surfaces in the meantime.
+export function snoozeAllSuggestions(state: HabitState, days: number, now: Date = new Date()): HabitState {
+  return {
+    ...state,
+    builder: null,
+    cadence: {
+      ...state.cadence,
+      suggestionId: null,
+      suggestionHoldUntil: addDaysISO(days, now),
+    },
+  };
+}
+
 // "No Thanks" (or a second Maybe Later): shelve the habit for its cooldown, offer
 // something different next time, and start the breather.
 export function declineSuggestion(state: HabitState, templateId: string, cooldownDays: number, now: Date = new Date()): HabitState {
