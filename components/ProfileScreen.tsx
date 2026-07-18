@@ -1624,7 +1624,7 @@ export default function ProfileScreen() {
             onClick={handleSignOut}
             disabled={signingOut}
           >
-            {signingOut ? "Signing out…" : "Log Out"}
+            {signingOut ? "Signing Out…" : "Log Out"}
           </button>
         </Card>
 
