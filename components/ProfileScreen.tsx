@@ -1608,11 +1608,12 @@ export default function ProfileScreen() {
             className="mt-2 w-full rounded-xl border border-ink/10 bg-ink/5 px-4 py-2.5 text-xs font-semibold text-ink/70 transition active:opacity-60 active:scale-[0.98]"
             onClick={() => {
               if (!user) return;
-              localStorage.removeItem(`wya_walkthrough_${user.id}`);
-              localStorage.removeItem(`wya_walkthrough_gate_${user.id}`);
-              localStorage.removeItem(`wya_walkthrough_active_${user.id}`);
-              localStorage.removeItem(`wya_walkthrough_stage_${user.id}`);
-              localStorage.removeItem(`wya_demo_mode_${user.id}`);
+              // Start the walkthrough directly by arming the flags HomeScreen's resume logic checks
+              // (active + stage=home + demo). Clearing them doesn't work — HomeScreen re-syncs
+              // walkthrough_done from Supabase, so the tour never starts and you just land on home.
+              localStorage.setItem(`wya_demo_mode_${user.id}`, "true");
+              localStorage.setItem(`wya_walkthrough_active_${user.id}`, "true");
+              localStorage.setItem(`wya_walkthrough_stage_${user.id}`, "home");
               router.push("/");
             }}
           >
