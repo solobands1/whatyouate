@@ -30,6 +30,17 @@ const FEELING_GOALS: { value: FeelingGoal; label: string }[] = [
   { value: "cravings", label: "Fewer Cravings" },
 ];
 
+// Sample push shown on the notifications screen, tailored to the chosen goal so the value is
+// concrete. Illustrative coaching prompts — not claims about data the user hasn't logged yet.
+const SAMPLE_NUDGES: Record<FeelingGoal, { title: string; body: string }> = {
+  energy:    { title: "Your morning check-in", body: "Eating within an hour of waking helps steady your energy. Want to aim for that today?" },
+  sleep:     { title: "A note for tonight",    body: "Try a caffeine cutoff around 2pm. It's one of the biggest levers for deep sleep." },
+  mood:      { title: "Your morning check-in", body: "A protein-forward breakfast can smooth out the midday mood dips. Worth a try today?" },
+  focus:     { title: "Your morning check-in", body: "Steady blood sugar keeps focus sharp. A balanced breakfast sets the tone." },
+  digestion: { title: "A note for tonight",    body: "Earlier, lighter dinners tend to sit easier. Something to notice tonight." },
+  cravings:  { title: "Your morning check-in", body: "Protein and fiber early on can quiet the afternoon cravings. Let's test it today." },
+};
+
 const ACTIVITY_LEVELS: { value: ActivityLevel; label: string; sub: string }[] = [
   { value: "very_active",       label: "Very Active",        sub: "Training most days or physical job" },
   { value: "moderately_active", label: "Moderately Active",  sub: "Exercise 3–4x/week" },
@@ -187,7 +198,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
     return (
       <div className="fixed inset-0 z-50 flex flex-col bg-white safe-top px-6">
         <div className="flex flex-1 flex-col items-center text-center pt-[18vh]">
-          <div style={animStyle(introAnimStep >= 1)} className="mb-6 h-[88px] w-[88px] overflow-hidden rounded-[20px] border border-ink/10 shadow-md">
+          <div style={animStyle(introAnimStep >= 1)} className="mb-6 h-[88px] w-[88px] overflow-hidden rounded-[20px] border border-ink/10">
             <img src="/icon.svg" alt="WhatYouAte" className="h-full w-full object-cover" />
           </div>
           <div style={animStyle(introAnimStep >= 2)}>
@@ -217,17 +228,50 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
 
   // Welcome animation
   if (showNotifPrompt) {
+    const sample = SAMPLE_NUDGES[feelingGoals[0] ?? "energy"] ?? SAMPLE_NUDGES.energy;
     return (
-      <div className="fixed inset-0 z-50 flex flex-col items-center bg-white px-8 pt-[26vh]">
-        <div className="flex flex-col items-center gap-5 text-center">
-          <svg className="h-16 w-16 text-primary/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
-            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-          </svg>
-          <p className="text-2xl font-semibold text-ink">Turn On Notifications</p>
-          <p className="max-w-xs text-sm text-muted/65">Your coach checks in with a morning nudge and a reminder to reflect each evening. Notifications are how they reach you.</p>
+      <div className="fixed inset-0 z-50 flex flex-col bg-white px-8 pt-[14vh]">
+        <style>{`
+          @keyframes notif-drop {
+            0%   { opacity: 0; transform: translateY(-170%) scale(0.94); }
+            70%  { opacity: 1; transform: translateY(6px) scale(1); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+          }
+          @keyframes notif-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+          @keyframes notif-fade { from { opacity: 0; } to { opacity: 1; } }
+          .notif-card { animation: notif-drop 0.7s cubic-bezier(0.22,1,0.36,1) 0.15s both; }
+          .notif-copy { animation: notif-rise 0.5s ease 0.8s both; }
+          .notif-cta  { animation: notif-rise 0.5s ease 1s both; }
+          @media (prefers-reduced-motion: reduce) {
+            .notif-card, .notif-copy, .notif-cta { animation: notif-fade 0.3s ease both; }
+          }
+        `}</style>
+
+        {/* Mock iOS push — drops in from the top like the real thing, personalized to their goal */}
+        <div className="notif-card mx-auto w-full max-w-sm">
+          <div className="flex items-start gap-2.5 rounded-2xl bg-white p-3.5 shadow-[0_10px_34px_rgba(20,40,80,0.16)] ring-1 ring-black/5">
+            <div className="h-9 w-9 shrink-0 overflow-hidden rounded-[9px] border border-ink/10">
+              <img src="/icon.svg" alt="" className="h-full w-full object-cover" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-baseline justify-between gap-2">
+                <p className="truncate text-[13px] font-semibold text-ink">WhatYouAte</p>
+                <span className="shrink-0 text-[11px] text-muted/50">now</span>
+              </div>
+              <p className="mt-0.5 text-[13px] font-medium leading-snug text-ink">{sample.title}</p>
+              <p className="text-[13px] leading-snug text-ink/70">{sample.body}</p>
+            </div>
+          </div>
         </div>
-        <div className="mt-14 w-full space-y-3">
+
+        <div className="notif-copy mx-auto mt-11 max-w-xs text-center">
+          <p className="text-2xl font-semibold text-ink">Let Your Coach Reach You</p>
+          <p className="mt-3 text-sm leading-relaxed text-muted/70">
+            A check-in each morning, a nudge when something matters, and a reminder to reflect at night. Turn notifications on so your coach can actually reach you.
+          </p>
+        </div>
+
+        <div className="notif-cta mx-auto mt-auto w-full max-w-sm space-y-3 pb-[6vh]">
           <button
             type="button"
             className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80"
