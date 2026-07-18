@@ -202,9 +202,6 @@ export default function ProfileScreen() {
   const [editingWaterGoal, setEditingWaterGoal] = useState(false);
   const [waterGoalInput, setWaterGoalInput] = useState("");
   const [dailySupplements, setDailySupplementsState] = useState<SupplementEntry[]>([]);
-  const [newSuppInput, setNewSuppInput] = useState("");
-  const [newSuppDose, setNewSuppDose] = useState("");
-  const [newSuppUnit, setNewSuppUnit] = useState("mg");
   const [suppMatchHint, setSuppMatchHint] = useState<string | null>(null);
   const [suppLookingUp, setSuppLookingUp] = useState(false);
   const suppLookupTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -594,31 +591,57 @@ export default function ProfileScreen() {
   // Open the nutrient picker for a multivitamin / unrecognized supplement — pre-selecting
   // any tracked nutrients we recognize from the name. Everything saved through the picker
   // carries tracked nutrients, so nothing that would show nothing in your totals gets in.
-  const openSuppPicker = () => {
-    const name = newSuppInput.trim();
+  // Open the unified "Add Supplement" modal fresh — the user names it and picks the tracked
+  // nutrients it contains, all in one place (works for a single vitamin or a multivitamin).
+  const openSuppAdd = () => {
     if (suppLookupTimer.current) clearTimeout(suppLookupTimer.current);
-    const seed: Record<string, { dose: string; unit: string; pct: string; mode: "dose" | "pct" }> = {};
-    matchedNutrientKeys(name).forEach((key) => {
-      seed[key] = { dose: "", unit: NUTRIENT_UNITS[key] ?? "mg", pct: "", mode: "dose" };
-    });
-    setMultiSuppName(name);
-    setMultiSuppNutrients(seed);
+    setMultiSuppName("");
+    setMultiSuppNutrients({});
+    setSuppMatchHint(null);
+    setSuppLookingUp(false);
     setShowMultiSuppModal(true);
   };
 
-  // A supplement that maps to exactly one tracked nutrient (e.g. Vitamin D) is added
-  // inline with a dose. A dose is required, so the entry always counts toward that total.
-  const commitSingleSupp = () => {
-    const name = newSuppInput.trim();
-    const key = matchedNutrientKeys(name)[0];
-    const dose = parseFloat(newSuppDose);
-    if (!name || !key || isNaN(dose) || dose <= 0) return;
+  // As the user types the name in the modal, give a smart head start: keyword-match tracked
+  // nutrients (pre-open their rows) and, after a pause, an AI lookup that can name the nutrients
+  // + prefill the dose for a single recognized supplement (e.g. "Vitamin D" -> 2000 IU).
+  const handleSuppNameChange = (val: string) => {
+    setMultiSuppName(val);
     if (suppLookupTimer.current) clearTimeout(suppLookupTimer.current);
-    const entry: SupplementEntry = { name, nutrients: [{ nutrient: key, dose, unit: newSuppUnit }] };
-    const updated = [...dailySupplements, entry];
-    setDailySupplementsState(updated);
-    if (user) { setDailySupplements(user.id, updated); saveDailySupplements(user.id, updated).then(() => notifyProfileUpdated()).catch(() => {}); }
-    setNewSuppInput(""); setNewSuppDose(""); setSuppMatchHint(null);
+    if (val.trim().length < 2) { setSuppMatchHint(null); return; }
+    const names = matchSupplementNutrients(val.trim());
+    setSuppMatchHint(names.length ? `Tracks: ${names.join(", ")}` : null);
+    const keys = matchedNutrientKeys(val);
+    if (keys.length) {
+      setMultiSuppNutrients((prev) => {
+        const next = { ...prev };
+        keys.forEach((key) => { if (!next[key]) next[key] = { dose: "", unit: NUTRIENT_UNITS[key] ?? "mg", pct: "", mode: "dose" }; });
+        return next;
+      });
+    }
+    suppLookupTimer.current = setTimeout(async () => {
+      setSuppLookingUp(true);
+      try {
+        const res = await fetch("/api/analyze-supplement", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: val.trim() }) });
+        if (!res.ok) return;
+        const data = await res.json();
+        const canonKeys = data.canonical_name ? matchedNutrientKeys(data.canonical_name) : [];
+        const allKeys = [...new Set([...matchedNutrientKeys(val), ...canonKeys])];
+        const allNames = [...new Set([...matchSupplementNutrients(val.trim()), ...(data.canonical_name ? matchSupplementNutrients(data.canonical_name) : [])])];
+        setSuppMatchHint(allNames.length ? `Tracks: ${allNames.join(", ")}` : null);
+        setMultiSuppNutrients((prev) => {
+          const next = { ...prev };
+          allKeys.forEach((key) => { if (!next[key]) next[key] = { dose: "", unit: NUTRIENT_UNITS[key] ?? "mg", pct: "", mode: "dose" }; });
+          // Single recognized nutrient + an AI dose: prefill it so the user just confirms.
+          if (allKeys.length === 1 && data.dose && !next[allKeys[0]].dose) {
+            next[allKeys[0]] = { ...next[allKeys[0]], dose: String(data.dose), unit: data.unit ?? next[allKeys[0]].unit };
+          }
+          return next;
+        });
+      } catch { /* keep the keyword hint */ } finally {
+        setSuppLookingUp(false);
+      }
+    }, 800);
   };
 
   const handleClear = async () => {
@@ -1438,103 +1461,14 @@ export default function ProfileScreen() {
                 </span>
               ))}
             </div>
-            <div className="mt-2 flex flex-col gap-1.5">
-              <input
-                type="text"
-                className="w-full rounded-xl border border-ink/10 px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                placeholder="e.g. Vitamin D, or your multivitamin"
-                value={newSuppInput}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setNewSuppInput(val);
-                  // Clear any pending lookup
-                  if (suppLookupTimer.current) clearTimeout(suppLookupTimer.current);
-                  if (val.trim().length < 2) { setSuppMatchHint(null); return; }
-                  // Show keyword-based hint immediately
-                  const matched = matchSupplementNutrients(val.trim());
-                  setSuppMatchHint(matched.length ? `Tracks: ${matched.join(", ")}` : null);
-                  // Debounce AI lookup — fires 800ms after user stops typing
-                  suppLookupTimer.current = setTimeout(async () => {
-                    setSuppLookingUp(true);
-                    try {
-                      const res = await fetch("/api/analyze-supplement", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ name: val.trim() }),
-                      });
-                      if (!res.ok) return;
-                      const data = await res.json();
-                      if (data.dose) {
-                        setNewSuppDose(String(data.dose));
-                        setNewSuppUnit(data.unit ?? "mg");
-                      }
-                      const reMatched = matchSupplementNutrients(val.trim());
-                      const canonMatched = data.canonical_name ? matchSupplementNutrients(data.canonical_name) : [];
-                      const allMatched = [...new Set([...reMatched, ...canonMatched])];
-                      setSuppMatchHint(allMatched.length ? `Tracks: ${allMatched.join(", ")}` : null);
-                    } catch {
-                      // silently fail — hint stays as keyword match
-                    } finally {
-                      setSuppLookingUp(false);
-                    }
-                  }, 800);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key !== "Enter") return;
-                  e.preventDefault();
-                  if (!newSuppInput.trim()) return;
-                  if (matchedNutrientKeys(newSuppInput).length === 1) commitSingleSupp();
-                  else openSuppPicker();
-                }}
-              />
-              {(suppMatchHint || suppLookingUp) && (
-                <p className={`-mt-0.5 text-[11px] ${suppLookingUp ? "text-muted/55" : suppMatchHint?.startsWith("Tracks") ? "text-primary/70" : "text-muted/65"}`}>
-                  {suppLookingUp ? "Looking up…" : suppMatchHint}
-                </p>
-              )}
-              {matchedNutrientKeys(newSuppInput).length === 1 ? (
-                // A specific tracked vitamin (e.g. Vitamin D) — just a dose, no picker.
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    className="min-w-0 flex-1 rounded-xl border border-ink/10 px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                    placeholder="dose from label"
-                    value={newSuppDose}
-                    onChange={(e) => setNewSuppDose(e.target.value)}
-                  />
-                  <select
-                    className="rounded-full border border-ink/10 bg-white px-3 py-1.5 text-xs text-ink/80"
-                    value={newSuppUnit}
-                    onChange={(e) => setNewSuppUnit(e.target.value)}
-                  >
-                    {["mg", "mcg", "IU", "g", "mL"].map((u) => (
-                      <option key={u} value={u}>{u}</option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    disabled={!(parseFloat(newSuppDose) > 0)}
-                    className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90 active:opacity-80 disabled:opacity-40"
-                    onClick={commitSingleSupp}
-                  >
-                    Add
-                  </button>
-                </div>
-              ) : (
-                // A multivitamin or unrecognized supplement — pick what's in it next.
-                <>
-                  <button
-                    type="button"
-                    disabled={!newSuppInput.trim()}
-                    className="mt-1 self-start rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-white transition hover:bg-primary/90 active:opacity-80 disabled:opacity-40"
-                    onClick={openSuppPicker}
-                  >
-                    Add
-                  </button>
-                  <p className="text-[11px] leading-relaxed text-muted/55">Next you pick which nutrients it contains, so it counts toward your daily totals.</p>
-                </>
-              )}
+            <div className="mt-3">
+              <button
+                type="button"
+                className="rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-white transition hover:bg-primary/90 active:opacity-80"
+                onClick={openSuppAdd}
+              >
+                Add Supplement
+              </button>
             </div>
           </label>
         </Card>
@@ -2041,11 +1975,24 @@ export default function ProfileScreen() {
       )}
 
       {showMultiSuppModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/30 px-5 pt-[calc(env(safe-area-inset-top,0px)+3rem)]">
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
-            <h2 className="text-base font-semibold text-ink">{multiSuppName || "Supplement"}</h2>
-            <p className="mt-1 text-xs text-muted/60">These are the nutrients we track. Tap any this supplement contains and enter the amount from the label.</p>
-            <div className="mt-4 space-y-2 max-h-[55vh] overflow-y-auto">
+            <h2 className="text-base font-semibold text-ink">Add Supplement</h2>
+            <input
+              type="text"
+              autoFocus
+              className="mt-3 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+              placeholder="Name, e.g. Vitamin D or Webber Naturals Iron"
+              value={multiSuppName}
+              onChange={(e) => handleSuppNameChange(e.target.value)}
+            />
+            {(suppMatchHint || suppLookingUp) && (
+              <p className={`mt-1.5 text-[11px] ${suppLookingUp ? "text-muted/55" : suppMatchHint?.startsWith("Tracks") ? "text-primary/70" : "text-muted/65"}`}>
+                {suppLookingUp ? "Looking up…" : suppMatchHint}
+              </p>
+            )}
+            <p className="mt-3 text-xs text-muted/60">Tap each tracked nutrient it contains and enter the amount from the label.</p>
+            <div className="mt-3 space-y-2 max-h-[42vh] overflow-y-auto">
               {Object.entries(NUTRIENT_DISPLAY_NAMES).map(([key, displayName]) => {
                 const entry = multiSuppNutrients[key];
                 const isOpen = !!entry;
@@ -2102,7 +2049,7 @@ export default function ProfileScreen() {
               <button
                 type="button"
                 className="flex-1 rounded-xl border border-ink/10 px-4 py-3 text-sm font-semibold text-ink/70 transition hover:bg-ink/5"
-                onClick={() => { setShowMultiSuppModal(false); setMultiSuppNutrients({}); }}
+                onClick={() => { if (suppLookupTimer.current) clearTimeout(suppLookupTimer.current); setShowMultiSuppModal(false); setMultiSuppNutrients({}); setMultiSuppName(""); setSuppMatchHint(null); }}
               >
                 Cancel
               </button>
@@ -2123,11 +2070,12 @@ export default function ProfileScreen() {
                   const updated = [...dailySupplements, entry];
                   setDailySupplementsState(updated);
                   if (user) { setDailySupplements(user.id, updated); saveDailySupplements(user.id, updated).then(() => notifyProfileUpdated()).catch(() => {}); }
-                  setNewSuppInput(""); setSuppMatchHint(null);
+                  if (suppLookupTimer.current) clearTimeout(suppLookupTimer.current);
+                  setMultiSuppName(""); setSuppMatchHint(null);
                   setShowMultiSuppModal(false); setMultiSuppNutrients({});
                 }}
               >
-                Add Supplement
+                Add
               </button>
             </div>
           </div>
