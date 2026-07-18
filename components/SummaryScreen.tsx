@@ -582,6 +582,19 @@ export default function SummaryScreen() {
         </div>
       ),
     },
+    {
+      target: String.raw`[data-tour="nav-patterns"]`,
+      placement: "top" as const,
+      disableBeacon: true,
+      spotlightClicks: true,
+      hideFooter: true,
+      content: (
+        <div>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Explore Your Patterns</p>
+          <p>Last stop — tap <strong>Patterns</strong> below to see the trends your coach has spotted.</p>
+        </div>
+      ),
+    },
   ];
 
   const handleSummaryTour = (data: CallBackProps) => {
@@ -595,11 +608,11 @@ export default function SummaryScreen() {
       setRunSummaryTour(false);
       return;
     }
-    if (data.type === "step:after" && data.index === summaryTourSteps.length - 1) {
+    // The final step spotlights the Patterns tab and waits for the tap (teaching navigation). Arm
+    // the next stage as we advance to it so tapping the tab resumes the tour on Patterns.
+    if (data.type === "step:after" && data.index === summaryTourSteps.length - 2) {
       localStorage.setItem(`wya_walkthrough_active_${user.id}`, "true");
       localStorage.setItem(`wya_walkthrough_stage_${user.id}`, "insights");
-      setRunSummaryTour(false);
-      router.push("/summary/insights");
     }
   };
 

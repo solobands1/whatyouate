@@ -2635,6 +2635,19 @@ export default function HomeScreen() {
         </div>
       ),
     },
+    {
+      target: '[data-tour="nav-summary"]',
+      placement: "top" as const,
+      disableBeacon: true,
+      spotlightClicks: true,
+      hideFooter: true,
+      content: (
+        <div>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>See Your Insights</p>
+          <p>Tap <strong>Insights</strong> below to keep going. It&apos;s where your coach shows what it&apos;s noticing about you.</p>
+        </div>
+      ),
+    },
   ] as Step[];
 
   const handleTourCallback = (data: CallBackProps) => {
@@ -2654,12 +2667,12 @@ export default function HomeScreen() {
       supabase.from("profiles").update({ walkthrough_done: true }).eq("user_id", user.id).then(() => {});
       return;
     }
-    if (data.type === "step:after" && data.index === steps.length - 1) {
-      // Keep demo mode ON — SummaryScreen needs it to show example data during its tour
+    // The final step spotlights the Insights tab and waits for the user to tap it (so they learn
+    // to navigate). Arm the next stage as we advance to it, so tapping the tab resumes the tour
+    // on Insights. Keep demo mode ON — SummaryScreen needs it to show example data during its tour.
+    if (data.type === "step:after" && data.index === steps.length - 2) {
       localStorage.setItem(activeKey, "true");
       localStorage.setItem(stageKey, "summary");
-      setRunTour(false);
-      router.push("/summary");
     }
   };
 
