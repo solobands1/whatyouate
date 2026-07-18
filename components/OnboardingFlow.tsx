@@ -30,15 +30,16 @@ const FEELING_GOALS: { value: FeelingGoal; label: string }[] = [
   { value: "cravings", label: "Fewer Cravings" },
 ];
 
-// Sample push shown on the notifications screen, tailored to the chosen goal so the value is
-// concrete. Illustrative coaching prompts — not claims about data the user hasn't logged yet.
-const SAMPLE_NUDGES: Record<FeelingGoal, { title: string; body: string }> = {
-  energy:    { title: "Your morning check-in", body: "Eating within an hour of waking helps steady your energy. Want to aim for that today?" },
-  sleep:     { title: "A note for tonight",    body: "Try a caffeine cutoff around 2pm. It's one of the biggest levers for deep sleep." },
-  mood:      { title: "Your morning check-in", body: "A protein-forward breakfast can smooth out the midday mood dips. Worth a try today?" },
-  focus:     { title: "Your morning check-in", body: "Steady blood sugar keeps focus sharp. A balanced breakfast sets the tone." },
-  digestion: { title: "A note for tonight",    body: "Earlier, lighter dinners tend to sit easier. Something to notice tonight." },
-  cravings:  { title: "Your morning check-in", body: "Protein and fiber early on can quiet the afternoon cravings. Let's test it today." },
+// Sample morning push shown on the notifications screen, tailored to the chosen goal. Every one
+// is a tiny, effortless action (a glass of water, a few minutes of daylight) so notifications
+// read as easy wins, not homework. Illustrative — not a claim about data the user hasn't logged.
+const SAMPLE_NUDGES: Record<FeelingGoal, string> = {
+  energy:    "Drink a glass of water when you wake up. One of the easiest ways to shake off morning grogginess.",
+  sleep:     "Catch a few minutes of morning daylight. It quietly sets you up for better sleep tonight.",
+  mood:      "Step outside for two minutes of daylight. A quick, easy mood lift.",
+  focus:     "Have a glass of water now. Even mild thirst can quietly fog up your focus.",
+  digestion: "Sip some water between meals today. An easy way to keep things moving.",
+  cravings:  "Drink a glass of water before your next snack. Cravings often fade on their own.",
 };
 
 const ACTIVITY_LEVELS: { value: ActivityLevel; label: string; sub: string }[] = [
@@ -228,50 +229,74 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
 
   // Welcome animation
   if (showNotifPrompt) {
-    const sample = SAMPLE_NUDGES[feelingGoals[0] ?? "energy"] ?? SAMPLE_NUDGES.energy;
+    const sampleBody = SAMPLE_NUDGES[feelingGoals[0] ?? "energy"] ?? SAMPLE_NUDGES.energy;
     return (
-      <div className="fixed inset-0 z-50 flex flex-col bg-white px-8 pt-[14vh]">
+      <div className="fixed inset-0 z-50 flex flex-col justify-center bg-white px-8">
         <style>{`
           @keyframes notif-drop {
-            0%   { opacity: 0; transform: translateY(-170%) scale(0.94); }
-            70%  { opacity: 1; transform: translateY(6px) scale(1); }
+            0%   { opacity: 0; transform: translateY(-150%) scale(0.94); }
+            70%  { opacity: 1; transform: translateY(5px) scale(1); }
             100% { opacity: 1; transform: translateY(0) scale(1); }
           }
           @keyframes notif-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
           @keyframes notif-fade { from { opacity: 0; } to { opacity: 1; } }
-          .notif-card { animation: notif-drop 0.7s cubic-bezier(0.22,1,0.36,1) 0.15s both; }
-          .notif-copy { animation: notif-rise 0.5s ease 0.8s both; }
-          .notif-cta  { animation: notif-rise 0.5s ease 1s both; }
+          @keyframes glow-pulse { 0%,100% { opacity: 0.5; transform: scale(1); } 50% { opacity: 0.85; transform: scale(1.1); } }
+          .notif-card  { animation: notif-drop 0.7s cubic-bezier(0.22,1,0.36,1) 0.15s both; }
+          .notif-card2 { animation: notif-drop 0.7s cubic-bezier(0.22,1,0.36,1) 0.34s both; }
+          .notif-copy  { animation: notif-rise 0.5s ease 0.9s both; }
+          .notif-cta   { animation: notif-rise 0.5s ease 1.05s both; }
+          .notif-glow  { animation: glow-pulse 4.5s ease-in-out infinite; }
           @media (prefers-reduced-motion: reduce) {
-            .notif-card, .notif-copy, .notif-cta { animation: notif-fade 0.3s ease both; }
+            .notif-card, .notif-card2, .notif-copy, .notif-cta { animation: notif-fade 0.3s ease both; }
+            .notif-glow { animation: none; opacity: 0.6; }
           }
         `}</style>
 
-        {/* Mock iOS push — drops in from the top like the real thing, personalized to their goal */}
-        <div className="notif-card mx-auto w-full max-w-sm">
-          <div className="flex items-start gap-2.5 rounded-2xl bg-white p-3.5 shadow-[0_10px_34px_rgba(20,40,80,0.16)] ring-1 ring-black/5">
-            <div className="h-9 w-9 shrink-0 overflow-hidden rounded-[9px] border border-ink/10">
-              <img src="/icon.svg" alt="" className="h-full w-full object-cover" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-baseline justify-between gap-2">
-                <p className="truncate text-[13px] font-semibold text-ink">WhatYouAte</p>
-                <span className="shrink-0 text-[11px] text-muted/50">now</span>
+        {/* Two mock iOS pushes cascade in over a soft glow — shows the daily rhythm, personalized */}
+        <div className="relative mx-auto w-full max-w-sm">
+          <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            <div className="notif-glow h-72 w-72 rounded-full bg-primary/15 blur-3xl" />
+          </div>
+          <div className="relative space-y-2.5">
+            {/* Morning: a tiny, effortless win, tailored to their goal */}
+            <div className="notif-card flex items-start gap-2.5 rounded-2xl bg-white p-3.5 shadow-[0_10px_34px_rgba(20,40,80,0.16)] ring-1 ring-black/5">
+              <div className="h-9 w-9 shrink-0 overflow-hidden rounded-[9px] border border-ink/10">
+                <img src="/icon.svg" alt="" className="h-full w-full object-cover" />
               </div>
-              <p className="mt-0.5 text-[13px] font-medium leading-snug text-ink">{sample.title}</p>
-              <p className="text-[13px] leading-snug text-ink/70">{sample.body}</p>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-baseline justify-between gap-2">
+                  <p className="truncate text-[13px] font-semibold text-ink">WhatYouAte</p>
+                  <span className="shrink-0 text-[11px] text-muted/50">9:00 AM</span>
+                </div>
+                <p className="mt-0.5 text-[13px] font-medium leading-snug text-ink">A tiny win for today</p>
+                <p className="text-[13px] leading-snug text-ink/70">{sampleBody}</p>
+              </div>
+            </div>
+            {/* Evening: the reflection reminder */}
+            <div className="notif-card2 flex items-start gap-2.5 rounded-2xl bg-white p-3.5 shadow-[0_10px_34px_rgba(20,40,80,0.16)] ring-1 ring-black/5">
+              <div className="h-9 w-9 shrink-0 overflow-hidden rounded-[9px] border border-ink/10">
+                <img src="/icon.svg" alt="" className="h-full w-full object-cover" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-baseline justify-between gap-2">
+                  <p className="truncate text-[13px] font-semibold text-ink">WhatYouAte</p>
+                  <span className="shrink-0 text-[11px] text-muted/50">7:00 PM</span>
+                </div>
+                <p className="mt-0.5 text-[13px] font-medium leading-snug text-ink">Your nightly reflection is ready</p>
+                <p className="text-[13px] leading-snug text-ink/70">It only takes a minute, and it'll help a lot.</p>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="notif-copy mx-auto mt-11 max-w-xs text-center">
+        <div className="notif-copy mx-auto mt-9 max-w-xs text-center">
           <p className="text-2xl font-semibold text-ink">Let Your Coach Reach You</p>
           <p className="mt-3 text-sm leading-relaxed text-muted/70">
-            A check-in each morning, a nudge when something matters, and a reminder to reflect at night. Turn notifications on so your coach can actually reach you.
+            Small, timely nudges through the day and a reminder to reflect at night. Turn notifications on so your coach can actually reach you.
           </p>
         </div>
 
-        <div className="notif-cta mx-auto mt-auto w-full max-w-sm space-y-3 pb-[6vh]">
+        <div className="notif-cta mx-auto mt-9 w-full max-w-sm space-y-3">
           <button
             type="button"
             className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80"
