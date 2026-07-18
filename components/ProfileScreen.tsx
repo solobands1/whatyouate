@@ -2148,6 +2148,7 @@ export default function ProfileScreen() {
                   </div>
                 );
               })}
+              <p className="pt-1 text-[11px] leading-relaxed text-muted/50">If a vitamin or mineral isn't listed here, we don't track it yet.</p>
             </div>
             <div className="mt-5 flex shrink-0 gap-3">
               <button
