@@ -358,9 +358,43 @@ export default function ProfileScreen() {
     return () => window.removeEventListener("profile-prompt-opened", handler as EventListener);
   }, []);
 
+  // Lock the page behind the supplement modal (position:fixed — iOS WKWebView ignores
+  // overflow:hidden for touch scrolling) and restore scroll position on close.
   useEffect(() => {
-    document.body.style.overflow = showMultiSuppModal ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
+    if (!showMultiSuppModal) return;
+    const scrollY = window.scrollY;
+    const { body } = document;
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.left = "0";
+    body.style.right = "0";
+    body.style.width = "100%";
+    body.style.overflow = "hidden";
+    return () => {
+      body.style.position = "";
+      body.style.top = "";
+      body.style.left = "";
+      body.style.right = "";
+      body.style.width = "";
+      body.style.overflow = "";
+      window.scrollTo(0, scrollY);
+    };
+  }, [showMultiSuppModal]);
+
+  // Pin the supplement modal to the visual viewport so it shrinks above the keyboard (and
+  // expands back when it closes), instead of being hidden behind it.
+  useEffect(() => {
+    if (!showMultiSuppModal || typeof window === "undefined" || !window.visualViewport) return;
+    const viewport = window.visualViewport;
+    const update = () => setVv({ height: viewport.height, top: viewport.offsetTop });
+    update();
+    viewport.addEventListener("resize", update);
+    viewport.addEventListener("scroll", update);
+    return () => {
+      viewport.removeEventListener("resize", update);
+      viewport.removeEventListener("scroll", update);
+      setVv(undefined);
+    };
   }, [showMultiSuppModal]);
 
   useEffect(() => {
@@ -1975,24 +2009,30 @@ export default function ProfileScreen() {
       )}
 
       {showMultiSuppModal && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/30 px-5 pt-[calc(env(safe-area-inset-top,0px)+3rem)]">
-          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
-            <h2 className="text-base font-semibold text-ink">Add Supplement</h2>
+        <>
+        {/* Static dim so it can't flicker while the modal repositions for the keyboard. */}
+        <div className="fixed inset-0 z-50 bg-black/30" />
+        <div
+          className="fixed inset-x-0 z-[51] flex items-center justify-center px-5 py-[4vh] transition-[top,height] duration-200 ease-out"
+          style={{ top: vv ? `${vv.top}px` : 0, height: vv ? `${vv.height}px` : "100%" }}
+        >
+          <div className="flex max-h-full w-full max-w-sm flex-col rounded-2xl bg-white p-6 shadow-xl">
+            <h2 className="shrink-0 text-base font-semibold text-ink">Add Supplement</h2>
             <input
               type="text"
               autoFocus
-              className="mt-3 w-full rounded-xl border border-ink/10 px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+              className="mt-3 w-full shrink-0 rounded-xl border border-ink/10 px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
               placeholder="Name, e.g. Vitamin D or Webber Naturals Iron"
               value={multiSuppName}
               onChange={(e) => handleSuppNameChange(e.target.value)}
             />
             {(suppMatchHint || suppLookingUp) && (
-              <p className={`mt-1.5 text-[11px] ${suppLookingUp ? "text-muted/55" : suppMatchHint?.startsWith("Tracks") ? "text-primary/70" : "text-muted/65"}`}>
+              <p className={`mt-1.5 shrink-0 text-[11px] ${suppLookingUp ? "text-muted/55" : suppMatchHint?.startsWith("Tracks") ? "text-primary/70" : "text-muted/65"}`}>
                 {suppLookingUp ? "Looking up…" : suppMatchHint}
               </p>
             )}
-            <p className="mt-3 text-xs text-muted/60">Tap each tracked nutrient it contains and enter the amount from the label.</p>
-            <div className="mt-3 space-y-2 max-h-[42vh] overflow-y-auto">
+            <p className="mt-3 shrink-0 text-xs text-muted/60">Tap each tracked nutrient it contains and enter the amount from the label.</p>
+            <div className="mt-3 min-h-0 flex-1 space-y-2 overflow-y-auto">
               {Object.entries(NUTRIENT_DISPLAY_NAMES).map(([key, displayName]) => {
                 const entry = multiSuppNutrients[key];
                 const isOpen = !!entry;
@@ -2045,7 +2085,7 @@ export default function ProfileScreen() {
                 );
               })}
             </div>
-            <div className="mt-5 flex gap-3">
+            <div className="mt-5 flex shrink-0 gap-3">
               <button
                 type="button"
                 className="flex-1 rounded-xl border border-ink/10 px-4 py-3 text-sm font-semibold text-ink/70 transition hover:bg-ink/5"
@@ -2080,6 +2120,7 @@ export default function ProfileScreen() {
             </div>
           </div>
         </div>
+        </>
       )}
 
       {showWeightHistory && (
