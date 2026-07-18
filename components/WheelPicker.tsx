@@ -81,23 +81,27 @@ export default function WheelPicker({
               <p className="text-sm font-semibold text-ink">{title}</p>
               <button type="button" className="text-sm font-semibold text-primary active:opacity-60" onClick={done}>Done</button>
             </div>
-            <div className="relative" style={{ height: ITEM_H * VISIBLE }}>
-              <div className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 border-y border-ink/10 bg-ink/[0.03]" style={{ height: ITEM_H }} />
+            <div className="relative overflow-hidden" style={{ height: ITEM_H * VISIBLE }}>
+              {/* iOS-style center selection band — subtle gray pill behind the numbers */}
+              <div className="pointer-events-none absolute inset-x-3 top-1/2 z-0 -translate-y-1/2 rounded-lg bg-ink/[0.06]" style={{ height: ITEM_H }} />
               <div
                 ref={listRef}
-                className="h-full overflow-y-auto overscroll-contain [scroll-snap-type:y_mandatory]"
+                className="relative z-10 h-full overflow-y-auto overscroll-contain [scroll-snap-type:y_mandatory]"
                 style={{ paddingTop: PAD, paddingBottom: PAD }}
               >
                 {options.map((o) => (
                   <div
                     key={o.value}
-                    className="flex items-center justify-center text-lg text-ink [scroll-snap-align:center]"
+                    className="flex items-center justify-center text-[22px] font-medium text-ink [scroll-snap-align:center]"
                     style={{ height: ITEM_H }}
                   >
                     {o.label}
                   </div>
                 ))}
               </div>
+              {/* top + bottom fades so numbers dissolve at the edges like the native wheel */}
+              <div className="pointer-events-none absolute inset-x-0 top-0 z-20 bg-gradient-to-b from-white to-transparent" style={{ height: PAD }} />
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-white to-transparent" style={{ height: PAD }} />
             </div>
           </div>
         </div>

@@ -873,13 +873,12 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
                 <svg viewBox="0 0 48 48" className="h-[72px] w-[72px]" role="img" aria-label="Apple Health">
                   <defs>
                     <linearGradient id="ah-heart" x1="0" y1="1" x2="0" y2="0">
-                      <stop offset="0" stopColor="#FE2233" />
-                      <stop offset="0.55" stopColor="#FF3D66" />
-                      <stop offset="1" stopColor="#FC4C92" />
+                      <stop offset="0" stopColor="#F41F3F" />
+                      <stop offset="1" stopColor="#FF5488" />
                     </linearGradient>
                   </defs>
-                  <rect x="0.75" y="0.75" width="46.5" height="46.5" rx="11" fill="#fff" stroke="rgba(0,0,0,0.08)" strokeWidth="1.5" />
-                  <path fill="url(#ah-heart)" transform="translate(10.2 5.9) scale(1.15)" d="M12 21 C9 21 3 13.5 3 8.8 C3 4.8 5.3 3.5 8 3.5 C10 3.5 11.2 6.2 12 6.2 C12.8 6.2 14 3.5 16 3.5 C18.7 3.5 21 4.8 21 8.8 C21 13.5 15 21 12 21 Z" />
+                  <rect x="0.75" y="0.75" width="46.5" height="46.5" rx="11" fill="#fff" stroke="rgba(0,0,0,0.1)" strokeWidth="1.2" />
+                  <path fill="url(#ah-heart)" transform="translate(11.04 7.1) scale(1.08)" d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
                 </svg>
               </div>
               <h1 className="text-2xl font-semibold text-ink text-center">Connect Apple Health</h1>
