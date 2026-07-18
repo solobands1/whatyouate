@@ -17,9 +17,9 @@ const DIETARY_OPTIONS = [
 ];
 
 const GOALS: { value: GoalDirection; label: string; sub: string }[] = [
-  { value: "gain",     label: "Gain Weight",  sub: "We'll focus on fueling your growth and performance." },
-  { value: "maintain", label: "Stay Steady",  sub: "We'll help you stay balanced and spot patterns over time." },
-  { value: "lose",     label: "Lose Weight",  sub: "We'll help you do it steadily and keep your energy up." },
+  { value: "gain",     label: "Gain Weight",  sub: "We'll focus on fueling your growth and performance" },
+  { value: "maintain", label: "Stay Steady",  sub: "We'll help you stay balanced and spot patterns over time" },
+  { value: "lose",     label: "Lose Weight",  sub: "We'll help you do it steadily and keep your energy up" },
 ];
 
 const FEELING_GOALS: { value: FeelingGoal; label: string }[] = [
@@ -261,7 +261,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
         {/* Coach orb floats above the title (absolute) so the title and everything below stay put */}
         <div className="relative w-full max-w-sm">
           <div className="notif-icon absolute inset-x-0 bottom-full mb-4 flex justify-center">
-            <WyaaAvatar size={60} />
+            <WyaaAvatar size={68} />
           </div>
           <p className="notif-title w-full text-center text-2xl font-semibold text-ink">Let Your Coach Reach You</p>
         </div>
@@ -329,8 +329,37 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
         <style>{`
           @keyframes draw-circle { from { stroke-dashoffset: 63; } to { stroke-dashoffset: 0; } }
           @keyframes draw-check { from { stroke-dashoffset: 12; } to { stroke-dashoffset: 0; } }
+          @keyframes confetti-fall {
+            0%   { transform: translateY(-14vh) rotate(0deg); opacity: 0; }
+            12%  { opacity: 0.4; }
+            88%  { opacity: 0.4; }
+            100% { transform: translateY(114vh) rotate(300deg); opacity: 0; }
+          }
+          .confetti-piece { position: absolute; top: 0; animation: confetti-fall linear infinite; will-change: transform, opacity; }
+          @media (prefers-reduced-motion: reduce) { .confetti-piece { animation: none; opacity: 0; } }
         `}</style>
-        <div className="flex flex-col items-center gap-5 text-center">
+        <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+          {Array.from({ length: 20 }).map((_, i) => {
+            const palette = ["#82B8FF", "#A9CCFF", "#BBD4FF", "#6FA8FF"];
+            const size = 4 + (i % 4) * 2;
+            return (
+              <span
+                key={i}
+                className="confetti-piece"
+                style={{
+                  left: `${(i * 37 + 6) % 100}%`,
+                  width: size,
+                  height: size,
+                  background: palette[i % palette.length],
+                  borderRadius: i % 2 === 0 ? "9999px" : "2px",
+                  animationDelay: `${(i % 10) * 0.45}s`,
+                  animationDuration: `${5 + (i % 5)}s`,
+                }}
+              />
+            );
+          })}
+        </div>
+        <div className="relative z-10 flex flex-col items-center gap-5 text-center">
           <div style={animStyle(animStep >= 1)}>
             <svg className="h-28 w-28 text-primary/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10" style={{ strokeDasharray: 63, strokeDashoffset: 63, animation: "draw-circle 0.55s ease-out 0.5s forwards" }} />
@@ -344,7 +373,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
             <p className="text-sm text-muted/65">Let's take a look around!</p>
           </div>
         </div>
-        <div style={animStyle(animStep >= 4)} className="flex justify-center w-full mt-16">
+        <div style={animStyle(animStep >= 4)} className="relative z-10 flex justify-center w-full mt-16">
           <button
             type="button"
             className="w-2/3 rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80"
@@ -432,7 +461,6 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
                 >
                   Continue
                 </button>
-                <button type="button" className={skipCls} onClick={next}>Skip</button>
               </div>
             </div>
           </div>
@@ -810,13 +838,6 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
                 >
                   Continue
                 </button>
-                <button
-                  type="button"
-                  className={skipCls}
-                  onClick={next}
-                >
-                  Skip
-                </button>
               </div>
             </div>
           </div>
@@ -834,15 +855,16 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
             <div className="mt-[14vh]">
               <div className="flex justify-center mb-5">
                 {/* Apple Health app icon — white tile with the red/pink heart toward the upper-right, per the real app */}
-                <svg viewBox="0 0 48 48" className="h-16 w-16" role="img" aria-label="Apple Health">
+                <svg viewBox="0 0 48 48" className="h-[72px] w-[72px]" role="img" aria-label="Apple Health">
                   <defs>
                     <linearGradient id="ah-heart" x1="0" y1="1" x2="0" y2="0">
-                      <stop offset="0" stopColor="#FB2D55" />
-                      <stop offset="1" stopColor="#FF6E92" />
+                      <stop offset="0" stopColor="#FE1F2E" />
+                      <stop offset="0.55" stopColor="#FF3A64" />
+                      <stop offset="1" stopColor="#F94DAE" />
                     </linearGradient>
                   </defs>
                   <rect x="0.75" y="0.75" width="46.5" height="46.5" rx="11" fill="#fff" stroke="rgba(0,0,0,0.08)" strokeWidth="1.5" />
-                  <path fill="url(#ah-heart)" transform="translate(18.3 6) scale(0.85)" d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                  <path fill="url(#ah-heart)" transform="translate(18.7 7.9) scale(0.82)" d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z" />
                 </svg>
               </div>
               <h1 className="text-2xl font-semibold text-ink text-center">Connect Apple Health</h1>
