@@ -76,7 +76,7 @@ export function canonicalNutrient(raw: string): string | null {
 /** Canonical key → display name used in micronutrient_signals and INSIGHT_NUTRIENTS */
 export const NUTRIENT_DISPLAY_NAMES: Record<string, string> = {
   iron: "Iron",
-  b12: "B12",
+  b12: "Vitamin B12",
   magnesium: "Magnesium",
   zinc: "Zinc",
   "vitamin d": "Vitamin D",
@@ -87,7 +87,7 @@ export const NUTRIENT_DISPLAY_NAMES: Record<string, string> = {
   fiber: "Fiber",
   folate: "Folate",
   "vitamin a": "Vitamin A",
-  b6: "B6",
+  b6: "Vitamin B6",
 };
 
 /**

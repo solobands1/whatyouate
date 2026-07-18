@@ -23,7 +23,7 @@ import { openReviewPrompt } from "./ReviewPromptModal";
 
 const INSIGHT_NUTRIENTS = [
   // Energy & Focus
-  "Iron", "B12", "Magnesium", "B6", "Folate",
+  "Iron", "Vitamin B12", "Magnesium", "Vitamin B6", "Folate",
   // Mood & Recovery
   "Vitamin D", "Omega-3",
   // Immunity & Body
@@ -33,7 +33,7 @@ const INSIGHT_NUTRIENTS = [
 ];
 
 const NUTRIENT_CATEGORIES: { label: string; nutrients: string[] }[] = [
-  { label: "Energy & Focus",  nutrients: ["Iron", "B12", "Magnesium", "B6", "Folate"] },
+  { label: "Energy & Focus",  nutrients: ["Iron", "Vitamin B12", "Magnesium", "Vitamin B6", "Folate"] },
   { label: "Mood & Recovery", nutrients: ["Vitamin D", "Omega-3"] },
   { label: "Immunity & Body", nutrients: ["Vitamin C", "Zinc", "Vitamin A"] },
   { label: "Foundation",      nutrients: ["Calcium", "Potassium", "Fiber"] },
@@ -68,7 +68,7 @@ const NUTRIENT_INFO: Record<string, string | string[]> = {
   Sodium: "Necessary for fluid balance and nerve signaling, but most people already get more than enough. It tends to be higher with processed, packaged, and restaurant foods. Worth noticing if it's consistently elevated.",
   "Vitamin E": "A fat-soluble antioxidant that protects cells from damage and supports immune function. Deficiency is rare but more common with very low-fat diets. Best sources are sunflower seeds, almonds, wheat germ, and avocado.",
   Copper: "Works with iron to form red blood cells and supports bone, immune, and nerve health. Deficiency can mimic iron deficiency anemia. Shellfish, liver, dark chocolate, nuts, and seeds are the best sources.",
-  "B6": "Involved in protein metabolism, neurotransmitter production (serotonin, dopamine), and immune function. Low levels can affect mood and energy. Found in poultry, fish, potatoes, bananas, and chickpeas. Chickpeas are one of the richest plant sources.",
+  "Vitamin B6": "Involved in protein metabolism, neurotransmitter production (serotonin, dopamine), and immune function. Low levels can affect mood and energy. Found in poultry, fish, potatoes, bananas, and chickpeas. Chickpeas are one of the richest plant sources.",
   "Energy Check-Ins": "Each dot's position shows the time of day you logged your energy, PM towards the top and AM towards the bottom. No entry assumes average energy.\n\nThis helps you spot low or high energy patterns and relate them to foods you ate to improve energy based on your food intake.",
 };
 
@@ -411,9 +411,9 @@ export default function InsightsScreen() {
 
   const EXAMPLE_MICROS = [
         { name: "Iron",      label: "Sometimes detected",  foodPct: 38, suppPct: 0,  hasSupplement: false, overRda: false, usingAmounts: false },
-        { name: "B12",       label: "Well covered",        foodPct: 62, suppPct: 18, hasSupplement: true,  overRda: false, usingAmounts: false },
+        { name: "Vitamin B12",       label: "Well covered",        foodPct: 62, suppPct: 18, hasSupplement: true,  overRda: false, usingAmounts: false },
         { name: "Magnesium", label: "Rarely detected",     foodPct: 12, suppPct: 0,  hasSupplement: false, overRda: false, usingAmounts: false },
-        { name: "B6",        label: "Sometimes detected",  foodPct: 40, suppPct: 0,  hasSupplement: false, overRda: false, usingAmounts: false },
+        { name: "Vitamin B6",        label: "Sometimes detected",  foodPct: 40, suppPct: 0,  hasSupplement: false, overRda: false, usingAmounts: false },
         { name: "Folate",    label: "Rarely detected",     foodPct: 18, suppPct: 0,  hasSupplement: false, overRda: false, usingAmounts: false },
         { name: "Vitamin D", label: "Well covered",        foodPct: 45, suppPct: 40, hasSupplement: true,  overRda: false, usingAmounts: false },
         { name: "Omega-3",   label: "Rarely detected",     foodPct: 8,  suppPct: 0,  hasSupplement: false, overRda: false, usingAmounts: false },
