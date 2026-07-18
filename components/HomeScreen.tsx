@@ -2226,7 +2226,10 @@ export default function HomeScreen() {
 
     // Resume an in-progress walkthrough immediately — no need to wait on profile
     if (active && stage === "home") {
-      if (localStorage.getItem(`wya_demo_mode_${user.id}`) === "true") setIsDemoMode(true);
+      // A running home-stage walkthrough always uses demo data — set it unconditionally (matches
+      // SummaryScreen/PatternsScreen). The old flag-gated version left the water bar / demo data
+      // empty whenever wya_demo_mode wasn't present.
+      setIsDemoMode(true);
       setRunTour(true);
       setShowTourGate(false);
       return;
@@ -2673,6 +2676,7 @@ export default function HomeScreen() {
     if (data.type === "step:after" && data.index === steps.length - 2) {
       localStorage.setItem(activeKey, "true");
       localStorage.setItem(stageKey, "summary");
+      window.dispatchEvent(new Event("wya_tour_stage")); // BottomNav highlights the Insights tab
     }
   };
 

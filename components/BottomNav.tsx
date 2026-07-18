@@ -4,6 +4,7 @@ import { useEffect, useState, type JSX } from "react";
 import { useRouter } from "next/navigation";
 import { useTrialStatus } from "../hooks/useTrialStatus";
 import { useAppData } from "./AppDataProvider";
+import { useAuth } from "./AuthProvider";
 import { hasEnoughDataForPatterns } from "../lib/trial";
 
 function checkUnseen() {
@@ -33,8 +34,29 @@ export default function BottomNav({ current }: { current: "home" | "summary" | "
   const router = useRouter();
   const trial = useTrialStatus();
   const { meals } = useAppData();
+  const { user } = useAuth();
+  // During the walkthrough, highlight the tab the user is being prompted to tap. The armed stage
+  // names the NEXT screen: "summary" points at the Insights tab, "insights" at the Patterns tab.
+  const [tourTab, setTourTab] = useState<string | null>(null);
 
   const hasData = hasEnoughDataForPatterns(meals);
+
+  useEffect(() => {
+    if (!user) { setTourTab(null); return; }
+    const check = () => {
+      const active = localStorage.getItem(`wya_walkthrough_active_${user.id}`) === "true";
+      if (!active) { setTourTab(null); return; }
+      const stage = localStorage.getItem(`wya_walkthrough_stage_${user.id}`);
+      setTourTab(stage === "summary" ? "summary" : stage === "insights" ? "patterns" : null);
+    };
+    check();
+    window.addEventListener("wya_tour_stage", check);
+    window.addEventListener("wya_demo_mode_on", check);
+    return () => {
+      window.removeEventListener("wya_tour_stage", check);
+      window.removeEventListener("wya_demo_mode_on", check);
+    };
+  }, [user, current]);
 
   useEffect(() => {
     setShowPatternsDot(checkPatternsDot(trial.isPro, trial.isFree, hasData));
@@ -112,11 +134,14 @@ export default function BottomNav({ current }: { current: "home" | "summary" | "
     const showBell = key === "summary" && hasUnseenNudge;
     const showPulse = key === "patterns" && showPatternsDot;
     const isActive = current === key;
+    const isTourTarget = key === tourTab;
     return (
       <button
         data-tour={key === "summary" ? "nav-summary" : key === "patterns" ? "nav-patterns" : undefined}
         className={`relative flex flex-1 flex-col items-center gap-1 rounded-xl px-1.5 py-2 transition ${tappedKey === key ? "animate-nav-tap" : ""} ${
-          isActive
+          isTourTarget
+            ? "bg-primary/10 text-primary"
+            : isActive
             ? "bg-white text-primary shadow-[0_4px_16px_rgba(111,168,255,0.18)]"
             : "text-muted/65"
         }`}
@@ -126,8 +151,11 @@ export default function BottomNav({ current }: { current: "home" | "summary" | "
           router.push(href);
         }}
       >
+        {isTourTarget && (
+          <span className="pointer-events-none absolute inset-0 rounded-xl ring-2 ring-primary/60 animate-pulse" />
+        )}
         {icons[key]}
-        <span className={`text-[10px] font-semibold leading-none ${isActive ? "text-primary" : "text-muted/65"}`}>
+        <span className={`text-[10px] font-semibold leading-none ${isActive || isTourTarget ? "text-primary" : "text-muted/65"}`}>
           {label}
         </span>
         {showBell && (

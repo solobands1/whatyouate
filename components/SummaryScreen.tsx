@@ -613,6 +613,7 @@ export default function SummaryScreen() {
     if (data.type === "step:after" && data.index === summaryTourSteps.length - 2) {
       localStorage.setItem(`wya_walkthrough_active_${user.id}`, "true");
       localStorage.setItem(`wya_walkthrough_stage_${user.id}`, "insights");
+      window.dispatchEvent(new Event("wya_tour_stage")); // BottomNav highlights the Patterns tab
     }
   };
 
