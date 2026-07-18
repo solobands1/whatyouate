@@ -233,7 +233,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
     const sampleBody = SAMPLE_NUDGES[feelingGoals[0] ?? "energy"] ?? SAMPLE_NUDGES.energy;
     return (
       <div
-        className="fixed inset-0 z-50 flex flex-col bg-white px-8"
+        className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white px-8"
         style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "calc(env(safe-area-inset-bottom) + 40px)" }}
       >
         <style>{`
@@ -258,59 +258,56 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
           }
         `}</style>
 
-        {/* Title + notifications + paragraph, centered (biased up a touch) above the pinned CTA */}
-        <div className="flex flex-1 flex-col items-center justify-center pb-8">
-          {/* Coach orb floats above the title (absolute) so the title and everything below stay put */}
-          <div className="relative w-full max-w-sm">
-            <div className="notif-icon absolute inset-x-0 bottom-full mb-4 flex justify-center">
-              <WyaaAvatar size={60} />
-            </div>
-            <p className="notif-title w-full text-center text-2xl font-semibold text-ink">Let Your Coach Reach You</p>
+        {/* Coach orb floats above the title (absolute) so the title and everything below stay put */}
+        <div className="relative w-full max-w-sm">
+          <div className="notif-icon absolute inset-x-0 bottom-full mb-4 flex justify-center">
+            <WyaaAvatar size={60} />
           </div>
-
-          {/* Two mock iOS pushes cascade in beneath the title, over a soft glow — the daily rhythm */}
-          <div className="relative mt-9 w-full max-w-sm">
-            <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-              <div className="notif-glow h-72 w-72 rounded-full bg-primary/15 blur-3xl" />
-            </div>
-            <div className="relative space-y-2.5">
-              {/* Morning: a tiny, effortless win, tailored to their goal */}
-              <div className="notif-card flex items-start gap-2.5 rounded-2xl bg-white p-3.5 shadow-[0_10px_34px_rgba(20,40,80,0.16)] ring-1 ring-black/5">
-                <div className="h-9 w-9 shrink-0 overflow-hidden rounded-[9px] border border-ink/10">
-                  <img src="/icon.svg" alt="" className="h-full w-full object-cover" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <p className="truncate text-[13px] font-semibold text-ink">WhatYouAte</p>
-                    <span className="shrink-0 text-[11px] text-muted/50">9:00 AM</span>
-                  </div>
-                  <p className="mt-0.5 text-[13px] font-medium leading-snug text-ink">A Tiny Win For Today</p>
-                  <p className="text-[13px] leading-snug text-ink/70">{sampleBody}</p>
-                </div>
-              </div>
-              {/* Evening: the reflection reminder — softer shadow so it recedes a touch */}
-              <div className="notif-card2 flex items-start gap-2.5 rounded-2xl bg-white p-3.5 shadow-[0_5px_18px_rgba(20,40,80,0.09)] ring-1 ring-black/5">
-                <div className="h-9 w-9 shrink-0 overflow-hidden rounded-[9px] border border-ink/10">
-                  <img src="/icon.svg" alt="" className="h-full w-full object-cover" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <p className="truncate text-[13px] font-semibold text-ink">WhatYouAte</p>
-                    <span className="shrink-0 text-[11px] text-muted/50">7:00 PM</span>
-                  </div>
-                  <p className="mt-0.5 text-[13px] font-medium leading-snug text-ink">Your Nightly Reflection Is Ready</p>
-                  <p className="text-[13px] leading-snug text-ink/70">It only takes a minute, and it'll help a lot</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <p className="notif-copy mt-9 w-full max-w-sm text-center text-sm leading-relaxed text-muted/70">
-            Small, timely nudges through the day and a reminder to reflect at night. Turn notifications on so your coach can actually reach you.
-          </p>
+          <p className="notif-title w-full text-center text-2xl font-semibold text-ink">Let Your Coach Reach You</p>
         </div>
 
-        <div className="notif-cta mx-auto w-full max-w-sm space-y-3">
+        {/* Two mock iOS pushes cascade in beneath the title, over a soft glow — the daily rhythm */}
+        <div className="relative mt-9 w-full max-w-sm">
+          <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            <div className="notif-glow h-72 w-72 rounded-full bg-primary/15 blur-3xl" />
+          </div>
+          <div className="relative space-y-2.5">
+            {/* Morning: a tiny, effortless win, tailored to their goal */}
+            <div className="notif-card flex items-start gap-2.5 rounded-2xl bg-white p-3.5 shadow-[0_10px_34px_rgba(20,40,80,0.16)] ring-1 ring-black/5">
+              <div className="h-9 w-9 shrink-0 overflow-hidden rounded-[9px] border border-ink/10">
+                <img src="/icon.svg" alt="" className="h-full w-full object-cover" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-baseline justify-between gap-2">
+                  <p className="truncate text-[13px] font-semibold text-ink">WhatYouAte</p>
+                  <span className="shrink-0 text-[11px] text-muted/50">9:00 AM</span>
+                </div>
+                <p className="mt-0.5 text-[13px] font-medium leading-snug text-ink">A Tiny Win For Today</p>
+                <p className="text-[13px] leading-snug text-ink/70">{sampleBody}</p>
+              </div>
+            </div>
+            {/* Evening: the reflection reminder — softer shadow so it recedes a touch */}
+            <div className="notif-card2 flex items-start gap-2.5 rounded-2xl bg-white p-3.5 shadow-[0_5px_18px_rgba(20,40,80,0.09)] ring-1 ring-black/5">
+              <div className="h-9 w-9 shrink-0 overflow-hidden rounded-[9px] border border-ink/10">
+                <img src="/icon.svg" alt="" className="h-full w-full object-cover" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-baseline justify-between gap-2">
+                  <p className="truncate text-[13px] font-semibold text-ink">WhatYouAte</p>
+                  <span className="shrink-0 text-[11px] text-muted/50">7:00 PM</span>
+                </div>
+                <p className="mt-0.5 text-[13px] font-medium leading-snug text-ink">Your Nightly Reflection Is Ready</p>
+                <p className="text-[13px] leading-snug text-ink/70">It only takes a minute, and it'll help a lot</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p className="notif-copy mt-9 w-full max-w-sm text-center text-sm leading-relaxed text-muted/70">
+          Small, timely nudges through the day and a reminder to reflect at night. Turn notifications on so your coach can actually reach you.
+        </p>
+
+        <div className="notif-cta mt-[72px] w-full max-w-sm space-y-3">
           <button
             type="button"
             className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80"
