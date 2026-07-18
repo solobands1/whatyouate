@@ -2320,12 +2320,22 @@ export default function HomeScreen() {
       }
       return;
     }
-    // A habit builder occupies the hero, so the nudge lives only on Insights. If it's unseen,
-    // drop a top banner pointing there (once per nudge) — the nav bell is already lit too.
-    if (nudgeTs > seenTs && !trial.isFree && !isDemoMode && !!currentWindowNudge) {
+    // A habit builder occupies the hero, so the server nudge lives only on Insights. Light the
+    // nav bell from the nudge's own created_at if it's unseen — previously the bell only tracked
+    // locally-computed nudges, so a cron "smart" nudge could land without ever lighting it.
+    if (!trial.isFree && !isDemoMode && currentWindowNudge?.created_at) {
+      const nudgeCreatedMs = new Date(currentWindowNudge.created_at).getTime();
+      if (nudgeCreatedMs > seenTs && nudgeCreatedMs > nudgeTs) {
+        localStorage.setItem("wya_nudge_ts", String(nudgeCreatedMs));
+        window.dispatchEvent(new Event("wya_nudge_update"));
+      }
+    }
+    // If there's an unseen nudge, drop a one-time top banner pointing to Insights.
+    const liveNudgeTs = parseInt(localStorage.getItem("wya_nudge_ts") ?? "0");
+    if (liveNudgeTs > seenTs && !trial.isFree && !isDemoMode && !!currentWindowNudge) {
       const bannerTs = parseInt(localStorage.getItem("wya_nudge_banner_ts") ?? "0");
-      if (bannerTs < nudgeTs) {
-        try { localStorage.setItem("wya_nudge_banner_ts", String(nudgeTs)); } catch {}
+      if (bannerTs < liveNudgeTs) {
+        try { localStorage.setItem("wya_nudge_banner_ts", String(liveNudgeTs)); } catch {}
         setNudgeBanner(true);
       }
     }
