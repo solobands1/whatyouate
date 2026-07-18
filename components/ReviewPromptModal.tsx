@@ -107,7 +107,7 @@ export default function ReviewPromptModal() {
               </svg>
             </button>
             <div className="flex flex-col items-center text-center">
-              <div className="mb-3 h-12 w-12 overflow-hidden rounded-[14px] border border-ink/10 shadow-sm">
+              <div className="mb-3 h-12 w-12 overflow-hidden rounded-[14px] border border-ink/10">
                 <img src="/icon.svg" alt="WhatYouAte" className="h-full w-full object-cover" />
               </div>
               <h2 className="text-lg font-semibold text-ink">Are You Enjoying WhatYouAte?</h2>
