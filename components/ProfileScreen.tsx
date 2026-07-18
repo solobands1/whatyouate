@@ -838,6 +838,8 @@ export default function ProfileScreen() {
     return null;
   }
 
+  // Keyboard is open when the visual viewport is meaningfully shorter than the layout viewport.
+  const keyboardOpen = typeof window !== "undefined" && vv ? vv.height < window.innerHeight - 120 : false;
   return (
     <div className="min-h-screen bg-surface">
       <div className="mx-auto flex min-h-screen max-w-md flex-col px-5 pb-24 safe-top">
@@ -2028,10 +2030,10 @@ export default function ProfileScreen() {
         {/* Static dim so it can't flicker while the modal repositions for the keyboard. */}
         <div className="fixed inset-0 z-50 bg-black/30" />
         <div
-          className="fixed inset-x-0 z-[51] flex items-center justify-center px-5 py-[4vh] transition-[top,height] duration-200 ease-out"
+          className={`fixed inset-x-0 z-[51] flex justify-center px-5 transition-[top,height] duration-200 ease-out ${keyboardOpen ? "items-start py-[2vh]" : "items-center py-[4vh]"}`}
           style={{ top: vv ? `${vv.top}px` : 0, height: vv ? `${vv.height}px` : "100%" }}
         >
-          <div className="flex max-h-[85%] w-full max-w-sm flex-col rounded-2xl bg-white p-6 shadow-xl">
+          <div className={`flex w-full max-w-sm flex-col rounded-2xl bg-white p-6 shadow-xl ${keyboardOpen ? "max-h-full" : "max-h-[85%]"}`}>
             <h2 className="shrink-0 text-base font-semibold text-ink">Add Supplement</h2>
             <input
               type="text"
