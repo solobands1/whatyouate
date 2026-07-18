@@ -206,6 +206,7 @@ export default function ProfileScreen() {
   const [suppLookingUp, setSuppLookingUp] = useState(false);
   const suppLookupTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const suppListRef = useRef<HTMLDivElement>(null);
+  const [suppRemoveIdx, setSuppRemoveIdx] = useState<number | null>(null);
   const [showMultiSuppModal, setShowMultiSuppModal] = useState(false);
   const [multiSuppName, setMultiSuppName] = useState("");
   const [multiSuppNutrients, setMultiSuppNutrients] = useState<Record<string, { dose: string; unit: string; pct: string; mode: "dose" | "pct" }>>({});
@@ -1498,13 +1499,8 @@ export default function ProfileScreen() {
                   {suppLabel(entry)}
                   <button
                     type="button"
-                    className="text-ink/55 transition hover:text-ink/70"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const updated = dailySupplements.filter((_, i) => i !== idx);
-                      setDailySupplementsState(updated);
-                      if (user) { setDailySupplements(user.id, updated); saveDailySupplements(user.id, updated).then(() => notifyProfileUpdated()).catch(() => {}); }
-                    }}
+                    className="-my-1 ml-0.5 px-1.5 py-1 text-ink/55 transition hover:text-ink/70"
+                    onClick={(e) => { e.stopPropagation(); setSuppRemoveIdx(idx); }}
                     aria-label={`Remove ${suppName(entry)}`}
                   >
                     ×
@@ -2021,6 +2017,36 @@ export default function ProfileScreen() {
         <div className="fixed inset-x-0 bottom-6 z-50 flex justify-center px-5">
           <div className="rounded-full bg-primary px-4 py-1.5 text-center text-[13px] font-semibold text-white shadow-[0_8px_24px_rgba(15,23,42,0.15)]">
             Saved
+          </div>
+        </div>
+      )}
+
+      {suppRemoveIdx !== null && dailySupplements[suppRemoveIdx] && (
+        <div className="fixed inset-0 z-[55] flex items-center justify-center bg-black/40 px-6">
+          <div className="w-full max-w-xs rounded-2xl bg-white p-6 text-center shadow-xl">
+            <p className="text-base font-semibold text-ink">Remove supplement?</p>
+            <p className="mt-1.5 text-sm text-muted/70">{suppLabel(dailySupplements[suppRemoveIdx])} will stop counting toward your daily totals.</p>
+            <div className="mt-5 flex gap-3">
+              <button
+                type="button"
+                className="flex-1 rounded-xl border border-ink/10 px-4 py-3 text-sm font-semibold text-ink/70 transition active:opacity-60"
+                onClick={() => setSuppRemoveIdx(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="flex-1 rounded-xl bg-red-500 px-4 py-3 text-sm font-semibold text-white transition active:opacity-80"
+                onClick={() => {
+                  const updated = dailySupplements.filter((_, i) => i !== suppRemoveIdx);
+                  setDailySupplementsState(updated);
+                  if (user) { setDailySupplements(user.id, updated); saveDailySupplements(user.id, updated).then(() => notifyProfileUpdated()).catch(() => {}); }
+                  setSuppRemoveIdx(null);
+                }}
+              >
+                Remove
+              </button>
+            </div>
           </div>
         </div>
       )}
