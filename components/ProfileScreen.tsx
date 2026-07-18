@@ -495,6 +495,13 @@ export default function ProfileScreen() {
     const finished = data.status === STATUS.FINISHED || data.status === STATUS.SKIPPED;
     if (!finished || !user) return;
     localStorage.removeItem(`wya_walkthrough_profile_${user.id}`);
+    // Profile is now the final walkthrough segment (Patterns hands off here instead of ending),
+    // so end the whole walkthrough here: clear demo/active/stage, mark it seen + done.
+    localStorage.removeItem(`wya_demo_mode_${user.id}`);
+    localStorage.setItem(`wya_walkthrough_${user.id}`, "true");
+    localStorage.removeItem(`wya_walkthrough_active_${user.id}`);
+    localStorage.removeItem(`wya_walkthrough_stage_${user.id}`);
+    supabase.from("profiles").update({ walkthrough_done: true }).eq("user_id", user.id).then(() => {});
     setRunProfileTour(false);
   };
 

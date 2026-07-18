@@ -426,6 +426,7 @@ export default function HomeScreen() {
   const [waterInputAmount, setWaterInputAmount] = useState("");
   const [waterInputUnit, setWaterInputUnit] = useState<"ml" | "oz" | "cups" | "L">("ml");
   const [runTour, setRunTour] = useState(false);
+  const [profileHandoff, setProfileHandoff] = useState(false); // final walkthrough beat: "tap your profile"
   const [showTourGate, setShowTourGate] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [gateOverlay, setGateOverlay] = useState(false);
@@ -2225,11 +2226,12 @@ export default function HomeScreen() {
     const stage = localStorage.getItem(stageKey) ?? "home";
 
     // Resume an in-progress walkthrough immediately — no need to wait on profile
-    if (active && stage === "home") {
+    if (active && (stage === "home" || stage === "profile-handoff")) {
       // A running home-stage walkthrough always uses demo data — set it unconditionally (matches
       // SummaryScreen/PatternsScreen). The old flag-gated version left the water bar / demo data
       // empty whenever wya_demo_mode wasn't present.
       setIsDemoMode(true);
+      setProfileHandoff(stage === "profile-handoff");
       setRunTour(true);
       setShowTourGate(false);
       return;
@@ -2593,7 +2595,7 @@ export default function HomeScreen() {
     && displayMeals.filter((m) => m.analysisJson?.source !== "supplement").length >= 1
     && (!profile || profile.height === null || profile.weight === null || profile.age === null);
 
-  const steps = [
+  const homeSteps = [
     {
       target: '[data-tour="food-action"]',
       placement: "top" as const,
@@ -2652,6 +2654,24 @@ export default function HomeScreen() {
       ),
     },
   ] as Step[];
+
+  // Final walkthrough beat, shown on Home after Patterns hands off: spotlight the profile avatar.
+  const profileHandoffSteps = [
+    {
+      target: '[data-tour="nav-profile"]',
+      placement: "bottom" as const,
+      disableBeacon: true,
+      spotlightClicks: true,
+      hideFooter: true,
+      content: (
+        <div>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>One Last Thing</p>
+          <p>Tap your <strong>profile</strong> in the top corner to finish up and round out your details.</p>
+        </div>
+      ),
+    },
+  ] as Step[];
+  const steps = profileHandoff ? profileHandoffSteps : homeSteps;
 
   const handleTourCallback = (data: CallBackProps) => {
     if (!user) return;

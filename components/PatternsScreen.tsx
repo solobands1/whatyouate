@@ -196,9 +196,15 @@ export default function PatternsScreen() {
     };
     if (data.status === STATUS.SKIPPED) { end(); return; }
     if (data.type === "step:after" && data.index === patternsTourSteps.length - 1) {
-      end();
+      // Hand off to Home and prompt the user to tap their profile avatar (interactive), instead of
+      // auto-jumping to Profile. Keep the tour + demo alive; arm the profile-handoff stage and the
+      // profile-resume flag so tapping the avatar picks the tour back up on Profile.
+      localStorage.setItem(`wya_walkthrough_active_${user.id}`, "true");
+      localStorage.setItem(`wya_walkthrough_stage_${user.id}`, "profile-handoff");
+      localStorage.setItem(`wya_demo_mode_${user.id}`, "true");
       localStorage.setItem(`wya_walkthrough_profile_${user.id}`, "true");
-      router.push("/profile");
+      setRunPatternsTour(false);
+      router.push("/");
     }
   };
 
