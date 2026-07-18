@@ -49,13 +49,11 @@ const goals: { value: GoalDirection; label: string }[] = [
   { value: "lose", label: "Lose Weight" },
 ];
 
-// Group the tracked nutrients the same way the Nutrition page does, so the supplement picker
-// feels consistent and related nutrients sit together.
+// Group the tracked nutrients by type (vitamins / minerals / other) so the picker is easy to scan.
 const NUTRIENT_GROUPS: { label: string; keys: string[] }[] = [
-  { label: "Energy & Focus", keys: ["iron", "b12", "magnesium", "b6", "folate"] },
-  { label: "Mood & Recovery", keys: ["vitamin d", "omega-3"] },
-  { label: "Immunity & Body", keys: ["vitamin c", "zinc", "vitamin a"] },
-  { label: "Foundation", keys: ["calcium", "potassium", "fiber"] },
+  { label: "Vitamins", keys: ["vitamin a", "b6", "b12", "vitamin c", "vitamin d", "folate"] },
+  { label: "Minerals", keys: ["calcium", "iron", "magnesium", "potassium", "zinc"] },
+  { label: "Other", keys: ["omega-3", "fiber"] },
 ];
 
 // Which tracked-nutrient keys a typed supplement name maps to. Exactly one → it's a
@@ -2137,7 +2135,7 @@ export default function ProfileScreen() {
                         <button
                           key={key}
                           type="button"
-                          className="rounded-full border border-ink/15 bg-white px-4 py-2.5 text-sm text-ink/75 transition hover:bg-primary/5 active:bg-primary/10"
+                          className="rounded-full border border-ink/15 bg-white px-3 py-1.5 text-sm text-ink/75 transition hover:bg-primary/5 active:bg-primary/10"
                           onClick={() => setMultiSuppNutrients((prev) => ({ ...prev, [key]: { dose: "", unit: NUTRIENT_UNITS[key] ?? "mg", pct: "", mode: "dose" } }))}
                         >
                           {NUTRIENT_DISPLAY_NAMES[key] ?? key}
