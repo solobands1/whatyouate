@@ -2024,7 +2024,7 @@ export default function ProfileScreen() {
       {suppRemoveIdx !== null && dailySupplements[suppRemoveIdx] && (
         <div className="fixed inset-0 z-[55] flex items-center justify-center bg-black/40 px-6">
           <div className="w-full max-w-xs rounded-2xl bg-white p-6 text-center shadow-xl">
-            <p className="text-base font-semibold text-ink">Remove supplement?</p>
+            <p className="text-base font-semibold text-ink">Remove Supplement?</p>
             <p className="mt-1.5 text-sm text-muted/70">{suppLabel(dailySupplements[suppRemoveIdx])} will stop counting toward your daily totals.</p>
             <div className="mt-5 flex gap-3">
               <button
