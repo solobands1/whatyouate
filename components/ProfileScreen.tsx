@@ -2039,7 +2039,7 @@ export default function ProfileScreen() {
               type="text"
               autoFocus
               className="mt-3 w-full shrink-0 rounded-xl border border-ink/10 px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
-              placeholder="Name, e.g. Vitamin D or Webber Naturals Iron"
+              placeholder="e.g. Vitamin D"
               value={multiSuppName}
               onChange={(e) => handleSuppNameChange(e.target.value)}
             />
