@@ -73,11 +73,11 @@ export default function WheelPicker({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex w-full items-center justify-between rounded-xl border border-ink/10 bg-surface px-3 py-3 text-sm text-ink active:opacity-80"
+        className="flex w-full items-center justify-between rounded-xl border border-ink/10 bg-surface px-3 py-3 text-[15px] text-ink active:opacity-80"
       >
         <span className={selected ? "" : "text-muted/50"}>{selected ? selected.label : placeholder}</span>
         <svg className="h-4 w-4 shrink-0 text-muted/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="m6 9 6 6 6-6" />
+          <path d="M8 10.5l4-4 4 4M8 13.5l4 4 4-4" />
         </svg>
       </button>
 
