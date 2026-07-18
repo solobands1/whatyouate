@@ -330,23 +330,35 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
           @keyframes draw-circle { from { stroke-dashoffset: 63; } to { stroke-dashoffset: 0; } }
           @keyframes draw-check { from { stroke-dashoffset: 12; } to { stroke-dashoffset: 0; } }
           @keyframes confetti-fall {
-            0%   { transform: translateY(-8vh) translateX(0) rotate(0deg); opacity: 0; }
-            8%   { opacity: 0.5; }
-            100% { transform: translateY(112vh) translateX(22px) rotate(230deg); opacity: 0.5; }
+            0%   { transform: translateY(-8vh) translateX(0) rotate(0deg); }
+            25%  { transform: translateY(26vh) translateX(-16px) rotate(70deg); }
+            50%  { transform: translateY(54vh) translateX(14px) rotate(150deg); }
+            75%  { transform: translateY(82vh) translateX(-12px) rotate(240deg); }
+            100% { transform: translateY(112vh) translateX(8px) rotate(320deg); }
           }
           @keyframes confetti-fall-alt {
-            0%   { transform: translateY(-8vh) translateX(0) rotate(0deg); opacity: 0; }
-            8%   { opacity: 0.5; }
-            100% { transform: translateY(112vh) translateX(-22px) rotate(-205deg); opacity: 0.5; }
+            0%   { transform: translateY(-8vh) translateX(0) rotate(0deg); }
+            25%  { transform: translateY(24vh) translateX(15px) rotate(-60deg); }
+            50%  { transform: translateY(52vh) translateX(-14px) rotate(-140deg); }
+            75%  { transform: translateY(80vh) translateX(12px) rotate(-230deg); }
+            100% { transform: translateY(112vh) translateX(-8px) rotate(-310deg); }
+          }
+          @keyframes confetti-fall-c {
+            0%   { transform: translateY(-8vh) translateX(0) rotate(0deg); }
+            30%  { transform: translateY(32vh) translateX(-10px) rotate(100deg); }
+            60%  { transform: translateY(62vh) translateX(16px) rotate(190deg); }
+            100% { transform: translateY(112vh) translateX(-6px) rotate(280deg); }
           }
           .confetti-piece { position: absolute; top: 0; animation-timing-function: linear; animation-iteration-count: 1; animation-fill-mode: both; will-change: transform, opacity; }
-          @media (prefers-reduced-motion: reduce) { .confetti-piece { animation: none !important; opacity: 0; } }
+          @media (prefers-reduced-motion: reduce) { .confetti-piece { animation: none !important; opacity: 0 !important; } }
         `}</style>
         <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
           {Array.from({ length: 26 }).map((_, i) => {
             const palette = ["#82B8FF", "#A9CCFF", "#BBD4FF", "#6FA8FF"];
-            const w = 4 + (i % 3);           // 4-6px
-            const h = 9 + (i % 4) * 1.5;     // 9-13.5px (taller than wide)
+            const opacities = [0.3, 0.5, 0.7];
+            const anims = ["confetti-fall", "confetti-fall-alt", "confetti-fall-c"];
+            const w = 6 + (i % 3) * 1.5;     // 6-9px
+            const h = 12 + (i % 4) * 2;      // 12-18px (taller than wide)
             return (
               <span
                 key={i}
@@ -356,10 +368,11 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
                   width: w,
                   height: h,
                   background: palette[i % palette.length],
-                  borderRadius: "40%",       // soft, roundy corners — not sharp rectangles
-                  animationName: i % 2 === 0 ? "confetti-fall" : "confetti-fall-alt",
-                  animationDelay: `${(i % 6) * 0.13}s`,   // quick burst at the start
-                  animationDuration: `${6 + (i % 4)}s`,   // slow, floaty fall
+                  opacity: opacities[i % 3],            // 3 transparency levels
+                  borderRadius: "40%",                  // soft, roundy corners
+                  animationName: anims[i % 3],          // 3 fluttering paths
+                  animationDelay: `${(i % 6) * 0.14}s`,         // quick burst at the start
+                  animationDuration: `${5.5 + (i % 5) * 1.1}s`, // varied fall speeds
                 }}
               />
             );
@@ -576,56 +589,57 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
                 <div>
                   <p className="mb-2 text-xs font-medium text-muted/60">Height {units === "metric" ? "(cm)" : "(ft + in)"}</p>
                   {units === "metric" ? (
-                    <div className="relative">
-                      <input
-                        inputMode="numeric"
-                        className="w-full rounded-xl border border-ink/10 bg-surface px-3 py-3 pr-12 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
-                        placeholder="0"
-                        value={heightCm}
-                        onChange={(e) => setHeightCm(e.target.value.replace(/[^0-9]/g, "").slice(0, 3))}
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted/50">cm</span>
-                    </div>
+                    <select
+                      value={heightCm}
+                      onChange={(e) => setHeightCm(e.target.value)}
+                      className="w-full rounded-xl border border-ink/10 bg-surface px-3 py-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    >
+                      <option value="">Select</option>
+                      {Array.from({ length: 101 }, (_, i) => 120 + i).map((cm) => (
+                        <option key={cm} value={cm}>{cm} cm</option>
+                      ))}
+                    </select>
                   ) : (
                     <div className="flex gap-3">
-                      <div className="relative flex-1">
-                        <input
-                          inputMode="numeric"
-                          className="w-full rounded-xl border border-ink/10 bg-surface px-3 py-3 pr-9 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
-                          placeholder="0"
-                          value={heightFt}
-                          onChange={(e) => setHeightFt(e.target.value.replace(/[^0-9]/g, "").slice(0, 1))}
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted/50">ft</span>
-                      </div>
-                      <div className="relative flex-1">
-                        <input
-                          inputMode="numeric"
-                          className="w-full rounded-xl border border-ink/10 bg-surface px-3 py-3 pr-9 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
-                          placeholder="0"
-                          value={heightIn}
-                          onChange={(e) => {
-                            const v = parseInt(e.target.value.replace(/[^0-9]/g, "") || "0", 10);
-                            setHeightIn(String(Math.min(11, v)));
-                          }}
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted/50">in</span>
-                      </div>
+                      <select
+                        value={heightFt}
+                        onChange={(e) => setHeightFt(e.target.value)}
+                        className="flex-1 rounded-xl border border-ink/10 bg-surface px-3 py-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      >
+                        <option value="">ft</option>
+                        {Array.from({ length: 6 }, (_, i) => 3 + i).map((ft) => (
+                          <option key={ft} value={ft}>{ft} ft</option>
+                        ))}
+                      </select>
+                      <select
+                        value={heightIn}
+                        onChange={(e) => setHeightIn(e.target.value)}
+                        className="flex-1 rounded-xl border border-ink/10 bg-surface px-3 py-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      >
+                        <option value="">in</option>
+                        {Array.from({ length: 12 }, (_, i) => i).map((inch) => (
+                          <option key={inch} value={inch}>{inch} in</option>
+                        ))}
+                      </select>
                     </div>
                   )}
                 </div>
                 <div>
                   <p className="mb-2 text-xs font-medium text-muted/60">Weight ({units === "metric" ? "kg" : "lbs"})</p>
-                  <div className="relative">
-                    <input
-                      inputMode="numeric"
-                      className="w-full rounded-xl border border-ink/10 bg-surface px-3 py-3 pr-12 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
-                      placeholder="0"
-                      value={weight}
-                      onChange={(e) => setWeight(e.target.value.replace(/[^0-9]/g, ""))}
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted/50">{units === "metric" ? "kg" : "lbs"}</span>
-                  </div>
+                  <select
+                    value={weight}
+                    onChange={(e) => setWeight(e.target.value)}
+                    className="w-full rounded-xl border border-ink/10 bg-surface px-3 py-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  >
+                    <option value="">Select</option>
+                    {units === "metric"
+                      ? Array.from({ length: 171 }, (_, i) => 30 + i).map((kg) => (
+                          <option key={kg} value={kg}>{kg} kg</option>
+                        ))
+                      : Array.from({ length: 391 }, (_, i) => 60 + i).map((lb) => (
+                          <option key={lb} value={lb}>{lb} lbs</option>
+                        ))}
+                  </select>
                 </div>
               </div>
               <div className="mt-10 space-y-3">
@@ -870,7 +884,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
                     </linearGradient>
                   </defs>
                   <rect x="0.75" y="0.75" width="46.5" height="46.5" rx="11" fill="#fff" stroke="rgba(0,0,0,0.08)" strokeWidth="1.5" />
-                  <path fill="url(#ah-heart)" transform="translate(17.75 6.8) scale(0.9)" d="M12 20.8 C9 20.8 2 13 2 8.5 C2 4.5 4.2 3.2 7 3.2 C9.5 3.2 10.3 6.8 12 6.8 C13.7 6.8 14.5 3.2 17 3.2 C19.8 3.2 22 4.5 22 8.5 C22 13 15 20.8 12 20.8 Z" />
+                  <path fill="url(#ah-heart)" transform="translate(17.75 6.8) scale(0.9)" d="M12 20.8 C9 20.8 2.5 13 2.5 8.5 C2.5 4.6 4.6 3.3 7.4 3.3 C9.9 3.3 11 6.5 12 6.5 C13 6.5 14.1 3.3 16.6 3.3 C19.4 3.3 21.5 4.6 21.5 8.5 C21.5 13 15 20.8 12 20.8 Z" />
                 </svg>
               </div>
               <h1 className="text-2xl font-semibold text-ink text-center">Connect Apple Health</h1>
