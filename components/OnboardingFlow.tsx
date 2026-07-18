@@ -354,7 +354,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
           @media (prefers-reduced-motion: reduce) { .confetti-piece { animation: none !important; opacity: 0 !important; } }
         `}</style>
         <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-          {Array.from({ length: 26 }).map((_, i) => {
+          {Array.from({ length: 20 }).map((_, i) => {
             const palette = ["#82B8FF", "#A9CCFF", "#BBD4FF", "#6FA8FF"];
             const opacities = [0.3, 0.5, 0.7];
             const anims = ["confetti-fall", "confetti-fall-alt", "confetti-fall-c"];
@@ -878,7 +878,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
                     </linearGradient>
                   </defs>
                   <rect x="0.75" y="0.75" width="46.5" height="46.5" rx="11" fill="#fff" stroke="rgba(0,0,0,0.1)" strokeWidth="1.2" />
-                  <path fill="url(#ah-heart)" transform="translate(11.04 7.1) scale(1.08)" d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
+                  <path fill="url(#ah-heart)" transform="translate(15.5 3.55) scale(1)" d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
                 </svg>
               </div>
               <h1 className="text-2xl font-semibold text-ink text-center">Connect Apple Health</h1>

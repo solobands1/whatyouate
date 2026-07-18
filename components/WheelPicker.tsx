@@ -86,13 +86,13 @@ export default function WheelPicker({
               <div className="pointer-events-none absolute inset-x-3 top-1/2 z-0 -translate-y-1/2 rounded-lg bg-ink/[0.06]" style={{ height: ITEM_H }} />
               <div
                 ref={listRef}
-                className="relative z-10 h-full overflow-y-auto overscroll-contain [scroll-snap-type:y_mandatory]"
+                className="relative z-10 h-full overflow-y-auto overscroll-contain [scroll-snap-type:y_proximity] [-webkit-overflow-scrolling:touch]"
                 style={{ paddingTop: PAD, paddingBottom: PAD }}
               >
                 {options.map((o) => (
                   <div
                     key={o.value}
-                    className="flex items-center justify-center text-[22px] font-medium text-ink [scroll-snap-align:center]"
+                    className="flex items-center justify-center text-[19px] font-medium text-ink [scroll-snap-align:center]"
                     style={{ height: ITEM_H }}
                   >
                     {o.label}
