@@ -2518,9 +2518,9 @@ export default function HomeScreen() {
   const hasEverLogged = displayMeals.some((m) => m.analysisJson?.source !== "supplement" && m.status !== "failed");
   const greetingCopyFor = (phase: "morning" | "afternoon" | "evening") => {
     if (!hasEverLogged) return { greeting: "Welcome", sub: "Log Your First Meal", exclaim: true };
-    if (phase === "morning") return { greeting: "Good Morning", sub: "We're glad you're back", exclaim: false };
-    if (phase === "afternoon") return { greeting: "Good Afternoon", sub: "We're glad you're back", exclaim: false };
-    return { greeting: "Good Evening", sub: "We're glad you're back", exclaim: false };
+    if (phase === "morning") return { greeting: "Good Morning", sub: "We're glad you're back!", exclaim: false };
+    if (phase === "afternoon") return { greeting: "Good Afternoon", sub: "We're glad you're back!", exclaim: false };
+    return { greeting: "Good Evening", sub: "We're glad you're back!", exclaim: false };
   };
   const welcomeMessage = (() => {
     const hour = new Date().getHours();
