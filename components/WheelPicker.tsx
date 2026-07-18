@@ -107,7 +107,8 @@ export default function WheelPicker({
                 {options.map((o) => (
                   <div
                     key={o.value}
-                    className="flex items-center justify-center text-[19px] font-medium text-ink"
+                    onClick={() => { onChange(o.value); setOpen(false); }}
+                    className="flex cursor-pointer items-center justify-center text-[19px] font-medium text-ink"
                     style={{ height: ITEM_H }}
                   >
                     {o.label}
