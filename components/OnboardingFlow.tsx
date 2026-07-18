@@ -84,7 +84,8 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
   const [heightFt, setHeightFt] = useState("");
   const [heightIn, setHeightIn] = useState("");
   const [heightCm, setHeightCm] = useState("");
-  const [weight, setWeight] = useState("");
+  const [weight, setWeight] = useState("120"); // seed so the picker opens near an average, not a long scroll
+  const [weightTouched, setWeightTouched] = useState(false);
   const [goalDirection, setGoalDirection] = useState<GoalDirection | "">("");
   const [feelingGoals, setFeelingGoals] = useState<FeelingGoal[]>([]);
   const [activityLevel, setActivityLevel] = useState<ActivityLevel | "">("");
@@ -181,9 +182,9 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
 
   const next = () => setStep((s) => s + 1);
   const canContinueDob = dobMonth && dobDay && dobYear;
-  const canContinueHeight = units === "metric"
+  const canContinueHeight = weightTouched && (units === "metric"
     ? heightCm && weight
-    : (heightFt || heightIn) && weight;
+    : (heightFt || heightIn) && weight);
   const progress = (step / 8) * 100;
 
   const animStyle = (show: boolean) => ({
@@ -628,7 +629,8 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
                   <p className="mb-2 text-xs font-medium text-muted/60">Weight ({units === "metric" ? "kg" : "lbs"})</p>
                   <select
                     value={weight}
-                    onChange={(e) => setWeight(e.target.value)}
+                    onChange={(e) => { setWeight(e.target.value); setWeightTouched(true); }}
+                    onFocus={() => setWeightTouched(true)}
                     className="w-full rounded-xl border border-ink/10 bg-surface px-3 py-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
                   >
                     <option value="">Select</option>
