@@ -84,8 +84,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
   const [heightFt, setHeightFt] = useState("");
   const [heightIn, setHeightIn] = useState("");
   const [heightCm, setHeightCm] = useState("");
-  const [weight, setWeight] = useState("120"); // seed so the picker opens near an average, not a long scroll
-  const [weightTouched, setWeightTouched] = useState(false);
+  const [weight, setWeight] = useState("");
   const [goalDirection, setGoalDirection] = useState<GoalDirection | "">("");
   const [feelingGoals, setFeelingGoals] = useState<FeelingGoal[]>([]);
   const [activityLevel, setActivityLevel] = useState<ActivityLevel | "">("");
@@ -182,9 +181,9 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
 
   const next = () => setStep((s) => s + 1);
   const canContinueDob = dobMonth && dobDay && dobYear;
-  const canContinueHeight = weightTouched && (units === "metric"
+  const canContinueHeight = units === "metric"
     ? heightCm && weight
-    : (heightFt || heightIn) && weight);
+    : (heightFt || heightIn) && weight;
   const progress = (step / 8) * 100;
 
   const animStyle = (show: boolean) => ({
@@ -370,7 +369,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
                   height: h,
                   background: palette[i % palette.length],
                   opacity: opacities[i % 3],            // 3 transparency levels
-                  borderRadius: "40%",                  // soft, roundy corners
+                  borderRadius: "2px",                  // slight corner, mostly rectangular
                   animationName: anims[i % 3],          // 3 fluttering paths
                   animationDelay: `${(i % 6) * 0.14}s`,         // quick burst at the start
                   animationDuration: `${5.5 + (i % 5) * 1.1}s`, // varied fall speeds
@@ -629,8 +628,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
                   <p className="mb-2 text-xs font-medium text-muted/60">Weight ({units === "metric" ? "kg" : "lbs"})</p>
                   <select
                     value={weight}
-                    onChange={(e) => { setWeight(e.target.value); setWeightTouched(true); }}
-                    onFocus={() => setWeightTouched(true)}
+                    onChange={(e) => setWeight(e.target.value)}
                     className="w-full rounded-xl border border-ink/10 bg-surface px-3 py-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
                   >
                     <option value="">Select</option>
@@ -880,13 +878,13 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
                 <svg viewBox="0 0 48 48" className="h-[72px] w-[72px]" role="img" aria-label="Apple Health">
                   <defs>
                     <linearGradient id="ah-heart" x1="0" y1="1" x2="0" y2="0">
-                      <stop offset="0" stopColor="#FE1F2E" />
-                      <stop offset="0.55" stopColor="#FF3A64" />
-                      <stop offset="1" stopColor="#F94DAE" />
+                      <stop offset="0" stopColor="#FE2233" />
+                      <stop offset="0.55" stopColor="#FF3D66" />
+                      <stop offset="1" stopColor="#FC4C92" />
                     </linearGradient>
                   </defs>
                   <rect x="0.75" y="0.75" width="46.5" height="46.5" rx="11" fill="#fff" stroke="rgba(0,0,0,0.08)" strokeWidth="1.5" />
-                  <path fill="url(#ah-heart)" transform="translate(17.75 6.8) scale(0.9)" d="M12 20.8 C9 20.8 2.5 13 2.5 8.5 C2.5 4.6 4.6 3.3 7.4 3.3 C9.9 3.3 11 6.5 12 6.5 C13 6.5 14.1 3.3 16.6 3.3 C19.4 3.3 21.5 4.6 21.5 8.5 C21.5 13 15 20.8 12 20.8 Z" />
+                  <path fill="url(#ah-heart)" transform="translate(10.2 5.9) scale(1.15)" d="M12 21 C9 21 3 13.5 3 8.8 C3 4.8 5.3 3.5 8 3.5 C10 3.5 11.2 6.2 12 6.2 C12.8 6.2 14 3.5 16 3.5 C18.7 3.5 21 4.8 21 8.8 C21 13.5 15 21 12 21 Z" />
                 </svg>
               </div>
               <h1 className="text-2xl font-semibold text-ink text-center">Connect Apple Health</h1>
