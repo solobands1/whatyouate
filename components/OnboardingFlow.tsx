@@ -330,30 +330,36 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
           @keyframes draw-circle { from { stroke-dashoffset: 63; } to { stroke-dashoffset: 0; } }
           @keyframes draw-check { from { stroke-dashoffset: 12; } to { stroke-dashoffset: 0; } }
           @keyframes confetti-fall {
-            0%   { transform: translateY(-14vh) rotate(0deg); opacity: 0; }
-            12%  { opacity: 0.4; }
-            88%  { opacity: 0.4; }
-            100% { transform: translateY(114vh) rotate(300deg); opacity: 0; }
+            0%   { transform: translateY(-8vh) translateX(0) rotate(0deg); opacity: 0; }
+            8%   { opacity: 0.5; }
+            100% { transform: translateY(112vh) translateX(22px) rotate(230deg); opacity: 0.5; }
           }
-          .confetti-piece { position: absolute; top: 0; animation: confetti-fall linear infinite; will-change: transform, opacity; }
-          @media (prefers-reduced-motion: reduce) { .confetti-piece { animation: none; opacity: 0; } }
+          @keyframes confetti-fall-alt {
+            0%   { transform: translateY(-8vh) translateX(0) rotate(0deg); opacity: 0; }
+            8%   { opacity: 0.5; }
+            100% { transform: translateY(112vh) translateX(-22px) rotate(-205deg); opacity: 0.5; }
+          }
+          .confetti-piece { position: absolute; top: 0; animation-timing-function: linear; animation-iteration-count: 1; animation-fill-mode: both; will-change: transform, opacity; }
+          @media (prefers-reduced-motion: reduce) { .confetti-piece { animation: none !important; opacity: 0; } }
         `}</style>
         <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-          {Array.from({ length: 20 }).map((_, i) => {
+          {Array.from({ length: 26 }).map((_, i) => {
             const palette = ["#82B8FF", "#A9CCFF", "#BBD4FF", "#6FA8FF"];
-            const size = 4 + (i % 4) * 2;
+            const w = 4 + (i % 3);           // 4-6px
+            const h = 9 + (i % 4) * 1.5;     // 9-13.5px (taller than wide)
             return (
               <span
                 key={i}
                 className="confetti-piece"
                 style={{
                   left: `${(i * 37 + 6) % 100}%`,
-                  width: size,
-                  height: size,
+                  width: w,
+                  height: h,
                   background: palette[i % palette.length],
-                  borderRadius: i % 2 === 0 ? "9999px" : "2px",
-                  animationDelay: `${(i % 10) * 0.45}s`,
-                  animationDuration: `${5 + (i % 5)}s`,
+                  borderRadius: "40%",       // soft, roundy corners — not sharp rectangles
+                  animationName: i % 2 === 0 ? "confetti-fall" : "confetti-fall-alt",
+                  animationDelay: `${(i % 6) * 0.13}s`,   // quick burst at the start
+                  animationDuration: `${6 + (i % 4)}s`,   // slow, floaty fall
                 }}
               />
             );
@@ -864,7 +870,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
                     </linearGradient>
                   </defs>
                   <rect x="0.75" y="0.75" width="46.5" height="46.5" rx="11" fill="#fff" stroke="rgba(0,0,0,0.08)" strokeWidth="1.5" />
-                  <path fill="url(#ah-heart)" transform="translate(18.7 7.9) scale(0.82)" d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z" />
+                  <path fill="url(#ah-heart)" transform="translate(17.75 6.8) scale(0.9)" d="M12 20.8 C9 20.8 2 13 2 8.5 C2 4.5 4.2 3.2 7 3.2 C9.5 3.2 10.3 6.8 12 6.8 C13.7 6.8 14.5 3.2 17 3.2 C19.8 3.2 22 4.5 22 8.5 C22 13 15 20.8 12 20.8 Z" />
                 </svg>
               </div>
               <h1 className="text-2xl font-semibold text-ink text-center">Connect Apple Health</h1>
