@@ -138,9 +138,9 @@ export default function BottomNav({ current }: { current: "home" | "summary" | "
     return (
       <button
         data-tour={key === "summary" ? "nav-summary" : key === "patterns" ? "nav-patterns" : undefined}
-        className={`relative flex flex-1 flex-col items-center gap-1 rounded-xl px-1.5 py-2 transition ${tappedKey === key ? "animate-nav-tap" : ""} ${tourTab && !isTourTarget ? "opacity-25" : ""} ${
+        className={`relative flex flex-1 flex-col items-center gap-1 rounded-xl px-1.5 py-2 transition ${tappedKey === key ? "animate-nav-tap" : ""} ${
           isTourTarget
-            ? "bg-primary/10 text-primary"
+            ? "z-10 bg-white text-primary shadow-[0_4px_16px_rgba(111,168,255,0.18)]"
             : isActive
             ? "bg-white text-primary shadow-[0_4px_16px_rgba(111,168,255,0.18)]"
             : "text-muted/65"
@@ -173,6 +173,10 @@ export default function BottomNav({ current }: { current: "home" | "summary" | "
 
   return (
     <nav className={`fixed bottom-0 left-0 right-0 ${tourTab ? "z-[101]" : "z-40"} bg-surface/95 backdrop-blur safe-bottom`}>
+      {tourTab && (
+        // Match the tour overlay's dim over the whole nav; the target tab (z-10) sits above it.
+        <div className="pointer-events-none absolute inset-0 z-[5] bg-black/50" aria-hidden="true" />
+      )}
       <div data-tour="bottom-nav" className={`mx-auto flex max-w-md items-center gap-1 border-t border-ink/8 pl-4 pt-2 ${current === "home" ? "pr-[110px]" : "pr-4"}`}>
         {item("/", "Home", "home")}
         {item("/summary", "Insights", "summary")}
@@ -183,7 +187,7 @@ export default function BottomNav({ current }: { current: "home" | "summary" | "
           type="button"
           aria-label="Log"
           data-tour="food-action"
-          className={`absolute bottom-0 right-0 top-0 flex w-[100px] items-center justify-center rounded-l-full bg-primary text-white transition active:bg-primary/90 ${tourTab ? "opacity-25" : ""}`}
+          className="absolute bottom-0 right-0 top-0 flex w-[100px] items-center justify-center rounded-l-full bg-primary text-white transition active:bg-primary/90"
           onClick={() => window.dispatchEvent(new Event("wya_open_log_menu"))}
         >
           <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="-translate-x-0.5 -translate-y-0.5">
