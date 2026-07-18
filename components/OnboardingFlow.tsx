@@ -842,7 +842,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
                     </linearGradient>
                   </defs>
                   <rect x="0.75" y="0.75" width="46.5" height="46.5" rx="11" fill="#fff" stroke="rgba(0,0,0,0.08)" strokeWidth="1.5" />
-                  <path fill="url(#ah-heart)" transform="translate(16.8 7.5) scale(0.85)" d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                  <path fill="url(#ah-heart)" transform="translate(18.3 6) scale(0.85)" d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                 </svg>
               </div>
               <h1 className="text-2xl font-semibold text-ink text-center">Connect Apple Health</h1>
