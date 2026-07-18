@@ -1498,22 +1498,25 @@ export default function ProfileScreen() {
             <span className="text-xs font-semibold uppercase tracking-wide text-muted/70">Daily supplements</span>
             <p className="mt-1 text-[11px] text-muted/60">Added automatically every day in the background. Add a dose to track against recommended daily amounts.</p>
             <div className="mt-3 flex flex-wrap gap-2">
-              {dailySupplements.map((entry, idx) => (
-                <span
-                  key={idx}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs text-ink/80"
-                >
-                  {suppLabel(entry)}
-                  <button
-                    type="button"
-                    className="-my-1 ml-0.5 px-1.5 py-1 text-ink/55 transition hover:text-ink/70"
-                    onClick={(e) => { e.stopPropagation(); setSuppRemoveIdx(idx); }}
-                    aria-label={`Remove ${suppName(entry)}`}
+              {dailySupplements
+                .map((entry, idx) => ({ entry, idx, label: suppLabel(entry) }))
+                .sort((a, b) => a.label.length - b.label.length || a.label.localeCompare(b.label))
+                .map(({ entry, idx, label }) => (
+                  <span
+                    key={idx}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs text-ink/80"
                   >
-                    ×
-                  </button>
-                </span>
-              ))}
+                    {label}
+                    <button
+                      type="button"
+                      className="-my-1 ml-0.5 px-1.5 py-1 text-ink/55 transition hover:text-ink/70"
+                      onClick={(e) => { e.stopPropagation(); setSuppRemoveIdx(idx); }}
+                      aria-label={`Remove ${suppName(entry)}`}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
             </div>
             <div className="mt-3">
               <button
