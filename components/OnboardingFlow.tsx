@@ -244,6 +244,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
           @keyframes notif-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
           @keyframes notif-fade { from { opacity: 0; } to { opacity: 1; } }
           @keyframes glow-pulse { 0%,100% { opacity: 0.5; transform: scale(1); } 50% { opacity: 0.85; transform: scale(1.1); } }
+          .notif-icon  { animation: notif-rise 0.5s ease 0.05s both; }
           .notif-title { animation: notif-rise 0.5s ease 0.1s both; }
           .notif-card  { animation: notif-drop 0.7s cubic-bezier(0.22,1,0.36,1) 0.35s both; }
           .notif-card2 { animation: notif-drop 0.7s cubic-bezier(0.22,1,0.36,1) 0.52s both; }
@@ -251,13 +252,18 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
           .notif-cta   { animation: notif-rise 0.5s ease 1.15s both; }
           .notif-glow  { animation: glow-pulse 4.5s ease-in-out infinite; }
           @media (prefers-reduced-motion: reduce) {
-            .notif-title, .notif-card, .notif-card2, .notif-copy, .notif-cta { animation: notif-fade 0.3s ease both; }
+            .notif-icon, .notif-title, .notif-card, .notif-card2, .notif-copy, .notif-cta { animation: notif-fade 0.3s ease both; }
             .notif-glow { animation: none; opacity: 0.6; }
           }
         `}</style>
 
         {/* Title + notifications + paragraph, centered in the space above the pinned CTA */}
         <div className="flex flex-1 flex-col items-center justify-center">
+          <div className="notif-icon mb-5 flex justify-center">
+            <svg className="h-10 w-10 text-primary/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+            </svg>
+          </div>
           <p className="notif-title w-full max-w-sm text-center text-2xl font-semibold text-ink">Let Your Coach Reach You</p>
 
           {/* Two mock iOS pushes cascade in beneath the title, over a soft glow — the daily rhythm */}
