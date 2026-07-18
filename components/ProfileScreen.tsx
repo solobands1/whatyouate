@@ -2039,7 +2039,7 @@ export default function ProfileScreen() {
               type="text"
               autoFocus
               className="mt-3 w-full shrink-0 rounded-xl border border-ink/10 px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
-              placeholder="e.g. Vitamin D"
+              placeholder="Name (optional)"
               value={multiSuppName}
               onChange={(e) => handleSuppNameChange(e.target.value)}
             />
@@ -2048,59 +2048,67 @@ export default function ProfileScreen() {
                 {suppLookingUp ? "Looking up…" : suppMatchHint}
               </p>
             )}
-            <p className="mt-3 shrink-0 text-xs text-muted/60">Tap each tracked nutrient it contains and enter the amount from the label.</p>
-            <div ref={suppListRef} className="mt-3 min-h-0 flex-1 space-y-2 overflow-y-auto">
-              {Object.entries(NUTRIENT_DISPLAY_NAMES).map(([key, displayName]) => {
-                const entry = multiSuppNutrients[key];
-                const isOpen = !!entry;
-                const defaultUnit = NUTRIENT_UNITS[key] ?? "mg";
-                return (
-                  <div key={key} className="rounded-xl border border-ink/10 overflow-hidden">
-                    <button
-                      type="button"
-                      className={`flex w-full items-center justify-between px-4 py-3 text-left transition ${isOpen ? "bg-primary/5" : "bg-white hover:bg-ink/5"}`}
-                      onClick={() => {
-                        setMultiSuppNutrients((prev) => {
-                          if (prev[key]) {
-                            const next = { ...prev };
-                            delete next[key];
-                            return next;
-                          }
-                          return { ...prev, [key]: { dose: "", unit: defaultUnit, pct: "", mode: "dose" as const } };
-                        });
-                      }}
-                    >
-                      <span className="text-sm font-medium text-ink/80">{displayName}</span>
-                      <span className={`text-xs font-semibold ${isOpen ? "text-primary/70" : "text-ink/50"}`}>
-                        {isOpen ? (entry.dose ? `${entry.dose} ${entry.unit}` : "") : "+"}
-                      </span>
-                    </button>
-                    {isOpen && (
-                      <div className="border-t border-ink/5 px-4 py-3">
-                        <div className="flex gap-2">
-                          <input
-                            type="text"
-                            inputMode="decimal"
-                            placeholder="Amount"
-                            className="min-w-0 flex-1 rounded-xl border border-ink/10 px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                            value={entry.dose}
-                            onChange={(e) => setMultiSuppNutrients((prev) => ({ ...prev, [key]: { ...prev[key], dose: e.target.value } }))}
-                          />
-                          <select
-                            className="rounded-full border border-ink/10 bg-white px-3 py-1.5 text-xs text-ink/80"
-                            value={entry.unit}
-                            onChange={(e) => setMultiSuppNutrients((prev) => ({ ...prev, [key]: { ...prev[key], unit: e.target.value } }))}
-                          >
-                            {["mg", "mcg", "IU", "g", "mL"].map((u) => (
-                              <option key={u} value={u}>{u}</option>
-                            ))}
-                          </select>
-                        </div>
+            <div ref={suppListRef} className="mt-3 min-h-0 flex-1 space-y-3 overflow-y-auto">
+              {/* Selected nutrients — surfaced up top with their dose fields to fill/confirm. */}
+              {Object.keys(multiSuppNutrients).length > 0 && (
+                <div className="space-y-2">
+                  {Object.entries(multiSuppNutrients).map(([key, v]) => (
+                    <div key={key} className="rounded-xl border border-primary/25 bg-primary/[0.06] px-3 py-2.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-sm font-medium text-ink/85">{NUTRIENT_DISPLAY_NAMES[key] ?? key}</span>
+                        <button
+                          type="button"
+                          className="-mr-1 px-1 text-base leading-none text-ink/40 transition active:opacity-60"
+                          onClick={() => setMultiSuppNutrients((prev) => { const next = { ...prev }; delete next[key]; return next; })}
+                          aria-label={`Remove ${NUTRIENT_DISPLAY_NAMES[key] ?? key}`}
+                        >
+                          ×
+                        </button>
                       </div>
-                    )}
-                  </div>
-                );
-              })}
+                      <div className="mt-2 flex gap-2">
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          placeholder="Amount from label"
+                          className="min-w-0 flex-1 rounded-lg border border-ink/10 px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                          value={v.dose}
+                          onChange={(e) => setMultiSuppNutrients((prev) => ({ ...prev, [key]: { ...prev[key], dose: e.target.value } }))}
+                        />
+                        <select
+                          className="rounded-lg border border-ink/10 bg-white px-2.5 py-1.5 text-xs text-ink/80"
+                          value={v.unit}
+                          onChange={(e) => setMultiSuppNutrients((prev) => ({ ...prev, [key]: { ...prev[key], unit: e.target.value } }))}
+                        >
+                          {["mg", "mcg", "IU", "g", "mL"].map((u) => (
+                            <option key={u} value={u}>{u}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Add nutrients it contains — tracked nutrients not yet added, as tappable chips. */}
+              <div>
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted/55">
+                  {Object.keys(multiSuppNutrients).length > 0 ? "Add another nutrient" : "Add a nutrient it contains"}
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {Object.entries(NUTRIENT_DISPLAY_NAMES)
+                    .filter(([key]) => !multiSuppNutrients[key])
+                    .map(([key, displayName]) => (
+                      <button
+                        key={key}
+                        type="button"
+                        className="rounded-full border border-ink/12 bg-white px-3 py-1.5 text-xs text-ink/70 transition hover:bg-primary/5 active:bg-primary/10"
+                        onClick={() => setMultiSuppNutrients((prev) => ({ ...prev, [key]: { dose: "", unit: NUTRIENT_UNITS[key] ?? "mg", pct: "", mode: "dose" } }))}
+                      >
+                        {displayName}
+                      </button>
+                    ))}
+                </div>
+              </div>
             </div>
             <div className="mt-5 flex shrink-0 gap-3">
               <button
