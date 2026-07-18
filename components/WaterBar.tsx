@@ -11,13 +11,17 @@ export default function WaterBar({ pct, displayCurrent, displayGoal }: {
   const [animatedPct, setAnimatedPct] = useState(0);
   const [fillDuration, setFillDuration] = useState("3000ms");
   const isFirstRender = useRef(true);
+  const fillPctRef = useRef(fillPct);
+  fillPctRef.current = fillPct;
 
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
-      // Double rAF: first frame renders width=0, second triggers the 3s transition
+      // Double rAF: first frame renders width=0, second triggers the transition. Read the LATEST
+      // fillPct via a ref — if it changed between mount and the rAF (e.g. demo mode flipping in at
+      // the start of the walkthrough), a stale captured 0 would otherwise overwrite the real value.
       requestAnimationFrame(() => {
-        requestAnimationFrame(() => setAnimatedPct(fillPct));
+        requestAnimationFrame(() => setAnimatedPct(fillPctRef.current));
       });
     } else {
       setFillDuration("2000ms");
