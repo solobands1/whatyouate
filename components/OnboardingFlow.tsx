@@ -8,6 +8,7 @@ import { requestHealthKitPermissions, checkHealthKitAuthorization, syncHealthKit
 import { Capacitor } from "@capacitor/core";
 import { initPush, PUSH_ASKED_KEY, PUSH_DECLINED_AT_KEY } from "../lib/push";
 import WyaaAvatar from "./WyaaAvatar";
+import WheelPicker from "./WheelPicker";
 import type { ActivityLevel, FeelingGoal, GoalDirection } from "../lib/types";
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -589,57 +590,51 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
                 <div>
                   <p className="mb-2 text-xs font-medium text-muted/60">Height {units === "metric" ? "(cm)" : "(ft + in)"}</p>
                   {units === "metric" ? (
-                    <select
+                    <WheelPicker
                       value={heightCm}
-                      onChange={(e) => setHeightCm(e.target.value)}
-                      className="w-full rounded-xl border border-ink/10 bg-surface px-3 py-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
-                    >
-                      <option value="">Select</option>
-                      {Array.from({ length: 101 }, (_, i) => 120 + i).map((cm) => (
-                        <option key={cm} value={cm}>{cm} cm</option>
-                      ))}
-                    </select>
+                      onChange={setHeightCm}
+                      placeholder="Select"
+                      title="Height"
+                      defaultValue="170"
+                      options={Array.from({ length: 101 }, (_, i) => 120 + i).map((cm) => ({ value: String(cm), label: `${cm} cm` }))}
+                    />
                   ) : (
                     <div className="flex gap-3">
-                      <select
-                        value={heightFt}
-                        onChange={(e) => setHeightFt(e.target.value)}
-                        className="flex-1 rounded-xl border border-ink/10 bg-surface px-3 py-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
-                      >
-                        <option value="">ft</option>
-                        {Array.from({ length: 6 }, (_, i) => 3 + i).map((ft) => (
-                          <option key={ft} value={ft}>{ft} ft</option>
-                        ))}
-                      </select>
-                      <select
-                        value={heightIn}
-                        onChange={(e) => setHeightIn(e.target.value)}
-                        className="flex-1 rounded-xl border border-ink/10 bg-surface px-3 py-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
-                      >
-                        <option value="">in</option>
-                        {Array.from({ length: 12 }, (_, i) => i).map((inch) => (
-                          <option key={inch} value={inch}>{inch} in</option>
-                        ))}
-                      </select>
+                      <div className="flex-1">
+                        <WheelPicker
+                          value={heightFt}
+                          onChange={setHeightFt}
+                          placeholder="ft"
+                          title="Feet"
+                          defaultValue="5"
+                          options={Array.from({ length: 6 }, (_, i) => 3 + i).map((ft) => ({ value: String(ft), label: `${ft} ft` }))}
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <WheelPicker
+                          value={heightIn}
+                          onChange={setHeightIn}
+                          placeholder="in"
+                          title="Inches"
+                          defaultValue="8"
+                          options={Array.from({ length: 12 }, (_, i) => i).map((inch) => ({ value: String(inch), label: `${inch} in` }))}
+                        />
+                      </div>
                     </div>
                   )}
                 </div>
                 <div>
                   <p className="mb-2 text-xs font-medium text-muted/60">Weight ({units === "metric" ? "kg" : "lbs"})</p>
-                  <select
+                  <WheelPicker
                     value={weight}
-                    onChange={(e) => setWeight(e.target.value)}
-                    className="w-full rounded-xl border border-ink/10 bg-surface px-3 py-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
-                  >
-                    <option value="">Select</option>
-                    {units === "metric"
-                      ? Array.from({ length: 171 }, (_, i) => 30 + i).map((kg) => (
-                          <option key={kg} value={kg}>{kg} kg</option>
-                        ))
-                      : Array.from({ length: 391 }, (_, i) => 60 + i).map((lb) => (
-                          <option key={lb} value={lb}>{lb} lbs</option>
-                        ))}
-                  </select>
+                    onChange={setWeight}
+                    placeholder="Select"
+                    title="Weight"
+                    defaultValue={units === "metric" ? "55" : "120"}
+                    options={units === "metric"
+                      ? Array.from({ length: 171 }, (_, i) => 30 + i).map((kg) => ({ value: String(kg), label: `${kg} kg` }))
+                      : Array.from({ length: 391 }, (_, i) => 60 + i).map((lb) => ({ value: String(lb), label: `${lb} lbs` }))}
+                  />
                 </div>
               </div>
               <div className="mt-10 space-y-3">
