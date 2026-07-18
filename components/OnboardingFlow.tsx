@@ -231,7 +231,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
   if (showNotifPrompt) {
     const sampleBody = SAMPLE_NUDGES[feelingGoals[0] ?? "energy"] ?? SAMPLE_NUDGES.energy;
     return (
-      <div className="fixed inset-0 z-50 flex flex-col bg-white px-8" style={{ paddingTop: "calc(env(safe-area-inset-top) + 12px)" }}>
+      <div className="fixed inset-0 z-50 flex flex-col bg-white px-8" style={{ paddingTop: "calc(env(safe-area-inset-top) + 26px)" }}>
         <style>{`
           @keyframes notif-drop {
             0%   { opacity: 0; transform: translateY(-150%) scale(0.94); }
@@ -241,19 +241,22 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
           @keyframes notif-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
           @keyframes notif-fade { from { opacity: 0; } to { opacity: 1; } }
           @keyframes glow-pulse { 0%,100% { opacity: 0.5; transform: scale(1); } 50% { opacity: 0.85; transform: scale(1.1); } }
-          .notif-card  { animation: notif-drop 0.7s cubic-bezier(0.22,1,0.36,1) 0.15s both; }
-          .notif-card2 { animation: notif-drop 0.7s cubic-bezier(0.22,1,0.36,1) 0.34s both; }
-          .notif-copy  { animation: notif-rise 0.5s ease 0.9s both; }
-          .notif-cta   { animation: notif-rise 0.5s ease 1.05s both; }
+          .notif-title { animation: notif-rise 0.5s ease 0.1s both; }
+          .notif-card  { animation: notif-drop 0.7s cubic-bezier(0.22,1,0.36,1) 0.35s both; }
+          .notif-card2 { animation: notif-drop 0.7s cubic-bezier(0.22,1,0.36,1) 0.52s both; }
+          .notif-copy  { animation: notif-rise 0.5s ease 1s both; }
+          .notif-cta   { animation: notif-rise 0.5s ease 1.15s both; }
           .notif-glow  { animation: glow-pulse 4.5s ease-in-out infinite; }
           @media (prefers-reduced-motion: reduce) {
-            .notif-card, .notif-card2, .notif-copy, .notif-cta { animation: notif-fade 0.3s ease both; }
+            .notif-title, .notif-card, .notif-card2, .notif-copy, .notif-cta { animation: notif-fade 0.3s ease both; }
             .notif-glow { animation: none; opacity: 0.6; }
           }
         `}</style>
 
-        {/* Two mock iOS pushes cascade in over a soft glow — shows the daily rhythm, personalized */}
-        <div className="relative mx-auto w-full max-w-sm">
+        <p className="notif-title mx-auto max-w-xs text-center text-2xl font-semibold text-ink">Let Your Coach Reach You</p>
+
+        {/* Two mock iOS pushes cascade in beneath the title, over a soft glow — the daily rhythm */}
+        <div className="relative mx-auto mt-9 w-full max-w-sm">
           <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
             <div className="notif-glow h-72 w-72 rounded-full bg-primary/15 blur-3xl" />
           </div>
@@ -289,14 +292,11 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
           </div>
         </div>
 
-        <div className="notif-copy mx-auto mt-14 max-w-xs text-center">
-          <p className="text-2xl font-semibold text-ink">Let Your Coach Reach You</p>
-          <p className="mt-3 text-sm leading-relaxed text-muted/70">
-            Small, timely nudges through the day and a reminder to reflect at night. Turn notifications on so your coach can actually reach you.
-          </p>
-        </div>
+        <p className="notif-copy mx-auto mt-9 max-w-xs text-center text-sm leading-relaxed text-muted/70">
+          Small, timely nudges through the day and a reminder to reflect at night. Turn notifications on so your coach can actually reach you.
+        </p>
 
-        <div className="notif-cta mx-auto mt-16 w-full max-w-sm space-y-3">
+        <div className="notif-cta mx-auto mt-12 w-full max-w-sm space-y-3">
           <button
             type="button"
             className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80"
