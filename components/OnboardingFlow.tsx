@@ -234,7 +234,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
     return (
       <div
         className="fixed inset-0 z-50 flex flex-col bg-white px-8"
-        style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "calc(env(safe-area-inset-bottom) + 24px)" }}
+        style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "calc(env(safe-area-inset-bottom) + 40px)" }}
       >
         <style>{`
           @keyframes notif-drop {
@@ -258,12 +258,12 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
           }
         `}</style>
 
-        {/* Title + notifications + paragraph, centered in the space above the pinned CTA */}
-        <div className="flex flex-1 flex-col items-center justify-center">
+        {/* Title + notifications + paragraph, centered (biased up a touch) above the pinned CTA */}
+        <div className="flex flex-1 flex-col items-center justify-center pb-8">
           {/* Coach orb floats above the title (absolute) so the title and everything below stay put */}
           <div className="relative w-full max-w-sm">
             <div className="notif-icon absolute inset-x-0 bottom-full mb-4 flex justify-center">
-              <WyaaAvatar size={52} />
+              <WyaaAvatar size={60} />
             </div>
             <p className="notif-title w-full text-center text-2xl font-semibold text-ink">Let Your Coach Reach You</p>
           </div>
