@@ -34,6 +34,7 @@ export default function WheelPicker({
 }) {
   const [open, setOpen] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
+  const snapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const selected = options.find((o) => o.value === value);
 
   useEffect(() => {
@@ -52,6 +53,19 @@ export default function WheelPicker({
       onChange(options[idx].value);
     }
     setOpen(false);
+  };
+
+  // Let the wheel fling with full native momentum (no CSS snap resistance), then settle it
+  // onto the nearest row once it comes to rest.
+  const onScroll = () => {
+    if (snapTimer.current) clearTimeout(snapTimer.current);
+    snapTimer.current = setTimeout(() => {
+      const el = listRef.current;
+      if (!el) return;
+      const idx = Math.min(options.length - 1, Math.max(0, Math.round(el.scrollTop / ITEM_H)));
+      const target = idx * ITEM_H;
+      if (Math.abs(el.scrollTop - target) > 1) el.scrollTo({ top: target, behavior: "smooth" });
+    }, 140);
   };
 
   return (
@@ -86,13 +100,14 @@ export default function WheelPicker({
               <div className="pointer-events-none absolute inset-x-3 top-1/2 z-0 -translate-y-1/2 rounded-lg bg-ink/[0.06]" style={{ height: ITEM_H }} />
               <div
                 ref={listRef}
-                className="relative z-10 h-full overflow-y-auto overscroll-contain [scroll-snap-type:y_proximity] [-webkit-overflow-scrolling:touch]"
+                onScroll={onScroll}
+                className="relative z-10 h-full overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]"
                 style={{ paddingTop: PAD, paddingBottom: PAD }}
               >
                 {options.map((o) => (
                   <div
                     key={o.value}
-                    className="flex items-center justify-center text-[19px] font-medium text-ink [scroll-snap-align:center]"
+                    className="flex items-center justify-center text-[19px] font-medium text-ink"
                     style={{ height: ITEM_H }}
                   >
                     {o.label}
