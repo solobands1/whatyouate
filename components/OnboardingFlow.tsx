@@ -718,7 +718,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
                 </svg>
               </div>
               <h1 className="text-2xl font-semibold text-ink text-center">What Do You Want To Feel Better About?</h1>
-              <p className="mt-2 text-sm text-muted/70 text-center">This shapes the habits we suggest and how your coach talks to you. <span className="font-semibold text-ink">Select up to 2 options</span></p>
+              <p className="mt-2 text-sm text-muted/70 text-center">This shapes the habits we suggest and how your coach talks to you. <span className="font-semibold text-ink">Select up to 2 options</span>.</p>
               <div className="mt-8 flex flex-wrap justify-center gap-2">
                 {FEELING_GOALS.map(({ value, label }) => {
                   const active = feelingGoals.includes(value);

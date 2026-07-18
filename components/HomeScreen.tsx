@@ -2609,7 +2609,7 @@ export default function HomeScreen() {
       content: (
         <div>
           <p style={{ fontWeight: 600, marginBottom: 10 }}>Build One Small Habit</p>
-          <p>Each Habit Builder is a tiny, doable change. Complete it a few days in a row and it sticks, no willpower required.</p>
+          <p>Each Habit Builder is a tiny, doable change. Complete it a few days in a row to help a positive habit stick.</p>
         </div>
       ),
     },
