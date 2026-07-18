@@ -231,7 +231,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
   if (showNotifPrompt) {
     const sampleBody = SAMPLE_NUDGES[feelingGoals[0] ?? "energy"] ?? SAMPLE_NUDGES.energy;
     return (
-      <div className="fixed inset-0 z-50 flex flex-col bg-white px-8" style={{ paddingTop: "calc(env(safe-area-inset-top) + 26px)" }}>
+      <div className="fixed inset-0 z-50 flex flex-col bg-white px-8" style={{ paddingTop: "calc(env(safe-area-inset-top) + 60px)" }}>
         <style>{`
           @keyframes notif-drop {
             0%   { opacity: 0; transform: translateY(-150%) scale(0.94); }
@@ -296,7 +296,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
           Small, timely nudges through the day and a reminder to reflect at night. Turn notifications on so your coach can actually reach you.
         </p>
 
-        <div className="notif-cta mx-auto mt-12 w-full max-w-sm space-y-3">
+        <div className="notif-cta mx-auto mt-20 w-full max-w-sm space-y-3">
           <button
             type="button"
             className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80"
