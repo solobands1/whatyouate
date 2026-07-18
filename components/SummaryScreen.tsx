@@ -591,7 +591,7 @@ export default function SummaryScreen() {
       content: (
         <div>
           <p style={{ fontWeight: 600, marginBottom: 10 }}>Explore Your Patterns</p>
-          <p>Last stop — tap <strong>Patterns</strong> below to see the trends your coach has spotted.</p>
+          <p>Tap <strong>Patterns</strong> below to navigate to the Patterns page.</p>
         </div>
       ),
     },

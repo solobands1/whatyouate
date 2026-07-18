@@ -2644,7 +2644,7 @@ export default function HomeScreen() {
       content: (
         <div>
           <p style={{ fontWeight: 600, marginBottom: 10 }}>See Your Insights</p>
-          <p>Tap <strong>Insights</strong> below to keep going. It&apos;s where your coach shows what it&apos;s noticing about you.</p>
+          <p>Tap <strong>Insights</strong> below to navigate to the Insights page.</p>
         </div>
       ),
     },
