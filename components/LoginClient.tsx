@@ -136,7 +136,7 @@ export default function LoginClient() {
         {/* Branding */}
         {(mode === "signin" || mode === "forgot") && (
           <div className="flex flex-col items-center mb-10">
-            <div className="h-16 w-16 overflow-hidden rounded-2xl border border-ink/10 mb-4">
+            <div className="h-16 w-16 mb-4">
               <img src="/icon.svg" alt="WhatYouAte" className="h-full w-full object-cover" />
             </div>
             <h1 className="text-2xl font-semibold tracking-tight text-ink">

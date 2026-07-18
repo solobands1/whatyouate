@@ -200,7 +200,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
     return (
       <div className="fixed inset-0 z-50 flex flex-col bg-white safe-top px-6">
         <div className="flex flex-1 flex-col items-center text-center pt-[18vh]">
-          <div style={animStyle(introAnimStep >= 1)} className="mb-6 h-[88px] w-[88px] overflow-hidden rounded-[20px] border border-ink/10">
+          <div style={animStyle(introAnimStep >= 1)} className="mb-6 h-[88px] w-[88px]">
             <img src="/icon.svg" alt="WhatYouAte" className="h-full w-full object-cover" />
           </div>
           <div style={animStyle(introAnimStep >= 2)}>
@@ -274,8 +274,8 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
           <div className="relative space-y-2.5">
             {/* Morning: a tiny, effortless win, tailored to their goal */}
             <div className="notif-card flex items-start gap-2.5 rounded-2xl bg-white p-3.5 shadow-[0_10px_34px_rgba(20,40,80,0.16)] ring-1 ring-black/5">
-              <div className="h-9 w-9 shrink-0 overflow-hidden rounded-[9px] border border-ink/10">
-                <img src="/icon.svg" alt="" className="h-full w-full object-cover" />
+              <div className="h-9 w-9 shrink-0">
+                <img src="/icon.svg" alt="" className="h-full w-full" />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline justify-between gap-2">
@@ -288,8 +288,8 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
             </div>
             {/* Evening: the reflection reminder — softer shadow so it recedes a touch */}
             <div className="notif-card2 flex items-start gap-2.5 rounded-2xl bg-white p-3.5 shadow-[0_5px_18px_rgba(20,40,80,0.09)] ring-1 ring-black/5">
-              <div className="h-9 w-9 shrink-0 overflow-hidden rounded-[9px] border border-ink/10">
-                <img src="/icon.svg" alt="" className="h-full w-full object-cover" />
+              <div className="h-9 w-9 shrink-0">
+                <img src="/icon.svg" alt="" className="h-full w-full" />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline justify-between gap-2">
@@ -833,8 +833,16 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
             </div>
             <div className="mt-[14vh]">
               <div className="flex justify-center mb-5">
-                <svg viewBox="0 0 16 16" className="h-10 w-10 text-rose-400" fill="currentColor">
-                  <path d="M8 13.7C7.7 13.5 1 9.2 1 5.5 1 3.6 2.6 2 4.5 2c1 0 2 .5 2.7 1.3L8 4.2l.8-.9C9.5 2.5 10.5 2 11.5 2 13.4 2 15 3.6 15 5.5c0 3.7-6.7 8-7 8.2z"/>
+                {/* Apple Health app icon — white tile with the red/pink heart, so it reads as the real app */}
+                <svg viewBox="0 0 48 48" className="h-14 w-14" role="img" aria-label="Apple Health">
+                  <defs>
+                    <linearGradient id="ah-heart" x1="0" y1="1" x2="0" y2="0">
+                      <stop offset="0" stopColor="#FB2D55" />
+                      <stop offset="1" stopColor="#FF6E92" />
+                    </linearGradient>
+                  </defs>
+                  <rect x="0.75" y="0.75" width="46.5" height="46.5" rx="11" fill="#fff" stroke="rgba(0,0,0,0.08)" strokeWidth="1.5" />
+                  <path fill="url(#ah-heart)" transform="translate(7.2 8.6) scale(1.4)" d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                 </svg>
               </div>
               <h1 className="text-2xl font-semibold text-ink text-center">Connect Apple Health</h1>
@@ -893,7 +901,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
                     disabled={saving}
                     onClick={handleSaveAndFinish}
                   >
-                    {saving ? "Saving…" : "Done"}
+                    {saving ? "Saving…" : "Next"}
                   </button>
                 </div>
               )}
@@ -907,7 +915,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
                     disabled={saving}
                     onClick={handleSaveAndFinish}
                   >
-                    {saving ? "Saving…" : "Done"}
+                    {saving ? "Saving…" : "Next"}
                   </button>
                 </div>
               )}

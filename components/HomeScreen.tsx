@@ -2748,10 +2748,17 @@ export default function HomeScreen() {
           onComplete={() => {
             localStorage.setItem(`wya_onboarding_done_${user.id}`, "true");
             localStorage.setItem(`wya_walkthrough_gate_${user.id}`, "true");
+            // "You're All Set / Let's Go!" already served as the tour intro, so start the
+            // walkthrough directly instead of the redundant "Welcome / Show Me Around" gate.
+            localStorage.setItem(`wya_demo_mode_${user.id}`, "true");
+            localStorage.setItem(`wya_walkthrough_active_${user.id}`, "true");
+            localStorage.setItem(`wya_walkthrough_stage_${user.id}`, "home");
             reload();
             setGateOverlay(true);
             setShowOnboarding(false);
-            setShowTourGate(true);
+            setIsDemoMode(true);
+            window.dispatchEvent(new Event("wya_demo_mode_on"));
+            setRunTour(true);
             setTimeout(() => setGateOverlay(false), 200);
           }}
         />
