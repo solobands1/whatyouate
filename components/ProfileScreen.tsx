@@ -2115,7 +2115,7 @@ export default function ProfileScreen() {
                 disabled={Object.values(multiSuppNutrients).filter((v) => parseFloat(v.dose) > 0).length === 0}
                 className="flex-1 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white transition hover:bg-primary/90 disabled:opacity-40"
                 onClick={() => {
-                  const name = multiSuppName;
+                  const typedName = multiSuppName.trim();
                   // Build nutrients array from filled doses
                   const nutrients: SupplementNutrient[] = Object.entries(multiSuppNutrients)
                     .filter(([, v]) => parseFloat(v.dose) > 0)
@@ -2123,7 +2123,9 @@ export default function ProfileScreen() {
                   // Save only with at least one tracked nutrient, so nothing that would
                   // show nothing in your totals can end up in the list.
                   if (nutrients.length === 0) return;
-                  const entry: SupplementEntry = { name: name || "Supplement", nutrients };
+                  // No name typed? Fall back to the chosen nutrient(s), e.g. "Vitamin D".
+                  const derivedName = nutrients.map((n) => NUTRIENT_DISPLAY_NAMES[n.nutrient] ?? n.nutrient).join(", ");
+                  const entry: SupplementEntry = { name: typedName || derivedName || "Supplement", nutrients };
                   const updated = [...dailySupplements, entry];
                   setDailySupplementsState(updated);
                   if (user) { setDailySupplements(user.id, updated); saveDailySupplements(user.id, updated).then(() => notifyProfileUpdated()).catch(() => {}); }

@@ -16,7 +16,14 @@ export function suppName(entry: SupplementEntry): string {
 /** Formatted label: "Vitamin D 2000 IU", "Younited (multi)", or just "Vitamin D". */
 export function suppLabel(entry: SupplementEntry): string {
   if (typeof entry === "string") return entry;
-  if (entry.nutrients?.length) return `${entry.name} (${entry.nutrients.length} nutrients)`;
+  if (entry.nutrients?.length) {
+    // A single tracked nutrient reads cleaner as "Name dose unit" than "Name (1 nutrients)".
+    if (entry.nutrients.length === 1) {
+      const n = entry.nutrients[0];
+      return `${entry.name} ${n.dose} ${n.unit}`;
+    }
+    return `${entry.name} (${entry.nutrients.length} nutrients)`;
+  }
   if (entry.dose != null && entry.unit) return `${entry.name} ${entry.dose} ${entry.unit}`;
   if (entry.dose != null) return `${entry.name} ${entry.dose}`;
   return entry.name;
