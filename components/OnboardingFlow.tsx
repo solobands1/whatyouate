@@ -305,7 +305,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
         </div>
 
         <p className="notif-copy mt-9 w-full max-w-sm text-center text-sm leading-relaxed text-muted/70">
-          Small, timely nudges through the day and a reminder to reflect at night. Turn notifications on so your coach can actually reach you.
+          Small, timely nudges through the day and a reminder to reflect at night. Turn notifications on, so your coach can actually reach you.
         </p>
 
         <div className="notif-cta mt-[72px] w-full max-w-sm space-y-3">
@@ -718,7 +718,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
                 </svg>
               </div>
               <h1 className="text-2xl font-semibold text-ink text-center">What Do You Want To Feel Better About?</h1>
-              <p className="mt-2 text-sm text-muted/70 text-center">This shapes the habits we suggest and how your coach talks to you. Pick up to two.</p>
+              <p className="mt-2 text-sm text-muted/70 text-center">This shapes the habits we suggest and how your coach talks to you. <span className="font-semibold text-ink">Select up to 2 options</span></p>
               <div className="mt-8 flex flex-wrap justify-center gap-2">
                 {FEELING_GOALS.map(({ value, label }) => {
                   const active = feelingGoals.includes(value);
@@ -814,7 +814,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
                 </svg>
               </div>
               <h1 className="text-2xl font-semibold text-ink text-center">Any Foods You Avoid?</h1>
-              <p className="mt-2 text-sm text-muted/70 text-center">We'll make sure your coach never suggests these. Tap all that apply</p>
+              <p className="mt-2 text-sm text-muted/70 text-center">We'll make sure your coach never suggests these. Tap all that apply.</p>
               <div className="mt-12 flex flex-wrap justify-center gap-2">
                 {DIETARY_OPTIONS.map((d) => {
                   const active = dietaryRestrictions.includes(d);
@@ -882,7 +882,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
                 </svg>
               </div>
               <h1 className="text-2xl font-semibold text-ink text-center">Connect Apple Health</h1>
-              <p className="mt-2 text-sm text-muted/70 text-center">Sync steps, sleep, and workouts to make your AI Coach smarter</p>
+              <p className="mt-2 text-sm text-muted/70 text-center">Sync steps, sleep, and workouts to make your AI Coach smarter.</p>
 
               {healthChoice === null && (
                 <div className="mt-16 space-y-3">
