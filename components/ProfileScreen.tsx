@@ -2031,7 +2031,7 @@ export default function ProfileScreen() {
           className="fixed inset-x-0 z-[51] flex items-center justify-center px-5 py-[4vh] transition-[top,height] duration-200 ease-out"
           style={{ top: vv ? `${vv.top}px` : 0, height: vv ? `${vv.height}px` : "100%" }}
         >
-          <div className="flex max-h-full w-full max-w-sm flex-col rounded-2xl bg-white p-6 shadow-xl">
+          <div className="flex max-h-[85%] w-full max-w-sm flex-col rounded-2xl bg-white p-6 shadow-xl">
             <h2 className="shrink-0 text-base font-semibold text-ink">Add Supplement</h2>
             <input
               type="text"
