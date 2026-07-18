@@ -2037,7 +2037,6 @@ export default function ProfileScreen() {
             <h2 className="shrink-0 text-base font-semibold text-ink">Add Supplement</h2>
             <input
               type="text"
-              autoFocus
               className="mt-3 w-full shrink-0 rounded-xl border border-ink/10 px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
               placeholder="Name (optional)"
               value={multiSuppName}
