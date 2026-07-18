@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { devHooksEnabled } from "../lib/devHooks";
 import Joyride, { STATUS, CallBackProps, type Step } from "react-joyride";
 import { notifyProfileUpdated } from "../lib/dataEvents";
 import type { ActivityLevel, FeelingGoal, GoalDirection, SupplementEntry, SupplementNutrient, Units, UserProfile } from "../lib/types";
@@ -516,11 +517,20 @@ export default function ProfileScreen() {
   const handleProfileTitleTap = () => {
     profileTapCount.current += 1;
     if (profileTapTimer.current) clearTimeout(profileTapTimer.current);
-    profileTapTimer.current = setTimeout(() => { profileTapCount.current = 0; }, 600);
     if (profileTapCount.current >= 3) {
       profileTapCount.current = 0;
-      openReviewPrompt(null);
+      openReviewPrompt(null); // triple-tap: preview the review prompt
+      return;
     }
+    profileTapTimer.current = setTimeout(() => {
+      const taps = profileTapCount.current;
+      profileTapCount.current = 0;
+      // Double-tap on the dev preview replays onboarding for testing (inert in native builds).
+      if (taps === 2 && devHooksEnabled() && user) {
+        localStorage.removeItem(`wya_onboarding_done_${user.id}`);
+        router.push("/");
+      }
+    }, 600);
   };
 
   const parseInteger = (value: string) => {
