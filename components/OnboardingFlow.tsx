@@ -261,7 +261,10 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
         <div className="flex flex-1 flex-col items-center justify-center">
           <div className="notif-icon mb-5 flex justify-center">
             <svg className="h-10 w-10 text-primary/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+              {/* bell = notifications; sparkle = the smart, helpful kind, not a dismissable alert */}
+              <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              <path d="M19.5 2c.3 1.3.7 1.7 2 2-1.3.3-1.7.7-2 2-.3-1.3-.7-1.7-2-2 1.3-.3 1.7-.7 2-2z" fill="currentColor" stroke="none" />
             </svg>
           </div>
           <p className="notif-title w-full max-w-sm text-center text-2xl font-semibold text-ink">Let Your Coach Reach You</p>
