@@ -527,7 +527,7 @@ export default function ProfileScreen() {
       profileTapCount.current = 0;
       // Double-tap on the dev preview replays onboarding for testing (inert in native builds).
       if (taps === 2 && devHooksEnabled() && user) {
-        localStorage.removeItem(`wya_onboarding_done_${user.id}`);
+        sessionStorage.setItem("wya_force_onboarding", "1");
         router.push("/");
       }
     }, 600);

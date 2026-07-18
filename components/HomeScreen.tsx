@@ -2197,6 +2197,13 @@ export default function HomeScreen() {
   }, [meals.meals, loadingData, failedMealPrompt, isDemoMode, runTour]);
 
   useEffect(() => {
+    // Dev preview only: a forced onboarding replay (double-tap the Profile title) bypasses the
+    // Supabase flag sync + walkthrough gate below so the flow can be re-tested end to end.
+    if (devHooksEnabled() && typeof window !== "undefined" && sessionStorage.getItem("wya_force_onboarding") === "1") {
+      sessionStorage.removeItem("wya_force_onboarding");
+      setShowOnboarding(true);
+      return;
+    }
     if (!user || loadingData) return;
     const key = `wya_walkthrough_${user.id}`;
     const gateKey = `wya_walkthrough_gate_${user.id}`;
