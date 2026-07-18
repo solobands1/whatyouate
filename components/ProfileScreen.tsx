@@ -2035,6 +2035,7 @@ export default function ProfileScreen() {
         >
           <div className={`flex w-full max-w-sm flex-col rounded-2xl bg-white p-6 shadow-xl ${keyboardOpen ? "max-h-full" : "max-h-[85%]"}`}>
             <h2 className="shrink-0 text-base font-semibold text-ink">Add Supplement</h2>
+            <p className="mt-1.5 shrink-0 text-xs leading-relaxed text-muted/65">Add what's in your supplement. Tap each nutrient and enter the amount from the label.</p>
             <input
               type="text"
               className="mt-3 w-full shrink-0 rounded-xl border border-ink/10 px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
@@ -2130,9 +2131,13 @@ export default function ProfileScreen() {
                   // Save only with at least one tracked nutrient, so nothing that would
                   // show nothing in your totals can end up in the list.
                   if (nutrients.length === 0) return;
-                  // No name typed? Fall back to the chosen nutrient(s), e.g. "Vitamin D".
-                  const derivedName = nutrients.map((n) => NUTRIENT_DISPLAY_NAMES[n.nutrient] ?? n.nutrient).join(", ");
-                  const entry: SupplementEntry = { name: typedName || derivedName || "Supplement", nutrients };
+                  // No name typed? Single nutrient uses its name (e.g. "Vitamin D"); multiple
+                  // defaults to "Multivitamin" (a nutrient list would be long + redundant with
+                  // the "(N nutrients)" tag).
+                  const derivedName = nutrients.length === 1
+                    ? (NUTRIENT_DISPLAY_NAMES[nutrients[0].nutrient] ?? nutrients[0].nutrient)
+                    : "Multivitamin";
+                  const entry: SupplementEntry = { name: typedName || derivedName, nutrients };
                   const updated = [...dailySupplements, entry];
                   setDailySupplementsState(updated);
                   if (user) { setDailySupplements(user.id, updated); saveDailySupplements(user.id, updated).then(() => notifyProfileUpdated()).catch(() => {}); }
