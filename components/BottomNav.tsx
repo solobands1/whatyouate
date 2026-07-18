@@ -138,7 +138,7 @@ export default function BottomNav({ current }: { current: "home" | "summary" | "
     return (
       <button
         data-tour={key === "summary" ? "nav-summary" : key === "patterns" ? "nav-patterns" : undefined}
-        className={`relative flex flex-1 flex-col items-center gap-1 rounded-xl px-1.5 py-2 transition ${tappedKey === key ? "animate-nav-tap" : ""} ${
+        className={`relative flex flex-1 flex-col items-center gap-1 rounded-xl px-1.5 py-2 transition ${tappedKey === key ? "animate-nav-tap" : ""} ${tourTab && !isTourTarget ? "opacity-25" : ""} ${
           isTourTarget
             ? "bg-primary/10 text-primary"
             : isActive
@@ -183,7 +183,7 @@ export default function BottomNav({ current }: { current: "home" | "summary" | "
           type="button"
           aria-label="Log"
           data-tour="food-action"
-          className="absolute bottom-0 right-0 top-0 flex w-[100px] items-center justify-center rounded-l-full bg-primary text-white transition active:bg-primary/90"
+          className={`absolute bottom-0 right-0 top-0 flex w-[100px] items-center justify-center rounded-l-full bg-primary text-white transition active:bg-primary/90 ${tourTab ? "opacity-25" : ""}`}
           onClick={() => window.dispatchEvent(new Event("wya_open_log_menu"))}
         >
           <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="-translate-x-0.5 -translate-y-0.5">
