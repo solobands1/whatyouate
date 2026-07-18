@@ -49,6 +49,15 @@ const goals: { value: GoalDirection; label: string }[] = [
   { value: "lose", label: "Lose Weight" },
 ];
 
+// Group the tracked nutrients the same way the Nutrition page does, so the supplement picker
+// feels consistent and related nutrients sit together.
+const NUTRIENT_GROUPS: { label: string; keys: string[] }[] = [
+  { label: "Energy & Focus", keys: ["iron", "b12", "magnesium", "b6", "folate"] },
+  { label: "Mood & Recovery", keys: ["vitamin d", "omega-3"] },
+  { label: "Immunity & Body", keys: ["vitamin c", "zinc", "vitamin a"] },
+  { label: "Foundation", keys: ["calcium", "potassium", "fiber"] },
+];
+
 // Which tracked-nutrient keys a typed supplement name maps to. Exactly one → it's a
 // specific tracked vitamin (add a dose inline); zero or many → open the picker.
 function matchedNutrientKeys(name: string): string[] {
@@ -2115,26 +2124,29 @@ export default function ProfileScreen() {
                 </div>
               )}
 
-              {/* Add nutrients it contains — tracked nutrients not yet added, as tappable chips. */}
-              <div>
-                <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted/55">
-                  {Object.keys(multiSuppNutrients).length > 0 ? "Add another nutrient" : "Add a nutrient it contains"}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {Object.entries(NUTRIENT_DISPLAY_NAMES)
-                    .filter(([key]) => !multiSuppNutrients[key])
-                    .map(([key, displayName]) => (
-                      <button
-                        key={key}
-                        type="button"
-                        className="rounded-full border border-ink/15 bg-white px-4 py-2.5 text-sm text-ink/75 transition hover:bg-primary/5 active:bg-primary/10"
-                        onClick={() => setMultiSuppNutrients((prev) => ({ ...prev, [key]: { dose: "", unit: NUTRIENT_UNITS[key] ?? "mg", pct: "", mode: "dose" } }))}
-                      >
-                        {displayName}
-                      </button>
-                    ))}
-                </div>
-              </div>
+              {/* Add nutrients it contains — grouped like the Nutrition page; a group hides
+                  once all of its nutrients have been added. */}
+              {NUTRIENT_GROUPS.map((group) => {
+                const available = group.keys.filter((key) => !multiSuppNutrients[key]);
+                if (available.length === 0) return null;
+                return (
+                  <div key={group.label}>
+                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted/50">{group.label}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {available.map((key) => (
+                        <button
+                          key={key}
+                          type="button"
+                          className="rounded-full border border-ink/15 bg-white px-4 py-2.5 text-sm text-ink/75 transition hover:bg-primary/5 active:bg-primary/10"
+                          onClick={() => setMultiSuppNutrients((prev) => ({ ...prev, [key]: { dose: "", unit: NUTRIENT_UNITS[key] ?? "mg", pct: "", mode: "dose" } }))}
+                        >
+                          {NUTRIENT_DISPLAY_NAMES[key] ?? key}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
             <div className="mt-5 flex shrink-0 gap-3">
               <button
