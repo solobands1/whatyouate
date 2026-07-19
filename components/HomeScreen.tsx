@@ -1110,6 +1110,8 @@ export default function HomeScreen() {
   const [streakSaverDismissed, setStreakSaverDismissed] = useState(false);
   const [streakSaverMode, setStreakSaverMode] = useState(false);
   const [streakConfirmOpen, setStreakConfirmOpen] = useState(false);
+  const [streakAddAnotherOpen, setStreakAddAnotherOpen] = useState(false);
+  const [streakBackfillDate, setStreakBackfillDate] = useState<string | null>(null);
   const [recentlyLogged, setRecentlyLogged] = useState(false);
   const [streakBouncing, setStreakBouncing] = useState(false);
   const mountTimeRef = useRef<number>(Date.now());
@@ -2597,10 +2599,28 @@ export default function HomeScreen() {
   const startStreakBackfill = () => {
     if (!streakSaverInfo) return;
     if (user) localStorage.removeItem(`wya_streak_saver_demo_${user.id}`);
+    setStreakBackfillDate(streakSaverInfo.yesterdayStr);
     setStreakConfirmOpen(false);
     setStreakSaverMode(true);
     meals.openManualMealEntry();
     meals.setManualDate(streakSaverInfo.yesterdayStr);
+  };
+  // The streak is saved by the first backfilled meal, but a real day has more than one — so
+  // after each save we offer to log another for the same day (better food→feeling data)
+  // rather than nagging. "All Done" is always right there, so nobody's pushed to invent meals.
+  const saveBackfillMeal = async () => {
+    await meals.confirmManualMeal();
+    setStreakAddAnotherOpen(true);
+  };
+  const addAnotherBackfillMeal = () => {
+    setStreakAddAnotherOpen(false);
+    meals.openManualMealEntry();
+    if (streakBackfillDate) meals.setManualDate(streakBackfillDate);
+  };
+  const finishBackfill = () => {
+    setStreakAddAnotherOpen(false);
+    setStreakSaverMode(false);
+    setStreakBackfillDate(null);
   };
   const dismissStreakSaver = () => {
     setStreakConfirmOpen(false);
@@ -3220,6 +3240,44 @@ export default function HomeScreen() {
                 className="mt-2 w-full rounded-xl py-2 text-sm font-medium text-ink/45 transition active:opacity-60"
               >
                 Not Now
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* After each backfilled meal: offer another for the same day (a real day is more
+            than one meal), with "All Done" always present so it never feels like a nag. */}
+        {streakAddAnotherOpen && (
+          <div
+            className="fixed inset-0 z-[120] flex items-end justify-center bg-black/40 px-4 pb-6"
+            onClick={finishBackfill}
+          >
+            <div
+              className="w-full max-w-md rounded-3xl bg-surface p-5 shadow-[0_12px_40px_rgba(15,23,42,0.22)] animate-pill-in"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 6" /></svg>
+                </span>
+                <h2 className="text-base font-semibold text-ink">Meal Saved</h2>
+              </div>
+              <p className="mt-3 text-sm leading-relaxed text-ink/75">
+                Anything else you ate yesterday? Logging the full day keeps your patterns accurate.
+              </p>
+              <button
+                type="button"
+                onClick={addAnotherBackfillMeal}
+                className="mt-5 w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white transition active:scale-[0.98]"
+              >
+                Add Another Meal
+              </button>
+              <button
+                type="button"
+                onClick={finishBackfill}
+                className="mt-2 w-full rounded-xl py-2 text-sm font-medium text-ink/45 transition active:opacity-60"
+              >
+                All Done
               </button>
             </div>
           </div>
@@ -4025,7 +4083,7 @@ export default function HomeScreen() {
               <>
                 <div className="flex items-center justify-between">
                   <h2 className="text-base font-semibold text-ink">Add Food</h2>
-                  {streakSaverMode && meals.manualDate === streakSaverInfo?.yesterdayStr && (
+                  {streakSaverMode && meals.manualDate === streakBackfillDate && (
                     <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary/80">Yesterday</span>
                   )}
                 </div>
@@ -4113,7 +4171,7 @@ export default function HomeScreen() {
                       <button
                         type="button"
                         className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
-                        onClick={meals.confirmManualMeal}
+                        onClick={streakSaverMode ? saveBackfillMeal : meals.confirmManualMeal}
                         disabled={meals.updatingMeal}
                       >
                         {meals.updatingMeal ? "Adding…" : "Add"}
