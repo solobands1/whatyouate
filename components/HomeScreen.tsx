@@ -26,6 +26,7 @@ import { getFoodCacheEntry, setFoodCacheEntry, deleteFoodCacheEntry, deleteFoodT
 import { addFeelLog, deleteFeelLog, updateFeelLog, upsertWaterLog, addWeightLog, saveProfile, addReflection, saveHabitState, fetchHabitHistory, saveHabitHistory, type FeelLog } from "../lib/supabaseDb";
 import { EMPTY_HABIT_STATE, pickSuggestionId, snoozeSuggestion, snoozeAllSuggestions, declineSuggestion, markHabitEnded, endBuilderCompleted, resolveBuilderForToday, extendBuilder, type HabitState, type ActiveBuilder, type HabitHistoryEntry } from "../lib/habitState";
 import { readForgiven } from "../lib/streakSaver";
+import WaterFillPicker from "./WaterFillPicker";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
 import WaterBar from "./WaterBar";
@@ -1112,6 +1113,9 @@ export default function HomeScreen() {
   const [streakSaverMode, setStreakSaverMode] = useState(false);
   const [streakAddAnotherOpen, setStreakAddAnotherOpen] = useState(false);
   const [streakBackfillDate, setStreakBackfillDate] = useState<string | null>(null);
+  const [streakWaterOpen, setStreakWaterOpen] = useState(false);
+  const [streakCelebrateOpen, setStreakCelebrateOpen] = useState(false);
+  const [streakSavedCount, setStreakSavedCount] = useState(0);
   const [recentlyLogged, setRecentlyLogged] = useState(false);
   const [streakBouncing, setStreakBouncing] = useState(false);
   const mountTimeRef = useRef<number>(Date.now());
@@ -2590,6 +2594,7 @@ export default function HomeScreen() {
   const startStreakBackfill = () => {
     if (!streakSaverInfo) return;
     if (user) localStorage.removeItem(`wya_streak_saver_demo_${user.id}`);
+    setStreakSavedCount(streakSaverInfo.savedStreak);
     setStreakBackfillDate(streakSaverInfo.yesterdayStr);
     setStreakSaverMode(true);
     meals.openManualMealEntry();
@@ -2610,6 +2615,24 @@ export default function HomeScreen() {
   const finishBackfill = () => {
     setStreakAddAnotherOpen(false);
     setStreakSaverMode(false);
+    // Enrichment: a quick water estimate for the day (if they track it), then a celebration.
+    if (profile?.trackWater !== false) setStreakWaterOpen(true);
+    else setStreakCelebrateOpen(true);
+  };
+  const submitBackfillWater = (ml: number) => {
+    if (user && streakBackfillDate) {
+      upsertWaterLog(user.id, streakBackfillDate, ml).catch(() => {});
+      try { localStorage.setItem(`wya_water_${user.id}_${streakBackfillDate}`, String(ml)); } catch { /* non-fatal */ }
+    }
+    setStreakWaterOpen(false);
+    setStreakCelebrateOpen(true);
+  };
+  const skipBackfillWater = () => {
+    setStreakWaterOpen(false);
+    setStreakCelebrateOpen(true);
+  };
+  const closeStreakCelebration = () => {
+    setStreakCelebrateOpen(false);
     setStreakBackfillDate(null);
   };
   const dismissStreakSaver = () => {
@@ -3243,6 +3266,59 @@ export default function HomeScreen() {
                 className="mt-2 w-full rounded-xl py-2 text-sm font-medium text-ink/45 transition active:opacity-60"
               >
                 All Done
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Enrichment step: a quick drag-to-fill water estimate for the backfilled day. */}
+        {streakWaterOpen && (
+          <div className="fixed inset-0 z-[120] flex items-end justify-center bg-black/40 px-4 pb-6" onClick={skipBackfillWater}>
+            <div className="w-full max-w-md rounded-3xl bg-surface p-5 shadow-[0_12px_40px_rgba(15,23,42,0.22)] animate-pill-in" onClick={(e) => e.stopPropagation()}>
+              <WaterFillPicker
+                goalMl={(() => { if (!user) return 2000; try { const v = parseInt(localStorage.getItem(`wya_water_goal_ml_${user.id}`) ?? "", 10); return isNaN(v) ? 2000 : v; } catch { return 2000; } })()}
+                initialUnit={profile?.waterUnit === "oz" ? "oz" : "ml"}
+                onSubmit={submitBackfillWater}
+                onSkip={skipBackfillWater}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Payoff for completing the day — confetti + the streak, safe. */}
+        {streakCelebrateOpen && (
+          <div className="fixed inset-0 z-[125] flex items-center justify-center bg-black/55 px-6" onClick={closeStreakCelebration}>
+            <style>{`
+              @keyframes sc-fall { 0% { transform: translateY(-12vh) rotate(0deg); } 100% { transform: translateY(112vh) rotate(300deg); } }
+              @keyframes sc-fall-b { 0% { transform: translateY(-12vh) rotate(0deg); } 100% { transform: translateY(112vh) rotate(-280deg); } }
+              .sc-piece { position: absolute; top: 0; border-radius: 2px; animation-timing-function: linear; animation-iteration-count: 1; animation-fill-mode: both; will-change: transform; }
+              @media (prefers-reduced-motion: reduce) { .sc-piece { animation: none !important; opacity: 0 !important; } }
+            `}</style>
+            <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+              {Array.from({ length: 22 }).map((_, i) => {
+                const palette = ["#F97316", "#FBBF24", "#6FA8FF", "#93C5FD"];
+                const w = 6 + (i % 3) * 1.5;
+                const h = 12 + (i % 4) * 2;
+                return (
+                  <span
+                    key={i}
+                    className="sc-piece"
+                    style={{ left: `${(i * 37 + 6) % 100}%`, width: w, height: h, background: palette[i % palette.length], opacity: [0.4, 0.6, 0.8][i % 3], animationName: i % 2 ? "sc-fall" : "sc-fall-b", animationDelay: `${(i % 6) * 0.12}s`, animationDuration: `${4.8 + (i % 5) * 1.0}s` }}
+                  />
+                );
+              })}
+            </div>
+            <div className="relative z-10 flex flex-col items-center text-center" onClick={(e) => e.stopPropagation()}>
+              <span className="flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-[0_8px_30px_rgba(249,115,22,0.35)]">
+                <svg width="40" height="46" viewBox="0 0 13 15" fill="none" aria-hidden="true" className="animate-flame">
+                  <defs><linearGradient id="celebrate-flame" x1="0" y1="15" x2="0" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0%" stopColor="#ea580c" /><stop offset="50%" stopColor="#f97316" /><stop offset="100%" stopColor="#fbbf24" /></linearGradient></defs>
+                  <path d="M6.5 0C6.5 0 4 3.5 4 6C4 6.5 4.1 7 4.3 7.4C3.5 6.6 3.2 5.5 3.2 5.5C1.8 7 1 8.8 1 11C1 13.2 3.5 15 6.5 15C9.5 15 12 13.2 12 11C12 8.2 9.5 5.5 9.5 5.5C9.5 7 8.8 8 8 8.5C8.2 8 8.3 7.4 8.3 6.8C8.3 4.2 6.5 0 6.5 0Z" fill="url(#celebrate-flame)" />
+                </svg>
+              </span>
+              <h2 className="mt-5 text-2xl font-bold tracking-tight text-white">Yesterday, Complete!</h2>
+              <p className="mt-1.5 text-[15px] text-white/80">Your <span className="font-semibold text-white">{streakSavedCount + 1}-day streak</span> is safe.</p>
+              <button type="button" onClick={closeStreakCelebration} className="mt-7 rounded-full bg-white px-8 py-2.5 text-sm font-semibold text-ink transition active:scale-[0.97]">
+                Done
               </button>
             </div>
           </div>
