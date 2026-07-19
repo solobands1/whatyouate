@@ -25,6 +25,7 @@ import BarcodeScannerOverlay from "./BarcodeScannerOverlay";
 import { getFoodCacheEntry, setFoodCacheEntry, deleteFoodCacheEntry, deleteFoodTextEntry, incrementFoodCacheLogCount, incrementFoodTextLogCount, getQuickAddFromMeals, addQuickAddRemoved, getDailySupplements, setDailySupplements, hasDailySuppsLoggedToday, markDailySuppsLoggedToday, clearDailySuppsLoggedToday, dishGroupKey, type QuickAddItem } from "../lib/foodCache";
 import { addFeelLog, deleteFeelLog, updateFeelLog, upsertWaterLog, addWeightLog, saveProfile, addReflection, saveHabitState, fetchHabitHistory, saveHabitHistory, type FeelLog } from "../lib/supabaseDb";
 import { EMPTY_HABIT_STATE, pickSuggestionId, snoozeSuggestion, snoozeAllSuggestions, declineSuggestion, markHabitEnded, endBuilderCompleted, resolveBuilderForToday, extendBuilder, type HabitState, type ActiveBuilder, type HabitHistoryEntry } from "../lib/habitState";
+import { readForgiven } from "../lib/streakSaver";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
 import WaterBar from "./WaterBar";
@@ -1109,7 +1110,6 @@ export default function HomeScreen() {
   const [quickAddDate, setQuickAddDate] = useState(todayDateStr);
   const [streakSaverDismissed, setStreakSaverDismissed] = useState(false);
   const [streakSaverMode, setStreakSaverMode] = useState(false);
-  const [streakConfirmOpen, setStreakConfirmOpen] = useState(false);
   const [streakAddAnotherOpen, setStreakAddAnotherOpen] = useState(false);
   const [streakBackfillDate, setStreakBackfillDate] = useState<string | null>(null);
   const [recentlyLogged, setRecentlyLogged] = useState(false);
@@ -2565,33 +2565,24 @@ export default function HomeScreen() {
 
   // Streak saver: detect if yesterday was missed but there's still a saveable streak
   const streakSaverInfo = (() => {
-    if (isDemoMode || streakSaverDismissed) return null;
-    // Dev: quad-tapping the Profile title arms a simulated missed day so the whole
-    // saver flow (dull pulsing flame → confirm → backfill) can be previewed on demand.
-    if (user && localStorage.getItem(`wya_streak_saver_demo_${user.id}`) === "1") {
-      const y = new Date(); y.setDate(y.getDate() - 1);
-      const yStr = `${y.getFullYear()}-${String(y.getMonth() + 1).padStart(2, "0")}-${String(y.getDate()).padStart(2, "0")}`;
+    if (isDemoMode || streakSaverDismissed || !user) return null;
+    const y = new Date(); y.setDate(y.getDate() - 1);
+    const yStr = `${y.getFullYear()}-${String(y.getMonth() + 1).padStart(2, "0")}-${String(y.getDate()).padStart(2, "0")}`;
+    // Dev: quad-tapping the Profile title arms a simulated missed day so the whole saver flow
+    // can be previewed on demand.
+    if (localStorage.getItem(`wya_streak_saver_demo_${user.id}`) === "1") {
       return { savedStreak: streak > 1 ? streak : 6, yesterdayStr: yStr };
     }
-    const realMeals = (isDemoMode ? [] : meals.meals).filter(
-      (m) => m.analysisJson?.source !== "supplement" && m.status !== "failed"
-    );
-    const dayKeys = new Set(realMeals.map((m) => dayKeyFromTs(m.ts)));
-    const yest = new Date(); yest.setDate(yest.getDate() - 1);
-    const dayBefore = new Date(); dayBefore.setDate(dayBefore.getDate() - 2);
-    const yesterdayKey = dayKeyFromTs(yest.getTime());
-    const dayBeforeKey = dayKeyFromTs(dayBefore.getTime());
-    if (dayKeys.has(yesterdayKey) || !dayKeys.has(dayBeforeKey)) return null;
-    // Count streak length before yesterday
-    let savedStreak = 0;
-    const d = new Date(dayBefore.getTime());
-    while (dayKeys.has(dayKeyFromTs(d.getTime()))) {
-      savedStreak++;
-      d.setDate(d.getDate() - 1);
+    // Real: the foundation froze yesterday (a single slip within cap). The frozen day stays in
+    // the forgiven set until it's backfilled for real (which un-freezes it) or the streak breaks.
+    if (readForgiven(user.id).has(yStr)) {
+      // Hide the moment they've backfilled the day, before the foundation's prune runs on reload.
+      const loggedYesterday = meals.meals.some(
+        (m) => m.analysisJson?.source !== "supplement" && m.status !== "failed" && dayKeyFromTs(m.ts) === yStr
+      );
+      if (!loggedYesterday) return { savedStreak: streak, yesterdayStr: yStr };
     }
-    if (savedStreak < 2) return null;
-    const yStr = `${yest.getFullYear()}-${String(yest.getMonth() + 1).padStart(2, "0")}-${String(yest.getDate()).padStart(2, "0")}`;
-    return { savedStreak, yesterdayStr: yStr };
+    return null;
   })();
 
   // Start the honest backfill: open manual entry pre-dated to the missed day. The user
@@ -2600,7 +2591,6 @@ export default function HomeScreen() {
     if (!streakSaverInfo) return;
     if (user) localStorage.removeItem(`wya_streak_saver_demo_${user.id}`);
     setStreakBackfillDate(streakSaverInfo.yesterdayStr);
-    setStreakConfirmOpen(false);
     setStreakSaverMode(true);
     meals.openManualMealEntry();
     meals.setManualDate(streakSaverInfo.yesterdayStr);
@@ -2623,7 +2613,6 @@ export default function HomeScreen() {
     setStreakBackfillDate(null);
   };
   const dismissStreakSaver = () => {
-    setStreakConfirmOpen(false);
     setStreakSaverDismissed(true);
     if (user) {
       localStorage.setItem(`wya_streak_saver_dismissed_${user.id}_${todayKey()}`, "true");
@@ -3118,7 +3107,7 @@ export default function HomeScreen() {
                     onClick={() => {
                       if (cold) { window.dispatchEvent(new Event("wya_open_log_menu")); return; }
                       if (!streakSaverInfo) return;
-                      setStreakConfirmOpen(true);
+                      startStreakBackfill();
                     }}
                     className={`ml-2 flex items-center gap-1 rounded-full px-2 py-0.5 ${dull ? "bg-ink/[0.05]" : "bg-primary/10"} ${endangered ? "animate-streak-endangered" : (!cold && atRisk) ? "animate-wiggle" : ""} ${streakBouncing ? "animate-streak-bounce" : ""}`}
                   >
@@ -3175,73 +3164,49 @@ export default function HomeScreen() {
             </Link>
             </div>
           </div>
-          {streakSaverInfo ? (
-            <button
-              type="button"
-              onClick={() => setStreakConfirmOpen(true)}
-              className="mt-1 flex items-center gap-1 pl-0.5 text-[13px] font-semibold text-primary transition active:opacity-60"
-            >
-              <svg width="12" height="14" viewBox="0 0 13 15" fill="none" aria-hidden="true">
-                <defs>
-                  <linearGradient id="hint-flame" x1="0" y1="15" x2="0" y2="0" gradientUnits="userSpaceOnUse">
-                    <stop offset="0%" stopColor="#ea580c" /><stop offset="50%" stopColor="#f97316" /><stop offset="100%" stopColor="#fbbf24" />
-                  </linearGradient>
-                </defs>
-                <path d="M6.5 0C6.5 0 4 3.5 4 6C4 6.5 4.1 7 4.3 7.4C3.5 6.6 3.2 5.5 3.2 5.5C1.8 7 1 8.8 1 11C1 13.2 3.5 15 6.5 15C9.5 15 12 13.2 12 11C12 8.2 9.5 5.5 9.5 5.5C9.5 7 8.8 8 8 8.5C8.2 8 8.3 7.4 8.3 6.8C8.3 4.2 6.5 0 6.5 0Z" fill="url(#hint-flame)"/>
-              </svg>
-              <span className="animate-text-shimmer">Tap To Save Your Streak</span>
-            </button>
-          ) : (
-            <p className="mt-1 pl-0.5 text-[13px] text-muted/70">Eat Confidently | Feel Better</p>
-          )}
+          <p className="mt-1 pl-0.5 text-[13px] text-muted/70">Eat Confidently | Feel Better</p>
           {loadError && <p className="mt-2 text-[11px] text-muted/60">{loadError}</p>}
           {failedMealNotice && (
             <p className="mt-2 text-[11px] text-muted/60">One or more meals couldn't be analysed and were removed from your log.</p>
           )}
         </header>
 
-        {/* Streak-saver confirm beat: explains the missed day before dropping into the
-            backfill, and frames it honestly (log what you ate) rather than a free pass. */}
-        {streakConfirmOpen && streakSaverInfo && (
-          <div
-            className="fixed inset-0 z-[120] flex items-end justify-center bg-black/40 px-4 pb-6"
-            onClick={() => setStreakConfirmOpen(false)}
-          >
-            <div
-              className="w-full max-w-md rounded-3xl bg-surface p-5 shadow-[0_12px_40px_rgba(15,23,42,0.22)] animate-pill-in"
-              onClick={(e) => e.stopPropagation()}
+        {/* Streak-saver prompt: leads with the invitation to log the missed day. The streak is
+            already held underneath (frozen), but we surface the invitation rather than announce
+            the net, so acting still feels like it matters. */}
+        {streakSaverInfo && (
+          <div className="relative mt-3 rounded-2xl border border-primary/25 bg-primary/[0.06] p-4 shadow-[0_4px_16px_rgba(111,168,255,0.10)]">
+            <button
+              type="button"
+              onClick={dismissStreakSaver}
+              aria-label="Dismiss"
+              className="absolute right-2.5 top-2.5 flex h-6 w-6 items-center justify-center rounded-full text-ink/35 transition active:opacity-60"
             >
-              <div className="flex items-center gap-2.5">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                  <svg width="18" height="20" viewBox="0 0 13 15" fill="none" aria-hidden="true">
-                    <defs>
-                      <linearGradient id="confirm-flame" x1="0" y1="15" x2="0" y2="0" gradientUnits="userSpaceOnUse">
-                        <stop offset="0%" stopColor="#ea580c" /><stop offset="50%" stopColor="#f97316" /><stop offset="100%" stopColor="#fbbf24" />
-                      </linearGradient>
-                    </defs>
-                    <path d="M6.5 0C6.5 0 4 3.5 4 6C4 6.5 4.1 7 4.3 7.4C3.5 6.6 3.2 5.5 3.2 5.5C1.8 7 1 8.8 1 11C1 13.2 3.5 15 6.5 15C9.5 15 12 13.2 12 11C12 8.2 9.5 5.5 9.5 5.5C9.5 7 8.8 8 8 8.5C8.2 8 8.3 7.4 8.3 6.8C8.3 4.2 6.5 0 6.5 0Z" fill="url(#confirm-flame)"/>
-                  </svg>
-                </span>
-                <h2 className="text-base font-semibold text-ink">Save Your Streak?</h2>
+              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+            </button>
+            <div className="flex items-center gap-3 pr-6">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white shadow-[0_2px_8px_rgba(249,115,22,0.22)]">
+                <svg width="20" height="23" viewBox="0 0 13 15" fill="none" aria-hidden="true" className="animate-flame">
+                  <defs>
+                    <linearGradient id="card-flame" x1="0" y1="15" x2="0" y2="0" gradientUnits="userSpaceOnUse">
+                      <stop offset="0%" stopColor="#ea580c" /><stop offset="50%" stopColor="#f97316" /><stop offset="100%" stopColor="#fbbf24" />
+                    </linearGradient>
+                  </defs>
+                  <path d="M6.5 0C6.5 0 4 3.5 4 6C4 6.5 4.1 7 4.3 7.4C3.5 6.6 3.2 5.5 3.2 5.5C1.8 7 1 8.8 1 11C1 13.2 3.5 15 6.5 15C9.5 15 12 13.2 12 11C12 8.2 9.5 5.5 9.5 5.5C9.5 7 8.8 8 8 8.5C8.2 8 8.3 7.4 8.3 6.8C8.3 4.2 6.5 0 6.5 0Z" fill="url(#card-flame)"/>
+                </svg>
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-[14px] font-semibold text-ink">You missed yesterday</p>
+                <p className="text-[12.5px] leading-snug text-ink/60">Log it to keep your {streakSaverInfo.savedStreak}-day streak going.</p>
               </div>
-              <p className="mt-3 text-sm leading-relaxed text-ink/75">
-                You missed yesterday. Log what you ate to keep your <span className="font-semibold text-ink">{streakSaverInfo.savedStreak}-day streak</span> going.
-              </p>
-              <button
-                type="button"
-                onClick={startStreakBackfill}
-                className="mt-5 w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white transition active:scale-[0.98]"
-              >
-                Add Yesterday&apos;s Meal
-              </button>
-              <button
-                type="button"
-                onClick={dismissStreakSaver}
-                className="mt-2 w-full rounded-xl py-2 text-sm font-medium text-ink/45 transition active:opacity-60"
-              >
-                Not Now
-              </button>
             </div>
+            <button
+              type="button"
+              onClick={startStreakBackfill}
+              className="mt-3.5 w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white transition active:scale-[0.98]"
+            >
+              Log Yesterday&apos;s Meals
+            </button>
           </div>
         )}
 
