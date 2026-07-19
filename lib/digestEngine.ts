@@ -145,7 +145,7 @@ function dayCountFromMeals(meals: MealLog[]) {
   return days.size;
 }
 
-export function computeStreakFromMeals(meals: MealLog[]): number {
+export function computeStreakFromMeals(meals: MealLog[], forgiven?: Set<string>): number {
   const dayKeys = new Set(
     meals.filter((m) => m.analysisJson?.source !== "supplement").map((m) => dayKeyFromTs(m.ts))
   );
@@ -155,8 +155,15 @@ export function computeStreakFromMeals(meals: MealLog[]): number {
   if (!dayKeys.has(dayKeyFromTs(d.getTime()))) {
     d.setDate(d.getDate() - 1);
   }
-  while (dayKeys.has(dayKeyFromTs(d.getTime()))) {
-    streak++;
+  while (true) {
+    const key = dayKeyFromTs(d.getTime());
+    if (dayKeys.has(key)) {
+      streak++;
+    } else if (forgiven && forgiven.has(key)) {
+      // Frozen day — bridge the gap without crediting it.
+    } else {
+      break;
+    }
     d.setDate(d.getDate() - 1);
   }
   return streak;

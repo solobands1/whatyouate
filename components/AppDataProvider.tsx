@@ -8,6 +8,7 @@ import type { FeelLog, WeightLog } from "../lib/supabaseDb";
 import type { ReflectionEntry, HabitHistoryEntry, HabitState } from "../lib/habitState";
 import { dayKeyFromTs, todayKey } from "../lib/utils";
 import { computeStreakFromMeals } from "../lib/digestEngine";
+import { readForgiven, writeForgiven, clearForgiven, readRescueLast, setRescueLast, clearRescueLast, rescueAvailable } from "../lib/streakSaver";
 import { MEALS_UPDATED_EVENT, NUDGES_UPDATED_EVENT, PROFILE_UPDATED_EVENT, WORKOUTS_UPDATED_EVENT, notifyMealsFailed } from "../lib/dataEvents";
 import { safeFallbackAnalysis } from "../lib/ai/schema";
 import { seedTextCacheFromMeals, migrateTextCacheKeys } from "../lib/foodCache";
@@ -188,27 +189,55 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
 
       if (!mountedRef.current) return;
 
-      // Sync streak — update persisted value if user has logged today
+      // Sync streak — the persisted value is the source of truth for the pill. Keep it in step
+      // with logging, and when a single day is missed within the weekly cap, freeze it instead
+      // of resetting to zero (see lib/streakSaver).
       let resolvedProfile = profileData ?? null;
       if (profileData && userId) {
         const todayStr = todayKey();
         const yesterdayDate = new Date();
         yesterdayDate.setDate(yesterdayDate.getDate() - 1);
         const yesterdayStr = todayKey(yesterdayDate);
+        const dayBeforeDate = new Date();
+        dayBeforeDate.setDate(dayBeforeDate.getDate() - 2);
+        const dayBeforeStr = todayKey(dayBeforeDate);
         const storedStreak = profileData.streak ?? 0;
         const storedLastDate = profileData.streakLastDate ?? "";
-        const hasLoggedToday = finalMeals.some(
-          (m) => m.analysisJson?.source !== "supplement" && m.status !== "failed" && dayKeyFromTs(m.ts) === todayStr
+        const realDayKeys = new Set(
+          finalMeals
+            .filter((m) => m.analysisJson?.source !== "supplement" && m.status !== "failed")
+            .map((m) => dayKeyFromTs(m.ts))
         );
-        // Always recompute from meals to catch cases where persisted streak drifted low
-        const computedStreak = computeStreakFromMeals(finalMeals);
+        const hasLoggedToday = realDayKeys.has(todayStr);
+
+        // Reconcile freeze state: any forgiven day that's since been logged for real (e.g. the
+        // user backfilled it) is no longer frozen — drop it, and if it was the day the weekly
+        // rescue was spent on, release the rescue so backfilling never costs the free pass.
+        const forgiven = readForgiven(userId);
+        if (forgiven.size > 0) {
+          const rescueLast = readRescueLast(userId);
+          let changed = false;
+          for (const day of [...forgiven]) {
+            if (realDayKeys.has(day)) {
+              forgiven.delete(day);
+              changed = true;
+              if (rescueLast === day) clearRescueLast(userId);
+            }
+          }
+          if (changed) writeForgiven(userId, forgiven);
+        }
+
+        // Recompute (bridging frozen days) to catch cases where the persisted value drifted low
+        const computedStreak = computeStreakFromMeals(finalMeals, forgiven);
         if (hasLoggedToday && storedLastDate !== todayStr) {
           let newStreak: number;
           if (storedLastDate === "") {
             // First time persisting — bootstrap from computed history
             newStreak = computedStreak;
           } else {
-            const incrementedStreak = storedLastDate === yesterdayStr ? storedStreak + 1 : 1;
+            // Consecutive if the last credit was yesterday, or yesterday is a frozen bridge.
+            const consecutive = storedLastDate === yesterdayStr || forgiven.has(yesterdayStr);
+            const incrementedStreak = consecutive ? storedStreak + 1 : 1;
             // Take the higher of incremented vs recomputed (fixes dev-phase drift)
             newStreak = Math.max(incrementedStreak, computedStreak);
           }
@@ -219,9 +248,26 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
           resolvedProfile = { ...profileData, streak: computedStreak };
           saveStreak(userId, computedStreak, todayStr).catch(() => {});
         } else if (!hasLoggedToday && storedLastDate < yesterdayStr && storedLastDate !== "" && storedStreak > 0) {
-          // Streak broken — reset stored value so it doesn't show stale count
-          resolvedProfile = { ...profileData, streak: 0 };
-          saveStreak(userId, 0, storedLastDate).catch(() => {});
+          // A day was missed. Freeze a single slip within the weekly cap; otherwise it breaks.
+          const singleSlip =
+            storedLastDate === dayBeforeStr &&  // last real credit was the day before yesterday
+            realDayKeys.has(dayBeforeStr) &&    // ...and that day is genuinely logged, not itself frozen
+            rescueAvailable(userId, todayStr);
+          if (singleSlip) {
+            // Freeze yesterday: hold the count, advance the marker so logging today continues it,
+            // and spend the weekly rescue (released above if they later backfill it for real).
+            const nextForgiven = new Set(forgiven);
+            nextForgiven.add(yesterdayStr);
+            writeForgiven(userId, nextForgiven);
+            setRescueLast(userId, yesterdayStr);
+            resolvedProfile = { ...profileData, streak: storedStreak, streakLastDate: yesterdayStr };
+            saveStreak(userId, storedStreak, yesterdayStr).catch(() => {});
+          } else {
+            // Real break — reset and drop any stale freeze state.
+            clearForgiven(userId);
+            resolvedProfile = { ...profileData, streak: 0 };
+            saveStreak(userId, 0, storedLastDate).catch(() => {});
+          }
         }
       }
 
