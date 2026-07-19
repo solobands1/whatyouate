@@ -3258,8 +3258,8 @@ export default function HomeScreen() {
                       <button type="button" className="text-xs font-medium text-ink/50 transition active:opacity-60" onClick={() => dismissSuggestion(true)}>No Thanks</button>
                     </div>
                     <div className="mt-2 flex justify-center">
-                      <button type="button" className="text-[11px] font-medium text-muted/50 transition active:opacity-60" onClick={snoozeAll}>
-                        Not into habits right now? <span className="font-semibold text-primary/70">Snooze for 5 days</span>
+                      <button type="button" className="text-[11px] font-semibold text-primary/80 transition active:opacity-60" onClick={snoozeAll}>
+                        Snooze Habits For 5 Days
                       </button>
                     </div>
                   </div>
