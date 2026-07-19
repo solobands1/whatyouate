@@ -191,7 +191,7 @@ export default function PatternsScreen() {
       content: (
         <div>
           <p style={{ fontWeight: 600, marginBottom: 10 }}>Your Days Compared</p>
-          <p>The heart of it: what sets your best days apart from your low-energy ones, so you can lean into what works.</p>
+          <p>What sets your best days apart from your low-energy ones, so you can lean into what works.</p>
         </div>
       ),
     },
