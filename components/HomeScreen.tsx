@@ -740,6 +740,16 @@ export default function HomeScreen() {
   // Mirror of the persisted habit state, kept in a ref so the save/cadence effects
   // can read the latest without re-running on it.
   const habitStateRef = useRef<HabitState>(EMPTY_HABIT_STATE);
+  // Demo mode (walkthrough) always shows "Find Your Rhythm" in the hero, even for a returning user
+  // replaying the tour whose real habit state might be empty — so the "Build One Small Habit" step
+  // always has a habit to point at. Runs regardless of the appliedGoalHabitRef guard below.
+  useEffect(() => {
+    if (!isDemoMode) return;
+    setActiveTemplate(FIRST_TEMPLATE);
+    setHeroHabit({ status: "suggested", days: freshDays(FIRST_TEMPLATE) });
+    setHabitLoaded(true);
+  }, [isDemoMode]);
+
   useEffect(() => {
     // Wait for meals to finish loading so the cold-start count (Find Your Rhythm vs a
     // standard habit) is decided on real data, not a mid-load empty list.
@@ -747,7 +757,9 @@ export default function HomeScreen() {
     appliedGoalHabitRef.current = true;
     // Demo/walkthrough stays in-memory and never touches persistence.
     if (isDemoMode || !user) {
-      const top = goalHabits[0];
+      // During the walkthrough always show "Find Your Rhythm" so the "Build One Small Habit"
+      // step has a habit to point at, even for a returning user replaying the tour.
+      const top = isDemoMode ? FIRST_TEMPLATE : goalHabits[0];
       setActiveTemplate(top);
       setHeroHabit({ status: "suggested", days: freshDays(top) });
       setHabitLoaded(true);

@@ -77,7 +77,7 @@ function UnlockTimeline({ milestones }: { milestones: MilestoneItem[] }) {
 }
 
 
-const DEMO_NUDGE = "Your protein has been strong this week, but your last two days have been lighter on calories overall. If you're training today, consider a bigger lunch or an extra snack before your session, your body will make better use of what you eat around activity.";
+const DEMO_NUDGE = "Your energy dipped the last two afternoons, and both days started light on breakfast. Tomorrow, try a bit more protein in the morning and see if it holds steadier.";
 
 export default function SummaryScreen() {
   const router = useRouter();
@@ -579,6 +579,17 @@ export default function SummaryScreen() {
         <div>
           <p style={{ fontWeight: 600, marginBottom: 10 }}>Meet Your AI Coach</p>
           <p>Your Coach watches your meals, activity, and reflections, and it&apos;s what powers your Patterns, your Habit Builders, and your Personal Nudges. Honest observations, no generic tips.</p>
+        </div>
+      ),
+    },
+    {
+      target: String.raw`[data-tour="recent-nudge"]`,
+      placement: "auto" as const,
+      disableBeacon: true,
+      content: (
+        <div>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Your Personal Nudges</p>
+          <p>Each day your Coach leaves a short, specific note like this, connecting what you eat to how you feel and what to try next.</p>
         </div>
       ),
     },
@@ -1130,7 +1141,7 @@ export default function SummaryScreen() {
           )}
         </Card>
 
-        <Card className="mt-6" style={riseIn(hydrated, 1)}>
+        <Card className="mt-6" data-tour="recent-nudge" style={riseIn(hydrated, 1)}>
           {(() => {
             const ts = !isDemoMode && smartNudge?.generatedAt ? new Date(smartNudge.generatedAt) : null;
             const isSameDay = ts ? ts.toDateString() === new Date().toDateString() : true;
