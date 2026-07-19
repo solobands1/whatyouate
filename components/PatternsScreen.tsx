@@ -173,6 +173,28 @@ export default function PatternsScreen() {
         </div>
       ),
     },
+    {
+      target: String.raw`[data-tour="patterns-coach"]`,
+      placement: "auto" as const,
+      disableBeacon: true,
+      content: (
+        <div>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>What Your Coach Notices</p>
+          <p>Your Coach reads across everything you log and surfaces honest, specific observations, like these, to help you connect the dots.</p>
+        </div>
+      ),
+    },
+    {
+      target: String.raw`[data-tour="patterns-days"]`,
+      placement: "auto" as const,
+      disableBeacon: true,
+      content: (
+        <div>
+          <p style={{ fontWeight: 600, marginBottom: 10 }}>Your Days Compared</p>
+          <p>The heart of it: what sets your best days apart from your low-energy ones, so you can lean into what works.</p>
+        </div>
+      ),
+    },
   ];
   useEffect(() => {
     if (!user) return;
@@ -443,7 +465,7 @@ export default function PatternsScreen() {
 
         {/* What tends to help vs not — behavioral comparison (preview until we compute it) */}
         {!locked && (
-        <Card className="mt-6" style={riseIn(ready, 3)}>
+        <Card className="mt-6" data-tour="patterns-days" style={riseIn(ready, 3)}>
           <Eyebrow>Your Days Compared</Eyebrow>
           <p className="mt-1 text-sm text-muted/65">What tends to set your better days apart</p>
           <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2">
