@@ -63,6 +63,28 @@ export function clearRescueLast(uid: string): void {
   }
 }
 
+// Which rescue (by its missed-day key) has had its "we saved it this time" message shown, so
+// the passive reveal fires exactly once — whether the user dismisses the prompt or ignores it.
+const ackKey = (uid: string) => `wya_streak_rescue_ack_${uid}`;
+
+export function readRescueAck(uid: string): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return localStorage.getItem(ackKey(uid));
+  } catch {
+    return null;
+  }
+}
+
+export function setRescueAck(uid: string, dateStr: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(ackKey(uid), dateStr);
+  } catch {
+    /* non-fatal */
+  }
+}
+
 // Whole-day difference between two YYYY-MM-DD keys (b - a).
 function daysBetween(a: string, b: string): number {
   const da = new Date(a + "T00:00:00").getTime();

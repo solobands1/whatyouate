@@ -25,7 +25,7 @@ import BarcodeScannerOverlay from "./BarcodeScannerOverlay";
 import { getFoodCacheEntry, setFoodCacheEntry, deleteFoodCacheEntry, deleteFoodTextEntry, incrementFoodCacheLogCount, incrementFoodTextLogCount, getQuickAddFromMeals, addQuickAddRemoved, getDailySupplements, setDailySupplements, hasDailySuppsLoggedToday, markDailySuppsLoggedToday, clearDailySuppsLoggedToday, dishGroupKey, type QuickAddItem } from "../lib/foodCache";
 import { addFeelLog, deleteFeelLog, updateFeelLog, upsertWaterLog, addWeightLog, saveProfile, addReflection, saveHabitState, fetchHabitHistory, saveHabitHistory, type FeelLog } from "../lib/supabaseDb";
 import { EMPTY_HABIT_STATE, pickSuggestionId, snoozeSuggestion, snoozeAllSuggestions, declineSuggestion, markHabitEnded, endBuilderCompleted, resolveBuilderForToday, extendBuilder, type HabitState, type ActiveBuilder, type HabitHistoryEntry } from "../lib/habitState";
-import { readForgiven } from "../lib/streakSaver";
+import { readForgiven, readRescueLast, readRescueAck, setRescueAck } from "../lib/streakSaver";
 import WaterFillPicker from "./WaterFillPicker";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
@@ -1116,6 +1116,7 @@ export default function HomeScreen() {
   const [streakWaterOpen, setStreakWaterOpen] = useState(false);
   const [streakCelebrateOpen, setStreakCelebrateOpen] = useState(false);
   const [streakSavedCount, setStreakSavedCount] = useState(0);
+  const [showSavedMessage, setShowSavedMessage] = useState(false);
   const [recentlyLogged, setRecentlyLogged] = useState(false);
   const [streakBouncing, setStreakBouncing] = useState(false);
   const mountTimeRef = useRef<number>(Date.now());
@@ -2636,12 +2637,30 @@ export default function HomeScreen() {
     setStreakBackfillDate(null);
   };
   const dismissStreakSaver = () => {
+    if (streakSaverInfo) setStreakSavedCount(streakSaverInfo.savedStreak);
     setStreakSaverDismissed(true);
     if (user) {
       localStorage.setItem(`wya_streak_saver_dismissed_${user.id}_${todayKey()}`, "true");
       localStorage.removeItem(`wya_streak_saver_demo_${user.id}`);
+      // Passing reveals the net. Mark this rescue acknowledged so the message shows only once.
+      const rl = readRescueLast(user.id);
+      if (rl) setRescueAck(user.id, rl);
     }
+    setShowSavedMessage(true);
   };
+  // Path C: if a rescue was spent and its day-after invitation window has passed without the
+  // user acting or dismissing (but the streak stayed alive), reveal "we saved it" once.
+  useEffect(() => {
+    if (!user) return;
+    const rl = readRescueLast(user.id);
+    if (!rl) return;
+    const y = new Date(); y.setDate(y.getDate() - 1);
+    const yStr = `${y.getFullYear()}-${String(y.getMonth() + 1).padStart(2, "0")}-${String(y.getDate()).padStart(2, "0")}`;
+    if (rl < yStr && readForgiven(user.id).has(rl) && readRescueAck(user.id) !== rl) {
+      setRescueAck(user.id, rl);
+      setShowSavedMessage(true);
+    }
+  }, [user]);
 
   const calMid = (homeMarkers.todayTotals.calories_min + homeMarkers.todayTotals.calories_max) / 2;
   const protMid = (homeMarkers.todayTotals.protein_g_min + homeMarkers.todayTotals.protein_g_max) / 2;
@@ -3327,7 +3346,9 @@ export default function HomeScreen() {
         {/* One top banner at a time, queued by precedence — so e.g. "First Meal" and
             "Habit Done" don't compete for the same spot. The lower-priority banner's state
             persists and it slides in the moment the one ahead of it clears. */}
-        {firstCel ? (
+        {showSavedMessage ? (
+          <UnlockCelebrationBanner title="Streak Saved" sub={`You missed yesterday, and that's okay · We saved your ${streakSavedCount || streak}-day streak this time`} icon="flame" onDismiss={() => setShowSavedMessage(false)} />
+        ) : firstCel ? (
           <UnlockCelebrationBanner title={firstCel.title} sub={firstCel.sub} icon={firstCel.icon} onDismiss={dismissFirstCel} />
         ) : dailyHabitBanner ? (
           <UnlockCelebrationBanner title="Habit Done For Today!" sub="Keep logging everything else · It helps your Coach learn" icon="spark" onDismiss={() => setDailyHabitBanner(false)} />

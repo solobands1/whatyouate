@@ -8,7 +8,7 @@ import { notificationPing } from "../lib/celebrate";
 // where it makes sense (a feature "opening up", or a "first X" moment). Per-key baseline logic
 // means users who ALREADY passed a milestone before this shipped won't get a retroactive pop.
 
-type CelebrationIcon = "unlock" | "spark";
+type CelebrationIcon = "unlock" | "spark" | "flame";
 type CelebrationEntry = { key: string; title: string; sub?: string; unlocked: boolean; icon?: CelebrationIcon };
 
 // Per-key state in localStorage: absent | "armed" (seen while locked) | "done" (celebrated or
@@ -114,8 +114,13 @@ export function UnlockCelebrationBanner({ title, sub, icon = "unlock", onDismiss
         className={`pointer-events-auto w-full max-w-md touch-none rounded-2xl border border-white/40 bg-white/80 px-4 pt-3 pb-2 shadow-[0_14px_36px_rgba(15,23,42,0.20)] backdrop-blur-xl transition-all duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${visible ? "translate-y-0 opacity-100" : "-translate-y-[160%] opacity-0"}`}
       >
         <div className="flex items-center gap-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
-            {icon === "spark" ? (
+          <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${icon === "flame" ? "bg-[rgba(249,115,22,0.12)]" : "bg-primary/15 text-primary"}`}>
+            {icon === "flame" ? (
+              <svg width="15" height="17" viewBox="0 0 13 15" aria-hidden="true">
+                <defs><linearGradient id="banner-flame" x1="0" y1="15" x2="0" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0%" stopColor="#ea580c" /><stop offset="50%" stopColor="#f97316" /><stop offset="100%" stopColor="#fbbf24" /></linearGradient></defs>
+                <path d="M6.5 0C6.5 0 4 3.5 4 6C4 6.5 4.1 7 4.3 7.4C3.5 6.6 3.2 5.5 3.2 5.5C1.8 7 1 8.8 1 11C1 13.2 3.5 15 6.5 15C9.5 15 12 13.2 12 11C12 8.2 9.5 5.5 9.5 5.5C9.5 7 8.8 8 8 8.5C8.2 8 8.3 7.4 8.3 6.8C8.3 4.2 6.5 0 6.5 0Z" fill="url(#banner-flame)" />
+              </svg>
+            ) : icon === "spark" ? (
               <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 3l1.8 4.9L19 9.6l-4.2 2.9L15.5 18 12 15.2 8.5 18l.7-5.5L5 9.6l5.2-1.7L12 3z" />
               </svg>
