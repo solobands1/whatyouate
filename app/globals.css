@@ -337,6 +337,21 @@ input, textarea, select {
   animation: streakPulse 0.8s ease-in-out 5;
 }
 
+/* Slow, continuous "breathing" for an endangered streak about to be lost. */
+@keyframes streakEndangered {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.18); }
+}
+
+.animate-streak-endangered {
+  animation: streakEndangered 1.6s ease-in-out infinite;
+  transform-origin: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-streak-endangered { animation: none; }
+}
+
 @keyframes slideDown {
   from { transform: translateY(-110%); }
   to { transform: translateY(0); }

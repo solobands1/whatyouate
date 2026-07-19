@@ -1109,7 +1109,7 @@ export default function HomeScreen() {
   const [quickAddDate, setQuickAddDate] = useState(todayDateStr);
   const [streakSaverDismissed, setStreakSaverDismissed] = useState(false);
   const [streakSaverMode, setStreakSaverMode] = useState(false);
-  const [streakButtonPulsing, setStreakButtonPulsing] = useState(false);
+  const [streakConfirmOpen, setStreakConfirmOpen] = useState(false);
   const [recentlyLogged, setRecentlyLogged] = useState(false);
   const [streakBouncing, setStreakBouncing] = useState(false);
   const mountTimeRef = useRef<number>(Date.now());
@@ -2564,6 +2564,13 @@ export default function HomeScreen() {
   // Streak saver: detect if yesterday was missed but there's still a saveable streak
   const streakSaverInfo = (() => {
     if (isDemoMode || streakSaverDismissed) return null;
+    // Dev: quad-tapping the Profile title arms a simulated missed day so the whole
+    // saver flow (dull pulsing flame → confirm → backfill) can be previewed on demand.
+    if (user && localStorage.getItem(`wya_streak_saver_demo_${user.id}`) === "1") {
+      const y = new Date(); y.setDate(y.getDate() - 1);
+      const yStr = `${y.getFullYear()}-${String(y.getMonth() + 1).padStart(2, "0")}-${String(y.getDate()).padStart(2, "0")}`;
+      return { savedStreak: streak > 1 ? streak : 6, yesterdayStr: yStr };
+    }
     const realMeals = (isDemoMode ? [] : meals.meals).filter(
       (m) => m.analysisJson?.source !== "supplement" && m.status !== "failed"
     );
@@ -2585,15 +2592,24 @@ export default function HomeScreen() {
     return { savedStreak, yesterdayStr: yStr };
   })();
 
-  useEffect(() => {
+  // Start the honest backfill: open manual entry pre-dated to the missed day. The user
+  // saves the streak by logging what they actually ate, not with a free pass.
+  const startStreakBackfill = () => {
     if (!streakSaverInfo) return;
-    setStreakButtonPulsing(false);
-    const t = requestAnimationFrame(() => {
-      requestAnimationFrame(() => setStreakButtonPulsing(true));
-    });
-    const off = setTimeout(() => setStreakButtonPulsing(false), 0.8 * 5 * 1000 + 100);
-    return () => { cancelAnimationFrame(t); clearTimeout(off); };
-  }, [!!streakSaverInfo]);
+    if (user) localStorage.removeItem(`wya_streak_saver_demo_${user.id}`);
+    setStreakConfirmOpen(false);
+    setStreakSaverMode(true);
+    meals.openManualMealEntry();
+    meals.setManualDate(streakSaverInfo.yesterdayStr);
+  };
+  const dismissStreakSaver = () => {
+    setStreakConfirmOpen(false);
+    setStreakSaverDismissed(true);
+    if (user) {
+      localStorage.setItem(`wya_streak_saver_dismissed_${user.id}_${todayKey()}`, "true");
+      localStorage.removeItem(`wya_streak_saver_demo_${user.id}`);
+    }
+  };
 
   const calMid = (homeMarkers.todayTotals.calories_min + homeMarkers.todayTotals.calories_max) / 2;
   const protMid = (homeMarkers.todayTotals.protein_g_min + homeMarkers.todayTotals.protein_g_max) / 2;
@@ -3071,22 +3087,22 @@ export default function HomeScreen() {
               {(() => {
                 const todayMeals = meals.meals.filter((m) => m.analysisJson?.source !== "supplement" && m.status !== "failed" && dayKeyFromTs(m.ts) === todayKey());
                 const atRisk = todayMeals.length === 0 && new Date().getHours() >= 18;
-                const saveable = !!streakSaverInfo;
-                const cold = streak < 1; // no streak yet — show a muted flame + 0
+                const endangered = !!streakSaverInfo; // missed yesterday — flame dims, ready to save
+                const cold = !endangered && streak < 1; // no streak yet — muted flame + 0
+                const displayStreak = streakSaverInfo ? streakSaverInfo.savedStreak : streak; // the count at risk
+                const dull = cold || endangered; // grey, un-lit flame
                 return (
                   <button
                     type="button"
-                    aria-label={cold ? "Start your streak" : `Streak: ${streak} days`}
+                    aria-label={streakSaverInfo ? `Save your ${streakSaverInfo.savedStreak} day streak` : cold ? "Start your streak" : `Streak: ${streak} days`}
                     onClick={() => {
                       if (cold) { window.dispatchEvent(new Event("wya_open_log_menu")); return; }
                       if (!streakSaverInfo) return;
-                      setStreakSaverMode(true);
-                      meals.openManualMealEntry();
-                      meals.setManualDate(streakSaverInfo.yesterdayStr);
+                      setStreakConfirmOpen(true);
                     }}
-                    className={`ml-2 flex items-center gap-1 rounded-full px-2 py-0.5 ${cold ? "bg-ink/[0.05]" : "bg-primary/10"} ${(!cold && (saveable || atRisk)) ? "animate-wiggle" : ""} ${streakBouncing ? "animate-streak-bounce" : ""}`}
+                    className={`ml-2 flex items-center gap-1 rounded-full px-2 py-0.5 ${dull ? "bg-ink/[0.05]" : "bg-primary/10"} ${endangered ? "animate-streak-endangered" : (!cold && atRisk) ? "animate-wiggle" : ""} ${streakBouncing ? "animate-streak-bounce" : ""}`}
                   >
-                    <svg width="14" height="16" viewBox="0 0 13 15" fill="none" aria-hidden="true" className={cold ? "" : "animate-flame"}>
+                    <svg width="14" height="16" viewBox="0 0 13 15" fill="none" aria-hidden="true" className={dull ? "" : "animate-flame"}>
                       <defs>
                         <linearGradient id="flame-grad" x1="0" y1="15" x2="0" y2="0" gradientUnits="userSpaceOnUse">
                           <stop offset="0%" stopColor="#ea580c" />
@@ -3098,10 +3114,10 @@ export default function HomeScreen() {
                           <stop offset="100%" stopColor="#ffffff" stopOpacity="0.9" />
                         </linearGradient>
                       </defs>
-                      <path d="M6.5 0C6.5 0 4 3.5 4 6C4 6.5 4.1 7 4.3 7.4C3.5 6.6 3.2 5.5 3.2 5.5C1.8 7 1 8.8 1 11C1 13.2 3.5 15 6.5 15C9.5 15 12 13.2 12 11C12 8.2 9.5 5.5 9.5 5.5C9.5 7 8.8 8 8 8.5C8.2 8 8.3 7.4 8.3 6.8C8.3 4.2 6.5 0 6.5 0Z" fill={cold ? "#cbd5e1" : "url(#flame-grad)"}/>
-                      {!cold && <path d="M6.5 7.5C6.2 8.5 6 9.2 6 10C6 11.1 6.2 11.8 6.5 12C6.8 11.8 7 11.1 7 10C7 9.2 6.8 8.5 6.5 7.5Z" fill="url(#flame-inner)"/>}
+                      <path d="M6.5 0C6.5 0 4 3.5 4 6C4 6.5 4.1 7 4.3 7.4C3.5 6.6 3.2 5.5 3.2 5.5C1.8 7 1 8.8 1 11C1 13.2 3.5 15 6.5 15C9.5 15 12 13.2 12 11C12 8.2 9.5 5.5 9.5 5.5C9.5 7 8.8 8 8 8.5C8.2 8 8.3 7.4 8.3 6.8C8.3 4.2 6.5 0 6.5 0Z" fill={dull ? "#cbd5e1" : "url(#flame-grad)"}/>
+                      {!dull && <path d="M6.5 7.5C6.2 8.5 6 9.2 6 10C6 11.1 6.2 11.8 6.5 12C6.8 11.8 7 11.1 7 10C7 9.2 6.8 8.5 6.5 7.5Z" fill="url(#flame-inner)"/>}
                     </svg>
-                    <span className={`text-[13px] font-semibold ${cold ? "text-ink/40" : "text-primary"}`}>{cold ? "0" : streak}</span>
+                    <span className={`text-[13px] font-semibold ${dull ? "text-ink/40" : "text-primary"}`}>{displayStreak}</span>
                   </button>
                 );
               })()}
@@ -3139,12 +3155,70 @@ export default function HomeScreen() {
             </Link>
             </div>
           </div>
-          <p className="mt-1 pl-0.5 text-[13px] text-muted/70">Eat Confidently | Feel Better</p>
+          {streakSaverInfo ? (
+            <button
+              type="button"
+              onClick={() => setStreakConfirmOpen(true)}
+              className="mt-1 flex items-center gap-1 pl-0.5 text-[13px] font-semibold text-primary transition active:opacity-60"
+            >
+              <svg width="12" height="14" viewBox="0 0 13 15" fill="none" aria-hidden="true">
+                <path d="M6.5 0C6.5 0 4 3.5 4 6C4 6.5 4.1 7 4.3 7.4C3.5 6.6 3.2 5.5 3.2 5.5C1.8 7 1 8.8 1 11C1 13.2 3.5 15 6.5 15C9.5 15 12 13.2 12 11C12 8.2 9.5 5.5 9.5 5.5C9.5 7 8.8 8 8 8.5C8.2 8 8.3 7.4 8.3 6.8C8.3 4.2 6.5 0 6.5 0Z" fill="#cbd5e1"/>
+              </svg>
+              Tap To Save Your Streak
+            </button>
+          ) : (
+            <p className="mt-1 pl-0.5 text-[13px] text-muted/70">Eat Confidently | Feel Better</p>
+          )}
           {loadError && <p className="mt-2 text-[11px] text-muted/60">{loadError}</p>}
           {failedMealNotice && (
             <p className="mt-2 text-[11px] text-muted/60">One or more meals couldn't be analysed and were removed from your log.</p>
           )}
         </header>
+
+        {/* Streak-saver confirm beat: explains the missed day before dropping into the
+            backfill, and frames it honestly (log what you ate) rather than a free pass. */}
+        {streakConfirmOpen && streakSaverInfo && (
+          <div
+            className="fixed inset-0 z-[120] flex items-end justify-center bg-black/40 px-4 pb-6"
+            onClick={() => setStreakConfirmOpen(false)}
+          >
+            <div
+              className="w-full max-w-md rounded-3xl bg-surface p-5 shadow-[0_12px_40px_rgba(15,23,42,0.22)] animate-pill-in"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                  <svg width="18" height="20" viewBox="0 0 13 15" fill="none" aria-hidden="true">
+                    <defs>
+                      <linearGradient id="confirm-flame" x1="0" y1="15" x2="0" y2="0" gradientUnits="userSpaceOnUse">
+                        <stop offset="0%" stopColor="#ea580c" /><stop offset="50%" stopColor="#f97316" /><stop offset="100%" stopColor="#fbbf24" />
+                      </linearGradient>
+                    </defs>
+                    <path d="M6.5 0C6.5 0 4 3.5 4 6C4 6.5 4.1 7 4.3 7.4C3.5 6.6 3.2 5.5 3.2 5.5C1.8 7 1 8.8 1 11C1 13.2 3.5 15 6.5 15C9.5 15 12 13.2 12 11C12 8.2 9.5 5.5 9.5 5.5C9.5 7 8.8 8 8 8.5C8.2 8 8.3 7.4 8.3 6.8C8.3 4.2 6.5 0 6.5 0Z" fill="url(#confirm-flame)"/>
+                  </svg>
+                </span>
+                <h2 className="text-base font-semibold text-ink">Save Your Streak?</h2>
+              </div>
+              <p className="mt-3 text-sm leading-relaxed text-ink/75">
+                You missed yesterday. Log what you ate to keep your <span className="font-semibold text-ink">{streakSaverInfo.savedStreak}-day streak</span> going.
+              </p>
+              <button
+                type="button"
+                onClick={startStreakBackfill}
+                className="mt-5 w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white transition active:scale-[0.98]"
+              >
+                Add Yesterday&apos;s Meal
+              </button>
+              <button
+                type="button"
+                onClick={dismissStreakSaver}
+                className="mt-2 w-full rounded-xl py-2 text-sm font-medium text-ink/45 transition active:opacity-60"
+              >
+                Not Now
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* One top banner at a time, queued by precedence — so e.g. "First Meal" and
             "Habit Done" don't compete for the same spot. The lower-priority banner's state

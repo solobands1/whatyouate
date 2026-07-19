@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { devHooksEnabled } from "../lib/devHooks";
 import Joyride, { STATUS, CallBackProps, type Step } from "react-joyride";
 import { notifyProfileUpdated } from "../lib/dataEvents";
+import { todayKey } from "../lib/utils";
 import type { ActivityLevel, FeelingGoal, GoalDirection, SupplementEntry, SupplementNutrient, Units, UserProfile } from "../lib/types";
 import { suppLabel, suppName } from "../lib/types";
 import { matchSupplementNutrients, NUTRIENT_UNITS, NUTRIENT_DISPLAY_NAMES } from "../lib/rda";
@@ -524,14 +525,24 @@ export default function ProfileScreen() {
   const handleProfileTitleTap = () => {
     profileTapCount.current += 1;
     if (profileTapTimer.current) clearTimeout(profileTapTimer.current);
-    if (profileTapCount.current >= 3) {
-      profileTapCount.current = 0;
-      openReviewPrompt(null); // triple-tap: preview the review prompt
-      return;
-    }
+    // Everything resolves on the trailing edge so 3 taps (review) and 4 taps (streak demo)
+    // don't collide — we can't fire at 3 without knowing whether a 4th is coming.
     profileTapTimer.current = setTimeout(() => {
       const taps = profileTapCount.current;
       profileTapCount.current = 0;
+      // Quad-tap on the dev preview arms a simulated missed day, then sends you Home so you
+      // can watch the whole streak-saver flow (dull pulsing flame → confirm → backfill).
+      if (taps >= 4 && devHooksEnabled() && user) {
+        localStorage.setItem(`wya_streak_saver_demo_${user.id}`, "1");
+        localStorage.removeItem(`wya_streak_saver_dismissed_${user.id}_${todayKey()}`);
+        router.push("/");
+        return;
+      }
+      // Triple-tap: preview the review prompt.
+      if (taps === 3) {
+        openReviewPrompt(null);
+        return;
+      }
       // Double-tap on the dev preview replays onboarding for testing (inert in native builds).
       if (taps === 2 && devHooksEnabled() && user) {
         sessionStorage.setItem("wya_force_onboarding", "1");
