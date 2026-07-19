@@ -3090,7 +3090,7 @@ export default function HomeScreen() {
                 const endangered = !!streakSaverInfo; // missed yesterday — flame dims, ready to save
                 const cold = !endangered && streak < 1; // no streak yet — muted flame + 0
                 const displayStreak = streakSaverInfo ? streakSaverInfo.savedStreak : streak; // the count at risk
-                const dull = cold || endangered; // grey, un-lit flame
+                const dull = cold; // only the no-streak state greys out; an endangered streak stays lit
                 return (
                   <button
                     type="button"
@@ -3162,9 +3162,14 @@ export default function HomeScreen() {
               className="mt-1 flex items-center gap-1 pl-0.5 text-[13px] font-semibold text-primary transition active:opacity-60"
             >
               <svg width="12" height="14" viewBox="0 0 13 15" fill="none" aria-hidden="true">
-                <path d="M6.5 0C6.5 0 4 3.5 4 6C4 6.5 4.1 7 4.3 7.4C3.5 6.6 3.2 5.5 3.2 5.5C1.8 7 1 8.8 1 11C1 13.2 3.5 15 6.5 15C9.5 15 12 13.2 12 11C12 8.2 9.5 5.5 9.5 5.5C9.5 7 8.8 8 8 8.5C8.2 8 8.3 7.4 8.3 6.8C8.3 4.2 6.5 0 6.5 0Z" fill="#cbd5e1"/>
+                <defs>
+                  <linearGradient id="hint-flame" x1="0" y1="15" x2="0" y2="0" gradientUnits="userSpaceOnUse">
+                    <stop offset="0%" stopColor="#ea580c" /><stop offset="50%" stopColor="#f97316" /><stop offset="100%" stopColor="#fbbf24" />
+                  </linearGradient>
+                </defs>
+                <path d="M6.5 0C6.5 0 4 3.5 4 6C4 6.5 4.1 7 4.3 7.4C3.5 6.6 3.2 5.5 3.2 5.5C1.8 7 1 8.8 1 11C1 13.2 3.5 15 6.5 15C9.5 15 12 13.2 12 11C12 8.2 9.5 5.5 9.5 5.5C9.5 7 8.8 8 8 8.5C8.2 8 8.3 7.4 8.3 6.8C8.3 4.2 6.5 0 6.5 0Z" fill="url(#hint-flame)"/>
               </svg>
-              Tap To Save Your Streak
+              <span className="animate-text-shimmer">Tap To Save Your Streak</span>
             </button>
           ) : (
             <p className="mt-1 pl-0.5 text-[13px] text-muted/70">Eat Confidently | Feel Better</p>

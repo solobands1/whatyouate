@@ -352,6 +352,25 @@ input, textarea, select {
   .animate-streak-endangered { animation: none; }
 }
 
+/* Slow sheen sweeping across text to draw the eye (Save Your Streak hint). */
+@keyframes textShimmer {
+  0% { background-position: 150% 0; }
+  100% { background-position: -150% 0; }
+}
+
+.animate-text-shimmer {
+  background: linear-gradient(100deg, #6FA8FF 0%, #6FA8FF 38%, #d4e4ff 50%, #6FA8FF 62%, #6FA8FF 100%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: textShimmer 2.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-text-shimmer { animation: none; }
+}
+
 @keyframes slideDown {
   from { transform: translateY(-110%); }
   to { transform: translateY(0); }
