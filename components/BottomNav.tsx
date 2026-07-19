@@ -47,7 +47,9 @@ export default function BottomNav({ current }: { current: "home" | "summary" | "
       const active = localStorage.getItem(`wya_walkthrough_active_${user.id}`) === "true";
       if (!active) { setTourTab(null); return; }
       const stage = localStorage.getItem(`wya_walkthrough_stage_${user.id}`);
-      setTourTab(stage === "summary" ? "summary" : stage === "insights" ? "patterns" : null);
+      const target = stage === "summary" ? "summary" : stage === "insights" ? "patterns" : null;
+      // Stop spotlighting the tab once the user has actually arrived on its page.
+      setTourTab(target === current ? null : target);
     };
     check();
     window.addEventListener("wya_tour_stage", check);

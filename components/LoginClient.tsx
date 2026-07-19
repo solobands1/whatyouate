@@ -181,7 +181,7 @@ export default function LoginClient() {
               disabled={submitting}
               className="mt-1 w-full rounded-xl bg-primary py-3.5 text-sm font-semibold text-white transition active:opacity-80 disabled:opacity-50"
             >
-              {submitting ? "Signing in…" : "Sign in"}
+              {submitting ? "Signing In…" : "Sign In"}
             </button>
             <button
               type="button"
