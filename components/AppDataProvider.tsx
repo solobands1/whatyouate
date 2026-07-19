@@ -3,12 +3,12 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import type { MealLog, UserProfile, WorkoutSession } from "../lib/types";
 import { useAuth } from "./AuthProvider";
-import { getProfile, listMeals, listWorkouts, listNudges, getFeelLogs, getWeightLogs, updateMeal, saveStreak, saveTimezoneOffset, fetchReflections, fetchHabitHistory, fetchWaterLogs, fetchHabitState } from "../lib/supabaseDb";
+import { getProfile, listMeals, listWorkouts, listNudges, getFeelLogs, getWeightLogs, updateMeal, saveStreak, saveStreakSaver, saveTimezoneOffset, fetchReflections, fetchHabitHistory, fetchWaterLogs, fetchHabitState } from "../lib/supabaseDb";
 import type { FeelLog, WeightLog } from "../lib/supabaseDb";
 import type { ReflectionEntry, HabitHistoryEntry, HabitState } from "../lib/habitState";
 import { dayKeyFromTs, todayKey } from "../lib/utils";
 import { computeStreakFromMeals } from "../lib/digestEngine";
-import { readForgiven, writeForgiven, clearForgiven, readRescueLast, setRescueLast, clearRescueLast, rescueAvailable } from "../lib/streakSaver";
+import { EMPTY_STREAK_SAVER, rescueAvailable } from "../lib/streakSaver";
 import { MEALS_UPDATED_EVENT, NUDGES_UPDATED_EVENT, PROFILE_UPDATED_EVENT, WORKOUTS_UPDATED_EVENT, notifyMealsFailed } from "../lib/dataEvents";
 import { safeFallbackAnalysis } from "../lib/ai/schema";
 import { seedTextCacheFromMeals, migrateTextCacheKeys } from "../lib/foodCache";
@@ -210,21 +210,21 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         );
         const hasLoggedToday = realDayKeys.has(todayStr);
 
-        // Reconcile freeze state: any forgiven day that's since been logged for real (e.g. the
-        // user backfilled it) is no longer frozen — drop it, and if it was the day the weekly
-        // rescue was spent on, release the rescue so backfilling never costs the free pass.
-        const forgiven = readForgiven(userId);
-        if (forgiven.size > 0) {
-          const rescueLast = readRescueLast(userId);
-          let changed = false;
-          for (const day of [...forgiven]) {
-            if (realDayKeys.has(day)) {
-              forgiven.delete(day);
-              changed = true;
-              if (rescueLast === day) clearRescueLast(userId);
-            }
+        // Freeze state, persisted on the profile (durable + consistent across devices).
+        const saver = profileData.streakSaver ?? EMPTY_STREAK_SAVER;
+        const forgiven = new Set(saver.forgiven);
+        let rescueLast = saver.rescueLast;
+        let saverChanged = false;
+
+        // Reconcile: any forgiven day that's since been logged for real (e.g. the user backfilled
+        // it) is no longer frozen — drop it, and if the weekly rescue was spent on it, release the
+        // rescue so backfilling never costs the free pass.
+        for (const day of [...forgiven]) {
+          if (realDayKeys.has(day)) {
+            forgiven.delete(day);
+            saverChanged = true;
+            if (rescueLast === day) rescueLast = null;
           }
-          if (changed) writeForgiven(userId, forgiven);
         }
 
         // Recompute (bridging frozen days) to catch cases where the persisted value drifted low
@@ -252,22 +252,28 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
           const singleSlip =
             storedLastDate === dayBeforeStr &&  // last real credit was the day before yesterday
             realDayKeys.has(dayBeforeStr) &&    // ...and that day is genuinely logged, not itself frozen
-            rescueAvailable(userId, todayStr);
+            rescueAvailable({ forgiven: [...forgiven], rescueLast, ack: saver.ack }, todayStr);
           if (singleSlip) {
             // Freeze yesterday: hold the count, advance the marker so logging today continues it,
             // and spend the weekly rescue (released above if they later backfill it for real).
-            const nextForgiven = new Set(forgiven);
-            nextForgiven.add(yesterdayStr);
-            writeForgiven(userId, nextForgiven);
-            setRescueLast(userId, yesterdayStr);
+            forgiven.add(yesterdayStr);
+            rescueLast = yesterdayStr;
+            saverChanged = true;
             resolvedProfile = { ...profileData, streak: storedStreak, streakLastDate: yesterdayStr };
             saveStreak(userId, storedStreak, yesterdayStr).catch(() => {});
           } else {
             // Real break — reset and drop any stale freeze state.
-            clearForgiven(userId);
+            if (forgiven.size > 0) { forgiven.clear(); saverChanged = true; }
             resolvedProfile = { ...profileData, streak: 0 };
             saveStreak(userId, 0, storedLastDate).catch(() => {});
           }
+        }
+
+        // Persist + thread the freeze state onto the resolved profile whenever it changed.
+        if (saverChanged) {
+          const nextSaver = { forgiven: [...forgiven], rescueLast, ack: saver.ack };
+          resolvedProfile = { ...(resolvedProfile ?? profileData), streakSaver: nextSaver };
+          saveStreakSaver(userId, nextSaver).catch(() => {});
         }
       }
 

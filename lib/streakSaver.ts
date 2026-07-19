@@ -1,88 +1,33 @@
 // Streak-saver "freeze" state — a capped safety net that bridges a single missed day.
 //
-// All client-side (localStorage). The persisted profile.streak / streakLastDate stay the
-// source of truth for the displayed count; AppDataProvider keeps them in sync using the
-// forgiven set below. A "forgiven" day preserves the streak without crediting it (freeze
-// semantics): a 6-day streak stays 6 across the gap, and logging the next day makes it 7.
+// Freeze semantics: a forgiven day preserves the streak without crediting it (a 6-day streak
+// stays 6 across the gap; logging the next day makes it 7). At most one passive rescue is
+// spent per rolling window; actively backfilling the day releases it.
+//
+// The state is persisted server-side on the profile (streak_saver_json), so the forgiven days
+// and the weekly cap are durable and consistent across devices. These are pure helpers over
+// that state — AppDataProvider owns reading/writing it alongside the streak itself.
 
-const forgivenKey = (uid: string) => `wya_streak_forgiven_${uid}`;
-const rescueKey = (uid: string) => `wya_streak_rescue_last_${uid}`;
+export type StreakSaverState = {
+  forgiven: string[]; // frozen day-keys (YYYY-MM-DD) that bridge the streak
+  rescueLast: string | null; // day the weekly rescue was last spent on
+  ack: string | null; // rescue day whose "we saved it" message has been shown
+};
+
+export const EMPTY_STREAK_SAVER: StreakSaverState = { forgiven: [], rescueLast: null, ack: null };
 
 // At most one passive rescue per rolling window. Actively backfilling the day releases it.
 export const RESCUE_WINDOW_DAYS = 7;
 
-export function readForgiven(uid: string): Set<string> {
-  if (typeof window === "undefined") return new Set();
-  try {
-    const raw = localStorage.getItem(forgivenKey(uid));
-    const arr = raw ? JSON.parse(raw) : [];
-    return new Set(Array.isArray(arr) ? arr.filter((x): x is string => typeof x === "string") : []);
-  } catch {
-    return new Set();
-  }
-}
-
-export function writeForgiven(uid: string, set: Set<string>): void {
-  if (typeof window === "undefined") return;
-  try {
-    if (set.size === 0) localStorage.removeItem(forgivenKey(uid));
-    else localStorage.setItem(forgivenKey(uid), JSON.stringify([...set]));
-  } catch {
-    /* storage full / unavailable — non-fatal */
-  }
-}
-
-export function clearForgiven(uid: string): void {
-  writeForgiven(uid, new Set());
-}
-
-export function readRescueLast(uid: string): string | null {
-  if (typeof window === "undefined") return null;
-  try {
-    return localStorage.getItem(rescueKey(uid));
-  } catch {
-    return null;
-  }
-}
-
-export function setRescueLast(uid: string, dateStr: string): void {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(rescueKey(uid), dateStr);
-  } catch {
-    /* non-fatal */
-  }
-}
-
-export function clearRescueLast(uid: string): void {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.removeItem(rescueKey(uid));
-  } catch {
-    /* non-fatal */
-  }
-}
-
-// Which rescue (by its missed-day key) has had its "we saved it this time" message shown, so
-// the passive reveal fires exactly once — whether the user dismisses the prompt or ignores it.
-const ackKey = (uid: string) => `wya_streak_rescue_ack_${uid}`;
-
-export function readRescueAck(uid: string): string | null {
-  if (typeof window === "undefined") return null;
-  try {
-    return localStorage.getItem(ackKey(uid));
-  } catch {
-    return null;
-  }
-}
-
-export function setRescueAck(uid: string, dateStr: string): void {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(ackKey(uid), dateStr);
-  } catch {
-    /* non-fatal */
-  }
+// Normalize whatever is stored in the jsonb column (or a stale/missing value) into a valid state.
+export function coerceStreakSaver(raw: unknown): StreakSaverState {
+  if (!raw || typeof raw !== "object") return { ...EMPTY_STREAK_SAVER };
+  const o = raw as Record<string, unknown>;
+  return {
+    forgiven: Array.isArray(o.forgiven) ? o.forgiven.filter((x): x is string => typeof x === "string") : [],
+    rescueLast: typeof o.rescueLast === "string" ? o.rescueLast : null,
+    ack: typeof o.ack === "string" ? o.ack : null,
+  };
 }
 
 // Whole-day difference between two YYYY-MM-DD keys (b - a).
@@ -94,8 +39,7 @@ function daysBetween(a: string, b: string): number {
 }
 
 // A passive rescue is available only if none has been spent within the rolling window.
-export function rescueAvailable(uid: string, todayStr: string): boolean {
-  const last = readRescueLast(uid);
-  if (!last) return true;
-  return daysBetween(last, todayStr) >= RESCUE_WINDOW_DAYS;
+export function rescueAvailable(state: StreakSaverState, todayStr: string): boolean {
+  if (!state.rescueLast) return true;
+  return daysBetween(state.rescueLast, todayStr) >= RESCUE_WINDOW_DAYS;
 }

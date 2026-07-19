@@ -3,6 +3,7 @@ import { LOCAL_MODE } from "./config";
 import type { MealAnalysis, MealLog, SupplementEntry, UserProfile, WorkoutSession } from "./types";
 import type { HabitState, HabitHistoryEntry, ReflectionEntry } from "./habitState";
 import { approxFromRange } from "./utils";
+import { coerceStreakSaver, type StreakSaverState } from "./streakSaver";
 import { safeFallbackAnalysis } from "./ai/schema";
 
 export { LOCAL_MODE };
@@ -220,6 +221,7 @@ export async function getProfile(userId: string): Promise<UserProfile | null> {
       : [],
     streak: data.streak ?? 0,
     streakLastDate: data.streak_last_date ?? "",
+    streakSaver: coerceStreakSaver(data.streak_saver_json),
     trackWater: data.track_water ?? true,
     waterUnit: (data.water_unit === "oz" ? "oz" : "ml") as "ml" | "oz",
     timezoneOffsetMinutes: data.timezone_offset_minutes ?? null,
@@ -393,6 +395,30 @@ export async function saveStreak(userId: string, streak: number, lastDate: strin
   const cached = profileCache.get(userId);
   if (cached?.data) {
     profileCache.set(userId, { data: { ...cached.data, streak, streakLastDate: lastDate }, ts: cached.ts });
+  }
+}
+
+// Persist the streak-saver freeze state (forgiven days + weekly rescue) alongside the streak.
+// Wrapped so a not-yet-migrated column can't break loads — until streak_saver.sql is applied
+// the write no-ops and the feature falls back to session-only behaviour.
+export async function saveStreakSaver(userId: string, state: StreakSaverState): Promise<void> {
+  if (useMemory) {
+    if (memProfiles[userId]) {
+      memProfiles[userId] = { ...memProfiles[userId], streakSaver: state };
+      persistLocal();
+    }
+    return;
+  }
+  try {
+    await supabase
+      .from("profiles")
+      .upsert({ user_id: userId, streak_saver_json: state, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+    const cached = profileCache.get(userId);
+    if (cached?.data) {
+      profileCache.set(userId, { data: { ...cached.data, streakSaver: state }, ts: cached.ts });
+    }
+  } catch {
+    /* column may not exist yet — harmless */
   }
 }
 

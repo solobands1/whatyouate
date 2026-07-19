@@ -1,3 +1,5 @@
+import type { StreakSaverState } from "./streakSaver";
+
 export type Units = "metric" | "imperial";
 
 /** A nutrient entry within a multi-supplement */
@@ -57,6 +59,7 @@ export interface UserProfile {
   dailySupplements?: SupplementEntry[];
   streak?: number;
   streakLastDate?: string; // YYYY-MM-DD
+  streakSaver?: StreakSaverState; // capped freeze state (forgiven days + weekly rescue)
   trackWater?: boolean;
   waterUnit?: "ml" | "oz";
   timezoneOffsetMinutes?: number | null; // JS getTimezoneOffset() value — positive = west of UTC (e.g. ET=300, PT=480)

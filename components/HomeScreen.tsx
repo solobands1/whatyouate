@@ -23,9 +23,8 @@ import { supabase } from "../lib/supabaseClient";
 import "../lib/mealQueue";
 import BarcodeScannerOverlay from "./BarcodeScannerOverlay";
 import { getFoodCacheEntry, setFoodCacheEntry, deleteFoodCacheEntry, deleteFoodTextEntry, incrementFoodCacheLogCount, incrementFoodTextLogCount, getQuickAddFromMeals, addQuickAddRemoved, getDailySupplements, setDailySupplements, hasDailySuppsLoggedToday, markDailySuppsLoggedToday, clearDailySuppsLoggedToday, dishGroupKey, type QuickAddItem } from "../lib/foodCache";
-import { addFeelLog, deleteFeelLog, updateFeelLog, upsertWaterLog, addWeightLog, saveProfile, addReflection, saveHabitState, fetchHabitHistory, saveHabitHistory, type FeelLog } from "../lib/supabaseDb";
+import { addFeelLog, deleteFeelLog, updateFeelLog, upsertWaterLog, saveStreakSaver, addWeightLog, saveProfile, addReflection, saveHabitState, fetchHabitHistory, saveHabitHistory, type FeelLog } from "../lib/supabaseDb";
 import { EMPTY_HABIT_STATE, pickSuggestionId, snoozeSuggestion, snoozeAllSuggestions, declineSuggestion, markHabitEnded, endBuilderCompleted, resolveBuilderForToday, extendBuilder, type HabitState, type ActiveBuilder, type HabitHistoryEntry } from "../lib/habitState";
-import { readForgiven, readRescueLast, readRescueAck, setRescueAck } from "../lib/streakSaver";
 import WaterFillPicker from "./WaterFillPicker";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
@@ -2580,7 +2579,7 @@ export default function HomeScreen() {
     }
     // Real: the foundation froze yesterday (a single slip within cap). The frozen day stays in
     // the forgiven set until it's backfilled for real (which un-freezes it) or the streak breaks.
-    if (readForgiven(user.id).has(yStr)) {
+    if ((profile?.streakSaver?.forgiven ?? []).includes(yStr)) {
       // Hide the moment they've backfilled the day, before the foundation's prune runs on reload.
       const loggedYesterday = meals.meals.some(
         (m) => m.analysisJson?.source !== "supplement" && m.status !== "failed" && dayKeyFromTs(m.ts) === yStr
@@ -2643,24 +2642,27 @@ export default function HomeScreen() {
       localStorage.setItem(`wya_streak_saver_dismissed_${user.id}_${todayKey()}`, "true");
       localStorage.removeItem(`wya_streak_saver_demo_${user.id}`);
       // Passing reveals the net. Mark this rescue acknowledged so the message shows only once.
-      const rl = readRescueLast(user.id);
-      if (rl) setRescueAck(user.id, rl);
+      const saver = profile?.streakSaver;
+      if (saver?.rescueLast) saveStreakSaver(user.id, { ...saver, ack: saver.rescueLast }).catch(() => {});
     }
     setShowSavedMessage(true);
   };
   // Path C: if a rescue was spent and its day-after invitation window has passed without the
   // user acting or dismissing (but the streak stayed alive), reveal "we saved it" once.
+  const savedMsgHandledRef = useRef<string | null>(null);
   useEffect(() => {
     if (!user) return;
-    const rl = readRescueLast(user.id);
-    if (!rl) return;
+    const saver = profile?.streakSaver;
+    const rl = saver?.rescueLast;
+    if (!rl || savedMsgHandledRef.current === rl) return;
     const y = new Date(); y.setDate(y.getDate() - 1);
     const yStr = `${y.getFullYear()}-${String(y.getMonth() + 1).padStart(2, "0")}-${String(y.getDate()).padStart(2, "0")}`;
-    if (rl < yStr && readForgiven(user.id).has(rl) && readRescueAck(user.id) !== rl) {
-      setRescueAck(user.id, rl);
+    if (rl < yStr && saver.forgiven.includes(rl) && saver.ack !== rl) {
+      savedMsgHandledRef.current = rl;
+      saveStreakSaver(user.id, { ...saver, ack: rl }).catch(() => {});
       setShowSavedMessage(true);
     }
-  }, [user]);
+  }, [user, profile?.streakSaver]);
 
   const calMid = (homeMarkers.todayTotals.calories_min + homeMarkers.todayTotals.calories_max) / 2;
   const protMid = (homeMarkers.todayTotals.protein_g_min + homeMarkers.todayTotals.protein_g_max) / 2;
