@@ -25,6 +25,10 @@ export default function AuthGate({ children }: { children: ReactNode }) {
   // Start as false so server and client agree on initial render — no hydration mismatch.
   const [ready, setReady] = useState(false);
   const prevUserIdRef = useRef<string | null | undefined>(undefined);
+  // True once we've observed a confirmed logged-out state (auth resolved, no user) — i.e. the
+  // login screen was actually on screen. Lets us tell a real sign-in apart from a cold launch
+  // that restores a session (both look like "no user → user", only the former is a login).
+  const sawLoggedOutRef = useRef(false);
 
   // Wait for auth + main data + nudges (all load in parallel so nudges add minimal extra time)
   const fullyLoaded = !authLoading && (!user || (!dataLoading && nudgesLoaded));
@@ -40,14 +44,21 @@ export default function AuthGate({ children }: { children: ReactNode }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // When user transitions from logged-out → logged-in, reset splash so it shows
-  // during data load. Without this, _appReady is already true and the splash never fires.
+  // Record a confirmed logged-out state (auth resolved, no user) — the login screen is showing.
+  useEffect(() => {
+    if (!authLoading && !user) sawLoggedOutRef.current = true;
+  }, [authLoading, user]);
+
+  // When user transitions from logged-out → logged-in, reset splash so it shows during data
+  // load. Only render the login-matched splash if we were genuinely on the login screen first
+  // (a real sign-in) — not on a cold launch that just restored a session.
   useEffect(() => {
     const prev = prevUserIdRef.current;
     prevUserIdRef.current = user?.id ?? null;
     if (!prev && user?.id) {
       _appReady = false;
-      _postLoginSplash = true;
+      if (sawLoggedOutRef.current) _postLoginSplash = true;
+      sawLoggedOutRef.current = false;
       try { sessionStorage.removeItem("_appReady"); } catch {}
       setReady(false);
     }
