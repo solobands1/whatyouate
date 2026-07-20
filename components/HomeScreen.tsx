@@ -4848,7 +4848,7 @@ export default function HomeScreen() {
                 </p>
                 <input
                   type="date"
-                  className="mt-2 w-full rounded-lg border border-ink/10 bg-white px-2.5 py-1.5 text-xs text-ink/80"
+                  className="mt-2 w-full rounded-lg border border-ink/10 bg-white px-2.5 py-1 text-xs text-ink/80"
                   value={workout.manualDate}
                   max={(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; })()}
                   onChange={(e) => workout.setManualDate(e.target.value)}
