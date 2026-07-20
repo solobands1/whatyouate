@@ -3383,7 +3383,9 @@ export default function HomeScreen() {
         {(() => {
           return (
             <>
-              {!isDemoMode && trial.isTrialActive && (() => {
+              {/* Hidden while the streak-saver card is up — the two together crowd the top;
+                  the progress bar returns once the card is dismissed/resolved. */}
+              {!isDemoMode && trial.isTrialActive && !streakSaverInfo && (() => {
                 // Progress toward the "core picture" (5 logged days), not a fixed 7-day
                 // calendar — matches the behavior-based trial wall.
                 const loggedDays = countLoggedDays(ctxMeals);
