@@ -81,7 +81,7 @@ export default function WaterFillPicker({
           </defs>
           <path d="M12 3C11.4 3 5 11 5 15.5a7 7 0 0 0 14 0C19 11 12.6 3 12 3z" fill="url(#wfp-drop)" />
         </svg>
-        <span className="text-[2.6rem] font-bold leading-none tracking-tight text-ink tabular-nums">{display.toLocaleString()}</span>
+        <span className="text-[2rem] font-bold leading-none tracking-tight text-ink tabular-nums">{display.toLocaleString()}</span>
         <span className="mb-1 text-sm font-semibold text-ink/50">{unit}</span>
       </div>
 

@@ -141,7 +141,7 @@ export default function BarcodeScannerOverlay({ open, onClose, onDetected }: Pro
         </div>
         <div className="mt-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <p className="text-xs text-muted/60">Point camera at barcode</p>
+            <p className="text-xs text-muted/60">Point Camera At Barcode</p>
             {torchSupported && (
               <button
                 type="button"

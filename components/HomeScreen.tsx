@@ -3235,8 +3235,12 @@ export default function HomeScreen() {
                     <linearGradient id="card-flame" x1="0" y1="15" x2="0" y2="0" gradientUnits="userSpaceOnUse">
                       <stop offset="0%" stopColor="#ea580c" /><stop offset="50%" stopColor="#f97316" /><stop offset="100%" stopColor="#fbbf24" />
                     </linearGradient>
+                    <linearGradient id="card-flame-inner" x1="0" y1="12" x2="0" y2="7.5" gradientUnits="userSpaceOnUse">
+                      <stop offset="0%" stopColor="#fde68a" /><stop offset="100%" stopColor="#ffffff" stopOpacity="0.9" />
+                    </linearGradient>
                   </defs>
                   <path d="M6.5 0C6.5 0 4 3.5 4 6C4 6.5 4.1 7 4.3 7.4C3.5 6.6 3.2 5.5 3.2 5.5C1.8 7 1 8.8 1 11C1 13.2 3.5 15 6.5 15C9.5 15 12 13.2 12 11C12 8.2 9.5 5.5 9.5 5.5C9.5 7 8.8 8 8 8.5C8.2 8 8.3 7.4 8.3 6.8C8.3 4.2 6.5 0 6.5 0Z" fill="url(#card-flame)"/>
+                  <path d="M6.5 7.5C6.2 8.5 6 9.2 6 10C6 11.1 6.2 11.8 6.5 12C6.8 11.8 7 11.1 7 10C7 9.2 6.8 8.5 6.5 7.5Z" fill="url(#card-flame-inner)"/>
                 </svg>
               </span>
               <div className="min-w-0 flex-1">
@@ -3258,7 +3262,7 @@ export default function HomeScreen() {
             than one meal), with "All Done" always present so it never feels like a nag. */}
         {streakAddAnotherOpen && (
           <div
-            className="fixed inset-0 z-[120] flex items-end justify-center bg-black/40 px-4 pb-6"
+            className="fixed inset-0 z-[120] flex items-center justify-center bg-black/40 px-4 pb-[14vh]"
             onClick={finishBackfill}
           >
             <div
@@ -3294,7 +3298,7 @@ export default function HomeScreen() {
 
         {/* Enrichment step: a quick drag-to-fill water estimate for the backfilled day. */}
         {streakWaterOpen && (
-          <div className="fixed inset-0 z-[120] flex items-end justify-center bg-black/40 px-4 pb-6" onClick={skipBackfillWater}>
+          <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/40 px-4 pb-[14vh]" onClick={skipBackfillWater}>
             <div className="w-full max-w-md rounded-3xl bg-surface p-5 shadow-[0_12px_40px_rgba(15,23,42,0.22)] animate-pill-in" onClick={(e) => e.stopPropagation()}>
               <WaterFillPicker
                 goalMl={(() => { if (!user) return 2000; try { const v = parseInt(localStorage.getItem(`wya_water_goal_ml_${user.id}`) ?? "", 10); return isNaN(v) ? 2000 : v; } catch { return 2000; } })()}
@@ -3332,13 +3336,17 @@ export default function HomeScreen() {
             <div className="relative z-10 flex flex-col items-center text-center" onClick={(e) => e.stopPropagation()}>
               <span className="flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-[0_8px_30px_rgba(249,115,22,0.35)]">
                 <svg width="40" height="46" viewBox="0 0 13 15" fill="none" aria-hidden="true" className="animate-flame">
-                  <defs><linearGradient id="celebrate-flame" x1="0" y1="15" x2="0" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0%" stopColor="#ea580c" /><stop offset="50%" stopColor="#f97316" /><stop offset="100%" stopColor="#fbbf24" /></linearGradient></defs>
+                  <defs>
+                    <linearGradient id="celebrate-flame" x1="0" y1="15" x2="0" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0%" stopColor="#ea580c" /><stop offset="50%" stopColor="#f97316" /><stop offset="100%" stopColor="#fbbf24" /></linearGradient>
+                    <linearGradient id="celebrate-flame-inner" x1="0" y1="12" x2="0" y2="7.5" gradientUnits="userSpaceOnUse"><stop offset="0%" stopColor="#fde68a" /><stop offset="100%" stopColor="#ffffff" stopOpacity="0.9" /></linearGradient>
+                  </defs>
                   <path d="M6.5 0C6.5 0 4 3.5 4 6C4 6.5 4.1 7 4.3 7.4C3.5 6.6 3.2 5.5 3.2 5.5C1.8 7 1 8.8 1 11C1 13.2 3.5 15 6.5 15C9.5 15 12 13.2 12 11C12 8.2 9.5 5.5 9.5 5.5C9.5 7 8.8 8 8 8.5C8.2 8 8.3 7.4 8.3 6.8C8.3 4.2 6.5 0 6.5 0Z" fill="url(#celebrate-flame)" />
+                  <path d="M6.5 7.5C6.2 8.5 6 9.2 6 10C6 11.1 6.2 11.8 6.5 12C6.8 11.8 7 11.1 7 10C7 9.2 6.8 8.5 6.5 7.5Z" fill="url(#celebrate-flame-inner)" />
                 </svg>
               </span>
               <h2 className="mt-5 text-2xl font-bold tracking-tight text-white">Yesterday, Complete!</h2>
               <p className="mt-1.5 text-[15px] text-white/80">Your <span className="font-semibold text-white">{streakSavedCount + 1}-day streak</span> is safe.</p>
-              <button type="button" onClick={closeStreakCelebration} className="mt-7 rounded-full bg-white px-8 py-2.5 text-sm font-semibold text-ink transition active:scale-[0.97]">
+              <button type="button" onClick={closeStreakCelebration} className="mt-7 rounded-full bg-primary px-8 py-2.5 text-sm font-semibold text-white transition active:scale-[0.97]">
                 Done
               </button>
             </div>
