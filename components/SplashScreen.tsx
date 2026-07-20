@@ -33,9 +33,10 @@ export default function SplashScreen({ variant = "launch" }: { variant?: "launch
     );
   }
 
-  // Default launch splash (centered logo + spinner) — shown on cold launches.
+  // Default launch splash (centered logo + spinner) — shown on cold launches. Uses bg-surface
+  // (same as the body and every app screen) so there's no color jump white → splash → app.
   return (
-    <div className="fixed inset-0 flex flex-col items-center justify-center gap-6 bg-[#F1F6FF] pb-4 pt-10">
+    <div className="fixed inset-0 flex flex-col items-center justify-center gap-6 bg-surface pb-4 pt-10">
       <h1 className="animate-splash-breathe text-3xl font-semibold text-ink">
         WhatYouAt
         <span className="relative inline-block">
