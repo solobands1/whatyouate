@@ -1116,6 +1116,7 @@ export default function HomeScreen() {
   const [streakCelebrateOpen, setStreakCelebrateOpen] = useState(false);
   const [streakSavedCount, setStreakSavedCount] = useState(0);
   const [showSavedMessage, setShowSavedMessage] = useState(false);
+  const streakBackfillCountRef = useRef(0); // meals backfilled during the current streak-save
   const [recentlyLogged, setRecentlyLogged] = useState(false);
   const [streakBouncing, setStreakBouncing] = useState(false);
   const mountTimeRef = useRef<number>(Date.now());
@@ -2594,6 +2595,7 @@ export default function HomeScreen() {
   const startStreakBackfill = () => {
     if (!streakSaverInfo) return;
     if (user) localStorage.removeItem(`wya_streak_saver_demo_${user.id}`);
+    streakBackfillCountRef.current = 0;
     setStreakSavedCount(streakSaverInfo.savedStreak);
     setStreakBackfillDate(streakSaverInfo.yesterdayStr);
     setStreakSaverMode(true);
@@ -2605,7 +2607,18 @@ export default function HomeScreen() {
   // rather than nagging. "All Done" is always right there, so nobody's pushed to invent meals.
   const saveBackfillMeal = async () => {
     await meals.confirmManualMeal();
+    streakBackfillCountRef.current += 1;
     setStreakAddAnotherOpen(true);
+  };
+  // Cancelling the backfill: if they've already logged a meal this session the streak is earned,
+  // so go straight to the celebration (skip water); if they cancelled before logging anything,
+  // treat it as a pass and reveal the "we saved it this time" net.
+  const cancelStreakBackfill = () => {
+    meals.setEditingMeal(null);
+    setEditRecents(false);
+    setStreakSaverMode(false);
+    if (streakBackfillCountRef.current > 0) setStreakCelebrateOpen(true);
+    else dismissStreakSaver();
   };
   const addAnotherBackfillMeal = () => {
     setStreakAddAnotherOpen(false);
@@ -4191,7 +4204,7 @@ export default function HomeScreen() {
                       <button
                         type="button"
                         className="rounded-xl border border-ink/10 bg-white px-3 py-2 text-xs font-semibold text-ink/70 transition hover:bg-ink/5"
-                        onClick={() => { meals.setEditingMeal(null); setEditRecents(false); setStreakSaverMode(false); }}
+                        onClick={() => { if (streakSaverMode) { cancelStreakBackfill(); return; } meals.setEditingMeal(null); setEditRecents(false); }}
                       >
                         Cancel
                       </button>
