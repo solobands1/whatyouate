@@ -3257,7 +3257,7 @@ export default function HomeScreen() {
                 </svg>
               </span>
               <div className="min-w-0 flex-1">
-                <p className="text-[14px] font-semibold text-ink">You missed yesterday</p>
+                <p className="text-[14px] font-semibold text-ink">You Missed Yesterday</p>
                 <p className="text-[12.5px] leading-snug text-ink/60">Log it to keep your {streakSaverInfo.savedStreak}-day streak going.</p>
               </div>
             </div>
@@ -3325,7 +3325,7 @@ export default function HomeScreen() {
 
         {/* Payoff for completing the day — confetti + the streak, safe. */}
         {streakCelebrateOpen && (
-          <div className="fixed inset-0 z-[125] flex items-center justify-center bg-black/55 px-6" onClick={closeStreakCelebration}>
+          <div className="fixed inset-0 z-[125] flex items-center justify-center bg-black/55 px-6">
             <style>{`
               @keyframes sc-fall { 0% { transform: translateY(-12vh) rotate(0deg); } 100% { transform: translateY(112vh) rotate(300deg); } }
               @keyframes sc-fall-b { 0% { transform: translateY(-12vh) rotate(0deg); } 100% { transform: translateY(112vh) rotate(-280deg); } }

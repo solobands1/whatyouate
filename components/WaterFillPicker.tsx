@@ -73,7 +73,7 @@ export default function WaterFillPicker({
 
       {/* Live readout */}
       <div className="mt-6 flex items-end justify-center gap-2">
-        <svg width="26" height="30" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="mb-1 shrink-0">
+        <svg width="26" height="30" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="shrink-0 translate-y-[2px]">
           <defs>
             <linearGradient id="wfp-drop" x1="0.35" y1="0" x2="0.65" y2="1">
               <stop offset="0%" stopColor="#BAD8FF" /><stop offset="45%" stopColor="#93C5FD" /><stop offset="100%" stopColor="#6FA8FF" />
