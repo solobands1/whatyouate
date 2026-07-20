@@ -7,6 +7,9 @@ import SplashScreen from "./SplashScreen";
 
 // Module-level flag — persists across client-side navigations, resets on full page reload.
 let _appReady = false;
+// Set when the next splash follows a sign-in, so it renders the login-matched layout (seamless
+// login → splash) instead of the centered launch splash. Reset once the app is ready.
+let _postLoginSplash = false;
 
 function isSessionReady(): boolean {
   try { return sessionStorage.getItem("_appReady") === "1"; } catch { return false; }
@@ -44,6 +47,7 @@ export default function AuthGate({ children }: { children: ReactNode }) {
     prevUserIdRef.current = user?.id ?? null;
     if (!prev && user?.id) {
       _appReady = false;
+      _postLoginSplash = true;
       try { sessionStorage.removeItem("_appReady"); } catch {}
       setReady(false);
     }
@@ -53,10 +57,11 @@ export default function AuthGate({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (ready || !fullyLoaded) return;
     _appReady = true;
+    _postLoginSplash = false;
     markSessionReady();
     setReady(true);
   }, [fullyLoaded, ready]);
 
-  if (!ready) return <SplashScreen />;
+  if (!ready) return <SplashScreen variant={_postLoginSplash ? "login" : "launch"} />;
   return <>{children}</>;
 }
