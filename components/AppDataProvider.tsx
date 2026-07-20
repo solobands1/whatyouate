@@ -162,12 +162,14 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       const habitStateData = settled[8].status === "fulfilled" ? settled[8].value : null;
       if (settled[0].status === "fulfilled") setProfileResolved(true);
 
-      // Normalize existing text cache keys (one-time migration, idempotent)
-      migrateTextCacheKeys();
+      // Normalize existing text cache keys — a one-time idempotent migration; only needs the
+      // initial cold load, not every background refresh (it re-parsed the whole cache each time).
+      if (isInitial) migrateTextCacheKeys();
       // Seed quick-add text cache from history in case localStorage was cleared
       seedTextCacheFromMeals(mealsData);
-      // Prune stale nudge snapshot keys (older than 7 days) to avoid localStorage bloat
-      pruneNudgeSnapshots();
+      // Prune stale nudge snapshot keys (older than 7 days) — cleanup; once per session is enough
+      // (it scanned every localStorage key on each reload otherwise).
+      if (isInitial) pruneNudgeSnapshots();
 
       // Recover meals stuck in "processing" (e.g. tab closed mid-analysis)
       const STUCK_MS = 5 * 60 * 1000;
@@ -324,7 +326,10 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       setNudgesLoaded(true);
     }, 12000);
     return () => clearTimeout(watchdog);
-  }, [user, load, loadNudges]);
+    // Key on user?.id, not the user object: Supabase returns a new user object on every token
+    // refresh (which fires on foreground), which would otherwise re-run this whole heavy load.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, load, loadNudges]);
 
   useEffect(() => {
     if (!user) return;
@@ -351,11 +356,13 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       window.removeEventListener(NUDGES_UPDATED_EVENT, nudgeHandler);
       document.removeEventListener("visibilitychange", visibilityHandler);
     };
-  }, [user, load, loadMealsOnly, loadNudges]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, load, loadMealsOnly, loadNudges]);
 
   const reload = useCallback(() => {
     if (user) load(user.id, false);
-  }, [user, load]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, load]);
 
   return (
     <AppDataContext.Provider
