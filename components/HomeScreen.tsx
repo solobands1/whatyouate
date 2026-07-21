@@ -2680,7 +2680,9 @@ export default function HomeScreen() {
     setStreakSaverDismissed(true);
     if (user) {
       localStorage.setItem(`wya_streak_saver_dismissed_${user.id}_${todayKey()}`, "true");
-      localStorage.removeItem(`wya_streak_saver_demo_${user.id}`); localStorage.removeItem(`wya_streak_saver_capspent_${user.id}`);
+      // Note: don't clear the demo flags here — the card is already hidden by the dismiss flag,
+      // and keeping them lets the + drawer "Log Yesterday's Meals" entry persist (matching the
+      // real case, where detection is meal-based). They clear when the backfill actually starts.
       // Net case: passing reveals "we saved it" — ack the rescue so the message shows only once.
       if (info?.netAvailable) {
         const saver = profile?.streakSaver;
