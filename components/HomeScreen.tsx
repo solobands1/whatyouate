@@ -2580,6 +2580,12 @@ export default function HomeScreen() {
     if (isDemoMode || !user) return null;
     const y = new Date(); y.setDate(y.getDate() - 1);
     const yStr = `${y.getFullYear()}-${String(y.getMonth() + 1).padStart(2, "0")}-${String(y.getDate()).padStart(2, "0")}`;
+    const realDayKeys = new Set(
+      meals.meals.filter((m) => m.analysisJson?.source !== "supplement" && m.status !== "failed").map((m) => dayKeyFromTs(m.ts))
+    );
+    // Checked before the dev flags too, so the prompt + drawer entry clear the moment yesterday
+    // is actually logged — and stay until then, even after a cancelled backfill attempt.
+    if (realDayKeys.has(yStr)) return null;
     // Dev: 4 taps on the Profile title arms the net (auto-save) case; 5 taps the cap-spent one.
     if (localStorage.getItem(`wya_streak_saver_demo_${user.id}`) === "1") {
       return { savedStreak: streak > 1 ? streak : 6, yesterdayStr: yStr, netAvailable: true };
@@ -2587,10 +2593,6 @@ export default function HomeScreen() {
     if (localStorage.getItem(`wya_streak_saver_capspent_${user.id}`) === "1") {
       return { savedStreak: streak > 1 ? streak : 6, yesterdayStr: yStr, netAvailable: false };
     }
-    const realDayKeys = new Set(
-      meals.meals.filter((m) => m.analysisJson?.source !== "supplement" && m.status !== "failed").map((m) => dayKeyFromTs(m.ts))
-    );
-    if (realDayKeys.has(yStr)) return null; // already backfilled → nothing to prompt
     // Net case: the foundation froze yesterday (single slip within the weekly cap).
     if ((profile?.streakSaver?.forgiven ?? []).includes(yStr)) {
       return { savedStreak: streak, yesterdayStr: yStr, netAvailable: true };
@@ -2613,10 +2615,6 @@ export default function HomeScreen() {
   // saves the streak by logging what they actually ate, not with a free pass.
   const startStreakBackfill = () => {
     if (!backfillTarget) return;
-    if (user) {
-      localStorage.removeItem(`wya_streak_saver_demo_${user.id}`);
-      localStorage.removeItem(`wya_streak_saver_capspent_${user.id}`);
-    }
     streakBackfillCountRef.current = 0;
     setStreakSavedCount(backfillTarget.savedStreak);
     setStreakBackfillDate(backfillTarget.yesterdayStr);
@@ -2669,6 +2667,11 @@ export default function HomeScreen() {
   const closeStreakCelebration = () => {
     setStreakCelebrateOpen(false);
     setStreakBackfillDate(null);
+    // Finished the flow — clear any dev demo flags so it doesn't re-arm next launch.
+    if (user) {
+      localStorage.removeItem(`wya_streak_saver_demo_${user.id}`);
+      localStorage.removeItem(`wya_streak_saver_capspent_${user.id}`);
+    }
   };
   const dismissStreakSaver = () => {
     const info = streakSaverInfo;
