@@ -2578,9 +2578,12 @@ export default function HomeScreen() {
     if (isDemoMode || streakSaverDismissed || !user) return null;
     const y = new Date(); y.setDate(y.getDate() - 1);
     const yStr = `${y.getFullYear()}-${String(y.getMonth() + 1).padStart(2, "0")}-${String(y.getDate()).padStart(2, "0")}`;
-    // Dev: quad-tapping the Profile title arms a simulated missed day.
+    // Dev: 4 taps on the Profile title arms the net (auto-save) case; 5 taps the cap-spent one.
     if (localStorage.getItem(`wya_streak_saver_demo_${user.id}`) === "1") {
       return { savedStreak: streak > 1 ? streak : 6, yesterdayStr: yStr, netAvailable: true };
+    }
+    if (localStorage.getItem(`wya_streak_saver_capspent_${user.id}`) === "1") {
+      return { savedStreak: streak > 1 ? streak : 6, yesterdayStr: yStr, netAvailable: false };
     }
     const realDayKeys = new Set(
       meals.meals.filter((m) => m.analysisJson?.source !== "supplement" && m.status !== "failed").map((m) => dayKeyFromTs(m.ts))
@@ -2606,7 +2609,7 @@ export default function HomeScreen() {
   // saves the streak by logging what they actually ate, not with a free pass.
   const startStreakBackfill = () => {
     if (!streakSaverInfo) return;
-    if (user) localStorage.removeItem(`wya_streak_saver_demo_${user.id}`);
+    if (user) localStorage.removeItem(`wya_streak_saver_demo_${user.id}`); localStorage.removeItem(`wya_streak_saver_capspent_${user.id}`);
     streakBackfillCountRef.current = 0;
     setStreakSavedCount(streakSaverInfo.savedStreak);
     setStreakBackfillDate(streakSaverInfo.yesterdayStr);
@@ -2670,7 +2673,7 @@ export default function HomeScreen() {
     setStreakSaverDismissed(true);
     if (user) {
       localStorage.setItem(`wya_streak_saver_dismissed_${user.id}_${todayKey()}`, "true");
-      localStorage.removeItem(`wya_streak_saver_demo_${user.id}`);
+      localStorage.removeItem(`wya_streak_saver_demo_${user.id}`); localStorage.removeItem(`wya_streak_saver_capspent_${user.id}`);
       // Net case: passing reveals "we saved it" — ack the rescue so the message shows only once.
       if (info?.netAvailable) {
         const saver = profile?.streakSaver;

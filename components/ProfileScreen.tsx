@@ -525,15 +525,24 @@ export default function ProfileScreen() {
   const handleProfileTitleTap = () => {
     profileTapCount.current += 1;
     if (profileTapTimer.current) clearTimeout(profileTapTimer.current);
-    // Everything resolves on the trailing edge so 3 taps (review) and 4 taps (streak demo)
-    // don't collide — we can't fire at 3 without knowing whether a 4th is coming.
+    // Everything resolves on the trailing edge so the tap counts don't collide — we can't fire
+    // at 3 without knowing whether a 4th/5th is coming.
     profileTapTimer.current = setTimeout(() => {
       const taps = profileTapCount.current;
       profileTapCount.current = 0;
-      // Quad-tap on the dev preview arms a simulated missed day, then sends you Home so you
-      // can watch the whole streak-saver flow (dull pulsing flame → confirm → backfill).
-      if (taps >= 4 && devHooksEnabled() && user) {
+      // 5 taps: arm the CAP-SPENT streak-saver case (already used this week's save → warning card
+      // + "at risk" tappable banner, streak actually breaks, backfill restores it).
+      if (taps >= 5 && devHooksEnabled() && user) {
+        localStorage.setItem(`wya_streak_saver_capspent_${user.id}`, "1");
+        localStorage.removeItem(`wya_streak_saver_demo_${user.id}`);
+        localStorage.removeItem(`wya_streak_saver_dismissed_${user.id}_${todayKey()}`);
+        router.push("/");
+        return;
+      }
+      // 4 taps: arm the NET streak-saver case (auto-save available → "we saved it this time").
+      if (taps === 4 && devHooksEnabled() && user) {
         localStorage.setItem(`wya_streak_saver_demo_${user.id}`, "1");
+        localStorage.removeItem(`wya_streak_saver_capspent_${user.id}`);
         localStorage.removeItem(`wya_streak_saver_dismissed_${user.id}_${todayKey()}`);
         router.push("/");
         return;
