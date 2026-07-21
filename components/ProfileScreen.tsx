@@ -184,6 +184,10 @@ export default function ProfileScreen() {
   const [units, setUnits] = useState<Units>("imperial");
   const [saving, setSaving] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  // Must stay up here with the other hooks: it used to live below the `if (!user) return null`
+  // guard, so on logout (user → null) that early return skipped it, tripping React's
+  // "rendered fewer hooks than expected" and wedging the app until a full reload.
+  const [showTapLegend, setShowTapLegend] = useState(false);
   const [savingName, setSavingName] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const statusTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -522,7 +526,6 @@ export default function ProfileScreen() {
     })();
   };
 
-  const [showTapLegend, setShowTapLegend] = useState(false);
   const handleProfileTitleTap = () => {
     profileTapCount.current += 1;
     if (profileTapTimer.current) clearTimeout(profileTapTimer.current);
