@@ -522,6 +522,7 @@ export default function ProfileScreen() {
     })();
   };
 
+  const [showTapLegend, setShowTapLegend] = useState(false);
   const handleProfileTitleTap = () => {
     profileTapCount.current += 1;
     if (profileTapTimer.current) clearTimeout(profileTapTimer.current);
@@ -957,7 +958,32 @@ export default function ProfileScreen() {
               </span>
             </button>
             <div className="min-w-0 flex-1">
-              <h1 className="text-2xl font-semibold text-ink" onClick={handleProfileTitleTap}>Profile</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-semibold text-ink" onClick={handleProfileTitleTap}>Profile</h1>
+                {devHooksEnabled() && (
+                  <div className="relative">
+                    <button
+                      type="button"
+                      aria-label="Dev tap gestures"
+                      onClick={() => setShowTapLegend((v) => !v)}
+                      className="flex h-5 w-5 items-center justify-center rounded-full border border-ink/15 text-[11px] font-semibold italic text-muted/60 transition active:opacity-60"
+                    >
+                      i
+                    </button>
+                    {showTapLegend && (
+                      <div className="absolute left-0 top-7 z-30 w-60 rounded-xl border border-ink/10 bg-white p-3 shadow-[0_8px_28px_rgba(15,23,42,0.16)]">
+                        <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted/50">Tap &quot;Profile&quot; — dev only</p>
+                        <ul className="space-y-1 text-[12px] text-ink/75">
+                          <li><span className="font-semibold text-ink">2×</span> · Replay onboarding</li>
+                          <li><span className="font-semibold text-ink">3×</span> · Review prompt</li>
+                          <li><span className="font-semibold text-ink">4×</span> · Streak saver — auto-save available</li>
+                          <li><span className="font-semibold text-ink">5×</span> · Streak saver — save already used</li>
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
               <div className="mt-1 flex items-center gap-1.5">
                 <p className="text-sm text-muted/70">
                   {[firstName, lastName].filter(Boolean).join(" ") || "Set your name"}
