@@ -2698,8 +2698,9 @@ export default function HomeScreen() {
   const reopenAtRiskBackfill = () => {
     setShowSavedMessage(false);
     if (!streakAtRiskDay) return;
+    // Don't un-dismiss the card here — the backfill runs off backfillTarget, and resurrecting
+    // the card would make it pop back if this attempt is cancelled.
     streakBackfillCountRef.current = 0;
-    setStreakSaverDismissed(false);
     setStreakBackfillDate(streakAtRiskDay);
     setStreakSaverMode(true);
     meals.openManualMealEntry();
