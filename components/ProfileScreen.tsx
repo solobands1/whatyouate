@@ -959,7 +959,7 @@ export default function ProfileScreen() {
             </button>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-semibold text-ink" onClick={handleProfileTitleTap}>Profile</h1>
+                <h1 className="select-none text-2xl font-semibold text-ink [touch-action:manipulation]" onPointerDown={handleProfileTitleTap}>Profile</h1>
                 {devHooksEnabled() && (
                   <div className="relative">
                     <button
