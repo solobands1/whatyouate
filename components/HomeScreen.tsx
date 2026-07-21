@@ -4472,7 +4472,7 @@ export default function HomeScreen() {
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-[13px] font-semibold text-ink">Log Yesterday&apos;s Meals</span>
-                  <span className="block text-[11.5px] leading-snug text-ink/55">Keep your streak — add them all in one go.</span>
+                  <span className="block text-[11.5px] leading-snug text-ink/55">Keep your streak. Add them all at once.</span>
                 </span>
                 <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-ink/30" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
               </button>
