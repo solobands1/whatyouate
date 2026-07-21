@@ -2574,8 +2574,10 @@ export default function HomeScreen() {
   // Streak saver: detect a missed-yesterday that's still saveable. netAvailable=true → the
   // foundation froze it (weekly auto-save). false → the cap was already spent, so the streak
   // actually broke, but backfilling yesterday restores the run (the "log it or lose it" case).
-  const streakSaverInfo = (() => {
-    if (isDemoMode || streakSaverDismissed || !user) return null;
+  // backfillTarget ignores the per-day dismiss so the + drawer entry stays available all day;
+  // streakSaverInfo (below) is the dismissible version that drives the card.
+  const backfillTarget = (() => {
+    if (isDemoMode || !user) return null;
     const y = new Date(); y.setDate(y.getDate() - 1);
     const yStr = `${y.getFullYear()}-${String(y.getMonth() + 1).padStart(2, "0")}-${String(y.getDate()).padStart(2, "0")}`;
     // Dev: 4 taps on the Profile title arms the net (auto-save) case; 5 taps the cap-spent one.
@@ -2604,18 +2606,23 @@ export default function HomeScreen() {
     }
     return null;
   })();
+  // Dismissible version that drives the on-screen card (the + drawer entry uses backfillTarget).
+  const streakSaverInfo = streakSaverDismissed ? null : backfillTarget;
 
   // Start the honest backfill: open manual entry pre-dated to the missed day. The user
   // saves the streak by logging what they actually ate, not with a free pass.
   const startStreakBackfill = () => {
-    if (!streakSaverInfo) return;
-    if (user) localStorage.removeItem(`wya_streak_saver_demo_${user.id}`); localStorage.removeItem(`wya_streak_saver_capspent_${user.id}`);
+    if (!backfillTarget) return;
+    if (user) {
+      localStorage.removeItem(`wya_streak_saver_demo_${user.id}`);
+      localStorage.removeItem(`wya_streak_saver_capspent_${user.id}`);
+    }
     streakBackfillCountRef.current = 0;
-    setStreakSavedCount(streakSaverInfo.savedStreak);
-    setStreakBackfillDate(streakSaverInfo.yesterdayStr);
+    setStreakSavedCount(backfillTarget.savedStreak);
+    setStreakBackfillDate(backfillTarget.yesterdayStr);
     setStreakSaverMode(true);
     meals.openManualMealEntry();
-    meals.setManualDate(streakSaverInfo.yesterdayStr);
+    meals.setManualDate(backfillTarget.yesterdayStr);
   };
   // The streak is saved by the first backfilled meal, but a real day has more than one — so
   // after each save we offer to log another for the same day (better food→feeling data)
@@ -4445,6 +4452,31 @@ export default function HomeScreen() {
                 Cancel
               </button>
             </div>
+            {/* Contextual: a missed yesterday is still saveable — one tap into the pre-dated
+                backfill loop (Add Another / All Done), available all day even after dismiss. */}
+            {backfillTarget && (
+              <button
+                type="button"
+                onClick={() => { setShowLogFood(false); startStreakBackfill(); }}
+                className="mt-4 flex w-full items-center gap-3 rounded-xl border border-primary/25 bg-primary/[0.06] px-3.5 py-2.5 text-left transition active:scale-[0.99]"
+              >
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white shadow-[0_2px_8px_rgba(249,115,22,0.22)]">
+                  <svg width="16" height="18" viewBox="0 0 13 15" fill="none" aria-hidden="true">
+                    <defs>
+                      <linearGradient id="log-yday-flame" x1="0" y1="15" x2="0" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0%" stopColor="#ea580c" /><stop offset="50%" stopColor="#f97316" /><stop offset="100%" stopColor="#fbbf24" /></linearGradient>
+                      <linearGradient id="log-yday-flame-inner" x1="0" y1="12" x2="0" y2="7.5" gradientUnits="userSpaceOnUse"><stop offset="0%" stopColor="#fde68a" /><stop offset="100%" stopColor="#ffffff" stopOpacity="0.9" /></linearGradient>
+                    </defs>
+                    <path d="M6.5 0C6.5 0 4 3.5 4 6C4 6.5 4.1 7 4.3 7.4C3.5 6.6 3.2 5.5 3.2 5.5C1.8 7 1 8.8 1 11C1 13.2 3.5 15 6.5 15C9.5 15 12 13.2 12 11C12 8.2 9.5 5.5 9.5 5.5C9.5 7 8.8 8 8 8.5C8.2 8 8.3 7.4 8.3 6.8C8.3 4.2 6.5 0 6.5 0Z" fill="url(#log-yday-flame)" />
+                    <path d="M6.5 7.5C6.2 8.5 6 9.2 6 10C6 11.1 6.2 11.8 6.5 12C6.8 11.8 7 11.1 7 10C7 9.2 6.8 8.5 6.5 7.5Z" fill="url(#log-yday-flame-inner)" />
+                  </svg>
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[13px] font-semibold text-ink">Log Yesterday&apos;s Meals</span>
+                  <span className="block text-[11.5px] leading-snug text-ink/55">Keep your streak — add them all in one go.</span>
+                </span>
+                <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-ink/30" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
+              </button>
+            )}
             <div className="mt-4 grid grid-cols-4 gap-2">
               <button
                 type="button"
