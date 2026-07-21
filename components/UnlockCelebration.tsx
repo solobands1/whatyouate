@@ -52,7 +52,7 @@ export function useUnlockCelebration(
   return { pending, dismiss: () => setPending(null) };
 }
 
-export function UnlockCelebrationBanner({ title, sub, icon = "unlock", onDismiss }: { title: string; sub?: string; icon?: CelebrationIcon; onDismiss: () => void }) {
+export function UnlockCelebrationBanner({ title, sub, icon = "unlock", onDismiss, onClick }: { title: string; sub?: string; icon?: CelebrationIcon; onDismiss: () => void; onClick?: () => void }) {
   // enter → shown → exit. Slides down from the top on show and up off the top on dismiss,
   // like an iOS notification banner. Auto-dismisses after 10s.
   const [state, setState] = useState<"enter" | "shown" | "exit">("enter");
@@ -110,8 +110,9 @@ export function UnlockCelebrationBanner({ title, sub, icon = "unlock", onDismiss
       <div
         ref={bannerRef}
         role="status"
+        onClick={onClick ? () => { onClick(); close(); } : undefined}
         style={dragging ? { transform: `translateY(${dragY}px)`, transition: "none" } : undefined}
-        className={`pointer-events-auto w-full max-w-md touch-none rounded-2xl border border-white/40 bg-white/80 px-4 pt-3 pb-2 shadow-[0_14px_36px_rgba(15,23,42,0.20)] backdrop-blur-xl transition-all duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${visible ? "translate-y-0 opacity-100" : "-translate-y-[160%] opacity-0"}`}
+        className={`pointer-events-auto w-full max-w-md touch-none rounded-2xl border border-white/40 bg-white/80 px-4 pt-3 pb-2 shadow-[0_14px_36px_rgba(15,23,42,0.20)] backdrop-blur-xl transition-all duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${onClick ? "cursor-pointer" : ""} ${visible ? "translate-y-0 opacity-100" : "-translate-y-[160%] opacity-0"}`}
       >
         <div className="flex items-center gap-3">
           <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${icon === "flame" ? "bg-[rgba(249,115,22,0.12)]" : "bg-primary/15 text-primary"}`}>

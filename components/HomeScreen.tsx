@@ -25,6 +25,7 @@ import BarcodeScannerOverlay from "./BarcodeScannerOverlay";
 import { getFoodCacheEntry, setFoodCacheEntry, deleteFoodCacheEntry, deleteFoodTextEntry, incrementFoodCacheLogCount, incrementFoodTextLogCount, getQuickAddFromMeals, addQuickAddRemoved, getDailySupplements, setDailySupplements, hasDailySuppsLoggedToday, markDailySuppsLoggedToday, clearDailySuppsLoggedToday, dishGroupKey, type QuickAddItem } from "../lib/foodCache";
 import { addFeelLog, deleteFeelLog, updateFeelLog, upsertWaterLog, saveStreakSaver, addWeightLog, saveProfile, addReflection, saveHabitState, fetchHabitHistory, saveHabitHistory, type FeelLog } from "../lib/supabaseDb";
 import { EMPTY_HABIT_STATE, pickSuggestionId, snoozeSuggestion, snoozeAllSuggestions, declineSuggestion, markHabitEnded, endBuilderCompleted, resolveBuilderForToday, extendBuilder, type HabitState, type ActiveBuilder, type HabitHistoryEntry } from "../lib/habitState";
+import { rescueAvailable, EMPTY_STREAK_SAVER } from "../lib/streakSaver";
 import WaterFillPicker from "./WaterFillPicker";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
@@ -1116,6 +1117,8 @@ export default function HomeScreen() {
   const [streakCelebrateOpen, setStreakCelebrateOpen] = useState(false);
   const [streakSavedCount, setStreakSavedCount] = useState(0);
   const [showSavedMessage, setShowSavedMessage] = useState(false);
+  const [streakSaverNet, setStreakSaverNet] = useState(true); // was an auto-save available on the last dismiss?
+  const [streakAtRiskDay, setStreakAtRiskDay] = useState<string | null>(null); // missed day recoverable via the at-risk banner
   const streakBackfillCountRef = useRef(0); // meals backfilled during the current streak-save
   const [recentlyLogged, setRecentlyLogged] = useState(false);
   const [streakBouncing, setStreakBouncing] = useState(false);
@@ -2568,24 +2571,33 @@ export default function HomeScreen() {
   };
   const greetingBlock = makeGreeting(welcomeMessage.phase);
 
-  // Streak saver: detect if yesterday was missed but there's still a saveable streak
+  // Streak saver: detect a missed-yesterday that's still saveable. netAvailable=true → the
+  // foundation froze it (weekly auto-save). false → the cap was already spent, so the streak
+  // actually broke, but backfilling yesterday restores the run (the "log it or lose it" case).
   const streakSaverInfo = (() => {
     if (isDemoMode || streakSaverDismissed || !user) return null;
     const y = new Date(); y.setDate(y.getDate() - 1);
     const yStr = `${y.getFullYear()}-${String(y.getMonth() + 1).padStart(2, "0")}-${String(y.getDate()).padStart(2, "0")}`;
-    // Dev: quad-tapping the Profile title arms a simulated missed day so the whole saver flow
-    // can be previewed on demand.
+    // Dev: quad-tapping the Profile title arms a simulated missed day.
     if (localStorage.getItem(`wya_streak_saver_demo_${user.id}`) === "1") {
-      return { savedStreak: streak > 1 ? streak : 6, yesterdayStr: yStr };
+      return { savedStreak: streak > 1 ? streak : 6, yesterdayStr: yStr, netAvailable: true };
     }
-    // Real: the foundation froze yesterday (a single slip within cap). The frozen day stays in
-    // the forgiven set until it's backfilled for real (which un-freezes it) or the streak breaks.
+    const realDayKeys = new Set(
+      meals.meals.filter((m) => m.analysisJson?.source !== "supplement" && m.status !== "failed").map((m) => dayKeyFromTs(m.ts))
+    );
+    if (realDayKeys.has(yStr)) return null; // already backfilled → nothing to prompt
+    // Net case: the foundation froze yesterday (single slip within the weekly cap).
     if ((profile?.streakSaver?.forgiven ?? []).includes(yStr)) {
-      // Hide the moment they've backfilled the day, before the foundation's prune runs on reload.
-      const loggedYesterday = meals.meals.some(
-        (m) => m.analysisJson?.source !== "supplement" && m.status !== "failed" && dayKeyFromTs(m.ts) === yStr
-      );
-      if (!loggedYesterday) return { savedStreak: streak, yesterdayStr: yStr };
+      return { savedStreak: streak, yesterdayStr: yStr, netAvailable: true };
+    }
+    // Cap-spent case: a real run of 2+ ended the day before yesterday, but no rescue was left,
+    // so the streak broke. Offer the backfill anyway — logging yesterday restores the run.
+    const db = new Date(); db.setDate(db.getDate() - 2);
+    if (realDayKeys.has(dayKeyFromTs(db.getTime())) && !rescueAvailable(profile?.streakSaver ?? EMPTY_STREAK_SAVER, todayKey())) {
+      let run = 0;
+      const d = new Date(db.getTime());
+      while (realDayKeys.has(dayKeyFromTs(d.getTime()))) { run++; d.setDate(d.getDate() - 1); }
+      if (run >= 2) return { savedStreak: run, yesterdayStr: yStr, netAvailable: false };
     }
     return null;
   })();
@@ -2649,16 +2661,34 @@ export default function HomeScreen() {
     setStreakBackfillDate(null);
   };
   const dismissStreakSaver = () => {
-    if (streakSaverInfo) setStreakSavedCount(streakSaverInfo.savedStreak);
+    const info = streakSaverInfo;
+    if (info) {
+      setStreakSavedCount(info.savedStreak);
+      setStreakSaverNet(info.netAvailable);
+      setStreakAtRiskDay(info.netAvailable ? null : info.yesterdayStr);
+    }
     setStreakSaverDismissed(true);
     if (user) {
       localStorage.setItem(`wya_streak_saver_dismissed_${user.id}_${todayKey()}`, "true");
       localStorage.removeItem(`wya_streak_saver_demo_${user.id}`);
-      // Passing reveals the net. Mark this rescue acknowledged so the message shows only once.
-      const saver = profile?.streakSaver;
-      if (saver?.rescueLast) saveStreakSaver(user.id, { ...saver, ack: saver.rescueLast }).catch(() => {});
+      // Net case: passing reveals "we saved it" — ack the rescue so the message shows only once.
+      if (info?.netAvailable) {
+        const saver = profile?.streakSaver;
+        if (saver?.rescueLast) saveStreakSaver(user.id, { ...saver, ack: saver.rescueLast }).catch(() => {});
+      }
     }
     setShowSavedMessage(true);
+  };
+  // Tapping the "at risk" banner (cap-spent case) drops back into the backfill for the missed day.
+  const reopenAtRiskBackfill = () => {
+    setShowSavedMessage(false);
+    if (!streakAtRiskDay) return;
+    streakBackfillCountRef.current = 0;
+    setStreakSaverDismissed(false);
+    setStreakBackfillDate(streakAtRiskDay);
+    setStreakSaverMode(true);
+    meals.openManualMealEntry();
+    meals.setManualDate(streakAtRiskDay);
   };
   // Path C: if a rescue was spent and its day-after invitation window has passed without the
   // user acting or dismissing (but the streak stayed alive), reveal "we saved it" once.
@@ -3258,7 +3288,11 @@ export default function HomeScreen() {
               </span>
               <div className="min-w-0 flex-1">
                 <p className="text-[14px] font-semibold text-ink">You Missed Yesterday</p>
-                <p className="text-[12.5px] leading-snug text-ink/60">Log it to keep your {streakSaverInfo.savedStreak}-day streak going.</p>
+                <p className="text-[12.5px] leading-snug text-ink/60">
+                  {streakSaverInfo.netAvailable
+                    ? `Log it to keep your ${streakSaverInfo.savedStreak}-day streak going.`
+                    : `You've used this week's save. Log it to keep your ${streakSaverInfo.savedStreak}-day streak.`}
+                </p>
               </div>
             </div>
             <button
@@ -3370,7 +3404,11 @@ export default function HomeScreen() {
             "Habit Done" don't compete for the same spot. The lower-priority banner's state
             persists and it slides in the moment the one ahead of it clears. */}
         {showSavedMessage ? (
-          <UnlockCelebrationBanner title="Streak Saved" sub={`You missed yesterday, and that's okay · We saved your ${streakSavedCount || streak}-day streak this time`} icon="flame" onDismiss={() => setShowSavedMessage(false)} />
+          streakSaverNet ? (
+            <UnlockCelebrationBanner title="Streak Saved" sub={`You missed yesterday, and that's okay · We saved your ${streakSavedCount || streak}-day streak this time`} icon="flame" onDismiss={() => setShowSavedMessage(false)} />
+          ) : (
+            <UnlockCelebrationBanner title="Streak At Risk" sub={`You've used this week's save · Tap to log yesterday and keep your ${streakSavedCount}-day streak`} icon="flame" onClick={reopenAtRiskBackfill} onDismiss={() => setShowSavedMessage(false)} />
+          )
         ) : firstCel ? (
           <UnlockCelebrationBanner title={firstCel.title} sub={firstCel.sub} icon={firstCel.icon} onDismiss={dismissFirstCel} />
         ) : dailyHabitBanner ? (

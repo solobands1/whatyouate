@@ -269,6 +269,11 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
             resolvedProfile = { ...profileData, streak: 0 };
             saveStreak(userId, 0, storedLastDate).catch(() => {});
           }
+        } else if (computedStreak > storedStreak) {
+          // A past day was filled in (e.g. backfilling yesterday after a cap-spent break) —
+          // restore the true run so backfilling always brings the streak back.
+          resolvedProfile = { ...profileData, streak: computedStreak };
+          saveStreak(userId, computedStreak, storedLastDate).catch(() => {});
         }
 
         // Persist + thread the freeze state onto the resolved profile whenever it changed.
