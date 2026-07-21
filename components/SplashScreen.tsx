@@ -1,7 +1,7 @@
 "use client";
 
-const Spinner = () => (
-  <svg className="animate-spin text-primary/40" width="18" height="18" viewBox="0 0 24 24" fill="none">
+const Spinner = ({ size = 18 }: { size?: number }) => (
+  <svg className="animate-spin text-primary/40" width={size} height={size} viewBox="0 0 24 24" fill="none">
     <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="40 20" />
   </svg>
 );
@@ -26,7 +26,7 @@ export default function SplashScreen({ variant = "launch" }: { variant?: "launch
             <p className="mt-1.5 text-sm text-muted/60">Eat Confidently | Feel Better</p>
           </div>
           <div className="flex justify-center pt-2">
-            <Spinner />
+            <Spinner size={28} />
           </div>
         </div>
       </div>
