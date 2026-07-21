@@ -5,7 +5,7 @@ import { buildNutrientNotes, buildSuggestions, type SuggestionSignal } from "./r
 
 export type NudgeType =
   | "encouragement" | "food_win" | "micronutrient_win" | "micronutrient_low"
-  | "streak" | "pattern" | "honest" | "deficit" | "check_in"
+  | "streak" | "pattern" | "honest" | "deficit" | "activity_win" | "check_in"
   | "weekly_summary"
   // legacy types that may still exist in DB history
   | "calorie_low" | "calorie_high"
@@ -100,6 +100,7 @@ export interface SmartNudgeContext {
   recentNudges: string[];
   streak: number;
   todayHasWorkout: boolean;
+  activityConsistency?: { activeDaysThisWeek: number; newlyBuilt: boolean };
   recentFeelLogs: Array<{ ts: number; tag: string }>;
   todayMeals: TodayMealEntry[];
   lastMealTime: string | null;
@@ -1006,6 +1007,33 @@ export function buildSmartNudgeContext(
 
   const todayK = todayKeyLocal;
   const todayHasWorkout = workoutsByDay.has(todayK);
+
+  // Activity consistency: fire once when the person NEWLY builds a steady week (>=3 active days
+  // from logged activity, walks included) after not being consistent in the past ~month. Checking
+  // the prior 3 weeks — not just last week — means a bouncy 2<->3 user or an already-steady user
+  // never trips it; only a genuine fresh build after a real dry spell does, and only once (the week
+  // after, that week is now inside the lookback). Voiced by the coach as the activity_win type;
+  // kept separate from the Apple Health step count that also lands as "activeDaysThisWeek".
+  const CONSISTENCY_MIN_DAYS = 3;
+  const activeWorkoutDaysBetween = (startTs: number, endTs: number) => {
+    const daysSet = new Set<string>();
+    for (const w of workouts) {
+      if (w.endTs == null) continue;
+      const ts = w.endTs ?? w.startTs;
+      if (ts >= startTs && ts < endTs) daysSet.add(localDayKey(ts));
+    }
+    return daysSet.size;
+  };
+  const activeWorkoutDaysThisWeek = workoutsByDay.size;
+  const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
+  const wasConsistentInPriorMonth = [1, 2, 3].some(
+    (n) => activeWorkoutDaysBetween(Date.now() - (n + 1) * oneWeekMs, Date.now() - n * oneWeekMs) >= CONSISTENCY_MIN_DAYS
+  );
+  const activityConsistency =
+    activeWorkoutDaysThisWeek >= CONSISTENCY_MIN_DAYS && !wasConsistentInPriorMonth
+      ? { activeDaysThisWeek: activeWorkoutDaysThisWeek, newlyBuilt: true }
+      : undefined;
+
   // Prefer persisted streak from profile — it's accurate beyond the meal fetch window.
   // Re-computing from meals can undercount when fetch limit cuts off early days.
   const streak = profile?.streak ?? computeStreakFromMeals(meals);
@@ -1216,6 +1244,7 @@ export function buildSmartNudgeContext(
     recentNudges,
     streak,
     todayHasWorkout,
+    activityConsistency,
     recentFeelLogs: activeFeelLogs,
     todayMeals,
     lastMealTime,

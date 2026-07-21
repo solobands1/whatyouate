@@ -47,6 +47,10 @@ NUDGE TYPES, in priority order:
 
 8. deficit — only when no positive angle genuinely exists AND a gap is significant (over 30% of daily target remaining) AND protein has not appeared in either of the last 2 nudge types. Frame it as an opportunity, not a failure. Never lead with a deficit if any honest positive angle exists.
 
+9. activity_win — use ONLY when the data includes an "Activity consistency" note. The person has newly built a steady week of activity after a stretch of not being consistent. Acknowledge it warmly: name how many days they were active this week, and that steadiness (not intensity) is what shapes how they feel. This is a FALLBACK: prefer it over a generic encouragement message when that note is present, but never choose it over a food win, a micronutrient insight, or a pattern. Say "active" or "moving", never "workout" or "training" (it may have been a walk). Never imply they were lazy or had fallen off. End on a warm, present-tense note.
+   "Four active days this week, up from a quieter stretch. That kind of steadiness moves how you feel more than you think, and you're doing it!"
+   "Three days active this week, a real step up from before. Consistency is where the change actually lives, and you're building it!"
+
 GOAL DIRECTION — apply before choosing a type:
 - goal "gain": calorie_high is never relevant. Encouragement, food wins, and micronutrient nudges are the primary value. Deficit nudges are only for protein, and only when genuinely significant. Never flag overeating.
 - goal "lose": calorie deficit awareness is the primary lever. A win means coming in at or under calorie target. Protein deficit is low priority unless strength training is present. Encourage consistency over perfection.
@@ -65,10 +69,10 @@ RULES:
 - MEAL TIMING: Never make claims or observations about when the user ate or their meal timing (for example "you ate late", "breakfast before 9am", "you skipped lunch", "eating close to bed"). Log timestamps record when food was entered, which is often backfilled hours later, so they do not reliably show when the person actually ate. You may acknowledge that they logged and how consistently, but never infer eating times or timing patterns.
 
 Return ONLY valid JSON:
-{"message": "...", "type": "encouragement|food_win|micronutrient_win|micronutrient_low|streak|pattern|honest|deficit|check_in", "why": "...", "action": "...", "suggestions": ["food1","food2","food3"]}
+{"message": "...", "type": "encouragement|food_win|micronutrient_win|micronutrient_low|streak|pattern|honest|deficit|activity_win|check_in", "why": "...", "action": "...", "suggestions": ["food1","food2","food3"]}
 
-why: empty string for encouragement, streak, honest, food_win, micronutrient_win types. For pattern, micronutrient_low, and deficit: 1-2 sentences of science or context not already in the message.
-action: empty string for encouragement, streak, honest, food_win, micronutrient_win. For pattern, micronutrient_low, deficit: 1-2 specific sentences naming a food, timing, or next step.
+why: empty string for encouragement, streak, honest, food_win, micronutrient_win, activity_win types. For pattern, micronutrient_low, and deficit: 1-2 sentences of science or context not already in the message.
+action: empty string for encouragement, streak, honest, food_win, micronutrient_win, activity_win. For pattern, micronutrient_low, deficit: 1-2 specific sentences naming a food, timing, or next step.
 suggestions: 1-3 specific foods for micronutrient_low and deficit types only. Empty array for all other types. Match time of day. Do not repeat recently suggested foods.`;
 
 const FEELING_GOAL_LABELS: Record<string, string> = {
@@ -203,6 +207,11 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
   if (streak && streak > 1) streakParts.push(`${streak}-day logging streak`);
   if (todayHasWorkout) streakParts.push("worked out today");
   if (streakParts.length) lines.push(`Current: ${streakParts.join(", ")}`);
+
+  const activityConsistency = ctx.activityConsistency as { activeDaysThisWeek: number; newlyBuilt: boolean } | undefined;
+  if (activityConsistency?.newlyBuilt) {
+    lines.push(`Activity consistency: active ${activityConsistency.activeDaysThisWeek} days this week (from logged activity, walks included), newly built — they had not been consistent in the past month. A genuine step up worth acknowledging. Separate from any Apple Health step count above; do not blend the two.`);
+  }
 
   const foods = ctx.recentFoods as string[] | undefined;
   if (foods?.length) {

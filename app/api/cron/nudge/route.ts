@@ -107,7 +107,7 @@ function extractRecentFoods(meals: MealLog[]): string[] {
 
 const VALID_NUDGE_TYPES = new Set([
   "encouragement","food_win","micronutrient_win","micronutrient_low",
-  "streak","pattern","honest","deficit","check_in",
+  "streak","pattern","honest","deficit","activity_win","check_in",
 ]);
 
 async function generateNudge(ctx: Record<string, unknown>, userId: string): Promise<{ message: string; type: string; why?: string; action?: string; suggestions: string[] } | null> {
