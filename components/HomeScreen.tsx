@@ -3460,7 +3460,7 @@ export default function HomeScreen() {
             <UnlockCelebrationBanner title="Streak At Risk" sub={`You've used this week's save · Tap to log yesterday and keep your ${streakSavedCount}-day streak`} icon="flame" onClick={reopenAtRiskBackfill} onDismiss={() => setShowSavedMessage(false)} />
           )
         ) : comebackBanner ? (
-          <UnlockCelebrationBanner title="Back At It" sub="Good to see you moving again. Starting back up is the hard part, and you just did it." icon="spark" onDismiss={() => setComebackBanner(false)} />
+          <UnlockCelebrationBanner title="Back At It" sub="Good to see you moving again. Starting back up is the hard part, and you just did it!" icon="spark" onDismiss={() => setComebackBanner(false)} />
         ) : firstCel ? (
           <UnlockCelebrationBanner title={firstCel.title} sub={firstCel.sub} icon={firstCel.icon} onDismiss={dismissFirstCel} />
         ) : dailyHabitBanner ? (
