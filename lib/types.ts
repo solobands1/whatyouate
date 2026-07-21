@@ -1,4 +1,5 @@
 import type { StreakSaverState } from "./streakSaver";
+import type { ActivityCelebrationState } from "./activityCelebration";
 
 export type Units = "metric" | "imperial";
 
@@ -60,6 +61,7 @@ export interface UserProfile {
   streak?: number;
   streakLastDate?: string; // YYYY-MM-DD
   streakSaver?: StreakSaverState; // capped freeze state (forgiven days + weekly rescue)
+  activityCelebration?: ActivityCelebrationState; // which activity moments we've already celebrated (comeback / consistency)
   trackWater?: boolean;
   waterUnit?: "ml" | "oz";
   timezoneOffsetMinutes?: number | null; // JS getTimezoneOffset() value — positive = west of UTC (e.g. ET=300, PT=480)

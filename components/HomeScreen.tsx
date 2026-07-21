@@ -23,9 +23,10 @@ import { supabase } from "../lib/supabaseClient";
 import "../lib/mealQueue";
 import BarcodeScannerOverlay from "./BarcodeScannerOverlay";
 import { getFoodCacheEntry, setFoodCacheEntry, deleteFoodCacheEntry, deleteFoodTextEntry, incrementFoodCacheLogCount, incrementFoodTextLogCount, getQuickAddFromMeals, addQuickAddRemoved, getDailySupplements, setDailySupplements, hasDailySuppsLoggedToday, markDailySuppsLoggedToday, clearDailySuppsLoggedToday, dishGroupKey, type QuickAddItem } from "../lib/foodCache";
-import { addFeelLog, deleteFeelLog, updateFeelLog, upsertWaterLog, saveStreakSaver, addWeightLog, saveProfile, addReflection, saveHabitState, fetchHabitHistory, saveHabitHistory, type FeelLog } from "../lib/supabaseDb";
+import { addFeelLog, deleteFeelLog, updateFeelLog, upsertWaterLog, saveStreakSaver, saveActivityCelebration, addWeightLog, saveProfile, addReflection, saveHabitState, fetchHabitHistory, saveHabitHistory, type FeelLog } from "../lib/supabaseDb";
 import { EMPTY_HABIT_STATE, pickSuggestionId, snoozeSuggestion, snoozeAllSuggestions, declineSuggestion, markHabitEnded, endBuilderCompleted, resolveBuilderForToday, extendBuilder, type HabitState, type ActiveBuilder, type HabitHistoryEntry } from "../lib/habitState";
 import { rescueAvailable, EMPTY_STREAK_SAVER } from "../lib/streakSaver";
+import { detectComebackDay, EMPTY_ACTIVITY_CELEBRATION } from "../lib/activityCelebration";
 import WaterFillPicker from "./WaterFillPicker";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
@@ -1118,6 +1119,9 @@ export default function HomeScreen() {
   const [streakSavedCount, setStreakSavedCount] = useState(0);
   const [showSavedMessage, setShowSavedMessage] = useState(false);
   const [streakSaverNet, setStreakSaverNet] = useState(true); // was an auto-save available on the last dismiss?
+  // Comeback banner: fires once when recorded activity resumes after a gap (see lib/activityCelebration).
+  const [comebackBanner, setComebackBanner] = useState(false);
+  const comebackFiredRef = useRef<string | null>(null);
   const [streakAtRiskDay, setStreakAtRiskDay] = useState<string | null>(null); // missed day recoverable via the at-risk banner
   const streakBackfillCountRef = useRef(0); // meals backfilled during the current streak-save
   const [recentlyLogged, setRecentlyLogged] = useState(false);
@@ -2381,6 +2385,24 @@ export default function HomeScreen() {
     return computeRecent(displayMeals, completedWorkouts);
   }, [displayMeals, completedWorkouts]);
 
+  // Comeback celebration: the first recorded activity after a >=7-day gap gets a warm top banner,
+  // fired the moment it appears in the log — whether the user logged it or Apple Health synced it
+  // in passively. Once per comeback (the server marker survives a device switch; the ref covers
+  // this session). A walk counts the same as a workout. Never in demo mode.
+  useEffect(() => {
+    if (isDemoMode || !user || !profile) return;
+    const comeback = detectComebackDay(completedWorkouts, todayKey());
+    if (!comeback) return;
+    const marker = profile.activityCelebration ?? EMPTY_ACTIVITY_CELEBRATION;
+    if (marker.lastComeback === comeback || comebackFiredRef.current === comeback) return;
+    comebackFiredRef.current = comeback;
+    const next = { ...marker, lastComeback: comeback };
+    setProfile({ ...profile, activityCelebration: next });
+    saveActivityCelebration(user.id, next).catch(() => {});
+    setComebackBanner(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [completedWorkouts, profile?.activityCelebration?.lastComeback, isDemoMode, user]);
+
   useEffect(() => {
     if (!user) { setShowProfileBell(false); return; }
     const compute = () => {
@@ -3427,6 +3449,8 @@ export default function HomeScreen() {
           ) : (
             <UnlockCelebrationBanner title="Streak At Risk" sub={`You've used this week's save · Tap to log yesterday and keep your ${streakSavedCount}-day streak`} icon="flame" onClick={reopenAtRiskBackfill} onDismiss={() => setShowSavedMessage(false)} />
           )
+        ) : comebackBanner ? (
+          <UnlockCelebrationBanner title="Back At It" sub="Good to see you moving again. Starting back up is the hard part, and you just did it." icon="spark" onDismiss={() => setComebackBanner(false)} />
         ) : firstCel ? (
           <UnlockCelebrationBanner title={firstCel.title} sub={firstCel.sub} icon={firstCel.icon} onDismiss={dismissFirstCel} />
         ) : dailyHabitBanner ? (

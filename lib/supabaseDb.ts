@@ -4,6 +4,7 @@ import type { MealAnalysis, MealLog, SupplementEntry, UserProfile, WorkoutSessio
 import type { HabitState, HabitHistoryEntry, ReflectionEntry } from "./habitState";
 import { approxFromRange } from "./utils";
 import { coerceStreakSaver, type StreakSaverState } from "./streakSaver";
+import { coerceActivityCelebration, type ActivityCelebrationState } from "./activityCelebration";
 import { safeFallbackAnalysis } from "./ai/schema";
 
 export { LOCAL_MODE };
@@ -222,6 +223,7 @@ export async function getProfile(userId: string): Promise<UserProfile | null> {
     streak: data.streak ?? 0,
     streakLastDate: data.streak_last_date ?? "",
     streakSaver: coerceStreakSaver(data.streak_saver_json),
+    activityCelebration: coerceActivityCelebration(data.activity_celebration_json),
     trackWater: data.track_water ?? true,
     waterUnit: (data.water_unit === "oz" ? "oz" : "ml") as "ml" | "oz",
     timezoneOffsetMinutes: data.timezone_offset_minutes ?? null,
@@ -416,6 +418,30 @@ export async function saveStreakSaver(userId: string, state: StreakSaverState): 
     const cached = profileCache.get(userId);
     if (cached?.data) {
       profileCache.set(userId, { data: { ...cached.data, streakSaver: state }, ts: cached.ts });
+    }
+  } catch {
+    /* column may not exist yet — harmless */
+  }
+}
+
+// Persist which activity moments we've already celebrated (comeback / consistency), so each fires
+// once and survives a device switch. Wrapped so a not-yet-migrated column can't break loads —
+// until activity_celebration.sql is applied the write no-ops and it falls back to session-only.
+export async function saveActivityCelebration(userId: string, state: ActivityCelebrationState): Promise<void> {
+  if (useMemory) {
+    if (memProfiles[userId]) {
+      memProfiles[userId] = { ...memProfiles[userId], activityCelebration: state };
+      persistLocal();
+    }
+    return;
+  }
+  try {
+    await supabase
+      .from("profiles")
+      .upsert({ user_id: userId, activity_celebration_json: state, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+    const cached = profileCache.get(userId);
+    if (cached?.data) {
+      profileCache.set(userId, { data: { ...cached.data, activityCelebration: state }, ts: cached.ts });
     }
   } catch {
     /* column may not exist yet — harmless */
