@@ -2403,6 +2403,16 @@ export default function HomeScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [completedWorkouts, profile?.activityCelebration?.lastComeback, isDemoMode, user]);
 
+  // Dev-only: 6-tap on the Profile title arms a one-shot comeback-banner preview (ProfileScreen
+  // sets the flag, then navigates here). Fires the banner regardless of real activity data.
+  useEffect(() => {
+    if (!user || typeof window === "undefined") return;
+    if (localStorage.getItem(`wya_comeback_demo_${user.id}`) === "1") {
+      localStorage.removeItem(`wya_comeback_demo_${user.id}`);
+      setComebackBanner(true);
+    }
+  }, [user]);
+
   useEffect(() => {
     if (!user) { setShowProfileBell(false); return; }
     const compute = () => {

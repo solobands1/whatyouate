@@ -531,9 +531,15 @@ export default function ProfileScreen() {
     profileTapTimer.current = setTimeout(() => {
       const taps = profileTapCount.current;
       profileTapCount.current = 0;
+      // 6 taps: preview the activity comeback banner on Home (dev only).
+      if (taps >= 6 && devHooksEnabled() && user) {
+        localStorage.setItem(`wya_comeback_demo_${user.id}`, "1");
+        router.push("/");
+        return;
+      }
       // 5 taps: arm the CAP-SPENT streak-saver case (already used this week's save → warning card
       // + "at risk" tappable banner, streak actually breaks, backfill restores it).
-      if (taps >= 5 && devHooksEnabled() && user) {
+      if (taps === 5 && devHooksEnabled() && user) {
         localStorage.setItem(`wya_streak_saver_capspent_${user.id}`, "1");
         localStorage.removeItem(`wya_streak_saver_demo_${user.id}`);
         localStorage.removeItem(`wya_streak_saver_dismissed_${user.id}_${todayKey()}`);
@@ -978,6 +984,7 @@ export default function ProfileScreen() {
                           <li><span className="font-semibold text-ink">3×</span> · Review prompt</li>
                           <li><span className="font-semibold text-ink">4×</span> · Streak saver — auto-save available</li>
                           <li><span className="font-semibold text-ink">5×</span> · Streak saver — save already used</li>
+                          <li><span className="font-semibold text-ink">6×</span> · Activity comeback banner</li>
                         </ul>
                       </div>
                     )}
