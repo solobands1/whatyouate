@@ -2580,19 +2580,21 @@ export default function HomeScreen() {
     if (isDemoMode || !user) return null;
     const y = new Date(); y.setDate(y.getDate() - 1);
     const yStr = `${y.getFullYear()}-${String(y.getMonth() + 1).padStart(2, "0")}-${String(y.getDate()).padStart(2, "0")}`;
-    const realDayKeys = new Set(
-      meals.meals.filter((m) => m.analysisJson?.source !== "supplement" && m.status !== "failed").map((m) => dayKeyFromTs(m.ts))
-    );
-    // Checked before the dev flags too, so the prompt + drawer entry clear the moment yesterday
-    // is actually logged — and stay until then, even after a cancelled backfill attempt.
-    if (realDayKeys.has(yStr)) return null;
     // Dev: 4 taps on the Profile title arms the net (auto-save) case; 5 taps the cap-spent one.
+    // Forced regardless of real data (e.g. yesterday already logged from a prior demo); the flag
+    // clears on finish (closeStreakCelebration) and persists through a cancel.
     if (localStorage.getItem(`wya_streak_saver_demo_${user.id}`) === "1") {
       return { savedStreak: streak > 1 ? streak : 6, yesterdayStr: yStr, netAvailable: true };
     }
     if (localStorage.getItem(`wya_streak_saver_capspent_${user.id}`) === "1") {
       return { savedStreak: streak > 1 ? streak : 6, yesterdayStr: yStr, netAvailable: false };
     }
+    const realDayKeys = new Set(
+      meals.meals.filter((m) => m.analysisJson?.source !== "supplement" && m.status !== "failed").map((m) => dayKeyFromTs(m.ts))
+    );
+    // Real flow: once yesterday is actually logged the prompt + drawer entry clear — and stay
+    // until then, even after a cancelled backfill attempt.
+    if (realDayKeys.has(yStr)) return null;
     // Net case: the foundation froze yesterday (single slip within the weekly cap).
     if ((profile?.streakSaver?.forgiven ?? []).includes(yStr)) {
       return { savedStreak: streak, yesterdayStr: yStr, netAvailable: true };
