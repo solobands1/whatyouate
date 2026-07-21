@@ -1,6 +1,10 @@
 /**
- * Recommended Daily Allowances (RDA) for tracked micronutrients.
+ * Recommended Daily Allowances (RDA) for tracked micronutrients, by sex + age band.
  * Values sourced from NIH / Dietary Reference Intakes (DRIs).
+ * Two deliberate choices: vitamin D is 800 IU for all 51+ (the IOM's 600 for 51–70 is widely
+ * regarded as too low for older adults), and magnesium 19–50 uses the 31–50 value (a ~5%
+ * overshoot for 19–30). Everything else matches the DRI for the band.
+ * Omega-3 uses the ALA Adequate Intake as a proxy (there is no formal EPA/DHA RDA).
  * Units match what users will enter for supplements.
  */
 
@@ -185,6 +189,25 @@ const RDA_TABLE: RdaTable = {
     },
     {
       ageMin: 51,
+      ageMax: 71,
+      values: {
+        iron: 8,
+        b12: 2.4,
+        magnesium: 420,
+        zinc: 11,
+        "vitamin d": 800,
+        calcium: 1000, // men 51-70 DRI is 1000 (only 71+ rises to 1200)
+        "omega-3": 1600,
+        "vitamin c": 90,
+        potassium: 3400,
+        fiber: 30,
+        folate: 400,
+        "vitamin a": 900,
+        b6: 1.7,
+      },
+    },
+    {
+      ageMin: 71,
       ageMax: 999,
       values: {
         iron: 8,
