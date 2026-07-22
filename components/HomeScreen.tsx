@@ -27,6 +27,7 @@ import { addFeelLog, deleteFeelLog, updateFeelLog, upsertWaterLog, saveStreakSav
 import { EMPTY_HABIT_STATE, pickSuggestionId, snoozeSuggestion, snoozeAllSuggestions, declineSuggestion, markHabitEnded, endBuilderCompleted, resolveBuilderForToday, extendBuilder, type HabitState, type ActiveBuilder, type HabitHistoryEntry } from "../lib/habitState";
 import { rescueAvailable, EMPTY_STREAK_SAVER } from "../lib/streakSaver";
 import { detectComebackDay, EMPTY_ACTIVITY_CELEBRATION } from "../lib/activityCelebration";
+import { getWelcomeNudge, recordNudgeUnlockDate, WELCOME_NUDGE_TYPE } from "../lib/welcomeNudge";
 import WaterFillPicker from "./WaterFillPicker";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
@@ -704,6 +705,13 @@ export default function HomeScreen() {
     setChangeCheckin(null); setCheckinStopped(false);
   };
 
+  // Tracks the day nudges unlocked, so the one-time welcome nudge can appear promptly at unlock
+  // (localStorage alone wouldn't re-trigger the memo below). Set by the recorder effect further down.
+  const [nudgeUnlockDate, setNudgeUnlockDate] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    try { return localStorage.getItem("wya_nudges_unlocked_date"); } catch { return null; }
+  });
+
   // The current coach nudge (today's, or yesterday's before 2am) — shown in the hero
   // whenever no habit builder is occupying it. Mirrors the Insights selection.
   const currentWindowNudge = useMemo(() => {
@@ -712,12 +720,16 @@ export default function HomeScreen() {
     const todayStr = todayKey();
     const yesterday = new Date(now); yesterday.setDate(yesterday.getDate() - 1);
     const mostRecent = nudges[0];
-    if (!mostRecent?.created_at) return null;
-    const nudgeDate = todayKey(new Date(mostRecent.created_at));
-    if (nudgeDate === todayStr) return mostRecent;
-    if (nudgeDate === todayKey(yesterday) && now.getHours() < 2) return mostRecent;
-    return null;
-  }, [nudgesLoaded, nudges, ctxMeals?.length]);
+    if (mostRecent?.created_at) {
+      const nudgeDate = todayKey(new Date(mostRecent.created_at));
+      if (nudgeDate === todayStr) return mostRecent;
+      if (nudgeDate === todayKey(yesterday) && now.getHours() < 2) return mostRecent;
+    }
+    // No real nudge for the window — on the unlock day only, fall back to the one-time welcome
+    // nudge so the slot isn't a bare "Monitoring Your Patterns". It behaves like a real nudge here
+    // (hero vs Insights placement) but is excluded from the nav bell below.
+    return getWelcomeNudge(todayStr);
+  }, [nudgesLoaded, nudges, ctxMeals?.length, nudgeUnlockDate]);
 
   // Reveal a brand-new nudge in the hero (once per nudge) like a new habit: it starts
   // collapsed, the card shimmers + the eyebrow bounces, the border pulses, it slides
@@ -2308,6 +2320,9 @@ export default function HomeScreen() {
   useEffect(() => {
     if (!user || !habitLoaded) return;
     const nudgeOnHero = heroHabit.status === "hidden" && !!currentWindowNudge && !trial.isFree && !isDemoMode;
+    // The synthetic welcome nudge follows the same hero/Insights placement, but must NEVER light the
+    // nav bell or the "New Nudge" banner — the "Nudges Just Opened Up" celebration already points there.
+    const isWelcome = currentWindowNudge?.type === WELCOME_NUDGE_TYPE;
     // Let Insights know whether the nudge is currently on the home hero, so it shows the
     // full nudge (habit builder occupying the hero) vs. just a pointer (nudge is on home).
     try { localStorage.setItem("wya_nudge_on_home", nudgeOnHero ? "1" : "0"); } catch {}
@@ -2324,7 +2339,7 @@ export default function HomeScreen() {
     // A habit builder occupies the hero, so the server nudge lives only on Insights. Light the
     // nav bell from the nudge's own created_at if it's unseen — previously the bell only tracked
     // locally-computed nudges, so a cron "smart" nudge could land without ever lighting it.
-    if (!trial.isFree && !isDemoMode && currentWindowNudge?.created_at) {
+    if (!isWelcome && !trial.isFree && !isDemoMode && currentWindowNudge?.created_at) {
       const nudgeCreatedMs = new Date(currentWindowNudge.created_at).getTime();
       if (nudgeCreatedMs > seenTs && nudgeCreatedMs > nudgeTs) {
         localStorage.setItem("wya_nudge_ts", String(nudgeCreatedMs));
@@ -2333,7 +2348,7 @@ export default function HomeScreen() {
     }
     // If there's an unseen nudge, drop a one-time top banner pointing to Insights.
     const liveNudgeTs = parseInt(localStorage.getItem("wya_nudge_ts") ?? "0");
-    if (liveNudgeTs > seenTs && !trial.isFree && !isDemoMode && !!currentWindowNudge) {
+    if (liveNudgeTs > seenTs && !trial.isFree && !isDemoMode && !!currentWindowNudge && !isWelcome) {
       const bannerTs = parseInt(localStorage.getItem("wya_nudge_banner_ts") ?? "0");
       if (bannerTs < liveNudgeTs) {
         try { localStorage.setItem("wya_nudge_banner_ts", String(liveNudgeTs)); } catch {}
@@ -2530,6 +2545,17 @@ export default function HomeScreen() {
     { key: "nutrition", title: "Your Nutrition Just Opened Up", sub: "Your macros, micronutrients, and trends are filling in.", unlocked: !isDemoMode && hasEnoughDataForPatterns(ctxMeals ?? []), icon: "unlock" },
     { key: "feeling", title: "Food & Feeling Just Opened Up", sub: "Your coach is starting to connect your food to how you feel.", unlocked: !isDemoMode && (ctxReflections?.length ?? 0) >= 3, icon: "unlock" },
   ]);
+
+  // Record the day nudges first unlocked, tied to the genuine "nudges" unlock celebration (which
+  // baselines already-unlocked users to "done"), so the one-time welcome nudge appears only that
+  // day and never retroactively for someone who unlocked long ago.
+  useEffect(() => {
+    if (firstCel?.key === "nudges" && user && !isDemoMode) {
+      const today = todayKey();
+      recordNudgeUnlockDate(true, today);
+      setNudgeUnlockDate(today);
+    }
+  }, [firstCel, user, isDemoMode]);
 
   const todayHasActivity = (() => {
     const key = todayKey();

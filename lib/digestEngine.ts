@@ -5,7 +5,7 @@ import { buildNutrientNotes, buildSuggestions, type SuggestionSignal } from "./r
 
 export type NudgeType =
   | "encouragement" | "food_win" | "micronutrient_win" | "micronutrient_low"
-  | "streak" | "pattern" | "honest" | "deficit" | "activity_win" | "check_in"
+  | "streak" | "pattern" | "honest" | "deficit" | "activity_win" | "welcome" | "check_in"
   | "weekly_summary"
   // legacy types that may still exist in DB history
   | "calorie_low" | "calorie_high"

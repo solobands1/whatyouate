@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { riseIn } from "../lib/motion";
 import { devHooksEnabled } from "../lib/devHooks";
+import { getWelcomeNudge } from "../lib/welcomeNudge";
 import Joyride, { CallBackProps, STATUS, type Step } from "react-joyride";
 import { useRouter } from "next/navigation";
 import { dayKeyFromTs, formatDateShort, todayKey } from "../lib/utils";
@@ -452,11 +453,14 @@ export default function SummaryScreen() {
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = todayKey(yesterday);
     const mostRecent = nudges[0];
-    if (!mostRecent?.created_at) return null;
-    const nudgeLocalDate = todayKey(new Date(mostRecent.created_at));
-    if (nudgeLocalDate === todayStr) return mostRecent;
-    if (nudgeLocalDate === yesterdayStr && localHour < 2) return mostRecent;
-    return null;
+    if (mostRecent?.created_at) {
+      const nudgeLocalDate = todayKey(new Date(mostRecent.created_at));
+      if (nudgeLocalDate === todayStr) return mostRecent;
+      if (nudgeLocalDate === yesterdayStr && localHour < 2) return mostRecent;
+    }
+    // No real nudge for the window — on the unlock day only, fall back to the one-time welcome
+    // nudge (matches Home) so Insights shows it instead of a bare "Monitoring Your Patterns".
+    return getWelcomeNudge(todayStr);
   }, [nudgesLoaded, nudges, meals.length]);
 
   useEffect(() => {
