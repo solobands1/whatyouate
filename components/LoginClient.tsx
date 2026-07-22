@@ -217,7 +217,7 @@ export default function LoginClient() {
               </button>
               <div>
                 <h2 className="text-xl font-semibold text-ink">Create Account</h2>
-                <p className="mt-1 text-sm text-muted/60">7 days free, then $12.99/month.</p>
+                <p className="mt-1 text-sm text-muted/60">7 days free to start. No payment, no commitment.</p>
               </div>
             </div>
             <div className="flex flex-col gap-3">
