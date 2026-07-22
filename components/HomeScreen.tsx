@@ -3347,8 +3347,8 @@ export default function HomeScreen() {
             </div>
             <button
               type="button"
-              onClick={startStreakBackfill}
-              className="mt-3.5 w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white transition active:scale-[0.98]"
+              onPointerDown={startStreakBackfill}
+              className="mt-3.5 w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white transition active:scale-[0.98] [touch-action:manipulation]"
             >
               Log Yesterday&apos;s Meals
             </button>
