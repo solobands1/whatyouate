@@ -45,7 +45,7 @@ import {
   updateMeal,
   updateMealTs,
 } from "../lib/supabaseDb";
-import { computeHomeMarkers, computeNudges, computeRecent } from "../lib/digestEngine";
+import { computeHomeMarkers, computeRecent } from "../lib/digestEngine";
 import { useTrialStatus } from "../hooks/useTrialStatus";
 import { openUpgradeModal } from "./UpgradeModal";
 import { getPendingReviewFlag, canShowReviewPrompt, checkAndSetMilestoneFlag } from "../lib/reviewPrompt";
@@ -2296,40 +2296,10 @@ export default function HomeScreen() {
   const displayWorkouts = isDemoMode ? demoData.workouts : workout.workouts;
   const displayFeelLogs = isDemoMode ? demoData.feelLogs : homeFeelLogs;
 
-  const homeVisibleNotes = useMemo(
-    () => computeNudges(displayMeals, displayWorkouts, profile),
-    [displayMeals, displayWorkouts, profile]
-  );
-
-  // Bell notification: mark unseen nudge when new types appear today
-  // Exclude auto-supplement meals so adding vitamins doesn't trigger the dot
-  const homeNotifyNotes = useMemo(
-    () => computeNudges(
-      displayMeals.filter((m) => (m as any).analysisJson?.source !== "supplement"),
-      displayWorkouts,
-      profile
-    ),
-    [displayMeals, displayWorkouts, profile]
-  );
-
-  useEffect(() => {
-    if (!user || homeNotifyNotes.length === 0) return;
-    const todayStr = todayKey();
-    const notifiedTypesKey = `wya_notified_types_${todayStr}`;
-    const notifiedTypes = new Set<string>(JSON.parse(localStorage.getItem(notifiedTypesKey) ?? "[]"));
-    const newTypes = homeNotifyNotes.filter((note) => !notifiedTypes.has(note.type));
-    if (newTypes.length === 0) return;
-    newTypes.forEach((note) => notifiedTypes.add(note.type));
-    localStorage.setItem(notifiedTypesKey, JSON.stringify([...notifiedTypes]));
-    // Only bump wya_nudge_ts if user hasn't seen these nudge types yet today
-    const seenTs = parseInt(localStorage.getItem("wya_nudge_seen_ts") ?? "0");
-    const existingNudgeTs = parseInt(localStorage.getItem("wya_nudge_ts") ?? "0");
-    // If the existing nudge_ts is already after seen_ts, the bell is already lit — don't re-stamp
-    if (existingNudgeTs <= seenTs) {
-      localStorage.setItem("wya_nudge_ts", Date.now().toString());
-      window.dispatchEvent(new Event("wya_nudge_update"));
-    }
-  }, [user, homeNotifyNotes]);
+  // The Insights nav bell is driven ONLY by the actual smart (LLM) nudge — see the effect below.
+  // The old deterministic computeNudges bell was removed: those nudges are never displayed
+  // anywhere, so it lit the bell for a nudge that didn't exist on Insights (dropping the user on
+  // "Monitoring Your Patterns"), and it re-notified after the real nudge had already been seen.
 
   // When the nudge is actually showing on the home hero (no active habit builder taking the
   // slot), the user is already seeing it — so mark it seen and don't light the Insights nav
