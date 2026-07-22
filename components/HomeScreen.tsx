@@ -2660,15 +2660,20 @@ export default function HomeScreen() {
     streakBackfillCountRef.current += 1;
     setStreakAddAnotherOpen(true);
   };
-  // Cancelling the backfill: if they've already logged a meal this session the streak is earned,
-  // so go straight to the celebration (skip water). Cancelling with nothing logged just backs
-  // out — the card + drawer entry stay so they can come back later, and NO notification fires
-  // (that's reserved for actually dismissing the card via its X).
+  // Cancelling the current meal entry mid-backfill. If they've already saved a meal this session
+  // the streak is earned, so Cancel just discards the in-progress meal and returns to the "Add
+  // Another / All Done" choice, so an accidental Cancel doesn't drop them out of the flow. With
+  // nothing saved yet it backs out entirely; the card + drawer entry stay for later, and NO
+  // notification fires (that's reserved for actually dismissing the card via its X).
   const cancelStreakBackfill = () => {
     meals.setEditingMeal(null);
     setEditRecents(false);
-    setStreakSaverMode(false);
-    if (streakBackfillCountRef.current > 0) setStreakCelebrateOpen(true);
+    if (streakBackfillCountRef.current > 0) {
+      // Streak's already saved, so keep streakSaverMode on so "Add Another" reopens pre-dated.
+      setStreakAddAnotherOpen(true);
+    } else {
+      setStreakSaverMode(false);
+    }
   };
   const addAnotherBackfillMeal = () => {
     setStreakAddAnotherOpen(false);
