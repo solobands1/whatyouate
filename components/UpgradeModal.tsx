@@ -273,7 +273,7 @@ export default function UpgradeModal() {
                 <div
                   className="rounded-xl border border-primary/60 bg-primary/5 px-4 py-3 space-y-1 transition-all duration-300 animate-fade-slide-up"
                 >
-                  <p className="text-sm font-medium text-ink/90">I've been watching your patterns. I have a lot to tell you!</p>
+                  <p className="text-sm font-medium text-ink/90">I've been following your patterns. I have a lot to tell you!</p>
                   <p className="text-[11px] text-primary/70 font-medium">— Coach</p>
                 </div>
               )}
