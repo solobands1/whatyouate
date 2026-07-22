@@ -27,12 +27,26 @@ export default function LoginClient() {
   const [showPassword, setShowPassword] = useState(false);
   const [status, setStatus] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
+  // Keyboard avoidance: the on-screen keyboard shrinks the visual viewport; track how much so we
+  // can add scroll room and lift the focused field above it (the app's standard VisualViewport
+  // pattern — no native keyboard plugin). Helps every auth form, not just Create Account.
+  const [kbInset, setKbInset] = useState(0);
 
   useEffect(() => {
     if (!loading && user) {
       router.replace("/");
     }
   }, [loading, user, router]);
+
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const update = () => setKbInset(Math.max(0, window.innerHeight - vv.height - vv.offsetTop));
+    update();
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => { vv.removeEventListener("resize", update); vv.removeEventListener("scroll", update); };
+  }, []);
 
   const handleSignIn = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -131,7 +145,16 @@ export default function LoginClient() {
 
   return (
     <div className="min-h-screen bg-surface flex flex-col">
-      <div className="relative mx-auto flex w-full max-w-sm flex-col px-6 flex-1 justify-start pt-28 pb-24">
+      <div
+        className="relative mx-auto flex w-full max-w-sm flex-col px-6 flex-1 justify-start pt-28 pb-24"
+        style={kbInset > 120 ? { paddingBottom: kbInset + 24 } : undefined}
+        onFocusCapture={(e) => {
+          const t = e.target as HTMLElement;
+          if (t.tagName === "INPUT") {
+            setTimeout(() => { try { t.scrollIntoView({ block: "center", behavior: "smooth" }); } catch {} }, 300);
+          }
+        }}
+      >
 
         {/* Branding */}
         {(mode === "signin" || mode === "forgot") && (
