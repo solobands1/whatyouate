@@ -131,7 +131,7 @@ export default function LoginClient() {
 
   return (
     <div className="min-h-screen bg-surface flex flex-col">
-      <div className="mx-auto flex w-full max-w-sm flex-col px-6 flex-1 justify-start pt-28 pb-24">
+      <div className="relative mx-auto flex w-full max-w-sm flex-col px-6 flex-1 justify-start pt-28 pb-24">
 
         {/* Branding */}
         {(mode === "signin" || mode === "forgot") && (
@@ -203,6 +203,7 @@ export default function LoginClient() {
         {/* Sign up */}
         {mode === "signup" && (
           <>
+            <img src="/icon.svg" alt="WhatYouAte" className="absolute right-6 top-28 h-9 w-9 object-cover" />
             <div className="mb-7">
               <button
                 type="button"
@@ -275,7 +276,7 @@ export default function LoginClient() {
                 onClick={handleSignUp}
                 disabled={submitting}
               >
-                {submitting ? "Creating account…" : "Create account"}
+                {submitting ? "Creating Account…" : "Create Account"}
               </button>
               <p className="text-center text-[11px] text-muted/40 leading-relaxed">
                 By creating an account you agree to our{" "}
@@ -296,7 +297,7 @@ export default function LoginClient() {
               </svg>
             </div>
             <div>
-              <h2 className="text-xl font-semibold text-ink">Check your email</h2>
+              <h2 className="text-xl font-semibold text-ink">Check Your Email</h2>
               <p className="mt-2 text-sm text-muted/60 leading-relaxed">
                 We sent a confirmation link to <span className="font-medium text-ink/80">{email}</span>. Click it to activate your account, then sign in.
               </p>
@@ -345,7 +346,7 @@ export default function LoginClient() {
         {mode === "reset" && (
           <>
             <div className="mb-7">
-              <h2 className="text-xl font-semibold text-ink">New password</h2>
+              <h2 className="text-xl font-semibold text-ink">New Password</h2>
               <p className="mt-1 text-sm text-muted/60">Enter the code we sent to {email}.</p>
             </div>
             <div className="flex flex-col gap-3">
@@ -387,7 +388,7 @@ export default function LoginClient() {
                 onClick={handleResetPassword}
                 disabled={submitting}
               >
-                {submitting ? "Saving…" : "Set new password"}
+                {submitting ? "Saving…" : "Set New Password"}
               </button>
             </div>
           </>
