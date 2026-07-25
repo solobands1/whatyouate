@@ -2223,7 +2223,7 @@ export default function HomeScreen() {
       || waterModalOpen || quickConfirmMeal != null || failedMealPrompt != null
       || meals.editingMeal != null || editingFeelLog != null
       || barcodeOpen || barcodeProduct != null || barcodeNotFound || barcodeLookingUp
-      || workout.showStartWorkoutModal || workout.showEndWorkoutModal || pendingDelete != null;
+      || pendingDelete != null;
     if (!anyModal) return;
     // Pin the body so the page behind can't scroll (iOS WKWebView ignores
     // `overflow: hidden` alone). Preserve and restore the scroll position.
@@ -2244,7 +2244,7 @@ export default function HomeScreen() {
       body.style.overflow = "";
       window.scrollTo(0, scrollY);
     };
-  }, [showQuickAdd, showLogFood, showReflection, showFeelingModal, showHabitSpotlight, waterModalOpen, quickConfirmMeal, failedMealPrompt, meals.editingMeal, editingFeelLog, barcodeOpen, barcodeProduct, barcodeNotFound, barcodeLookingUp, workout.showStartWorkoutModal, workout.showEndWorkoutModal, pendingDelete]);
+  }, [showQuickAdd, showLogFood, showReflection, showFeelingModal, showHabitSpotlight, waterModalOpen, quickConfirmMeal, failedMealPrompt, meals.editingMeal, editingFeelLog, barcodeOpen, barcodeProduct, barcodeNotFound, barcodeLookingUp, pendingDelete]);
 
   // When a meal is still processing, the "Analyzing food…" label is time-gated
   // at render time (< 90s shows spinner text, >= 90s shows "Analysis failed").
@@ -3110,139 +3110,8 @@ export default function HomeScreen() {
           </div>
         </div>
       )}
-      {workout.showStartWorkoutModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
-          <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
-            <h2 className="text-base font-semibold text-ink">Log An Activity</h2>
-            {workout.activeWorkout ? (
-              <>
-                <p className="mt-2 text-sm text-muted/70">An activity is already in progress.</p>
-                <div className="mt-5 flex justify-end">
-                  <button
-                    type="button"
-                    className="rounded-xl border border-ink/10 bg-white px-3 py-2 text-xs font-semibold text-ink/70 transition hover:bg-ink/5"
-                    onClick={() => workout.setShowStartWorkoutModal(false)}
-                  >
-                    Close
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="mt-4 space-y-2">
-                  <button
-                    type="button"
-                    className="flex w-full flex-col items-start rounded-xl bg-primary px-4 py-3 text-left transition hover:bg-primary/90"
-                    onClick={() => {
-                      workout.setShowStartWorkoutModal(false);
-                      workout.openManualWorkoutModal();
-                    }}
-                  >
-                    <span className="text-sm font-semibold text-white">Manually Add Activity</span>
-                    <span className="mt-0.5 text-xs text-white/70">Log an activity you already completed</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="flex w-full flex-col items-start rounded-xl border border-ink/10 bg-white px-4 py-3 text-left transition hover:bg-ink/5"
-                    onClick={workout.handleStartWorkout}
-                  >
-                    <span className="text-sm font-semibold text-ink">Start Activity</span>
-                    <span className="mt-0.5 text-xs text-muted/60">Begin tracking time</span>
-                  </button>
-                </div>
-                <div className="mt-4 flex justify-end">
-                  <button
-                    type="button"
-                    className="text-xs font-semibold text-ink/50"
-                    onClick={() => workout.setShowStartWorkoutModal(false)}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-      {workout.showEndWorkoutModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
-          <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
-            <h2 className="text-base font-semibold text-ink">End Activity</h2>
-            <p className="mt-2 text-sm text-muted/70">
-              {workout.activeWorkout ? "Confirm your activity details." : "No active activity in progress."}
-            </p>
-            {workout.activeWorkout && (
-              <div className="mt-4 space-y-4">
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">
-                    Activity type
-                  </p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {WORKOUT_TYPE_OPTIONS.map((type) => (
-                      <button
-                        key={type}
-                        type="button"
-                        className={`rounded-full border px-3 py-1 text-xs transition ${
-                          workout.selectedWorkoutTypes.includes(type)
-                            ? "border-primary/30 bg-primary/10 text-ink"
-                            : "border-ink/10 bg-white text-ink/70 hover:bg-ink/5"
-                        }`}
-                        onClick={() => workout.toggleWorkoutType(type)}
-                      >
-                        {type}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">
-                    Intensity
-                  </p>
-                  <div className="mt-2 flex gap-2">
-                    {([
-                      { value: "low", label: "Low" },
-                      { value: "medium", label: "Medium" },
-                      { value: "high", label: "High" }
-                    ] as const).map((level) => (
-                      <button
-                        key={level.value}
-                        type="button"
-                        className={`rounded-full border px-3 py-1 text-xs transition ${
-                          workout.selectedIntensity === level.value
-                            ? "border-primary/30 bg-primary/10 text-ink"
-                            : "border-ink/10 bg-white text-ink/70 hover:bg-ink/5"
-                        }`}
-                        onClick={() => workout.setSelectedIntensity(level.value)}
-                      >
-                        {level.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-            <div className="mt-5 flex items-center justify-end gap-2">
-              <button
-                type="button"
-                className="rounded-xl border border-ink/10 bg-white px-3 py-2 text-xs font-semibold text-ink/70 transition hover:bg-ink/5"
-                onClick={() => workout.setShowEndWorkoutModal(false)}
-              >
-                Close
-              </button>
-              {workout.activeWorkout && (
-                <button
-                  type="button"
-                  disabled={workout.isEndingWorkout}
-                  className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
-                  onClick={workout.handleEndWorkout}
-                >
-                  {workout.isEndingWorkout ? "Ending…" : "End Activity"}
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* The live activity timer (start/end tracking) was removed — activity is logged manually or
+          synced from Apple Health. The "+" Activity option opens the manual entry directly. */}
       {pendingDelete && !meals.editingMeal && !workout.editingWorkout && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
           <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
@@ -4057,10 +3926,6 @@ export default function HomeScreen() {
           </div>
         )}
 
-        {workout.activeWorkout && (
-          <p className="mt-3 text-center text-[11px] text-muted/60">Workout in progress</p>
-        )}
-
         <Card className="mt-2" style={riseIn(barsReady && habitLoaded, 2)}>
           <div className="flex items-start justify-between">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Recent</p>
@@ -4698,12 +4563,12 @@ export default function HomeScreen() {
               <button
                 type="button"
                 className="flex w-[calc((100%-1.5rem)/4)] shrink-0 flex-col items-center justify-center gap-1.5 rounded-xl border border-ink/10 bg-white px-1 py-3 text-center text-[11px] font-semibold leading-tight text-ink/80 transition active:scale-[0.97] active:bg-primary/5"
-                onClick={() => { setShowLogFood(false); workout.activeWorkout ? workout.setShowEndWorkoutModal(true) : workout.setShowStartWorkoutModal(true); }}
+                onClick={() => { setShowLogFood(false); workout.openManualWorkoutModal(); }}
               >
                 <svg viewBox="0 0 24 24" className="h-5 w-5 text-primary" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
                 </svg>
-                <span>{workout.activeWorkout ? "End Activity" : "Activity"}</span>
+                <span>Activity</span>
               </button>
               {waterData && (
                 <button
