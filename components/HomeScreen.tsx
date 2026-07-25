@@ -892,9 +892,12 @@ export default function HomeScreen() {
         setActiveTemplate(t);
         if (b.status === "done") {
           setHeroHabit({ status: "done", days: b.days, holdDay: null });
-          // Answered "rested" confirmation, or the "You Started Something!" step (waits
-          // for the Done tap) if not answered yet. No celebration replay.
-          setDoneStep(b.keptAnswer ? "rested" : "started");
+          // Rated → calm resting state. Unrated → land on the rating prompt directly (never the
+          // "started" step, whose Done tap replayed the full You Built A Habit celebration). This
+          // only appears on same-day reopens — the finished card retires once the day rolls over —
+          // and the completion is already recorded in habit history regardless of the rating.
+          setDoneStep(b.keptAnswer ? "rested" : "feedback");
+          setFinaleReopened(!b.keptAnswer);
         } else if (b.status === "committed") {
           // "Starts Tomorrow" turns active once the next calendar day arrives.
           if (sameLocalDay(b.startedAt ?? new Date().toISOString(), new Date())) {
@@ -1222,6 +1225,9 @@ export default function HomeScreen() {
   };
   const [doneStep, setDoneStep] = useState<"dayDone" | "started" | "celebrate" | "feedback" | "rested">("dayDone");
   const [ratingPicked, setRatingPicked] = useState<string | null>(null);
+  // True when a finished-but-unrated habit is restored on reopen, so its rating prompt shows
+  // calmly (settle-glow) instead of replaying the built-celebration bloom/shimmer/haptic.
+  const [finaleReopened, setFinaleReopened] = useState(false);
   const [quickAddItems, setQuickAddItems] = useState<QuickAddItem[]>([]);
   const [quickAddRecentItems, setQuickAddRecentItems] = useState<QuickAddItem[]>([]);
   const [quickAddAllItems, setQuickAddAllItems] = useState<QuickAddItem[]>([]);
@@ -2172,7 +2178,7 @@ export default function HomeScreen() {
   // (the celebration lands first, then the feedback buttons fade in). Resets to the
   // start whenever we leave "done"; "feedback" and "rested" wait on the user.
   useEffect(() => {
-    if (heroHabit.status !== "done") { setDoneStep("dayDone"); setRatingPicked(null); return; }
+    if (heroHabit.status !== "done") { setDoneStep("dayDone"); setRatingPicked(null); setFinaleReopened(false); return; }
     let t: ReturnType<typeof setTimeout> | undefined;
     if (doneStep === "dayDone") t = setTimeout(() => setDoneStep("started"), 2400);
     else if (doneStep === "celebrate") t = setTimeout(() => setDoneStep("feedback"), 2600);
@@ -3583,7 +3589,7 @@ export default function HomeScreen() {
 
         <Card className="mt-2" style={riseIn(barsReady && habitLoaded, 0)}>
           {/* Hero — dynamic slot. Priority: active habit builder > suggestion > reflection reminder > discovery > wins > greeting (default). Sample habit wired locally for now. */}
-          <div data-tour="habit-hero" className={`-mx-4 rounded-2xl border-2 border-primary/25 px-4 ${heroHabit.status === "done" || heroHabit.status === "accepting" ? "bg-primary/10" : "bg-primary/[0.05]"} ${heroHabit.status === "hidden" ? (currentWindowNudge && !trial.isFree && !isDemoMode ? "py-5" : "py-7") : heroHabit.status === "done" && doneStep === "rested" ? "pt-5 pb-3" : heroHabit.status === "suggested" && heroExpanded ? "pt-5 pb-3" : "py-5"} ${heroHabit.status === "done" && (doneStep === "celebrate" || doneStep === "feedback") ? "animate-habit-built" : ""} ${(heroHabit.status === "done" && doneStep === "rested") || heroHabit.status === "accepting" ? "animate-habit-glow" : ""} ${(heroHabit.status === "active" && heroHabit.holdDay != null) || (heroHabit.status === "suggested" && !heroExpanded) || (heroHabit.status === "hidden" && !!currentWindowNudge && !nudgeExpanded) ? "animate-habit-shimmer" : ""} ${heroPulse ? "animate-card-pulse" : ""}`}>
+          <div data-tour="habit-hero" className={`-mx-4 rounded-2xl border-2 border-primary/25 px-4 ${heroHabit.status === "done" || heroHabit.status === "accepting" ? "bg-primary/10" : "bg-primary/[0.05]"} ${heroHabit.status === "hidden" ? (currentWindowNudge && !trial.isFree && !isDemoMode ? "py-5" : "py-7") : heroHabit.status === "done" && doneStep === "rested" ? "pt-5 pb-3" : heroHabit.status === "suggested" && heroExpanded ? "pt-5 pb-3" : "py-5"} ${heroHabit.status === "done" && (doneStep === "celebrate" || (doneStep === "feedback" && !finaleReopened)) ? "animate-habit-built" : ""} ${(heroHabit.status === "done" && (doneStep === "rested" || (doneStep === "feedback" && finaleReopened))) || heroHabit.status === "accepting" ? "animate-habit-glow" : ""} ${(heroHabit.status === "active" && heroHabit.holdDay != null) || (heroHabit.status === "suggested" && !heroExpanded) || (heroHabit.status === "hidden" && !!currentWindowNudge && !nudgeExpanded) ? "animate-habit-shimmer" : ""} ${heroPulse ? "animate-card-pulse" : ""}`}>
             {heroHabit.status === "suggested" ? (
               <div className={heroExpanded ? "" : "animate-habit-note"}>
                 {/* Tap the eyebrow to cycle templates (demo/testing). On first appearance
