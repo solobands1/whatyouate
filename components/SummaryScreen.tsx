@@ -90,11 +90,18 @@ export default function SummaryScreen() {
 
   useEffect(() => {
     if (!user) return;
-    if (localStorage.getItem(`wya_demo_mode_${user.id}`) === "true") {
+    // Only enter demo mode when the walkthrough is genuinely running on THIS screen (stage
+    // "summary"). Reading the raw wya_demo_mode flag alone leaked fabricated demo data as the
+    // user's real data if a tour was abandoned (force-quit mid-tour, or tapping away during a
+    // handoff) and the flag never got cleared. Matches HomeScreen's active+stage gate.
+    const tourHere = () =>
+      localStorage.getItem(`wya_walkthrough_active_${user.id}`) === "true" &&
+      localStorage.getItem(`wya_walkthrough_stage_${user.id}`) === "summary";
+    if (localStorage.getItem(`wya_demo_mode_${user.id}`) === "true" && tourHere()) {
       setIsDemoMode(true);
     }
     const handler = () => {
-      if (localStorage.getItem(`wya_demo_mode_${user.id}`) === "true") setIsDemoMode(true);
+      if (localStorage.getItem(`wya_demo_mode_${user.id}`) === "true" && tourHere()) setIsDemoMode(true);
     };
     window.addEventListener("wya_demo_mode_on", handler);
     return () => window.removeEventListener("wya_demo_mode_on", handler);

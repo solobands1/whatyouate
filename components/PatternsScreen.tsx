@@ -148,9 +148,16 @@ export default function PatternsScreen() {
   }, []);
   useEffect(() => {
     if (!user || typeof window === "undefined") return;
-    if (localStorage.getItem(`wya_demo_mode_${user.id}`) === "true") setIsDemoMode(true);
+    // Only enter demo mode when the walkthrough is genuinely running on THIS screen (stage
+    // "insights"). Reading the raw wya_demo_mode flag alone leaked fabricated demo data as the
+    // user's real data if a tour was abandoned and the flag never got cleared. Matches
+    // HomeScreen's active+stage gate.
+    const tourHere = () =>
+      localStorage.getItem(`wya_walkthrough_active_${user.id}`) === "true" &&
+      localStorage.getItem(`wya_walkthrough_stage_${user.id}`) === "insights";
+    if (localStorage.getItem(`wya_demo_mode_${user.id}`) === "true" && tourHere()) setIsDemoMode(true);
     const handler = () => {
-      if (user && localStorage.getItem(`wya_demo_mode_${user.id}`) === "true") setIsDemoMode(true);
+      if (user && localStorage.getItem(`wya_demo_mode_${user.id}`) === "true" && tourHere()) setIsDemoMode(true);
     };
     window.addEventListener("wya_demo_mode_on", handler);
     return () => window.removeEventListener("wya_demo_mode_on", handler);
