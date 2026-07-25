@@ -415,7 +415,12 @@ export function habitsForGoals(
   goalDirection?: GoalDirection,
   templates: HabitTemplate[] = HABIT_TEMPLATES,
 ): HabitTemplate[] {
-  const standard = templates.filter((t) => t.kind === "standard");
+  // Exclude "deepen" variants (the deepensTo target of another template, e.g. hydration-5): they're
+  // progression rewards earned by completing the base habit, and their copy presupposes that. The
+  // progression isn't wired yet, so keep them out of the cold suggestion pool rather than surface a
+  // false "you built this one before" to someone who never did.
+  const deepenTargets = new Set(templates.map((t) => t.deepensTo).filter((id): id is string => !!id));
+  const standard = templates.filter((t) => t.kind === "standard" && !deepenTargets.has(t.id));
   // Drop body-goal habits that don't match this user's direction.
   const eligible = standard.filter((t) => !t.goalDirections || (goalDirection != null && t.goalDirections.includes(goalDirection)));
   const cats = new Set((goals ?? []).flatMap((g) => FEELING_GOAL_CATEGORIES[g] ?? []));
