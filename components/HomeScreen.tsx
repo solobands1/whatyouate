@@ -5046,7 +5046,7 @@ export default function HomeScreen() {
               </button>
               <button
                 type="button"
-                className={`min-w-[96px] rounded-xl bg-primary px-4 py-2 text-center text-xs font-semibold text-white transition hover:bg-primary/90 ${
+                className={`min-w-[128px] rounded-xl bg-primary px-4 py-2 text-center text-xs font-semibold text-white transition hover:bg-primary/90 ${
                   workout.addingManual ? "opacity-70" : ""
                 }`}
                 onClick={workout.handleAddManualWorkout}
