@@ -335,6 +335,45 @@ function ManualDateRow({ manualDate, setManualDate, min }: { manualDate: string;
   );
 }
 
+// Duration picker: tap the field to open a short, scrollable, height-capped list. A native <select>'s
+// dropdown can't be height-limited (it ran down the page), so this bounds it (max-h-40 ≈ 6 rows).
+const DURATION_HOUR_OPTIONS = Array.from({ length: 13 }, (_, i) => ({ value: String(i), label: String(i) }));
+const DURATION_MINUTE_OPTIONS = Array.from({ length: 12 }, (_, i) => ({ value: String(i * 5), label: String(i * 5).padStart(2, "0") }));
+function DurationPicker({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: { value: string; label: string }[] }) {
+  const [open, setOpen] = useState(false);
+  const current = options.find((o) => o.value === value) ?? options[0];
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-14 rounded-lg border border-ink/10 bg-white px-2 py-2 text-center text-sm text-ink/80 transition active:bg-ink/5"
+      >
+        {current.label}
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-[60]" onClick={() => setOpen(false)} />
+          <div className="absolute left-1/2 top-full z-[61] mt-1 max-h-40 w-16 -translate-x-1/2 overflow-y-auto rounded-lg border border-ink/10 bg-white py-1 shadow-lg">
+            {options.map((o) => (
+              <button
+                key={o.value}
+                type="button"
+                onClick={() => { onChange(o.value); setOpen(false); }}
+                className={`block w-full px-2 py-1.5 text-center text-sm transition ${
+                  o.value === value ? "bg-primary/10 font-semibold text-primary" : "text-ink/80 active:bg-ink/5"
+                }`}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 // Renders a meal photo, fetching the (base64) thumbnail on demand since bulk loads no
 // longer carry it. Uses an already-loaded thumb when present (e.g. a just-added meal).
 function LazyMealImage({ mealId, thumb, className }: { mealId: string; thumb?: string; className?: string }) {
@@ -4954,21 +4993,9 @@ export default function HomeScreen() {
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Duration</p>
                   <div className="mt-2 flex items-center gap-1.5">
-                    <select
-                      className="w-14 appearance-none rounded-lg border border-ink/10 bg-white px-2 py-2 text-center text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                      value={workout.manualHours || "0"}
-                      onChange={(e) => workout.setManualHours(e.target.value)}
-                    >
-                      {Array.from({ length: 13 }, (_, i) => (<option key={i} value={String(i)}>{i}</option>))}
-                    </select>
+                    <DurationPicker value={workout.manualHours || "0"} onChange={workout.setManualHours} options={DURATION_HOUR_OPTIONS} />
                     <span className="text-xs text-muted/60">h</span>
-                    <select
-                      className="w-14 appearance-none rounded-lg border border-ink/10 bg-white px-2 py-2 text-center text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                      value={workout.manualMinutes || "0"}
-                      onChange={(e) => workout.setManualMinutes(e.target.value)}
-                    >
-                      {Array.from({ length: 12 }, (_, i) => { const m = i * 5; return (<option key={m} value={String(m)}>{String(m).padStart(2, "0")}</option>); })}
-                    </select>
+                    <DurationPicker value={workout.manualMinutes || "0"} onChange={workout.setManualMinutes} options={DURATION_MINUTE_OPTIONS} />
                     <span className="text-xs text-muted/60">m</span>
                   </div>
                 </div>
