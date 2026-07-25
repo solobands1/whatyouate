@@ -374,6 +374,60 @@ function DurationPicker({ value, onChange, options }: { value: string; onChange:
   );
 }
 
+// Compact date picker for the activity modal. Replaces the native <input type="date"> calendar,
+// whose size iOS draws (not CSS-resizable), with a small scrollable list of recent days (max-h-56).
+function ActivityDatePicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const options = useMemo(() => {
+    const opts: { value: string; label: string }[] = [];
+    const now = new Date();
+    for (let i = 0; i < 30; i++) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      const val = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      const label = i === 0 ? "Today" : i === 1 ? "Yesterday" : d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+      opts.push({ value: val, label });
+    }
+    return opts;
+  }, []);
+  const currentLabel =
+    options.find((o) => o.value === value)?.label ??
+    (value ? new Date(value + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "Today");
+  return (
+    <div className="relative w-36">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="mt-2 flex w-full items-center gap-2 rounded-lg border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 transition active:bg-ink/5"
+      >
+        <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-muted/60" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
+        </svg>
+        <span className="truncate">{currentLabel}</span>
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-[60]" onClick={() => setOpen(false)} />
+          <div className="absolute left-0 top-full z-[61] mt-1 max-h-56 w-full overflow-y-auto rounded-lg border border-ink/10 bg-white py-1 shadow-lg">
+            {options.map((o) => (
+              <button
+                key={o.value}
+                type="button"
+                onClick={() => { onChange(o.value); setOpen(false); }}
+                className={`block w-full px-3 py-2 text-left text-sm transition ${
+                  o.value === value ? "bg-primary/10 font-semibold text-primary" : "text-ink/80 active:bg-ink/5"
+                }`}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 // Renders a meal photo, fetching the (base64) thumbnail on demand since bulk loads no
 // longer carry it. Uses an already-loaded thumb when present (e.g. a just-added meal).
 function LazyMealImage({ mealId, thumb, className }: { mealId: string; thumb?: string; className?: string }) {
@@ -4982,13 +5036,7 @@ export default function HomeScreen() {
               <div className="flex items-end gap-3">
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Date</p>
-                  <input
-                    type="date"
-                    className="mt-2 w-36 rounded-lg border border-ink/10 bg-white px-2.5 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                    value={workout.manualDate}
-                    max={(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; })()}
-                    onChange={(e) => workout.setManualDate(e.target.value)}
-                  />
+                  <ActivityDatePicker value={workout.manualDate} onChange={workout.setManualDate} />
                 </div>
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Duration</p>
