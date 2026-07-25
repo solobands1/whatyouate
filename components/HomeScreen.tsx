@@ -2703,8 +2703,6 @@ export default function HomeScreen() {
     return () => observer.disconnect();
   }, [recentFiltered.length]);
 
-  if (!user) return null;
-
   const gentleTargetsDisplay = homeMarkers.gentleTargets ?? { calories: 2300, protein: 125 };
   const mealCount = homeMarkers.mealCount;
   const streak = homeMarkers.streak ?? 0;
@@ -2956,6 +2954,11 @@ export default function HomeScreen() {
       setShowSavedMessage(true);
     }
   }, [user, profile?.streakSaver]);
+
+  // Every hook is above this line. Guard the render (not hook execution) so a session dropping to
+  // null while Home is mounted unmounts cleanly instead of throwing "rendered fewer hooks". The
+  // three hooks that used to sit below the old guard are all no-ops when user is null.
+  if (!user) return null;
 
   const calMid = (homeMarkers.todayTotals.calories_min + homeMarkers.todayTotals.calories_max) / 2;
   const protMid = (homeMarkers.todayTotals.protein_g_min + homeMarkers.todayTotals.protein_g_max) / 2;
