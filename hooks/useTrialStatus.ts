@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../components/AuthProvider";
 import { useAppData } from "../components/AppDataProvider";
 import { computeTrialStatus, type TrialStatus } from "../lib/trial";
-import { initializePurchases, checkIsPro } from "../lib/purchases";
+import { initializePurchases, checkProStatus } from "../lib/purchases";
 import { devHooksEnabled } from "../lib/devHooks";
 
 export function useTrialStatus(): TrialStatus {
@@ -36,23 +36,53 @@ export function useTrialStatus(): TrialStatus {
     }
   }, []);
 
+  // Seed from the last-known Pro flag immediately, so a returning subscriber is never briefly
+  // walled while RevenueCat re-checks — and stays unlocked if RC is unreachable (offline / after a
+  // reinstall) instead of being locked out with no way to re-buy.
   useEffect(() => {
     if (!user) return;
-    initializePurchases(user.id)
-      .then(() => checkIsPro())
-      .then(setRcIsPro)
+    try {
+      if (localStorage.getItem(`wya_last_pro_${user.id}`) === "true") setRcIsPro(true);
+    } catch {}
+  }, [user?.id]);
+
+  // Verify with RevenueCat. Only downgrade on a definitive "free" (RC reachable, not entitled);
+  // never on "unknown" (offline / cache miss) — that's what would trap a paying customer.
+  useEffect(() => {
+    if (!user) return;
+    const uid = user.id;
+    initializePurchases(uid)
+      .then(() => checkProStatus())
+      .then((s) => {
+        if (s === "pro") {
+          setRcIsPro(true);
+          try { localStorage.setItem(`wya_last_pro_${uid}`, "true"); } catch {}
+        } else if (s === "free") {
+          setRcIsPro(false);
+          try { localStorage.removeItem(`wya_last_pro_${uid}`); } catch {}
+        }
+        // "unknown" → keep the seeded/optimistic value untouched
+      })
       .catch(() => {});
   }, [user?.id]);
 
   // Listen for successful purchases and recheck entitlements
   useEffect(() => {
+    if (!user) return;
+    const uid = user.id;
     const handler = async () => {
-      const pro = await checkIsPro().catch(() => false);
-      setRcIsPro(pro);
+      const s = await checkProStatus().catch(() => "unknown" as const);
+      if (s === "pro") {
+        setRcIsPro(true);
+        try { localStorage.setItem(`wya_last_pro_${uid}`, "true"); } catch {}
+      } else if (s === "free") {
+        setRcIsPro(false);
+        try { localStorage.removeItem(`wya_last_pro_${uid}`); } catch {}
+      }
     };
     window.addEventListener("wya_purchase_complete", handler);
     return () => window.removeEventListener("wya_purchase_complete", handler);
-  }, []);
+  }, [user?.id]);
 
   return useMemo(() => {
     if (override) return override; // dev-only ?trial / ?trialday override

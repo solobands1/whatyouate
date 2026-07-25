@@ -46,6 +46,22 @@ export async function checkIsPro(): Promise<boolean> {
   return !!info.entitlements.active["pro"];
 }
 
+export type ProStatus = "pro" | "free" | "unknown";
+
+// Like checkIsPro, but distinguishes a definitive "not entitled" (RC reachable) from "unknown"
+// (RC unreachable — offline, cache miss, or non-native). Callers use "unknown" to avoid
+// downgrading a known subscriber on a transient failure, which would trap a paying customer.
+export async function checkProStatus(): Promise<ProStatus> {
+  const mod = await getMod();
+  if (!mod) return "unknown"; // web / non-native: no StoreKit to check
+  try {
+    const { customerInfo } = await mod.Purchases.getCustomerInfo();
+    return customerInfo.entitlements.active["pro"] ? "pro" : "free";
+  } catch {
+    return "unknown"; // RC unreachable — do NOT treat as "not Pro"
+  }
+}
+
 export async function getOfferings() {
   const mod = await getMod();
   if (!mod) throw new Error("NOT_NATIVE");
