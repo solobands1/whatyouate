@@ -1544,6 +1544,18 @@ export default function HomeScreen() {
     workout.setWorkouts(ctxWorkouts);
   }, [ctxWorkouts]);
 
+  // Feel logs are seeded once from context, which is empty during the async cold load — so on a
+  // cold launch homeFeelLogs locked to [] and prior feelings vanished from Home (they still showed
+  // on Insights). Re-sync when the context resolves, like meals/workouts above. Merge by id so a
+  // feeling just logged locally isn't dropped before the context sync catches up.
+  useEffect(() => {
+    setHomeFeelLogs((prev) => {
+      const ctxIds = new Set(ctxFeelLogs.map((f) => f.id));
+      const localOnly = prev.filter((f) => !ctxIds.has(f.id));
+      return [...ctxFeelLogs, ...localOnly].sort((a, b) => b.ts - a.ts);
+    });
+  }, [ctxFeelLogs]);
+
   useEffect(() => {
     if (loadingData) {
       if (!barsEverShownRef.current) setBarsReady(false);
