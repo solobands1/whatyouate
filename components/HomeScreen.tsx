@@ -1178,6 +1178,10 @@ export default function HomeScreen() {
   // all-blue day for a beat, then reveal the confirmation. Shared by the checkpoint
   // buttons and the auto-complete-on-log for logging habits.
   const completeCheckpoint = (s: number) => {
+    // One finished day per calendar day (production): once today's day is done, ignore
+    // further check-offs until the real overnight rollover (resolveBuilderForToday) advances
+    // to the next day. Dev builds keep the fast-forward shortcuts for testing.
+    if (!devHooksEnabled() && habitStateRef.current.builder?.lastCompletedDate === todayKey()) return;
     unlockAudio();
     setHeroHabit((h) => {
       const cur = h.days.findIndex((d) => !d.every(Boolean));
@@ -3621,10 +3625,10 @@ export default function HomeScreen() {
               // Tap anywhere to advance into the tracker — demo/testing only, simulating
               // tomorrow arriving (the real version auto-advances overnight).
               <div
-                className="cursor-pointer text-center"
-                role="button"
-                aria-label="Start habit (testing)"
-                onClick={() => setHeroHabit((h) => ({ ...h, status: "active" }))}
+                className={`text-center${devHooksEnabled() ? " cursor-pointer" : ""}`}
+                role={devHooksEnabled() ? "button" : undefined}
+                aria-label={devHooksEnabled() ? "Start habit (testing)" : undefined}
+                onClick={devHooksEnabled() ? () => setHeroHabit((h) => ({ ...h, status: "active" })) : undefined}
               >
                 <p className="-mt-1 text-center text-xs font-semibold uppercase tracking-wide text-primary">Habit Builder</p>
                 <div className="flex flex-col items-center py-1">
@@ -3673,7 +3677,7 @@ export default function HomeScreen() {
                     <div className="flex items-center justify-between">
                       <p className="text-base font-semibold text-ink">{activeTemplate.title}</p>
                       {/* Tapping the day label simulates a missed day (demo/testing only). */}
-                      <p className="cursor-pointer text-xs font-medium text-muted/60 transition active:opacity-60" role="button" aria-label="Simulate missed day (testing)" onClick={() => setHeroHabit((h) => ({ ...h, status: "missed" }))}>Day {current + 1} of {activeTemplate.durationDays}</p>
+                      <p className={`text-xs font-medium text-muted/60${devHooksEnabled() ? " cursor-pointer transition active:opacity-60" : ""}`} role={devHooksEnabled() ? "button" : undefined} aria-label={devHooksEnabled() ? "Simulate missed day (testing)" : undefined} onClick={devHooksEnabled() ? () => setHeroHabit((h) => ({ ...h, status: "missed" })) : undefined}>Day {current + 1} of {activeTemplate.durationDays}</p>
                     </div>
                     <p className="mt-1.5 text-[13px] text-ink/70">{activeTemplate.ask}</p>
                     <div className="mt-4 flex gap-2">
@@ -3739,25 +3743,27 @@ export default function HomeScreen() {
                 return (
                   // Tapping the body simulates the next day (demo only; real version rolls over at midnight).
                   <div
-                    className="relative cursor-pointer text-center"
-                    role="button"
-                    aria-label="Continue to next day"
-                    onClick={() => setHeroHabit((h) => ({ ...h, status: "active" }))}
+                    className={`relative text-center${devHooksEnabled() ? " cursor-pointer" : ""}`}
+                    role={devHooksEnabled() ? "button" : undefined}
+                    aria-label={devHooksEnabled() ? "Continue to next day" : undefined}
+                    onClick={devHooksEnabled() ? () => setHeroHabit((h) => ({ ...h, status: "active" })) : undefined}
                   >
-                    <button
-                      type="button"
-                      className="absolute right-0 top-0 text-[11px] font-medium text-ink/45 transition active:opacity-60"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setHeroHabit((h) => {
-                          const target = h.days.filter((d) => d.every(Boolean)).length - 1;
-                          const days = h.days.map((day, di) => di === target ? day.map(() => false) : day);
-                          return { ...h, days, status: "active" };
-                        });
-                      }}
-                    >
-                      Undo
-                    </button>
+                    {devHooksEnabled() && (
+                      <button
+                        type="button"
+                        className="absolute right-0 top-0 text-[11px] font-medium text-ink/45 transition active:opacity-60"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setHeroHabit((h) => {
+                            const target = h.days.filter((d) => d.every(Boolean)).length - 1;
+                            const days = h.days.map((day, di) => di === target ? day.map(() => false) : day);
+                            return { ...h, days, status: "active" };
+                          });
+                        }}
+                      >
+                        Undo
+                      </button>
+                    )}
                     <div className="flex flex-col items-center py-1">
                       <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white animate-habit-pop">
                         <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 6" /></svg>
