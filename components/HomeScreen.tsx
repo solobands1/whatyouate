@@ -307,7 +307,7 @@ function formatManualDate(dateStr: string) {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-function ManualDateRow({ manualDate, setManualDate }: { manualDate: string; setManualDate: (d: string) => void }) {
+function ManualDateRow({ manualDate, setManualDate, min }: { manualDate: string; setManualDate: (d: string) => void; min?: string }) {
   const isToday = manualDate === todayDateStr();
   return (
     <div className="relative inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 transition"
@@ -328,7 +328,7 @@ function ManualDateRow({ manualDate, setManualDate }: { manualDate: string; setM
         className="absolute inset-0 cursor-pointer opacity-0"
         value={manualDate}
         max={todayDateStr()}
-        min={minDateStr()}
+        min={min ?? minDateStr()}
         onChange={(e) => { if (e.target.value && e.target.value <= todayDateStr()) setManualDate(e.target.value); }}
       />
     </div>
@@ -4402,6 +4402,10 @@ export default function HomeScreen() {
                       inputMode="numeric"
                     />
                   </div>
+                </div>
+                <div className="mt-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Date</p>
+                  <div className="mt-2"><ManualDateRow manualDate={meals.editMealDate} setManualDate={meals.setEditMealDate} min={meals.editMealDate && meals.editMealDate < minDateStr() ? meals.editMealDate : undefined} /></div>
                 </div>
                 <div className="mt-5 flex items-center justify-between">
                   <button

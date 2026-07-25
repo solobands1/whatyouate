@@ -23,6 +23,7 @@ export function useMeals(
     carbs: "",
     fat: "",
   });
+  const [editMealDate, setEditMealDate] = useState(""); // YYYY-MM-DD for editing a logged meal's date
   const [updatingMeal, setUpdatingMeal] = useState(false);
   // Retry thunks for optimistic manual pills whose DB write failed, keyed by pill id.
   const manualRetries = useRef<Map<string, () => void>>(new Map());
@@ -271,6 +272,8 @@ export function useMeals(
       carbs: meal.carbs?.toString() ?? "",
       fat: meal.fat?.toString() ?? "",
     });
+    const md = new Date(meal.ts);
+    setEditMealDate(`${md.getFullYear()}-${String(md.getMonth() + 1).padStart(2, "0")}-${String(md.getDate()).padStart(2, "0")}`);
     setEditingMeal(meal);
   };
 
@@ -315,6 +318,19 @@ export function useMeals(
             : m
         )
       );
+
+      // If the date was changed, move the meal to noon of the new day (log times are unreliable,
+      // so noon matches how backfilled meals are dated).
+      const origD = new Date(editingMeal.ts);
+      const origDateStr = `${origD.getFullYear()}-${String(origD.getMonth() + 1).padStart(2, "0")}-${String(origD.getDate()).padStart(2, "0")}`;
+      if (editMealDate && editMealDate !== origDateStr) {
+        const newTs = new Date(editMealDate + "T12:00:00").getTime();
+        if (Number.isFinite(newTs)) {
+          await updateMealTs(editingMeal.id, newTs).catch(() => {});
+          setMeals((prev) => prev.map((m) => (m.id === editingMeal.id ? { ...m, ts: newTs } : m)));
+        }
+      }
+
       setEditingMeal(null);
       setEditRecents(false);
     } catch (err) {
@@ -349,6 +365,8 @@ export function useMeals(
     setEditingMeal,
     editForm,
     setEditForm,
+    editMealDate,
+    setEditMealDate,
     updatingMeal,
     load,
     manualText,
