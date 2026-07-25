@@ -119,6 +119,7 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
         : `weight: ${profile.weight}kg`),
       profile.activityLevel && `activity: ${profile.activityLevel}`,
       profile.freeformFocus && `focus: ${profile.freeformFocus}`,
+      profile.bodyPriority && `eating habits: ${profile.bodyPriority}`,
       (profile.dietaryRestrictions as string[] | undefined)?.length &&
         `restrictions: ${(profile.dietaryRestrictions as string[]).join(", ")}`,
     ].filter(Boolean);
@@ -385,7 +386,7 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
 
   // Append the medical guardrail ONLY when the user has shared health context — otherwise this
   // prompt is unchanged, so ordinary nudges are byte-for-byte identical to before.
-  if (mentionsHealthContext(profile?.freeformFocus as string | undefined, (profile?.dietaryRestrictions as string[] | undefined)?.join(" "))) {
+  if (mentionsHealthContext(profile?.freeformFocus as string | undefined, profile?.bodyPriority as string | undefined, (profile?.dietaryRestrictions as string[] | undefined)?.join(" "))) {
     lines.push(HEALTH_MEDICAL_GUARDRAIL);
   }
 
