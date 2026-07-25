@@ -4967,7 +4967,7 @@ export default function HomeScreen() {
                       value={workout.manualMinutes || "0"}
                       onChange={(e) => workout.setManualMinutes(e.target.value)}
                     >
-                      {Array.from({ length: 60 }, (_, i) => (<option key={i} value={String(i)}>{i}</option>))}
+                      {Array.from({ length: 12 }, (_, i) => { const m = i * 5; return (<option key={m} value={String(m)}>{String(m).padStart(2, "0")}</option>); })}
                     </select>
                     <span className="text-xs text-muted/60">m</span>
                   </div>
