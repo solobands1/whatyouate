@@ -154,29 +154,41 @@ export function useMeals(
     if (normalizedInput) deleteFoodTextEntry(normalizedInput);
   };
 
-  const confirmManualMeal = async () => {
+  const confirmManualMeal = async (overrides?: { name?: string; calories?: number; protein?: number; carbs?: number; fat?: number }) => {
     if (!user || !manualResult) return;
 
+    const adjusted = !!overrides;
     const multiplier = manualPortion === "small" ? 0.7 : manualPortion === "large" ? 1.4 : 1;
     // Coerce missing/NaN bounds to 0 so a partial analysis can't write NaN into
     // the stored ranges (which then poisons the DB numeric payload and drops the meal).
     const scale = (v: number) => Math.round((Number.isFinite(v) ? v : 0) * multiplier);
     const r = manualResult.estimated_ranges;
+    const ranges = {
+      calories_min: scale(r.calories_min), calories_max: scale(r.calories_max),
+      protein_g_min: scale(r.protein_g_min), protein_g_max: scale(r.protein_g_max),
+      carbs_g_min: scale(r.carbs_g_min), carbs_g_max: scale(r.carbs_g_max),
+      fat_g_min: scale(r.fat_g_min), fat_g_max: scale(r.fat_g_max),
+    };
+    // "Adjust Values" overrides: pin any edited macro to the exact value entered (min = max), so
+    // the correction is stored as-is instead of a range. Non-edited macros keep the scaled estimate.
+    if (overrides) {
+      if (overrides.calories != null) { ranges.calories_min = ranges.calories_max = overrides.calories; }
+      if (overrides.protein != null) { ranges.protein_g_min = ranges.protein_g_max = overrides.protein; }
+      if (overrides.carbs != null) { ranges.carbs_g_min = ranges.carbs_g_max = overrides.carbs; }
+      if (overrides.fat != null) { ranges.fat_g_min = ranges.fat_g_max = overrides.fat; }
+    }
+    const finalName = overrides?.name?.trim() ? overrides.name.trim() : manualResult.name;
     const scaledAnalysis = {
       ...manualResult,
-      estimated_ranges: {
-        calories_min: scale(r.calories_min), calories_max: scale(r.calories_max),
-        protein_g_min: scale(r.protein_g_min), protein_g_max: scale(r.protein_g_max),
-        carbs_g_min: scale(r.carbs_g_min), carbs_g_max: scale(r.carbs_g_max),
-        fat_g_min: scale(r.fat_g_min), fat_g_max: scale(r.fat_g_max),
-      },
+      name: finalName,
+      estimated_ranges: ranges,
       portion: manualPortion,
       original_ranges: r,
     };
 
     // Optimistic update — show pill immediately before any DB calls
     const optimisticId = `optimistic-manual-${Date.now()}`;
-    const capturedName = manualResult.name;
+    const capturedName = finalName;
     const capturedDate = manualDate;
     const today = new Date();
     const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
@@ -205,11 +217,15 @@ export function useMeals(
           if (d.getTime() < Date.now()) await updateMealTs(created.id, d.getTime()).catch(() => {});
         }
         await updateMeal(created.id, scaledAnalysis as any, { userCorrection: capturedName }, user.id);
-        fetch("/api/analyze-food", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ mealId: created.id, existingAnalysis: scaledAnalysis, userId: user.id })
-        }).catch(() => {});
+        // Skip the background re-estimate when the user manually adjusted values, so their
+        // correction isn't overwritten by a fresh AI estimate.
+        if (!adjusted) {
+          fetch("/api/analyze-food", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ mealId: created.id, existingAnalysis: scaledAnalysis, userId: user.id })
+          }).catch(() => {});
+        }
         incrementFoodTextLogCount(normalizedInput);
         // Replace optimistic pill with real DB record using correct timestamp
         swapInPill();

@@ -1160,6 +1160,28 @@ export default function HomeScreen() {
   const workout = useWorkout(user, onError, setEditRecents, []);
   const meals = useMeals(user, onError, setEditRecents, []);
 
+  // Manual-add "Adjust Values": optional edit of the estimate's macros/name before saving.
+  const [manualAdjustOpen, setManualAdjustOpen] = useState(false);
+  const [manualAdjust, setManualAdjust] = useState({ name: "", calories: "", protein: "", carbs: "", fat: "" });
+  // Collapse the adjust fields whenever we leave the estimate screen (new entry, "Try again", save).
+  useEffect(() => { if (!meals.manualResult) setManualAdjustOpen(false); }, [meals.manualResult]);
+  // Portion scales the estimate, so re-fill the adjust fields from the newly scaled numbers when the
+  // portion changes — the user picks a portion, then fine-tunes from there.
+  useEffect(() => {
+    if (!manualAdjustOpen) return;
+    const r = meals.manualScaledRanges;
+    if (!r) return;
+    const mid = (a: number, b: number) => String(Math.round((a + b) / 2));
+    setManualAdjust((prev) => ({
+      ...prev,
+      calories: mid(r.calories_min, r.calories_max),
+      protein: mid(r.protein_g_min, r.protein_g_max),
+      carbs: mid(r.carbs_g_min, r.carbs_g_max),
+      fat: mid(r.fat_g_min, r.fat_g_max),
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [meals.manualPortion]);
+
   const handleFeelLog = async (tag: string, ts: number) => {
     if (!user) return;
     try {
@@ -2655,8 +2677,35 @@ export default function HomeScreen() {
   // The streak is saved by the first backfilled meal, but a real day has more than one — so
   // after each save we offer to log another for the same day (better food→feeling data)
   // rather than nagging. "All Done" is always right there, so nobody's pushed to invent meals.
-  const saveBackfillMeal = async () => {
-    await meals.confirmManualMeal();
+  // "Adjust Values" on the manual estimate: pre-fill the fields from the current scaled estimate,
+  // then reveal them so the user can tweak a number or the name before saving.
+  const openManualAdjust = () => {
+    const r = meals.manualScaledRanges;
+    if (!r) return;
+    const mid = (a: number, b: number) => String(Math.round((a + b) / 2));
+    setManualAdjust({
+      name: meals.manualResult?.name ?? "",
+      calories: mid(r.calories_min, r.calories_max),
+      protein: mid(r.protein_g_min, r.protein_g_max),
+      carbs: mid(r.carbs_g_min, r.carbs_g_max),
+      fat: mid(r.fat_g_min, r.fat_g_max),
+    });
+    setManualAdjustOpen(true);
+  };
+  // Turn the adjust fields into confirmManualMeal overrides (undefined when the fields aren't open).
+  const buildManualOverrides = () => {
+    if (!manualAdjustOpen) return undefined;
+    const num = (s: string) => { const n = Math.round(parseFloat(s)); return Number.isFinite(n) && n >= 0 ? n : undefined; };
+    return {
+      name: manualAdjust.name.trim() || undefined,
+      calories: num(manualAdjust.calories),
+      protein: num(manualAdjust.protein),
+      carbs: num(manualAdjust.carbs),
+      fat: num(manualAdjust.fat),
+    };
+  };
+  const saveBackfillMeal = async (overrides?: Parameters<typeof meals.confirmManualMeal>[0]) => {
+    await meals.confirmManualMeal(overrides);
     streakBackfillCountRef.current += 1;
     setStreakAddAnotherOpen(true);
   };
@@ -4337,6 +4386,41 @@ export default function HomeScreen() {
                         ))}
                       </div>
                     </div>
+                    {/* Optional fine-tune of the estimate before saving (e.g. protein 9 -> 10). */}
+                    {!manualAdjustOpen ? (
+                      <button
+                        type="button"
+                        className="mt-3 text-xs font-semibold text-primary/80 underline underline-offset-2 transition active:opacity-60"
+                        onClick={openManualAdjust}
+                      >
+                        Adjust Values
+                      </button>
+                    ) : (
+                      <div className="mt-3 space-y-2 rounded-xl border border-ink/10 bg-ink/[0.02] p-3">
+                        <div>
+                          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Name</p>
+                          <input
+                            className="mt-1 w-full rounded-lg border border-ink/10 bg-white px-3 py-1.5 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                            value={manualAdjust.name}
+                            onChange={(e) => setManualAdjust({ ...manualAdjust, name: e.target.value })}
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          {([["Calories", "calories"], ["Protein (g)", "protein"], ["Carbs (g)", "carbs"], ["Fat (g)", "fat"]] as const).map(([label, key]) => (
+                            <div key={key}>
+                              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">{label}</p>
+                              <input
+                                type="number"
+                                inputMode="numeric"
+                                className="mt-1 w-full rounded-lg border border-ink/10 bg-white px-3 py-1.5 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                                value={manualAdjust[key]}
+                                onChange={(e) => setManualAdjust({ ...manualAdjust, [key]: e.target.value })}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     <div className="mt-3"><ManualDateRow manualDate={meals.manualDate} setManualDate={meals.setManualDate} /></div>
                     <div className="mt-5 flex items-center justify-between">
                       <button
@@ -4349,7 +4433,7 @@ export default function HomeScreen() {
                       <button
                         type="button"
                         className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
-                        onClick={streakSaverMode ? saveBackfillMeal : meals.confirmManualMeal}
+                        onClick={() => (streakSaverMode ? saveBackfillMeal : meals.confirmManualMeal)(buildManualOverrides())}
                         disabled={meals.updatingMeal}
                       >
                         {meals.updatingMeal ? "Adding…" : "Add"}
