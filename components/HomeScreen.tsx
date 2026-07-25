@@ -1336,9 +1336,10 @@ export default function HomeScreen() {
     if (quickAddBackfillRef.current) {
       quickAddBackfillRef.current = false;
       streakBackfillCountRef.current += pendingItems.length;
-      setStreakSaverMode(false);
-      if (profile?.trackWater !== false) setStreakWaterOpen(true);
-      else setStreakCelebrateOpen(true);
+      // Offer to log another (manual or quick) before finishing — same as the manual backfill path,
+      // instead of jumping straight to water/celebration. streakSaverMode stays on so "Add Another"
+      // reopens in backfill mode. "All Done" then runs the water + celebration finish.
+      setStreakAddAnotherOpen(true);
     }
 
     // Write to DB — each item independent so one failure doesn't block others
@@ -3132,21 +3133,21 @@ export default function HomeScreen() {
                   <button
                     type="button"
                     className="flex w-full flex-col items-start rounded-xl bg-primary px-4 py-3 text-left transition hover:bg-primary/90"
-                    onClick={workout.handleStartWorkout}
-                  >
-                    <span className="text-sm font-semibold text-white">Start Activity</span>
-                    <span className="mt-0.5 text-xs text-white/70">Begin tracking time</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="flex w-full flex-col items-start rounded-xl border border-ink/10 bg-white px-4 py-3 text-left transition hover:bg-ink/5"
                     onClick={() => {
                       workout.setShowStartWorkoutModal(false);
                       workout.openManualWorkoutModal();
                     }}
                   >
-                    <span className="text-sm font-semibold text-ink">Manually Add Activity</span>
-                    <span className="mt-0.5 text-xs text-muted/60">Log an activity you already completed</span>
+                    <span className="text-sm font-semibold text-white">Manually Add Activity</span>
+                    <span className="mt-0.5 text-xs text-white/70">Log an activity you already completed</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="flex w-full flex-col items-start rounded-xl border border-ink/10 bg-white px-4 py-3 text-left transition hover:bg-ink/5"
+                    onClick={workout.handleStartWorkout}
+                  >
+                    <span className="text-sm font-semibold text-ink">Start Activity</span>
+                    <span className="mt-0.5 text-xs text-muted/60">Begin tracking time</span>
                   </button>
                 </div>
                 <div className="mt-4 flex justify-end">
@@ -4376,7 +4377,7 @@ export default function HomeScreen() {
                       <button
                         type="button"
                         className="mt-3 w-full text-center text-xs font-semibold text-primary/80 underline underline-offset-2 transition active:opacity-60"
-                        onClick={() => { meals.setEditingMeal(null); setStreakSaverMode(false); handleOpenQuickAdd(streakBackfillDate ?? undefined); }}
+                        onClick={() => { meals.setEditingMeal(null); handleOpenQuickAdd(streakBackfillDate ?? undefined); }}
                       >
                         Quick Add A Past Meal
                       </button>
@@ -5069,7 +5070,7 @@ export default function HomeScreen() {
                 </p>
                 <input
                   type="date"
-                  className="mt-2 w-full rounded-lg border border-ink/10 bg-white px-2.5 py-1 text-xs text-ink/80"
+                  className="mt-2 w-40 rounded-lg border border-ink/10 bg-white px-2.5 py-1 text-xs text-ink/80"
                   value={workout.manualDate}
                   max={(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; })()}
                   onChange={(e) => workout.setManualDate(e.target.value)}
@@ -5176,13 +5177,13 @@ export default function HomeScreen() {
               </button>
               <button
                 type="button"
-                className={`rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 ${
+                className={`min-w-[96px] rounded-xl bg-primary px-4 py-2 text-center text-xs font-semibold text-white transition hover:bg-primary/90 ${
                   workout.addingManual ? "opacity-70" : ""
                 }`}
                 onClick={workout.handleAddManualWorkout}
                 disabled={workout.addingManual}
               >
-                {workout.addingManual ? "Saving…" : "Save activity"}
+                {workout.addingManual ? "Saving…" : "Save Activity"}
               </button>
             </div>
           </div>
@@ -5471,7 +5472,7 @@ export default function HomeScreen() {
               <button
                 type="button"
                 className="px-3 py-2 text-xs text-ink/50 underline"
-                onClick={() => setShowQuickAdd(false)}
+                onClick={() => { setShowQuickAdd(false); if (quickAddBackfillRef.current) { quickAddBackfillRef.current = false; setStreakSaverMode(false); } }}
               >
                 Cancel
               </button>
