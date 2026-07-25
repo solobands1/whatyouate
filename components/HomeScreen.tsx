@@ -1155,6 +1155,7 @@ export default function HomeScreen() {
   const recentQuickAddRef = useRef<number>(0);
   const quickAddBouncedRef = useRef(false);
   const quickAddConfirmingRef = useRef(false);
+  const quickAddBackfillRef = useRef(false); // quick-add opened from the streak backfill (pre-dated to the missed day)
   const onError = useCallback((msg: string) => setLoadError(msg), []);
 
   const workout = useWorkout(user, onError, setEditRecents, []);
@@ -1197,15 +1198,16 @@ export default function HomeScreen() {
     await deleteFeelLog(id);
   };
 
-  const handleOpenQuickAdd = () => {
+  const handleOpenQuickAdd = (backfillDate?: string) => {
     quickAddConfirmingRef.current = false;
+    quickAddBackfillRef.current = !!backfillDate;
     const { frequent, recent, all } = getQuickAddFromMeals(meals.meals);
     setQuickAddItems(frequent);
     setQuickAddRecentItems(recent);
     setQuickAddAllItems(all);
     setQuickAddQuery("");
     setQuickAddSelected({});
-    setQuickAddDate(todayDateStr());
+    setQuickAddDate(backfillDate ?? todayDateStr());
     setShowQuickAdd(true);
   };
 
@@ -1328,6 +1330,16 @@ export default function HomeScreen() {
     setQuickAddSelected({});
     setQuickAddAdding(false);
     quickAddConfirmingRef.current = false;
+
+    // Streak backfill via quick-add: the picked dishes now belong to the missed day, so finish the
+    // save the same way the manual path does (water estimate, then celebration).
+    if (quickAddBackfillRef.current) {
+      quickAddBackfillRef.current = false;
+      streakBackfillCountRef.current += pendingItems.length;
+      setStreakSaverMode(false);
+      if (profile?.trackWater !== false) setStreakWaterOpen(true);
+      else setStreakCelebrateOpen(true);
+    }
 
     // Write to DB — each item independent so one failure doesn't block others
     const capturedDate = quickAddDate;
@@ -4360,6 +4372,15 @@ export default function HomeScreen() {
                         {meals.manualAnalysing ? "Analyzing…" : "Analyze"}
                       </button>
                     </div>
+                    {streakSaverMode && streakBackfillDate && (
+                      <button
+                        type="button"
+                        className="mt-3 w-full text-center text-xs font-semibold text-primary/80 underline underline-offset-2 transition active:opacity-60"
+                        onClick={() => { meals.setEditingMeal(null); setStreakSaverMode(false); handleOpenQuickAdd(streakBackfillDate ?? undefined); }}
+                      >
+                        Quick Add A Past Meal
+                      </button>
+                    )}
                   </>
                 ) : (
                   <>
