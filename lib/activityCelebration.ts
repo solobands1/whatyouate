@@ -27,6 +27,11 @@ export const COMEBACK_GAP_DAYS = 7;
 // so a stale one (they didn't open the app for a week) doesn't pop as a late "welcome back".
 export const COMEBACK_FRESH_DAYS = 2;
 
+// The coach voices a consistency nod (activity_win) at most once per this many days, so a newly
+// steady stretch is celebrated once, not congratulated every morning it stays true. Long enough to
+// cover the same-week repeat window, short enough that a genuine later dip-and-rebuild re-earns it.
+export const CONSISTENCY_COOLDOWN_DAYS = 14;
+
 // Normalize whatever is stored in the jsonb column (or a stale/missing value) into a valid state.
 export function coerceActivityCelebration(raw: unknown): ActivityCelebrationState {
   if (!raw || typeof raw !== "object") return { ...EMPTY_ACTIVITY_CELEBRATION };
@@ -70,4 +75,17 @@ export function detectComebackDay(workouts: WorkoutSession[], todayKey: string):
   if (daysBetween(prev, latest) < COMEBACK_GAP_DAYS) return null; // no real gap — not a comeback
   if (daysBetween(latest, todayKey) > COMEBACK_FRESH_DAYS) return null; // too stale to celebrate now
   return latest;
+}
+
+// Whether the coach may voice a consistency nod today — true unless one fired within the cooldown.
+// The cron nudge path reads this to suppress a repeat, and writes recordConsistencyWin when one fires.
+export function consistencyWinAvailable(state: ActivityCelebrationState, todayKey: string): boolean {
+  if (!state.lastConsistencyWin) return true;
+  return daysBetween(state.lastConsistencyWin, todayKey) >= CONSISTENCY_COOLDOWN_DAYS;
+}
+
+// Mark a consistency nod as fired today, so it stays quiet for CONSISTENCY_COOLDOWN_DAYS. Preserves
+// the comeback marker.
+export function recordConsistencyWin(state: ActivityCelebrationState, todayKey: string): ActivityCelebrationState {
+  return { ...state, lastConsistencyWin: todayKey };
 }

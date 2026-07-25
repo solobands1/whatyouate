@@ -1,6 +1,7 @@
 import type { ActivityLevel, MealLog, Units, UserProfile, WorkoutSession } from "./types";
 import { summarizeDay, summarizeLoggedDays, summarizeWeek, summarizeWorkoutsWeek } from "./summary";
 import { dayKeyFromTs, localDayKeyFromTs, localTodayKey } from "./utils";
+import { consistencyWinAvailable, EMPTY_ACTIVITY_CELEBRATION } from "./activityCelebration";
 import { buildNutrientNotes, buildSuggestions, type SuggestionSignal } from "./recommendations";
 
 export type NudgeType =
@@ -1029,8 +1030,13 @@ export function buildSmartNudgeContext(
   const wasConsistentInPriorMonth = [1, 2, 3].some(
     (n) => activeWorkoutDaysBetween(Date.now() - (n + 1) * oneWeekMs, Date.now() - n * oneWeekMs) >= CONSISTENCY_MIN_DAYS
   );
+  // Cool the nod down so the coach celebrates a newly-steady stretch once, not every morning it holds.
+  const consistencyOffCooldown = consistencyWinAvailable(
+    profile.activityCelebration ?? EMPTY_ACTIVITY_CELEBRATION,
+    todayKeyLocal,
+  );
   const activityConsistency =
-    activeWorkoutDaysThisWeek >= CONSISTENCY_MIN_DAYS && !wasConsistentInPriorMonth
+    activeWorkoutDaysThisWeek >= CONSISTENCY_MIN_DAYS && !wasConsistentInPriorMonth && consistencyOffCooldown
       ? { activeDaysThisWeek: activeWorkoutDaysThisWeek, newlyBuilt: true }
       : undefined;
 

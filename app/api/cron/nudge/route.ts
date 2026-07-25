@@ -7,6 +7,8 @@ import { sendPush } from "../../../../lib/apns";
 import type { MealLog, WorkoutSession, UserProfile, SupplementEntry } from "../../../../lib/types";
 import { isTrialEligible } from "../../../../lib/trial";
 import { checkProEntitlement } from "../../../../lib/entitlement";
+import { coerceActivityCelebration, EMPTY_ACTIVITY_CELEBRATION, recordConsistencyWin } from "../../../../lib/activityCelebration";
+import { dayKeyFromTs, localTodayKey } from "../../../../lib/utils";
 
 export const maxDuration = 300;
 
@@ -82,6 +84,7 @@ function mapProfileRow(data: Record<string, unknown>): UserProfile {
     streakLastDate: (data.streak_last_date as string) ?? "",
     trackWater: (data.track_water as boolean) ?? false,
     waterUnit: data.water_unit === "oz" ? "oz" : "ml",
+    activityCelebration: coerceActivityCelebration(data.activity_celebration_json),
   };
 }
 
@@ -361,6 +364,17 @@ export async function GET(req: Request) {
         suggestions: nudge.suggestions?.length ? nudge.suggestions : null,
         created_at: nowISO,
       });
+
+      // Cooldown marker: once the coach voices a consistency nod, remember the day so buildSmartNudgeContext
+      // suppresses a repeat for CONSISTENCY_COOLDOWN_DAYS. Merges with the existing state to keep the comeback marker.
+      if (nudge.type === "activity_win") {
+        const writeDayKey = timezoneOffset !== undefined ? localTodayKey(timezoneOffset) : dayKeyFromTs(Date.now());
+        const nextState = recordConsistencyWin(profile.activityCelebration ?? EMPTY_ACTIVITY_CELEBRATION, writeDayKey);
+        await supabase.from("profiles").upsert(
+          { user_id: userId, activity_celebration_json: nextState, updated_at: nowISO },
+          { onConflict: "user_id" },
+        );
+      }
 
       console.log(`[cron/nudge] saved nudge for ${userId.slice(0,8)} type=${nudge.type}`);
       pendingPushes.push({ userId, message: nudge.message });
