@@ -93,14 +93,12 @@ export default function LoginClient() {
   const handleSendCode = async () => {
     if (!email) { setStatus("Enter your email first."); return; }
     setSubmitting(true);
-    const result = await sendPasswordOtp(email.trim());
-    if (result.error) {
-      setStatus("Couldn't send code. Try again.");
-      setSubmitting(false);
-      return;
-    }
-    setStatus("Reset Email Sent");
+    await sendPasswordOtp(email.trim());
     setSubmitting(false);
+    // Neutral by design: don't reveal whether the email is registered (prevents enumeration and the
+    // old ghost-account-on-typo behavior), and never a false "sent" claim. A real account receives a
+    // code; others simply won't. Proceed to the code step either way.
+    setStatus("If an account exists for that email, a reset code is on its way.");
     setMode("reset");
   };
 

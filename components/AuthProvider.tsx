@@ -127,7 +127,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return {};
     },
     sendPasswordOtp: async (email) => {
-      const { error } = await supabase.auth.signInWithOtp({ email });
+      // shouldCreateUser:false — a password reset must never mint a new (passwordless) account for
+      // a typo'd or probed address. Only an existing account receives a code.
+      const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: false } });
       if (error) return { error: error.message };
       return {};
     },
