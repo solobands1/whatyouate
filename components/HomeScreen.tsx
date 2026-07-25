@@ -4935,44 +4935,39 @@ export default function HomeScreen() {
                   <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
                 </svg>
               </span>
-              <div className="min-w-0">
-                <h2 className="text-base font-semibold text-ink">Add Activity</h2>
-                <p className="text-xs text-muted/70">Log something you already did</p>
-              </div>
+              <h2 className="text-base font-semibold text-ink">Add Activity</h2>
             </div>
 
             <div className="mt-5 space-y-5">
-              <div className="flex gap-3">
-                <div className="flex-1">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Date</p>
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Date</p>
+                <input
+                  type="date"
+                  className="mt-2 w-full rounded-lg border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                  value={workout.manualDate}
+                  max={(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; })()}
+                  onChange={(e) => workout.setManualDate(e.target.value)}
+                />
+              </div>
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Duration</p>
+                <div className="mt-2 flex items-center gap-2">
                   <input
-                    type="date"
-                    className="mt-2 w-full rounded-lg border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                    value={workout.manualDate}
-                    max={(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; })()}
-                    onChange={(e) => workout.setManualDate(e.target.value)}
+                    className="w-16 rounded-lg border border-ink/10 bg-white px-3 py-2 text-center text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    value={workout.manualHours}
+                    onChange={(e) => workout.setManualHours(e.target.value)}
+                    placeholder="0"
+                    inputMode="numeric"
                   />
-                </div>
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Duration</p>
-                  <div className="mt-2 flex items-center gap-1.5">
-                    <input
-                      className="w-11 rounded-lg border border-ink/10 bg-white px-2 py-2 text-center text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                      value={workout.manualHours}
-                      onChange={(e) => workout.setManualHours(e.target.value)}
-                      placeholder="0"
-                      inputMode="numeric"
-                    />
-                    <span className="text-xs text-muted/60">h</span>
-                    <input
-                      className="w-11 rounded-lg border border-ink/10 bg-white px-2 py-2 text-center text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                      value={workout.manualMinutes}
-                      onChange={(e) => workout.setManualMinutes(e.target.value)}
-                      placeholder="0"
-                      inputMode="numeric"
-                    />
-                    <span className="text-xs text-muted/60">m</span>
-                  </div>
+                  <span className="text-xs text-muted/60">hrs</span>
+                  <input
+                    className="w-16 rounded-lg border border-ink/10 bg-white px-3 py-2 text-center text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    value={workout.manualMinutes}
+                    onChange={(e) => workout.setManualMinutes(e.target.value)}
+                    placeholder="0"
+                    inputMode="numeric"
+                  />
+                  <span className="text-xs text-muted/60">mins</span>
                 </div>
               </div>
 
