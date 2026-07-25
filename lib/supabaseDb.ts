@@ -798,15 +798,22 @@ export async function listWorkouts(userId: string, limit = 50) {
   if (cached && Date.now() - cached.ts < CACHE_TTL) return cached.data;
 
   if (DEBUG) console.debug("[supabase] listWorkouts -> workouts");
+  // start_ts is stored in mixed units (manual = seconds, HealthKit = ms), so a DB sort on the raw
+  // column ranks every ms row above every seconds row and a LIMIT would silently drop manual
+  // workouts once there are enough Health ones. Order by created_at (a consistent timestamptz) to
+  // bound the fetch to recent rows, then let mapWorkout coerce units and sort + slice here.
   const { data, error } = await supabase
     .from("workouts")
     .select("*")
     .eq("user_id", userId)
-    .order("start_ts", { ascending: false })
-    .limit(limit);
+    .order("created_at", { ascending: false })
+    .limit(Math.max(limit * 4, 500));
   if (error) handleSupabaseError("workouts", error);
   if (DEBUG) console.debug("[supabase] workouts rows:", data?.length ?? 0);
-  const result = (data ?? []).map(mapWorkout);
+  const result = (data ?? [])
+    .map(mapWorkout)
+    .sort((a, b) => b.startTs - a.startTs)
+    .slice(0, limit);
   workoutsCache.set(cacheKey, { data: result, ts: Date.now() });
   return result;
 }
