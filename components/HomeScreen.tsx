@@ -4939,35 +4939,37 @@ export default function HomeScreen() {
             </div>
 
             <div className="mt-5 space-y-5">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Date</p>
-                <input
-                  type="date"
-                  className="mt-2 w-full rounded-lg border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                  value={workout.manualDate}
-                  max={(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; })()}
-                  onChange={(e) => workout.setManualDate(e.target.value)}
-                />
-              </div>
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Duration</p>
-                <div className="mt-2 flex items-center gap-2">
+              <div className="flex items-end gap-3">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Date</p>
                   <input
-                    className="w-16 rounded-lg border border-ink/10 bg-white px-3 py-2 text-center text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                    value={workout.manualHours}
-                    onChange={(e) => workout.setManualHours(e.target.value)}
-                    placeholder="0"
-                    inputMode="numeric"
+                    type="date"
+                    className="mt-2 w-36 rounded-lg border border-ink/10 bg-white px-2.5 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    value={workout.manualDate}
+                    max={(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; })()}
+                    onChange={(e) => workout.setManualDate(e.target.value)}
                   />
-                  <span className="text-xs text-muted/60">hrs</span>
-                  <input
-                    className="w-16 rounded-lg border border-ink/10 bg-white px-3 py-2 text-center text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                    value={workout.manualMinutes}
-                    onChange={(e) => workout.setManualMinutes(e.target.value)}
-                    placeholder="0"
-                    inputMode="numeric"
-                  />
-                  <span className="text-xs text-muted/60">mins</span>
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Duration</p>
+                  <div className="mt-2 flex items-center gap-1.5">
+                    <input
+                      className="w-12 rounded-lg border border-ink/10 bg-white px-2 py-2 text-center text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                      value={workout.manualHours}
+                      onChange={(e) => workout.setManualHours(e.target.value)}
+                      placeholder="0"
+                      inputMode="numeric"
+                    />
+                    <span className="text-xs text-muted/60">h</span>
+                    <input
+                      className="w-12 rounded-lg border border-ink/10 bg-white px-2 py-2 text-center text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                      value={workout.manualMinutes}
+                      onChange={(e) => workout.setManualMinutes(e.target.value)}
+                      placeholder="0"
+                      inputMode="numeric"
+                    />
+                    <span className="text-xs text-muted/60">m</span>
+                  </div>
                 </div>
               </div>
 
