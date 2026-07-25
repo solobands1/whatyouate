@@ -4928,59 +4928,64 @@ export default function HomeScreen() {
       {/* Manual workout modal */}
       {workout.showManualWorkoutModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
-          <div className="w-full max-w-sm rounded-xl bg-white p-5 shadow-xl">
-            <h2 className="text-base font-semibold text-ink">Add Activity</h2>
-            <p className="mt-1 text-sm text-muted/70">Log an activity you already completed</p>
-
-            <div className="mt-4 space-y-4">
-              <div className="overflow-hidden">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">
-                  Date
-                </p>
-                <input
-                  type="date"
-                  className="mt-2 w-40 rounded-lg border border-ink/10 bg-white px-2.5 py-1 text-xs text-ink/80"
-                  value={workout.manualDate}
-                  max={(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; })()}
-                  onChange={(e) => workout.setManualDate(e.target.value)}
-                />
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                </svg>
+              </span>
+              <div className="min-w-0">
+                <h2 className="text-base font-semibold text-ink">Add Activity</h2>
+                <p className="text-xs text-muted/70">Log something you already did</p>
               </div>
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">
-                  Duration
-                </p>
-                <div className="mt-2 flex items-center gap-2">
+            </div>
+
+            <div className="mt-5 space-y-5">
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Date</p>
                   <input
-                    className="w-12 rounded-lg border border-ink/10 bg-white px-2 py-1.5 text-xs text-ink/80"
-                    value={workout.manualHours}
-                    onChange={(e) => workout.setManualHours(e.target.value)}
-                    placeholder="0"
-                    inputMode="numeric"
+                    type="date"
+                    className="mt-2 w-full rounded-lg border border-ink/10 bg-white px-3 py-2 text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    value={workout.manualDate}
+                    max={(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; })()}
+                    onChange={(e) => workout.setManualDate(e.target.value)}
                   />
-                  <span className="text-xs text-muted/70">hrs</span>
-                  <input
-                    className="w-12 rounded-lg border border-ink/10 bg-white px-2 py-1.5 text-xs text-ink/80"
-                    value={workout.manualMinutes}
-                    onChange={(e) => workout.setManualMinutes(e.target.value)}
-                    placeholder="0"
-                    inputMode="numeric"
-                  />
-                  <span className="text-xs text-muted/70">mins</span>
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Duration</p>
+                  <div className="mt-2 flex items-center gap-1.5">
+                    <input
+                      className="w-11 rounded-lg border border-ink/10 bg-white px-2 py-2 text-center text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                      value={workout.manualHours}
+                      onChange={(e) => workout.setManualHours(e.target.value)}
+                      placeholder="0"
+                      inputMode="numeric"
+                    />
+                    <span className="text-xs text-muted/60">h</span>
+                    <input
+                      className="w-11 rounded-lg border border-ink/10 bg-white px-2 py-2 text-center text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                      value={workout.manualMinutes}
+                      onChange={(e) => workout.setManualMinutes(e.target.value)}
+                      placeholder="0"
+                      inputMode="numeric"
+                    />
+                    <span className="text-xs text-muted/60">m</span>
+                  </div>
                 </div>
               </div>
 
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">
-                  Activity type
-                </p>
-                <div className="mt-2 flex flex-wrap gap-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Activity type</p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
                   {WORKOUT_TYPE_OPTIONS.map((type) => (
                     <button
                       key={type}
                       type="button"
-                      className={`rounded-full border px-3 py-1 text-xs transition ${
+                      className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
                         workout.manualTypes.includes(type)
-                          ? "border-primary/30 bg-primary/10 text-ink"
+                          ? "border-primary/40 bg-primary/15 text-primary"
                           : "border-ink/10 bg-white text-ink/70 hover:bg-ink/5"
                       }`}
                       onClick={() =>
@@ -4998,9 +5003,7 @@ export default function HomeScreen() {
               </div>
 
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">
-                  Intensity
-                </p>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Intensity</p>
                 <div className="mt-2 flex gap-2">
                   {([
                     { value: "low", label: "Low" },
@@ -5010,9 +5013,9 @@ export default function HomeScreen() {
                     <button
                       key={level.value}
                       type="button"
-                      className={`rounded-full border px-3 py-1 text-xs transition ${
+                      className={`flex-1 rounded-xl border px-3 py-2 text-xs font-semibold transition ${
                         workout.manualIntensity === level.value
-                          ? "border-primary/30 bg-primary/10 text-ink"
+                          ? "border-primary/40 bg-primary/10 text-ink"
                           : "border-ink/10 bg-white text-ink/70 hover:bg-ink/5"
                       }`}
                       onClick={() =>
@@ -5028,10 +5031,10 @@ export default function HomeScreen() {
               </div>
             </div>
 
-            <div className="mt-5 flex items-center justify-end gap-2">
+            <div className="mt-6 flex items-center justify-end gap-2">
               <button
                 type="button"
-                className="rounded-xl border border-ink/10 bg-white px-3 py-2 text-xs font-semibold text-ink/70 transition hover:bg-ink/5"
+                className="rounded-xl border border-ink/10 bg-white px-4 py-2 text-xs font-semibold text-ink/70 transition hover:bg-ink/5"
                 onClick={() => {
                   workout.setShowManualWorkoutModal(false);
                   workout.setManualHours("");
