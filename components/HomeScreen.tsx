@@ -1043,14 +1043,25 @@ export default function HomeScreen() {
     // reload), do nothing — otherwise finishedAt + the breather would reset every load.
     if (prev?.status === "done" && prev.templateId === tmpl.id) return;
     const startedAt = prev && prev.templateId === tmpl.id ? prev.startedAt : new Date().toISOString();
+    const finishedAt = new Date().toISOString();
     const doneBuilder: ActiveBuilder = {
       templateId: tmpl.id, status: "done", days: heroHabit.days, startedAt,
-      holdDay: null, finishedAt: new Date().toISOString(), keptAnswer: prev?.keptAnswer ?? null,
+      holdDay: null, finishedAt, keptAnswer: prev?.keptAnswer ?? null,
     };
     const next: HabitState = { ...markHabitEnded(habitStateRef.current, tmpl.id, tmpl.cooldownDays), builder: doneBuilder };
     habitStateRef.current = next;
     setHabitState(next); // keep the shared context in sync so a nav-away + back doesn't revert
     void saveHabitState(user.id, next);
+    // Record the completion in habit history NOW, so a finished habit is never lost if the user
+    // closes the app before the optional "keep this up?" rating. keep starts null and is patched
+    // in by setBuiltHabitKeep if they answer; builtHabits counts it regardless. Idempotent by
+    // finishedAt so a re-render/retry can't double-write.
+    void (async () => {
+      const history = await fetchHabitHistory(user.id);
+      if (history.some((h) => h.templateId === tmpl.id && h.finishedAt === finishedAt)) return;
+      const entry: HabitHistoryEntry = { templateId: tmpl.id, title: tmpl.title, days: tmpl.durationDays, finishedAt, keep: null };
+      await saveHabitHistory(user.id, [entry, ...history]);
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [heroHabit.status, isDemoMode, user]);
 
@@ -1060,13 +1071,23 @@ export default function HomeScreen() {
   const setBuiltHabitKeep = (keep: "yes" | "maybe" | "no") => {
     if (isDemoMode || !user) return;
     const tmpl = activeTemplate;
+    const finishedAt = habitStateRef.current.builder?.finishedAt ?? null;
     void (async () => {
-      const entry: HabitHistoryEntry = {
-        templateId: tmpl.id, title: tmpl.title, days: tmpl.durationDays,
-        finishedAt: new Date().toISOString(), keep,
-      };
       const history = await fetchHabitHistory(user.id);
-      await saveHabitHistory(user.id, [entry, ...history]);
+      // The completion was already recorded (keep: null) by the done-persist effect — patch its
+      // keep in place rather than adding a duplicate. Fall back to inserting if it's missing.
+      let patched = false;
+      const updated = history.map((h) => {
+        if (!patched && h.templateId === tmpl.id && finishedAt != null && h.finishedAt === finishedAt) {
+          patched = true;
+          return { ...h, keep };
+        }
+        return h;
+      });
+      if (!patched) {
+        updated.unshift({ templateId: tmpl.id, title: tmpl.title, days: tmpl.durationDays, finishedAt: finishedAt ?? new Date().toISOString(), keep });
+      }
+      await saveHabitHistory(user.id, updated);
       const cur = habitStateRef.current;
       if (cur.builder?.status === "done") {
         const next: HabitState = { ...cur, builder: { ...cur.builder, keptAnswer: keep } };
