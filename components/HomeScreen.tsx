@@ -2223,6 +2223,7 @@ export default function HomeScreen() {
       || waterModalOpen || quickConfirmMeal != null || failedMealPrompt != null
       || meals.editingMeal != null || editingFeelLog != null
       || barcodeOpen || barcodeProduct != null || barcodeNotFound || barcodeLookingUp
+      || workout.showManualWorkoutModal || workout.editingWorkout
       || pendingDelete != null;
     if (!anyModal) return;
     // Pin the body so the page behind can't scroll (iOS WKWebView ignores
@@ -2244,7 +2245,7 @@ export default function HomeScreen() {
       body.style.overflow = "";
       window.scrollTo(0, scrollY);
     };
-  }, [showQuickAdd, showLogFood, showReflection, showFeelingModal, showHabitSpotlight, waterModalOpen, quickConfirmMeal, failedMealPrompt, meals.editingMeal, editingFeelLog, barcodeOpen, barcodeProduct, barcodeNotFound, barcodeLookingUp, pendingDelete]);
+  }, [showQuickAdd, showLogFood, showReflection, showFeelingModal, showHabitSpotlight, waterModalOpen, quickConfirmMeal, failedMealPrompt, meals.editingMeal, editingFeelLog, barcodeOpen, barcodeProduct, barcodeNotFound, barcodeLookingUp, workout.showManualWorkoutModal, workout.editingWorkout, pendingDelete]);
 
   // When a meal is still processing, the "Analyzing food…" label is time-gated
   // at render time (< 90s shows spinner text, >= 90s shows "Analysis failed").
@@ -4953,21 +4954,21 @@ export default function HomeScreen() {
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/60">Duration</p>
                   <div className="mt-2 flex items-center gap-1.5">
-                    <input
-                      className="w-12 rounded-lg border border-ink/10 bg-white px-2 py-2 text-center text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                      value={workout.manualHours}
+                    <select
+                      className="w-14 appearance-none rounded-lg border border-ink/10 bg-white px-2 py-2 text-center text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                      value={workout.manualHours || "0"}
                       onChange={(e) => workout.setManualHours(e.target.value)}
-                      placeholder="0"
-                      inputMode="numeric"
-                    />
+                    >
+                      {Array.from({ length: 13 }, (_, i) => (<option key={i} value={String(i)}>{i}</option>))}
+                    </select>
                     <span className="text-xs text-muted/60">h</span>
-                    <input
-                      className="w-12 rounded-lg border border-ink/10 bg-white px-2 py-2 text-center text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                      value={workout.manualMinutes}
+                    <select
+                      className="w-14 appearance-none rounded-lg border border-ink/10 bg-white px-2 py-2 text-center text-sm text-ink/80 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                      value={workout.manualMinutes || "0"}
                       onChange={(e) => workout.setManualMinutes(e.target.value)}
-                      placeholder="0"
-                      inputMode="numeric"
-                    />
+                    >
+                      {Array.from({ length: 60 }, (_, i) => (<option key={i} value={String(i)}>{i}</option>))}
+                    </select>
                     <span className="text-xs text-muted/60">m</span>
                   </div>
                 </div>
