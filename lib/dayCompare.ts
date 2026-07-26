@@ -35,12 +35,12 @@ interface DayFacts {
 // fact), which is exactly why the coach is banned from timing claims. Only reliable signals —
 // movement, meal count, sleep — are compared here.
 const BEHAVIOURS: { label: string; test: (d: DayFacts) => boolean }[] = [
-  { label: "A walk or workout", test: (d) => d.hasWorkout },
-  { label: "Little movement", test: (d) => !d.hasWorkout },
-  { label: "Steady meals through the day", test: (d) => d.mealCount >= 3 },
-  { label: "Long gaps without eating", test: (d) => d.mealCount > 0 && d.mealCount <= 1 },
-  { label: "Slept well", test: (d) => d.sleepIdx != null && d.sleepIdx >= 2 },
-  { label: "Slept poorly", test: (d) => d.sleepIdx === 0 },
+  { label: "A Walk Or Workout", test: (d) => d.hasWorkout },
+  { label: "Little Movement", test: (d) => !d.hasWorkout },
+  { label: "Steady Meals Through The Day", test: (d) => d.mealCount >= 3 },
+  { label: "Long Gaps Without Eating", test: (d) => d.mealCount > 0 && d.mealCount <= 1 },
+  { label: "Slept Well", test: (d) => d.sleepIdx != null && d.sleepIdx >= 2 },
+  { label: "Slept Poorly", test: (d) => d.sleepIdx === 0 },
 ];
 
 export interface DaysCompared {

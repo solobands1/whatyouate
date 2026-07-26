@@ -50,8 +50,8 @@ const KEEP_CHIP: Record<"yes" | "maybe", { label: string; cls: string }> = {
 
 // Behavioural comparison (Your Days Compared) — example data until we compute the real
 // food/movement/sleep vs energy correlations. Shown as Preview like the nutrients page.
-const EX_BETTER = ["Breakfast before 9am", "A walk or workout", "In bed before 11pm", "Steady meals through the day"];
-const EX_LOWER = ["First meal after noon", "Long gaps without eating", "Caffeine after 2pm", "Little movement"];
+const EX_BETTER = ["A Walk Or Workout", "Steady Meals Through The Day", "Slept Well"];
+const EX_LOWER = ["Little Movement", "Long Gaps Without Eating", "Slept Poorly"];
 const CHANGE_VERB: Record<"up" | "down" | "same", { verb: string; cls: string; arrow: string }> = {
   up: { verb: "improved", cls: "text-primary-dark", arrow: "M5 15l7-7 7 7" },
   down: { verb: "slipped", cls: "text-ink/45", arrow: "M19 9l-7 7-7-7" },
