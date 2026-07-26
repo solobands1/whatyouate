@@ -547,6 +547,7 @@ export default function HomeScreen() {
   const [runTour, setRunTour] = useState(false);
   const [profileHandoff, setProfileHandoff] = useState(false); // final walkthrough beat: "tap your profile"
   const [showTourGate, setShowTourGate] = useState(false);
+  const [showUpdatePopup, setShowUpdatePopup] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [gateOverlay, setGateOverlay] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
@@ -2502,6 +2503,23 @@ export default function HomeScreen() {
     }
   }, [user, loadingData, ctxProfile, profileResolved]);
 
+  // One-time "we've made a big update" popup for EXISTING users (new users get the real onboarding +
+  // tour instead, so onComplete marks it seen). It offers the walkthrough. wya_update_force_<uid> is
+  // a dev test trigger (7 taps on the profile title); wya_update_seen_<uid> is set once it's shown.
+  useEffect(() => {
+    if (!user || loadingData || showOnboarding) return;
+    try {
+      const force = localStorage.getItem(`wya_update_force_${user.id}`) === "1";
+      const seen = localStorage.getItem(`wya_update_seen_${user.id}`) === "1";
+      const onboardingDone = localStorage.getItem(`wya_onboarding_done_${user.id}`) === "true";
+      if (force || (!seen && onboardingDone)) {
+        if (force) localStorage.removeItem(`wya_update_force_${user.id}`);
+        localStorage.setItem(`wya_walkthrough_gate_${user.id}`, "true"); // supersede the old welcome gate
+        setShowUpdatePopup(true);
+      }
+    } catch {}
+  }, [user?.id, loadingData, showOnboarding]);
+
   const displayMeals = isDemoMode ? demoData.meals : meals.meals;
   const displayWorkouts = isDemoMode ? demoData.workouts : workout.workouts;
   const displayFeelLogs = isDemoMode ? demoData.feelLogs : homeFeelLogs;
@@ -3210,6 +3228,7 @@ export default function HomeScreen() {
           }
           onComplete={() => {
             localStorage.setItem(`wya_onboarding_done_${user.id}`, "true");
+            localStorage.setItem(`wya_update_seen_${user.id}`, "1"); // new users get the tour, not the big-update popup
             localStorage.setItem(`wya_walkthrough_gate_${user.id}`, "true");
             // "You're All Set / Let's Go!" already served as the tour intro, so start the
             // walkthrough directly instead of the redundant "Welcome / Show Me Around" gate.
@@ -3227,7 +3246,49 @@ export default function HomeScreen() {
         />
       )}
       {gateOverlay && <div className="fixed inset-0 z-50 bg-white" />}
-      {showTourGate && (
+      {showUpdatePopup && (
+        <div className="fixed inset-0 z-40 flex flex-col items-center justify-center bg-white/70 backdrop-blur-sm px-5">
+          <div className="flex max-w-xs flex-col items-center text-center -mt-[10vh]">
+            <p className="text-[26px] font-semibold text-ink/80">A Big Update</p>
+            <div className="mt-3 space-y-3 text-sm text-ink/70">
+              <p className="text-[15px] font-semibold text-ink/80">We&apos;ve reworked the app.</p>
+              <p>There&apos;s a lot new, all to help you see how food and other things affect how you feel. Want a quick tour of what changed?</p>
+            </div>
+          </div>
+          <div className="mt-10 flex flex-col items-center gap-4">
+            <button
+              type="button"
+              className="rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] ring-1 ring-white/40 transition hover:bg-primary/90"
+              onClick={() => {
+                if (!user) return;
+                localStorage.setItem(`wya_update_seen_${user.id}`, "1");
+                localStorage.setItem(`wya_demo_mode_${user.id}`, "true");
+                localStorage.setItem(`wya_walkthrough_active_${user.id}`, "true");
+                localStorage.setItem(`wya_walkthrough_stage_${user.id}`, "home");
+                setIsDemoMode(true);
+                window.dispatchEvent(new Event("wya_demo_mode_on"));
+                setShowUpdatePopup(false);
+                setShowTourGate(false);
+                setRunTour(true);
+              }}
+            >
+              Show Me What&apos;s New
+            </button>
+            <button
+              type="button"
+              className="text-xs text-ink/55 underline underline-offset-2 transition hover:text-ink/70"
+              onClick={() => {
+                if (user) localStorage.setItem(`wya_update_seen_${user.id}`, "1");
+                setShowUpdatePopup(false);
+                setShowTourGate(false);
+              }}
+            >
+              Maybe Later
+            </button>
+          </div>
+        </div>
+      )}
+      {showTourGate && !showUpdatePopup && (
         <div className="fixed inset-0 z-40 flex flex-col items-center justify-center bg-white/70 backdrop-blur-sm px-5">
           <div className="flex max-w-xs flex-col items-center text-center -mt-[10vh]">
             <div className="w-full px-5 py-1 text-center">

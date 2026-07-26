@@ -534,8 +534,14 @@ export default function ProfileScreen() {
     profileTapTimer.current = setTimeout(() => {
       const taps = profileTapCount.current;
       profileTapCount.current = 0;
+      // 7 taps: preview the one-time "big update" popup on Home (dev only).
+      if (taps >= 7 && devHooksEnabled() && user) {
+        localStorage.setItem(`wya_update_force_${user.id}`, "1");
+        router.push("/");
+        return;
+      }
       // 6 taps: preview the activity comeback banner on Home (dev only).
-      if (taps >= 6 && devHooksEnabled() && user) {
+      if (taps === 6 && devHooksEnabled() && user) {
         localStorage.setItem(`wya_comeback_demo_${user.id}`, "1");
         router.push("/");
         return;
@@ -988,6 +994,7 @@ export default function ProfileScreen() {
                           <li><span className="font-semibold text-ink">4×</span> · Streak saver — auto-save available</li>
                           <li><span className="font-semibold text-ink">5×</span> · Streak saver — save already used</li>
                           <li><span className="font-semibold text-ink">6×</span> · Activity comeback banner</li>
+                          <li><span className="font-semibold text-ink">7×</span> · Big-update popup</li>
                         </ul>
                       </div>
                     )}
