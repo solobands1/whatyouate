@@ -4604,7 +4604,11 @@ export default function HomeScreen() {
                     >
                       Cancel
                     </button>
-                    {meals.editForm.name.trim().toLowerCase() !== editOriginalName.trim().toLowerCase() && (
+                    {/* Re-Analyze shows when the name changed, OR for an hour after logging — an
+                        escape hatch if you accepted an estimate (or saved instead of re-analyzing)
+                        and later want it re-run. */}
+                    {(meals.editForm.name.trim().toLowerCase() !== editOriginalName.trim().toLowerCase()
+                      || (!!meals.editingMeal && Date.now() - meals.editingMeal.ts < 3_600_000)) && (
                       <button
                         type="button"
                         className="rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
