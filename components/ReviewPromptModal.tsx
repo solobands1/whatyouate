@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { AppReview } from "@capawesome/capacitor-app-review";
 import { useAuth } from "./AuthProvider";
 import { useAppData } from "./AppDataProvider";
+import { useKeyboardInset } from "../hooks/useKeyboardInset";
 import {
   recordReviewShown,
   recordReviewResponse,
@@ -27,6 +28,7 @@ export default function ReviewPromptModal() {
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackText, setFeedbackText] = useState("");
   const [feedbackStatus, setFeedbackStatus] = useState<"idle" | "sending" | "sent">("idle");
+  const kbInset = useKeyboardInset();
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -134,7 +136,7 @@ export default function ReviewPromptModal() {
       )}
 
       {showFeedback && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
+        <div className="kb-avoid fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5" style={{ paddingBottom: kbInset }}>
           <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
             <h2 className="text-base font-semibold text-ink">Tell Us What's Going On</h2>
             <p className="mt-2 text-sm text-muted/70">

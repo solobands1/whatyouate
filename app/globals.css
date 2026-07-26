@@ -43,6 +43,15 @@ input, textarea, select {
   font-size: 16px !important;
 }
 
+/* Modal keyboard-avoidance: containers set paddingBottom = live keyboard height (via
+   useKeyboardInset), and this transition makes the dialog glide above the iOS keyboard in
+   sync with its slide. paddingBottom is 0 when the keyboard is closed, so this is inert
+   normally. Honors reduced-motion via the global rule above. */
+.kb-avoid {
+  transition: padding-bottom 0.25s cubic-bezier(0.17, 0.59, 0.25, 1),
+              height 0.25s cubic-bezier(0.17, 0.59, 0.25, 1);
+}
+
 @keyframes cardFadeIn {
   from {
     opacity: 0;

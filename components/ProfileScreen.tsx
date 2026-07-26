@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { devHooksEnabled } from "../lib/devHooks";
+import { useKeyboardInset } from "../hooks/useKeyboardInset";
 import Joyride, { STATUS, CallBackProps, type Step } from "react-joyride";
 import { notifyProfileUpdated } from "../lib/dataEvents";
 import { todayKey } from "../lib/utils";
@@ -94,7 +95,9 @@ export default function ProfileScreen() {
   const initialWeightKgRef = useRef<number | null>(null);
   const [mounted, setMounted] = useState(false);
   const [showWeightHistory, setShowWeightHistory] = useState(false);
-  const [vv, setVv] = useState<{ height: number; top: number } | undefined>(undefined);
+  // Live keyboard height (native @capacitor/keyboard event on device, visualViewport on web;
+  // 0 when closed). Drives keyboard-avoidance for the weight-history + supplement modals.
+  const kbInset = useKeyboardInset();
   const [historyWeightInput, setHistoryWeightInput] = useState("");
   const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
   const [historyWeightDate, setHistoryWeightDate] = useState(todayStr);
@@ -144,23 +147,7 @@ export default function ProfileScreen() {
     };
   }, [showWeightHistory]);
 
-  // Pin the modal overlay to the visual viewport. When the keyboard opens, iOS shrinks
-  // AND scrolls the visual viewport to reveal the focused input, which drags a plain
-  // position:fixed element off-screen. Tracking both height and offsetTop keeps the
-  // overlay exactly over the visible area so the modal sits right above the keyboard.
-  useEffect(() => {
-    if (!showWeightHistory || typeof window === "undefined" || !window.visualViewport) return;
-    const viewport = window.visualViewport;
-    const update = () => setVv({ height: viewport.height, top: viewport.offsetTop });
-    update();
-    viewport.addEventListener("resize", update);
-    viewport.addEventListener("scroll", update);
-    return () => {
-      viewport.removeEventListener("resize", update);
-      viewport.removeEventListener("scroll", update);
-      setVv(undefined);
-    };
-  }, [showWeightHistory]);
+  // (Weight-history + supplement keyboard-avoidance is now driven by the shared kbInset above.)
   const profileTapCount = useRef(0);
   const profileTapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -396,21 +383,6 @@ export default function ProfileScreen() {
     };
   }, [showMultiSuppModal]);
 
-  // Pin the supplement modal to the visual viewport so it shrinks above the keyboard (and
-  // expands back when it closes), instead of being hidden behind it.
-  useEffect(() => {
-    if (!showMultiSuppModal || typeof window === "undefined" || !window.visualViewport) return;
-    const viewport = window.visualViewport;
-    const update = () => setVv({ height: viewport.height, top: viewport.offsetTop });
-    update();
-    viewport.addEventListener("resize", update);
-    viewport.addEventListener("scroll", update);
-    return () => {
-      viewport.removeEventListener("resize", update);
-      viewport.removeEventListener("scroll", update);
-      setVv(undefined);
-    };
-  }, [showMultiSuppModal]);
 
   // Belt-and-suspenders: with the keyboard open, iOS keyboard-scrolling leaks past the
   // position:fixed body lock. Also block touchmove everywhere EXCEPT inside the nutrient list,
@@ -900,7 +872,7 @@ export default function ProfileScreen() {
   }
 
   // Keyboard is open when the visual viewport is meaningfully shorter than the layout viewport.
-  const keyboardOpen = typeof window !== "undefined" && vv ? vv.height < window.innerHeight - 120 : false;
+  const keyboardOpen = kbInset > 0;
   return (
     <div className="min-h-screen bg-surface">
       <div className="mx-auto flex min-h-screen max-w-md flex-col px-5 pb-24 safe-top">
@@ -1786,7 +1758,7 @@ export default function ProfileScreen() {
       <BottomNav current="none" />
 
       {editingName && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
+        <div className="kb-avoid fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5" style={{ paddingBottom: kbInset }}>
           <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-lg">
             <p className="text-sm font-semibold text-ink">Name & Avatar</p>
             <div className="mt-3 flex justify-center">
@@ -1943,7 +1915,7 @@ export default function ProfileScreen() {
       )}
 
       {showFeedback && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
+        <div className="kb-avoid fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5" style={{ paddingBottom: kbInset }}>
           <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
             <h2 className="text-base font-semibold text-ink">Send Feedback</h2>
             <p className="mt-2 text-sm text-muted/70">
@@ -2148,7 +2120,7 @@ export default function ProfileScreen() {
         <div className="fixed inset-0 z-50 bg-black/30" />
         <div
           className="fixed inset-x-0 z-[51] flex items-start justify-center px-5 py-[2vh] transition-[top,height] duration-200 ease-out"
-          style={{ top: vv ? `${vv.top}px` : 0, height: vv ? `${vv.height}px` : "100%" }}
+          style={{ top: 0, height: kbInset ? `calc(100% - ${kbInset}px)` : "100%" }}
         >
           <div className={`flex w-full max-w-sm flex-col rounded-2xl bg-white p-6 shadow-xl ${keyboardOpen ? "max-h-full" : "max-h-[85%]"}`}>
             <h2 className="shrink-0 text-base font-semibold text-ink">Add Supplement</h2>
@@ -2280,7 +2252,7 @@ export default function ProfileScreen() {
         {/* Static full-screen dim, never moves, so it can't flicker while the modal
             repositions for the keyboard. */}
         <div className="fixed inset-0 z-50 bg-black/30" onClick={() => setShowWeightHistory(false)} />
-        <div className="fixed inset-x-0 z-[51] flex items-center justify-center px-5 py-[4vh] transition-[top,height] duration-200 ease-out" style={{ top: vv ? `${vv.top}px` : 0, height: vv ? `${vv.height}px` : "100%" }} onClick={() => setShowWeightHistory(false)}>
+        <div className="fixed inset-x-0 z-[51] flex items-center justify-center px-5 py-[4vh] transition-[top,height] duration-200 ease-out" style={{ top: 0, height: kbInset ? `calc(100% - ${kbInset}px)` : "100%" }} onClick={() => setShowWeightHistory(false)}>
           <div className="flex max-h-full w-full max-w-sm flex-col rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
             <div className="mb-4 flex shrink-0 items-center justify-between">
               <p className="text-base font-semibold text-ink">Weight History</p>

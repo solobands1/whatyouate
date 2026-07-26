@@ -35,6 +35,7 @@ import WaterBar from "./WaterBar";
 import { useAuth } from "./AuthProvider";
 import { useAppData } from "./AppDataProvider";
 import { useUnlockCelebration, UnlockCelebrationBanner } from "./UnlockCelebration";
+import { useKeyboardInset } from "../hooks/useKeyboardInset";
 import { countLoggedDays, hasEnoughDataForPatterns } from "../lib/trial";
 import { devHooksEnabled } from "../lib/devHooks";
 import {
@@ -1257,17 +1258,10 @@ export default function HomeScreen() {
   const [quickAddRecentItems, setQuickAddRecentItems] = useState<QuickAddItem[]>([]);
   const [quickAddAllItems, setQuickAddAllItems] = useState<QuickAddItem[]>([]);
   const [quickAddQuery, setQuickAddQuery] = useState("");
-  // Visual viewport height while Quick Add is open, so the modal shrinks above the keyboard.
-  const [vvHeight, setVvHeight] = useState<number | undefined>(undefined);
-  useEffect(() => {
-    if (!showQuickAdd || typeof window === "undefined" || !window.visualViewport) return;
-    const vv = window.visualViewport;
-    const update = () => setVvHeight(vv.height);
-    update();
-    vv.addEventListener("resize", update);
-    vv.addEventListener("scroll", update);
-    return () => { vv.removeEventListener("resize", update); vv.removeEventListener("scroll", update); };
-  }, [showQuickAdd]);
+  // Live on-screen keyboard height (native @capacitor/keyboard event on device, visualViewport
+  // on web; 0 when closed). Drives keyboard-avoidance for every modal on this screen. See
+  // useKeyboardInset / lib/keyboardInset.
+  const kbInset = useKeyboardInset();
   const [quickAddSelected, setQuickAddSelected] = useState<Record<string, "small" | "medium" | "large">>({});
   const [quickAddAdding, setQuickAddAdding] = useState(false);
   const [quickAddDate, setQuickAddDate] = useState(todayDateStr);
@@ -4402,7 +4396,7 @@ export default function HomeScreen() {
       </div>
 
       {meals.editingMeal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5">
+        <div className="kb-avoid fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5" style={{ paddingBottom: kbInset }}>
           <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
             {pendingDelete?.type === "meal" ? (
               <>
@@ -4897,7 +4891,7 @@ export default function HomeScreen() {
       )}
 
       {failedMealPrompt && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5">
+        <div className="kb-avoid fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5" style={{ paddingBottom: kbInset }}>
           <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
             <h2 className="text-base font-semibold text-ink">What did you eat?</h2>
             <p className="mt-1 text-xs text-muted/70">The photo was unclear. Type what you had and we'll estimate the nutrition.</p>
@@ -4938,7 +4932,7 @@ export default function HomeScreen() {
       )}
 
       {quickConfirmMeal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5">
+        <div className="kb-avoid fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5" style={{ paddingBottom: kbInset }}>
           <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
             <h2 className="text-base font-semibold text-ink">What did you eat?</h2>
             <p className="mt-1 text-xs text-muted/70">
@@ -5024,7 +5018,7 @@ export default function HomeScreen() {
       )}
 
       {workout.editingWorkout && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
+        <div className="kb-avoid fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5" style={{ paddingBottom: kbInset }}>
           <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
             {pendingDelete?.type === "workout" ? (
               <>
@@ -5304,7 +5298,7 @@ export default function HomeScreen() {
 
       {/* Barcode product confirmation */}
       {barcodeProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
+        <div className="kb-avoid fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5" style={{ paddingBottom: kbInset }}>
           <div className="w-full max-w-sm rounded-xl bg-white p-5 shadow-xl">
             <div className="flex items-start justify-between gap-2">
               <div>
@@ -5423,7 +5417,7 @@ export default function HomeScreen() {
 
       {/* Barcode not found */}
       {barcodeNotFound && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5">
+        <div className="kb-avoid fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5" style={{ paddingBottom: kbInset }}>
           <div className="w-full max-w-sm rounded-xl bg-white p-5 shadow-xl">
             <p className="text-sm font-semibold text-ink">Product not found</p>
             <p className="mt-1 text-xs text-muted/60">This barcode isn&apos;t in our database. Describe what it is and we&apos;ll estimate the nutrition.</p>
@@ -5565,7 +5559,7 @@ export default function HomeScreen() {
 
       {/* Quick Add modal */}
       {showQuickAdd && (
-        <div className="fixed inset-x-0 top-0 z-50 flex items-start justify-center bg-black/40 px-5 pt-[calc(env(safe-area-inset-top,0px)+2.25rem)]" style={{ height: vvHeight ? `${vvHeight}px` : "100%" }}>
+        <div className="kb-avoid fixed inset-x-0 top-0 z-50 flex items-start justify-center bg-black/40 px-5 pt-[calc(env(safe-area-inset-top,0px)+2.25rem)]" style={{ height: kbInset ? `calc(100% - ${kbInset}px)` : "100%" }}>
           <div className="flex max-h-full w-full max-w-sm flex-col rounded-xl bg-white px-5 pb-6 pt-5 shadow-xl">
             <div className="mb-4 flex shrink-0 items-center justify-between">
               <h2 className="text-base font-semibold text-ink">Quick Add</h2>
@@ -5856,7 +5850,7 @@ export default function HomeScreen() {
           ? REFLECTION_QUESTIONS.find((x) => x.key === reflectionEditingKey) : null;
         if (reflectionEditMode) {
           return (
-            <div className="fixed inset-0 z-[60] flex flex-col justify-start bg-[#EDF4FF] px-6" style={{ paddingTop: "calc(env(safe-area-inset-top) + 2.5rem)", paddingBottom: "calc(env(safe-area-inset-bottom) + 1rem)" }}>
+            <div className="kb-avoid fixed inset-0 z-[60] flex flex-col justify-start bg-[#EDF4FF] px-6" style={{ paddingTop: "calc(env(safe-area-inset-top) + 2.5rem)", paddingBottom: `calc(env(safe-area-inset-bottom) + 1rem + ${kbInset}px)` }}>
               <NightlyMoonsBg />
               <div className="relative z-10 flex h-[72vh] max-h-full flex-col overflow-hidden rounded-3xl border border-primary/20 bg-white animate-card-fade">
                 <div className="flex flex-1 flex-col px-6 overflow-y-auto">
@@ -5944,7 +5938,7 @@ export default function HomeScreen() {
           );
         }
         return (
-          <div className="fixed inset-0 z-[60] flex flex-col justify-start bg-[#EDF4FF] px-6" style={{ paddingTop: "calc(env(safe-area-inset-top) + 2.5rem)", paddingBottom: "calc(env(safe-area-inset-bottom) + 1rem)" }}>
+          <div className="kb-avoid fixed inset-0 z-[60] flex flex-col justify-start bg-[#EDF4FF] px-6" style={{ paddingTop: "calc(env(safe-area-inset-top) + 2.5rem)", paddingBottom: `calc(env(safe-area-inset-bottom) + 1rem + ${kbInset}px)` }}>
             <NightlyMoonsBg />
             <div className="relative z-10 flex h-[72vh] max-h-full flex-col overflow-hidden rounded-3xl border border-primary/20 bg-white animate-card-fade">
             {!atIntro && (

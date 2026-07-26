@@ -6,6 +6,7 @@ import { fileToThumbnailDataUrl } from "../lib/utils";
 import { safeFallbackAnalysis } from "../lib/ai/schema";
 import { notifyMealsUpdated } from "../lib/dataEvents";
 import { useAuth } from "./AuthProvider";
+import { useKeyboardInset } from "../hooks/useKeyboardInset";
 import { useAppData } from "./AppDataProvider";
 import { addMeal, updateMealTs, uploadMealThumbnail, updateMealImageUrl } from "../lib/supabaseDb";
 import { enqueueMeal } from "../lib/mealQueue";
@@ -57,18 +58,8 @@ export default function CaptureScreen() {
   const [confirmingTime, setConfirmingTime] = useState(false);
   const [analyzed, setAnalyzed] = useState(false);
   const [hint, setHint] = useState("");
-  const [kbOpen, setKbOpen] = useState(false);
-
-  useEffect(() => {
-    const fullHeight = window.innerHeight;
-    const check = () => setKbOpen(fullHeight - window.innerHeight > 150 || fullHeight - (window.visualViewport?.height ?? fullHeight) > 150);
-    window.addEventListener("resize", check);
-    window.visualViewport?.addEventListener("resize", check);
-    return () => {
-      window.removeEventListener("resize", check);
-      window.visualViewport?.removeEventListener("resize", check);
-    };
-  }, []);
+  const kbInset = useKeyboardInset();
+  const kbOpen = kbInset > 0;
 
   useEffect(() => {
     if (loading) return;
@@ -128,25 +119,19 @@ export default function CaptureScreen() {
     };
   }, [cameraMode]);
 
-  // Shrink container to visible viewport when keyboard opens — photo absorbs the change
+  // Shrink the capture container to the area above the keyboard (native keyboard height via
+  // useKeyboardInset; the photo absorbs the change). Cleared when the keyboard closes.
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const vv = window.visualViewport;
-    if (!vv) return;
-    const update = () => {
-      const el = captureContainerRef.current;
-      if (!el) return;
-      el.style.height = `${vv.height}px`;
-      el.style.top = `${vv.offsetTop}px`;
-    };
-    update();
-    vv.addEventListener("resize", update);
-    vv.addEventListener("scroll", update);
-    return () => {
-      vv.removeEventListener("resize", update);
-      vv.removeEventListener("scroll", update);
-    };
-  }, []);
+    const el = captureContainerRef.current;
+    if (!el) return;
+    if (kbInset > 0) {
+      el.style.height = `calc(100% - ${kbInset}px)`;
+      el.style.top = "0px";
+    } else {
+      el.style.height = "";
+      el.style.top = "";
+    }
+  }, [kbInset]);
 
   const buildResizedDataUrl = async (selected: File) => {
     const imageUrl = URL.createObjectURL(selected);

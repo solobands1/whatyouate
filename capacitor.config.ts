@@ -1,4 +1,5 @@
 import type { CapacitorConfig } from '@capacitor/cli';
+import { KeyboardResize } from '@capacitor/keyboard';
 
 const config: CapacitorConfig = {
   appId: 'com.dillonpoulin.whatyouate',
@@ -11,6 +12,15 @@ const config: CapacitorConfig = {
   server: {
     url: 'https://whatyouate.vercel.app',
     cleartext: false,
+  },
+  plugins: {
+    // Keyboard EVENTS only — we do NOT let the plugin resize the webview (resize: None).
+    // Modal keyboard-avoidance is handled in-app via useKeyboardInset (paddingBottom that
+    // tracks the native keyboardWillShow height), so nothing global reflows unexpectedly.
+    // (Takes effect on the next native build: npx cap sync ios, then rebuild.)
+    Keyboard: {
+      resize: KeyboardResize.None,
+    },
   },
 };
 
