@@ -11,7 +11,7 @@ import BottomNav from "./BottomNav";
 import Card from "./Card";
 import { useAuth } from "./AuthProvider";
 import { useAppData } from "./AppDataProvider";
-import type { FeelLog } from "../lib/supabaseDb";
+import { markWalkthroughDone } from "../lib/supabaseDb";
 import { computeSummaryMarkers, type ComputedNudge, type NudgeType } from "../lib/digestEngine";
 import { countLoggedDays } from "../lib/trial";
 import { useTrialStatus } from "../hooks/useTrialStatus";
@@ -625,6 +625,7 @@ export default function SummaryScreen() {
       localStorage.removeItem(`wya_demo_mode_${user.id}`);
       setIsDemoMode(false);
       localStorage.setItem(`wya_walkthrough_${user.id}`, "true");
+      void markWalkthroughDone(user.id); // persist server-side so a skip survives reinstall / new device
       localStorage.removeItem(`wya_walkthrough_active_${user.id}`);
       localStorage.removeItem(`wya_walkthrough_stage_${user.id}`);
       setRunSummaryTour(false);

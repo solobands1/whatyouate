@@ -15,6 +15,7 @@ import { computeDaysCompared } from "../lib/dayCompare";
 import { computeFoodFeelingLinks, type FoodFeelingLink } from "../lib/foodFeeling";
 import { computeActiveChanges, type ActiveChange } from "../lib/changes";
 import { getChangeStatuses, setChangeStatus } from "../lib/changeStatus";
+import { markWalkthroughDone } from "../lib/supabaseDb";
 import { useTrialStatus } from "../hooks/useTrialStatus";
 import { openUpgradeModal } from "./UpgradeModal";
 
@@ -219,6 +220,7 @@ export default function PatternsScreen() {
       localStorage.removeItem(`wya_demo_mode_${user.id}`);
       setIsDemoMode(false);
       localStorage.setItem(`wya_walkthrough_${user.id}`, "true");
+      void markWalkthroughDone(user.id); // persist server-side so a skip survives reinstall / new device
       localStorage.removeItem(`wya_walkthrough_active_${user.id}`);
       localStorage.removeItem(`wya_walkthrough_stage_${user.id}`);
       setRunPatternsTour(false);

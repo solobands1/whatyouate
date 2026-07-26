@@ -1029,6 +1029,13 @@ export async function getWeightLogs(userId: string, limit = 60): Promise<WeightL
   return (data ?? []) as WeightLog[];
 }
 
+// Persist that the multi-screen walkthrough is finished, so a skip/finish on any screen survives a
+// reinstall or new device (the localStorage flags are per-device). Mirrors HomeScreen's skip write.
+export async function markWalkthroughDone(userId: string): Promise<void> {
+  if (useMemory) return;
+  await supabase.from("profiles").update({ walkthrough_done: true }).eq("user_id", userId);
+}
+
 export async function clearAllData(userId: string) {
   if (useMemory) {
     ensureLocalLoaded();
