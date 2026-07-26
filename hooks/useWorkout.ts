@@ -29,6 +29,17 @@ export function useWorkout(
   initialWorkouts: WorkoutSession[] = []
 ) {
   const [workouts, setWorkouts] = useState<WorkoutSession[]>(() => initialWorkouts);
+
+  // ── DORMANT: live activity-timer flow ──────────────────────────────────────────────────
+  // Removed from the UI (activity is manual entry + Apple Health sync only) but kept ON PURPOSE:
+  // it was fiddly to get right and a timer may return. Verified dead (no callers) and safe to
+  // delete, but preserved deliberately — please don't re-flag it as dead code to remove. Its
+  // pieces: activeWorkout, showStart/EndWorkoutModal, isEndingWorkout, selectedWorkoutTypes,
+  // selectedIntensity (below); toggleWorkoutType, handleStartWorkout, handleEndWorkout; and the
+  // getActiveWorkout call inside load(). The LIVE paths are the manual-add flow
+  // (openManualWorkoutModal / handleAddManualWorkout) and the edit flow (openWorkoutEditor /
+  // handleUpdateWorkout). Its deps (addWorkout/updateWorkout/WorkoutSession) stay alive via
+  // those, so it won't bit-rot.
   const [activeWorkout, setActiveWorkout] = useState<WorkoutSession | null>(null);
   const [showStartWorkoutModal, setShowStartWorkoutModal] = useState(false);
   const [showEndWorkoutModal, setShowEndWorkoutModal] = useState(false);
@@ -81,6 +92,7 @@ export function useWorkout(
     setEditingWorkout(workout);
   };
 
+  // Dormant timer flow — see the DORMANT note near the top of this hook.
   const handleStartWorkout = async () => {
     if (!user) return;
     try {
