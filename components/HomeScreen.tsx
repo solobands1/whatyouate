@@ -590,6 +590,8 @@ export default function HomeScreen() {
   const [showLogFood, setShowLogFood] = useState(false);
   const [logFoodClosing, setLogFoodClosing] = useState(false);
   const [showFeelingModal, setShowFeelingModal] = useState(false);
+  const [feelSaving, setFeelSaving] = useState(false);
+  const [feelSaveError, setFeelSaveError] = useState(false);
   const [showReflection, setShowReflection] = useState(false);
   const [reflection, setReflection] = useState<Record<string, number | number[]>>({});
   const [reflectionNote, setReflectionNote] = useState("");
@@ -1307,15 +1309,17 @@ export default function HomeScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [meals.manualPortion]);
 
-  const handleFeelLog = async (tag: string, ts: number) => {
-    if (!user) return;
+  const handleFeelLog = async (tag: string, ts: number): Promise<string | null> => {
+    if (!user) return null;
     try {
-      const id = await addFeelLog(user.id, ts, tag);
-      if (id) setHomeFeelLogs((prev) => [{ id, ts, tag }, ...prev].sort((a, b) => b.ts - a.ts));
+      return await addFeelLog(user.id, ts, tag);
     } catch {
-      // silently fail
+      return null;
     }
   };
+  // Clear the save-error whenever the feeling sheet closes, so a stale error can't linger into the
+  // next time it's opened.
+  useEffect(() => { if (!showFeelingModal) setFeelSaveError(false); }, [showFeelingModal]);
 
   const handleDeleteHomeFeelLog = async (id: string) => {
     setHomeFeelLogs((prev) => prev.filter((f) => f.id !== id));
@@ -5704,19 +5708,36 @@ export default function HomeScreen() {
             </div>
             <button
               type="button"
-              disabled={selectedFeelings.length === 0}
+              disabled={selectedFeelings.length === 0 || feelSaving}
               className="mt-5 w-full rounded-xl bg-primary py-3 text-sm font-semibold text-white transition active:scale-[0.98] disabled:opacity-40"
-              onClick={() => {
-                if (!isDemoMode) {
-                  const now = Date.now();
-                  selectedFeelings.forEach((tag) => handleFeelLog(tag, now));
+              onClick={async () => {
+                if (isDemoMode) { setShowFeelingModal(false); setSelectedFeelings([]); return; }
+                if (!user || feelSaving) return;
+                const now = Date.now();
+                const tags = selectedFeelings;
+                setFeelSaving(true);
+                setFeelSaveError(false);
+                const ids = await Promise.all(tags.map((tag) => handleFeelLog(tag, now)));
+                setFeelSaving(false);
+                if (ids.every((id) => id)) {
+                  setHomeFeelLogs((prev) => [
+                    ...ids.map((id, i) => ({ id: id as string, ts: now, tag: tags[i] })),
+                    ...prev,
+                  ].sort((a, b) => b.ts - a.ts));
+                  setShowFeelingModal(false);
+                  setSelectedFeelings([]);
+                } else {
+                  // All-or-nothing: roll back any that did save so a retry can't create duplicates.
+                  ids.forEach((id) => { if (id) void deleteFeelLog(id).catch(() => {}); });
+                  setFeelSaveError(true);
                 }
-                setShowFeelingModal(false);
-                setSelectedFeelings([]);
               }}
             >
-              {selectedFeelings.length > 0 ? `Log ${selectedFeelings.length}` : "Log"}
+              {feelSaving ? "Saving…" : selectedFeelings.length > 0 ? `Log ${selectedFeelings.length}` : "Log"}
             </button>
+            {feelSaveError && (
+              <p className="mt-3 text-center text-sm text-rose-500">Couldn&apos;t Save · Check your connection and try again.</p>
+            )}
           </div>
         </div>
       )}
