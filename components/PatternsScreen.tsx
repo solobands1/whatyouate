@@ -52,6 +52,24 @@ const KEEP_CHIP: Record<"yes" | "maybe", { label: string; cls: string }> = {
 // food/movement/sleep vs energy correlations. Shown as Preview like the nutrients page.
 const EX_BETTER = ["A Walk Or Workout", "Steady Meals Through The Day", "Slept Well"];
 const EX_LOWER = ["Little Movement", "Long Gaps Without Eating", "Slept Poorly"];
+
+// Small tappable "Pro" lock chip for the header of a locked trend card — signals the card is a paid
+// tease (not "no data yet") without stacking another Unlock Pro button on the screen.
+function ProLockChip() {
+  return (
+    <button
+      type="button"
+      onClick={openUpgradeModal}
+      aria-label="Unlock Pro"
+      className="inline-flex shrink-0 items-center gap-1 rounded-full border border-primary/25 bg-primary/[0.08] px-2 py-0.5 text-[10px] font-semibold text-primary/80 transition active:scale-95"
+    >
+      <svg viewBox="0 0 24 24" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+      </svg>
+      Pro
+    </button>
+  );
+}
 const CHANGE_VERB: Record<"up" | "down" | "same", { verb: string; cls: string; arrow: string }> = {
   up: { verb: "improved", cls: "text-primary-dark", arrow: "M5 15l7-7 7 7" },
   down: { verb: "slipped", cls: "text-ink/45", arrow: "M19 9l-7 7-7-7" },
@@ -444,11 +462,13 @@ export default function PatternsScreen() {
         </Card>
 
         {/* Compared to last week */}
-        {!locked && (
           <Card className="mt-6" style={riseIn(ready, 3)}>
-            <Eyebrow>Compared To Last Week</Eyebrow>
+            <div className="flex items-center justify-between gap-2">
+              <Eyebrow>Compared To Last Week</Eyebrow>
+              {locked && <ProLockChip />}
+            </div>
             <p className="mt-1 text-sm text-muted/65">How your energy, sleep, and mood compare to last week</p>
-            {changes.length > 0 ? (
+            {!locked && changes.length > 0 ? (
               <div className="mt-3 space-y-2">
                 {changes.map((c) => (
                   <div key={c.key} className="flex items-center gap-2.5">
@@ -472,12 +492,14 @@ export default function PatternsScreen() {
               </div>
             )}
           </Card>
-        )}
 
         {/* What tends to help vs not — behavioral comparison (preview until we compute it). Walled
             users still see the card as a skeleton tease + Unlock Pro (locked path below). */}
         <Card className="mt-6" data-tour="patterns-days" style={riseIn(ready, 3)}>
-          <Eyebrow>Your Days Compared</Eyebrow>
+          <div className="flex items-center justify-between gap-2">
+            <Eyebrow>Your Days Compared</Eyebrow>
+            {locked && <ProLockChip />}
+          </div>
           <p className="mt-1 text-sm text-muted/65">What tends to set your better days apart</p>
           <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-primary-dark/80">Better Days</p>
@@ -521,23 +543,6 @@ export default function PatternsScreen() {
                   ))}
             </ul>
           </div>
-          {locked && (
-            <div className="mt-4 rounded-xl border border-primary/20 bg-primary/[0.06] px-4 py-3.5">
-              <div className="flex items-start gap-2.5">
-                <svg viewBox="0 0 24 24" className="mt-0.5 h-4 w-4 shrink-0 text-primary/70" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                </svg>
-                <p className="text-sm leading-relaxed text-ink/80">Unlock Pro to see what sets your best-energy days apart from the rest.</p>
-              </div>
-              <button
-                type="button"
-                onClick={openUpgradeModal}
-                className="mt-3 w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white transition active:scale-[0.98]"
-              >
-                Unlock Pro
-              </button>
-            </div>
-          )}
         </Card>
 
         {/* When energy dips */}
@@ -570,11 +575,13 @@ export default function PatternsScreen() {
         )}
 
         {/* Changes you're making — kept habits + whether the metric they target improved */}
-        {!locked && (
           <Card className="mt-6" style={riseIn(ready, 6)}>
-            <Eyebrow>Changes You&apos;re Making</Eyebrow>
+            <div className="flex items-center justify-between gap-2">
+              <Eyebrow>Changes You&apos;re Making</Eyebrow>
+              {locked && <ProLockChip />}
+            </div>
             <p className="mt-1 text-sm text-muted/65">Habits you kept, and whether they seem to be helping</p>
-            {changesLedgerPreview ? (
+            {(locked || changesLedgerPreview) ? (
               <div className="mt-3 space-y-2.5">
                 <div className="rounded-xl border border-primary/15 bg-primary/[0.05] px-3 py-3">
                   <p className="text-[13px] font-semibold text-ink/80">Your Kept Habits Show Up Here</p>
@@ -618,7 +625,6 @@ export default function PatternsScreen() {
             </div>
             )}
           </Card>
-        )}
 
         <p className="mt-4 px-1 text-[11px] leading-relaxed text-muted/50">
           These are observations from your data, not medical advice. The more you log and check in, the sharper they get.
