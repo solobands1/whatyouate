@@ -3249,7 +3249,7 @@ export default function HomeScreen() {
       {showUpdatePopup && (
         <div className="fixed inset-0 z-40 flex flex-col items-center justify-center bg-white/70 backdrop-blur-sm px-5">
           <div className="flex max-w-xs flex-col items-center text-center -mt-[10vh]">
-            <p className="text-[26px] font-semibold text-ink/80">A Big Update</p>
+            <p className="text-[26px] font-semibold text-ink/80">A Big Update!</p>
             <div className="mt-3 space-y-3 text-sm text-ink/70">
               <p className="text-[15px] font-semibold text-ink/80">We&apos;ve reworked the app.</p>
               <p>There&apos;s a lot new, all to help you see how food and other things affect how you feel. Want a quick tour of what changed?</p>
@@ -3285,6 +3285,7 @@ export default function HomeScreen() {
             >
               Maybe Later
             </button>
+            <p className="mt-1 max-w-[16rem] text-center text-[11px] leading-relaxed text-muted/50">Keep your app updated in the App Store for the smoothest experience.</p>
           </div>
         </div>
       )}
