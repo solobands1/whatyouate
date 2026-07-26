@@ -609,6 +609,7 @@ export default function SummaryScreen() {
       placement: "top" as const,
       disableBeacon: true,
       spotlightClicks: true,
+      spotlightPadding: 0, // hug the tab — default padding lights a strip above the nav (a "white line"); the nav already highlights the tab itself
       hideFooter: true,
       content: (
         <div>

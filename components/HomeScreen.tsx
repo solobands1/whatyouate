@@ -3066,6 +3066,7 @@ export default function HomeScreen() {
       placement: "top" as const,
       disableBeacon: true,
       spotlightClicks: true,
+      spotlightPadding: 0, // hug the tab — default padding lights a strip above the nav (a "white line"); the nav already highlights the tab itself
       hideFooter: true,
       content: (
         <div>
@@ -3285,7 +3286,7 @@ export default function HomeScreen() {
             >
               Maybe Later
             </button>
-            <p className="mt-1 max-w-[16rem] text-center text-[11px] leading-relaxed text-muted/50">Keep your app updated in the App Store for the smoothest experience.</p>
+            <p className="mt-1 max-w-[16rem] text-center text-[11px] font-medium leading-relaxed text-primary">Update your app in the App Store for the smoothest experience.</p>
           </div>
         </div>
       )}
@@ -3604,7 +3605,7 @@ export default function HomeScreen() {
                 </svg>
               </span>
               <h2 className="mt-5 text-2xl font-bold tracking-tight text-white">Yesterday, Complete!</h2>
-              <p className="mt-1.5 text-[15px] text-white/80">Your <span className="font-semibold text-white">{streakSavedCount + 1}-day streak</span> is safe.</p>
+              <p className="mt-1.5 text-[15px] text-white/80">Your <span className="font-semibold text-white">{streakSavedCount + 1}-day streak</span> is safe</p>
               <button type="button" onClick={closeStreakCelebration} className="mt-7 rounded-full bg-primary px-8 py-2.5 text-sm font-semibold text-white transition active:scale-[0.97]">
                 Done
               </button>
