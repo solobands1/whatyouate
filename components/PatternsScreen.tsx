@@ -259,7 +259,9 @@ export default function PatternsScreen() {
   // Your Days Compared — real behavioural difference between high/low energy days when we
   // have enough of both. Empty (non-demo) shows placeholder pills, never fake items.
   const daysReal = daysCompared.hasData;
-  const daysPreview = !demo && !daysReal;
+  // Locked (post-trial) users get the skeleton tease + an Unlock Pro CTA below, never their real
+  // comparison — Days Compared is part of the paid Patterns layer.
+  const daysPreview = locked || (!demo && !daysReal);
   const betterList = demo ? EX_BETTER : daysReal ? daysCompared.better : [];
   const lowList = demo ? EX_LOWER : daysReal ? daysCompared.low : [];
 
@@ -472,8 +474,8 @@ export default function PatternsScreen() {
           </Card>
         )}
 
-        {/* What tends to help vs not — behavioral comparison (preview until we compute it) */}
-        {!locked && (
+        {/* What tends to help vs not — behavioral comparison (preview until we compute it). Walled
+            users still see the card as a skeleton tease + Unlock Pro (locked path below). */}
         <Card className="mt-6" data-tour="patterns-days" style={riseIn(ready, 3)}>
           <Eyebrow>Your Days Compared</Eyebrow>
           <p className="mt-1 text-sm text-muted/65">What tends to set your better days apart</p>
@@ -519,8 +521,24 @@ export default function PatternsScreen() {
                   ))}
             </ul>
           </div>
+          {locked && (
+            <div className="mt-4 rounded-xl border border-primary/20 bg-primary/[0.06] px-4 py-3.5">
+              <div className="flex items-start gap-2.5">
+                <svg viewBox="0 0 24 24" className="mt-0.5 h-4 w-4 shrink-0 text-primary/70" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+                <p className="text-sm leading-relaxed text-ink/80">Unlock Pro to see what sets your best-energy days apart from the rest.</p>
+              </div>
+              <button
+                type="button"
+                onClick={openUpgradeModal}
+                className="mt-3 w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-white transition active:scale-[0.98]"
+              >
+                Unlock Pro
+              </button>
+            </div>
+          )}
         </Card>
-        )}
 
         {/* When energy dips */}
         {(
