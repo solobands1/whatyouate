@@ -493,6 +493,9 @@ export default function HomeScreen() {
     }
   };
   const [waterTick, setWaterTick] = useState(0);
+  // Timestamp of the last local water add/remove — the ctx->local reconcile below skips briefly
+  // after a local write so a lagging server snapshot can't clobber it.
+  const lastWaterWriteRef = useRef(0);
   const [showWaterUndo, setShowWaterUndo] = useState(false);
   const waterUndoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastAddedWaterMlRef = useRef<number[]>([]);
@@ -505,16 +508,21 @@ export default function HomeScreen() {
     }
   }, [waterModalOpen]);
 
-  // Seed water data (preloaded by AppDataProvider) into localStorage — restores after cache clear.
+  // Reconcile water from the server (preloaded by AppDataProvider) into localStorage. The server is
+  // source of truth for cross-device consistency: previously we only filled empty keys, so a device
+  // with a stale-lower local total kept it and clobbered a higher server value on the next add. Skip
+  // the reconcile briefly after a local add/remove so a lagging server snapshot doesn't undo a fresh
+  // local write before its upsert has propagated.
   useEffect(() => {
     if (!user || !profile?.trackWater) return;
+    if (Date.now() - lastWaterWriteRef.current < 4000) return;
     let changed = false;
     for (const [dayKey, ml] of Object.entries(ctxWaterLogs)) {
-      if (ml <= 0) continue;
       const key = `wya_water_${user.id}_${dayKey}`;
       try {
         const local = parseInt(localStorage.getItem(key) ?? "0", 10) || 0;
-        if (local === 0) { localStorage.setItem(key, String(ml)); changed = true; }
+        const server = Math.max(0, ml);
+        if (local !== server) { localStorage.setItem(key, String(server)); changed = true; }
       } catch {}
     }
     if (changed) setWaterTick((t) => t + 1);
@@ -3099,6 +3107,7 @@ export default function HomeScreen() {
       const newMl = waterMl + ml;
       try { localStorage.setItem(WATER_KEY, String(newMl)); } catch {}
       lastAddedWaterMlRef.current.push(ml);
+      lastWaterWriteRef.current = Date.now();
       setWaterTick((t) => t + 1);
       upsertWaterLog(user.id, todayKey(), newMl).catch(() => {});
     };
@@ -3106,6 +3115,7 @@ export default function HomeScreen() {
       const toRemove = lastAddedWaterMlRef.current.pop() ?? 100;
       const newMl = Math.max(0, waterMl - toRemove);
       try { localStorage.setItem(WATER_KEY, String(newMl)); } catch {}
+      lastWaterWriteRef.current = Date.now();
       setWaterTick((t) => t + 1);
       upsertWaterLog(user.id, todayKey(), newMl).catch(() => {});
     };
