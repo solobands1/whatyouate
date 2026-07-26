@@ -81,7 +81,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
   const [dobMonth, setDobMonth] = useState("");
   const [dobDay, setDobDay] = useState("");
   const [dobYear, setDobYear] = useState("");
-  const [sex, setSex] = useState<"male" | "female" | "prefer_not" | "">();
+  const [sex, setSex] = useState<"male" | "female" | "other" | "prefer_not" | "">();
   const [units, setUnits] = useState<"imperial" | "metric">("imperial");
   const [heightFt, setHeightFt] = useState("");
   const [heightIn, setHeightIn] = useState("");
@@ -513,7 +513,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
               <h1 className="text-2xl font-semibold text-ink text-center">What's Your Biological Sex?</h1>
               <p className="mt-2 text-sm text-muted/70 text-center">This helps us personalize your targets</p>
               <div className="mt-8 flex flex-col gap-3">
-                {(["male","female","prefer_not"] as const).map((v) => (
+                {(["male","female","other","prefer_not"] as const).map((v) => (
                   <button
                     key={v}
                     type="button"
@@ -522,7 +522,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
                     }`}
                     onClick={() => setSex(v)}
                   >
-                    {v === "male" ? "Male" : v === "female" ? "Female" : "Prefer Not To Say"}
+                    {v === "male" ? "Male" : v === "female" ? "Female" : v === "other" ? "Other" : "Prefer Not To Say"}
                   </button>
                 ))}
               </div>
