@@ -1046,10 +1046,14 @@ export async function clearAllData(userId: string) {
   const nudges = await supabase.from("nudges").delete().eq("user_id", userId);
   const feelLogs = await supabase.from("feel_logs").delete().eq("user_id", userId);
   const weightLogs = await supabase.from("weight_logs").delete().eq("user_id", userId);
+  // HealthKit-synced tables — clear these too, or step/sleep data survives a full wipe and keeps
+  // feeding the cron nudge + weekly-summary generators (a privacy/deletion gap).
+  const stepLogs = await supabase.from("step_logs").delete().eq("user_id", userId);
+  const sleepLogs = await supabase.from("sleep_logs").delete().eq("user_id", userId);
   // Evict the cached profile so callers don't resurrect stale data (e.g. daily supplements).
   profileCache.delete(userId);
-  if (meals.error || workouts.error || profile.error || nudges.error || feelLogs.error || weightLogs.error) {
-    throw meals.error || workouts.error || profile.error || nudges.error || feelLogs.error || weightLogs.error;
+  if (meals.error || workouts.error || profile.error || nudges.error || feelLogs.error || weightLogs.error || stepLogs.error || sleepLogs.error) {
+    throw meals.error || workouts.error || profile.error || nudges.error || feelLogs.error || weightLogs.error || stepLogs.error || sleepLogs.error;
   }
 }
 
