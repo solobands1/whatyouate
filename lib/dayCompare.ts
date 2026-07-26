@@ -9,6 +9,9 @@ import type { ReflectionEntry } from "./habitState";
 const MIN_GROUP = 3;   // need at least this many days in each group
 const MIN_DIFF = 0.25; // and a behaviour must differ by at least this rate to surface
 const MIN_RATE = 0.4;  // and be present on at least this share of the group it lands in
+const MIN_ENERGY_GAP = 0.75; // top vs bottom group must differ by at least this much energy (0-4
+                             // scale) before we compare them — guards against reading a pattern
+                             // into days that were all basically the same. Main tuning knob.
 
 function dayKey(ts: number): string {
   const d = new Date(ts);
@@ -83,14 +86,27 @@ export function computeDaysCompared(
     sleepIdx: c.sleepIdx,
   });
 
-  const better: DayFacts[] = [];
-  const low: DayFacts[] = [];
-  for (const c of byDate.values()) {
-    if (c.energyIdx == null) continue;
-    if (c.energyIdx >= 3) better.push(toFacts(c));
-    else if (c.energyIdx <= 1) low.push(toFacts(c));
+  // Split relative to the user's OWN energy range (top third vs bottom third), not fixed good/bad
+  // cutoffs — so "days compared" works for steady users whose energy rarely hits the extremes. The
+  // gap guard below keeps it honest: only compare groups that are genuinely apart in energy.
+  const rated = [...byDate.values()].filter(
+    (c): c is DayCtx & { energyIdx: number } => c.energyIdx != null,
+  );
+  rated.sort((a, b) => b.energyIdx - a.energyIdx); // highest energy first
+  const n = rated.length;
+  const k = Math.max(MIN_GROUP, Math.floor(n / 3)); // group size: thirds, but at least MIN_GROUP
+  if (n < 2 * k) return { better: [], low: [], hasData: false }; // not enough days for two groups
+  const topDays = rated.slice(0, k);
+  const bottomDays = rated.slice(n - k);
+  const meanEnergy = (arr: { energyIdx: number }[]) =>
+    arr.reduce((s, c) => s + c.energyIdx, 0) / arr.length;
+  // Honesty guard: bail if the two groups aren't meaningfully apart in energy, so we never read a
+  // behaviour difference into days that were all basically the same.
+  if (meanEnergy(topDays) - meanEnergy(bottomDays) < MIN_ENERGY_GAP) {
+    return { better: [], low: [], hasData: false };
   }
-  if (better.length < MIN_GROUP || low.length < MIN_GROUP) return { better: [], low: [], hasData: false };
+  const better = topDays.map(toFacts);
+  const low = bottomDays.map(toFacts);
 
   const rate = (group: DayFacts[], test: (d: DayFacts) => boolean) => group.filter(test).length / group.length;
 

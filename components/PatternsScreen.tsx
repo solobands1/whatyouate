@@ -199,7 +199,7 @@ export default function PatternsScreen() {
       content: (
         <div>
           <p style={{ fontWeight: 600, marginBottom: 10 }}>Your Days Compared</p>
-          <p>What sets your best days apart from your low-energy ones, so you can lean into what works.</p>
+          <p>What sets your better days apart from your other days, so you can lean into what works.</p>
         </div>
       ),
     },
@@ -479,7 +479,7 @@ export default function PatternsScreen() {
           <p className="mt-1 text-sm text-muted/65">What tends to set your better days apart</p>
           <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-primary-dark/80">Better Days</p>
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/70">Low-Energy Days</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/70">Other Days</p>
             <ul className="space-y-1.5">
               {daysPreview
                 ? ["w-24", "w-16", "w-20"].map((w, i) => (
