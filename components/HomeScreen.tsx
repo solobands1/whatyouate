@@ -2380,13 +2380,28 @@ export default function HomeScreen() {
     };
   }, [user, reload]);
 
+  // Keyboard-avoidance for the meal editor (a centered dialog): ride the visual viewport so its
+  // text/number inputs aren't hidden behind the keyboard. Same visualViewport pattern as Quick Add
+  // and the profile modals; this shape can be extended to the other input modals.
+  const [mealEditVv, setMealEditVv] = useState<{ top: number; height: number } | undefined>(undefined);
+  useEffect(() => {
+    if (!meals.editingMeal || typeof window === "undefined" || !window.visualViewport) return;
+    const vv = window.visualViewport;
+    const update = () => setMealEditVv({ top: vv.offsetTop, height: vv.height });
+    update();
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => { vv.removeEventListener("resize", update); vv.removeEventListener("scroll", update); setMealEditVv(undefined); };
+  }, [meals.editingMeal]);
+
   useEffect(() => {
     const anyModal = showQuickAdd || showLogFood || showReflection || showFeelingModal || showHabitSpotlight
       || waterModalOpen || quickConfirmMeal != null || failedMealPrompt != null
       || meals.editingMeal != null || editingFeelLog != null
       || barcodeOpen || barcodeProduct != null || barcodeNotFound || barcodeLookingUp
       || workout.showManualWorkoutModal || workout.editingWorkout
-      || pendingDelete != null;
+      || pendingDelete != null
+      || changeCheckin != null || streakAddAnotherOpen || streakWaterOpen || streakCelebrateOpen;
     if (!anyModal) return;
     // Pin the body so the page behind can't scroll (iOS WKWebView ignores
     // `overflow: hidden` alone). Preserve and restore the scroll position.
@@ -2407,7 +2422,7 @@ export default function HomeScreen() {
       body.style.overflow = "";
       window.scrollTo(0, scrollY);
     };
-  }, [showQuickAdd, showLogFood, showReflection, showFeelingModal, showHabitSpotlight, waterModalOpen, quickConfirmMeal, failedMealPrompt, meals.editingMeal, editingFeelLog, barcodeOpen, barcodeProduct, barcodeNotFound, barcodeLookingUp, workout.showManualWorkoutModal, workout.editingWorkout, pendingDelete]);
+  }, [showQuickAdd, showLogFood, showReflection, showFeelingModal, showHabitSpotlight, waterModalOpen, quickConfirmMeal, failedMealPrompt, meals.editingMeal, editingFeelLog, barcodeOpen, barcodeProduct, barcodeNotFound, barcodeLookingUp, workout.showManualWorkoutModal, workout.editingWorkout, pendingDelete, changeCheckin, streakAddAnotherOpen, streakWaterOpen, streakCelebrateOpen]);
 
   // When a meal is still processing, the "Analyzing food…" label is time-gated
   // at render time (< 90s shows spinner text, >= 90s shows "Analysis failed").
@@ -4339,8 +4354,8 @@ export default function HomeScreen() {
       </div>
 
       {meals.editingMeal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5">
-          <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
+        <div className="fixed inset-x-0 z-50 flex items-center justify-center bg-black/40 px-5" style={{ top: mealEditVv ? `${mealEditVv.top}px` : 0, height: mealEditVv ? `${mealEditVv.height}px` : "100%" }}>
+          <div className="w-full max-w-sm max-h-full overflow-y-auto rounded-xl bg-white p-6 shadow-xl">
             {pendingDelete?.type === "meal" ? (
               <>
                 <h3 className="text-base font-semibold text-ink">Delete Meal</h3>
