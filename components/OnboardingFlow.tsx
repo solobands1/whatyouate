@@ -73,6 +73,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
   const [showIntro, setShowIntro] = useState(true);
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
   const [showNotifPrompt, setShowNotifPrompt] = useState(false);
   const [animStep, setAnimStep] = useState(0);
@@ -113,6 +114,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
 
   const handleSaveAndFinish = async () => {
     setSaving(true);
+    setSaveError(false);
     try {
       const dobString = dobYear && dobMonth && dobDay
         ? `${dobYear}-${dobMonth.padStart(2, "0")}-${dobDay.padStart(2, "0")}`
@@ -135,7 +137,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
         weightKgVal = lb > 0 ? Math.round((lb / 2.20462) * 10) / 10 : null;
       }
 
-      await supabase.from("profiles").upsert({
+      const { error } = await supabase.from("profiles").upsert({
         user_id: userId,
         first_name: firstName || null,
         last_name: lastName || null,
@@ -153,13 +155,19 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
         onboarding_done: true,
         updated_at: new Date().toISOString(),
       }, { onConflict: "user_id" });
+      if (error) throw error;
 
       clearProfileCache(userId);
       localStorage.setItem(`wya_profile_updated_${userId}`, String(Date.now()));
       notifyProfileUpdated();
-    } catch { /* proceed regardless */ } finally {
       setSaving(false);
       setShowNotifPrompt(true);
+    } catch {
+      // Don't advance (which marks onboarding done) on a failed write — a user flagged onboarded
+      // with no saved profile gets a broken first session (no targets) and never re-prompts. Keep
+      // them here with a retry; their entries are preserved in component state.
+      setSaving(false);
+      setSaveError(true);
     }
   };
 
@@ -954,6 +962,9 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
                     {saving ? "Saving…" : "Next"}
                   </button>
                 </div>
+              )}
+              {saveError && (
+                <p className="mt-4 text-center text-sm text-rose-500">Couldn&apos;t save your profile. Check your connection and tap Next to try again.</p>
               )}
             </div>
           </div>
