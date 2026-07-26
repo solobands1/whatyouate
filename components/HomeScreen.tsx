@@ -3960,22 +3960,33 @@ export default function HomeScreen() {
                 </div>
               </div>
             </div>
-          <button
-            type="button"
-            className="mt-2 flex items-center gap-1 text-left text-[10px] text-muted/70 transition active:opacity-60"
-            onClick={() => setShowTargetInfo((v) => !v)}
-          >
-            <span>Target Range: {gentleTargetsDisplay.calories} kcal · {gentleTargetsDisplay.protein}g protein · {homeMarkers.gentleTargets?.carbs ?? 277}g carbs · {homeMarkers.gentleTargets?.fat ?? 77}g fat</span>
-            <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-ink/20 text-[9px] font-semibold text-muted/60">i</span>
-          </button>
-          {showTargetInfo && (
-            <p className="mt-1 text-[10px] text-muted/65">
-              {mealCount >= 10 && profile?.weight
-                ? "Based on your recent intake pattern, adjusted for your goal."
-                : profile?.weight && profile?.activityLevel
-                ? "Based on your weight, activity level, and goal."
-                : "Standard Estimate · Complete Your Profile To Personalize."}
-            </p>
+          {!homeMarkers.gentleTargets ? (
+            // Generic fallback numbers — label them inline, always visible (not hidden behind the
+            // "i"), so a placeholder target never reads as personalized.
+            <div className="mt-2 text-[10px] text-muted/70">
+              <span>Target Range: {gentleTargetsDisplay.calories} kcal · {gentleTargetsDisplay.protein}g protein · 277g carbs · 77g fat</span>
+              <p className="mt-0.5 text-muted/55">Standard Estimate · Complete Your Profile To Personalize.</p>
+            </div>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="mt-2 flex items-center gap-1 text-left text-[10px] text-muted/70 transition active:opacity-60"
+                onClick={() => setShowTargetInfo((v) => !v)}
+              >
+                <span>Target Range: {gentleTargetsDisplay.calories} kcal · {gentleTargetsDisplay.protein}g protein · {homeMarkers.gentleTargets?.carbs ?? 277}g carbs · {homeMarkers.gentleTargets?.fat ?? 77}g fat</span>
+                <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-ink/20 text-[9px] font-semibold text-muted/60">i</span>
+              </button>
+              {showTargetInfo && (
+                <p className="mt-1 text-[10px] text-muted/65">
+                  {mealCount >= 10 && profile?.weight
+                    ? "Based on your recent intake pattern, adjusted for your goal."
+                    : profile?.weight && profile?.activityLevel
+                    ? "Based on your weight, activity level, and goal."
+                    : "Standard Estimate · Complete Your Profile To Personalize."}
+                </p>
+              )}
+            </>
           )}
           {waterData && waterTick >= 0 && (
             <div className="mt-4 border-t border-ink/8 pt-3" data-tour="water-bar">

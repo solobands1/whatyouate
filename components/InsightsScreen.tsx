@@ -532,6 +532,9 @@ export default function InsightsScreen() {
           <p className="mt-4 text-xs text-muted/70">
             Suggested range: {gentleTargetsDisplay.calories} kcal · {gentleTargetsDisplay.carbs}g carbs · {gentleTargetsDisplay.fat}g fat · {gentleTargetsDisplay.protein}g protein
           </p>
+          {!gentleTargets && (
+            <p className="mt-1 text-[11px] text-muted/55">Standard Estimate · Complete Your Profile To Personalize.</p>
+          )}
         </Card>
 
         <Card className="mt-6" style={riseIn(barsReady, 1)}>
