@@ -1731,7 +1731,7 @@ export default function ProfileScreen() {
                     className="flex-1 rounded-xl bg-red-500 py-3 text-sm font-semibold text-white transition active:opacity-80"
                     onClick={() => { setShowClearConfirm(false); handleClear(); }}
                   >
-                    Clear data
+                    Clear Data
                   </button>
                 </div>
               </div>
@@ -1758,7 +1758,7 @@ export default function ProfileScreen() {
                     className="flex-1 rounded-xl bg-red-500 py-3 text-sm font-semibold text-white transition active:opacity-80"
                     onClick={() => { setShowDeleteConfirm(false); handleDeleteAccount(); }}
                   >
-                    Delete account
+                    Delete Account
                   </button>
                 </div>
               </div>
@@ -1907,7 +1907,7 @@ export default function ProfileScreen() {
           <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-lg">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-sm font-semibold text-ink">Profile update</p>
+                <p className="text-sm font-semibold text-ink">Profile Update</p>
                 <p className="mt-2 text-sm text-muted/70">
                   It’s been about 3 months since your profile was updated. Refresh any details so
                   your goals and nudges stay aligned.

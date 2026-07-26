@@ -1475,7 +1475,7 @@ export default function SummaryScreen() {
                   ))}
                   {!trial.isFree && visibleNudgeGroupCount < historyGroups.length && (
                     <button type="button" className="mt-1 text-[11px] font-semibold text-ink/50 underline transition active:opacity-50" onClick={() => setVisibleNudgeGroupCount((prev) => prev + 3)}>
-                      Show more
+                      Show More
                     </button>
                   )}
                 </div>
@@ -1525,7 +1525,7 @@ export default function SummaryScreen() {
                   className="mt-1 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-white active:opacity-70"
                   onClick={closeCoach}
                 >
-                  Got it
+                  Got It
                 </button>
               </div>
               {/* Tail pointing down-right toward Wyaa in the card header */}

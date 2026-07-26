@@ -4472,7 +4472,7 @@ export default function HomeScreen() {
                         className="text-xs text-ink/50 underline transition active:opacity-50"
                         onClick={() => { meals.clearManualTextCache(); meals.setManualResult(null); }}
                       >
-                        Try again
+                        Try Again
                       </button>
                       <button
                         type="button"
@@ -4905,7 +4905,7 @@ export default function HomeScreen() {
                     onClick={() => handleQuickConfirm(false)}
                     disabled={quickConfirming}
                   >
-                    Fix name
+                    Fix Name
                   </button>
                   <button
                     type="button"
@@ -4913,7 +4913,7 @@ export default function HomeScreen() {
                     onClick={() => handleQuickConfirm(true)}
                     disabled={quickConfirming}
                   >
-                    Re-analyze
+                    Re-Analyze
                   </button>
                 </div>
               ) : (
@@ -4923,7 +4923,7 @@ export default function HomeScreen() {
                   onClick={() => handleQuickConfirm(false)}
                   disabled={quickConfirming || !quickConfirmName.trim()}
                 >
-                  {quickConfirming ? "Saving…" : "Looks good"}
+                  {quickConfirming ? "Saving…" : "Looks Good"}
                 </button>
               )}
             </div>
