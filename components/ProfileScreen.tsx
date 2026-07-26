@@ -9,7 +9,7 @@ import { todayKey } from "../lib/utils";
 import type { ActivityLevel, FeelingGoal, GoalDirection, SupplementEntry, SupplementNutrient, Units, UserProfile } from "../lib/types";
 import { suppLabel, suppName } from "../lib/types";
 import { matchSupplementNutrients, NUTRIENT_UNITS, NUTRIENT_DISPLAY_NAMES } from "../lib/rda";
-import { clearAllData, saveProfile, saveDailySupplements, clearProfileCache, addWeightLog, deleteWeightLog, LOCAL_MODE } from "../lib/supabaseDb";
+import { clearAllData, saveProfile, saveDailySupplements, clearProfileCache, addWeightLog, deleteWeightLog, saveWaterGoal, LOCAL_MODE } from "../lib/supabaseDb";
 import { getDailySupplements, setDailySupplements, clearDailySuppsLoggedToday, clearAllFoodCaches } from "../lib/foodCache";
 import { clearMealsCache } from "../lib/supabaseDb";
 import { notifyMealsUpdated } from "../lib/dataEvents";
@@ -1484,7 +1484,7 @@ export default function ProfileScreen() {
                               if (!isNaN(val) && val > 0) {
                                 const ml = waterUnit === "oz" ? Math.round(val * 29.5735) : val;
                                 setCustomWaterGoalMl(ml);
-                                if (user) localStorage.setItem(`wya_water_goal_ml_${user.id}`, String(ml));
+                                if (user) { localStorage.setItem(`wya_water_goal_ml_${user.id}`, String(ml)); void saveWaterGoal(user.id, ml); }
                               }
                               setEditingWaterGoal(false);
                               setWaterGoalInput("");
@@ -1519,7 +1519,7 @@ export default function ProfileScreen() {
                               className="text-[10px] text-muted/50 underline transition active:opacity-60"
                               onClick={() => {
                                 setCustomWaterGoalMl(null);
-                                if (user) localStorage.removeItem(`wya_water_goal_ml_${user.id}`);
+                                if (user) { localStorage.removeItem(`wya_water_goal_ml_${user.id}`); void saveWaterGoal(user.id, null); }
                               }}
                             >
                               Reset

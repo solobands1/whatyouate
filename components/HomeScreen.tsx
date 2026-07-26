@@ -510,20 +510,34 @@ export default function HomeScreen() {
 
   // Reconcile water from the server (preloaded by AppDataProvider) into localStorage. The server is
   // source of truth for cross-device consistency: previously we only filled empty keys, so a device
-  // with a stale-lower local total kept it and clobbered a higher server value on the next add. Skip
-  // the reconcile briefly after a local add/remove so a lagging server snapshot doesn't undo a fresh
-  // local write before its upsert has propagated.
+  // with a stale-lower local total kept it and clobbered a higher server value on the next add.
   useEffect(() => {
     if (!user || !profile?.trackWater) return;
-    if (Date.now() - lastWaterWriteRef.current < 4000) return;
     let changed = false;
-    for (const [dayKey, ml] of Object.entries(ctxWaterLogs)) {
-      const key = `wya_water_${user.id}_${dayKey}`;
-      try {
-        const local = parseInt(localStorage.getItem(key) ?? "0", 10) || 0;
-        const server = Math.max(0, ml);
-        if (local !== server) { localStorage.setItem(key, String(server)); changed = true; }
-      } catch {}
+    // Custom goal: stored under a reserved "goal" key in the same blob; sync it into localStorage so
+    // it follows the user across devices / a reinstall. Server-authoritative, including resets.
+    try {
+      const goalKey = `wya_water_goal_ml_${user.id}`;
+      const prevGoal = localStorage.getItem(goalKey);
+      const serverGoal: number | undefined = ctxWaterLogs.goal;
+      if (typeof serverGoal === "number" && serverGoal > 0) {
+        if (prevGoal !== String(serverGoal)) { localStorage.setItem(goalKey, String(serverGoal)); changed = true; }
+      } else if (prevGoal != null && !("goal" in ctxWaterLogs)) {
+        localStorage.removeItem(goalKey); changed = true;
+      }
+    } catch {}
+    // Day totals: reconcile to the server, skipping the reserved "goal" key. Guarded briefly after a
+    // local add/remove so a lagging server snapshot can't undo a fresh local write before it propagates.
+    if (Date.now() - lastWaterWriteRef.current >= 4000) {
+      for (const [dayKey, ml] of Object.entries(ctxWaterLogs)) {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(dayKey)) continue;
+        const key = `wya_water_${user.id}_${dayKey}`;
+        try {
+          const local = parseInt(localStorage.getItem(key) ?? "0", 10) || 0;
+          const server = Math.max(0, ml);
+          if (local !== server) { localStorage.setItem(key, String(server)); changed = true; }
+        } catch {}
+      }
     }
     if (changed) setWaterTick((t) => t + 1);
   }, [user?.id, profile?.trackWater, ctxWaterLogs]);

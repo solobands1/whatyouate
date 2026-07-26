@@ -310,6 +310,23 @@ export async function upsertWaterLog(userId: string, dayKey: string, ml: number)
   } catch {}
 }
 
+// The custom water goal syncs across devices via a reserved "goal" key in the same water_logs_json
+// blob (no schema change needed). Day-key readers ignore it — "goal" isn't a YYYY-MM-DD date. Pass
+// ml=null to clear it (reset to the recommended default).
+export async function saveWaterGoal(userId: string, ml: number | null): Promise<void> {
+  if (useMemory) return;
+  try {
+    if (!waterLogsCache.has(userId)) await fetchWaterLogs(userId);
+    const updated: Record<string, number> = { ...(waterLogsCache.get(userId) ?? {}) };
+    if (ml == null) delete updated.goal; else updated.goal = ml;
+    waterLogsCache.set(userId, updated);
+    await supabase.from("profiles").upsert(
+      { user_id: userId, water_logs_json: updated, updated_at: new Date().toISOString() },
+      { onConflict: "user_id" }
+    );
+  } catch {}
+}
+
 // ── Habit builder + nightly reflection persistence ─────────────────────────
 const habitStateCache = new Map<string, HabitState | null>();
 const habitHistoryCache = new Map<string, HabitHistoryEntry[]>();
