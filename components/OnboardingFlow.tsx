@@ -193,7 +193,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
   const canContinueHeight = units === "metric"
     ? heightCm && weight
     : (heightFt || heightIn) && weight;
-  const progress = (step / 8) * 100;
+  const progress = ((step + 1) / 8) * 100;
 
   const animStyle = (show: boolean) => ({
     opacity: show ? 1 : 0,
