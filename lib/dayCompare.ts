@@ -2,7 +2,7 @@
 // energy rating) and surface which real, logged behaviours differ between the two groups.
 // Deterministic + honest — every item is a real rate difference across your own days, with
 // min-sample guards. No causal claims; the card frames them as "what your better days tend
-// to look like." Behavioural data comes from meal timestamps, workouts, and sleep rating.
+// to look like." Behavioural data comes from meal counts, workouts, and sleep rating.
 
 import type { ReflectionEntry } from "./habitState";
 
@@ -23,15 +23,15 @@ interface DayCtx {
 }
 
 interface DayFacts {
-  firstMealHour: number | null;
   mealCount: number;
   hasWorkout: boolean;
   sleepIdx: number | null;
 }
 
+// Meal *timing* is deliberately excluded: log times are unreliable (backfilled / logged after the
+// fact), which is exactly why the coach is banned from timing claims. Only reliable signals —
+// movement, meal count, sleep — are compared here.
 const BEHAVIOURS: { label: string; test: (d: DayFacts) => boolean }[] = [
-  { label: "Breakfast before 9am", test: (d) => d.firstMealHour != null && d.firstMealHour < 9 },
-  { label: "First meal after noon", test: (d) => d.firstMealHour != null && d.firstMealHour >= 12 },
   { label: "A walk or workout", test: (d) => d.hasWorkout },
   { label: "Little movement", test: (d) => !d.hasWorkout },
   { label: "Steady meals through the day", test: (d) => d.mealCount >= 3 },
@@ -78,7 +78,6 @@ export function computeDaysCompared(
   }
 
   const toFacts = (c: DayCtx): DayFacts => ({
-    firstMealHour: c.mealTimes.length ? new Date(Math.min(...c.mealTimes)).getHours() : null,
     mealCount: c.mealTimes.length,
     hasWorkout: c.hasWorkout,
     sleepIdx: c.sleepIdx,
