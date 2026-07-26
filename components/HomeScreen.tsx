@@ -4759,11 +4759,12 @@ export default function HomeScreen() {
                 </svg>
                 <span>Photo</span>
                 {trial.isFree && !isDemoMode && (
-                  <span className="absolute right-1 top-1">
-                    <svg viewBox="0 0 24 24" className="h-3 w-3 text-white/60" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <span className="absolute -right-1 -top-1 inline-flex items-center gap-0.5 rounded-full bg-white px-1.5 py-0.5 text-[9px] font-bold leading-none text-primary shadow-[0_1px_4px_rgba(15,23,42,0.25)]">
+                    <svg viewBox="0 0 24 24" className="h-2 w-2" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                       <rect x="3" y="11" width="18" height="11" rx="2" />
                       <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                     </svg>
+                    Pro
                   </span>
                 )}
               </button>
