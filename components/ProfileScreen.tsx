@@ -1594,7 +1594,7 @@ export default function ProfileScreen() {
             <div className="mt-3">
               <button
                 type="button"
-                className="rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-white transition hover:bg-primary/90 active:opacity-80"
+                className="rounded-xl bg-primary px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-primary/90 active:opacity-80"
                 onClick={openSuppAdd}
               >
                 Add Supplement
