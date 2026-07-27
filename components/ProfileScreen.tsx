@@ -2252,7 +2252,7 @@ export default function ProfileScreen() {
         {/* Static full-screen dim, never moves, so it can't flicker while the modal
             repositions for the keyboard. */}
         <div className="fixed inset-0 z-50 bg-black/30" onClick={() => setShowWeightHistory(false)} />
-        <div className="fixed inset-x-0 z-[51] flex items-center justify-center px-5 py-[4vh] transition-[top,height] duration-200 ease-out" style={{ top: 0, height: kbInset ? `calc(100% - ${kbInset}px)` : "100%" }} onClick={() => setShowWeightHistory(false)}>
+        <div className="fixed inset-x-0 z-[51] flex items-center justify-center px-5 transition-[top,height] duration-200 ease-out" style={{ top: 0, height: kbInset ? `calc(100% - ${kbInset}px)` : "100%", paddingTop: kbInset ? "calc(env(safe-area-inset-top) + 0.5rem)" : "4vh", paddingBottom: "4vh" }} onClick={() => setShowWeightHistory(false)}>
           <div className="flex max-h-full w-full max-w-sm flex-col rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
             <div className="mb-4 flex shrink-0 items-center justify-between">
               <p className="text-base font-semibold text-ink">Weight History</p>
