@@ -155,7 +155,13 @@ export function celebrateAccepted() {
 }
 
 export function celebrateDaily() {
-  try { nativeHaptics()?.impact?.({ style: "LIGHT" }); } catch { /* no-op */ }
+  // A double pulse — two solid taps ~100ms apart, so it reads as a deliberate, rewarding
+  // "tap-tap" with enough body (not faint), rather than a single sharp jolt.
+  try {
+    const h = nativeHaptics();
+    h?.impact?.({ style: "MEDIUM" });
+    setTimeout(() => { try { nativeHaptics()?.impact?.({ style: "MEDIUM" }); } catch { /* no-op */ } }, 100);
+  } catch { /* no-op */ }
   playChime("daily");
 }
 
