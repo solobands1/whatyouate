@@ -144,7 +144,7 @@ function playPing() {
 
 // Native haptics via the Capacitor bridge global — undefined (no-op) until the
 // plugin is compiled into the app, so this never breaks the web build.
-function nativeHaptics(): { impact?: (o: { style: string }) => void; notification?: (o: { type: string }) => void } | null {
+function nativeHaptics(): { impact?: (o: { style: string }) => void; notification?: (o: { type: string }) => void; vibrate?: (o: { duration: number }) => void } | null {
   if (typeof window === "undefined") return null;
   return (window as unknown as { Capacitor?: { Plugins?: { Haptics?: never } } }).Capacitor?.Plugins?.Haptics ?? null;
 }
@@ -155,12 +155,12 @@ export function celebrateAccepted() {
 }
 
 export function celebrateDaily() {
-  // A double pulse — two strong taps ~180ms apart, a deliberate, rewarding "tap ... tap"
-  // with real weight.
+  // Two longer, sustained pulses ("taaap ... taap") rather than short taps — a timed
+  // vibration gives length that a discrete impact can't.
   try {
     const h = nativeHaptics();
-    h?.impact?.({ style: "HEAVY" });
-    setTimeout(() => { try { nativeHaptics()?.impact?.({ style: "HEAVY" }); } catch { /* no-op */ } }, 180);
+    h?.vibrate?.({ duration: 200 });
+    setTimeout(() => { try { nativeHaptics()?.vibrate?.({ duration: 150 }); } catch { /* no-op */ } }, 400);
   } catch { /* no-op */ }
   playChime("daily");
 }
