@@ -2798,7 +2798,12 @@ export default function HomeScreen() {
   const makeGreeting = (phase: "morning" | "afternoon" | "evening") => {
     const copy = greetingCopyFor(phase);
     return (
-      <div className="text-center">
+      <div
+        className={`text-center${devHooksEnabled() ? " cursor-pointer" : ""}`}
+        role={devHooksEnabled() ? "button" : undefined}
+        aria-label={devHooksEnabled() ? "Test haptic (dev)" : undefined}
+        onClick={devHooksEnabled() ? () => celebrateDaily() : undefined}
+      >
         <span className="mx-auto mb-1.5 flex h-10 w-10 items-center justify-center text-primary">{greetingIcon(phase)}</span>
         <p className="text-lg font-semibold text-ink">{copy.greeting}{firstName ? ` ${firstName}` : ""}{copy.exclaim ? "!" : ""}</p>
         <p className="mt-1 text-sm text-muted/60">{copy.sub}</p>
