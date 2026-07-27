@@ -4396,8 +4396,8 @@ export default function HomeScreen() {
       </div>
 
       {meals.editingMeal && (
-        <div className="kb-avoid fixed inset-0 z-50 flex justify-center bg-black/40 px-5" style={{ alignItems: kbInset ? "flex-end" : "center", paddingBottom: kbInset ? kbInset + 16 : 0 }}>
-          <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
+        <div className="kb-avoid fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5" style={{ paddingTop: kbInset ? "calc(env(safe-area-inset-top) + 0.5rem)" : undefined, paddingBottom: kbInset ? kbInset + 8 : 0 }}>
+          <div className="w-full max-w-sm max-h-full overflow-y-auto rounded-xl bg-white p-6 shadow-xl">
             {pendingDelete?.type === "meal" ? (
               <>
                 <h3 className="text-base font-semibold text-ink">Delete Meal</h3>

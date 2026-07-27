@@ -2119,8 +2119,8 @@ export default function ProfileScreen() {
         {/* Static dim so it can't flicker while the modal repositions for the keyboard. */}
         <div className="fixed inset-0 z-50 bg-black/30" />
         <div
-          className="fixed inset-x-0 z-[51] flex items-start justify-center px-5 py-[2vh] transition-[top,height] duration-200 ease-out"
-          style={{ top: 0, height: kbInset ? `calc(100% - ${kbInset}px)` : "100%" }}
+          className="fixed inset-x-0 z-[51] flex items-center justify-center px-5 transition-[top,height] duration-200 ease-out"
+          style={{ top: 0, height: kbInset ? `calc(100% - ${kbInset}px)` : "100%", paddingTop: kbInset ? "calc(env(safe-area-inset-top) + 0.5rem)" : "2vh", paddingBottom: "2vh" }}
         >
           <div className={`flex w-full max-w-sm flex-col rounded-2xl bg-white p-6 shadow-xl ${keyboardOpen ? "max-h-full" : "max-h-[85%]"}`}>
             <h2 className="shrink-0 text-base font-semibold text-ink">Add Supplement</h2>
