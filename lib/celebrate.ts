@@ -150,12 +150,12 @@ function nativeHaptics(): { impact?: (o: { style: string }) => void; notificatio
 }
 
 export function celebrateAccepted() {
-  try { nativeHaptics()?.impact?.({ style: "MEDIUM" }); } catch { /* no-op */ }
+  try { nativeHaptics()?.impact?.({ style: "LIGHT" }); } catch { /* no-op */ }
   playChime("accepted");
 }
 
 export function celebrateDaily() {
-  try { nativeHaptics()?.impact?.({ style: "MEDIUM" }); } catch { /* no-op */ }
+  try { nativeHaptics()?.impact?.({ style: "LIGHT" }); } catch { /* no-op */ }
   playChime("daily");
 }
 
