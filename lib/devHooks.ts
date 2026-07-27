@@ -1,11 +1,20 @@
 import { Capacitor } from "@capacitor/core";
 
-// Dev-only URL hooks (?trial / ?trialday, ?days / ?meals / ?refl, ?cue, ?fdebug) are testing
-// shortcuts that force trial/paywall, unlock-ladder, and cue states from the address bar. They
-// must work in a browser (our dev preview) but never inside the shipped native app.
-// Capacitor.isNativePlatform() is true in any TestFlight / App Store build and false in a
-// browser, so gating on it makes the hooks inert for real testers and users while staying
-// usable for us. (These were marked "strip pre-merge"; this guard is the standing version.)
+// Dev-only hooks (?trial / ?trialday, ?days / ?meals / ?refl, ?cue, ?fdebug URL params, plus
+// the habit-hero "force state" taps) are testing shortcuts that force trial/paywall, unlock-
+// ladder, cue, and habit states. They must work for US (browser dev preview + a native build
+// pointed at the preview) but NEVER in the shipped production app.
+//
+// - Any browser  -> enabled (our dev preview; also the marketing site, unchanged).
+// - Native shell -> enabled ONLY when loaded from a Vercel *preview* build. Preview branch URLs
+//   contain "-git-" (e.g. whatyouate-git-dev-...vercel.app); production is whatyouate.vercel.app
+//   (no "-git-"), so the shipped app stays inert for real testers and users.
 export function devHooksEnabled(): boolean {
-  return typeof window !== "undefined" && !Capacitor.isNativePlatform();
+  if (typeof window === "undefined") return false;
+  if (!Capacitor.isNativePlatform()) return true;
+  try {
+    return window.location.hostname.includes("-git-");
+  } catch {
+    return false;
+  }
 }
