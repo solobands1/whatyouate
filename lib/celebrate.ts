@@ -149,18 +149,28 @@ function nativeHaptics(): { impact?: (o: { style: string }) => void; notificatio
   return (window as unknown as { Capacitor?: { Plugins?: { Haptics?: never } } }).Capacitor?.Plugins?.Haptics ?? null;
 }
 
+// Build a longer, sustained-feeling pulse from a rapid burst of impacts — gives length like a
+// vibration but at the impact engine's gentler, style-controlled intensity.
+function sustainedPulse(style: "LIGHT" | "MEDIUM" | "HEAVY", durationMs: number, startDelay = 0) {
+  const step = 30;
+  const n = Math.max(1, Math.round(durationMs / step));
+  for (let i = 0; i < n; i++) {
+    setTimeout(() => { try { nativeHaptics()?.impact?.({ style }); } catch { /* no-op */ } }, startDelay + i * step);
+  }
+}
+
 export function celebrateAccepted() {
   try { nativeHaptics()?.impact?.({ style: "LIGHT" }); } catch { /* no-op */ }
   playChime("accepted");
 }
 
 export function celebrateDaily() {
-  // Two longer, sustained pulses ("taaap ... taap") rather than short taps — a timed
-  // vibration gives length that a discrete impact can't.
+  // Two longer pulses ("taaap ... taap") built from rapid MEDIUM impacts — length like a
+  // vibration but gentler than a full vibrate (which felt too strong). Intensity is the
+  // knob: LIGHT / MEDIUM / HEAVY.
   try {
-    const h = nativeHaptics();
-    h?.vibrate?.({ duration: 150 });
-    setTimeout(() => { try { nativeHaptics()?.vibrate?.({ duration: 120 }); } catch { /* no-op */ } }, 350);
+    sustainedPulse("MEDIUM", 150);
+    sustainedPulse("MEDIUM", 120, 350);
   } catch { /* no-op */ }
   playChime("daily");
 }
