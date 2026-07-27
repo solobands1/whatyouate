@@ -159,8 +159,8 @@ export function celebrateDaily() {
   // vibration gives length that a discrete impact can't.
   try {
     const h = nativeHaptics();
-    h?.vibrate?.({ duration: 200 });
-    setTimeout(() => { try { nativeHaptics()?.vibrate?.({ duration: 150 }); } catch { /* no-op */ } }, 400);
+    h?.vibrate?.({ duration: 150 });
+    setTimeout(() => { try { nativeHaptics()?.vibrate?.({ duration: 120 }); } catch { /* no-op */ } }, 350);
   } catch { /* no-op */ }
   playChime("daily");
 }
