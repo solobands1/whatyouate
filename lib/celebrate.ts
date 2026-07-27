@@ -160,7 +160,9 @@ function sustainedPulse(style: "LIGHT" | "MEDIUM" | "HEAVY", durationMs: number,
 }
 
 export function celebrateAccepted() {
-  try { nativeHaptics()?.impact?.({ style: "LIGHT" }); } catch { /* no-op */ }
+  // One gentle sustained pulse — same texture as the daily double, but a single beat since
+  // this is a "locked in" confirmation, not a completion.
+  try { sustainedPulse("MEDIUM", 120); } catch { /* no-op */ }
   playChime("accepted");
 }
 
