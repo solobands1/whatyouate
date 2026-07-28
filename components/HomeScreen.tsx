@@ -457,6 +457,7 @@ export default function HomeScreen() {
   const [weightInput, setWeightInput] = useState("");
   const [weightPromptHidden, setWeightPromptHidden] = useState(false);
   const [savingWeight, setSavingWeight] = useState(false);
+  const [weightModalOpen, setWeightModalOpen] = useState(false);
   const weightUnitLabel = profile?.units === "metric" ? "kg" : "lbs";
   const weightPromptDue = useMemo(() => {
     if (!user || !profile?.weight || typeof window === "undefined") return false;
@@ -488,6 +489,7 @@ export default function HomeScreen() {
       localStorage.setItem(`wya_profile_updated_${user.id}`, String(Date.now()));
       setWeightInput("");
       setWeightPromptHidden(true);
+      setWeightModalOpen(false);
     } catch {
       // best effort; leave the prompt open so they can retry
     } finally {
@@ -3644,6 +3646,8 @@ export default function HomeScreen() {
           <UnlockCelebrationBanner title="Habit Done For Today!" sub="Keep logging everything else · It helps your Coach learn" icon="spark" onDismiss={() => setDailyHabitBanner(false)} />
         ) : nudgeBanner ? (
           <UnlockCelebrationBanner title="New Nudge Available" sub="Your Coach spotted something · See it on Insights" icon="spark" onDismiss={() => setNudgeBanner(false)} />
+        ) : showWeightPrompt ? (
+          <UnlockCelebrationBanner title="Time For A Weight Check-In" sub="Tap to log it · or add it in Profile anytime" icon="spark" onClick={() => { setWeightPromptHidden(true); setWeightModalOpen(true); }} onDismiss={dismissWeightPrompt} />
         ) : null)}
 
         {/* Trial progress / expired banner + optional profile nudge */}
@@ -4101,36 +4105,39 @@ export default function HomeScreen() {
           </div>
         </Card>
 
-        {showWeightPrompt && (
-          <div className="mt-3 rounded-2xl border-2 border-primary/25 bg-primary/[0.05] px-4 py-3 animate-card-fade">
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <p className="text-sm font-semibold text-ink">Quick Weight Check-In</p>
-                <p className="mt-0.5 text-xs text-muted/70">It&apos;s been a while. A quick update keeps your coach and targets accurate.</p>
+        {weightModalOpen && (
+          <div className="kb-avoid fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5" style={{ paddingBottom: kbInset }}>
+            <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="text-base font-semibold text-ink">Quick Weight Check-In</p>
+                  <p className="mt-0.5 text-xs text-muted/70">It&apos;s been a while. A quick update keeps your coach and targets accurate.</p>
+                </div>
+                <button type="button" onClick={() => setWeightModalOpen(false)} aria-label="Close" className="-mr-1 -mt-1 p-1 text-ink/35 transition active:opacity-60">
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+                </button>
               </div>
-              <button type="button" onClick={dismissWeightPrompt} aria-label="Not now" className="-mr-1 -mt-1 p-1 text-ink/35 transition active:opacity-60">
-                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
-              </button>
-            </div>
-            <div className="mt-2.5 flex items-center gap-2">
-              <div className="flex items-center rounded-xl border border-primary/25 bg-white px-3 py-2">
-                <input
-                  value={weightInput}
-                  onChange={(e) => setWeightInput(e.target.value.replace(/[^0-9.]/g, ""))}
-                  inputMode="decimal"
-                  placeholder="0"
-                  className="w-16 bg-transparent text-sm font-semibold text-ink outline-none"
-                />
-                <span className="text-xs text-muted/60">{weightUnitLabel}</span>
+              <div className="mt-4 flex items-center gap-2">
+                <div className="flex items-center rounded-xl border border-primary/25 bg-white px-3 py-2">
+                  <input
+                    value={weightInput}
+                    onChange={(e) => setWeightInput(e.target.value.replace(/[^0-9.]/g, ""))}
+                    inputMode="decimal"
+                    placeholder="0"
+                    autoFocus
+                    className="w-16 bg-transparent text-sm font-semibold text-ink outline-none"
+                  />
+                  <span className="text-xs text-muted/60">{weightUnitLabel}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={saveWeightPrompt}
+                  disabled={savingWeight || !weightInput}
+                  className="ml-auto rounded-xl bg-primary px-5 py-2 text-xs font-semibold text-white transition active:opacity-80 disabled:opacity-40"
+                >
+                  {savingWeight ? "Saving…" : "Save"}
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={saveWeightPrompt}
-                disabled={savingWeight || !weightInput}
-                className="ml-auto rounded-xl bg-primary px-5 py-2 text-xs font-semibold text-white transition active:opacity-80 disabled:opacity-40"
-              >
-                {savingWeight ? "Saving…" : "Save"}
-              </button>
             </div>
           </div>
         )}
