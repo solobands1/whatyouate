@@ -5,6 +5,7 @@ import { AppReview } from "@capawesome/capacitor-app-review";
 import { useAuth } from "./AuthProvider";
 import { useAppData } from "./AppDataProvider";
 import { useKeyboardInset } from "../hooks/useKeyboardInset";
+import { isIntroActive } from "../lib/introQuiet";
 import {
   recordReviewShown,
   recordReviewResponse,
@@ -33,6 +34,9 @@ export default function ReviewPromptModal() {
 
   useEffect(() => {
     const handler = (e: Event) => {
+      // Don't stack the review request on top of the big-update popup / walkthrough. Leaving the
+      // pending flag untouched means it returns naturally on a later app load, not right after.
+      if (isIntroActive()) return;
       const key = (e as CustomEvent<{ key: PromptKey | null }>).detail?.key ?? null;
       setPromptKey(key);
       setOpen(true);

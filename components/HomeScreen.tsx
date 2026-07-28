@@ -36,6 +36,7 @@ import { useAuth } from "./AuthProvider";
 import { useAppData } from "./AppDataProvider";
 import { useUnlockCelebration, UnlockCelebrationBanner } from "./UnlockCelebration";
 import { useKeyboardInset } from "../hooks/useKeyboardInset";
+import { markIntroActive } from "../lib/introQuiet";
 import { countLoggedDays, hasEnoughDataForPatterns } from "../lib/trial";
 import { devHooksEnabled } from "../lib/devHooks";
 import {
@@ -568,6 +569,13 @@ export default function HomeScreen() {
     const timer = setTimeout(() => openReviewPrompt(flag.key), 3000);
     return () => clearTimeout(timer);
   }, [loadingData, ctxMeals]);
+
+  // Once the big-update popup or the walkthrough is active, keep the review request quiet for the
+  // rest of this load (see lib/introQuiet). Only affects that moment — normal cadence, including a
+  // new user's first-time celebrations, resumes the instant it's dismissed.
+  useEffect(() => {
+    if (showUpdatePopup || runTour || showTourGate || isDemoMode) markIntroActive();
+  }, [showUpdatePopup, runTour, showTourGate, isDemoMode]);
   const [dailyLimitBanner, setDailyLimitBanner] = useState(false);
   const [barcodeOpen, setBarcodeOpen] = useState(false);
   const [barcodeNotFound, setBarcodeNotFound] = useState(false);
@@ -3622,7 +3630,7 @@ export default function HomeScreen() {
         {/* One top banner at a time, queued by precedence — so e.g. "First Meal" and
             "Habit Done" don't compete for the same spot. The lower-priority banner's state
             persists and it slides in the moment the one ahead of it clears. */}
-        {showSavedMessage ? (
+        {!showUpdatePopup && !showTourGate && !runTour && !isDemoMode && (showSavedMessage ? (
           streakSaverNet ? (
             <UnlockCelebrationBanner title="Streak Saved" sub={`You missed yesterday, and that's okay · We saved your ${streakSavedCount || streak}-day streak this time`} icon="flame" onDismiss={() => setShowSavedMessage(false)} />
           ) : (
@@ -3636,7 +3644,7 @@ export default function HomeScreen() {
           <UnlockCelebrationBanner title="Habit Done For Today!" sub="Keep logging everything else · It helps your Coach learn" icon="spark" onDismiss={() => setDailyHabitBanner(false)} />
         ) : nudgeBanner ? (
           <UnlockCelebrationBanner title="New Nudge Available" sub="Your Coach spotted something · See it on Insights" icon="spark" onDismiss={() => setNudgeBanner(false)} />
-        ) : null}
+        ) : null)}
 
         {/* Trial progress / expired banner + optional profile nudge */}
         {(() => {
