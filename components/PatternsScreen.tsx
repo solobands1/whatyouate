@@ -22,10 +22,9 @@ import { openUpgradeModal } from "./UpgradeModal";
 const METRIC_LABEL: Record<string, string> = { energy: "energy", sleep: "sleep", mood: "mood", stress: "stress", digestion: "digestion" };
 function changeEffectLine(c: Pick<ActiveChange, "targetKey" | "effect">): string | null {
   if (!c.effect) return null;
-  const m = METRIC_LABEL[c.targetKey] ?? "how you feel";
-  if (c.effect.direction === "better") return `Your ${m} looks better since, about ${c.effect.beforePerWeek} to ${c.effect.afterPerWeek} low days a week.`;
-  if (c.effect.direction === "worse") return `Your ${m} hasn't picked up since this yet.`;
-  return `No clear change in ${m} yet.`;
+  // A simple, confident verdict — signal that we've noticed whether it's helping, without
+  // over-claiming a specific (and possibly noisy) number.
+  return c.effect.direction === "better" ? "Seems to be helping." : "No clear change yet.";
 }
 // Example ledger for Preview / demo.
 const EX_LEDGER: Pick<ActiveChange, "id" | "templateId" | "label" | "targetKey" | "keep" | "effect" | "stopped" | "regressed">[] = [
