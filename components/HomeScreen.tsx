@@ -1199,6 +1199,13 @@ export default function HomeScreen() {
     return () => clearTimeout(tExpand);
   }, [heroHabit.status, habitLoaded, activeTemplate.id, user]);
 
+  // During the walkthrough/demo, load the hero already expanded — skip the timed shimmer/bounce
+  // reveal — so the screen is stable. Otherwise the hero grows mid-tour and the joyride spotlight
+  // jumps, which is what makes the walkthrough feel choppy.
+  useEffect(() => {
+    if (isDemoMode) setHeroExpanded(true);
+  }, [isDemoMode]);
+
   // Once the card finishes dropping down, pulse its border again like a finished habit.
   useEffect(() => {
     if (!heroExpanded) return;
