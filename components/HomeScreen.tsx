@@ -283,6 +283,11 @@ function todayDateStr() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
+function yesterdayDateStr() {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
 
 // When true, the nightly reflection is available all day (testing only). False = the real
 // gate, which opens the reflection from 5pm (hour >= 17).
@@ -627,6 +632,7 @@ export default function HomeScreen() {
   const [feelSaving, setFeelSaving] = useState(false);
   const [feelSaveError, setFeelSaveError] = useState(false);
   const [showReflection, setShowReflection] = useState(false);
+  const [reflectingYesterday, setReflectingYesterday] = useState(false);
   const [reflection, setReflection] = useState<Record<string, number | number[]>>({});
   const [reflectionNote, setReflectionNote] = useState("");
   const [reflectionStep, setReflectionStep] = useState(0);
@@ -655,15 +661,19 @@ export default function HomeScreen() {
     if (p.has("cue")) setCuePreview(true);
     if (p.has("fdebug")) setFdebug(true); // ?fdebug shows each Quick Add row's grouping key
   }, []);
-  const closeReflection = () => { setShowReflection(false); setReflectionEditMode(false); setReflectionEditingKey(null); };
+  const closeReflection = () => { setShowReflection(false); setReflectionEditMode(false); setReflectionEditingKey(null); setReflectingYesterday(false); };
   const finishReflection = () => {
     // Persist the completed check-in so it feeds the coach and "Same As Last Night".
     if (user && Object.keys(reflection).length > 0) {
+      const backfill = reflectingYesterday;
+      const date = backfill ? yesterdayDateStr() : todayDateStr();
+      const ts = backfill ? new Date(`${date}T21:00:00`).getTime() : Date.now();
       setLastReflection({ reflection, note: reflectionNote });
-      setTodayReflection({ reflection, note: reflectionNote });
+      if (!backfill) setTodayReflection({ reflection, note: reflectionNote });
       // Refresh AppDataProvider so the new reflection flows into Patterns/Reflections live.
-      addReflection(user.id, { date: todayDateStr(), answers: reflection, note: reflectionNote, ts: Date.now() }).then(() => reload()).catch(() => {});
+      addReflection(user.id, { date, answers: reflection, note: reflectionNote, ts }).then(() => reload()).catch(() => {});
     }
+    setReflectingYesterday(false);
     setShowReflection(false); setReflectionStep(0); setReflection({}); setReflectionNote("");
     // After a reflection, occasionally check in on one active change (throttled, one at a time).
     if (user && dueCheckin) { markChangeAsked(user.id, dueCheckin.templateId); setCheckinStopped(false); setChangeCheckin(dueCheckin); }
@@ -698,6 +708,15 @@ export default function HomeScreen() {
     }
     setReflectionsLoaded(true);
   }, [user, ctxReflections]);
+
+  // Yesterday's reflection is missing AND the user has reflected before (so they're not brand
+  // new) → offer a one-day backfill on the entry. Not in demo/walkthrough.
+  const missedYesterday = useMemo(() => {
+    if (!reflectionsLoaded || isDemoMode) return false;
+    const rows = ctxReflections ?? [];
+    if (rows.length === 0) return false; // never reflected — don't nag a new user about "yesterday"
+    return !rows.some((r) => r.date === yesterdayDateStr());
+  }, [reflectionsLoaded, isDemoMode, ctxReflections]);
 
   const [selectedFeelings, setSelectedFeelings] = useState<string[]>([]);
   const [heroHabit, setHeroHabit] = useState<{ status: "suggested" | "accepting" | "committed" | "active" | "dayComplete" | "done" | "missed" | "hidden"; days: boolean[][]; holdDay?: number | null }>(
@@ -4167,6 +4186,23 @@ export default function HomeScreen() {
               <span className="flex-1">
                 <span className="block text-sm font-semibold text-ink">{todayReflection ? "Reflection Complete" : "How Was Your Day?"}</span>
                 <span className="block text-[12px] text-ink/55">{todayReflection ? "Tap to edit your reflection" : "Take a minute to reflect on your day"}</span>
+              </span>
+              <svg viewBox="0 0 24 24" className="h-4 w-4 text-ink/30" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
+            </button>
+          </div>
+        ) : missedYesterday ? (
+          <div className="mt-2" style={riseIn(barsReady && habitLoaded, 1)}>
+            <button
+              type="button"
+              onClick={() => { setReflectingYesterday(true); setShowReflection(true); }}
+              className="flex w-full items-center gap-3 rounded-2xl border-2 border-primary/25 bg-primary/[0.05] px-4 py-3 text-left transition active:scale-[0.99]"
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z" /></svg>
+              </span>
+              <span className="flex-1">
+                <span className="block text-sm font-semibold text-ink">Complete Yesterday&apos;s Reflection</span>
+                <span className="block text-[12px] text-ink/55">You missed last night · Tonight&apos;s opens at 5pm, reminder at 7pm</span>
               </span>
               <svg viewBox="0 0 24 24" className="h-4 w-4 text-ink/30" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
             </button>
