@@ -2,11 +2,19 @@
 	"appId": "com.dillonpoulin.whatyouate",
 	"appName": "WhatYouAte",
 	"webDir": "public",
+	"backgroundColor": "#F8FAFC",
 	"server": {
 		"url": "https://whatyouate.vercel.app",
 		"cleartext": false
 	},
+	"plugins": {
+		"Keyboard": {
+			"resize": "none"
+		}
+	},
 	"packageClassList": [
+		"HapticsPlugin",
+		"KeyboardPlugin",
 		"PushNotificationsPlugin",
 		"AppReviewPlugin",
 		"PurchasesPlugin"
