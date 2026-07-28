@@ -16,6 +16,7 @@ import { clearMealsCache } from "../lib/supabaseDb";
 import { notifyMealsUpdated } from "../lib/dataEvents";
 import { supabase } from "../lib/supabaseClient";
 import { requestHealthKitPermissions, checkHealthKitAuthorization, syncHealthKitActivity, getHealthKitAuthStatus } from "../lib/healthKit";
+import { initPush, getPushStatus, openPushSettings, PUSH_ASKED_KEY } from "../lib/push";
 import { openReviewPrompt } from "./ReviewPromptModal";
 import BottomNav from "./BottomNav";
 import Card from "./Card";
@@ -216,6 +217,7 @@ export default function ProfileScreen() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [healthKitShowSettings, setHealthKitShowSettings] = useState(false);
   const [healthKitModalState, setHealthKitModalState] = useState<"loading" | "connect" | "connecting" | "instructions">("loading");
+  const [pushStatus, setPushStatus] = useState<"granted" | "prompt" | "denied" | "unsupported" | "loading">("loading");
 
   useEffect(() => {
     setMounted(true);
@@ -431,6 +433,10 @@ export default function ProfileScreen() {
     });
   }, [healthKitShowSettings]);
 
+  useEffect(() => {
+    getPushStatus().then(setPushStatus);
+  }, []);
+
   async function handleHealthKitConnect() {
     if (!user) return;
     setHealthKitModalState("connecting");
@@ -441,6 +447,16 @@ export default function ProfileScreen() {
       syncHealthKitActivity(user.id).catch(() => {});
     }
     setHealthKitModalState("instructions");
+  }
+
+  async function handleNotifButton() {
+    if (!user) return;
+    if (pushStatus === "denied") { await openPushSettings(); return; }
+    await initPush(user.id);
+    const s = await getPushStatus();
+    setPushStatus(s);
+    // Mark asked so the fallback "Turn On Notifications" banner doesn't also fire.
+    if (s === "granted" || s === "denied") { try { localStorage.setItem(PUSH_ASKED_KEY, s === "denied" ? "declined" : "1"); } catch { /* ignore */ } }
   }
 
   if (loading) {
@@ -1635,7 +1651,23 @@ export default function ProfileScreen() {
           <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">Account</p>
           <div className="mt-3 rounded-xl border border-ink/10 bg-ink/5 px-4 py-3">
             <p className="text-sm font-medium text-ink/80">Notifications</p>
-            <p className="mt-0.5 text-xs leading-relaxed text-muted/60">Daily reminders to log and reflect. Turn them on or off anytime in your phone&apos;s Settings › Notifications › WhatYouAte.</p>
+            <p className="mt-0.5 text-xs leading-relaxed text-muted/60">Daily reminders to log and reflect.</p>
+            {pushStatus !== "unsupported" && pushStatus !== "loading" && (
+              <button
+                type="button"
+                onClick={handleNotifButton}
+                disabled={pushStatus === "granted"}
+                className={`mt-2.5 w-full rounded-xl px-4 py-2.5 text-xs font-semibold transition active:scale-[0.98] ${
+                  pushStatus === "granted"
+                    ? "bg-primary-dark/10 text-primary-dark"
+                    : pushStatus === "denied"
+                    ? "border border-ink/10 bg-white text-ink/70 active:opacity-60"
+                    : "bg-primary text-white active:opacity-80"
+                }`}
+              >
+                {pushStatus === "granted" ? "Notifications On" : pushStatus === "denied" ? "Enable in Settings" : "Turn On Notifications"}
+              </button>
+            )}
           </div>
           <button
             type="button"

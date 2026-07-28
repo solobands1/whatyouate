@@ -64,3 +64,22 @@ export async function initPush(userId: string, silentIfNotGranted = false): Prom
     return false;
   }
 }
+
+// Current notification permission state, for the Profile toggle. "unsupported" on web.
+export async function getPushStatus(): Promise<"granted" | "prompt" | "denied" | "unsupported"> {
+  if (!Capacitor.isNativePlatform()) return "unsupported";
+  try {
+    const { PushNotifications } = await import("@capacitor/push-notifications");
+    const s = await PushNotifications.checkPermissions();
+    if (s.receive === "granted") return "granted";
+    if (s.receive === "denied") return "denied";
+    return "prompt";
+  } catch {
+    return "unsupported";
+  }
+}
+
+// Open the iOS Settings page for this app, so a user who denied can re-enable Notifications.
+export async function openPushSettings(): Promise<void> {
+  try { window.open("app-settings:", "_system"); } catch { /* no-op */ }
+}
