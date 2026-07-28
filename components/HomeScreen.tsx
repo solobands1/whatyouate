@@ -2752,7 +2752,7 @@ export default function HomeScreen() {
     { key: "nudges", title: "Nudges Just Opened Up", sub: "Your coach can now send you personalized nudges.", unlocked: !isDemoMode && mealCount >= 5, icon: "unlock" },
     { key: "nutrition", title: "Your Nutrition Just Opened Up", sub: "Your macros, micronutrients, and trends are filling in.", unlocked: !isDemoMode && hasEnoughDataForPatterns(ctxMeals ?? []), icon: "unlock" },
     { key: "feeling", title: "Food & Feeling Just Opened Up", sub: "Your coach is starting to connect your food to how you feel.", unlocked: !isDemoMode && (ctxReflections?.length ?? 0) >= 3, icon: "unlock" },
-  ]);
+  ], !loadingData);
 
   // Record the day nudges first unlocked, tied to the genuine "nudges" unlock celebration (which
   // baselines already-unlocked users to "done"), so the one-time welcome nudge appears only that

@@ -21,6 +21,7 @@ function celKey(userId: string, key: string) { return `wya_cel_${key}_${userId}`
 export function useUnlockCelebration(
   userId: string | undefined,
   entries: CelebrationEntry[],
+  ready: boolean = true,
 ): { pending: CelebrationEntry | null; dismiss: () => void } {
   const [pending, setPending] = useState<CelebrationEntry | null>(null);
   const signature = useMemo(
@@ -30,6 +31,11 @@ export function useUnlockCelebration(
 
   useEffect(() => {
     if (!userId || typeof window === "undefined") return;
+    // Wait until the underlying data has loaded. Otherwise the first eval runs with empty
+    // data (every milestone reads as "locked"), arms them, and then the real data arriving
+    // flips them to "unlocked" — firing a retroactive pop for users who passed the milestone
+    // long ago. Gating on `ready` makes the first eval a correct baseline instead.
+    if (!ready) return;
     for (const e of entries) {
       try {
         const k = celKey(userId, e.key);
@@ -47,7 +53,7 @@ export function useUnlockCelebration(
       } catch { /* ignore */ }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId, signature]);
+  }, [userId, signature, ready]);
 
   return { pending, dismiss: () => setPending(null) };
 }
