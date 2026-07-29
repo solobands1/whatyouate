@@ -294,6 +294,18 @@ export async function GET(req: Request) {
       ) as unknown as Record<string, unknown>;
       if (recentSuggestedFoods.length) ctx.recentSuggestedFoods = recentSuggestedFoods;
 
+      // Consistency-theme fatigue. The streak / "X days straight" / "X pounds since you started"
+      // angle leaks across many nudge TYPES (it opens deficit, pattern, and encouragement messages
+      // alike), so the type-based blocks above can't catch it. Detect it by CONTENT across the last
+      // few nudges and bench it for a cooldown, unless the streak just hit a round milestone.
+      const CONSISTENCY_THEME_RE = /(\bdays?\s+(?:straight|in a row|logged)\b|\b(?:logging|day)\s+streak\b|from where you (?:started|began)|since you started|\b\d+\s+pounds?\b|\bpounds?\s+(?:up|down)\b|\blbs?\s+(?:up|down)\b|^\s*\d+\s+days?\b)/i;
+      const consistencyCooldown = (nudgesRes.data ?? [])
+        .slice(0, 4)
+        .some((n: { message?: string }) => CONSISTENCY_THEME_RE.test(n.message ?? ""));
+      const streakVal = typeof ctx.streak === "number" ? (ctx.streak as number) : 0;
+      const streakMilestone = streakVal > 0 && streakVal % 50 === 0;
+      if (consistencyCooldown && !streakMilestone) ctx.benchConsistencyTheme = true;
+
       // Reflection-aware coaching: attach a summary of the user's nightly reflections so the
       // nudge can speak to how they feel + whether their kept habits are helping.
       const profileRow = profileRes.data as Record<string, unknown> | null;
@@ -347,10 +359,13 @@ export async function GET(req: Request) {
 
       if (nudge && nudge.type === "check_in" && !sparseLogs) { console.log(`[cron/nudge] skip ${userId.slice(0,8)}: check_in suppressed (not sparse)`); nudge = null; }
 
-      // Prevent consecutive streak openers (e.g. "54 days..." two nudges in a row)
-      if (nudge?.message) {
-        const lastMsg = ((nudgesRes.data as Array<{ message: string }> | null)?.[0]?.message ?? "").toLowerCase();
-        if (/^\d+\s+days?\b/i.test(nudge.message) && /^\d+\s+days?\b/i.test(lastMsg)) { console.log(`[cron/nudge] skip ${userId.slice(0,8)}: consecutive streak opener suppressed`); nudge = null; }
+      // Backstop: never let a streak/count opener land if ANY of the last few nudges used one.
+      // (The bench flag above should prevent this upstream; this catches slips.)
+      if (nudge?.message && /^\s*\d+\s+days?\b/i.test(nudge.message)) {
+        const recentOpenedWithCount = ((nudgesRes.data as Array<{ message: string }> | null) ?? [])
+          .slice(0, 4)
+          .some((n) => /^\s*\d+\s+days?\b/i.test(n.message ?? ""));
+        if (recentOpenedWithCount) { console.log(`[cron/nudge] skip ${userId.slice(0,8)}: streak opener within cooldown suppressed`); nudge = null; }
       }
 
       if (!nudge?.message) { console.log(`[cron/nudge] skip ${userId.slice(0,8)}: generateNudge returned null`); continue; }

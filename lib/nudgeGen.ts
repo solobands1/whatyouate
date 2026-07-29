@@ -15,10 +15,10 @@ VOICE:
 
 NUDGE TYPES, in priority order:
 
-1. encouragement — the default. Use this whenever nothing more specific stands out. Genuine praise for showing up, logging consistently, or making a good choice. Reference something specific they did. Connect it to why logging matters. 3-4 sentences. Examples:
-   "Proud of you for showing up today. You've logged every meal and it's only 2pm, which is exactly the kind of consistency that makes this work. The more you log, the better I understand your patterns, and you're giving me a lot to work with right now."
-   "You're doing really well. Three days of solid logging means I can actually see what's working for you. That data is what turns this from an app into something that genuinely helps, so keep going."
-   "Good job today. You logged breakfast and lunch already, which is the best thing you can do. The more you log, the more I can help you before the day gets away from you, not after."
+1. encouragement — the default when nothing more specific stands out. Genuine, specific praise tied to a real recent choice, or a light forward-looking note. Prefer a food, a meal, a nutrient, or how they have been doing lately. Do NOT lead with or lean on the logging streak, the day-count, or "pounds since you started" — that angle is overused; find something fresher. 3-4 sentences. Examples:
+   "The eggs and sourdough this morning were a strong start. Getting protein in early tends to steady the back half of the day, and you set yourself up well for it."
+   "You have been working real vegetables in over the last few days, and your fiber is climbing because of it. Small produce swaps quietly do more than they look like they should."
+   "Good place to be today. You have a solid base to build on, so one more protein-forward meal and the day mostly takes care of itself."
 
 2. food_win — when a specific food they ate this week is worth celebrating. Name the food, state the benefit, explain why it matters in one sentence. Warm close. Science goes in the message, not a separate field.
    "That salmon earlier this week was a great call. It covered your Omega-3 for the week, and it's one of the only foods that actually moves that number. Most people are chronically low and never know it."
@@ -34,7 +34,7 @@ NUDGE TYPES, in priority order:
 5. streak — when there's an active streak worth acknowledging. State it plainly, give it meaning with a real fact, close with something forward-looking.
    "55 days in a row. Habits research shows it takes around 66 days for a behavior to become truly automatic, so you're almost there. This is the part where it stops feeling like effort."
    "You've logged every day for two months. Awareness alone changes behavior, even before you make a single intentional change. The fact that you're still here is doing more than you think."
-   STREAK RULE: If the most recent nudge already featured the streak number prominently, do NOT open this nudge the same way. Lead with a food, a pattern, or an observation instead.
+   STREAK RULE: Lead with the streak number only rarely. If ANY recent nudge already opened with or centered the day-count, the streak, or weight "since you started", do NOT open this one the same way. Reserve a streak-led nudge for a genuine milestone; otherwise lead with a food, a pattern, or an observation.
 
 6. pattern — a visible trend across 2+ data points the user likely hasn't noticed. Cite specific data. Explain the biology behind it simply.
    "Your highest-protein days this week were also the days you logged feeling steady. Protein blunts the blood sugar swings that show up as afternoon dips, and your own data is showing it."
@@ -58,7 +58,7 @@ GOAL DIRECTION — apply before choosing a type:
 - goal "balance": consistency and food quality matter. Mirror maintain tone. Frame around how the body feels and performs, not numbers.
 
 RULES:
-- For active users (logged within last 2 days): never return null. If nothing specific stands out, use encouragement.
+- For active users (logged within last 2 days): never return null. If nothing specific stands out, prefer a food-curiosity note, a light forward-looking observation, or praise for a specific recent choice — not a generic consistency or streak message.
 - For inactive users (3+ days since last log): one warm check-in sentence only.
 - Only reference numbers and patterns visible in the data. Never invent or approximate.
 - FOOD CONTEXT: Desserts, treats, and junk food are neutral. Do not celebrate them as nutritional wins. Logging them is good. The food itself is not a win.
@@ -204,8 +204,11 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
 
   const streak = ctx.streak as number | undefined;
   const todayHasWorkout = ctx.todayHasWorkout as boolean | undefined;
+  const benchConsistency = ctx.benchConsistencyTheme === true;
   const streakParts: string[] = [];
-  if (streak && streak > 1) streakParts.push(`${streak}-day logging streak`);
+  // When the consistency/streak angle is benched (recently overused), keep the streak number OUT
+  // of the context entirely — the model can't headline a number it was never handed.
+  if (streak && streak > 1 && !benchConsistency) streakParts.push(`${streak}-day logging streak`);
   if (todayHasWorkout) streakParts.push("worked out today");
   if (streakParts.length) lines.push(`Current: ${streakParts.join(", ")}`);
 
@@ -276,6 +279,10 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
     lines.push(`Recently used themes (these words appeared in 2+ of the last 3 nudge messages — prefer a fresh angle, but use your judgment if this is genuinely the most relevant thing today): ${contentBlocked.join(", ")}`);
   }
 
+  if (ctx.benchConsistencyTheme === true) {
+    lines.push(`BENCHED ANGLE (overused in recent nudges): the logging streak, "X days straight/logged", "day streak", and weight "since you started / from where you started". Do NOT open with or center any of these today. Consistency is assumed for an established user — they do not need reminding. Lead with a specific food, a micronutrient, a pattern, or how they have been feeling instead.`);
+  }
+
   const persistentThemes = ctx.persistentThemes as string[] | undefined;
   if (persistentThemes?.length) {
     lines.push(`Overused themes (appeared in 5+ of the last 14 nudges — find a different angle if one exists, but never let this be a reason to return null): ${persistentThemes.join(", ")}`);
@@ -319,7 +326,13 @@ export function buildSmartPrompt(ctx: Record<string, unknown>): string {
     const imperial = (profile?.units as string) === "imperial";
     const fmt = (kg: number) => imperial ? `${Math.round(kg * 2.20462)}lbs` : `${kg}kg`;
     const dir = wt.changeKg < 0 ? "down" : wt.changeKg > 0 ? "up" : "stable";
-    lines.push(`Weight trend (${wt.entryCount} weigh-ins over ${wt.daysSinceFirst} days): ${dir} ${fmt(Math.abs(wt.changeKg))} | started at ${fmt(wt.startKg)}, now ${fmt(wt.currentKg)}`);
+    // When consistency is benched, drop the "started at X, now Y" anchor — that phrasing is the
+    // source of the repetitive "X pounds from where you started" opener. Keep only the direction.
+    if (ctx.benchConsistencyTheme === true) {
+      lines.push(`Weight trend (${wt.entryCount} weigh-ins over ${wt.daysSinceFirst} days): ${dir} ${fmt(Math.abs(wt.changeKg))} recently (do not frame as "since you started")`);
+    } else {
+      lines.push(`Weight trend (${wt.entryCount} weigh-ins over ${wt.daysSinceFirst} days): ${dir} ${fmt(Math.abs(wt.changeKg))} | started at ${fmt(wt.startKg)}, now ${fmt(wt.currentKg)}`);
+    }
   }
 
   const avgDailySteps = ctx.avgDailySteps as number | undefined;
