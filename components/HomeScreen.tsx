@@ -3844,7 +3844,8 @@ export default function HomeScreen() {
                 const current = heroHabit.holdDay != null ? heroHabit.holdDay : (nextIncomplete === -1 ? Math.max(heroHabit.days.length - 1, 0) : nextIncomplete);
                 return (
                   <>
-                    <div className="flex items-center justify-between">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary/70">Habit Builder</p>
+                    <div className="mt-1.5 flex items-center justify-between">
                       <p className="text-base font-semibold text-ink">{activeTemplate.title}</p>
                       {/* Tapping the day label simulates a missed day (demo/testing only). */}
                       <p className={`text-xs font-medium text-muted/60${devHooksEnabled() ? " cursor-pointer transition active:opacity-60" : ""}`} role={devHooksEnabled() ? "button" : undefined} aria-label={devHooksEnabled() ? "Simulate missed day (testing)" : undefined} onClick={devHooksEnabled() ? () => setHeroHabit((h) => ({ ...h, status: "missed" })) : undefined}>Day {current + 1} of {activeTemplate.durationDays}</p>
