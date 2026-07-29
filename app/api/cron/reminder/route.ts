@@ -14,11 +14,11 @@ function adminClient() {
 }
 
 const REMINDER_MESSAGES = [
-  "You haven't logged anything yet today. Even a quick entry keeps your data accurate.",
-  "No meals logged today. A few seconds to log now keeps your streak and your insights sharp.",
-  "Still nothing logged today. Tap to add your first meal when you get a moment.",
-  "Your coach hasn't seen any meals today. Log something and I'll have a fresh read for you.",
-  "Quick check-in: nothing logged yet. Even a rough log is better than nothing.",
+  "Whenever you eat next, a quick log helps your coach learn what works for you. Even a rough one counts.",
+  "Still time to log something today. A few seconds is all it takes, and even a snack gives your coach something to work with.",
+  "Your coach hasn't caught a meal from you yet today. Log whenever you're ready, even a rough one helps.",
+  "Your coach is ready when you are. Log a meal and I'll have a fresh read for you.",
+  "A quick log whenever you get a moment keeps your insights fresh. Even a rough one is plenty.",
 ];
 
 function getRandomReminder(): string {
