@@ -3844,12 +3844,12 @@ export default function HomeScreen() {
                 const current = heroHabit.holdDay != null ? heroHabit.holdDay : (nextIncomplete === -1 ? Math.max(heroHabit.days.length - 1, 0) : nextIncomplete);
                 return (
                   <>
-                    <p className="-mt-1 text-center text-xs font-semibold uppercase tracking-wide text-primary">Habit Builder</p>
-                    <div className="mt-1.5 flex items-center justify-between">
-                      <p className="text-base font-semibold text-ink">{activeTemplate.title}</p>
+                    <div className="relative -mt-1 flex items-center justify-center">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-primary">Habit Builder</p>
                       {/* Tapping the day label simulates a missed day (demo/testing only). */}
-                      <p className={`text-xs font-medium text-muted/60${devHooksEnabled() ? " cursor-pointer transition active:opacity-60" : ""}`} role={devHooksEnabled() ? "button" : undefined} aria-label={devHooksEnabled() ? "Simulate missed day (testing)" : undefined} onClick={devHooksEnabled() ? () => setHeroHabit((h) => ({ ...h, status: "missed" })) : undefined}>Day {current + 1} of {activeTemplate.durationDays}</p>
+                      <p className={`absolute right-0 text-xs font-medium text-muted/60${devHooksEnabled() ? " cursor-pointer transition active:opacity-60" : ""}`} role={devHooksEnabled() ? "button" : undefined} aria-label={devHooksEnabled() ? "Simulate missed day (testing)" : undefined} onClick={devHooksEnabled() ? () => setHeroHabit((h) => ({ ...h, status: "missed" })) : undefined}>Day {current + 1} of {activeTemplate.durationDays}</p>
                     </div>
+                    <p className="mt-1.5 text-base font-semibold text-ink">{activeTemplate.title}</p>
                     <p className="mt-1.5 text-[13px] text-ink/70">{activeTemplate.ask}</p>
                     <div className="mt-4 flex gap-2">
                       {activeTemplate.checkpoints.map((slot, s) => {
