@@ -1061,26 +1061,31 @@ export default function HomeScreen() {
   useEffect(() => {
     if (!appliedGoalHabitRef.current || isDemoMode || !user) return;
     if (heroHabit.status === "done") return;
+    // Only persist a real in-progress builder. suggested/accepting/hidden are transient view
+    // states, and the initial mount status is "suggested" — so this effect can fire on mount (or a
+    // nav-back remount) BEFORE the load effect restores the real builder. The old code wrote
+    // builder:null here, which raced that async restore and could wipe an ACTIVE builder from the
+    // DB (the "marked the afternoon and it reverted to the suggestion, losing the morning" bug).
+    // Clearing the builder is owned solely by the explicit cadence handlers (decline / snooze /
+    // lapse / done-rollover), which each persist builder:null themselves — never here.
     const persistable = ["committed", "active", "dayComplete", "missed"].includes(heroHabit.status);
-    let builder: ActiveBuilder | null = null;
-    if (persistable) {
-      const prev = habitStateRef.current.builder;
-      const sameTpl = !!prev && prev.templateId === activeTemplate.id;
-      const startedAt = sameTpl ? prev!.startedAt : new Date().toISOString();
-      // Stamp the completed day when we hit "Done For Today" (drives the one-per-day
-      // gate + missed detection); otherwise carry the prior value forward.
-      let lastCompletedDate = sameTpl ? (prev!.lastCompletedDate ?? null) : null;
-      if (heroHabit.status === "dayComplete") lastCompletedDate = todayKey();
-      builder = {
-        templateId: activeTemplate.id,
-        status: heroHabit.status,
-        days: heroHabit.days,
-        startedAt,
-        holdDay: heroHabit.holdDay ?? null,
-        lastCompletedDate,
-        extensionsUsed: sameTpl ? (prev!.extensionsUsed ?? 0) : 0,
-      };
-    }
+    if (!persistable) return;
+    const prev = habitStateRef.current.builder;
+    const sameTpl = !!prev && prev.templateId === activeTemplate.id;
+    const startedAt = sameTpl ? prev!.startedAt : new Date().toISOString();
+    // Stamp the completed day when we hit "Done For Today" (drives the one-per-day
+    // gate + missed detection); otherwise carry the prior value forward.
+    let lastCompletedDate = sameTpl ? (prev!.lastCompletedDate ?? null) : null;
+    if (heroHabit.status === "dayComplete") lastCompletedDate = todayKey();
+    const builder: ActiveBuilder = {
+      templateId: activeTemplate.id,
+      status: heroHabit.status,
+      days: heroHabit.days,
+      startedAt,
+      holdDay: heroHabit.holdDay ?? null,
+      lastCompletedDate,
+      extensionsUsed: sameTpl ? (prev!.extensionsUsed ?? 0) : 0,
+    };
     const next: HabitState = { ...habitStateRef.current, builder };
     habitStateRef.current = next;
     setHabitState(next); // keep the shared context in sync so a nav-away + back doesn't revert
