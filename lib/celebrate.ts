@@ -166,6 +166,13 @@ export function celebrateAccepted() {
   playChime("accepted");
 }
 
+// A single crisp tap for completing ONE checkpoint of a habit day — heavier than a bare
+// selection tick so it feels deliberate, but no chime (the chime is saved for the day / finale
+// completion so tapping each checkpoint doesn't get noisy).
+export function tapTick() {
+  try { nativeHaptics()?.impact?.({ style: "MEDIUM" }); } catch { /* no-op */ }
+}
+
 export function celebrateDaily() {
   // Two longer pulses ("taaap ... taap") built from rapid MEDIUM impacts — length like a
   // vibration but gentler than a full vibrate (which felt too strong). Intensity is the

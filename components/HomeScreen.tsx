@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import type { MealLog, UserProfile, WorkoutSession } from "../lib/types";
 import { suppName, suppLabel } from "../lib/types";
 import { matchSupplementNutrients } from "../lib/rda";
-import { celebrateDaily, celebrateBuilt, celebrateAccepted, unlockAudio } from "../lib/celebrate";
+import { celebrateDaily, celebrateBuilt, celebrateAccepted, tapTick, unlockAudio } from "../lib/celebrate";
 import { HABIT_TEMPLATES, habitsForSignals, type HabitTemplate } from "../lib/habits";
 import { computeReflectionFacts } from "../lib/reflectionFacts";
 import { getChangeStatuses, setChangeStatus, markChangeAsked, getNotForMe } from "../lib/changeStatus";
@@ -3863,17 +3863,27 @@ export default function HomeScreen() {
                           <button
                             key={slot}
                             type="button"
-                            onClick={() => completeCheckpoint(s)}
-                            className={`flex h-11 flex-1 items-center justify-center gap-1 rounded-xl text-[11px] font-semibold transition active:scale-[0.97] ${
+                            onClick={() => { if (!checked) tapTick(); completeCheckpoint(s); }}
+                            className={`relative flex h-11 flex-1 items-center justify-center gap-1 overflow-hidden rounded-xl text-[11px] font-semibold transition active:scale-[0.97] ${
                               checked
-                                ? "bg-primary text-white"
+                                ? "text-white"
                                 : "border-2 border-primary/30 bg-white text-ink/70 shadow-[0_2px_8px_rgba(15,23,42,0.06)]"
                             }`}
                           >
-                            {checked && (
-                              <svg viewBox="0 0 24 24" className="h-3 w-3 shrink-0" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 6" /></svg>
-                            )}
-                            {slot}
+                            {/* Blue fill springs in from the center when the checkpoint is completed,
+                                so a tap feels like it fills rather than an instant color swap. Always
+                                rendered (scale toggles) so the transition can animate on tap. */}
+                            <span
+                              aria-hidden
+                              className="absolute inset-0 rounded-xl bg-primary transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] motion-reduce:transition-none"
+                              style={{ transform: checked ? "scale(1)" : "scale(0)" }}
+                            />
+                            <span className="relative z-10 flex items-center gap-1">
+                              {checked && (
+                                <svg viewBox="0 0 24 24" className="h-3 w-3 shrink-0" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 6" /></svg>
+                              )}
+                              {slot}
+                            </span>
                           </button>
                         );
                       })}

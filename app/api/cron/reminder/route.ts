@@ -28,7 +28,7 @@ function getRandomReminder(): string {
 // The nightly reflection reminder (fires at 7pm local if the user hasn't reflected today).
 // One fixed message, unlike the rotating meal nag.
 const REFLECTION_REMINDER_TITLE = "Your Nightly Reflection Is Ready";
-const REFLECTION_REMINDER_BODY = "It only takes a minute, and it'll help a lot.";
+const REFLECTION_REMINDER_BODY = "Open the app to complete it.";
 
 // The user's local calendar date ("YYYY-MM-DD") from their stored timezone offset, to compare
 // against reflections_json[].date (written as the device's local date at save time).

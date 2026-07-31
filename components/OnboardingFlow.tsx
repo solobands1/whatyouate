@@ -306,7 +306,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
                   <span className="shrink-0 text-[11px] text-muted/50">7:00 PM</span>
                 </div>
                 <p className="mt-0.5 text-[13px] font-medium leading-snug text-ink">Your Nightly Reflection Is Ready</p>
-                <p className="text-[13px] leading-snug text-ink/70">It only takes a minute, and it'll help a lot</p>
+                <p className="text-[13px] leading-snug text-ink/70">Open the app to complete it</p>
               </div>
             </div>
           </div>
