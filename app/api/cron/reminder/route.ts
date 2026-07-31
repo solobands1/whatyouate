@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { sendPush } from "../../../../lib/apns";
 import { isTrialEligible, type TrialMeal } from "../../../../lib/trial";
 import { checkProEntitlement } from "../../../../lib/entitlement";
+import { HABIT_TEMPLATES } from "../../../../lib/habits";
 
 export const maxDuration = 60;
 
@@ -36,6 +37,20 @@ function userLocalDateStr(offsetMinutes: number | null | undefined): string {
   const offset = offsetMinutes ?? 0;
   const local = new Date(Date.now() - offset * 60 * 1000);
   return `${local.getUTCFullYear()}-${String(local.getUTCMonth() + 1).padStart(2, "0")}-${String(local.getUTCDate()).padStart(2, "0")}`;
+}
+
+// Local YYYY-MM-DD for an arbitrary timestamp under the user's stored offset (generalizes
+// userLocalDateStr, which is just this for "now") — used to date-stamp a habit's startedAt.
+function localDateStrOf(ts: number, offsetMinutes: number | null | undefined): string {
+  const offset = offsetMinutes ?? 0;
+  const local = new Date(ts - offset * 60 * 1000);
+  return `${local.getUTCFullYear()}-${String(local.getUTCMonth() + 1).padStart(2, "0")}-${String(local.getUTCDate()).padStart(2, "0")}`;
+}
+// Whole calendar days from fromKey to toKey (both "YYYY-MM-DD").
+function dayDiff(fromKey: string, toKey: string): number {
+  const f = Date.UTC(+fromKey.slice(0, 4), +fromKey.slice(5, 7) - 1, +fromKey.slice(8, 10));
+  const t = Date.UTC(+toKey.slice(0, 4), +toKey.slice(5, 7) - 1, +toKey.slice(8, 10));
+  return Math.round((t - f) / (24 * 60 * 60 * 1000));
 }
 
 function getUserLocalHour(timezoneOffsetMinutes: number | undefined): number {
@@ -94,14 +109,38 @@ export async function GET(req: Request) {
       // reminder. Fixed hours (14 / 19) keep them from colliding, so no cross-nudge cooldown.
       const { data: profileRow } = await supabase
         .from("profiles")
-        .select("timezone_offset_minutes, reflections_json")
+        .select("timezone_offset_minutes, reflections_json, habit_state_json")
         .eq("user_id", userId)
         .maybeSingle();
       const offsetMinutes = (profileRow as Record<string, unknown> | null)?.timezone_offset_minutes as number | null | undefined;
       const localHour = getUserLocalHour(offsetMinutes ?? undefined);
       const userTokens = (tokens as Array<{ user_id: string; token: string }>).filter((t) => t.user_id === userId);
 
-      if (localHour === 14) {
+      if (localHour === 8) {
+        // Habit-builder KICKOFF — one push on the morning a "starts tomorrow" habit goes live, so
+        // day one doesn't silently slip. Only for a builder still "committed" whose start day is
+        // today (accept day + 1); once the user opens the app it flips to "active" and this stops,
+        // so it fires exactly once (the cron is hourly at :00). No trial/pro gate — new users on
+        // "Find Your Rhythm" need the day-one prompt most. The daily 9am coach nudge is untouched;
+        // this is purely additive.
+        const habitState = (profileRow as Record<string, unknown> | null)?.habit_state_json as { builder?: { templateId?: string; status?: string; startedAt?: string | null } } | null;
+        const builder = habitState?.builder;
+        if (builder && builder.status === "committed" && builder.startedAt) {
+          const startedLocal = localDateStrOf(new Date(builder.startedAt).getTime(), offsetMinutes);
+          if (dayDiff(startedLocal, userLocalDateStr(offsetMinutes)) === 1) {
+            const tmpl = HABIT_TEMPLATES.find((t) => t.id === builder.templateId);
+            if (tmpl) {
+              const title = `${tmpl.title} Starts Today`;
+              const body = `Day 1 of ${tmpl.durationDays}. Open the app to track it as you go.`;
+              console.log(`[cron/reminder] habit kickoff for ${userId.slice(0, 8)}: ${tmpl.id}`);
+              for (const t of userTokens) {
+                const ok = await sendPush(t.token, { title, body, data: { screen: "home" }, badge: 1 });
+                if (ok) sent++;
+              }
+            }
+          }
+        }
+      } else if (localHour === 14) {
         // 2pm MEAL NAG — only if they've logged nothing today. Goes to trial-active or paid users
         // (unchanged eligibility from the original reminder).
         const todayStartISO = userTodayStartISO(offsetMinutes);
