@@ -1,4 +1,5 @@
 import { Capacitor } from "@capacitor/core";
+import { supabase } from "./supabaseClient";
 
 export const PUSH_ASKED_KEY = "wya_push_permission_asked";
 export const PUSH_DECLINED_AT_KEY = "wya_push_declined_at";
@@ -37,9 +38,14 @@ export async function initPush(userId: string, silentIfNotGranted = false): Prom
       listenersAdded = true;
       PushNotifications.addListener("registration", async (token) => {
         try {
+          const { data: sess } = await supabase.auth.getSession();
+          const accessToken = sess.session?.access_token;
           const res = await fetch("/api/push/register", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+              ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+            },
             body: JSON.stringify({ userId, token: token.value }),
           });
           if (!res.ok) console.error("[push] Token registration failed:", res.status, await res.text());

@@ -82,9 +82,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signOut: async () => {
       const pushToken = localStorage.getItem("wya_push_token");
       if (pushToken && user) {
+        const { data: sess } = await supabase.auth.getSession();
+        const accessToken = sess.session?.access_token;
         fetch("/api/push/register", {
           method: "DELETE",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          },
           body: JSON.stringify({ userId: user.id, token: pushToken }),
         }).catch(() => {});
         localStorage.removeItem("wya_push_token");
