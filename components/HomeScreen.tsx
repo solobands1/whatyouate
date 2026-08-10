@@ -1290,6 +1290,33 @@ export default function HomeScreen() {
       return { ...h, days, status: "active", holdDay: null };
     });
   };
+  // Undo the tap that finished today, for the fat-finger case. Clearing
+  // lastCompletedDate is the half that matters: completeCheckpoint's one-per-day guard
+  // reads it, so without this the day unticks but can never be re-completed. Written to
+  // the ref before setHeroHabit so the persistence effect carries the cleared value
+  // forward rather than re-stamping today.
+  //
+  // Only reachable from "dayComplete", which never happens on the final day (that path
+  // goes straight to "done"), so finishing a habit stays deliberately irreversible.
+  const undoDayComplete = () => {
+    const prev = habitStateRef.current.builder;
+    if (prev) {
+      const next: HabitState = {
+        ...habitStateRef.current,
+        builder: { ...prev, status: "active", lastCompletedDate: null },
+      };
+      habitStateRef.current = next;
+      setHabitState(next);
+      if (user && !isDemoMode) void saveHabitState(user.id, next);
+    }
+    setHeroHabit((h) => {
+      const target = h.days.filter((d) => d.every(Boolean)).length - 1;
+      if (target < 0) return h;
+      const days = h.days.map((day, di) => (di === target ? day.map(() => false) : day));
+      return { ...h, days, status: "active", holdDay: null };
+    });
+  };
+
   const [doneStep, setDoneStep] = useState<"dayDone" | "started" | "celebrate" | "feedback" | "rested">("dayDone");
   const [ratingPicked, setRatingPicked] = useState<string | null>(null);
   // True when a finished-but-unrated habit is restored on reopen, so its rating prompt shows
@@ -2267,11 +2294,18 @@ export default function HomeScreen() {
     const t = setTimeout(() => {
       const choice = startChoiceRef.current;
       startChoiceRef.current = null;
-      const nextStatus = choice === "today" ? "active" : choice === "tomorrow" ? "committed" : (new Date().getHours() < 10 ? "active" : "committed");
+      // The 10am cutoff exists because a morning habit accepted at 3pm can no longer be
+      // done today. Sleep habits are the exception: they happen at night, so tonight is
+      // still usable and waiting until tomorrow wastes the moment the user said yes.
+      const startsTonight = activeTemplate.category === "sleep";
+      const nextStatus =
+        choice === "today" ? "active"
+        : choice === "tomorrow" ? "committed"
+        : (startsTonight || new Date().getHours() < 10) ? "active" : "committed";
       setHeroHabit((h) => ({ ...h, status: nextStatus }));
     }, 2800);
     return () => clearTimeout(t);
-  }, [heroHabit.status]);
+  }, [heroHabit.status, activeTemplate]);
 
   // Logging habits (Find Your Rhythm / Pick Back Up) auto-tick the day when the
   // user logs anything (a meal or feeling), then the confirmation appears on its
@@ -3934,22 +3968,14 @@ export default function HomeScreen() {
                     aria-label={devHooksEnabled() ? "Continue to next day" : undefined}
                     onClick={devHooksEnabled() ? () => setHeroHabit((h) => ({ ...h, status: "active" })) : undefined}
                   >
-                    {devHooksEnabled() && (
-                      <button
-                        type="button"
-                        className="absolute right-0 top-0 text-[11px] font-medium text-ink/45 transition active:opacity-60"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setHeroHabit((h) => {
-                            const target = h.days.filter((d) => d.every(Boolean)).length - 1;
-                            const days = h.days.map((day, di) => di === target ? day.map(() => false) : day);
-                            return { ...h, days, status: "active" };
-                          });
-                        }}
-                      >
-                        Undo
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      aria-label="Undo today's completion"
+                      className="absolute right-0 top-0 text-[11px] font-medium text-ink/45 transition active:opacity-60"
+                      onClick={(e) => { e.stopPropagation(); undoDayComplete(); }}
+                    >
+                      Undo
+                    </button>
                     <div className="flex flex-col items-center py-1">
                       <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white animate-habit-pop">
                         <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 6" /></svg>
