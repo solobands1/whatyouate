@@ -997,15 +997,19 @@ export default function HomeScreen() {
             if (raw) { const [d, n] = raw.split("|"); lastDate = d ?? ""; count = parseInt(n ?? "0", 10) || 0; }
           } catch {}
           const shown = lastDate === today ? count : count + 1; // only bump on a new day
-          // Shown on day 1 and day 2; on the 3rd day it snoozes.
-          if (suggestId !== "logging-starter" && shown >= 3) {
+          // Shown on day 1 and day 2; on the 3rd day it snoozes. The onboarding habit gets a
+          // week instead, because a first log matters more than tidiness — but it does decay,
+          // so passively ignoring it eventually stops it rather than nagging forever. An
+          // explicit "No Thanks" still shelves it for its full cooldown at any point.
+          const ignoreLimit = suggestId === "logging-starter" ? 7 : 3;
+          if (shown >= ignoreLimit) {
             try { localStorage.removeItem(ignoreKey); } catch {}
             const snoozed = snoozeSuggestion(state, suggestId, t.cooldownDays);
             habitStateRef.current = snoozed;
             void saveHabitState(user.id, snoozed);
             setHeroHabit((h) => ({ ...h, status: "hidden" }));
           } else {
-            if (suggestId !== "logging-starter") { try { localStorage.setItem(ignoreKey, `${today}|${shown}`); } catch {} }
+            try { localStorage.setItem(ignoreKey, `${today}|${shown}`); } catch {}
             setActiveTemplate(t);
             setHeroHabit({ status: "suggested", days: freshDays(t) });
           }
@@ -3968,14 +3972,20 @@ export default function HomeScreen() {
                     aria-label={devHooksEnabled() ? "Continue to next day" : undefined}
                     onClick={devHooksEnabled() ? () => setHeroHabit((h) => ({ ...h, status: "active" })) : undefined}
                   >
-                    <button
-                      type="button"
-                      aria-label="Undo today's completion"
-                      className="absolute right-0 top-0 text-[11px] font-medium text-ink/45 transition active:opacity-60"
-                      onClick={(e) => { e.stopPropagation(); undoDayComplete(); }}
-                    >
-                      Undo
-                    </button>
+                    {/* Undo exists for the mis-tap case. An autoCompleteOnLog habit is
+                        finished by the act of logging, not by a tap, so there is no mis-tap
+                        to reverse — and un-ticking it would contradict a log that still
+                        exists, then silently re-complete on the next one. */}
+                    {!activeTemplate.autoCompleteOnLog && (
+                      <button
+                        type="button"
+                        aria-label="Undo today's completion"
+                        className="absolute right-0 top-0 text-[11px] font-medium text-ink/45 transition active:opacity-60"
+                        onClick={(e) => { e.stopPropagation(); undoDayComplete(); }}
+                      >
+                        Undo
+                      </button>
+                    )}
                     <div className="flex flex-col items-center py-1">
                       <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white animate-habit-pop">
                         <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 6" /></svg>
