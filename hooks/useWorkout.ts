@@ -157,6 +157,9 @@ export function useWorkout(
       const hours = Number(manualHours) || 0;
       const minutes = Number(manualMinutes) || 0;
       const durationMin = hours * 60 + minutes;
+      // A zero-length activity is the blank-form case. Saving it would add a workout day
+      // with no workout in it, which skews the activity side of the pattern engine.
+      if (durationMin <= 0) { setAddingManual(false); return; }
       // Use noon of the selected date as the end anchor
       const endTs = new Date(`${manualDate}T12:00:00`).getTime();
       const startTs = durationMin > 0 ? endTs - durationMin * 60000 : endTs;

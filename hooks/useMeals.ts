@@ -279,6 +279,11 @@ export function useMeals(
 
   const handleUpdateMeal = async (portion?: "small" | "medium" | "large") => {
     if (!editingMeal || !user) return;
+    // A nameless meal still counts as "logged" everywhere downstream: it inflates the
+    // logging streak and lands in the correlation engine as a data point with no food in
+    // it. openMealEditor always fills a name (falling back to "Meal"), so this can only
+    // ever block a genuinely empty manual entry.
+    if (!editForm.name.trim()) return;
     try {
       setUpdatingMeal(true);
       const ranges = { ...editingMeal.analysisJson.estimated_ranges };

@@ -4794,7 +4794,7 @@ export default function HomeScreen() {
                       type="button"
                       className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
                       onClick={() => meals.handleUpdateMeal(editPortion)}
-                      disabled={meals.updatingMeal}
+                      disabled={meals.updatingMeal || !meals.editForm.name.trim()}
                     >
                       {meals.updatingMeal ? "Updating…" : "Update"}
                     </button>
@@ -5386,11 +5386,14 @@ export default function HomeScreen() {
               </button>
               <button
                 type="button"
-                className={`min-w-[128px] rounded-xl bg-primary px-4 py-2 text-center text-xs font-semibold text-white transition hover:bg-primary/90 ${
+                className={`min-w-[128px] rounded-xl bg-primary px-4 py-2 text-center text-xs font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50 ${
                   workout.addingManual ? "opacity-70" : ""
                 }`}
                 onClick={workout.handleAddManualWorkout}
-                disabled={workout.addingManual}
+                disabled={
+                  workout.addingManual ||
+                  (Number(workout.manualHours) || 0) * 60 + (Number(workout.manualMinutes) || 0) <= 0
+                }
               >
                 {workout.addingManual ? "Saving…" : "Save Activity"}
               </button>
