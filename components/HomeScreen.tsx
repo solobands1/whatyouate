@@ -572,6 +572,10 @@ export default function HomeScreen() {
   const [demoData] = useState(() => ({ meals: makeDemoMeals(), workouts: makeDemoWorkouts(), feelLogs: makeDemoFeelLogs() }));
   const loadingData = dataLoading;
   const [loadError, setLoadError] = useState<string | null>(null);
+  // Set by the scroll-lock effect below. The review-prompt timer is declared before
+  // `meals` exists, so it can't read meals.editingMeal directly — a ref is the only way
+  // to let it know a modal is open.
+  const anyModalOpenRef = useRef(false);
 
   // Fallback: if a review flag has been pending for 7+ days without an Insights visit, show on Home
   useEffect(() => {
@@ -582,7 +586,13 @@ export default function HomeScreen() {
     const sevenDays = 7 * 24 * 60 * 60 * 1000;
     if (Date.now() - flag.setTs < sevenDays) return;
     if (!canShowReviewPrompt(flag.type === "upgrade")) return;
-    const timer = setTimeout(() => openReviewPrompt(flag.key), 3000);
+    // This effect re-runs whenever ctxMeals changes, which is now after every meal save.
+    // Without this guard the prompt lands three seconds later on top of whatever is open —
+    // most visibly the portion picker mid-way through a manual add.
+    const timer = setTimeout(() => {
+      if (anyModalOpenRef.current) return;
+      openReviewPrompt(flag.key);
+    }, 3000);
     return () => clearTimeout(timer);
   }, [loadingData, ctxMeals]);
 
@@ -2495,6 +2505,7 @@ export default function HomeScreen() {
       || barcodeOpen || barcodeProduct != null || barcodeNotFound || barcodeLookingUp
       || workout.showManualWorkoutModal || workout.editingWorkout
       || pendingDelete != null;
+    anyModalOpenRef.current = anyModal;
     if (!anyModal) return;
     // Pin the body so the page behind can't scroll (iOS WKWebView ignores
     // `overflow: hidden` alone). Preserve and restore the scroll position.
