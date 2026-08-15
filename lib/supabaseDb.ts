@@ -388,14 +388,20 @@ export async function fetchReflections(userId: string): Promise<ReflectionEntry[
 export async function addReflection(userId: string, entry: ReflectionEntry): Promise<void> {
   const current = reflectionsCache.has(userId) ? reflectionsCache.get(userId)! : await fetchReflections(userId);
   const updated = [entry, ...current.filter((e) => e.date !== entry.date)];
+  if (useMemory) {
+    reflectionsCache.set(userId, updated);
+    return;
+  }
+  // The supabase client resolves with { error } rather than throwing, so the old
+  // try/catch here caught nothing and a failed write was indistinguishable from a
+  // successful one — the check-in looked saved and was gone by morning. Match
+  // saveStreak below and surface it, and only trust the cache once the write lands.
+  const { error } = await supabase.from("profiles").upsert(
+    { user_id: userId, reflections_json: updated, updated_at: new Date().toISOString() },
+    { onConflict: "user_id" }
+  );
+  if (error) throw error;
   reflectionsCache.set(userId, updated);
-  if (useMemory) return;
-  try {
-    await supabase.from("profiles").upsert(
-      { user_id: userId, reflections_json: updated, updated_at: new Date().toISOString() },
-      { onConflict: "user_id" }
-    );
-  } catch {}
 }
 
 export async function saveStreak(userId: string, streak: number, lastDate: string): Promise<void> {

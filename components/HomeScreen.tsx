@@ -680,7 +680,20 @@ export default function HomeScreen() {
       setLastReflection({ reflection, note: reflectionNote });
       if (!backfill) setTodayReflection({ reflection, note: reflectionNote });
       // Refresh AppDataProvider so the new reflection flows into Patterns/Reflections live.
-      addReflection(user.id, { date, answers: reflection, note: reflectionNote, ts }).then(() => reload()).catch(() => {});
+      // Retry once before giving up: this used to be fire-and-forget with the error
+      // discarded, so a failed write left the check-in looking saved until the next day
+      // reported it as missed. If it still fails, say so rather than pretending.
+      const payload = { date, answers: reflection, note: reflectionNote, ts };
+      addReflection(user.id, payload)
+        .then(() => reload())
+        .catch(() =>
+          addReflection(user.id, payload)
+            .then(() => reload())
+            .catch((err) => {
+              console.warn("[reflection] save failed after retry", err);
+              setLoadError("Your check-in didn't save. Check your connection and try again.");
+            })
+        );
     }
     setReflectingYesterday(false);
     setShowReflection(false); setReflectionStep(0); setReflection({}); setReflectionNote("");
@@ -701,7 +714,19 @@ export default function HomeScreen() {
     if (user && Object.keys(reflection).length > 0) {
       setTodayReflection({ reflection, note: reflectionNote });
       setLastReflection({ reflection, note: reflectionNote });
-      addReflection(user.id, { date: todayDateStr(), answers: reflection, note: reflectionNote, ts: Date.now() }).then(() => reload()).catch(() => {});
+      // Same treatment as finishReflection: an edit that silently failed to write left the
+      // old answers on the server while showing the new ones on screen.
+      const edited = { date: todayDateStr(), answers: reflection, note: reflectionNote, ts: Date.now() };
+      addReflection(user.id, edited)
+        .then(() => reload())
+        .catch(() =>
+          addReflection(user.id, edited)
+            .then(() => reload())
+            .catch((err) => {
+              console.warn("[reflection] edit save failed after retry", err);
+              setLoadError("Your changes didn't save. Check your connection and try again.");
+            })
+        );
     }
     setShowReflection(false); setReflectionEditMode(false); setReflectionEditingKey(null);
   };
