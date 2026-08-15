@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import { notifyMealsUpdated } from "../lib/dataEvents";
 import type { User } from "@supabase/supabase-js";
 import type { MealAnalysis, MealLog } from "../lib/types";
 import { addMeal, listMeals, updateMeal, updateMealTs } from "../lib/supabaseDb";
@@ -230,6 +231,11 @@ export function useMeals(
         incrementFoodTextLogCount(normalizedInput);
         // Replace optimistic pill with real DB record using correct timestamp
         swapInPill();
+        // Tell AppDataProvider the row exists. Without this the meal is only ever in this
+        // hook's local state: navigating away destroys it, and the merge effect rebuilds
+        // from ctxMeals, which never learned about the save — so a meal that saved fine
+        // simply vanished from the screen.
+        notifyMealsUpdated();
         manualRetries.current.delete(optimisticId);
       } catch (err) {
         console.error("Manual meal save failed", err);
@@ -237,6 +243,7 @@ export function useMeals(
         // dropping it.
         if (created) {
           swapInPill();
+          notifyMealsUpdated();
           manualRetries.current.delete(optimisticId);
         } else {
           // Nothing persisted. Don't drop it silently — keep the pill in an "unsaved"
@@ -335,6 +342,11 @@ export function useMeals(
           setMeals((prev) => prev.map((m) => (m.id === editingMeal.id ? { ...m, ts: newTs } : m)));
         }
       }
+
+      // Same reason as the save path: the optimistic update above only touches this hook's
+      // state, so without this an edit reverts to the old values the moment the screen
+      // remounts and rebuilds from ctxMeals.
+      notifyMealsUpdated();
 
       setEditingMeal(null);
       setEditRecents(false);

@@ -453,7 +453,7 @@ function LazyMealImage({ mealId, thumb, className }: { mealId: string; thumb?: s
 export default function HomeScreen() {
   const router = useRouter();
   const { user, loading } = useAuth();
-  const { profile: ctxProfile, meals: ctxMeals, workouts: ctxWorkouts, feelLogs: ctxFeelLogs, weightLogs: ctxWeightLogs, reflections: ctxReflections, habitHistory: ctxHabitHistory, waterLogs: ctxWaterLogs, habitState: ctxHabitState, setHabitState, setWeightLogs, nudges, nudgesLoaded, loading: dataLoading, profileResolved, reload } = useAppData();
+  const { profile: ctxProfile, meals: ctxMeals, workouts: ctxWorkouts, feelLogs: ctxFeelLogs, weightLogs: ctxWeightLogs, reflections: ctxReflections, habitHistory: ctxHabitHistory, waterLogs: ctxWaterLogs, habitState: ctxHabitState, setHabitState, setWeightLogs, setWaterLogs, nudges, nudgesLoaded, loading: dataLoading, profileResolved, reload } = useAppData();
   const trial = useTrialStatus();
 
   const [profile, setProfile] = useState<UserProfile | undefined>(undefined);
@@ -537,7 +537,16 @@ export default function HomeScreen() {
     } catch {}
     // Day totals: reconcile to the server, skipping the reserved "goal" key. Guarded briefly after a
     // local add/remove so a lagging server snapshot can't undo a fresh local write before it propagates.
-    if (Date.now() - lastWaterWriteRef.current >= 4000) {
+    // The ref alone is not enough: navigating away unmounts this screen, so on remount it
+    // resets to 0 and the guard passes instantly — which is how a stale server snapshot
+    // used to overwrite water that had just been added. Persist the stamp so a recent
+    // write is still respected after a remount.
+    const lastWrite = (() => {
+      let stored = 0;
+      try { stored = parseInt(localStorage.getItem(`wya_water_last_write_${user.id}`) ?? "0", 10) || 0; } catch {}
+      return Math.max(lastWaterWriteRef.current, stored);
+    })();
+    if (Date.now() - lastWrite >= 4000) {
       for (const [dayKey, ml] of Object.entries(ctxWaterLogs)) {
         if (!/^\d{4}-\d{2}-\d{2}$/.test(dayKey)) continue;
         const key = `wya_water_${user.id}_${dayKey}`;
@@ -3214,21 +3223,31 @@ export default function HomeScreen() {
     const displayGoal = profile?.waterUnit === "oz" ? `${Math.round(goalMl / 29.5735)} oz` : `${goalMl} ml`;
     const displayCurrent = profile?.waterUnit === "oz" ? `${Math.round(waterMl / 29.5735)} oz` : `${waterMl} ml`;
     const pct = Math.min(100, Math.round((waterMl / goalMl) * 100));
-    const addAmount = (ml: number) => {
-      const newMl = waterMl + ml;
+    // localStorage is what the bar reads, but the reconcile effect above copies the
+    // provider's snapshot back over it. Writing both together is what stops the two from
+    // disagreeing — without this, ctxWaterLogs still held the pre-add total and clobbered
+    // the new value the moment this screen remounted.
+    const commitWater = (newMl: number) => {
       try { localStorage.setItem(WATER_KEY, String(newMl)); } catch {}
-      lastAddedWaterMlRef.current.push(ml);
+      try { localStorage.setItem(`wya_water_last_write_${user.id}`, String(Date.now())); } catch {}
       lastWaterWriteRef.current = Date.now();
+      setWaterLogs((prev) => ({ ...prev, [todayKey()]: newMl }));
       setWaterTick((t) => t + 1);
-      upsertWaterLog(user.id, todayKey(), newMl).catch(() => {});
+      // One retry, then leave it: localStorage and the provider both already hold the value,
+      // so the user keeps their water even if the server is unreachable right now.
+      upsertWaterLog(user.id, todayKey(), newMl).catch(() =>
+        upsertWaterLog(user.id, todayKey(), newMl).catch((err) =>
+          console.warn("[water] server write failed after retry", err)
+        )
+      );
+    };
+    const addAmount = (ml: number) => {
+      lastAddedWaterMlRef.current.push(ml);
+      commitWater(waterMl + ml);
     };
     const remove = () => {
       const toRemove = lastAddedWaterMlRef.current.pop() ?? 100;
-      const newMl = Math.max(0, waterMl - toRemove);
-      try { localStorage.setItem(WATER_KEY, String(newMl)); } catch {}
-      lastWaterWriteRef.current = Date.now();
-      setWaterTick((t) => t + 1);
-      upsertWaterLog(user.id, todayKey(), newMl).catch(() => {});
+      commitWater(Math.max(0, waterMl - toRemove));
     };
     return { waterMl, goalMl, displayGoal, displayCurrent, pct, addAmount, remove, unit: (profile?.waterUnit ?? "ml") as "ml" | "oz" };
   })();
