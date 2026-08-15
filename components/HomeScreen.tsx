@@ -1705,9 +1705,14 @@ export default function HomeScreen() {
     return () => clearTimeout(t);
   }, [loadingData]);
 
-  // Auto-close edit panels after 1 minute of inactivity
+  // Auto-close edit panels after 1 minute of inactivity.
+  // The manual-add panel (empty id) is exempt: the timer is armed when the panel opens and
+  // nothing inside it resets the timer, so it was a hard 60s cap on the whole flow rather than
+  // an idle timeout. Typing a food, waiting out the analyze call, then setting a portion runs
+  // past that easily, and the close discarded the draft with no message. Nothing goes stale
+  // here anyway: it's an in-memory draft that doesn't survive a relaunch.
   useEffect(() => {
-    const anyOpen = !!(meals.editingMeal || workout.editingWorkout || editingFeelLog);
+    const anyOpen = !!(meals.editingMeal?.id || workout.editingWorkout || editingFeelLog);
     if (!anyOpen) return;
     const t = setTimeout(() => {
       meals.setEditingMeal(null);
