@@ -1162,7 +1162,7 @@ export default function HomeScreen() {
       if (history.some((h) => h.templateId === tmpl.id && h.finishedAt === finishedAt)) return;
       const entry: HabitHistoryEntry = { templateId: tmpl.id, title: tmpl.title, days: tmpl.durationDays, finishedAt, keep: null };
       await saveHabitHistory(user.id, [entry, ...history]);
-    })();
+    })().catch((err) => console.warn("[habitHistory] write failed", err));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [heroHabit.status, isDemoMode, user]);
 
@@ -1196,7 +1196,7 @@ export default function HomeScreen() {
         setHabitState(next);
         await saveHabitState(user.id, next);
       }
-    })();
+    })().catch((err) => console.warn("[habitHistory] keep write failed", err));
   };
 
   // Maybe Later = soft snooze (re-offer tomorrow; 2nd = No); No Thanks = shelve it.
@@ -5706,7 +5706,14 @@ export default function HomeScreen() {
                 onClick={async () => {
                   if (!editFeelTag) return;
                   const ts = editFeelDate && editFeelTime ? new Date(`${editFeelDate}T${editFeelTime}`).getTime() : editingFeelLog.ts;
-                  await updateFeelLog(editingFeelLog.id, ts, editFeelTag);
+                  try {
+                    await updateFeelLog(editingFeelLog.id, ts, editFeelTag);
+                  } catch (err) {
+                    // Don't close on a failed write and don't repaint the row as saved.
+                    console.warn("[feelLog] edit failed", err);
+                    setLoadError("That change didn't save. Check your connection and try again.");
+                    return;
+                  }
                   setHomeFeelLogs((prev) => prev.map((f) => f.id === editingFeelLog.id ? { ...f, ts, tag: editFeelTag } : f).sort((a, b) => b.ts - a.ts));
                   setEditingFeelLog(null);
                 }}

@@ -298,16 +298,16 @@ export async function fetchWaterLogs(userId: string): Promise<Record<string, num
 
 export async function upsertWaterLog(userId: string, dayKey: string, ml: number): Promise<void> {
   if (useMemory) return;
-  try {
-    if (!waterLogsCache.has(userId)) await fetchWaterLogs(userId);
-    const current = waterLogsCache.get(userId) ?? {};
-    const updated = { ...current, [dayKey]: ml };
-    waterLogsCache.set(userId, updated);
-    await supabase.from("profiles").upsert(
-      { user_id: userId, water_logs_json: updated, updated_at: new Date().toISOString() },
-      { onConflict: "user_id" }
-    );
-  } catch {}
+  if (!waterLogsCache.has(userId)) await fetchWaterLogs(userId);
+  const current = waterLogsCache.get(userId) ?? {};
+  const updated = { ...current, [dayKey]: ml };
+  const { error } = await supabase.from("profiles").upsert(
+    { user_id: userId, water_logs_json: updated, updated_at: new Date().toISOString() },
+    { onConflict: "user_id" }
+  );
+  if (error) throw error;
+  // Cache only after the write lands, so it can never claim a total the server rejected.
+  waterLogsCache.set(userId, updated);
 }
 
 // The custom water goal syncs across devices via a reserved "goal" key in the same water_logs_json
@@ -345,12 +345,17 @@ export async function fetchHabitState(userId: string): Promise<HabitState | null
 export async function saveHabitState(userId: string, state: HabitState | null): Promise<void> {
   habitStateCache.set(userId, state);
   if (useMemory) return;
-  try {
-    await supabase.from("profiles").upsert(
+  // Deliberately does not throw: ten call sites invoke this as a bare `void`, so rejecting
+  // here would only produce unhandled rejections. Retry once and make the failure visible
+  // in the logs instead of discarding it, which is how habit progress used to disappear.
+  const write = () =>
+    supabase.from("profiles").upsert(
       { user_id: userId, habit_state_json: state, updated_at: new Date().toISOString() },
       { onConflict: "user_id" }
     );
-  } catch {}
+  let { error } = await write();
+  if (error) ({ error } = await write());
+  if (error) console.warn("[habitState] save failed after retry", error);
 }
 
 export async function fetchHabitHistory(userId: string): Promise<HabitHistoryEntry[]> {
@@ -364,14 +369,13 @@ export async function fetchHabitHistory(userId: string): Promise<HabitHistoryEnt
 }
 
 export async function saveHabitHistory(userId: string, history: HabitHistoryEntry[]): Promise<void> {
+  if (useMemory) { habitHistoryCache.set(userId, history); return; }
+  const { error } = await supabase.from("profiles").upsert(
+    { user_id: userId, habit_history_json: history, updated_at: new Date().toISOString() },
+    { onConflict: "user_id" }
+  );
+  if (error) throw error;
   habitHistoryCache.set(userId, history);
-  if (useMemory) return;
-  try {
-    await supabase.from("profiles").upsert(
-      { user_id: userId, habit_history_json: history, updated_at: new Date().toISOString() },
-      { onConflict: "user_id" }
-    );
-  } catch {}
 }
 
 export async function fetchReflections(userId: string): Promise<ReflectionEntry[]> {
@@ -958,11 +962,8 @@ export async function addFeelLog(userId: string, ts: number, tag: string): Promi
 
 export async function updateFeelLog(id: string, ts: number, tag: string): Promise<void> {
   if (useMemory) return;
-  try {
-    await supabase.from("feel_logs").update({ ts: Math.floor(ts / 1000), tag }).eq("id", id);
-  } catch {
-    // silently fail
-  }
+  const { error } = await supabase.from("feel_logs").update({ ts: Math.floor(ts / 1000), tag }).eq("id", id);
+  if (error) throw error;
 }
 
 export async function deleteFeelLog(id: string): Promise<void> {
