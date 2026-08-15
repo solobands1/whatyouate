@@ -2505,7 +2505,8 @@ export default function HomeScreen() {
       || barcodeOpen || barcodeProduct != null || barcodeNotFound || barcodeLookingUp
       || workout.showManualWorkoutModal || workout.editingWorkout
       || pendingDelete != null;
-    anyModalOpenRef.current = anyModal;
+    // `anyModal` ends on object-or-null operands, so it is not strictly boolean.
+    anyModalOpenRef.current = !!anyModal;
     if (!anyModal) return;
     // Pin the body so the page behind can't scroll (iOS WKWebView ignores
     // `overflow: hidden` alone). Preserve and restore the scroll position.
