@@ -1705,12 +1705,17 @@ export default function HomeScreen() {
     return () => clearTimeout(t);
   }, [loadingData]);
 
-  // Auto-close edit panels after 1 minute of inactivity.
-  // The manual-add panel (empty id) is exempt: the timer is armed when the panel opens and
-  // nothing inside it resets the timer, so it was a hard 60s cap on the whole flow rather than
-  // an idle timeout. Typing a food, waiting out the analyze call, then setting a portion runs
-  // past that easily, and the close discarded the draft with no message. Nothing goes stale
-  // here anyway: it's an in-memory draft that doesn't survive a relaunch.
+  // Bumped by any tap or keystroke inside an edit panel (capture phase on the panel wrapper,
+  // so it covers every control inside without wiring each one up). Re-arms the auto-close below.
+  const [panelActivity, setPanelActivity] = useState(0);
+  const notePanelActivity = () => setPanelActivity(Date.now());
+
+  // Auto-close edit panels after three minutes of genuine inactivity.
+  // This used to be armed once when the panel opened with nothing resetting it, making it a hard
+  // cap on the whole flow rather than an idle timeout: a slow edit closed itself and discarded
+  // what you had typed, with no message. panelActivity is what makes it measure idle time.
+  // The manual-add panel (empty id) stays exempt: nothing there goes stale, it's an in-memory
+  // draft that doesn't survive a relaunch.
   useEffect(() => {
     const anyOpen = !!(meals.editingMeal?.id || workout.editingWorkout || editingFeelLog);
     if (!anyOpen) return;
@@ -1718,9 +1723,9 @@ export default function HomeScreen() {
       meals.setEditingMeal(null);
       workout.setEditingWorkout(null);
       setEditingFeelLog(null);
-    }, 60_000);
+    }, 180_000);
     return () => clearTimeout(t);
-  }, [meals.editingMeal, workout.editingWorkout, editingFeelLog]);
+  }, [meals.editingMeal, workout.editingWorkout, editingFeelLog, panelActivity]);
 
   const handleConfirmDelete = async () => {
     if (!pendingDelete || !user) return;
@@ -4572,7 +4577,7 @@ export default function HomeScreen() {
       </div>
 
       {meals.editingMeal && (
-        <div className="kb-avoid fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5" style={{ paddingTop: kbInset ? "calc(env(safe-area-inset-top) + 0.5rem)" : undefined, paddingBottom: kbInset ? kbInset + 8 : 0 }}>
+        <div className="kb-avoid fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5" style={{ paddingTop: kbInset ? "calc(env(safe-area-inset-top) + 0.5rem)" : undefined, paddingBottom: kbInset ? kbInset + 8 : 0 }} onPointerDownCapture={notePanelActivity} onKeyDownCapture={notePanelActivity}>
           <div className="w-full max-w-sm max-h-full overflow-y-auto rounded-xl bg-white p-6 shadow-xl">
             {pendingDelete?.type === "meal" ? (
               <>
@@ -5194,7 +5199,7 @@ export default function HomeScreen() {
       )}
 
       {workout.editingWorkout && (
-        <div className="kb-avoid fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5" style={{ paddingBottom: kbInset }}>
+        <div className="kb-avoid fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5" style={{ paddingBottom: kbInset }} onPointerDownCapture={notePanelActivity} onKeyDownCapture={notePanelActivity}>
           <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
             {pendingDelete?.type === "workout" ? (
               <>
@@ -5656,7 +5661,7 @@ export default function HomeScreen() {
       {/* Feel modal */}
       {/* Edit Feel Log modal */}
       {editingFeelLog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5" onPointerDownCapture={notePanelActivity} onKeyDownCapture={notePanelActivity}>
           <div className="w-full max-w-sm rounded-2xl bg-white px-5 pb-6 pt-5 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-base font-semibold text-ink">Edit Feeling</h2>
