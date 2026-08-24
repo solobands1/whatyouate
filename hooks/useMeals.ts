@@ -108,20 +108,31 @@ export function useMeals(
 
     setManualAnalysing(true);
     setManualError(null);
+    // userId is what lets the route apply the per-user daily cap and rate limit. Without it the
+    // cap is skipped entirely and the rate limit falls back to the caller's IP, which mobile
+    // carriers share across many people, so unrelated users could exhaust each other's budget.
     const attempt = async () => {
       const res = await fetch("/api/analyze-food", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ textDescription: manualText.trim() })
+        body: JSON.stringify({ textDescription: manualText.trim(), userId: user?.id })
       });
-      if (!res.ok) throw new Error("Analysis failed");
+      if (!res.ok) {
+        const err = new Error("Analysis failed") as Error & { status?: number; detail?: string };
+        err.status = res.status;
+        err.detail = (await res.json().catch(() => null))?.error;
+        throw err;
+      }
       return res.json();
     };
     try {
       let data;
       try {
         data = await attempt();
-      } catch {
+      } catch (err) {
+        // A 429 is a cap being enforced, not a cold start. Retrying makes it worse and the
+        // server's message ("Daily limit reached...") is more use than a generic failure.
+        if ((err as { status?: number })?.status === 429) throw err;
         // The first call can fail on a cold serverless start; a brief warm retry usually works.
         await new Promise((r) => setTimeout(r, 900));
         data = await attempt();
@@ -144,8 +155,11 @@ export function useMeals(
         };
         setFoodTextEntry(normalizedInput, entry);
       }
-    } catch {
-      setManualError("Something went wrong. Please try again.");
+    } catch (err) {
+      // Only a cap message is worth showing verbatim ("Daily limit reached. Resets at midnight."),
+      // since "try again" is wrong advice there. Everything else keeps the friendly copy.
+      const e = err as { status?: number; detail?: string };
+      setManualError(e?.status === 429 && e.detail ? e.detail : "Something went wrong. Please try again.");
     } finally {
       setManualAnalysing(false);
     }
