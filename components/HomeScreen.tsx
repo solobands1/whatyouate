@@ -657,8 +657,13 @@ export default function HomeScreen() {
   const [reflectionStep, setReflectionStep] = useState(0);
   const [lastReflection, setLastReflection] = useState<{ reflection: Record<string, number | number[]>; note: string } | null>(null);
   // Today's completed check-in (so the button shows "Checked In" + can be edited).
-  // Clears on its own at midnight since the date no longer matches.
+  // Kept in step with ctxReflections by the effect below, which clears it when there is no
+  // entry for today. It does NOT clear itself at midnight, since the effect only re-runs when
+  // the reflections change.
   const [todayReflection, setTodayReflection] = useState<{ reflection: Record<string, number | number[]>; note: string } | null>(null);
+  // True while a check-in write is in flight. The sync effect below must not clear the
+  // optimistic "done" state just because a refresh landed before the write did.
+  const reflectionSaveInFlight = useRef(false);
   // Edit mode: a summary of answers; tap one to edit just that question/note.
   // editingKey: null = summary, a question key, or "note".
   const [reflectionEditMode, setReflectionEditMode] = useState(false);
@@ -687,6 +692,12 @@ export default function HomeScreen() {
       const backfill = reflectingYesterday;
       const date = backfill ? yesterdayDateStr() : todayDateStr();
       const ts = backfill ? new Date(`${date}T21:00:00`).getTime() : Date.now();
+      // Snapshot what to restore if the write fails. Showing the check-in as complete and
+      // leaving it that way after a failed save is what made a lost reflection invisible
+      // until the next day asked for it again.
+      const prevLast = lastReflection;
+      const prevToday = todayReflection;
+      reflectionSaveInFlight.current = true;
       setLastReflection({ reflection, note: reflectionNote });
       if (!backfill) setTodayReflection({ reflection, note: reflectionNote });
       // Refresh AppDataProvider so the new reflection flows into Patterns/Reflections live.
@@ -695,12 +706,15 @@ export default function HomeScreen() {
       // reported it as missed. If it still fails, say so rather than pretending.
       const payload = { date, answers: reflection, note: reflectionNote, ts };
       addReflection(user.id, payload)
-        .then(() => reload())
+        .then(() => { reflectionSaveInFlight.current = false; reload(); })
         .catch(() =>
           addReflection(user.id, payload)
-            .then(() => reload())
+            .then(() => { reflectionSaveInFlight.current = false; reload(); })
             .catch((err) => {
               console.warn("[reflection] save failed after retry", err);
+              reflectionSaveInFlight.current = false;
+              setLastReflection(prevLast);
+              if (!backfill) setTodayReflection(prevToday);
               setLoadError("Your check-in didn't save. Check your connection and try again.");
             })
         );
@@ -722,18 +736,24 @@ export default function HomeScreen() {
   // Save the edited answers (overwrites today) and close.
   const saveEditedReflection = () => {
     if (user && Object.keys(reflection).length > 0) {
+      const prevLast = lastReflection;
+      const prevToday = todayReflection;
+      reflectionSaveInFlight.current = true;
       setTodayReflection({ reflection, note: reflectionNote });
       setLastReflection({ reflection, note: reflectionNote });
       // Same treatment as finishReflection: an edit that silently failed to write left the
       // old answers on the server while showing the new ones on screen.
       const edited = { date: todayDateStr(), answers: reflection, note: reflectionNote, ts: Date.now() };
       addReflection(user.id, edited)
-        .then(() => reload())
+        .then(() => { reflectionSaveInFlight.current = false; reload(); })
         .catch(() =>
           addReflection(user.id, edited)
-            .then(() => reload())
+            .then(() => { reflectionSaveInFlight.current = false; reload(); })
             .catch((err) => {
               console.warn("[reflection] edit save failed after retry", err);
+              reflectionSaveInFlight.current = false;
+              setTodayReflection(prevToday);
+              setLastReflection(prevLast);
               setLoadError("Your changes didn't save. Check your connection and try again.");
             })
         );
@@ -745,11 +765,22 @@ export default function HomeScreen() {
     // Reflections are preloaded by AppDataProvider — no separate fetch. Re-runs when they
     // change (e.g. after saving one + reload) so today's reflection stays in sync.
     const rows = ctxReflections ?? [];
-    if (rows.length > 0) {
-      setLastReflection({ reflection: rows[0].answers, note: rows[0].note }); // newest first
-      const today = rows.find((r) => r.date === todayDateStr());
-      if (today) setTodayReflection({ reflection: today.answers, note: today.note });
-    }
+    const today = rows.find((r) => r.date === todayDateStr());
+    // Both of these have to be able to go back to null. Previously they were only ever set,
+    // so once a day was marked complete the card kept saying so after the date rolled over,
+    // and a reflection that never reached the server still looked saved.
+    // The in-flight guard keeps an optimistic save from being wiped by a refresh that lands
+    // before the write does.
+    setLastReflection((prev) =>
+      rows.length > 0
+        ? { reflection: rows[0].answers, note: rows[0].note } // newest first
+        : (reflectionSaveInFlight.current ? prev : null)
+    );
+    setTodayReflection((prev) =>
+      today
+        ? { reflection: today.answers, note: today.note }
+        : (reflectionSaveInFlight.current ? prev : null)
+    );
     setReflectionsLoaded(true);
   }, [user, ctxReflections]);
 
