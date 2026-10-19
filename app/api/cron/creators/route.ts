@@ -48,6 +48,21 @@ export async function GET(req: Request) {
     lines.push("Say hi, and check the accounts look real.");
   }
 
+  // Creators who earned their free year since yesterday.
+  const { data: earnedYear } = await db
+    .from("creator_pro_codes")
+    .select("creators(name, email, code)")
+    .eq("kind", "1_year")
+    .gte("assigned_at", since);
+  const yearNames = (earnedYear ?? [])
+    .map((r) => (Array.isArray(r.creators) ? r.creators[0] : r.creators))
+    .filter(Boolean)
+    .map((c) => `- ${c!.name} (${c!.email}), code **${c!.code}**`);
+  if (yearNames.length) {
+    lines.push(`**Earned their free year (${yearNames.length})**: 3 of their followers have each paid for 2 months or a year. Worth a thank-you.`);
+    lines.push(...yearNames);
+  }
+
   // Free Pro code supply. Codes with under two weeks left aren't handed out, so they don't count.
   const usableAfter = new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10);
   const { data: pool } = await db.from("creator_pro_codes").select("kind, expires_on").is("creator_id", null);
