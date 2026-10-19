@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { PurchasesPackage } from "@revenuecat/purchases-capacitor";
+import { Capacitor } from "@capacitor/core";
 import {
   CREATOR_MONTHLY_ID,
   CREATOR_OFFERING,
@@ -14,7 +15,8 @@ import {
 /**
  * Shown right after someone signs up with a creator code: start the Monthly (Creator) plan with its
  * one month free trial, or carry on with the normal 7 days. Calls onDone straight away when Apple
- * won't give this person the trial (or off-device), so nobody sees an offer they can't get.
+ * won't give this person the trial, so nobody sees an offer they can't get. In a web browser it
+ * shows with the usual price but can't purchase, like the upgrade screen.
  */
 export default function CreatorOffer({
   userId,
@@ -31,8 +33,10 @@ export default function CreatorOffer({
   const [buying, setBuying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [welcome, setWelcome] = useState(false);
+  const isNative = Capacitor.isNativePlatform();
 
   useEffect(() => {
+    if (!isNative) return;
     let live = true;
     (async () => {
       try {
@@ -49,7 +53,7 @@ export default function CreatorOffer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
-  if (!pkg) {
+  if (!pkg && isNative) {
     return (
       <div className="flex justify-center py-16">
         <svg className="h-6 w-6 animate-spin text-primary/60" viewBox="0 0 24 24" fill="none">
@@ -60,10 +64,14 @@ export default function CreatorOffer({
     );
   }
 
-  const price = pkg.product.priceString;
+  const price = pkg?.product.priceString ?? "$12.99";
 
   const start = async () => {
     if (buying) return;
+    if (!pkg) {
+      setError("Purchases are only available in the iOS app.");
+      return;
+    }
     setBuying(true);
     setError(null);
     try {
