@@ -114,8 +114,11 @@ export default function LoginClient() {
       const { data } = await supabase.auth.getSession();
       const uid = data.session?.user.id;
       if (uid) {
+        // useReferral may have linked the code first (it also runs on sign-in), which shows up here
+        // as already_redeemed with the same code. Either way this brand new account has it.
         const redeemed = await redeemCreatorCode(code, uid);
-        if (redeemed.ok) openCreatorOffer({ code, name: codeCheck?.name ?? null });
+        const linked = redeemed.ok || (redeemed.reason === "already_redeemed" && redeemed.code === code);
+        if (linked) openCreatorOffer({ code, name: codeCheck?.name ?? null });
       }
     }
     if (result.needsConfirmation) {
