@@ -73,6 +73,35 @@ export async function getOfferings() {
   }
 }
 
+// The creator program's plan: same price as the normal monthly, with a 1-month free trial. It is
+// only offered to people who joined with a creator code (see lib/referral.ts).
+export const CREATOR_OFFERING = "creator";
+export const CREATOR_MONTHLY_ID = "com.dillonpoulin.whatyouate.monthly.creator";
+
+/** A specific offering by identifier, or the current one when no id is given. */
+export async function getOffering(id?: string) {
+  const mod = await getMod();
+  if (!mod) throw new Error("NOT_NATIVE");
+  const offerings = await mod.Purchases.getOfferings();
+  return id ? offerings.all[id] ?? null : offerings.current;
+}
+
+/**
+ * Whether Apple will give this person the product's free trial. Apple allows one per subscription
+ * group, so anyone who already had a trial is ineligible. RevenueCat advises treating "unknown" as
+ * not eligible, so nobody is promised a trial they won't get.
+ */
+export async function isIntroEligible(productId: string): Promise<boolean> {
+  const mod = await getMod();
+  if (!mod) return false;
+  try {
+    const result = await mod.Purchases.checkTrialOrIntroductoryPriceEligibility({ productIdentifiers: [productId] });
+    return result[productId]?.status === 2; // INTRO_ELIGIBILITY_STATUS_ELIGIBLE
+  } catch {
+    return false;
+  }
+}
+
 export async function purchasePackage(pkg: import("@revenuecat/purchases-capacitor").PurchasesPackage) {
   const mod = await getMod();
   if (!mod) throw new Error("Purchases not available on this platform");

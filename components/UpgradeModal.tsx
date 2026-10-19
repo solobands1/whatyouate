@@ -2,7 +2,15 @@
 
 import { useEffect, useState } from "react";
 import type { PurchasesPackage } from "@revenuecat/purchases-capacitor";
-import { getOfferings, purchasePackage, restorePurchases } from "../lib/purchases";
+import {
+  CREATOR_MONTHLY_ID,
+  CREATOR_OFFERING,
+  getOffering,
+  isIntroEligible,
+  purchasePackage,
+  restorePurchases,
+} from "../lib/purchases";
+import { useReferral } from "../hooks/useReferral";
 import { Capacitor } from "@capacitor/core";
 import { setPendingReviewFlag, isPromptDone } from "../lib/reviewPrompt";
 
@@ -14,7 +22,28 @@ export function openUpgradeModal() {
   }
 }
 
+const MONTHLY_ID = "com.dillonpoulin.whatyouate.monthly";
+const YEARLY_ID = "com.dillonpoulin.whatyouate.yearly";
+
+type IntroPrice = { price: number; periodUnit: string; periodNumberOfUnits: number };
+
+/** "7 Days", "1 Month" and so on, for a free trial. */
+function trialLength(intro: IntroPrice) {
+  const n = intro.periodNumberOfUnits;
+  switch (intro.periodUnit) {
+    case "DAY": return `${n} Day${n === 1 ? "" : "s"}`;
+    case "WEEK": return `${n * 7} Days`;
+    case "MONTH": return `${n} Month${n === 1 ? "" : "s"}`;
+    case "YEAR": return `${n} Year${n === 1 ? "" : "s"}`;
+    default: return "7 Days";
+  }
+}
+
 export default function UpgradeModal() {
+  // People who joined with a creator code see the creator offering: a monthly plan whose free
+  // trial is a month, plus the normal yearly.
+  const referral = useReferral();
+  const [creatorTrialOk, setCreatorTrialOk] = useState(false);
   const [open, setOpen] = useState(false);
   const [plan, setPlan] = useState<"monthly" | "yearly">("monthly");
   const [loading, setLoading] = useState(false);
@@ -47,7 +76,17 @@ export default function UpgradeModal() {
   // Load offerings when modal opens
   useEffect(() => {
     if (!open || !isNative) return;
-    getOfferings().then((offering) => {
+    const load = async () => {
+      if (referral) {
+        const creator = await getOffering(CREATOR_OFFERING).catch(() => null);
+        if (creator) {
+          setCreatorTrialOk(await isIntroEligible(CREATOR_MONTHLY_ID));
+          return creator;
+        }
+      }
+      return getOffering();
+    };
+    load().then((offering) => {
       if (!offering) {
         setError("Couldn't load products. Please try again.");
         return;
@@ -58,10 +97,10 @@ export default function UpgradeModal() {
         return;
       }
       const monthly = pkgs.find(
-        (p) => p.product.identifier === "com.dillonpoulin.whatyouate.monthly"
+        (p) => p.product.identifier === CREATOR_MONTHLY_ID || p.product.identifier === MONTHLY_ID
       ) ?? null;
       const yearly = pkgs.find(
-        (p) => p.product.identifier === "com.dillonpoulin.whatyouate.yearly"
+        (p) => p.product.identifier === YEARLY_ID
       ) ?? null;
       if (!monthly && !yearly) {
         setError("Couldn't load products. Please try again.");
@@ -71,7 +110,7 @@ export default function UpgradeModal() {
     }).catch(() => {
       setError("Couldn't load products. Please try again.");
     });
-  }, [open, isNative]);
+  }, [open, isNative, referral]);
 
   if (!open) return null;
 
@@ -80,10 +119,12 @@ export default function UpgradeModal() {
   const yearlyMonthly = packages.yearly ? `${(packages.yearly.product.price / 12).toFixed(2)}` : "9.17";
   const yearlySavings = Math.round((1 - (packages.yearly?.product.price ?? 109.99) / ((packages.monthly?.product.price ?? 12.99) * 12)) * 100);
 
-  const monthlyTrial = packages.monthly?.product.introPrice?.price === 0 ? packages.monthly.product.introPrice : null;
-  const trialDays = plan === "monthly" && monthlyTrial
-    ? (monthlyTrial.periodUnit === "DAY" ? monthlyTrial.periodNumberOfUnits : 7)
+  // Only promise the creator plan's free month when Apple confirms this person can get it.
+  const isCreatorPlan = packages.monthly?.product.identifier === CREATOR_MONTHLY_ID;
+  const monthlyTrial = packages.monthly?.product.introPrice?.price === 0 && (!isCreatorPlan || creatorTrialOk)
+    ? packages.monthly.product.introPrice
     : null;
+  const trial = plan === "monthly" && monthlyTrial ? trialLength(monthlyTrial) : null;
 
   const handlePurchase = async () => {
     if (loading) return;
@@ -196,6 +237,12 @@ export default function UpgradeModal() {
             })}
           </div>
 
+          {isCreatorPlan && monthlyTrial && (
+            <p className="mt-4 rounded-full bg-primary/10 px-3.5 py-1.5 text-center text-xs font-semibold text-primary">
+              Creator code {referral}: your first month is free
+            </p>
+          )}
+
           {/* Plan toggle */}
           <div className="mt-4 w-full">
             <div className="flex gap-3">
@@ -295,12 +342,12 @@ export default function UpgradeModal() {
                   </svg>
                   Processing…
                 </span>
-              ) : success ? "Welcome to Pro!" : trialDays ? `Try ${trialDays} Days Free` : "Unlock"}
+              ) : success ? "Welcome to Pro!" : trial ? `Try ${trial} Free` : "Unlock"}
             </button>
 
             <p className="text-center text-[11px] text-muted/50">
-              {trialDays
-                ? `Try free for ${trialDays} days, then ${plan === "yearly" ? `${yearlyCost}/year` : `${monthlyCost}/month`}. Cancel anytime.`
+              {trial
+                ? `Try free for ${trial.toLowerCase()}, then ${plan === "yearly" ? `${yearlyCost}/year` : `${monthlyCost}/month`}. Cancel anytime.`
                 : "Cancel anytime. Subscriptions managed through Apple and can be cancelled in your device settings."}
             </p>
 

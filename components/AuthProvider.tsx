@@ -14,7 +14,7 @@ type AuthContextValue = {
   signUpWithEmailPassword: (
     email: string,
     password: string,
-    profile?: { firstName?: string; lastName?: string }
+    profile?: { firstName?: string; lastName?: string; creatorCode?: string }
   ) => Promise<{ error?: string; needsConfirmation?: boolean }>;
   sendPasswordReset: (email: string) => Promise<{ error?: string }>;
   sendPasswordOtp: (email: string) => Promise<{ error?: string }>;
@@ -113,7 +113,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         options: {
           data: {
             first_name: profile?.firstName ?? "",
-            last_name: profile?.lastName ?? ""
+            last_name: profile?.lastName ?? "",
+            // Kept with the account so the code can still be redeemed if signup needs an email
+            // confirmation first (see lib/referral.ts).
+            ...(profile?.creatorCode ? { creator_code: profile.creatorCode } : {})
           }
         }
       });

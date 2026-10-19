@@ -4,6 +4,7 @@ import { AuthProvider } from "./AuthProvider";
 import { AppDataProvider } from "./AppDataProvider";
 import AuthGate from "./AuthGate";
 import UpgradeModal from "./UpgradeModal";
+import CreatorOfferSheet from "./CreatorOfferSheet";
 import ReviewPromptModal from "./ReviewPromptModal";
 import ValueMomentSheet from "./ValueMomentSheet";
 import PushNotificationSetup from "./PushNotificationSetup";
@@ -15,6 +16,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       <AppDataProvider>
         <AuthGate>{children}</AuthGate>
         <UpgradeModal />
+        <CreatorOfferSheet />
         <ReviewPromptModal />
         <ValueMomentSheet />
         <PushNotificationSetup />
