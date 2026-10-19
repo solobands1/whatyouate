@@ -255,8 +255,8 @@ export default function PrivacyPage() {
           <Section title="28. Contact">
             <p>
               For privacy inquiries, data requests, or any questions about these terms, contact us at:{" "}
-              <a href="mailto:hello@minimul.app" className="text-primary underline-offset-2 hover:underline">
-                hello@minimul.app
+              <a href="mailto:support@whatyouate.app" className="text-primary underline-offset-2 hover:underline">
+                support@whatyouate.app
               </a>
             </p>
           </Section>
