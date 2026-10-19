@@ -295,4 +295,17 @@ delete from auth.users where id = '10000000-0000-0000-0000-000000000001';
 select t('deleting a user keeps the referral count', (select count(*) from referrals where user_id is null) = 1);
 select t('earnings survive deletion', (select count(*) from creator_earnings where source_id = 'ev1') = 1);
 
+-- ---- Code expiry ---------------------------------------------------------------------
+insert into auth.users (id, email, created_at) values ('d0000000-0000-0000-0000-000000000004', 'dana@example.com', now() - interval '60 days');
+set role service_role;
+select creator_add_pro_codes('3_months', array['SOON1'], current_date + 5);
+select creator_add_pro_codes('3_months', array['LATER1'], current_date + 60);
+reset role;
+set role authenticated;
+select as_user('d0000000-0000-0000-0000-000000000004');
+select creator_join('Dana', 'dana', '', 'DANA', 'US', 'paypal', 'dana@example.com');
+select t('nearly expired code skipped, soonest usable code used', (creator_dashboard()->'pro'->>'threeMonths') = 'LATER1');
+reset role;
+select t('expiry recorded', (select expires_on = current_date + 60 from creator_pro_codes where code = 'LATER1'));
+
 \echo ALL TESTS PASSED

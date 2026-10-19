@@ -14,8 +14,8 @@
 --   * a month's earnings are paid on the 1st of the month after next; under $10 rolls
 --     over, except after the creator has left
 --   * Canadians earn CAD, everyone else USD
---   * creators get free Pro through Apple offer codes: 3 months when they join, and a year once
---     3 people they referred have paid (refunded payments don't count)
+--   * creators get free Pro through Apple one-time offer codes (set not to auto-renew): 3 months
+--     when they join, and a year once 3 people they referred have paid (refunds don't count)
 --
 -- Writes only happen through the security definer functions below. Tables have RLS on
 -- with read-own policies where the app or the creator site needs a direct read.
@@ -115,10 +115,14 @@ create table if not exists public.creator_pro_codes (
   kind text not null check (kind in ('3_months', '1_year')),
   creator_id uuid references public.creators(id),
   assigned_at timestamptz,
-  reminded_at timestamptz, -- reminder sent before a 3-month code renews
+  reminded_at timestamptz, -- unused: the codes don't auto-renew, so there is nothing to remind about
+  expires_on date, -- Apple one-time codes expire at most 6 months after they're generated
   added_at timestamptz not null default now(),
   unique (creator_id, kind)
 );
+
+-- Added after the first release of this file.
+alter table public.creator_pro_codes add column if not exists expires_on date;
 
 alter table public.creators enable row level security;
 alter table public.creator_pro_codes enable row level security;
@@ -194,9 +198,12 @@ declare picked text;
 begin
   select code into picked from creator_pro_codes where creator_id = p_creator and kind = p_kind;
   if picked is not null then return picked; end if;
+  -- Soonest-expiring first, skipping codes with under two weeks left to redeem.
   update creator_pro_codes set creator_id = p_creator, assigned_at = now()
-  where code = (select code from creator_pro_codes where creator_id is null and kind = p_kind
-                order by added_at, code limit 1 for update skip locked)
+  where code = (select code from creator_pro_codes
+                where creator_id is null and kind = p_kind
+                  and (expires_on is null or expires_on > current_date + 14)
+                order by expires_on nulls last, added_at, code limit 1 for update skip locked)
   returning code into picked;
   return picked;
 end $$;
@@ -232,13 +239,15 @@ begin
   return n;
 end $$;
 
--- Adds a batch of codes downloaded from App Store Connect. Already-known codes are skipped.
-create or replace function public.creator_add_pro_codes(p_kind text, p_codes text[])
+-- Adds a batch of codes downloaded from App Store Connect, with the batch's expiry date.
+-- Already-known codes are skipped.
+drop function if exists public.creator_add_pro_codes(text, text[]);
+create or replace function public.creator_add_pro_codes(p_kind text, p_codes text[], p_expires date default null)
 returns integer language plpgsql security definer set search_path = public as $$
 declare added integer;
 begin
-  insert into creator_pro_codes (code, kind)
-  select distinct trim(c), p_kind from unnest(p_codes) c where trim(c) <> ''
+  insert into creator_pro_codes (code, kind, expires_on)
+  select distinct trim(c), p_kind, p_expires from unnest(p_codes) c where trim(c) <> ''
   on conflict (code) do nothing;
   get diagnostics added = row_count;
   return added;
@@ -655,7 +664,7 @@ revoke all on function public.creator_record_transaction(text, text[], timestamp
 revoke all on function public.creator_create_payouts(date) from public, anon, authenticated;
 revoke all on function public.creator_assign_pro_code(uuid, text) from public, anon, authenticated;
 revoke all on function public.creator_check_year_code(uuid) from public, anon, authenticated;
-revoke all on function public.creator_add_pro_codes(text, text[]) from public, anon, authenticated;
+revoke all on function public.creator_add_pro_codes(text, text[], date) from public, anon, authenticated;
 revoke all on function public.creator_backfill_pro_codes() from public, anon, authenticated;
 
 grant execute on function public.creator_check_code(text) to anon, authenticated;
@@ -669,5 +678,5 @@ grant execute on function public.creator_dashboard() to authenticated;
 grant execute on function public.creator_mark_qualified() to service_role;
 grant execute on function public.creator_record_transaction(text, text[], timestamptz, text, numeric, numeric, text, numeric, numeric, numeric) to service_role;
 grant execute on function public.creator_create_payouts(date) to service_role;
-grant execute on function public.creator_add_pro_codes(text, text[]) to service_role;
+grant execute on function public.creator_add_pro_codes(text, text[], date) to service_role;
 grant execute on function public.creator_backfill_pro_codes() to service_role;

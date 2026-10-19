@@ -13,17 +13,20 @@ tables and functions, and is safe to run again). The creator website is whatyoua
 
 ## Loading free Pro codes
 
-Creators get Apple one-time offer codes: 3 months when they join, a year once 3 people they
-referred have paid. Generate a batch in App Store Connect (Subscriptions > the subscription >
-Offer Codes), download the file, then in the SQL editor:
+Creators get Apple one-time offer codes on the normal monthly plan, set not to auto-renew: 3 months
+when they join ("Creator Pro 3 months"), a year once 3 people they referred have paid ("Creator Pro
+1 year"). Both offers are under Subscriptions > WhatYouAte Monthly > View all Subscription Pricing >
+Offer Codes. For a new batch, open the offer, Create One-Time Use Codes (500 is the minimum, pick
+the latest expiry), download the file, then in the SQL editor:
 
 ```sql
-select creator_add_pro_codes('3_months', array['CODE1', 'CODE2']);
-select creator_add_pro_codes('1_year', array['CODE3', 'CODE4']);
+select creator_add_pro_codes('3_months', array['CODE1', 'CODE2'], '2027-04-19');
+select creator_add_pro_codes('1_year', array['CODE3', 'CODE4'], '2027-04-19');
 select creator_backfill_pro_codes(); -- gives codes to anyone who joined while the pool was empty
 ```
 
-Apple's one-time codes expire after at most 6 months, so load small batches.
+The third argument is the batch's expiry date. Codes with under two weeks left are never handed
+out, and the daily report warns when the supply is low or close to expiring.
 
 ## Marking a payout paid
 
