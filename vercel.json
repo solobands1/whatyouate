@@ -11,6 +11,10 @@
     {
       "path": "/api/cron/weekly-summary",
       "schedule": "0 * * * 0"
+    },
+    {
+      "path": "/api/cron/creators",
+      "schedule": "0 14 * * *"
     }
   ]
 }
