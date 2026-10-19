@@ -237,7 +237,8 @@ select t('jess now has her code', (creator_dashboard()->'pro'->>'threeMonths') =
 select t('next payout says which month it covers', (creator_dashboard()->'nextPayout'->>'covers') is not null);
 reset role;
 
--- The free year: Sarah has u3 paying and u1 refunded (doesn't count). Two more payers unlock it.
+-- The free year: a referral counts after 2 paid months or a yearly plan, net of refunds.
+-- Sarah has u3 (yearly, counts) and u1 (refunded, doesn't). u6 and u7 pay monthly.
 select as_user('60000000-0000-0000-0000-000000000006');
 set role authenticated;
 select t('u6 redeems', (redeem_creator_code('SARAHC')->>'ok')::boolean);
@@ -247,9 +248,16 @@ reset role;
 set role service_role;
 select creator_record_transaction('ev7', array['60000000-0000-0000-0000-000000000006'], now(), 'com.dillonpoulin.whatyouate.monthly', 12.99, 17.99, 'CAD', 0.13, 0.15, 1.38);
 reset role;
-select t('two payers: no year yet', (select count(*) from creator_pro_codes where kind = '1_year' and creator_id is not null) = 0);
+select creator_record_transaction('ev8', array['70000000-0000-0000-0000-000000000007'], now(), 'com.dillonpoulin.whatyouate.monthly.creator', 12.99, 17.99, 'CAD', 0.13, 0.15, 1.38);
+select creator_record_transaction('ev7b', array['60000000-0000-0000-0000-000000000006'], now() + interval '1 month', 'com.dillonpoulin.whatyouate.monthly', 12.99, 17.99, 'CAD', 0.13, 0.15, 1.38);
+reset role;
+select t('one month each is not enough', (select count(*) from creator_pro_codes where kind = '1_year' and creator_id is not null) = 0);
+set role authenticated;
+select as_user('a0000000-0000-0000-0000-000000000001');
+select t('progress counts yearly plus 2-month payer', (creator_dashboard()->'pro'->>'paying')::int = 2);
+reset role;
 set role service_role;
-select creator_record_transaction('ev8', array['70000000-0000-0000-0000-000000000007'], now(), 'com.dillonpoulin.whatyouate.monthly', 12.99, 17.99, 'CAD', 0.13, 0.15, 1.38);
+select creator_record_transaction('ev8b', array['70000000-0000-0000-0000-000000000007'], now() + interval '1 month', 'com.dillonpoulin.whatyouate.monthly.creator', 12.99, 17.99, 'CAD', 0.13, 0.15, 1.38);
 reset role;
 set role authenticated;
 select as_user('a0000000-0000-0000-0000-000000000001');

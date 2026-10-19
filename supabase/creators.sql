@@ -15,7 +15,8 @@
 --     over, except after the creator has left
 --   * Canadians earn CAD, everyone else USD
 --   * creators get free Pro through Apple one-time offer codes (set not to auto-renew): 3 months
---     when they join, and a year once 3 people they referred have paid (refunds don't count)
+--     when they join, and a year once 3 people they referred have each paid for at least 2 months,
+--     or bought a yearly plan (refunds don't count)
 --
 -- Writes only happen through the security definer functions below. Tables have RLS on
 -- with read-own policies where the app or the creator site needs a direct read.
@@ -208,18 +209,25 @@ begin
   return picked;
 end $$;
 
--- The free year: once 3 people they referred have paid, counting refunds against it.
-create or replace function public.creator_check_year_code(p_creator uuid)
-returns text language plpgsql security definer set search_path = public as $$
-declare paying integer;
-begin
-  if (select status from creators where id = p_creator) <> 'active' then return null; end if;
-  select count(*) into paying from (
+-- How many of a creator's referrals count toward the free year: each has paid for at least
+-- 2 months, or for a yearly plan, after refunds.
+create or replace function public.creator_year_progress(p_creator uuid)
+returns integer language sql stable security definer set search_path = public as $$
+  select count(*)::integer from (
     select referral_id from creator_earnings
     where creator_id = p_creator and kind in ('commission', 'refund')
-    group by referral_id having sum(amount) > 0
-  ) x;
-  if paying < 3 then return null; end if;
+    group by referral_id
+    having sum(case when kind = 'commission' then 1 else -1 end
+               * case when product_id ilike '%year%' then 12 else 1 end) >= 2
+  ) x
+$$;
+
+-- The free year: once 3 referrals count (see creator_year_progress).
+create or replace function public.creator_check_year_code(p_creator uuid)
+returns text language plpgsql security definer set search_path = public as $$
+begin
+  if (select status from creators where id = p_creator) <> 'active' then return null; end if;
+  if public.creator_year_progress(p_creator) < 3 then return null; end if;
   return public.creator_assign_pro_code(p_creator, '1_year');
 end $$;
 
@@ -574,10 +582,7 @@ begin
     'pro', jsonb_build_object(
       'threeMonths', (select code from creator_pro_codes where creator_id = cr.id and kind = '3_months'),
       'year', (select code from creator_pro_codes where creator_id = cr.id and kind = '1_year'),
-      'paying', (select count(*) from (
-        select referral_id from creator_earnings
-        where creator_id = cr.id and kind in ('commission', 'refund')
-        group by referral_id having sum(amount) > 0) x)
+      'paying', public.creator_year_progress(cr.id)
     ),
     'month', jsonb_build_object(
       'label', trim(to_char(now_local, 'FMMonth')),
@@ -664,6 +669,7 @@ revoke all on function public.creator_record_transaction(text, text[], timestamp
 revoke all on function public.creator_create_payouts(date) from public, anon, authenticated;
 revoke all on function public.creator_assign_pro_code(uuid, text) from public, anon, authenticated;
 revoke all on function public.creator_check_year_code(uuid) from public, anon, authenticated;
+revoke all on function public.creator_year_progress(uuid) from public, anon, authenticated;
 revoke all on function public.creator_add_pro_codes(text, text[], date) from public, anon, authenticated;
 revoke all on function public.creator_backfill_pro_codes() from public, anon, authenticated;
 
