@@ -78,8 +78,9 @@ export default function UpgradeModal() {
     if (!open || !isNative) return;
     const load = async () => {
       if (referral) {
+        // Until Apple approves the creator plan it isn't on sale, so fall back to the normal plans.
         const creator = await getOffering(CREATOR_OFFERING).catch(() => null);
-        if (creator) {
+        if (creator?.availablePackages.some((p) => p.product.identifier === CREATOR_MONTHLY_ID)) {
           setCreatorTrialOk(await isIntroEligible(CREATOR_MONTHLY_ID));
           return creator;
         }
