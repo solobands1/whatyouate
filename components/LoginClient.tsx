@@ -6,6 +6,9 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "./AuthProvider";
 import { useKeyboardInset } from "../hooks/useKeyboardInset";
 import { LOCAL_MODE } from "../lib/config";
+import { supabase } from "../lib/supabaseClient";
+import { creatorNameForCode, normalizeCode, redeemCreatorCode } from "../lib/referral";
+import { openCreatorOffer } from "./CreatorOfferSheet";
 
 export default function LoginClient() {
   const router = useRouter();
@@ -28,6 +31,10 @@ export default function LoginClient() {
   const [showPassword, setShowPassword] = useState(false);
   const [status, setStatus] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
+  // Creator code (optional, at signup). It only links the account to the creator; the free month
+  // itself is Apple's trial on the Monthly (Creator) plan, offered by CreatorOfferSheet.
+  const [creatorCode, setCreatorCode] = useState("");
+  const [codeCheck, setCodeCheck] = useState<{ code: string; name: string | null } | null>(null);
   // Keyboard avoidance: the on-screen keyboard shrinks the visual viewport; track how much so we
   // can add scroll room and lift the focused field above it (the app's standard VisualViewport
   // pattern — no native keyboard plugin). Helps every auth form, not just Create Account.
@@ -38,6 +45,28 @@ export default function LoginClient() {
       router.replace("/");
     }
   }, [loading, user, router]);
+
+  // Look the creator code up as it's typed: the creator's first name, or not found.
+  useEffect(() => {
+    if (creatorCode.length < 3) return;
+    let live = true;
+    const t = setTimeout(() => {
+      creatorNameForCode(creatorCode)
+        .then((name) => { if (live) setCodeCheck({ code: creatorCode, name }); })
+        .catch(() => { if (live) setCodeCheck({ code: creatorCode, name: null }); });
+    }, 400);
+    return () => { live = false; clearTimeout(t); };
+  }, [creatorCode]);
+  const codeChecked = codeCheck?.code === creatorCode;
+  const codeFound = codeChecked && !!codeCheck?.name;
+
+  const pasteCode = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      const code = normalizeCode(text);
+      if (code) setCreatorCode(code);
+    } catch {}
+  };
 
 
   const handleSignIn = async (event: React.FormEvent) => {
@@ -63,17 +92,37 @@ export default function LoginClient() {
       setStatus("Passwords do not match.");
       return;
     }
+    const code = creatorCode.length >= 3 ? creatorCode : "";
+    if (creatorCode && !codeFound) {
+      setStatus(codeChecked ? "We couldn't find that creator code. Check it, or leave it empty." : "Checking your code. Try again in a second.");
+      return;
+    }
     setSubmitting(true);
     const result = await signUpWithEmailPassword(email.trim(), password, {
       firstName: firstName.trim(),
-      lastName: lastName.trim()
+      lastName: lastName.trim(),
+      creatorCode: code || undefined
     });
     if (result.error) {
       setStatus(result.error);
       setSubmitting(false);
       return;
     }
+    if (code && !result.needsConfirmation) {
+      // The app swaps to its loading splash as soon as the account exists, so this screen may be
+      // gone by now. The offer is a global sheet, so it still shows.
+      const { data } = await supabase.auth.getSession();
+      const uid = data.session?.user.id;
+      if (uid) {
+        // useReferral may have linked the code first (it also runs on sign-in), which shows up here
+        // as already_redeemed with the same code. Either way this brand new account has it.
+        const redeemed = await redeemCreatorCode(code, uid);
+        const linked = redeemed.ok || (redeemed.reason === "already_redeemed" && redeemed.code === code);
+        if (linked) openCreatorOffer({ code, name: codeCheck?.name ?? null });
+      }
+    }
     if (result.needsConfirmation) {
+      // The code is saved with the account and redeemed on first sign-in (lib/referral.ts).
       setSubmitting(false);
       setMode("confirm");
       return;
@@ -281,6 +330,33 @@ export default function LoginClient() {
                   placeholder="Confirm password"
                 />
                 <EyeToggle />
+              </div>
+              <div>
+                <div className="relative">
+                  <input
+                    type="text"
+                    autoCapitalize="characters"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    className={`${inputClass} pr-20 ${creatorCode ? "font-semibold tracking-[0.06em]" : ""}`}
+                    value={creatorCode}
+                    onChange={(e) => setCreatorCode(normalizeCode(e.target.value))}
+                    placeholder="Creator code (optional)"
+                  />
+                  <button
+                    type="button"
+                    onClick={pasteCode}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary transition active:opacity-60"
+                  >
+                    Paste
+                  </button>
+                </div>
+                {creatorCode.length >= 3 && codeChecked && (
+                  <p className={`mt-1.5 px-1 text-xs ${codeFound ? "text-emerald-600" : "text-red-500/80"}`}>
+                    {codeFound ? `Code from ${codeCheck?.name}. Your first month is free.` : "We couldn't find that code."}
+                  </p>
+                )}
               </div>
               {status && <p className="text-xs text-red-500/80">{status}</p>}
               <button

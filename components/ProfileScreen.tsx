@@ -26,6 +26,7 @@ import { useAppData } from "./AppDataProvider";
 import { useTrialStatus } from "../hooks/useTrialStatus";
 import { restorePurchases } from "../lib/purchases";
 import { openUpgradeModal } from "./UpgradeModal";
+import CreatorCodeEntry from "./CreatorCodeEntry";
 
 function calculateAgeFromDob(dobStr: string): number | null {
   if (!dobStr) return null;
@@ -1644,6 +1645,7 @@ export default function ProfileScreen() {
             )}
           </div>
           {restoreMsg && <p className="mt-2 text-xs text-muted/70">{restoreMsg}</p>}
+          <CreatorCodeEntry isPro={trial.isPro} />
         </Card>
 
         {/* Account */}
