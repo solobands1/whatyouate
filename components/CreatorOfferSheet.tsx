@@ -6,7 +6,7 @@ import CreatorOffer from "./CreatorOffer";
 
 const CREATOR_OFFER_EVENT = "wya_show_creator_offer";
 
-type Offer = { code: string; name: string | null };
+type Offer = { code: string; name: string | null; atSignup?: boolean };
 
 /** Shows the creator free month offer, from anywhere (used right after signing up with a code). */
 export function openCreatorOffer(offer: Offer) {
@@ -33,7 +33,13 @@ export default function CreatorOfferSheet() {
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/30 px-5">
       <div className="max-h-[90vh] w-full max-w-sm overflow-y-auto rounded-xl bg-white px-6 py-7 shadow-xl">
-        <CreatorOffer userId={user.id} code={offer.code} name={offer.name} onDone={() => setOffer(null)} />
+        <CreatorOffer
+          userId={user.id}
+          code={offer.code}
+          name={offer.name}
+          atSignup={offer.atSignup ?? true}
+          onDone={() => setOffer(null)}
+        />
       </div>
     </div>
   );

@@ -50,7 +50,7 @@ export default function CreatorCodeEntry({ isPro }: { isPro: boolean }) {
     const result = await redeemCreatorCode(code, user.id);
     if (result.ok) {
       const name = await creatorNameForCode(code).catch(() => null);
-      openCreatorOffer({ code, name });
+      openCreatorOffer({ code, name, atSignup: false });
     } else {
       setMessage(REASONS[result.reason] ?? "Couldn't add that code. Try again in a moment.");
     }

@@ -22,11 +22,13 @@ export default function CreatorOffer({
   userId,
   code,
   name,
+  atSignup = true,
   onDone,
 }: {
   userId: string;
   code: string;
   name: string | null;
+  atSignup?: boolean;
   onDone: () => void;
 }) {
   const [pkg, setPkg] = useState<PurchasesPackage | null>(null);
@@ -124,7 +126,7 @@ export default function CreatorOffer({
           disabled={buying}
           className="w-full py-2 text-sm font-medium text-muted/60 transition active:opacity-60"
         >
-          Not now, start with 7 days free
+          {atSignup ? "Not now, start with 7 days free" : "Not now"}
         </button>
         <div className="flex items-center justify-center gap-4 pt-1">
           <a href="https://whatyouate.app/terms" target="_blank" rel="noopener noreferrer" className="text-[11px] text-muted/40 underline underline-offset-2">
