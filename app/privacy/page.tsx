@@ -29,7 +29,7 @@ export default function PrivacyPage() {
         </Link>
 
         <h1 className="text-2xl font-semibold text-ink">Privacy Policy and Terms of Use</h1>
-        <p className="mt-1 text-xs text-muted/60">Effective date: April 24, 2026. Governing law: Province of Ontario, Canada.</p>
+        <p className="mt-1 text-xs text-muted/60">Effective date: October 21, 2026. Governing law: Province of Ontario, Canada.</p>
         <p className="mt-3 text-xs text-ink/60 leading-relaxed">
           By creating an account or using WhatYouAte (the "App"), you agree to these terms in full. If you do not agree, do not use the App.
         </p>
@@ -174,6 +174,8 @@ export default function PrivacyPage() {
             <p>We store a push notification token for your device to deliver your daily AI coach check-in and reminders. You can disable notifications at any time in your device settings.</p>
             <H3>Device and technical data</H3>
             <p>We may collect basic technical information such as device type, operating system version, and crash logs solely for the purpose of maintaining app stability.</p>
+            <H3>Creator codes</H3>
+            <p>If you enter a creator code when you sign up, we record which code you used, so the creator can be credited for subscriptions you buy in your first year. Creators only ever see totals. We never share your name, email or anything else that identifies you with them.</p>
           </Section>
 
           <Section title="17. Meal Photos">
@@ -196,23 +198,31 @@ export default function PrivacyPage() {
               <li><span className="font-medium text-ink/80">RevenueCat</span>: subscription and in-app purchase management.</li>
               <li><span className="font-medium text-ink/80">Vercel</span>: application hosting and infrastructure.</li>
               <li><span className="font-medium text-ink/80">Apple</span>: payment processing for App Store subscriptions.</li>
+              <li><span className="font-medium text-ink/80">Resend</span>: sends account emails, such as sign-in and password reset codes.</li>
+              <li><span className="font-medium text-ink/80">Wise</span>: sends payouts to creators outside Canada.</li>
+              <li><span className="font-medium text-ink/80">Discord</span>: internal notifications to our team about the creator program, such as new creators and monthly payouts.</li>
             </ul>
             <p className="mt-2">Each provider operates under its own privacy policy and data processing agreements. WhatYouAte is not responsible for the data practices of these third parties beyond the contractual safeguards in place.</p>
           </Section>
 
-          <Section title="20. Data Retention and Deletion">
+          <Section title="20. Creator Program">
+            <p>If you join our creator program at whatyouate.app/creators, we collect your name, email address, Instagram and TikTok handles, country, your creator code(s), and the email you want payouts sent to. We record the signups, subscriptions, earnings and payouts linked to your code. We use this to run the program, pay you, and keep the financial records the law requires.</p>
+            <p>The first name you give us appears on your share page (whatyouate.app/c/YOURCODE), for example &ldquo;Sarah Sent You&rdquo;. Payout records are kept for as long as Canadian tax law requires, even if you leave the program.</p>
+          </Section>
+          <Section title="21. Data Retention and Deletion">
             <p>
               We retain your data for as long as your account is active. You may delete your account and all associated data at any time using the "Delete account" option in your Profile. Upon deletion, your personal data is removed from our systems within a reasonable period, except where retention is required by law.
             </p>
+            <p>If you joined with a creator code and later delete your account, we keep a record that a signup came from that code, with nothing that identifies you, so the creator&apos;s totals stay accurate.</p>
           </Section>
 
-          <Section title="21. Security">
+          <Section title="22. Security">
             <p>
               We use industry-standard security measures including encryption in transit (TLS) and encryption at rest to protect your data. No method of transmission over the internet is 100% secure. While we take reasonable steps to protect your information, we cannot guarantee absolute security.
             </p>
           </Section>
 
-          <Section title="22. Your Rights">
+          <Section title="23. Your Rights">
             <p>
               Depending on your location, you may have rights including: the right to access your personal data; the right to correct inaccurate data; the right to request deletion; the right to data portability; and the right to withdraw consent.
             </p>
@@ -221,25 +231,25 @@ export default function PrivacyPage() {
             </p>
           </Section>
 
-          <Section title="23. International Users">
+          <Section title="24. International Users">
             <p>
               WhatYouAte is operated from Canada. If you access the App from outside Canada, your information may be transferred to and processed in Canada. By using the App, you consent to this transfer. We take steps to ensure that data transferred internationally receives an adequate level of protection.
             </p>
           </Section>
 
-          <Section title="24. Cookies and Local Storage">
+          <Section title="25. Cookies and Local Storage">
             <p>
               The App uses browser local storage to save preferences and cached data on your device. This data does not leave your device except as described in this policy. We do not use third-party tracking cookies or advertising trackers.
             </p>
           </Section>
 
-          <Section title="25. Changes to This Policy">
+          <Section title="26. Changes to This Policy">
             <p>
               We may update this policy as the App evolves. Material changes will be communicated within the App. The effective date at the top of this page reflects the most recent revision. Continued use of the App after changes are posted constitutes acceptance of the revised policy.
             </p>
           </Section>
 
-          <Section title="26. Health Information Sources">
+          <Section title="27. Health Information Sources">
             <p>
               Nutritional insights, nudges, and recommendations generated by WhatYouAte are informed by publicly available dietary reference materials, including the{" "}
               <a href="https://www.dietaryguidelines.gov" className="text-primary underline-offset-2 hover:underline" target="_blank" rel="noopener noreferrer">U.S. Dietary Guidelines for Americans</a>
