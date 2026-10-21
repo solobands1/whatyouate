@@ -161,7 +161,7 @@ begin
   if length(c) > 15 then return 'long'; end if;
   if c = any (array['WHATYOUATE', 'WYA', 'ADMIN', 'SUPPORT', 'HELP', 'FREE', 'TEST', 'APPLE',
                     'APPSTORE', 'PROMO', 'CODE', 'CREATOR', 'CREATORS', 'OFFICIAL', 'STAFF', 'TEAM',
-                    'INTEGRITYSTACK']) then
+                    'INTEGRITYSTACK', 'YOURCODE', 'YOURNAME', 'EXAMPLE', 'SAMPLE']) then
     return 'reserved';
   end if;
   if c ~ '(FUCK|SHIT|BITCH|CUNT|DICK|NAZI|PORN|SEX|WHORE|SLUT|FAG|NIGG|RAPE|KILL|HITLER)' then
