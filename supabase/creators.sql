@@ -15,8 +15,8 @@
 --     over, except after the creator has left
 --   * Canadians earn CAD, everyone else USD
 --   * creators get free Pro through Apple one-time offer codes (set not to auto-renew): 3 months
---     when they join, and a year once 3 people they referred have each paid for at least 2 months,
---     or bought a yearly plan (refunds don't count)
+--     once their first signup qualifies, and a year once 3 people they referred have each paid for at
+--     least 2 months, or bought a yearly plan (refunds don't count)
 --
 -- Writes only happen through the security definer functions below. Tables have RLS on
 -- with read-own policies where the app or the creator site needs a direct read.
@@ -231,13 +231,15 @@ begin
   return public.creator_assign_pro_code(p_creator, '1_year');
 end $$;
 
--- Gives a 3-month code to any active creator who joined while the pool was empty.
+-- Gives a 3-month code to any active creator who has unlocked one (a qualified signup) but didn't get
+-- it because the pool was empty at the time.
 create or replace function public.creator_backfill_pro_codes()
 returns integer language plpgsql security definer set search_path = public as $$
 declare r record; n integer := 0;
 begin
   for r in
     select id from creators cr where status = 'active'
+      and exists (select 1 from referrals rf where rf.creator_id = cr.id and rf.qualified_at is not null)
       and not exists (select 1 from creator_pro_codes p where p.creator_id = cr.id and p.kind = '3_months')
     order by joined_at
   loop
@@ -282,7 +284,6 @@ begin
           p_country, p_payout_method, trim(p_payout_email), c)
   returning * into me;
   insert into creator_codes (code, creator_id) values (c, me.id);
-  perform public.creator_assign_pro_code(me.id, '3_months');
   return me;
 end $$;
 
@@ -421,6 +422,11 @@ begin
 
     update referrals set qualified_at = third_day where id = r.id;
     marked := marked + 1;
+
+    -- A creator's first qualified signup unlocks their 3 months of free Pro.
+    if r.creator_status = 'active' then
+      perform public.creator_assign_pro_code(r.creator_id, '3_months');
+    end if;
 
     if r.creator_status <> 'removed' and r.redeemed_at < r.joined_at + interval '30 days' then
       select coalesce(sum(amount), 0) into bonus_so_far
@@ -582,6 +588,7 @@ begin
     'pro', jsonb_build_object(
       'threeMonths', (select code from creator_pro_codes where creator_id = cr.id and kind = '3_months'),
       'year', (select code from creator_pro_codes where creator_id = cr.id and kind = '1_year'),
+      'unlocked', exists (select 1 from referrals where creator_id = cr.id and qualified_at is not null),
       'paying', public.creator_year_progress(cr.id)
     ),
     'month', jsonb_build_object(

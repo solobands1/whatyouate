@@ -71,12 +71,13 @@ select t('sarah earns in CAD', (select currency from creators) = 'CAD');
 select t('sarah sees only her row', (select count(*) from creators) = 1);
 select expect_error('cannot join twice', $q$select creator_join('Sarah','','','SARAH2','CA','etransfer','s@x.com')$q$, 'already_joined');
 
-select t('sarah got a 3-month code', (creator_dashboard()->'pro'->>'threeMonths') = 'THREE1');
+select t('no free Pro before a qualified signup', (creator_dashboard()->'pro'->>'threeMonths') is null);
+select t('dashboard says Pro is still locked', (creator_dashboard()->'pro'->>'unlocked')::boolean = false);
 select as_user('b0000000-0000-0000-0000-000000000002');
 select expect_error('taken code refused', $q$select creator_join('Mike','','mikeeats','Sarah','US','wise','m@x.com')$q$, 'code_taken');
 select expect_error('canadian payout must be interac', $q$select creator_join('Mike','','','MIKE','CA','paypal','m@x.com')$q$, 'creators_payout_matches_country');
 select t('mike joins', (select code from creator_join('Mike', '', 'mikeeats', 'mike', 'US', 'wise', 'mike@example.com')) = 'MIKE');
-select t('mike got the second 3-month code', (creator_dashboard()->'pro'->>'threeMonths') = 'THREE2');
+select t('mike has no free Pro yet either', (creator_dashboard()->'pro'->>'threeMonths') is null);
 select t('no year code yet', (creator_dashboard()->'pro'->>'year') is null);
 select t('mike earns in USD', (select currency from creators) = 'USD');
 select t('mike sees only his row', (select count(*) from creators) = 1);
@@ -158,6 +159,8 @@ set role service_role;
 select t('third local day qualifies', creator_mark_qualified() = 1);
 select t('rerun marks nothing new', creator_mark_qualified() = 0);
 reset role;
+select t('first qualified signup unlocks 3 months of Pro', (select code from creator_pro_codes
+  where kind = '3_months' and creator_id = (select id from creators where code = 'SARAHC')) = 'THREE1');
 select t('direct deletes did nothing', (select count(*) from creator_codes) = 3);
 select t('bonus is $1 CAD', (select amount = 1 and currency = 'CAD' from creator_earnings where kind = 'bonus'));
 select t('one bonus only', (select count(*) from creator_earnings where kind = 'bonus') = 1);
@@ -171,6 +174,8 @@ from generate_series(0, 2) g;
 set role service_role;
 select t('u3 qualifies', creator_mark_qualified() = 1);
 reset role;
+select t('later qualified signups give no extra 3-month code', (select count(*) from creator_pro_codes
+  where kind = '3_months' and creator_id = (select id from creators where code = 'SARAHC')) = 1);
 select t('bonus capped at $100', (select sum(amount) from creator_earnings where kind = 'bonus'
   and creator_id = (select id from creators where code = 'SARAHC')) = 100);
 
@@ -182,6 +187,8 @@ from generate_series(0, 2) g;
 set role service_role;
 select t('u4 qualifies', creator_mark_qualified() = 1);
 reset role;
+select t('mike unlocks his 3 months too', (select code from creator_pro_codes
+  where kind = '3_months' and creator_id = (select id from creators where code = 'MIKE')) = 'THREE2');
 select t('no bonus after first 30 days', (select count(*) from creator_earnings e join creators c on c.id = e.creator_id where c.code = 'MIKE') = 0);
 
 -- ---- Purchases -----------------------------------------------------------------------
@@ -228,6 +235,11 @@ reset role;
 set role service_role;
 select t('backfill with empty pool does nothing', creator_backfill_pro_codes() = 0);
 select creator_add_pro_codes('3_months', array['THREE3']);
+select t('backfill skips creators with no qualified signup', creator_backfill_pro_codes() = 0);
+reset role;
+insert into referrals (creator_id, code, account_created_at, qualified_at)
+select id, 'JESS', now(), now() from creators where code = 'JESS';
+set role service_role;
 select t('backfill hands out the new code', creator_backfill_pro_codes() = 1);
 select t('backfill only once', creator_backfill_pro_codes() = 0);
 reset role;
@@ -300,7 +312,7 @@ select t('mike is paid his small balance', (select p.amount < 10 from creator_pa
 
 -- ---- Account deletion ----------------------------------------------------------------
 delete from auth.users where id = '10000000-0000-0000-0000-000000000001';
-select t('deleting a user keeps the referral count', (select count(*) from referrals where user_id is null) = 1);
+select t('deleting a user keeps the referral count', (select count(*) from referrals where user_id is null and code = 'SARAH') = 1);
 select t('earnings survive deletion', (select count(*) from creator_earnings where source_id = 'ev1') = 1);
 
 -- ---- Code expiry ---------------------------------------------------------------------
@@ -312,8 +324,9 @@ reset role;
 set role authenticated;
 select as_user('d0000000-0000-0000-0000-000000000004');
 select creator_join('Dana', 'dana', '', 'DANA', 'US', 'paypal', 'dana@example.com');
-select t('nearly expired code skipped, soonest usable code used', (creator_dashboard()->'pro'->>'threeMonths') = 'LATER1');
 reset role;
+select t('nearly expired code skipped, soonest usable code used',
+  creator_assign_pro_code((select id from creators where code = 'DANA'), '3_months') = 'LATER1');
 select t('expiry recorded', (select expires_on = current_date + 60 from creator_pro_codes where code = 'LATER1'));
 
 \echo ALL TESTS PASSED
