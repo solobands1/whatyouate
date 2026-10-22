@@ -77,7 +77,9 @@ create table if not exists public.referrals (
   account_created_at timestamptz not null,
   redeemed_at timestamptz not null default now(),
   qualified_at timestamptz,
-  first_paid_at timestamptz
+  first_paid_at timestamptz,
+  trial_ends_at timestamptz,      -- set when they start the Monthly (Creator) free month
+  trial_cancelled_at timestamptz  -- set if they turn off renewal during it
 );
 create index if not exists referrals_creator_idx on public.referrals (creator_id, redeemed_at);
 
@@ -124,6 +126,8 @@ create table if not exists public.creator_pro_codes (
 
 -- Added after the first release of this file.
 alter table public.creator_pro_codes add column if not exists expires_on date;
+alter table public.referrals add column if not exists trial_ends_at timestamptz;
+alter table public.referrals add column if not exists trial_cancelled_at timestamptz;
 
 alter table public.creators enable row level security;
 alter table public.creator_pro_codes enable row level security;
@@ -441,6 +445,28 @@ begin
   return marked;
 end $$;
 
+-- Free month tracking for the dashboard's "In Their Free Month" count. Called by the webhook route:
+-- 'start' when a referred user starts a free trial, 'cancel' when they turn off renewal during it,
+-- 'uncancel' when they turn it back on. Returns what happened, for logging.
+create or replace function public.creator_record_trial(p_app_user_ids text[], p_action text, p_trial_ends_at timestamptz)
+returns text language plpgsql security definer set search_path = public as $$
+declare rf referrals;
+begin
+  select * into rf from referrals where user_id::text = any (p_app_user_ids) limit 1;
+  if rf.id is null then return 'not_referred'; end if;
+  if p_action = 'start' then
+    update referrals set trial_ends_at = p_trial_ends_at, trial_cancelled_at = null where id = rf.id;
+  elsif p_action = 'cancel' then
+    if rf.first_paid_at is not null or rf.trial_ends_at is null then return 'not_in_trial'; end if;
+    update referrals set trial_cancelled_at = now() where id = rf.id;
+  elsif p_action = 'uncancel' then
+    update referrals set trial_cancelled_at = null where id = rf.id;
+  else
+    return 'unknown_action';
+  end if;
+  return 'trial_' || p_action;
+end $$;
+
 -- Records one RevenueCat transaction for a referred user. Called by the webhook route,
 -- which passes the event fields plus the USD to CAD rate for the purchase day.
 -- Returns what happened, for logging.
@@ -585,6 +611,9 @@ begin
       'oldCodes', (select coalesce(jsonb_agg(code order by created_at), '[]'::jsonb)
                    from creator_codes where creator_id = cr.id and code <> cr.code)
     ),
+    -- Followers trying Pro right now: started the free month, haven't paid yet, still renewing.
+    'freeMonth', (select count(*) from referrals where creator_id = cr.id and first_paid_at is null
+                    and trial_ends_at > now() and trial_cancelled_at is null),
     'pro', jsonb_build_object(
       'threeMonths', (select code from creator_pro_codes where creator_id = cr.id and kind = '3_months'),
       'year', (select code from creator_pro_codes where creator_id = cr.id and kind = '1_year'),
@@ -673,6 +702,7 @@ revoke all on function public.redeem_creator_code(text) from public, anon;
 revoke all on function public.creator_dashboard() from public, anon;
 revoke all on function public.creator_mark_qualified() from public, anon, authenticated;
 revoke all on function public.creator_record_transaction(text, text[], timestamptz, text, numeric, numeric, text, numeric, numeric, numeric) from public, anon, authenticated;
+revoke all on function public.creator_record_trial(text[], text, timestamptz) from public, anon, authenticated;
 revoke all on function public.creator_create_payouts(date) from public, anon, authenticated;
 revoke all on function public.creator_assign_pro_code(uuid, text) from public, anon, authenticated;
 revoke all on function public.creator_check_year_code(uuid) from public, anon, authenticated;
@@ -690,6 +720,7 @@ grant execute on function public.redeem_creator_code(text) to authenticated;
 grant execute on function public.creator_dashboard() to authenticated;
 grant execute on function public.creator_mark_qualified() to service_role;
 grant execute on function public.creator_record_transaction(text, text[], timestamptz, text, numeric, numeric, text, numeric, numeric, numeric) to service_role;
+grant execute on function public.creator_record_trial(text[], text, timestamptz) to service_role;
 grant execute on function public.creator_create_payouts(date) to service_role;
 grant execute on function public.creator_add_pro_codes(text, text[], date) to service_role;
 grant execute on function public.creator_backfill_pro_codes() to service_role;

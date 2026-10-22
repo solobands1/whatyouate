@@ -17,6 +17,8 @@ type RcEvent = {
   aliases?: string[];
   product_id?: string;
   purchased_at_ms?: number;
+  expiration_at_ms?: number;
+  period_type?: string;
   event_timestamp_ms?: number;
   price?: number | null;
   price_in_purchased_currency?: number | null;
@@ -36,14 +38,36 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   const e: RcEvent | undefined = body?.event;
   if (!e?.id || !e.type) return NextResponse.json({ ok: true, result: "no_event" });
-  if (!PAYMENT_EVENTS.has(e.type)) return NextResponse.json({ ok: true, result: "ignored_type" });
-  // A cancellation only matters when it's a refund, which RevenueCat sends with a negative price.
-  if (e.type === "CANCELLATION" && !((e.price ?? 0) < 0)) return NextResponse.json({ ok: true, result: "not_a_refund" });
   if (e.environment !== "PRODUCTION" && process.env.CREATOR_ALLOW_SANDBOX !== "1") {
     return NextResponse.json({ ok: true, result: "sandbox" });
   }
-
   const ids = [e.app_user_id, e.original_app_user_id, ...(e.aliases ?? [])].filter((x): x is string => !!x);
+
+  // Free month tracking for the creator dashboard ("In Their Free Month"): a trial starting, renewal
+  // being turned off during it (a non-refund cancellation), or turned back on.
+  const isRefund = (e.price ?? 0) < 0;
+  const trialAction =
+    e.type === "INITIAL_PURCHASE" && (e.period_type === "TRIAL" || e.period_type === "INTRO") && !(e.price ?? 0)
+      ? "start"
+      : e.type === "CANCELLATION" && !isRefund
+        ? "cancel"
+        : e.type === "UNCANCELLATION"
+          ? "uncancel"
+          : null;
+  if (trialAction) {
+    const { data, error } = await creatorsAdmin().rpc("creator_record_trial", {
+      p_app_user_ids: ids,
+      p_action: trialAction,
+      p_trial_ends_at: e.expiration_at_ms ? new Date(e.expiration_at_ms).toISOString() : null,
+    });
+    if (error) {
+      console.log("[creators/revenuecat] trial error", e.id, error.message);
+      return NextResponse.json({ error: "record_failed" }, { status: 500 });
+    }
+    return NextResponse.json({ ok: true, result: data });
+  }
+
+  if (!PAYMENT_EVENTS.has(e.type)) return NextResponse.json({ ok: true, result: "ignored_type" });
   const purchasedAt = new Date(e.type === "CANCELLATION" ? e.event_timestamp_ms ?? Date.now() : e.purchased_at_ms ?? e.event_timestamp_ms ?? Date.now());
   const usdCad = (e.currency ?? "").toUpperCase() === "CAD" ? null : await usdCadOn(purchasedAt);
 
