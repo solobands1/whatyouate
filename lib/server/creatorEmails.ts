@@ -111,51 +111,54 @@ export type CreatorRow = {
   payout_email: string;
 };
 
+const KIT_NOTE =
+  "In your dashboard you'll find your numbers, your free Pro and the Creator Kit, with captions, post ideas, videos and a printable card with your code.";
+
 export function welcomeEmail(c: CreatorRow): Email {
   const link = `${SITE}/c/${c.code}`;
   const ca = c.currency === "CAD";
   const yearly = ca ? "about $38" : "about $28";
   const monthly = ca ? "about $4.50 a month" : "about $3.30 a month";
   const html = layout(
-    `Welcome, ${esc(firstName(c.name))}`,
-    p("You're in. Here's your creator code. Anyone who signs up with it gets their first month of WhatYouAte Pro free.") +
+    `Welcome To Our Team, ${esc(firstName(c.name))}!`,
+    p("Here's your creator code. Anyone who signs up with it gets their first month of WhatYouAte Pro free.") +
       codeBox(c.code) +
       p(`Your link is <a href="${link}" style="color:${BLUE};text-decoration:none;font-weight:600;">whatyouate.app/c/${esc(c.code)}</a>. Put it in your bio, or send it to anyone you think it would help.`) +
       rows([
-        ["Each yearly subscriber", yearly],
-        ["Each monthly subscriber", `${monthly}, up to a year`],
-        ["Each signup in your first month", "$1"],
+        ["Each Yearly Subscriber", yearly],
+        ["Each Monthly Subscriber", `${monthly}, up to a year`],
+        ["Each Signup in Your First Month", "$1"],
       ]) +
       p(`Payouts go out on the 1st of each month by ${METHOD[c.payout_method] ?? c.payout_method}, once you have $10 or more. Your 3 months of free Pro unlock with your first signup.`) +
-      p("The Creator Kit has captions, post ideas, videos and a printable card with your code.", "margin-bottom:20px;") +
-      button(`${SITE}/creators/dashboard`, "Open Your Dashboard") +
-      `<p style="margin:14px 0 0 0;font-size:14.5px;"><a href="${SITE}/creators/kit" style="color:${BLUE};text-decoration:none;font-weight:600;">Open The Creator Kit</a></p>`
+      p(KIT_NOTE, "margin-bottom:20px;") +
+      button(`${SITE}/creators/dashboard`, "Open Your Dashboard")
   );
   const text = [
-    `Welcome, ${firstName(c.name)}`,
+    `Welcome To Our Team, ${firstName(c.name)}!`,
     "",
-    "You're in. Here's your creator code. Anyone who signs up with it gets their first month of WhatYouAte Pro free.",
+    "Here's your creator code. Anyone who signs up with it gets their first month of WhatYouAte Pro free.",
     "",
     `Your code: ${c.code}`,
     `Your link: ${link}`,
     "",
-    `Each yearly subscriber: ${yearly}`,
-    `Each monthly subscriber: ${monthly}, up to a year`,
-    "Each signup in your first month: $1",
+    `Each Yearly Subscriber: ${yearly}`,
+    `Each Monthly Subscriber: ${monthly}, up to a year`,
+    "Each Signup in Your First Month: $1",
     "",
     `Payouts go out on the 1st of each month by ${METHOD[c.payout_method] ?? c.payout_method}, once you have $10 or more. Your 3 months of free Pro unlock with your first signup.`,
     "",
-    `Dashboard: ${SITE}/creators/dashboard`,
-    `Creator Kit: ${SITE}/creators/kit`,
+    KIT_NOTE,
+    "",
+    `Your dashboard: ${SITE}/creators/dashboard`,
     "",
     "Questions? Just reply to this email.",
   ].join("\n");
-  return { subject: "Welcome to the WhatYouAte creator program", html, text };
+  return { subject: "Welcome To The WhatYouAte Creator Program", html, text };
 }
 
 export function proEmail(c: CreatorRow, kind: "3_months" | "1_year", code: string): Email {
   const three = kind === "3_months";
-  const title = three ? "Your first signup counts" : "You earned a free year";
+  const title = three ? "Your First Signup Counts" : "You Earned A Free Year";
   const lead = three
     ? "Someone who joined with your code has been active in the app on 3 days, so they count as your first signup. That unlocks 3 months of WhatYouAte Pro for you."
     : "Three of your referrals are sticking with it: each has paid for 2 months or a year. Thank you. Here's a year of WhatYouAte Pro, on us.";
@@ -183,7 +186,7 @@ export function proEmail(c: CreatorRow, kind: "3_months" | "1_year", code: strin
     "",
     "Questions? Just reply to this email.",
   ].join("\n");
-  return { subject: three ? "Your first signup, and 3 months of Pro" : "You earned a free year of WhatYouAte Pro", html, text };
+  return { subject: three ? "Your First Signup And 3 Months Of Pro" : "You Earned A Free Year Of WhatYouAte Pro", html, text };
 }
 
 export type PayoutRow = { id: string; amount: number; currency: string; covers_before: string; reference: string | null };
@@ -201,17 +204,17 @@ export function payoutEmail(c: CreatorRow, pay: PayoutRow): Email {
   // Wise is the only method that may need something from the creator.
   const wise = c.payout_method === "wise" ? `Wise emails ${c.payout_email} to collect your bank details, if they don't have them yet.` : "";
   const html = layout(
-    "Your payout is on its way",
+    "Your Payout Is On Its Way",
     p(`We sent you ${amount} by ${method.replace("-", "&#8209;")}.`) +
       rows([
-        ["Covers earnings through", through],
-        ["Sent to", esc(c.payout_email)],
+        ["Covers Earnings Through", through],
+        ["Sent To", esc(c.payout_email)],
       ]) +
       (wise ? p(esc(wise)) : "") +
       button(`${SITE}/creators/dashboard`, "See Your Statement")
   );
   const text = [
-    "Your payout is on its way",
+    "Your Payout Is On Its Way",
     "",
     `We sent you ${amount} by ${method}.`,
     `Covers earnings through ${through}.`,
@@ -222,7 +225,7 @@ export function payoutEmail(c: CreatorRow, pay: PayoutRow): Email {
     "",
     "Questions? Just reply to this email.",
   ].join("\n");
-  return { subject: `Your WhatYouAte payout: ${amount}`, html, text };
+  return { subject: `Your WhatYouAte Payout: ${amount}`, html, text };
 }
 
 // ---- Sending -----------------------------------------------------------------------------------
