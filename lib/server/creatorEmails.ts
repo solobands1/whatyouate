@@ -227,7 +227,7 @@ export function payoutEmail(c: CreatorRow, pay: PayoutRow): Email {
 
 // ---- Sending -----------------------------------------------------------------------------------
 
-async function sendViaResend(to: string, email: Email, key: string) {
+export async function sendViaResend(to: string, email: Email, key: string) {
   const apiKey = process.env.RESEND_API_KEY?.trim();
   if (!apiKey) throw new Error("RESEND_API_KEY is not set");
   const res = await fetch("https://api.resend.com/emails", {
