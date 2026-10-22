@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { creatorsAdmin, csv, postToDiscord } from "../../../../lib/server/creators";
+import { sendDueCreatorEmails } from "../../../../lib/server/creatorEmails";
 
 // Daily creator program job (10:00 Toronto time). Marks signups that qualified for the $1 bonus,
 // hands out free Pro codes, and posts a Discord summary when there's news (new creators, codes
 // running low or expiring). On the 1st of the
-// month it also creates that day's payouts and attaches a CSV of every payout so far.
+// month it also creates that day's payouts and attaches a CSV of every payout so far. Then it emails
+// creators anything due: welcomes, new free Pro codes, and payouts marked paid.
 export const maxDuration = 60;
 
 const PAYOUT_LABEL: Record<string, string> = { etransfer: "Interac e-Transfer", paypal: "PayPal", wise: "Wise bank deposit" };
@@ -130,7 +132,14 @@ export async function GET(req: Request) {
     }
   }
 
+  // After payouts and Pro codes, so today's new codes go out today.
+  const emails = await sendDueCreatorEmails(db);
+  if (emails.errors.length) {
+    lines.push(`**Creator emails:** ${emails.errors.length} didn't send. They'll retry tomorrow.`);
+    lines.push(...emails.errors.slice(0, 5).map((e) => `- ${e}`));
+  }
+
   if (lines.length) await postToDiscord(["**Creator program**", ...lines].join("\n"), file).catch(() => {});
-  console.log("[cron/creators]", { today, qualified, backfilled, joined: joined?.length ?? 0 });
+  console.log("[cron/creators]", { today, qualified, backfilled, joined: joined?.length ?? 0, emails });
   return NextResponse.json({ ok: true, qualified, backfilled, posted: lines.length > 0 });
 }
