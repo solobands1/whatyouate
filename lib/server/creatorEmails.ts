@@ -7,6 +7,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 const SITE = "https://whatyouate.app";
 const FROM = "WhatYouAte Creators <noreply@whatyouate.app>";
 const REPLY_TO = "support@whatyouate.app";
+// Opens the dashboard on Payout History, where the statement downloads (Dashboard.tsx, #statement).
+const STATEMENT = `${SITE}/creators/dashboard?view=numbers#statement`;
 const REDEEM = "https://apps.apple.com/redeem?ctx=offercodes&id=6762287393&code=";
 
 const INK = "#16233B";
@@ -217,7 +219,7 @@ export function payoutEmail(c: CreatorRow, pay: PayoutRow): Email {
         ["Sent To", esc(c.payout_email)],
       ]) +
       (wise ? p(esc(wise)) : "") +
-      button(`${SITE}/creators/dashboard`, "See Your Statement")
+      button(STATEMENT, "See Your Statement")
   );
   const text = [
     "Your Payout Is On Its Way",
@@ -227,7 +229,7 @@ export function payoutEmail(c: CreatorRow, pay: PayoutRow): Email {
     `Sent to ${c.payout_email}.`,
     "",
     ...(wise ? [wise, ""] : []),
-    `Your statement: ${SITE}/creators/dashboard`,
+    `Your statement: ${STATEMENT}`,
     "",
     "Questions? Just reply to this email.",
   ].join("\n");
