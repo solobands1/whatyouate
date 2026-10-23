@@ -151,11 +151,32 @@ export async function GET(req: Request) {
   }
 
   // After payouts and Pro codes, so today's new codes go out today.
-  const emails = await sendDueCreatorEmails(db);
+  const emails = await sendDueCreatorEmails(db, today);
   if (emails.errors.length) {
     lines.push(`**Creator emails:** ${emails.errors.length} didn't send. They'll retry tomorrow.`);
     lines.push(...emails.errors.slice(0, 5).map((e) => `- ${e}`));
   }
+
+  // Mondays: a short weekly summary, always posted, so a quiet Discord also means the job is running.
+  if (new Date(`${today}T12:00:00Z`).getUTCDay() === 1) {
+    const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+    const [{ count: active }, { count: newCreators }, { count: uses }, { count: counted }, { count: paying }, { data: earned }] = await Promise.all([
+      db.from("creators").select("id", { count: "exact", head: true }).eq("status", "active"),
+      db.from("creators").select("id", { count: "exact", head: true }).gte("joined_at", weekAgo),
+      db.from("referrals").select("id", { count: "exact", head: true }).gte("redeemed_at", weekAgo),
+      db.from("referrals").select("id", { count: "exact", head: true }).gte("qualified_at", weekAgo),
+      db.from("referrals").select("id", { count: "exact", head: true }).gte("first_paid_at", weekAgo),
+      db.from("creator_earnings").select("amount, currency").gte("occurred_at", weekAgo),
+    ]);
+    const byCur: Record<string, number> = {};
+    for (const e of earned ?? []) byCur[e.currency] = (byCur[e.currency] ?? 0) + Number(e.amount);
+    const money = Object.entries(byCur).map(([c, v]) => `$${v.toFixed(2)} ${c}`).join(" + ") || "$0";
+    lines.push(
+      `**This week:** ${active ?? 0} active creators (${newCreators ?? 0} new), ${uses ?? 0} code uses, ${counted ?? 0} signups that count, ` +
+        `${paying ?? 0} new paying subscribers, ${money} earned by creators. Free Pro codes left: ${left["3_months"]} three-month, ${left["1_year"]} one-year.`
+    );
+  }
+  if (emails.sent.yearSummary) lines.push(`**Year summaries:** sent to ${emails.sent.yearSummary} creator${emails.sent.yearSummary === 1 ? "" : "s"}.`);
 
   if (lines.length) await postToDiscord(["**Creator program**", ...lines].join("\n"), file).catch(() => {});
   console.log("[cron/creators]", { today, qualified, backfilled, joined: joined?.length ?? 0, emails });

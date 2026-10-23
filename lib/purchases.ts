@@ -116,6 +116,21 @@ export async function restorePurchases() {
   return customerInfo;
 }
 
+/**
+ * Apple's sheet for redeeming an offer code, such as a creator's free Pro code. iPhone only; the
+ * plugin method has been in the app since 1.0.2, so this needed no new build.
+ */
+export async function presentRedeemSheet(): Promise<boolean> {
+  const mod = await getMod();
+  if (!mod) return false;
+  try {
+    await mod.Purchases.presentCodeRedemptionSheet();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function resetPurchases(): void {
   _initialized = false;
 }

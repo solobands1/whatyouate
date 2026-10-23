@@ -176,7 +176,7 @@ export function proEmail(c: CreatorRow, kind: "3_months" | "1_year", code: strin
   const html = layout(
     title,
     p(lead) +
-      p("Open this email on your iPhone and tap the button. Or redeem it by hand: in the App Store app, tap your profile picture, then Redeem Gift Card or Code.", "margin-bottom:10px;") +
+      p("Open this email on your iPhone and tap the button. Or redeem it by hand: in WhatYouAte, go to Profile and tap Redeem Offer Code.", "margin-bottom:10px;") +
       codeBox(code, 20) +
       button(REDEEM + encodeURIComponent(code), "Redeem On iPhone") +
       p(after, "margin:18px 0 0 0;font-size:14px;")
@@ -188,7 +188,7 @@ export function proEmail(c: CreatorRow, kind: "3_months" | "1_year", code: strin
     "",
     `Your code: ${code}`,
     `Redeem on your iPhone: ${REDEEM}${encodeURIComponent(code)}`,
-    "Or in the App Store app, tap your profile picture, then Redeem Gift Card or Code.",
+    "Or in WhatYouAte, go to Profile and tap Redeem Offer Code.",
     "",
     after,
     "",
@@ -236,6 +236,75 @@ export function payoutEmail(c: CreatorRow, pay: PayoutRow): Email {
   return { subject: `Your WhatYouAte Payout: ${amount}`, html, text };
 }
 
+/** A week after joining with no code uses yet: a few ideas, kindly put. Sent once. */
+export function nudgeEmail(c: CreatorRow): Email {
+  const link = `${SITE}/c/${c.code}`;
+  const tips: [string, string][] = [
+    ["Put your link in your bio.", `whatyouate.app/c/${c.code} shows your code and sends people to the App Store.`],
+    ["Share what you noticed.", "One honest post about a few days of logging works better than an ad. The Creator Kit has captions, post ideas and videos."],
+    ["Sharing in person?", "Print the cards in your Creator Kit. Each one has your code and a QR code."],
+    ["Lead with the free month.", "Anyone who uses your code gets their first month of Pro free. It's an easy yes."],
+  ];
+  const html = layout(
+    `Ready For Your First Signup, ${esc(firstName(c.name))}?`,
+    p("It's been a week since you joined, and your code hasn't been used yet. That's normal. Here are a few things that work:") +
+      tips
+        .map(([head, body]) => `<p style="margin:0 0 12px 0;font-size:15px;line-height:1.55;color:${BODY};"><span style="font-weight:600;color:${INK};">${head}</span> ${esc(body)}</p>`)
+        .join("") +
+      p("Your Creator Kit is in your dashboard.", "margin:6px 0 20px 0;") +
+      button(`${SITE}/creators/dashboard`, "Open Your Dashboard")
+  );
+  const text = [
+    `Ready For Your First Signup, ${firstName(c.name)}?`,
+    "",
+    "It's been a week since you joined, and your code hasn't been used yet. That's normal. Here are a few things that work:",
+    "",
+    ...tips.map(([head, body]) => `${head} ${body}`),
+    "",
+    `Your link: ${link}`,
+    `Your dashboard (with the Creator Kit): ${SITE}/creators/dashboard`,
+    "",
+    "Questions? Just reply to this email.",
+  ].join("\n");
+  return { subject: "A Few Ways To Get Your First Signup", html, text };
+}
+
+export type YearTotals = { year: number; paid: number; payouts: number; earned: number; subscribers: number };
+
+/** Early January: what the creator was paid last year, for their records and taxes. */
+export function yearSummaryEmail(c: CreatorRow, t: YearTotals): Email {
+  const cur = c.currency;
+  const html = layout(
+    `Your ${t.year} Summary`,
+    p(`Here's what WhatYouAte paid you in ${t.year}, for your records and taxes.`) +
+      rows([
+        ["Total Paid", money(t.paid, cur)],
+        ["Payouts", String(t.payouts)],
+        ["Earned", money(t.earned, cur), "some is paid in the new year"],
+        ["New Subscribers", String(t.subscribers)],
+      ]) +
+      p("Each payout's statement is in your dashboard, where you can save it as a PDF or a spreadsheet.", "margin-bottom:20px;") +
+      button(`${SITE}/creators/statements`, "See Your Statements") +
+      p("Thank you for sharing WhatYouAte this year.", "margin:20px 0 0 0;")
+  );
+  const text = [
+    `Your ${t.year} Summary`,
+    "",
+    `Here's what WhatYouAte paid you in ${t.year}, for your records and taxes.`,
+    "",
+    `Total paid in ${t.year}: ${money(t.paid, cur)}`,
+    `Payouts: ${t.payouts}`,
+    `Earned in ${t.year}: ${money(t.earned, cur)} (including anything paid in the new year)`,
+    `Subscribers you brought in: ${t.subscribers}`,
+    "",
+    `Your statements: ${SITE}/creators/statements`,
+    "",
+    "Thank you for sharing WhatYouAte this year.",
+    "Questions? Just reply to this email.",
+  ].join("\n");
+  return { subject: `Your ${t.year} WhatYouAte Creator Summary`, html, text };
+}
+
 // ---- Sending -----------------------------------------------------------------------------------
 
 export async function sendViaResend(to: string, email: Email, key: string) {
@@ -256,7 +325,7 @@ export async function sendViaResend(to: string, email: Email, key: string) {
 export async function sendCreatorEmail(
   db: SupabaseClient,
   creator: CreatorRow,
-  kind: "welcome" | "pro_3_months" | "pro_1_year" | "payout",
+  kind: "welcome" | "pro_3_months" | "pro_1_year" | "payout" | "nudge" | "year_summary",
   ref: string,
   email: Email
 ): Promise<"sent" | "skipped" | string> {
@@ -286,11 +355,12 @@ export async function sendWelcome(db: SupabaseClient, creator: CreatorRow) {
 
 /**
  * Catches up on every creator email that's due: welcomes the join route missed, newly assigned Pro
- * codes, and payouts marked paid. Only looks back a short way, so nothing old is sent when this
- * first goes live. Returns counts and any errors, for the daily Discord summary.
+ * codes, payouts marked paid, the one-week nudge, and (from January 7) last year's summary. Only
+ * looks back a short way, so nothing old is sent when this first goes live. Returns counts and any
+ * errors, for the daily Discord summary.
  */
-export async function sendDueCreatorEmails(db: SupabaseClient) {
-  const sent = { welcome: 0, pro: 0, payout: 0 };
+export async function sendDueCreatorEmails(db: SupabaseClient, today: string) {
+  const sent = { welcome: 0, pro: 0, payout: 0, nudge: 0, yearSummary: 0 };
   const errors: string[] = [];
   const note = (r: string, what: string) => {
     if (r !== "sent" && r !== "skipped") errors.push(`${what}: ${r}`);
@@ -324,6 +394,43 @@ export async function sendDueCreatorEmails(db: SupabaseClient) {
     const c = (Array.isArray(r.creators) ? r.creators[0] : r.creators) as CreatorRow | null;
     if (!c) continue;
     if (note(await sendCreatorEmail(db, c, "payout", r.id, payoutEmail(c, r as PayoutRow)), `payout ${c.code}`)) sent.payout++;
+  }
+
+  // A week in with no code uses: one friendly nudge (joined 7 to 10 days ago, so it's sent once).
+  const { data: quiet } = await db
+    .from("creators")
+    .select(CREATOR_COLS)
+    .eq("status", "active")
+    .lte("joined_at", daysAgo(7))
+    .gte("joined_at", daysAgo(10));
+  for (const c of (quiet ?? []) as CreatorRow[]) {
+    const { count } = await db.from("referrals").select("id", { count: "exact", head: true }).eq("creator_id", c.id);
+    if (count === 0 && note(await sendCreatorEmail(db, c, "nudge", c.id, nudgeEmail(c)), `nudge ${c.code}`)) sent.nudge++;
+  }
+
+  // From January 7, once that month's payouts are out: last year's summary, to anyone paid or earning in it.
+  if (today.slice(5, 7) === "01" && Number(today.slice(8, 10)) >= 7) {
+    const year = Number(today.slice(0, 4)) - 1;
+    // Toronto's midnight on January 1 (always EST, five hours behind UTC).
+    const start = `${year}-01-01T05:00:00Z`;
+    const end = `${year + 1}-01-01T05:00:00Z`;
+    const { data: all } = await db.from("creators").select(CREATOR_COLS).neq("status", "removed");
+    for (const c of (all ?? []) as CreatorRow[]) {
+      const [{ data: pays }, { data: earns }, { count: subs }] = await Promise.all([
+        db.from("creator_payouts").select("amount").eq("creator_id", c.id).eq("status", "paid").gte("paid_on", `${year}-01-01`).lt("paid_on", `${year + 1}-01-01`),
+        db.from("creator_earnings").select("amount").eq("creator_id", c.id).gte("occurred_at", start).lt("occurred_at", end),
+        db.from("referrals").select("id", { count: "exact", head: true }).eq("creator_id", c.id).gte("first_paid_at", start).lt("first_paid_at", end),
+      ]);
+      const t: YearTotals = {
+        year,
+        paid: (pays ?? []).reduce((a, r) => a + Number(r.amount), 0),
+        payouts: (pays ?? []).length,
+        earned: (earns ?? []).reduce((a, r) => a + Number(r.amount), 0),
+        subscribers: subs ?? 0,
+      };
+      if (t.paid <= 0 && t.earned <= 0) continue;
+      if (note(await sendCreatorEmail(db, c, "year_summary", `${c.id}:${year}`, yearSummaryEmail(c, t)), `summary ${c.code}`)) sent.yearSummary++;
+    }
   }
 
   return { sent, errors };

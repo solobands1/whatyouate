@@ -24,7 +24,8 @@ import ProfileAvatar, { AVATAR_COLORS_DARK, AVATAR_COLORS_PASTEL, DEFAULT_AVATAR
 import { useAuth } from "./AuthProvider";
 import { useAppData } from "./AppDataProvider";
 import { useTrialStatus } from "../hooks/useTrialStatus";
-import { restorePurchases } from "../lib/purchases";
+import { presentRedeemSheet, restorePurchases } from "../lib/purchases";
+import { Capacitor } from "@capacitor/core";
 import { openUpgradeModal } from "./UpgradeModal";
 import CreatorCodeEntry from "./CreatorCodeEntry";
 
@@ -91,6 +92,22 @@ export default function ProfileScreen() {
       setRestoring(false);
       setTimeout(() => setRestoreMsg(""), 4000);
     }
+  };
+  // Offer codes (like a creator's free Pro code) redeem in Apple's own sheet. It reports nothing
+  // back, so when the app is next focused we re-check Pro, the same way Restore does.
+  const handleRedeem = async () => {
+    if (!(await presentRedeemSheet())) {
+      setRestoreMsg("Couldn't open the App Store. Please try again.");
+      setTimeout(() => setRestoreMsg(""), 4000);
+      return;
+    }
+    const recheck = () => {
+      window.dispatchEvent(new Event("wya_purchase_complete"));
+      window.removeEventListener("focus", recheck);
+    };
+    window.addEventListener("focus", recheck);
+    setRestoreMsg("Once you've redeemed your code, Pro turns on. If it doesn't, tap Restore Purchases.");
+    setTimeout(() => setRestoreMsg(""), 8000);
   };
   const profileExistsRef = useRef(false);
   const hasInitializedRef = useRef(false);
@@ -1638,6 +1655,11 @@ export default function ProfileScreen() {
             <button type="button" onClick={handleRestore} disabled={restoring} className="w-full rounded-xl border border-ink/10 bg-ink/5 px-4 py-2.5 text-xs font-semibold text-ink/70 transition active:opacity-60 active:scale-[0.98] disabled:opacity-50">
               {restoring ? "Restoring…" : "Restore Purchases"}
             </button>
+            {!trial.isPro && Capacitor.isNativePlatform() && (
+              <button type="button" onClick={handleRedeem} className="w-full rounded-xl border border-ink/10 bg-ink/5 px-4 py-2.5 text-xs font-semibold text-ink/70 transition active:opacity-60 active:scale-[0.98]">
+                Redeem Offer Code
+              </button>
+            )}
             {trial.isPro && (
               <a href="https://apps.apple.com/account/subscriptions" target="_blank" rel="noopener noreferrer" className="w-full rounded-xl border border-ink/10 bg-ink/5 px-4 py-2.5 text-center text-xs font-semibold text-ink/70 transition active:opacity-60">
                 Manage Subscription

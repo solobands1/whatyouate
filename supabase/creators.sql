@@ -127,7 +127,7 @@ create table if not exists public.creator_pro_codes (
 -- Emails sent to creators (lib/server/creatorEmails.ts). A row is claimed before sending, so each
 -- email goes out at most once. ref is the creator id (welcome), the Pro code, or the payout id.
 create table if not exists public.creator_emails (
-  kind text not null check (kind in ('welcome', 'pro_3_months', 'pro_1_year', 'payout')),
+  kind text not null check (kind in ('welcome', 'pro_3_months', 'pro_1_year', 'payout', 'nudge', 'year_summary')),
   ref text not null,
   creator_id uuid not null references public.creators(id) on delete cascade,
   to_email text not null,
@@ -136,6 +136,10 @@ create table if not exists public.creator_emails (
 );
 
 -- Added after the first release of this file.
+-- The one-week nudge and the January summary joined the creator emails.
+alter table public.creator_emails drop constraint if exists creator_emails_kind_check;
+alter table public.creator_emails add constraint creator_emails_kind_check
+  check (kind in ('welcome', 'pro_3_months', 'pro_1_year', 'payout', 'nudge', 'year_summary'));
 alter table public.creator_pro_codes add column if not exists expires_on date;
 alter table public.referrals add column if not exists trial_ends_at timestamptz;
 alter table public.referrals add column if not exists trial_cancelled_at timestamptz;

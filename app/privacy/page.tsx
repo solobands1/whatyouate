@@ -29,7 +29,7 @@ export default function PrivacyPage() {
         </Link>
 
         <h1 className="text-2xl font-semibold text-ink">Privacy Policy and Terms of Use</h1>
-        <p className="mt-1 text-xs text-muted/60">Effective date: October 21, 2026. Governing law: Province of Ontario, Canada.</p>
+        <p className="mt-1 text-xs text-muted/60">Effective date: October 23, 2026. Governing law: Province of Ontario, Canada.</p>
         <p className="mt-3 text-xs text-ink/60 leading-relaxed">
           By creating an account or using WhatYouAte (the "App"), you agree to these terms in full. If you do not agree, do not use the App.
         </p>
@@ -206,7 +206,7 @@ export default function PrivacyPage() {
           </Section>
 
           <Section title="20. Creator Program">
-            <p>If you join our creator program at whatyouate.app/creators, we collect your name, email address, Instagram and TikTok handles, country, your creator code(s), and the email you want payouts sent to. We record the signups, subscriptions, earnings and payouts linked to your code. We use this to run the program, pay you, and keep the financial records the law requires.</p>
+            <p>If you join our creator program at whatyouate.app/creators, we collect your name, email address, Instagram and TikTok handles, country, your creator code(s), and the email you want payouts sent to. We record the signups, subscriptions, earnings and payouts linked to your code, and we may keep private notes about our work together, such as when you plan to post. We use this to run the program, pay you, and keep the financial records the law requires.</p>
             <p>The first name you give us appears on your share page (whatyouate.app/c/YOURCODE), for example &ldquo;Sarah Sent You&rdquo;. Payout records are kept for as long as Canadian tax law requires, even if you leave the program.</p>
           </Section>
           <Section title="21. Data Retention and Deletion">
