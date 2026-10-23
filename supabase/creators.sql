@@ -719,6 +719,8 @@ alter table public.creator_payouts add column if not exists paid_at timestamptz;
 alter table public.creator_payouts add column if not exists statement jsonb;
 -- Set when a paid payout comes back (an e-Transfer expires, a bank deposit fails) and is reopened.
 alter table public.creator_payouts add column if not exists returned_at timestamptz;
+-- Why a payout is withheld, for the owner's own records (creators never see it).
+alter table public.creator_payouts add column if not exists hold_reason text;
 
 -- The owner's private notes on each creator. Kept apart from creators, which creators can read.
 create table if not exists public.creator_owner_notes (
@@ -808,6 +810,8 @@ declare
   m_first date := date_trunc('month', p_month)::date;
   m_start timestamptz := case when p_month is null then '-infinity'::timestamptz else m_first::timestamp at time zone tz end;
   m_end timestamptz := case when p_month is null then 'infinity'::timestamptz else (m_first + interval '1 month')::timestamp at time zone tz end;
+  -- The cutoff the latest payouts were worked out to (the start of last month, Toronto time).
+  last_cutoff timestamptz := (date_trunc('month', now() at time zone tz) - interval '1 month')::timestamp at time zone tz;
 begin
   if not public.creator_is_owner() then raise exception 'not_owner'; end if;
   return jsonb_build_object(
@@ -832,8 +836,13 @@ begin
            and (p_month is null or (paid_on >= m_first and paid_on < m_first + interval '1 month'))) as "paidOut",
           (select coalesce(round(sum(amount), 2), 0) from creator_earnings where creator_id = cr.id)
             - (select coalesce(sum(amount), 0) from creator_payouts where creator_id = cr.id and status = 'paid') as owed,
+          -- Earned before the latest cutoff but not in any payout: under $10, so it rolls over.
+          greatest(0, round(
+            (select coalesce(sum(amount), 0) from creator_earnings where creator_id = cr.id and occurred_at < last_cutoff)
+            - (select coalesce(sum(amount), 0) from creator_payouts where creator_id = cr.id), 2)) as "rolledOver",
           (select jsonb_build_object('id', p.id, 'amount', p.amount, 'status', p.status, 'dueOn', p.due_on,
-                                     'paidOn', p.paid_on, 'reference', coalesce(p.reference, ''), 'returned', p.returned_at is not null)
+                                     'paidOn', p.paid_on, 'reference', coalesce(p.reference, ''), 'returned', p.returned_at is not null,
+                                     'holdReason', coalesce(p.hold_reason, ''))
            from creator_payouts p where p.creator_id = cr.id
              and (p_month is null or (p.due_on >= m_first and p.due_on < m_first + interval '1 month'))
            order by (p.status <> 'paid') desc, p.due_on desc limit 1) as payout,
@@ -854,7 +863,8 @@ begin
 end $$;
 
 -- Marks a payout paid (freezing its statement) or withheld, or puts a withheld one back to due.
--- A paid payout can't be changed here: its email and statement have gone out.
+-- A paid payout can't be changed here: its email and statement have gone out. p_reference is the
+-- payment reference when marking paid, and the reason when withholding.
 create or replace function public.owner_set_payout(p_payout uuid, p_status text, p_reference text default null)
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare
@@ -872,9 +882,11 @@ begin
         reference = coalesce(nullif(trim(p_reference), ''), reference)
     where id = p.id;
     update creator_payouts set statement = public.creator_statement_snapshot(p.id) where id = p.id;
-  else
-    update creator_payouts set status = p_status, reference = coalesce(nullif(trim(p_reference), ''), reference)
+  elsif p_status = 'withheld' then
+    update creator_payouts set status = 'withheld', hold_reason = coalesce(nullif(trim(p_reference), ''), hold_reason)
     where id = p.id;
+  else
+    update creator_payouts set status = 'due' where id = p.id;
   end if;
   return (select jsonb_build_object('id', id, 'status', status, 'paidOn', paid_on) from creator_payouts where id = p.id);
 end $$;
@@ -921,7 +933,8 @@ begin
   if p_status = 'removed' then
     update creators set status = 'removed', left_at = coalesce(left_at, now()), updated_at = now() where id = cr.id;
     if p_withhold then
-      update creator_payouts set status = 'withheld' where creator_id = cr.id and status = 'due';
+      update creator_payouts set status = 'withheld', hold_reason = coalesce(hold_reason, 'Removed from the program')
+      where creator_id = cr.id and status = 'due';
     end if;
   elsif p_status = 'active' then
     if cr.status <> 'removed' then raise exception 'not_removed'; end if;
@@ -942,7 +955,8 @@ begin
       'name', cr.name, 'email', cr.email, 'code', cr.code, 'country', cr.country,
       'payoutMethod', cr.payout_method, 'payoutEmail', cr.payout_email,
       'dueOn', p.due_on, 'coversBefore', p.covers_before, 'amount', p.amount, 'currency', p.currency,
-      'status', p.status, 'paidOn', p.paid_on, 'reference', coalesce(p.reference, ''), 'returned', p.returned_at is not null
+      'status', p.status, 'paidOn', p.paid_on, 'reference', coalesce(p.reference, ''), 'returned', p.returned_at is not null,
+      'holdReason', coalesce(p.hold_reason, '')
     ) order by p.due_on desc, cr.name), '[]'::jsonb)
     from creator_payouts p join creators cr on cr.id = p.creator_id
   );

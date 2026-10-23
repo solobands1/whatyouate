@@ -372,7 +372,11 @@ select t('owner recognised, email case ignored', creator_is_owner());
 select t('overview lists every creator', jsonb_array_length(owner_overview()->'creators') = (select creators from n));
 select t('due payouts sort first', owner_overview()->'creators'->0->'payout'->>'status' = 'due');
 select t('overview has pro code counts', owner_overview()->'proCodes' ? 'threeMonths');
-select t('withhold', owner_set_payout((select id from sp), 'withheld')->>'status' = 'withheld');
+select t('withhold', owner_set_payout((select id from sp), 'withheld', 'Checking signups')->>'status' = 'withheld');
+select t('the reason shows on the owner page',
+  (select c->'payout'->>'holdReason' = 'Checking signups' from jsonb_array_elements(owner_overview()->'creators') c where c->>'code' = 'SARAHC'));
+select t('rolled over is a number for everyone',
+  (select bool_and(jsonb_typeof(c->'rolledOver') = 'number') from jsonb_array_elements(owner_overview()->'creators') c));
 select t('back to due', owner_set_payout((select id from sp), 'due')->>'status' = 'due');
 select expect_error('unknown status refused', $q$select owner_set_payout((select id from sp), 'sent')$q$, 'bad_status');
 select t('mark paid', owner_set_payout((select id from sp), 'paid', '  ETR-123 ')->>'status' = 'paid');
