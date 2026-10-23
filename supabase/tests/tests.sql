@@ -398,4 +398,50 @@ select t('mike gets a statement built on the fly', (creator_statements()->0->'pa
 select expect_error('creators cannot build snapshots directly', $q$select creator_statement_snapshot((select id from sp))$q$, 'permission denied');
 reset role;
 
+-- ---- Owner: months, notes, returned payouts, removing, export ---------------------------
+create temp table pc as select count(*) as payouts from creator_payouts;
+create temp table ids as select code, id from creators;
+grant select on pc, ids to authenticated;
+insert into creator_emails (kind, ref, creator_id, to_email)
+select 'payout', id::text, creator_id, 'sarah@example.com' from creator_payouts where id = (select id from sp);
+set role authenticated;
+select as_user('e0000000-0000-0000-0000-000000000099');
+select t('october shows sarah''s october earnings',
+  (select (c->>'earned')::numeric > 0 from jsonb_array_elements(owner_overview('2026-10-01')->'creators') c where c->>'code' = 'SARAHC'));
+select t('september shows nothing earned',
+  (select (c->>'earned')::numeric = 0 from jsonb_array_elements(owner_overview('2026-09-01')->'creators') c where c->>'code' = 'SARAHC'));
+select t('december shows the payout worked out in december',
+  (select c->'payout'->>'dueOn' = '2026-12-01' from jsonb_array_elements(owner_overview('2026-12-01')->'creators') c where c->>'code' = 'SARAHC'));
+select t('october has no payout for sarah',
+  (select c->'payout' = 'null'::jsonb from jsonb_array_elements(owner_overview('2026-10-01')->'creators') c where c->>'code' = 'SARAHC'));
+select t('owed is all time in any month',
+  (select (c->>'owed')::numeric = 0 from jsonb_array_elements(owner_overview('2026-09-01')->'creators') c where c->>'code' = 'SARAHC'));
+select t('months list ends with this month', owner_overview()->'months'->>0 = to_char(now() at time zone 'America/Toronto', 'YYYY-MM'));
+select owner_update_creator((select id from ids where code = 'SARAHC'), 'Met at the clinic. Posting Friday.', true);
+select t('notes and posted saved',
+  (select c->>'notes' = 'Met at the clinic. Posting Friday.' and (c->>'posted')::boolean from jsonb_array_elements(owner_overview()->'creators') c where c->>'code' = 'SARAHC'));
+select t('export has every payout', jsonb_array_length(owner_export()) = (select payouts from pc));
+select expect_error('only paid payouts reopen', $q$select owner_reopen_payout((select id from creator_payouts limit 0))$q$, 'no_payout');
+select t('returned payout goes back to due', owner_reopen_payout((select id from sp))->>'status' = 'due');
+select expect_error('a due payout cannot be returned', $q$select owner_reopen_payout((select id from sp))$q$, 'not_paid');
+select as_user('a0000000-0000-0000-0000-000000000001');
+select t('a creator cannot read owner notes', (select count(*) from creator_owner_notes) = 0);
+select expect_error('a creator cannot write owner notes', $q$select owner_update_creator((select id from sp), 'x', false)$q$, 'not_owner');
+select t('the returned statement is withdrawn', jsonb_array_length(creator_statements()) = 0);
+select as_user('e0000000-0000-0000-0000-000000000099');
+select t('remove sarah', owner_set_creator_status((select id from ids where code = 'SARAHC'), 'removed', true) = 'removed');
+select expect_error('only removed creators restore', $q$select owner_set_creator_status((select id from ids where code = 'DANA'), 'active')$q$, 'not_removed');
+reset role;
+select t('returned payout is marked, reopened and its email can go again',
+  (select returned_at is not null and paid_on is null and statement is null and reference = 'Returned: ETR-123' from creator_payouts where id = (select id from sp))
+  and not exists (select 1 from creator_emails where kind = 'payout' and ref = (select id::text from sp)));
+select t('removing withholds the waiting payout', (select status = 'withheld' from creator_payouts where id = (select id from sp)));
+set role authenticated;
+select as_user('50000000-0000-0000-0000-000000000005');
+select t('a removed creator''s code stops working', redeem_creator_code('SARAHC')->>'reason' = 'inactive_code');
+select as_user('e0000000-0000-0000-0000-000000000099');
+select t('restore sarah', owner_set_creator_status((select id from ids where code = 'SARAHC'), 'active') = 'active');
+reset role;
+select t('restored creator is active again', (select status = 'active' and left_at is null from creators where code = 'SARAHC'));
+
 \echo ALL TESTS PASSED
