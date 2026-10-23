@@ -49,13 +49,14 @@ const button = (href: string, label: string) =>
   `<a href="${href}" style="display:inline-block;padding:13px 26px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:999px;">${label}</a>` +
   `</td></tr></table>`;
 
-const rows = (items: [string, string][]) =>
+// Each row: label, value, and an optional small line under the value (like the website's table).
+const rows = (items: ([string, string] | [string, string, string])[]) =>
   `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 22px 0;border-top:1px solid #EDF1F7;">` +
   items
     .map(
-      ([label, value]) =>
+      ([label, value, sub]) =>
         `<tr><td style="padding:11px 0;border-bottom:1px solid #EDF1F7;font-size:14.5px;color:${BODY};">${label}</td>` +
-        `<td style="padding:11px 0;border-bottom:1px solid #EDF1F7;font-size:14.5px;font-weight:600;color:${INK};text-align:right;">${value}</td></tr>`
+        `<td style="padding:11px 0;border-bottom:1px solid #EDF1F7;font-size:14.5px;font-weight:600;color:${INK};text-align:right;white-space:nowrap;">${value}${sub ? `<br><span style="font-size:12.5px;font-weight:400;color:${BODY};">${sub}</span>` : ""}</td></tr>`
     )
     .join("") +
   `</table>`;
@@ -119,8 +120,11 @@ const KIT_NOTE =
 export function welcomeEmail(c: CreatorRow): Email {
   const link = `${SITE}/c/${c.code}`;
   const ca = c.currency === "CAD";
-  const yearly = ca ? "about $38" : "about $28";
-  const monthly = ca ? "about $4.50 a month" : "about $3.30 a month";
+  // Every amount carries the creator's currency: CAD in Canada, USD everywhere else.
+  const cur = c.currency;
+  const yearly = ca ? "about $38 CAD" : "about $28 USD";
+  const monthly = ca ? "about $4.50 CAD" : "about $3.30 USD";
+  const payouts = `Payouts go out on the 1st of each month by ${METHOD[c.payout_method] ?? c.payout_method}, in ${ca ? "Canadian" : "US"} dollars, once you have $10 ${cur} or more. Your 3 months of free Pro unlock with your first signup.`;
   const html = layout(
     `Welcome To Our Team, ${esc(firstName(c.name))}!`,
     p("Here's your creator code. Anyone who signs up with it gets their first month of WhatYouAte Pro free.") +
@@ -128,10 +132,10 @@ export function welcomeEmail(c: CreatorRow): Email {
       p(`Your link is <a href="${link}" style="color:${BLUE};text-decoration:none;font-weight:600;">whatyouate.app/c/${esc(c.code)}</a>. Put it in your bio, or send it to anyone you think it would help.`) +
       rows([
         ["Each Yearly Subscriber", yearly],
-        ["Each Monthly Subscriber", `${monthly}, up to a year`],
-        ["Each Signup In Your First Month", "$1"],
+        ["Each Monthly Subscriber", monthly, "a month, up to a year"],
+        ["Each Signup In Your First Month", `$1 ${cur}`],
       ]) +
-      p(`Payouts go out on the 1st of each month by ${METHOD[c.payout_method] ?? c.payout_method}, once you have $10 or more. Your 3 months of free Pro unlock with your first signup.`) +
+      p(payouts) +
       p(KIT_NOTE, "margin-bottom:20px;") +
       button(`${SITE}/creators/dashboard`, "Open Your Dashboard")
   );
@@ -144,10 +148,10 @@ export function welcomeEmail(c: CreatorRow): Email {
     `Your link: ${link}`,
     "",
     `Each Yearly Subscriber: ${yearly}`,
-    `Each Monthly Subscriber: ${monthly}, up to a year`,
-    "Each Signup In Your First Month: $1",
+    `Each Monthly Subscriber: ${monthly} a month, up to a year`,
+    `Each Signup In Your First Month: $1 ${cur}`,
     "",
-    `Payouts go out on the 1st of each month by ${METHOD[c.payout_method] ?? c.payout_method}, once you have $10 or more. Your 3 months of free Pro unlock with your first signup.`,
+    payouts,
     "",
     KIT_NOTE,
     "",
