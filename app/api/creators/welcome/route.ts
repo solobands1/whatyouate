@@ -1,28 +1,18 @@
 import { NextResponse } from "next/server";
 import { creatorsAdmin } from "../../../../lib/server/creators";
+import { siteCors } from "../../../../lib/server/cors";
 import { sendWelcome, type CreatorRow } from "../../../../lib/server/creatorEmails";
 
 // Called by whatyouate.app/creators/join right after someone joins, with their Supabase session.
 // Sends the welcome email once. The daily creators cron sends any this route missed.
 
-const ORIGINS = new Set(["https://whatyouate.app", "https://www.whatyouate.app"]);
-
-function cors(req: Request) {
-  const origin = req.headers.get("origin") ?? "";
-  return {
-    "Access-Control-Allow-Origin": ORIGINS.has(origin) ? origin : "https://whatyouate.app",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Authorization, Content-Type",
-    Vary: "Origin",
-  };
-}
 
 export function OPTIONS(req: Request) {
-  return new NextResponse(null, { status: 204, headers: cors(req) });
+  return new NextResponse(null, { status: 204, headers: siteCors(req) });
 }
 
 export async function POST(req: Request) {
-  const headers = cors(req);
+  const headers = siteCors(req);
   const auth = req.headers.get("authorization") ?? "";
   const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
   if (!token) return NextResponse.json({ error: "Missing auth token." }, { status: 401, headers });

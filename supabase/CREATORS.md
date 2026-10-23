@@ -30,14 +30,20 @@ out, and the daily report warns when the supply is low or close to expiring.
 
 ## Marking a payout paid
 
-The Discord report on the 1st lists who to pay. After sending each one:
+Payouts are worked out on the 1st (the Discord report lists who to pay) and sent during the first
+week. After sending each one, open https://whatyouate.app/creators/owner (log in with an owner email),
+set its status to Paid and add the e-Transfer or Wise reference. That freezes the creator's statement
+for that payout and emails it to them. On the 5th, Discord lists anything still unsent.
+
+Owners are the login emails in `creator_owners`:
 
 ```sql
-update creator_payouts set status = 'paid', paid_on = current_date, reference = 'e-Transfer ref or note'
-where due_on = '2026-12-01' and creator_id = (select id from creators where code = 'SARAH');
+insert into creator_owners (email) values ('you@example.com');
 ```
 
-To hold a payout instead, set `status = 'withheld'`.
+To hold a payout, set it to Withheld on the owner page. A paid payout can't be changed there; if one
+was marked by mistake, fix it in SQL (`update creator_payouts set status = 'due', paid_on = null,
+paid_at = null, statement = null where id = '...'`), knowing the creator has already had the email.
 
 ## Removing a creator
 

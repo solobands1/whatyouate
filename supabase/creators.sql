@@ -702,6 +702,163 @@ begin
   return result;
 end $$;
 
+-- ---- Owner page and issued statements (whatyouate.app/creators/owner) -----------------------
+-- Owners are listed by login email. The page's data only comes out of these functions, and each
+-- one checks the caller is an owner, so finding the page's address shows nothing.
+create table if not exists public.creator_owners (
+  email text primary key check (email = lower(email))
+);
+alter table public.creator_owners enable row level security;
+
+-- A statement is frozen when its payout is marked paid, so later refunds land on the next one.
+alter table public.creator_payouts add column if not exists paid_at timestamptz;
+alter table public.creator_payouts add column if not exists statement jsonb;
+
+create or replace function public.creator_is_owner()
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from creator_owners o join auth.users u on lower(u.email) = o.email
+    where u.id = auth.uid()
+  );
+$$;
+
+-- What a payout covers: every month since the previous paid payout (or since joining), up to the
+-- payout's cutoff, plus the creator's details as they were when it was paid.
+create or replace function public.creator_statement_snapshot(p_payout uuid)
+returns jsonb language plpgsql stable security definer set search_path = public as $$
+declare
+  tz constant text := 'America/Toronto';
+  p creator_payouts;
+  cr creators;
+  prev date;
+  first_month date;
+  from_ts timestamptz;
+  to_ts timestamptz;
+begin
+  select * into p from creator_payouts where id = p_payout;
+  if p.id is null then return null; end if;
+  select * into cr from creators where id = p.creator_id;
+  select max(covers_before) into prev from creator_payouts
+  where creator_id = cr.id and status = 'paid' and id <> p.id and covers_before < p.covers_before;
+  first_month := coalesce(prev, date_trunc('month', cr.joined_at at time zone tz)::date);
+  from_ts := case when prev is null then '-infinity'::timestamptz else prev::timestamp at time zone tz end;
+  to_ts := p.covers_before::timestamp at time zone tz;
+
+  return jsonb_build_object(
+    'payout', jsonb_build_object(
+      'id', p.id, 'amount', p.amount, 'currency', p.currency, 'paidOn', p.paid_on, 'reference', coalesce(p.reference, ''),
+      'method', cr.payout_method, 'payoutEmail', cr.payout_email
+    ),
+    'period', jsonb_build_object('from', first_month, 'to', p.covers_before - 1),
+    'creator', jsonb_build_object(
+      'name', cr.name, 'email', cr.email, 'instagram', cr.instagram, 'tiktok', cr.tiktok, 'country', cr.country,
+      'currency', cr.currency, 'payoutMethod', cr.payout_method, 'payoutEmail', cr.payout_email, 'code', cr.code,
+      'joined', (cr.joined_at at time zone tz)::date
+    ),
+    'months', (
+      select coalesce(jsonb_agg(jsonb_build_object(
+        'month', to_char(m, 'YYYY-MM'),
+        'codeUses', (select count(*) from referrals where creator_id = cr.id
+                     and (redeemed_at at time zone tz) >= m and (redeemed_at at time zone tz) < m + interval '1 month'),
+        'signups', (select count(*) from referrals where creator_id = cr.id
+                    and (qualified_at at time zone tz) >= m and (qualified_at at time zone tz) < m + interval '1 month'),
+        'newPaid', (select count(*) from referrals where creator_id = cr.id
+                    and (first_paid_at at time zone tz) >= m and (first_paid_at at time zone tz) < m + interval '1 month'),
+        'bonus', (select coalesce(round(sum(amount), 2), 0) from creator_earnings where creator_id = cr.id and kind = 'bonus'
+                  and occurred_at >= from_ts and occurred_at < to_ts
+                  and (occurred_at at time zone tz) >= m and (occurred_at at time zone tz) < m + interval '1 month'),
+        'commission', (select coalesce(round(sum(amount), 2), 0) from creator_earnings where creator_id = cr.id
+                       and kind in ('commission', 'refund', 'adjustment')
+                       and occurred_at >= from_ts and occurred_at < to_ts
+                       and (occurred_at at time zone tz) >= m and (occurred_at at time zone tz) < m + interval '1 month')
+      ) order by m), '[]'::jsonb)
+      from generate_series(first_month::timestamp, (p.covers_before - interval '1 month')::timestamp, interval '1 month') m
+    ),
+    'allTime', jsonb_build_object(
+      'earned', (select coalesce(round(sum(amount), 2), 0) from creator_earnings where creator_id = cr.id and occurred_at < to_ts),
+      'paidOut', (select coalesce(sum(amount), 0) from creator_payouts where creator_id = cr.id and status = 'paid'
+                  and covers_before <= p.covers_before)
+    )
+  );
+end $$;
+
+-- Everything on the owner page: one entry per creator, with their latest payout.
+create or replace function public.owner_overview()
+returns jsonb language plpgsql stable security definer set search_path = public as $$
+declare
+  tz constant text := 'America/Toronto';
+begin
+  if not public.creator_is_owner() then raise exception 'not_owner'; end if;
+  return jsonb_build_object(
+    'creators', (
+      select coalesce(jsonb_agg(x order by x.sort_due desc, x.joined desc), '[]'::jsonb) from (
+        select
+          cr.id, cr.name, cr.email, cr.code, cr.country, cr.currency, cr.status, cr.instagram, cr.tiktok,
+          cr.payout_method as "payoutMethod", cr.payout_email as "payoutEmail",
+          (cr.joined_at at time zone tz)::date as joined,
+          (select count(*) from referrals where creator_id = cr.id) as "codeUses",
+          (select count(*) from referrals where creator_id = cr.id and qualified_at is not null) as signups,
+          (select count(*) from referrals where creator_id = cr.id and first_paid_at is not null) as paying,
+          (select coalesce(round(sum(amount), 2), 0) from creator_earnings where creator_id = cr.id) as earned,
+          (select coalesce(sum(amount), 0) from creator_payouts where creator_id = cr.id and status = 'paid') as "paidOut",
+          (select jsonb_build_object('id', p.id, 'amount', p.amount, 'status', p.status, 'dueOn', p.due_on,
+                                     'paidOn', p.paid_on, 'reference', coalesce(p.reference, ''))
+           from creator_payouts p where p.creator_id = cr.id
+           order by (p.status <> 'paid') desc, p.due_on desc limit 1) as payout,
+          exists (select 1 from creator_payouts p where p.creator_id = cr.id and p.status = 'due') as sort_due
+        from creators cr
+      ) x
+    ),
+    'proCodes', jsonb_build_object(
+      'threeMonths', (select count(*) from creator_pro_codes where creator_id is null and kind = '3_months'
+                      and (expires_on is null or expires_on > current_date + 14)),
+      'year', (select count(*) from creator_pro_codes where creator_id is null and kind = '1_year'
+               and (expires_on is null or expires_on > current_date + 14))
+    )
+  );
+end $$;
+
+-- Marks a payout paid (freezing its statement) or withheld, or puts a withheld one back to due.
+-- A paid payout can't be changed here: its email and statement have gone out.
+create or replace function public.owner_set_payout(p_payout uuid, p_status text, p_reference text default null)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+  p creator_payouts;
+begin
+  if not public.creator_is_owner() then raise exception 'not_owner'; end if;
+  if p_status not in ('paid', 'due', 'withheld') then raise exception 'bad_status'; end if;
+  select * into p from creator_payouts where id = p_payout for update;
+  if p.id is null then raise exception 'no_payout'; end if;
+  if p.status = 'paid' then raise exception 'already_paid'; end if;
+
+  if p_status = 'paid' then
+    update creator_payouts
+    set status = 'paid', paid_on = (now() at time zone 'America/Toronto')::date, paid_at = now(),
+        reference = coalesce(nullif(trim(p_reference), ''), reference)
+    where id = p.id;
+    update creator_payouts set statement = public.creator_statement_snapshot(p.id) where id = p.id;
+  else
+    update creator_payouts set status = p_status, reference = coalesce(nullif(trim(p_reference), ''), reference)
+    where id = p.id;
+  end if;
+  return (select jsonb_build_object('id', id, 'status', status, 'paidOn', paid_on) from creator_payouts where id = p.id);
+end $$;
+
+-- A creator's issued statements, newest first. Payouts marked paid before statements were frozen
+-- are built on the fly.
+create or replace function public.creator_statements()
+returns jsonb language plpgsql stable security definer set search_path = public as $$
+declare
+  cid uuid;
+begin
+  select id into cid from creators where user_id = auth.uid();
+  if cid is null then return '[]'::jsonb; end if;
+  return (
+    select coalesce(jsonb_agg(coalesce(statement, public.creator_statement_snapshot(id)) order by paid_on desc, due_on desc), '[]'::jsonb)
+    from creator_payouts where creator_id = cid and status = 'paid'
+  );
+end $$;
+
 -- ---- Permissions ---------------------------------------------------------------------
 
 revoke all on function public.creator_code_problem(text, uuid) from public, anon, authenticated;
@@ -737,3 +894,13 @@ grant execute on function public.creator_record_trial(text[], text, timestamptz)
 grant execute on function public.creator_create_payouts(date) to service_role;
 grant execute on function public.creator_add_pro_codes(text, text[], date) to service_role;
 grant execute on function public.creator_backfill_pro_codes() to service_role;
+
+revoke all on function public.creator_is_owner() from public, anon;
+revoke all on function public.creator_statement_snapshot(uuid) from public, anon, authenticated;
+revoke all on function public.owner_overview() from public, anon;
+revoke all on function public.owner_set_payout(uuid, text, text) from public, anon;
+revoke all on function public.creator_statements() from public, anon;
+grant execute on function public.creator_is_owner() to authenticated;
+grant execute on function public.owner_overview() to authenticated;
+grant execute on function public.owner_set_payout(uuid, text, text) to authenticated;
+grant execute on function public.creator_statements() to authenticated;

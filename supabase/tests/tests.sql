@@ -352,4 +352,50 @@ select t('nearly expired code skipped, soonest usable code used',
   creator_assign_pro_code((select id from creators where code = 'DANA'), '3_months') = 'LATER1');
 select t('expiry recorded', (select expires_on = current_date + 60 from creator_pro_codes where code = 'LATER1'));
 
+-- ---- Owner page and statements ---------------------------------------------------------
+insert into auth.users (id, email) values ('e0000000-0000-0000-0000-000000000099', 'Owner@Example.com');
+insert into creator_owners values ('owner@example.com');
+create temp table sp as select p.id from creator_payouts p join creators c on c.id = p.creator_id where c.code = 'SARAHC';
+create temp table mp as select p.id from creator_payouts p join creators c on c.id = p.creator_id where c.code = 'MIKE';
+create temp table n as select count(*) as creators from creators;
+grant select on sp, mp, n to authenticated;
+set role authenticated;
+select as_user('a0000000-0000-0000-0000-000000000001');
+select t('a creator is not an owner', not creator_is_owner());
+select expect_error('creators cannot see the owner page', $q$select owner_overview()$q$, 'not_owner');
+select expect_error('creators cannot mark payouts', $q$select owner_set_payout((select id from sp), 'paid')$q$, 'not_owner');
+select t('no statements before a payout is paid', jsonb_array_length(creator_statements()) = 0);
+select as_user(null);
+select t('signed out is not an owner', not creator_is_owner());
+select as_user('e0000000-0000-0000-0000-000000000099');
+select t('owner recognised, email case ignored', creator_is_owner());
+select t('overview lists every creator', jsonb_array_length(owner_overview()->'creators') = (select creators from n));
+select t('due payouts sort first', owner_overview()->'creators'->0->'payout'->>'status' = 'due');
+select t('overview has pro code counts', owner_overview()->'proCodes' ? 'threeMonths');
+select t('withhold', owner_set_payout((select id from sp), 'withheld')->>'status' = 'withheld');
+select t('back to due', owner_set_payout((select id from sp), 'due')->>'status' = 'due');
+select expect_error('unknown status refused', $q$select owner_set_payout((select id from sp), 'sent')$q$, 'bad_status');
+select t('mark paid', owner_set_payout((select id from sp), 'paid', '  ETR-123 ')->>'status' = 'paid');
+select expect_error('a paid payout cannot change', $q$select owner_set_payout((select id from sp), 'due')$q$, 'already_paid');
+reset role;
+select t('statement frozen with reference and time',
+  (select statement is not null and reference = 'ETR-123' and paid_at is not null and paid_on is not null from creator_payouts where id = (select id from sp)));
+select t('statement amount is the payout', (select (statement->'payout'->>'amount')::numeric = amount from creator_payouts where id = (select id from sp)));
+select t('statement ends with October', (select statement->'months'->-1->>'month' = '2026-10' from creator_payouts where id = (select id from sp)));
+select t('statement months add up to the payout',
+  (select round(sum((m->>'bonus')::numeric + (m->>'commission')::numeric), 2) from creator_payouts, jsonb_array_elements(statement->'months') m
+   where id = (select id from sp)) = (select amount from creator_payouts where id = (select id from sp)));
+select t('statement paid out includes this payout',
+  (select (statement->'allTime'->>'paidOut')::numeric = amount from creator_payouts where id = (select id from sp)));
+-- A payout marked paid outside the owner page still gets a statement, built on the fly.
+update creator_payouts set status = 'paid', paid_on = '2027-01-03' where id = (select id from mp);
+set role authenticated;
+select as_user('a0000000-0000-0000-0000-000000000001');
+select t('sarah sees her one statement', jsonb_array_length(creator_statements()) = 1);
+select t('her statement carries the reference', creator_statements()->0->'payout'->>'reference' = 'ETR-123');
+select as_user('b0000000-0000-0000-0000-000000000002');
+select t('mike gets a statement built on the fly', (creator_statements()->0->'payout'->>'amount')::numeric > 0);
+select expect_error('creators cannot build snapshots directly', $q$select creator_statement_snapshot((select id from sp))$q$, 'permission denied');
+reset role;
+
 \echo ALL TESTS PASSED

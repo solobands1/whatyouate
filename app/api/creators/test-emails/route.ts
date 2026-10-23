@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { creatorsAdmin } from "../../../../lib/server/creators";
+import { siteCors } from "../../../../lib/server/cors";
 import { payoutEmail, proEmail, sendViaResend, welcomeEmail, type CreatorRow } from "../../../../lib/server/creatorEmails";
 
 // Owner-only: sends every creator email, filled in with sample data (or the owner's own creator
@@ -7,24 +8,13 @@ import { payoutEmail, proEmail, sendViaResend, welcomeEmail, type CreatorRow } f
 // OWNER_EMAILS env var (comma separated); without it this route is off. Nothing is logged in
 // creator_emails, so real emails are unaffected.
 
-const ORIGINS = new Set(["https://whatyouate.app", "https://www.whatyouate.app"]);
-
-function cors(req: Request) {
-  const origin = req.headers.get("origin") ?? "";
-  return {
-    "Access-Control-Allow-Origin": ORIGINS.has(origin) ? origin : "https://whatyouate.app",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Authorization, Content-Type",
-    Vary: "Origin",
-  };
-}
 
 export function OPTIONS(req: Request) {
-  return new NextResponse(null, { status: 204, headers: cors(req) });
+  return new NextResponse(null, { status: 204, headers: siteCors(req) });
 }
 
 export async function POST(req: Request) {
-  const headers = cors(req);
+  const headers = siteCors(req);
   const owners = (process.env.OWNER_EMAILS ?? "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
   if (!owners.length) return NextResponse.json({ error: "Test emails are turned off." }, { status: 403, headers });
 

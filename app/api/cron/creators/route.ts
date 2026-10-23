@@ -5,7 +5,8 @@ import { sendDueCreatorEmails } from "../../../../lib/server/creatorEmails";
 // Daily creator program job (10:00 Toronto time). Marks signups that qualified for the $1 bonus,
 // hands out free Pro codes, and posts a Discord summary when there's news (new creators, codes
 // running low or expiring). On the 1st of the
-// month it also creates that day's payouts and attaches a CSV of every payout so far. Then it emails
+// month it also creates that month's payouts and attaches a CSV of every payout so far; on the 5th it
+// lists any still unsent. Payouts are marked paid on the owner page (whatyouate.app/creators/owner). Then it emails
 // creators anything due: welcomes, new free Pro codes, and payouts marked paid.
 export const maxDuration = 60;
 
@@ -95,7 +96,24 @@ export async function GET(req: Request) {
     );
   }
 
-  // Payouts, on the 1st.
+  // On the 5th, a nudge for any payout still waiting to be sent: they go out in the first week.
+  if (today.endsWith("-05")) {
+    const { data: waiting } = await db
+      .from("creator_payouts")
+      .select("amount, currency, creators(name)")
+      .eq("status", "due")
+      .lte("due_on", today);
+    if (waiting?.length) {
+      lines.push(`**Payouts still to send (${waiting.length})**, due by the 7th:`);
+      for (const w of waiting) {
+        const c = Array.isArray(w.creators) ? w.creators[0] : w.creators;
+        lines.push(`- ${c?.name}: ${Number(w.amount).toFixed(2)} ${w.currency}`);
+      }
+      lines.push("Mark them paid on https://whatyouate.app/creators/owner once sent.");
+    }
+  }
+
+  // Payouts, worked out on the 1st and sent during the first week.
   if (today.endsWith("-01")) {
     const { data: made, error: pErr } = await db.rpc("creator_create_payouts", { p_today: today });
     if (pErr) {
@@ -115,7 +133,7 @@ export async function GET(req: Request) {
         for (const r of todays) {
           lines.push(`- ${r.c?.name}: **${Number(r.amount).toFixed(2)} ${r.currency}** by ${PAYOUT_LABEL[r.c?.payout_method ?? ""] ?? r.c?.payout_method} to ${r.c?.payout_email}`);
         }
-        lines.push("Once each one is sent, mark it paid (see supabase/CREATORS.md).");
+        lines.push("Send these in the first week, then mark each one paid on https://whatyouate.app/creators/owner (that emails the creator their statement).");
       } else if ((made ?? []).length === 0) {
         lines.push("**Payouts:** nothing due today. Balances under $10 roll over.");
       }

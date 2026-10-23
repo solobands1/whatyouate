@@ -7,8 +7,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 const SITE = "https://whatyouate.app";
 const FROM = "WhatYouAte Creators <noreply@whatyouate.app>";
 const REPLY_TO = "support@whatyouate.app";
-// The creator's statement page (whatyouate-web components/creators/Statement.tsx).
-const STATEMENT = `${SITE}/creators/statement`;
+// One issued statement on the creator's Statements page (whatyouate-web components/creators/Statement.tsx).
+const statementLink = (payoutId: string) => `${SITE}/creators/statements?id=${payoutId}`;
 const REDEEM = "https://apps.apple.com/redeem?ctx=offercodes&id=6762287393&code=";
 
 const INK = "#16233B";
@@ -126,7 +126,7 @@ export function welcomeEmail(c: CreatorRow): Email {
   const cur = c.currency;
   const yearly = ca ? "about $38 CAD" : "about $28 USD";
   const monthly = ca ? "about $4.50 CAD" : "about $3.30 USD";
-  const payouts = `Payouts go out on the 1st of each month by ${METHOD[c.payout_method] ?? c.payout_method}, in ${ca ? "Canadian" : "US"} dollars, once you have $10 ${cur} or more. Your 3 months of free Pro unlock with your first signup.`;
+  const payouts = `Payouts go out in the first week of each month by ${METHOD[c.payout_method] ?? c.payout_method}, in ${ca ? "Canadian" : "US"} dollars, once you have $10 ${cur} or more. Your 3 months of free Pro unlock with your first signup.`;
   const html = layout(
     `Welcome To Our Team, ${esc(firstName(c.name))}!`,
     p("Here's your creator code. Anyone who signs up with it gets their first month of WhatYouAte Pro free.") +
@@ -219,7 +219,7 @@ export function payoutEmail(c: CreatorRow, pay: PayoutRow): Email {
         ["Sent To", esc(c.payout_email)],
       ]) +
       (wise ? p(esc(wise)) : "") +
-      button(STATEMENT, "See Your Statement")
+      button(statementLink(pay.id), "See Your Statement")
   );
   const text = [
     "Your Payout Is On Its Way",
@@ -229,7 +229,7 @@ export function payoutEmail(c: CreatorRow, pay: PayoutRow): Email {
     `Sent to ${c.payout_email}.`,
     "",
     ...(wise ? [wise, ""] : []),
-    `Your statement: ${STATEMENT}`,
+    `Your statement: ${statementLink(pay.id)}`,
     "",
     "Questions? Just reply to this email.",
   ].join("\n");
