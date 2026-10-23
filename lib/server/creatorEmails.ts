@@ -35,6 +35,8 @@ function money(n: number, currency: string) {
 }
 
 // ---- Layout (matches supabase/email-magic-link.html) -------------------------------------------
+// The AI is placed with padding and margin, not position: Gmail strips position, which left it
+// floating above the name. Matches the app header's AI in Gmail and Apple Mail alike.
 
 const p = (html: string, extra = "") =>
   `<p style="margin:0 0 16px 0;font-size:15.5px;line-height:1.6;color:${BODY};${extra}">${html}</p>`;
@@ -76,7 +78,7 @@ function layout(title: string, body: string) {
             <td style="padding-right:10px;vertical-align:middle;">
               <img src="${SITE}/icon-512.png" width="34" height="34" alt="" style="display:block;border-radius:9px;border:0;">
             </td>
-            <td style="vertical-align:middle;font-size:19px;font-weight:600;letter-spacing:-0.3px;color:#1F2937;white-space:nowrap;">WhatYouAte<span style="font-size:7px;font-weight:600;color:#1F2937;opacity:0.6;vertical-align:top;position:relative;top:3px;left:1px;">AI</span></td>
+            <td style="vertical-align:middle;font-size:19px;font-weight:600;letter-spacing:-0.3px;color:#1F2937;white-space:nowrap;">WhatYouAte<span style="display:inline-block;font-size:6.6px;line-height:1;font-weight:600;color:#1F2937;opacity:0.6;vertical-align:top;padding-top:5px;margin-left:1px;">AI</span></td>
           </tr>
         </table>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background-color:#ffffff;border-radius:22px;box-shadow:0 18px 40px -26px rgba(16,42,86,0.30);">
