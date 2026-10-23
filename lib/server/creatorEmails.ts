@@ -7,8 +7,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 const SITE = "https://whatyouate.app";
 const FROM = "WhatYouAte Creators <noreply@whatyouate.app>";
 const REPLY_TO = "support@whatyouate.app";
-// Opens the dashboard on Payout History, where the statement downloads (Dashboard.tsx, #statement).
-const STATEMENT = `${SITE}/creators/dashboard?view=numbers#statement`;
+// The creator's statement page (whatyouate-web components/creators/Statement.tsx).
+const STATEMENT = `${SITE}/creators/statement`;
 const REDEEM = "https://apps.apple.com/redeem?ctx=offercodes&id=6762287393&code=";
 
 const INK = "#16233B";
