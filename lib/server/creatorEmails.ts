@@ -283,7 +283,7 @@ export function yearSummaryEmail(c: CreatorRow, t: YearTotals): Email {
         ["Earned", money(t.earned, cur), "some is paid in the new year"],
         ["New Subscribers", String(t.subscribers)],
       ]) +
-      p("Each payout's statement is in your dashboard, where you can save it as a PDF or a spreadsheet.", "margin-bottom:20px;") +
+      p("Each payout's statement is in your dashboard, where you can download it as a PDF or an Excel file.", "margin-bottom:20px;") +
       button(`${SITE}/creators/statements`, "See Your Statements") +
       p("Thank you for sharing WhatYouAte this year.", "margin:20px 0 0 0;")
   );
