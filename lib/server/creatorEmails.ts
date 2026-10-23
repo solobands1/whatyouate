@@ -127,7 +127,7 @@ export function welcomeEmail(c: CreatorRow): Email {
       rows([
         ["Each Yearly Subscriber", yearly],
         ["Each Monthly Subscriber", `${monthly}, up to a year`],
-        ["Each Signup in Your First Month", "$1"],
+        ["Each Signup In Your First Month", "$1"],
       ]) +
       p(`Payouts go out on the 1st of each month by ${METHOD[c.payout_method] ?? c.payout_method}, once you have $10 or more. Your 3 months of free Pro unlock with your first signup.`) +
       p(KIT_NOTE, "margin-bottom:20px;") +
@@ -143,7 +143,7 @@ export function welcomeEmail(c: CreatorRow): Email {
     "",
     `Each Yearly Subscriber: ${yearly}`,
     `Each Monthly Subscriber: ${monthly}, up to a year`,
-    "Each Signup in Your First Month: $1",
+    "Each Signup In Your First Month: $1",
     "",
     `Payouts go out on the 1st of each month by ${METHOD[c.payout_method] ?? c.payout_method}, once you have $10 or more. Your 3 months of free Pro unlock with your first signup.`,
     "",
