@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { creatorsAdmin } from "../../../../lib/server/creators";
+import { creatorsAdmin, usdCadOn } from "../../../../lib/server/creators";
 import { siteCors } from "../../../../lib/server/cors";
 import { payoutEmail, sendCreatorEmail, type CreatorRow, type PayoutRow } from "../../../../lib/server/creatorEmails";
 
@@ -26,12 +26,18 @@ export async function POST(req: Request) {
 
   const { data: pay } = await db
     .from("creator_payouts")
-    .select("id, amount, currency, covers_before, reference, status, creators(id, name, email, code, country, currency, payout_method, payout_email)")
+    .select("id, amount, currency, covers_before, reference, status, paid_on, paid_usd_cad, creators(id, name, email, code, country, currency, payout_method, payout_email)")
     .eq("id", payoutId)
     .maybeSingle();
   if (!pay || pay.status !== "paid") return NextResponse.json({ error: "That payout isn't marked paid." }, { status: 409, headers });
   const c = (Array.isArray(pay.creators) ? pay.creators[0] : pay.creators) as CreatorRow | null;
   if (!c) return NextResponse.json({ error: "No creator." }, { status: 404, headers });
+
+  // For the owner's books: a USD payout's value in CAD uses the Bank of Canada rate on the day it was paid.
+  if (pay.currency === "USD" && !pay.paid_usd_cad && pay.paid_on) {
+    const rate = await usdCadOn(new Date(`${pay.paid_on}T12:00:00Z`));
+    if (rate) await db.from("creator_payouts").update({ paid_usd_cad: rate }).eq("id", pay.id);
+  }
 
   const result = await sendCreatorEmail(db, c, "payout", pay.id, payoutEmail(c, pay as PayoutRow));
   if (result !== "sent" && result !== "skipped") console.log("[creators/payout-paid]", result);

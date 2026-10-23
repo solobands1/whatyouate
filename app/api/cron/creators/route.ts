@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { creatorsAdmin, csv, postToDiscord } from "../../../../lib/server/creators";
+import { creatorsAdmin, csv, postToDiscord, usdCadOn } from "../../../../lib/server/creators";
 import { sendDueCreatorEmails } from "../../../../lib/server/creatorEmails";
 
 // Daily creator program job (10:00 Toronto time). Marks signups that qualified for the $1 bonus,
@@ -148,6 +148,13 @@ export async function GET(req: Request) {
         ]),
       };
     }
+  }
+
+  // USD payouts marked paid without their CAD rate saved (the owner page normally saves it): catch up.
+  const { data: noRate } = await db.from("creator_payouts").select("id, paid_on").eq("status", "paid").eq("currency", "USD").is("paid_usd_cad", null);
+  for (const p of noRate ?? []) {
+    const rate = p.paid_on ? await usdCadOn(new Date(`${p.paid_on}T12:00:00Z`)) : null;
+    if (rate) await db.from("creator_payouts").update({ paid_usd_cad: rate }).eq("id", p.id);
   }
 
   // After payouts and Pro codes, so today's new codes go out today.

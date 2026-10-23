@@ -126,7 +126,7 @@ export function welcomeEmail(c: CreatorRow): Email {
   const cur = c.currency;
   const yearly = ca ? "about $38 CAD" : "about $28 USD";
   const monthly = ca ? "about $4.50 CAD" : "about $3.30 USD";
-  const payouts = `Payouts go out in the first week of each month by ${METHOD[c.payout_method] ?? c.payout_method}, in ${ca ? "Canadian" : "US"} dollars, once you have $10 ${cur} or more. Your 3 months of free Pro unlock with your first signup.`;
+  const payouts = `Payouts go out in the first week of each month by ${METHOD[c.payout_method] ?? c.payout_method}, ${ca ? "in Canadian dollars" : c.country === "US" ? "in US dollars" : "deposited in your own currency"}, once you have $10 ${cur} or more. Your 3 months of free Pro unlock with your first signup.`;
   const html = layout(
     `Welcome To Our Team, ${esc(firstName(c.name))}!`,
     p("Here's your creator code. Anyone who signs up with it gets their first month of WhatYouAte Pro free.") +

@@ -363,6 +363,7 @@ set role authenticated;
 select as_user('a0000000-0000-0000-0000-000000000001');
 select t('a creator is not an owner', not creator_is_owner());
 select expect_error('creators cannot see the owner page', $q$select owner_overview()$q$, 'not_owner');
+select expect_error('creators cannot see the report', $q$select owner_report()$q$, 'not_owner');
 select expect_error('creators cannot mark payouts', $q$select owner_set_payout((select id from sp), 'paid')$q$, 'not_owner');
 select t('no statements before a payout is paid', jsonb_array_length(creator_statements()) = 0);
 select as_user(null);
@@ -379,7 +380,12 @@ select t('rolled over is a number for everyone',
   (select bool_and(jsonb_typeof(c->'rolledOver') = 'number') from jsonb_array_elements(owner_overview()->'creators') c));
 select t('back to due', owner_set_payout((select id from sp), 'due')->>'status' = 'due');
 select expect_error('unknown status refused', $q$select owner_set_payout((select id from sp), 'sent')$q$, 'bad_status');
-select t('mark paid', owner_set_payout((select id from sp), 'paid', '  ETR-123 ')->>'status' = 'paid');
+select t('mark paid', owner_set_payout((select id from sp), 'paid', '  ETR-123 ', 1.234)->>'status' = 'paid');
+select t('report counts the paid payout this month',
+  jsonb_array_length(owner_report(date_trunc('month', current_date)::date, (date_trunc('month', current_date) + interval '1 month')::date)->'payouts') = 1);
+select t('report payout carries its fee', (owner_report()->'payouts'->0->>'feeCad')::numeric = 1.23);
+select t('all-time report lists creators with activity', jsonb_array_length(owner_report()->'creators') >= 1);
+select t('a period with nothing paid has no payouts', jsonb_array_length(owner_report('2020-01-01', '2020-02-01')->'payouts') = 0);
 select expect_error('a paid payout cannot change', $q$select owner_set_payout((select id from sp), 'due')$q$, 'already_paid');
 reset role;
 select t('statement frozen with reference and time',
