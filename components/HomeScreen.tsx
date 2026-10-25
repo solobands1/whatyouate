@@ -686,9 +686,16 @@ export default function HomeScreen() {
     if (p.has("fdebug")) setFdebug(true); // ?fdebug shows each Quick Add row's grouping key
   }, []);
   const closeReflection = () => { setShowReflection(false); setReflectionEditMode(false); setReflectionEditingKey(null); setReflectingYesterday(false); };
-  const finishReflection = () => {
-    // Persist the completed check-in so it feeds the coach and "Same As Last Night".
-    if (user && Object.keys(reflection).length > 0) {
+  // Saved as soon as the last answer is in (Done/Skip on the note, or Same As Last Entry), not on
+  // the closing "Thanks" screen: people who closed the app on that screen used to lose the check-in.
+  const reflectionPersisted = useRef(false);
+  const persistReflection = (answers: typeof reflection, note: string) => {
+    if (reflectionPersisted.current) return;
+    if (!(user && Object.keys(answers).length > 0)) return;
+    reflectionPersisted.current = true;
+    const reflection = answers;
+    const reflectionNote = note;
+    {
       const backfill = reflectingYesterday;
       const date = backfill ? yesterdayDateStr() : todayDateStr();
       const ts = backfill ? new Date(`${date}T21:00:00`).getTime() : Date.now();
@@ -713,12 +720,17 @@ export default function HomeScreen() {
             .catch((err) => {
               console.warn("[reflection] save failed after retry", err);
               reflectionSaveInFlight.current = false;
+              reflectionPersisted.current = false; // let the Done button try again
               setLastReflection(prevLast);
               if (!backfill) setTodayReflection(prevToday);
               setLoadError("Your check-in didn't save. Check your connection and try again.");
             })
         );
     }
+  };
+  const finishReflection = () => {
+    persistReflection(reflection, reflectionNote); // no-op if it was already saved on the last step
+    reflectionPersisted.current = false;
     setReflectingYesterday(false);
     setShowReflection(false); setReflectionStep(0); setReflection({}); setReflectionNote("");
     // After a reflection, occasionally check in on one active change (throttled, one at a time).
@@ -6185,12 +6197,12 @@ export default function HomeScreen() {
                   </span>
                   <h1 className="mt-5 text-2xl font-semibold text-ink">Your Nightly Reflection</h1>
                   <p className="mt-3 max-w-xs text-sm leading-relaxed text-ink/70">A quick look back at your day. It takes under a minute, and it&apos;s how your coach learns what lifts your energy and what drags it down.</p>
-                  <button type="button" className="mt-8 w-full max-w-xs rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80" onClick={() => setReflectionStep(1)}>Get Started</button>
+                  <button type="button" className="mt-8 w-full max-w-xs rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80" onClick={() => { reflectionPersisted.current = false; setReflectionStep(1); }}>Get Started</button>
                   {lastReflection && (
                     <button
                       type="button"
                       className="mt-3 w-full max-w-xs rounded-xl border border-primary/30 bg-white py-4 text-sm font-semibold text-primary transition active:opacity-80"
-                      onClick={() => { setReflection(lastReflection.reflection); setReflectionNote(lastReflection.note); setReflectionStep(total + 2); }}
+                      onClick={() => { reflectionPersisted.current = false; setReflection(lastReflection.reflection); setReflectionNote(lastReflection.note); persistReflection(lastReflection.reflection, lastReflection.note); setReflectionStep(total + 2); }}
                     >
                       Same As Last Entry
                     </button>
@@ -6265,7 +6277,7 @@ export default function HomeScreen() {
                   <button
                     type="button"
                     className="mt-8 w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80"
-                    onClick={() => setReflectionStep((s) => s + 1)}
+                    onClick={() => { persistReflection(reflection, reflectionNote); setReflectionStep((s) => s + 1); }}
                   >
                     {reflectionNote.trim() ? "Done" : "Skip"}
                   </button>
