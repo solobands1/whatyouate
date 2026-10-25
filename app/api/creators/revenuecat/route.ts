@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { creatorsAdmin, postToDiscord, usdCadOn } from "../../../../lib/server/creators";
+import { creatorsAdmin, postAlert, usdCadOn } from "../../../../lib/server/creators";
 
 // RevenueCat webhook for the creator program. Every payment, renewal and refund for a user who
 // joined with a creator code is recorded as earnings; everything else is ignored by the database.
@@ -88,7 +88,7 @@ export async function POST(req: Request) {
     console.log("[creators/revenuecat] error", e.id, error.message);
     // Not having an exchange rate yet is temporary: a 500 makes RevenueCat retry later.
     if (error.message.includes("missing_fx_rate")) return NextResponse.json({ error: "fx" }, { status: 500 });
-    await postToDiscord(`**Creator program:** couldn't record RevenueCat event ${e.id} (${e.type}): ${error.message}`).catch(() => {});
+    await postAlert("⚠️ RevenueCat Event Not Recorded", `**Event:** ${e.type}\n**ID:** ${e.id}\n\n${error.message}`).catch(() => {});
     return NextResponse.json({ error: "record_failed" }, { status: 500 });
   }
 

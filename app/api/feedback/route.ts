@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { COLORS, sendEmbeds } from "../../../lib/server/discord";
 
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT = 3;
@@ -42,24 +43,21 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing message" }, { status: 400 });
     }
 
-    const lines = [
-      "**New Feedback**",
-      name ? `**Name:** ${name}` : null,
-      email ? `**Email:** ${email}` : null,
-      userId ? `**User ID:** ${userId}` : null,
-      "",
-      cleanMessage
-    ].filter(Boolean);
-
-    const payload = {
-      content: lines.join("\n")
-    };
-
-    const res = await fetch(webhookUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
+    const fields = [
+      name ? { name: "Name", value: String(name).slice(0, 256), inline: true } : null,
+      email ? { name: "Email", value: String(email).slice(0, 256), inline: true } : null,
+      userId ? { name: "User ID", value: `\`${String(userId).slice(0, 100)}\``, inline: false } : null,
+    ].filter(Boolean) as { name: string; value: string; inline: boolean }[];
+    const res = await sendEmbeds(webhookUrl, [{
+      title: "💬 New Feedback",
+      description: cleanMessage.slice(0, 3900),
+      color: COLORS.blue,
+      fields,
+      timestamp: new Date().toISOString(),
+    }]);
+    if (!res) {
+      return NextResponse.json({ error: "Failed to send feedback" }, { status: 500 });
+    }
 
     if (!res.ok) {
       const detail = await res.text().catch(() => "");

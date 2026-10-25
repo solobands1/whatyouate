@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { creatorsAdmin, csv, postToDiscord, usdCadOn } from "../../../../lib/server/creators";
+import { creatorsAdmin, csv, postCards, usdCadOn } from "../../../../lib/server/creators";
+import { COLORS, section, type Embed } from "../../../../lib/server/discord";
 import { sendDueCreatorEmails } from "../../../../lib/server/creatorEmails";
 
 // Daily creator program job (10:00 Toronto time). Marks signups that qualified for the $1 bonus,
@@ -26,7 +27,8 @@ export async function GET(req: Request) {
 
   const db = creatorsAdmin();
   const today = torontoToday();
-  const lines: string[] = [];
+  const cards: Embed[] = [];
+  const OWNER = "https://whatyouate.app/creators/owner";
   let file: { name: string; text: string } | undefined;
 
   const { data: qualified, error: qErr } = await db.rpc("creator_mark_qualified");
@@ -43,12 +45,11 @@ export async function GET(req: Request) {
     .gte("joined_at", since)
     .order("joined_at");
   if (joined?.length) {
-    lines.push(`**New creators (${joined.length})**`);
-    for (const c of joined) {
-      const socials = [c.instagram && `IG @${c.instagram}`, c.tiktok && `TikTok @${c.tiktok}`].filter(Boolean).join(", ");
-      lines.push(`- ${c.name} (${c.email}), code **${c.code}**, ${c.country}${socials ? `, ${socials}` : ""}`);
-    }
-    lines.push("Say hi, and check the accounts look real.");
+    const rows = joined.map((c) => {
+      const socials = [c.instagram && `Instagram @${c.instagram}`, c.tiktok && `TikTok @${c.tiktok}`].filter(Boolean).join("  ·  ");
+      return `**${c.name}**  ·  code \`${c.code}\`\n${c.email}  ·  ${c.country}${socials ? `\n${socials}` : ""}\n`;
+    });
+    cards.push(...section(`🆕 New Creators (${joined.length})`, rows, { color: COLORS.blue, footer: { text: "Say hi, and check the accounts look real." } }));
   }
 
   // Creators who earned their free year since yesterday.
@@ -60,10 +61,12 @@ export async function GET(req: Request) {
   const yearNames = (earnedYear ?? [])
     .map((r) => (Array.isArray(r.creators) ? r.creators[0] : r.creators))
     .filter(Boolean)
-    .map((c) => `- ${c!.name} (${c!.email}), code **${c!.code}**`);
+    .map((c) => `**${c!.name}**  ·  code \`${c!.code}\`\n${c!.email}\n`);
   if (yearNames.length) {
-    lines.push(`**Earned their free year (${yearNames.length})**: 3 of their followers have each paid for 2 months or a year. Worth a thank-you.`);
-    lines.push(...yearNames);
+    cards.push(...section(`🎉 Earned Their Free Year (${yearNames.length})`, yearNames, {
+      color: COLORS.green,
+      footer: { text: "3 of their followers have each paid for 2 months or a year. Worth a thank-you." },
+    }));
   }
 
   // Free Pro code supply. Codes with under two weeks left aren't handed out, so they don't count.
@@ -88,12 +91,18 @@ export async function GET(req: Request) {
     .not("creator_id", "is", null);
   const missing = Math.max(0, (waiting ?? 0) - (withCode ?? 0));
   if (left["3_months"] < LOW_POOL || left["1_year"] < LOW_POOL || missing > 0 || expiringSoon) {
-    lines.push(
-      `**Free Pro codes:** ${left["3_months"]} three-month and ${left["1_year"]} one-year codes left` +
-        (missing ? `, and ${missing} creator${missing === 1 ? " is" : "s are"} waiting for one` : "") +
-        (expiringSoon ? `. Some expire on ${soonestExpiry}` : "") +
-        ". Generate more in App Store Connect and load them (see supabase/CREATORS.md)."
-    );
+    const fields = [
+      { name: "3-Month Codes Left", value: String(left["3_months"]), inline: true },
+      { name: "1-Year Codes Left", value: String(left["1_year"]), inline: true },
+    ];
+    if (missing) fields.push({ name: "Creators Waiting", value: String(missing), inline: true });
+    if (expiringSoon) fields.push({ name: "Next Expiry", value: String(soonestExpiry), inline: true });
+    cards.push({
+      title: "🎟️ Free Pro Codes Running Low",
+      color: COLORS.amber,
+      fields,
+      footer: { text: "Generate more in App Store Connect and load them (see supabase/CREATORS.md)." },
+    });
   }
 
   // On the 5th, a nudge for any payout still waiting to be sent: they go out in the first week.
@@ -104,12 +113,11 @@ export async function GET(req: Request) {
       .eq("status", "due")
       .lte("due_on", today);
     if (waiting?.length) {
-      lines.push(`**Payouts still to send (${waiting.length})**, due by the 7th:`);
-      for (const w of waiting) {
+      const rows = waiting.map((w) => {
         const c = Array.isArray(w.creators) ? w.creators[0] : w.creators;
-        lines.push(`- ${c?.name}: ${Number(w.amount).toFixed(2)} ${w.currency}`);
-      }
-      lines.push("Mark them paid on https://whatyouate.app/creators/owner once sent.");
+        return `**${c?.name}**  ·  ${Number(w.amount).toFixed(2)} ${w.currency}`;
+      });
+      cards.push(...section(`⏰ Payouts Still To Send (${waiting.length})`, ["Due by the 7th.\n", ...rows, `\n[Mark them paid on the owner page](${OWNER})`], { color: COLORS.amber, url: OWNER }));
     }
   }
 
@@ -117,7 +125,7 @@ export async function GET(req: Request) {
   if (today.endsWith("-01")) {
     const { data: made, error: pErr } = await db.rpc("creator_create_payouts", { p_today: today });
     if (pErr) {
-      lines.push(`**Payouts:** couldn't create today's payouts: ${pErr.message}`);
+      cards.push({ title: "⚠️ Payouts Not Created", description: `Couldn't create today's payouts.\n\n${pErr.message}`, color: COLORS.red });
     } else {
       const { data: all } = await db
         .from("creator_payouts")
@@ -129,13 +137,16 @@ export async function GET(req: Request) {
       });
       const todays = rows.filter((r) => r.due_on === today);
       if (todays.length) {
-        lines.push(`**Payouts due today (${todays.length})**`);
-        for (const r of todays) {
-          lines.push(`- ${r.c?.name}: **${Number(r.amount).toFixed(2)} ${r.currency}** by ${PAYOUT_LABEL[r.c?.payout_method ?? ""] ?? r.c?.payout_method} to ${r.c?.payout_email}`);
-        }
-        lines.push("Send these in the first week, then mark each one paid on https://whatyouate.app/creators/owner (that emails the creator their statement).");
+        const rows = todays.map((r) =>
+          `**${r.c?.name}**  ·  **${Number(r.amount).toFixed(2)} ${r.currency}**\n${PAYOUT_LABEL[r.c?.payout_method ?? ""] ?? r.c?.payout_method}  →  ${r.c?.payout_email}\n`
+        );
+        cards.push(...section(`💸 Payouts Due Today (${todays.length})`, [...rows, `[Open the owner page](${OWNER})`], {
+          color: COLORS.green,
+          url: OWNER,
+          footer: { text: "Send these in the first week, then mark each one paid. That emails the creator their statement. Full CSV attached." },
+        }));
       } else if ((made ?? []).length === 0) {
-        lines.push("**Payouts:** nothing due today. Balances under $10 roll over.");
+        cards.push({ title: "💸 Payouts", description: "Nothing due today. Balances under $10 roll over.", color: COLORS.grey });
       }
       file = {
         name: `creator-payouts-${today}.csv`,
@@ -160,8 +171,10 @@ export async function GET(req: Request) {
   // After payouts and Pro codes, so today's new codes go out today.
   const emails = await sendDueCreatorEmails(db, today);
   if (emails.errors.length) {
-    lines.push(`**Creator emails:** ${emails.errors.length} didn't send. They'll retry tomorrow.`);
-    lines.push(...emails.errors.slice(0, 5).map((e) => `- ${e}`));
+    cards.push(...section(`⚠️ Creator Emails Didn't Send (${emails.errors.length})`, emails.errors.slice(0, 5).map((e) => `• ${e}`), {
+      color: COLORS.red,
+      footer: { text: "They'll retry tomorrow." },
+    }));
   }
 
   // Mondays: a short weekly summary, always posted, so a quiet Discord also means the job is running.
@@ -178,14 +191,26 @@ export async function GET(req: Request) {
     const byCur: Record<string, number> = {};
     for (const e of earned ?? []) byCur[e.currency] = (byCur[e.currency] ?? 0) + Number(e.amount);
     const money = Object.entries(byCur).map(([c, v]) => `$${v.toFixed(2)} ${c}`).join(" + ") || "$0";
-    lines.push(
-      `**This week:** ${active ?? 0} active creators (${newCreators ?? 0} new), ${uses ?? 0} code uses, ${counted ?? 0} signups that count, ` +
-        `${paying ?? 0} new paying subscribers, ${money} earned by creators. Free Pro codes left: ${left["3_months"]} three-month, ${left["1_year"]} one-year.`
-    );
+    cards.push({
+      title: "📊 Creator Program This Week",
+      color: COLORS.blue,
+      url: OWNER,
+      fields: [
+        { name: "Active Creators", value: `${active ?? 0}  (${newCreators ?? 0} new)`, inline: true },
+        { name: "Code Uses", value: String(uses ?? 0), inline: true },
+        { name: "Signups That Count", value: String(counted ?? 0), inline: true },
+        { name: "New Paying Subscribers", value: String(paying ?? 0), inline: true },
+        { name: "Earned By Creators", value: money, inline: true },
+        { name: "Free Pro Codes Left", value: `${left["3_months"]} three-month  ·  ${left["1_year"]} one-year`, inline: true },
+      ],
+      footer: { text: "Posted every Monday, so a quiet channel also means the job is running." },
+    });
   }
-  if (emails.sent.yearSummary) lines.push(`**Year summaries:** sent to ${emails.sent.yearSummary} creator${emails.sent.yearSummary === 1 ? "" : "s"}.`);
+  if (emails.sent.yearSummary) {
+    cards.push({ title: "📬 Year Summaries Sent", description: `Sent to ${emails.sent.yearSummary} creator${emails.sent.yearSummary === 1 ? "" : "s"}.`, color: COLORS.green });
+  }
 
-  if (lines.length) await postToDiscord(["**Creator program**", ...lines].join("\n"), file).catch(() => {});
+  if (cards.length) await postCards(cards, file).catch(() => {});
   console.log("[cron/creators]", { today, qualified, backfilled, joined: joined?.length ?? 0, emails });
-  return NextResponse.json({ ok: true, qualified, backfilled, posted: lines.length > 0 });
+  return NextResponse.json({ ok: true, qualified, backfilled, posted: cards.length > 0 });
 }

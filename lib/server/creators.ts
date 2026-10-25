@@ -2,6 +2,7 @@
 // database (supabase/creators.sql); these routes only feed it events and report on it.
 
 import { createClient } from "@supabase/supabase-js";
+import { COLORS, sendEmbeds, type Embed } from "./discord";
 
 export function creatorsAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
@@ -12,19 +13,16 @@ function webhookUrl() {
   return (process.env.CREATOR_DISCORD_WEBHOOK_URL ?? process.env.DISCORD_WEBHOOK_URL ?? "").trim();
 }
 
-/** Posts to Discord, optionally with a file. Messages over Discord's 2000 characters are cut. */
-export async function postToDiscord(content: string, file?: { name: string; text: string }) {
+/** Posts report cards (Discord embeds) to the creator channel, optionally with a CSV on the first message. */
+export async function postCards(embeds: Embed[], file?: { name: string; text: string }) {
   const url = webhookUrl();
-  if (!url) return;
-  const body = content.length > 1990 ? content.slice(0, 1980) + "\n…" : content;
-  if (!file) {
-    await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: body }) });
-    return;
-  }
-  const form = new FormData();
-  form.append("payload_json", JSON.stringify({ content: body }));
-  form.append("files[0]", new Blob([file.text], { type: "text/csv" }), file.name);
-  await fetch(url, { method: "POST", body: form });
+  if (!url || !embeds.length) return;
+  await sendEmbeds(url, embeds.map((e) => ({ ...e, timestamp: e.timestamp ?? new Date().toISOString() })), { file });
+}
+
+/** A single alert card, for one-off problems (red by default). */
+export async function postAlert(title: string, text: string, color = COLORS.red) {
+  await postCards([{ title, description: text, color }]);
 }
 
 const rateCache = new Map<string, number | null>();
