@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { COLORS, sendEmbeds } from "../../../lib/server/discord";
+import { COLORS, headerDate, sendEmbeds } from "../../../lib/server/discord";
 
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT = 3;
@@ -54,7 +54,10 @@ export async function POST(req: Request) {
       color: COLORS.blue,
       fields,
       timestamp: new Date().toISOString(),
-    }]);
+    }], {
+      username: "WhatYouAte · Feedback",
+      content: `**💬 Feedback${name ? ` from ${String(name).slice(0, 60)}` : ""} · ${headerDate()}**`,
+    });
     if (!res) {
       return NextResponse.json({ error: "Failed to send feedback" }, { status: 500 });
     }

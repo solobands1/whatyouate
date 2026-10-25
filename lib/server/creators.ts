@@ -2,7 +2,7 @@
 // database (supabase/creators.sql); these routes only feed it events and report on it.
 
 import { createClient } from "@supabase/supabase-js";
-import { COLORS, sendEmbeds, type Embed } from "./discord";
+import { COLORS, headerDate, sendEmbeds, type Embed } from "./discord";
 
 export function creatorsAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
@@ -13,16 +13,25 @@ function webhookUrl() {
   return (process.env.CREATOR_DISCORD_WEBHOOK_URL ?? process.env.DISCORD_WEBHOOK_URL ?? "").trim();
 }
 
-/** Posts report cards (Discord embeds) to the creator channel, optionally with a CSV on the first message. */
+/** Posts the creator program report (Discord cards) under its own sender name and a dated header. */
 export async function postCards(embeds: Embed[], file?: { name: string; text: string }) {
   const url = webhookUrl();
   if (!url || !embeds.length) return;
-  await sendEmbeds(url, embeds.map((e) => ({ ...e, timestamp: e.timestamp ?? new Date().toISOString() })), { file });
+  await sendEmbeds(url, embeds.map((e) => ({ ...e, timestamp: e.timestamp ?? new Date().toISOString() })), {
+    username: "WhatYouAte · Creator Program",
+    content: `**📋 Creator Program Report · ${headerDate()}**`,
+    file,
+  });
 }
 
-/** A single alert card, for one-off problems (red by default). */
+/** A single alert card, for one-off problems (red by default), sent as "WhatYouAte · Alerts". */
 export async function postAlert(title: string, text: string, color = COLORS.red) {
-  await postCards([{ title, description: text, color }]);
+  const url = webhookUrl();
+  if (!url) return;
+  await sendEmbeds(url, [{ title, description: text, color, timestamp: new Date().toISOString() }], {
+    username: "WhatYouAte · Alerts",
+    content: `**🚨 Alert · ${headerDate()}**`,
+  });
 }
 
 const rateCache = new Map<string, number | null>();

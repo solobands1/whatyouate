@@ -63,12 +63,26 @@ export function batches(embeds: Embed[]): Embed[][] {
   return out;
 }
 
-/** Sends cards to a webhook, optionally with a CSV file on the first message. Returns the last response. */
-export async function sendEmbeds(url: string, embeds: Embed[], opts: { content?: string; file?: { name: string; text: string } } = {}) {
+export const ICON = "https://whatyouate.app/icon-512.png";
+
+/** Today's date as "Sun, Oct 25" (Toronto), for message headers. */
+export function headerDate(d = new Date()) {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Toronto", weekday: "short", month: "short", day: "numeric" }).format(d);
+}
+
+type SendOpts = { content?: string; username?: string; file?: { name: string; text: string } };
+
+/**
+ * Sends cards to a webhook. Each kind of message gets its own sender name (so Discord doesn't stack
+ * different reports under one name) and a bold header line, so back-to-back messages stay distinct.
+ * Long reports continue in follow-up messages marked "continued". Returns the last response.
+ */
+export async function sendEmbeds(url: string, embeds: Embed[], opts: SendOpts = {}) {
   let res: Response | undefined;
   const groups = batches(embeds);
   for (let i = 0; i < groups.length; i++) {
-    const payload = { content: i === 0 ? opts.content : undefined, embeds: groups[i], allowed_mentions: { parse: [] } };
+    const content = i === 0 ? opts.content : opts.content ? `↳ ${opts.content.replace(/\*\*/g, "")} (continued)` : undefined;
+    const payload = { content, username: opts.username, avatar_url: ICON, embeds: groups[i], allowed_mentions: { parse: [] } };
     if (i === 0 && opts.file) {
       const form = new FormData();
       form.append("payload_json", JSON.stringify(payload));
