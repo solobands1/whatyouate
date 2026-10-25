@@ -2014,7 +2014,8 @@ export default function ProfileScreen() {
                         message: feedbackText.trim(),
                         userId: user.id,
                         email: user.email ?? null,
-                        name: [firstName, lastName].filter(Boolean).join(" ")
+                        name: [firstName, lastName].filter(Boolean).join(" "),
+                        source: "profile"
                       })
                     });
                     if (!res.ok) {

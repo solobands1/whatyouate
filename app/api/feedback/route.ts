@@ -26,7 +26,7 @@ export async function POST(req: Request) {
     } catch {
       payloadJson = { message: rawBody };
     }
-    const { message, userId, email, name } = payloadJson ?? {};
+    const { message, userId, email, name, source } = payloadJson ?? {};
 
     const rateLimitKey = userId ?? req.headers.get("x-forwarded-for") ?? "anon";
     if (!checkRateLimit(rateLimitKey)) {
@@ -43,13 +43,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing message" }, { status: 400 });
     }
 
+    // Where in the app it was sent from. The rating prompt only asks for feedback after someone
+    // answers No to "Are You Enjoying WhatYouAte?", so those get flagged in the header.
+    const unhappy = source === "rating_prompt";
+    const sourceLabel = unhappy ? "Answered No to \u201cAre You Enjoying WhatYouAte?\u201d" : source === "profile" ? "Profile \u2192 Send Feedback" : "In the app";
     const fields = [
+      { name: "Source", value: sourceLabel, inline: false },
       name ? { name: "Name", value: String(name).slice(0, 256), inline: true } : null,
       email ? { name: "Email", value: String(email).slice(0, 256), inline: true } : null,
       userId ? { name: "User ID", value: `\`${String(userId).slice(0, 100)}\``, inline: false } : null,
     ].filter(Boolean) as { name: string; value: string; inline: boolean }[];
     const res = await sendEmbeds(webhookUrl, [{
-      title: "💬 New Feedback",
+      title: unhappy ? "😕 Not Enjoying It: Feedback" : "💬 New Feedback",
       description: cleanMessage.slice(0, 3900),
       color: COLORS.blue,
       fields,
@@ -57,7 +62,7 @@ export async function POST(req: Request) {
       timestamp: new Date().toISOString(),
     }], {
       username: "WhatYouAte · Feedback",
-      content: `**💬 Feedback${name ? ` from ${String(name).slice(0, 60)}` : ""} · ${headerDate()}**`,
+      content: `**${unhappy ? "😕 Not Enjoying It" : "💬 Feedback"}${name ? ` from ${String(name).slice(0, 60)}` : ""} · ${headerDate()}**`,
     });
     if (!res) {
       return NextResponse.json({ error: "Failed to send feedback" }, { status: 500 });

@@ -81,6 +81,7 @@ export default function ReviewPromptModal() {
           userId: user.id,
           email: user.email ?? null,
           name,
+          source: "rating_prompt",
         }),
       });
       if (!res.ok) {
