@@ -53,6 +53,7 @@ export async function POST(req: Request) {
       description: cleanMessage.slice(0, 3900),
       color: COLORS.blue,
       fields,
+      footer: { text: email ? `Reply to ${String(email).slice(0, 120)} from support@whatyouate.app` : "No email given, so there's no one to reply to." },
       timestamp: new Date().toISOString(),
     }], {
       username: "WhatYouAte · Feedback",
