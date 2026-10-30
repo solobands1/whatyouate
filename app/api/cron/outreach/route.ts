@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 
 const SEND_DAYS = new Set([1, 2, 3, 4]); // Mon to Thu
 const WINDOW: [number, number] = [10.5, 14];
-const FIRST_PER_DAY = 12;
+const FIRST_PER_DAY = 8; // start gently for the first two weeks, then raise to 12
 const TOTAL_PER_DAY = 20;
 const FOLLOW_DAYS = [4, 10];
 
