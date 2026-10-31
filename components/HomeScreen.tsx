@@ -867,19 +867,22 @@ export default function HomeScreen() {
   const reflectionFacts = useMemo(() => computeReflectionFacts(ctxReflections ?? []), [ctxReflections]);
   // Reflection streak (consecutive nights, counting today which is being completed now) and
   // total nights — both real, for the completion reward. Streak leads; total is the fallback.
+  // The night being saved is yesterday when filling in a missed check-in, so count that night, not today
+  // (today isn't done yet), and walk back from it.
   const reflectionStreak = useMemo(() => {
     const dates = new Set((ctxReflections ?? []).map((r) => r.date));
-    dates.add(todayDateStr());
+    const saving = reflectingYesterday ? yesterdayDateStr() : todayDateStr();
+    dates.add(saving);
     let streak = 0;
-    const d = new Date();
+    const d = new Date(`${saving}T12:00:00`);
     while (dates.has(todayKey(d))) { streak++; d.setDate(d.getDate() - 1); }
     return streak;
-  }, [ctxReflections]);
+  }, [ctxReflections, reflectingYesterday]);
   const reflectionTotal = useMemo(() => {
     const dates = new Set((ctxReflections ?? []).map((r) => r.date));
-    dates.add(todayDateStr());
+    dates.add(reflectingYesterday ? yesterdayDateStr() : todayDateStr());
     return dates.size;
-  }, [ctxReflections]);
+  }, [ctxReflections, reflectingYesterday]);
   const observedProblem = useMemo(() => {
     const w = reflectionFacts.watch;
     const dipTime = reflectionFacts.dip && !("none" in reflectionFacts.dip) ? reflectionFacts.dip.time : undefined;
@@ -6292,11 +6295,13 @@ export default function HomeScreen() {
                   <p className="mt-6 text-center text-2xl font-semibold text-ink">Thanks For Reflecting</p>
                   <div className={`mt-3 inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-3.5 py-1.5 text-[13px] font-semibold text-primary/90 ${reflectionTotal <= 1 ? "animate-habit-pop" : ""}`}>
                     <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z" /></svg>
+                    {/* A streak and the all-time total used to share this badge with no label, so after a missed
+                        night "4 nights in a row" became "46 nights reflected" and read like a jump in the streak. */}
                     {reflectionStreak >= 2
-                      ? `${reflectionStreak} nights in a row`
+                      ? `${reflectionStreak} Nights In A Row`
                       : reflectionTotal <= 1
                         ? "Your First Reflection"
-                        : `${reflectionTotal} nights reflected`}
+                        : `New Streak Started · ${reflectionTotal} Nights Total`}
                   </div>
                   <p className="mt-3 max-w-xs text-center text-sm text-ink/65">That's today, noted. Showing up for yourself like this is how feeling better slowly stops being a goal and just becomes your normal.</p>
                   <button type="button" className="mt-10 w-full max-w-xs rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80" onClick={finishReflection}>Done</button>
