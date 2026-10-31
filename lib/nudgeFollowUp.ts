@@ -5,7 +5,7 @@ import { todayKey } from "./utils";
 // it reads wrong ("log your first meal" with three meals in). Once a real meal is logged after that nudge, show a
 // short line acknowledging it instead. Only these "nothing logged yet" nudges are swapped; every other nudge stays.
 
-const NOT_LOGGED = /\b(nothing|no meals?|no food)\b[^.]{0,20}\b(logged|tracked)\b|\bhaven'?t (logged|tracked)\b|\bnot (logged|tracked) (anything|yet)\b|\b(log|add|track) (your |a |the )?(first|1st) (meal|bite|thing|entry|log)\b|\bfirst (meal|log|entry) (of the day|today)\b|\bstart (your |the )?(day|log) (by|with) logging\b/i;
+const NOT_LOGGED = /\b(nothing|no meals?|no food)\b[^.]{0,20}\b(logged|tracked)\b|\bhaven'?t (logged|tracked)\b|\bnot (logged|tracked) (anything|yet)\b|\b(log|add|track) (your |a |the )?(first|1st) (meal|bite|thing|entry|log)\b|\bstart (your |the )?(day|log) (by|with) logging\b/i;
 
 export function isNothingLoggedNudge(message: string | null | undefined) {
   return !!message && NOT_LOGGED.test(message);
