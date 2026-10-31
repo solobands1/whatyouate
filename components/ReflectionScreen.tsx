@@ -143,9 +143,9 @@ export default function ReflectionScreen() {
               <Card>
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted/70">This Week</p>
-                  {facts.streak >= 2 && (
+                  {facts.total >= 2 && (
                     <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
-                      {facts.streak}-night streak
+                      {facts.total} Nights Total
                     </span>
                   )}
                 </div>
