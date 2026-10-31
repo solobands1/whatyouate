@@ -1,5 +1,6 @@
 "use client";
 
+import { withLoggedFollowUp } from "../lib/nudgeFollowUp";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { riseIn } from "../lib/motion";
 import { devHooksEnabled } from "../lib/devHooks";
@@ -459,7 +460,8 @@ export default function SummaryScreen() {
     const yesterday = new Date(now);
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = todayKey(yesterday);
-    const mostRecent = nudges[0];
+    // A "nothing logged yet" nudge turns into an acknowledgement once a meal is logged after it (matches Home).
+    const mostRecent = withLoggedFollowUp(nudges[0] ?? null, meals);
     if (mostRecent?.created_at) {
       const nudgeLocalDate = todayKey(new Date(mostRecent.created_at));
       if (nudgeLocalDate === todayStr) return mostRecent;
@@ -468,7 +470,7 @@ export default function SummaryScreen() {
     // No real nudge for the window — on the unlock day only, fall back to the one-time welcome
     // nudge (matches Home) so Insights shows it instead of a bare "Monitoring Your Patterns".
     return getWelcomeNudge(todayStr);
-  }, [nudgesLoaded, nudges, meals.length]);
+  }, [nudgesLoaded, nudges, meals]);
 
   useEffect(() => {
     setSmartNudge(

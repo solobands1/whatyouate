@@ -23,6 +23,7 @@ import { supabase } from "../lib/supabaseClient";
 import "../lib/mealQueue";
 import BarcodeScannerOverlay from "./BarcodeScannerOverlay";
 import { getFoodCacheEntry, setFoodCacheEntry, deleteFoodCacheEntry, deleteFoodTextEntry, incrementFoodCacheLogCount, incrementFoodTextLogCount, getQuickAddFromMeals, addQuickAddRemoved, getDailySupplements, setDailySupplements, hasDailySuppsLoggedToday, markDailySuppsLoggedToday, clearDailySuppsLoggedToday, dishGroupKey, type QuickAddItem } from "../lib/foodCache";
+import { withLoggedFollowUp } from "../lib/nudgeFollowUp";
 import { addFeelLog, deleteFeelLog, updateFeelLog, upsertWaterLog, saveStreakSaver, saveActivityCelebration, addWeightLog, saveProfile, addReflection, saveHabitState, fetchHabitHistory, saveHabitHistory, type FeelLog } from "../lib/supabaseDb";
 import { EMPTY_HABIT_STATE, pickSuggestionId, snoozeSuggestion, snoozeAllSuggestions, declineSuggestion, markHabitEnded, endBuilderCompleted, resolveBuilderForToday, extendBuilder, type HabitState, type ActiveBuilder, type HabitHistoryEntry } from "../lib/habitState";
 import { rescueAvailable, EMPTY_STREAK_SAVER } from "../lib/streakSaver";
@@ -949,7 +950,8 @@ export default function HomeScreen() {
     const now = new Date();
     const todayStr = todayKey();
     const yesterday = new Date(now); yesterday.setDate(yesterday.getDate() - 1);
-    const mostRecent = nudges[0];
+    // A "nothing logged yet" nudge turns into an acknowledgement once a meal is logged after it.
+    const mostRecent = withLoggedFollowUp(nudges[0] ?? null, ctxMeals);
     if (mostRecent?.created_at) {
       const nudgeDate = todayKey(new Date(mostRecent.created_at));
       if (nudgeDate === todayStr) return mostRecent;
@@ -959,7 +961,7 @@ export default function HomeScreen() {
     // nudge so the slot isn't a bare "Monitoring Your Patterns". It behaves like a real nudge here
     // (hero vs Insights placement) but is excluded from the nav bell below.
     return getWelcomeNudge(todayStr);
-  }, [nudgesLoaded, nudges, ctxMeals?.length, nudgeUnlockDate]);
+  }, [nudgesLoaded, nudges, ctxMeals, nudgeUnlockDate]);
 
   // Reveal a brand-new nudge in the hero (once per nudge) like a new habit: it starts
   // collapsed, the card shimmers + the eyebrow bounces, the border pulses, it slides
