@@ -83,7 +83,8 @@ export async function GET(req: Request) {
   const { count: waiting } = await db
     .from("creators")
     .select("id", { count: "exact", head: true })
-    .eq("status", "active");
+    .eq("status", "active")
+    .eq("is_house", false);
   const { count: withCode } = await db
     .from("creator_pro_codes")
     .select("code", { count: "exact", head: true })

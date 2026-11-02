@@ -143,6 +143,9 @@ alter table public.creator_emails add constraint creator_emails_kind_check
 alter table public.creator_pro_codes add column if not exists expires_on date;
 alter table public.referrals add column if not exists trial_ends_at timestamptz;
 alter table public.referrals add column if not exists trial_cancelled_at timestamptz;
+-- The house account: WhatYouAte's own code for its socials. Its signups are tracked like any creator's,
+-- but it never earns, never gets free Pro and is never paid (see creators_house.sql).
+alter table public.creators add column if not exists is_house boolean not null default false;
 
 alter table public.creators enable row level security;
 alter table public.creator_pro_codes enable row level security;
@@ -259,7 +262,7 @@ returns integer language plpgsql security definer set search_path = public as $$
 declare r record; n integer := 0;
 begin
   for r in
-    select id from creators cr where status = 'active'
+    select id from creators cr where status = 'active' and not cr.is_house
       and exists (select 1 from referrals rf where rf.creator_id = cr.id and rf.qualified_at is not null)
       and not exists (select 1 from creator_pro_codes p where p.creator_id = cr.id and p.kind = '3_months')
     order by joined_at
@@ -409,7 +412,7 @@ declare
   marked integer := 0;
 begin
   for r in
-    select rf.*, cr.joined_at, cr.currency, cr.status as creator_status,
+    select rf.*, cr.joined_at, cr.currency, cr.status as creator_status, cr.is_house,
            coalesce(p.timezone_offset_minutes, 300) as tz
     from referrals rf
     join creators cr on cr.id = rf.creator_id
@@ -443,6 +446,9 @@ begin
 
     update referrals set qualified_at = third_day where id = r.id;
     marked := marked + 1;
+
+    -- The house account's signups are counted, but it earns nothing.
+    continue when r.is_house;
 
     -- A creator's first qualified signup unlocks their 3 months of free Pro.
     if r.creator_status = 'active' then
@@ -523,6 +529,8 @@ begin
       return 'refund_without_commission';
     end if;
   end if;
+  -- The house account tracks who paid (first_paid_at above) but earns no commission.
+  if cr.is_house then return 'house'; end if;
 
   -- Their payment in the creator's currency, converted on the day they paid.
   if upper(coalesce(p_currency, '')) = cr.currency and p_price_local is not null then
@@ -564,7 +572,7 @@ begin
       (select coalesce(sum(amount), 0) from creator_earnings e where e.creator_id = cr.id and e.occurred_at < cutoff_ts)
       - (select coalesce(sum(amount), 0) from creator_payouts p where p.creator_id = cr.id) as balance
     from creators cr
-    where cr.status <> 'removed'
+    where cr.status <> 'removed' and not cr.is_house
   loop
     made := null;
     if round(r.balance, 2) >= 10 or (r.status = 'left' and round(r.balance, 2) > 0) then
@@ -828,7 +836,7 @@ begin
     'creators', (
       select coalesce(jsonb_agg(x order by x.sort_due desc, x.joined desc), '[]'::jsonb) from (
         select
-          cr.id, cr.name, cr.email, cr.code, cr.country, cr.currency, cr.status, cr.instagram, cr.tiktok,
+          cr.id, cr.name, cr.email, cr.code, cr.country, cr.currency, cr.status, cr.instagram, cr.tiktok, cr.is_house as house,
           cr.payout_method as "payoutMethod", cr.payout_email as "payoutEmail",
           (cr.joined_at at time zone tz)::date as joined,
           (select count(*) from referrals where creator_id = cr.id and redeemed_at >= m_start and redeemed_at < m_end) as "codeUses",
@@ -982,8 +990,8 @@ begin
   if not public.creator_is_owner() then raise exception 'not_owner'; end if;
   return jsonb_build_object(
     'from', p_from, 'to', p_to,
-    'creatorsJoined', (select count(*) from creators where joined_at >= from_ts and joined_at < to_ts),
-    'creatorsActive', (select count(*) from creators where status = 'active'),
+    'creatorsJoined', (select count(*) from creators where joined_at >= from_ts and joined_at < to_ts and not is_house),
+    'creatorsActive', (select count(*) from creators where status = 'active' and not is_house),
     'codeUses', (select count(*) from referrals where redeemed_at >= from_ts and redeemed_at < to_ts),
     'signups', (select count(*) from referrals where qualified_at >= from_ts and qualified_at < to_ts),
     'newPaying', (select count(*) from referrals where first_paid_at >= from_ts and first_paid_at < to_ts),

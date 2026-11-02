@@ -7,3 +7,10 @@ Local tests for creators.sql against a plain Postgres with a small Supabase stan
     psql -d t -f setup.sql && psql -d t -f ../creators.sql && psql -d t -f tests.sql
 
 The last line should print ALL TESTS PASSED.
+
+House account (creators_house.sql): after the line above,
+
+    psql -d t -f ../creators_house.sql && psql -d t -f house_tests.sql
+
+should print HOUSE TESTS PASSED. Two statement tests in tests.sql fail when run on the 1st of a month
+(the statement period collapses); that's a test date issue, not the SQL.
