@@ -208,7 +208,8 @@ export function useMeals(
     const capturedDate = manualDate;
     const today = new Date();
     const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-    const optimisticTs = capturedDate !== todayStr ? new Date(capturedDate + "T12:00:00").getTime() : Date.now();
+    const backdated = capturedDate !== todayStr ? new Date(capturedDate + "T12:00:00").getTime() : null;
+    const optimisticTs = backdated !== null && backdated < Date.now() ? backdated : Date.now();
     const esc = scaledAnalysis.estimated_ranges;
     setMeals((prev) => [{ id: optimisticId, ts: optimisticTs, analysisJson: scaledAnalysis as any, userCorrection: capturedName, calories: approxFromRange(esc.calories_min, esc.calories_max), protein: approxFromRange(esc.protein_g_min, esc.protein_g_max), status: "done" as const }, ...prev]);
     setManualText("");
@@ -227,11 +228,8 @@ export function useMeals(
       const swapInPill = () => setMeals((prev) => prev.map((m) => m.id === optimisticId ? { ...created!, ts: optimisticTs, analysisJson: scaledAnalysis as any, userCorrection: capturedName, status: "done" as const } : m));
       try {
         setUpdatingMeal(true);
-        created = await addMeal(user.id, scaledAnalysis as any, undefined, undefined, "done");
-        if (capturedDate !== todayStr) {
-          const d = new Date(capturedDate + "T12:00:00");
-          if (d.getTime() < Date.now()) await updateMealTs(created.id, d.getTime()).catch(() => {});
-        }
+        // A missed day's meal is created with that day's time, so it can't end up on today.
+        created = await addMeal(user.id, scaledAnalysis as any, undefined, undefined, "done", optimisticTs);
         await updateMeal(created.id, scaledAnalysis as any, { userCorrection: capturedName }, user.id);
         // Skip the background re-estimate when the user manually adjusted values, so their
         // correction isn't overwritten by a fresh AI estimate.
@@ -352,8 +350,10 @@ export function useMeals(
       if (editMealDate && editMealDate !== origDateStr) {
         const newTs = new Date(editMealDate + "T12:00:00").getTime();
         if (Number.isFinite(newTs)) {
-          await updateMealTs(editingMeal.id, newTs).catch(() => {});
-          setMeals((prev) => prev.map((m) => (m.id === editingMeal.id ? { ...m, ts: newTs } : m)));
+          // Only show the meal on its new day once the move has actually saved.
+          await updateMealTs(editingMeal.id, newTs)
+            .then(() => setMeals((prev) => prev.map((m) => (m.id === editingMeal.id ? { ...m, ts: newTs } : m))))
+            .catch((err) => console.error("Moving the meal to its new date failed", err));
         }
       }
 

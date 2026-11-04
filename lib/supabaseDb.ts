@@ -511,12 +511,14 @@ export async function updateMealImageUrl(mealId: string, userId: string, imageUr
   }
 }
 
-export async function addMeal(userId: string, analysis: MealAnalysis, imageOptional?: string, corrections?: any, initialStatus: "processing" | "done" = "processing") {
+// ts: when the meal was eaten. Defaults to now; logging a missed day passes that day's time so the meal
+// is created on the right date in one write (a separate follow-up update could fail and leave it on today).
+export async function addMeal(userId: string, analysis: MealAnalysis, imageOptional?: string, corrections?: any, initialStatus: "processing" | "done" = "processing", ts?: number) {
   if (useMemory) {
     ensureLocalLoaded();
     const meal: MealLog = {
       id: newId("meal"),
-      ts: Date.now(),
+      ts: ts ?? Date.now(),
       analysisJson: analysis,
       userCorrection: undefined,
       imageThumb: imageOptional ?? undefined
@@ -531,7 +533,7 @@ export async function addMeal(userId: string, analysis: MealAnalysis, imageOptio
   const payload = {
     user_id: userId,
     created_at,
-    ts: Date.now(),
+    ts: ts ?? Date.now(),
     analysis_json: analysis,
     image_url: imageOptional ?? null,
     calories: approxFromRange(ranges.calories_min, ranges.calories_max),

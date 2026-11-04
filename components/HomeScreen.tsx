@@ -1610,6 +1610,11 @@ export default function HomeScreen() {
 
     // Optimistically add pills and close the modal immediately
     const now = Date.now();
+    // Logging a missed day: the pills and the saved rows both carry that day's time, so they land on
+    // the right day straight away (and the missed-day banner clears).
+    const capturedDate = quickAddDate;
+    const backdated = capturedDate !== todayDateStr() ? new Date(capturedDate + "T12:00:00").getTime() : null;
+    const baseTs = backdated !== null && backdated < now ? backdated : now;
     recentQuickAddRef.current = now;
     quickAddBouncedRef.current = false;
     setTimeout(() => { if (recentQuickAddRef.current === now) recentQuickAddRef.current = 0; }, 60_000);
@@ -1617,7 +1622,7 @@ export default function HomeScreen() {
       const r = analysis.estimated_ranges;
       return {
         id: `optimistic-${now}-${i}`,
-        ts: now - i,
+        ts: baseTs - i,
         analysisJson: analysis,
         // Final rounded macros up front, so the pill shows the confirmed number once —
         // never an interim value that rounds/changes when the DB record swaps in.
@@ -1644,25 +1649,20 @@ export default function HomeScreen() {
     }
 
     // Write to DB — each item independent so one failure doesn't block others
-    const capturedDate = quickAddDate;
     (async () => {
       const results = await Promise.allSettled(
         pendingItems.map(async ({ item, analysis }, i) => {
-          const created = await addMeal(user.id, analysis, undefined, undefined, "done");
+          const created = await addMeal(user.id, analysis, undefined, undefined, "done", baseTs - i);
           if (!created?.id) throw new Error(`addMeal failed for ${item.name}`);
           await updateMeal(created.id, analysis, { userCorrection: item.name }, user.id);
           // Replace optimistic pill with the real DB record, then dedupe by id in case a
           // realtime ctxMeals sync already added that same record (was showing it twice).
           meals.setMeals((prev) => {
-            const realMeal = { ...created, ts: now - i, analysisJson: analysis, userCorrection: item.name, status: "done" as const };
+            const realMeal = { ...created, ts: baseTs - i, analysisJson: analysis, userCorrection: item.name, status: "done" as const };
             const mapped = prev.map((m) => (m.id === `optimistic-${now}-${i}` ? realMeal : m));
             const seen = new Set<string>();
             return mapped.filter((m) => (seen.has(m.id) ? false : (seen.add(m.id), true)));
           });
-          if (capturedDate !== todayDateStr()) {
-            const d = new Date(capturedDate + "T12:00:00");
-            if (d.getTime() < Date.now()) await updateMealTs(created.id, d.getTime()).catch(() => {});
-          }
           if (item.type === "text") incrementFoodTextLogCount(item.key);
           else if (item.barcode) incrementFoodCacheLogCount(item.barcode);
         })
