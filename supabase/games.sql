@@ -1,4 +1,4 @@
--- Website games (whatyouate.app/games): players and scoreboards. Additive only; nothing here touches the app's tables.
+-- Website games (whatyouate.app/games): players and scoreboards (Snack Merge, Beat The Crash). Additive only; nothing here touches the app's tables.
 -- Players sign up once with a display name and an email (never shown publicly) and get a private token their browser
 -- keeps; scores are posted with that token. Tables are locked (RLS on, no policies): everything goes through the
 -- functions below, which are the only things the website's public key can call.
@@ -81,21 +81,27 @@ begin
   return json_build_object('ok', true, 'token', p.token, 'name', p.name);
 end $$;
 
--- Post a finished run. Keeps the player's best per board per day; rejects impossible runs.
+-- Post a finished run. Keeps the player's best per board per day; rejects impossible runs. Each game has its own
+-- limits, from what its rules allow: "drops" is that game's count of moves (Snack Merge drops, Beat The Crash foods eaten).
 create or replace function public.game_submit_score(p_token uuid, p_game text, p_mode text, p_score integer, p_drops integer, p_duration_ms integer)
 returns json language plpgsql volatile security definer set search_path = public as $$
-declare p game_players; why text; d date := public.game_today(); recent int; prev int;
+declare p game_players; why text; d date := public.game_today(); recent int; prev int; secs numeric := greatest(coalesce(p_duration_ms, 0), 0) / 1000.0;
 begin
   select * into p from game_players where token = p_token;
   if p.id is null then return json_build_object('ok', false, 'error', 'unknown_player'); end if;
   select count(*) into recent from game_submissions where player_id = p.id and created_at > now() - interval '1 hour';
   why := case
-    when p_game is distinct from 'snack-merge' then 'game'
+    when p_game is null or p_game not in ('snack-merge', 'beat-the-crash') then 'game'
     when p_mode not in ('daily', 'free') then 'mode'
     when recent >= 60 then 'too_many'
-    when p_score is null or p_score < 0 or p_drops is null or p_drops < 1 or p_drops > 3000 then 'values'
-    when p_duration_ms < p_drops * 450 then 'too_fast'            -- the game allows one drop every 0.55s
-    when p_score > p_drops * 60 then 'too_high'                   -- far above what a drop can earn, even with combos
+    when p_score is null or p_score < 0 or p_drops is null or p_drops < 0 or p_drops > 3000 or p_duration_ms is null then 'values'
+    -- Snack Merge: one drop every 0.55s at most; a drop can't earn more than 60, even with combos
+    when p_game = 'snack-merge' and p_drops < 1 then 'values'
+    when p_game = 'snack-merge' and p_duration_ms < p_drops * 450 then 'too_fast'
+    when p_game = 'snack-merge' and p_score > p_drops * 60 then 'too_high'
+    -- Beat The Crash: at most 60 points a second, 15 a food, and a 600 bonus per 75-second day; foods fall about 2 a second
+    when p_game = 'beat-the-crash' and p_drops > secs * 3 + 5 then 'too_fast'
+    when p_game = 'beat-the-crash' and p_score > secs * 70 + p_drops * 20 + 700 * (1 + secs / 75) then 'too_high'
     else null end;
   insert into game_submissions (player_id, game, mode, score, drops, duration_ms, accepted, reason)
   values (p.id, p_game, p_mode, p_score, p_drops, p_duration_ms, why is null, why);
