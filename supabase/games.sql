@@ -91,7 +91,7 @@ begin
   if p.id is null then return json_build_object('ok', false, 'error', 'unknown_player'); end if;
   select count(*) into recent from game_submissions where player_id = p.id and created_at > now() - interval '1 hour';
   why := case
-    when p_game is null or p_game not in ('snack-merge', 'beat-the-crash') then 'game'
+    when p_game is null or p_game not in ('snack-merge', 'beat-the-crash', 'cart-rush', 'berry-dash') then 'game'
     when p_mode not in ('daily', 'free') then 'mode'
     when recent >= 60 then 'too_many'
     when p_score is null or p_score < 0 or p_drops is null or p_drops < 0 or p_drops > 3000 or p_duration_ms is null then 'values'
@@ -102,6 +102,14 @@ begin
     -- Beat The Crash: at most 60 points a second, 15 a food, and a 600 bonus per 75-second day; foods fall about 2 a second
     when p_game = 'beat-the-crash' and p_drops > secs * 3 + 5 then 'too_fast'
     when p_game = 'beat-the-crash' and p_score > secs * 70 + p_drops * 20 + 700 * (1 + secs / 75) then 'too_high'
+    -- Cart Rush: drops = items grabbed. Speed rises 2.2 px/s each second from 230; one item per row at most, rows 185px+ apart;
+    -- a point per 20px, 20 per item, recipe n (3+ grabs each) pays at most 200 * least(n, 10)
+    when p_game = 'cart-rush' and p_drops > (secs * 230 + secs * secs * 1.1) / 185 + 3 then 'too_fast'
+    when p_game = 'cart-rush' and p_score > secs * 11.5 + secs * secs * 0.055 + p_drops * 20
+      + 100 * least(p_drops / 3.0, 10) * (least(p_drops / 3.0, 10) + 1) + 2000 * greatest(p_drops / 3.0 - 10, 0) + 100 then 'too_high'
+    -- Berry Dash: drops = pickups. Top speed 650 px/s, 1.3x in a sugar rush (about 42 m/s); 15 points a pickup at most
+    when p_game = 'berry-dash' and p_drops > secs * 4 + 10 then 'too_fast'
+    when p_game = 'berry-dash' and p_score > secs * 45 + p_drops * 15 + 100 then 'too_high'
     else null end;
   insert into game_submissions (player_id, game, mode, score, drops, duration_ms, accepted, reason)
   values (p.id, p_game, p_mode, p_score, p_drops, p_duration_ms, why is null, why);
