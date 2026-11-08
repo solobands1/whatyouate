@@ -137,16 +137,16 @@ begin
     when p_game = 'fridge-raid' and p_mode = 'daily' and p_drops > 53 then 'values'
     when p_game = 'fridge-raid' and p_duration_ms < p_drops * 600 then 'too_fast'
     when p_game = 'fridge-raid' and p_score > p_drops * 245 + 100 then 'too_high'
-    -- Pea Tanks: drops = peas fired at the computer (live and same-phone matches post nothing). A won round pays at most
-    -- 500 (damage) + 400 (aim) + 1,000 + 1,000 (health left) + 600 (speed): 3,500 for a knockout (5 hits), or 2,900 for a
-    -- win on time (the full 60 seconds; a tie on time goes to the computer). A lost round pays at most 720 and takes 4 peas
-    -- or more. So under 700 a pea plus 50 a second, plus 1,000 for winning the day; Today (best of 3) tops out at 8,720.
-    -- A pea every 0.2s at the very fastest; each round starts with a 3-second countdown
+    -- Pea Tanks: drops = peas fired plus jelly mines dropped, in solo Missions (co-op, Guard The Lunch and versus post
+    -- nothing). A cleared mission pays at most 1,000 + 150 x 4 enemies + 600 (speed) + 500 (aim) = 2,700, each starting
+    -- with a card and a 1.8-second countdown, so well under 900 points a second. Today is 5 missions: at most 13,500 + 500
+    -- a life left (3) + 1,000 for clearing all 5 = 16,000. The Free Play campaign is at most 20 missions with a bonus life
+    -- every 5: 54,000 + 3,500 + 1,000 = 58,500. A pea every 0.17s at the very fastest (with Chili Peas)
     when p_game = 'pea-tanks' and p_drops < 1 then 'values'
-    when p_game = 'pea-tanks' and p_mode = 'daily' and p_drops > 1000 then 'values'
-    when p_game = 'pea-tanks' and (p_duration_ms < 4500 or p_duration_ms < p_drops * 150) then 'too_fast'
-    when p_game = 'pea-tanks' and p_mode = 'daily' and p_score > 8800 then 'too_high'
-    when p_game = 'pea-tanks' and p_score > p_drops * 700 + p_duration_ms / 20 + 1000 then 'too_high'
+    when p_game = 'pea-tanks' and (p_duration_ms < 4000 or p_duration_ms < p_drops * 150) then 'too_fast'
+    when p_game = 'pea-tanks' and p_mode = 'daily' and p_score > 16000 then 'too_high'
+    when p_game = 'pea-tanks' and p_score > 58500 then 'too_high'
+    when p_game = 'pea-tanks' and p_score > p_duration_ms * 0.9 + 3000 then 'too_high'
     -- Food Rally: drops = laps finished, always 3 (live and same-phone races post nothing). Today is a 3-lap time trial
     -- paying 1,000 for finishing plus 100 a second under the course's par (about 3,600 at most; 4,000 leaves room).
     -- Free Play pays 400 to 2,000 for the place plus 50 a second under par (about 3,300; 3,600 with room). The quickest
