@@ -81,19 +81,16 @@ begin
   return json_build_object('ok', true, 'token', p.token, 'name', p.name);
 end $$;
 
--- Post a finished run. Keeps the player's best per board per day; rejects impossible runs. Each game has its own
--- limits, from what its rules allow: "drops" is that game's count of moves (Snack Merge drops, Beat The Crash foods eaten).
-create or replace function public.game_submit_score(p_token uuid, p_game text, p_mode text, p_score integer, p_drops integer, p_duration_ms integer)
-returns json language plpgsql volatile security definer set search_path = public as $$
-declare p game_players; why text; d date := public.game_today(); recent int; prev int; secs numeric := greatest(coalesce(p_duration_ms, 0), 0) / 1000.0;
+-- Why a run's numbers are impossible for its game, or null when they're fine. Each game has its own limits, from what
+-- its rules allow: "drops" is that game's count of moves (Snack Merge drops, Beat The Crash foods eaten, ...). Shared by
+-- the scoreboard (game_submit_score) and Friend Duels (games_duels.sql), so a new game is added in one place.
+create or replace function public.game_score_problem(p_game text, p_mode text, p_score integer, p_drops integer, p_duration_ms integer)
+returns text language plpgsql immutable as $$
+declare secs numeric := greatest(coalesce(p_duration_ms, 0), 0) / 1000.0;
 begin
-  select * into p from game_players where token = p_token;
-  if p.id is null then return json_build_object('ok', false, 'error', 'unknown_player'); end if;
-  select count(*) into recent from game_submissions where player_id = p.id and created_at > now() - interval '1 hour';
-  why := case
+  return case
     when p_game is null or p_game not in ('snack-merge', 'beat-the-crash', 'cart-rush', 'berry-dash', 'food-fling', 'food-fight', 'sugar-showdown', 'fridge-raid') then 'game'
     when p_mode not in ('daily', 'free') then 'mode'
-    when recent >= 60 then 'too_many'
     when p_score is null or p_score < 0 or p_drops is null or p_drops < 0 or p_drops > 3000 or p_duration_ms is null then 'values'
     -- Snack Merge: one drop every 0.55s at most; a drop can't earn more than 60, even with combos
     when p_game = 'snack-merge' and p_drops < 1 then 'values'
@@ -141,6 +138,17 @@ begin
     when p_game = 'fridge-raid' and p_duration_ms < p_drops * 600 then 'too_fast'
     when p_game = 'fridge-raid' and p_score > p_drops * 245 + 100 then 'too_high'
     else null end;
+end $$;
+
+-- Post a finished run. Keeps the player's best per board per day; rejects impossible runs (game_score_problem).
+create or replace function public.game_submit_score(p_token uuid, p_game text, p_mode text, p_score integer, p_drops integer, p_duration_ms integer)
+returns json language plpgsql volatile security definer set search_path = public as $$
+declare p game_players; why text; d date := public.game_today(); recent int; prev int;
+begin
+  select * into p from game_players where token = p_token;
+  if p.id is null then return json_build_object('ok', false, 'error', 'unknown_player'); end if;
+  select count(*) into recent from game_submissions where player_id = p.id and created_at > now() - interval '1 hour';
+  why := case when recent >= 60 then 'too_many' else public.game_score_problem(p_game, p_mode, p_score, p_drops, p_duration_ms) end;
   insert into game_submissions (player_id, game, mode, score, drops, duration_ms, accepted, reason)
   values (p.id, p_game, p_mode, p_score, p_drops, p_duration_ms, why is null, why);
   if why is not null then return json_build_object('ok', false, 'error', why); end if;
@@ -197,3 +205,4 @@ grant execute on function public.game_submit_score(uuid, text, text, integer, in
 grant execute on function public.game_leaderboard(text, text, integer) to anon, authenticated;
 grant execute on function public.game_my_rank(uuid, text, text) to anon, authenticated;
 grant execute on function public.game_name_problem(text) to anon, authenticated;
+revoke all on function public.game_score_problem(text, text, integer, integer, integer) from public, anon, authenticated;
