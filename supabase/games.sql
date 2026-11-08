@@ -91,7 +91,7 @@ begin
   if p.id is null then return json_build_object('ok', false, 'error', 'unknown_player'); end if;
   select count(*) into recent from game_submissions where player_id = p.id and created_at > now() - interval '1 hour';
   why := case
-    when p_game is null or p_game not in ('snack-merge', 'beat-the-crash', 'cart-rush', 'berry-dash') then 'game'
+    when p_game is null or p_game not in ('snack-merge', 'beat-the-crash', 'cart-rush', 'berry-dash', 'food-fling') then 'game'
     when p_mode not in ('daily', 'free') then 'mode'
     when recent >= 60 then 'too_many'
     when p_score is null or p_score < 0 or p_drops is null or p_drops < 0 or p_drops > 3000 or p_duration_ms is null then 'values'
@@ -110,6 +110,12 @@ begin
     -- Berry Dash: drops = pickups. Top speed 650 px/s, 1.3x in a sugar rush (about 42 m/s); 15 points a pickup at most
     when p_game = 'berry-dash' and p_drops > secs * 4 + 10 then 'too_fast'
     when p_game = 'berry-dash' and p_score > secs * 45 + p_drops * 15 + 100 then 'too_high'
+    -- Food Fling: drops = fruits flung; each fling's physics runs at least 0.67s in real time; Today is 10 levels x 3 fruits.
+    -- A fling earns at most 100+200+...+1000 plus 100 a junk for distance (6,500); a cleared level adds at most 2,250; a full day adds 1,000
+    when p_game = 'food-fling' and p_drops < 1 then 'values'
+    when p_game = 'food-fling' and p_mode = 'daily' and p_drops > 30 then 'values'
+    when p_game = 'food-fling' and p_duration_ms < p_drops * 500 then 'too_fast'
+    when p_game = 'food-fling' and p_score > p_drops * 9000 + 1000 then 'too_high'
     else null end;
   insert into game_submissions (player_id, game, mode, score, drops, duration_ms, accepted, reason)
   values (p.id, p_game, p_mode, p_score, p_drops, p_duration_ms, why is null, why);
