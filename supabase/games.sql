@@ -89,7 +89,7 @@ returns text language plpgsql immutable as $$
 declare secs numeric := greatest(coalesce(p_duration_ms, 0), 0) / 1000.0;
 begin
   return case
-    when p_game is null or p_game not in ('snack-merge', 'beat-the-crash', 'cart-rush', 'berry-dash', 'food-fling', 'food-fight', 'sugar-showdown', 'fridge-raid') then 'game'
+    when p_game is null or p_game not in ('snack-merge', 'beat-the-crash', 'cart-rush', 'berry-dash', 'food-fling', 'food-fight', 'sugar-showdown', 'fridge-raid', 'pea-tanks') then 'game'
     when p_mode not in ('daily', 'free') then 'mode'
     when p_score is null or p_score < 0 or p_drops is null or p_drops < 0 or p_drops > 3000 or p_duration_ms is null then 'values'
     -- Snack Merge: one drop every 0.55s at most; a drop can't earn more than 60, even with combos
@@ -137,6 +137,16 @@ begin
     when p_game = 'fridge-raid' and p_mode = 'daily' and p_drops > 64 then 'values'
     when p_game = 'fridge-raid' and p_duration_ms < p_drops * 600 then 'too_fast'
     when p_game = 'fridge-raid' and p_score > p_drops * 245 + 100 then 'too_high'
+    -- Pea Tanks: drops = peas fired at the computer (live and same-phone matches post nothing). A won round pays at most
+    -- 500 (damage) + 400 (aim) + 1,000 + 1,000 (health left) + 600 (speed): 3,500 for a knockout (5 hits), or 2,900 for a
+    -- win on time (the full 60 seconds; a tie on time goes to the computer). A lost round pays at most 720 and takes 4 peas
+    -- or more. So under 700 a pea plus 50 a second, plus 1,000 for winning the day; Today (best of 3) tops out at 8,720.
+    -- A pea every 0.2s at the very fastest; each round starts with a 3-second countdown
+    when p_game = 'pea-tanks' and p_drops < 1 then 'values'
+    when p_game = 'pea-tanks' and p_mode = 'daily' and p_drops > 1000 then 'values'
+    when p_game = 'pea-tanks' and (p_duration_ms < 4500 or p_duration_ms < p_drops * 150) then 'too_fast'
+    when p_game = 'pea-tanks' and p_mode = 'daily' and p_score > 8800 then 'too_high'
+    when p_game = 'pea-tanks' and p_score > p_drops * 700 + p_duration_ms / 20 + 1000 then 'too_high'
     else null end;
 end $$;
 
