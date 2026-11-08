@@ -129,12 +129,12 @@ begin
     when p_game = 'sugar-showdown' and p_duration_ms < p_drops * 1500 then 'too_fast'
     when p_game = 'sugar-showdown' and p_mode = 'daily' and p_score > 10000 then 'too_high'
     when p_game = 'sugar-showdown' and p_mode = 'free' and p_score > (p_drops - 3) * 1000 then 'too_high'
-    -- Fridge Raid: drops = your shots, summed over rounds. The computer needs 14 shots to find your 14 snack cells and you
-    -- shoot first, so every round (won or lost) is at least 14 shots; Today is one round, at most 64. Each shot is followed by
+    -- Fridge Raid: drops = shelves your moves checked, summed over rounds (7x7 fridge, 12 snack cells; a bite earns another
+    -- shot, so a lost round can be very short). Today is one round: at most 49 shelves plus 4 lit shelves bitten later. Each shot is followed by
     -- the computer's turn (0.75s or more). A round pays at most 670 for hits + 340 for snacks found + a win bonus of
     -- 400 + 35 per shot under 64 + 210 for hidden cells: 3,370 at 14 shots, which is under 245 a shot
-    when p_game = 'fridge-raid' and p_drops < 14 then 'values'
-    when p_game = 'fridge-raid' and p_mode = 'daily' and p_drops > 64 then 'values'
+    when p_game = 'fridge-raid' and p_drops < 1 then 'values'
+    when p_game = 'fridge-raid' and p_mode = 'daily' and p_drops > 53 then 'values'
     when p_game = 'fridge-raid' and p_duration_ms < p_drops * 600 then 'too_fast'
     when p_game = 'fridge-raid' and p_score > p_drops * 245 + 100 then 'too_high'
     -- Pea Tanks: drops = peas fired at the computer (live and same-phone matches post nothing). A won round pays at most
