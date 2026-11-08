@@ -89,7 +89,7 @@ returns text language plpgsql immutable as $$
 declare secs numeric := greatest(coalesce(p_duration_ms, 0), 0) / 1000.0;
 begin
   return case
-    when p_game is null or p_game not in ('snack-merge', 'beat-the-crash', 'cart-rush', 'berry-dash', 'food-fling', 'food-fight', 'sugar-showdown', 'fridge-raid', 'pea-tanks', 'food-rally', 'melon-bowling') then 'game'
+    when p_game is null or p_game not in ('snack-merge', 'beat-the-crash', 'cart-rush', 'berry-dash', 'food-fling', 'food-fight', 'sugar-showdown', 'fridge-raid', 'pea-tanks', 'food-rally', 'melon-bowling', 'kitchen-golf') then 'game'
     when p_mode not in ('daily', 'free') then 'mode'
     when p_score is null or p_score < 0 or p_drops is null or p_drops < 0 or p_drops > 3000 or p_duration_ms is null then 'values'
     -- Snack Merge: one drop every 0.55s at most; a drop can't earn more than 60, even with combos
@@ -162,6 +162,13 @@ begin
     when p_game = 'melon-bowling' and (p_drops < 11 or p_drops > 21) then 'values'
     when p_game = 'melon-bowling' and p_duration_ms < p_drops * 1500 then 'too_fast'
     when p_game = 'melon-bowling' and p_score > 3540 then 'too_high'
+    -- Kitchen Golf: drops = the round's total strokes (a picked-up hole counts 7), so 9 to 63 for Today's 9 holes. Every
+    -- putt rolls and settles (well over 0.6s). A hole pays at most 1,125 (a one-stroke hole under par, beating the
+    -- computer) and the round bonus is 500
+    when p_game = 'kitchen-golf' and p_drops < 9 then 'values'
+    when p_game = 'kitchen-golf' and p_mode = 'daily' and p_drops > 63 then 'values'
+    when p_game = 'kitchen-golf' and p_duration_ms < p_drops * 600 then 'too_fast'
+    when p_game = 'kitchen-golf' and p_score > p_drops * 1200 + 500 then 'too_high'
     else null end;
 end $$;
 
