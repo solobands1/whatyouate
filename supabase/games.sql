@@ -89,7 +89,7 @@ returns text language plpgsql immutable as $$
 declare secs numeric := greatest(coalesce(p_duration_ms, 0), 0) / 1000.0;
 begin
   return case
-    when p_game is null or p_game not in ('snack-merge', 'beat-the-crash', 'cart-rush', 'berry-dash', 'food-fling', 'food-fight', 'sugar-showdown', 'fridge-raid', 'pea-tanks') then 'game'
+    when p_game is null or p_game not in ('snack-merge', 'beat-the-crash', 'cart-rush', 'berry-dash', 'food-fling', 'food-fight', 'sugar-showdown', 'fridge-raid', 'pea-tanks', 'food-rally', 'melon-bowling') then 'game'
     when p_mode not in ('daily', 'free') then 'mode'
     when p_score is null or p_score < 0 or p_drops is null or p_drops < 0 or p_drops > 3000 or p_duration_ms is null then 'values'
     -- Snack Merge: one drop every 0.55s at most; a drop can't earn more than 60, even with combos
@@ -147,6 +147,21 @@ begin
     when p_game = 'pea-tanks' and (p_duration_ms < 4500 or p_duration_ms < p_drops * 150) then 'too_fast'
     when p_game = 'pea-tanks' and p_mode = 'daily' and p_score > 8800 then 'too_high'
     when p_game = 'pea-tanks' and p_score > p_drops * 700 + p_duration_ms / 20 + 1000 then 'too_high'
+    -- Food Rally: drops = laps finished, always 3 (live and same-phone races post nothing). Today is a 3-lap time trial
+    -- paying 1,000 for finishing plus 100 a second under the course's par (about 3,600 at most; 4,000 leaves room).
+    -- Free Play pays 400 to 2,000 for the place plus 50 a second under par (about 3,300; 3,600 with room). The quickest
+    -- course takes over 25 s, after a 3-second countdown
+    when p_game = 'food-rally' and p_drops <> 3 then 'values'
+    when p_game = 'food-rally' and p_mode = 'daily' and p_score < 1000 then 'values'
+    when p_game = 'food-rally' and p_duration_ms < 25000 then 'too_fast'
+    when p_game = 'food-rally' and p_mode = 'daily' and p_score > 4000 then 'too_high'
+    when p_game = 'food-rally' and p_score > 3600 then 'too_high'
+    -- Melon Bowling: drops = balls you rolled in one 10-frame game against the computer (live and same-phone games post
+    -- nothing), so 11 to 21. Every ball rolls, settles and is swept (well over 1.5s). Score = 10 x the bowling score
+    -- (300 at most) + up to 20 for each full rack where you hit the pocket (12 at most) + 300 for beating the computer
+    when p_game = 'melon-bowling' and (p_drops < 11 or p_drops > 21) then 'values'
+    when p_game = 'melon-bowling' and p_duration_ms < p_drops * 1500 then 'too_fast'
+    when p_game = 'melon-bowling' and p_score > 3540 then 'too_high'
     else null end;
 end $$;
 
