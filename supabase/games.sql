@@ -91,7 +91,7 @@ begin
   if p.id is null then return json_build_object('ok', false, 'error', 'unknown_player'); end if;
   select count(*) into recent from game_submissions where player_id = p.id and created_at > now() - interval '1 hour';
   why := case
-    when p_game is null or p_game not in ('snack-merge', 'beat-the-crash', 'cart-rush', 'berry-dash', 'food-fling') then 'game'
+    when p_game is null or p_game not in ('snack-merge', 'beat-the-crash', 'cart-rush', 'berry-dash', 'food-fling', 'food-fight', 'sugar-showdown', 'fridge-raid') then 'game'
     when p_mode not in ('daily', 'free') then 'mode'
     when recent >= 60 then 'too_many'
     when p_score is null or p_score < 0 or p_drops is null or p_drops < 0 or p_drops > 3000 or p_duration_ms is null then 'values'
@@ -116,6 +116,30 @@ begin
     when p_game = 'food-fling' and p_mode = 'daily' and p_drops > 30 then 'values'
     when p_game = 'food-fling' and p_duration_ms < p_drops * 500 then 'too_fast'
     when p_game = 'food-fling' and p_score > p_drops * 9000 + 1000 then 'too_high'
+    -- Food Fight: drops = foods thrown at the computer (live and same-phone matches post nothing). Today is best of 3 rounds,
+    -- 12 throws each at most. Every throw is followed by its flight, a pause and the computer's turn, so well over 0.5s each.
+    -- A won round pays at most 500 (damage) + 500 + 1,000 (health left) + 700 (few throws) and takes at least 3 throws;
+    -- a lost round pays at most 200 a throw; so under 900 a throw, plus 1,000 for winning the day
+    when p_game = 'food-fight' and p_drops < 1 then 'values'
+    when p_game = 'food-fight' and p_mode = 'daily' and p_drops > 36 then 'values'
+    when p_game = 'food-fight' and p_duration_ms < p_drops * 500 then 'too_fast'
+    when p_game = 'food-fight' and p_score > p_drops * 900 + 1000 then 'too_high'
+    -- Sugar Showdown: drops = questions answered. Today is always exactly 10; Free Play ends at the 3rd wrong answer, so
+    -- drops - 3 were right. A right answer is 500 plus up to 500 for speed, a wrong one 0. Every answer shows the grams for
+    -- at least 1.7s before the next question or the end, so 1.5s an answer is a safe floor. Live and same-phone duels post nothing
+    when p_game = 'sugar-showdown' and p_mode = 'daily' and p_drops <> 10 then 'values'
+    when p_game = 'sugar-showdown' and p_mode = 'free' and p_drops < 3 then 'values'
+    when p_game = 'sugar-showdown' and p_duration_ms < p_drops * 1500 then 'too_fast'
+    when p_game = 'sugar-showdown' and p_mode = 'daily' and p_score > 10000 then 'too_high'
+    when p_game = 'sugar-showdown' and p_mode = 'free' and p_score > (p_drops - 3) * 1000 then 'too_high'
+    -- Fridge Raid: drops = your shots, summed over rounds. The computer needs 14 shots to find your 14 snack cells and you
+    -- shoot first, so every round (won or lost) is at least 14 shots; Today is one round, at most 64. Each shot is followed by
+    -- the computer's turn (0.75s or more). A round pays at most 670 for hits + 340 for snacks found + a win bonus of
+    -- 400 + 35 per shot under 64 + 210 for hidden cells: 3,370 at 14 shots, which is under 245 a shot
+    when p_game = 'fridge-raid' and p_drops < 14 then 'values'
+    when p_game = 'fridge-raid' and p_mode = 'daily' and p_drops > 64 then 'values'
+    when p_game = 'fridge-raid' and p_duration_ms < p_drops * 600 then 'too_fast'
+    when p_game = 'fridge-raid' and p_score > p_drops * 245 + 100 then 'too_high'
     else null end;
   insert into game_submissions (player_id, game, mode, score, drops, duration_ms, accepted, reason)
   values (p.id, p_game, p_mode, p_score, p_drops, p_duration_ms, why is null, why);
