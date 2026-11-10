@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { creatorsAdmin, postAlert, usdCadOn } from "../../../../lib/server/creators";
+import { recordSubscriptionStatus } from "../../../../lib/server/subscriptionStatus";
 
 // RevenueCat webhook for the creator program. Every payment, renewal and refund for a user who
 // joined with a creator code is recorded as earnings; everything else is ignored by the database.
@@ -42,6 +43,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, result: "sandbox" });
   }
   const ids = [e.app_user_id, e.original_app_user_id, ...(e.aliases ?? [])].filter((x): x is string => !!x);
+
+  // Every event also updates the user's subscription status for the owner's usage page (supabase/owner_usage.sql).
+  // It never throws and its result is only logged, so the creator program handling below is unchanged.
+  const statusResult = await recordSubscriptionStatus(e, ids);
+  if (statusResult !== "recorded") console.log("[creators/revenuecat] status", e.id, e.type, statusResult);
 
   // Free month tracking for the creator dashboard ("In Their Free Month"): a trial starting, renewal
   // being turned off during it (a non-refund cancellation), or turned back on.
