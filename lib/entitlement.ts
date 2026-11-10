@@ -19,12 +19,17 @@ export async function checkProEntitlement(userId: string): Promise<boolean> {
       `https://api.revenuecat.com/v1/subscribers/${encodeURIComponent(userId)}`,
       {
         headers: {
-          Authorization: `Bearer ${process.env.REVENUECAT_SECRET_KEY}`,
+          // The v1 subscribers endpoint needs a v1 secret key; a v2 key is rejected (code 7723) and every user would
+          // read as not Pro. REVENUECAT_V1_SECRET_KEY wins when set.
+          Authorization: `Bearer ${process.env.REVENUECAT_V1_SECRET_KEY || process.env.REVENUECAT_SECRET_KEY}`,
           "Content-Type": "application/json",
         },
       }
     );
-    if (!res.ok) return false;
+    if (!res.ok) {
+      console.warn(`[entitlement] RevenueCat ${res.status} for ${userId.slice(0, 8)}: ${(await res.text().catch(() => "")).slice(0, 160)}`);
+      return false;
+    }
     const data = await res.json();
     const entitlement = data.subscriber?.entitlements?.pro;
     if (!entitlement) return false;
