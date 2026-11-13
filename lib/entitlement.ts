@@ -10,8 +10,8 @@ export const UNLIMITED_USER_IDS = new Set<string>([
 ]);
 
 // True if the user has an active paid "pro" entitlement in RevenueCat (or is on
-// the allowlist). Note this is the PAID check only — free-trial eligibility is a
-// separate, meal-derived check (see isTrialEligible in ./trial). Callers OR the two.
+// the allowlist). Note this is the PAID check only — Free Access is a separate check
+// (isFreeAccessEligible in ./server/freeAccess, meals plus reflections). Callers OR the two.
 export async function checkProEntitlement(userId: string): Promise<boolean> {
   if (UNLIMITED_USER_IDS.has(userId)) return true;
   try {

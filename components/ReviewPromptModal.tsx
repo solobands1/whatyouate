@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AppReview } from "@capawesome/capacitor-app-review";
 import { useAuth } from "./AuthProvider";
 import { useAppData } from "./AppDataProvider";
 import { useKeyboardInset } from "../hooks/useKeyboardInset";
+import { useTrialStatus } from "../hooks/useTrialStatus";
 import { isIntroActive } from "../lib/introQuiet";
+import { isUpgradeModalOpen } from "./UpgradeModal";
 import {
   recordReviewShown,
   recordReviewResponse,
@@ -31,6 +33,13 @@ export default function ReviewPromptModal() {
   const [feedbackStatus, setFeedbackStatus] = useState<"idle" | "sending" | "sent">("idle");
   const kbInset = useKeyboardInset();
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
+  // The review ask never competes with the paywall: not during Free Access (the wall is on its
+  // way, and the paywall sits behind every "See Plans"), not once it has ended and the app is
+  // locked (the paywall is on those screens), and never over the open paywall. Read through a
+  // ref so the window listener below always sees the current state.
+  const trial = useTrialStatus();
+  const paywallTime = useRef(false);
+  paywallTime.current = trial.isTrialActive || trial.isFree;
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -38,6 +47,9 @@ export default function ReviewPromptModal() {
       // pending flag untouched means it returns naturally on a later app load, not right after.
       if (isIntroActive()) return;
       const key = (e as CustomEvent<{ key: PromptKey | null }>).detail?.key ?? null;
+      // Same for the paywall: a milestone or post-purchase ask waits (flag kept) until it's clear.
+      // A manual preview (no key, Profile's triple tap) still opens.
+      if (key && (paywallTime.current || isUpgradeModalOpen())) return;
       setPromptKey(key);
       setOpen(true);
       setShowFeedback(false);

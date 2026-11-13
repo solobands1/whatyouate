@@ -4,7 +4,7 @@ import { buildSmartNudgeContext } from "../../../../lib/digestEngine";
 import { buildWeeklySummaryPrompt, sanitizeNudgeFields, WEEKLY_SUMMARY_SYSTEM_PROMPT, medicalRedFlag } from "../../../../lib/nudgeGen";
 import { sendPush } from "../../../../lib/apns";
 import type { MealLog, WorkoutSession, UserProfile, SupplementEntry } from "../../../../lib/types";
-import { isTrialEligible } from "../../../../lib/trial";
+import { isFreeAccessEligible } from "../../../../lib/server/freeAccess";
 import { checkProEntitlement } from "../../../../lib/entitlement";
 
 export const maxDuration = 300;
@@ -200,9 +200,9 @@ export async function GET(req: Request) {
       const { data: mealRows } = await supabase.from("meals").select("*").eq("user_id", userId).gte("created_at", sixtyDaysAgo).order("ts", { ascending: false });
       const meals = (mealRows ?? []).map(mapMealRow).filter(Boolean) as MealLog[];
 
-      // Weekly summary runs for active free-trial users OR paid users. Trial is
-      // derived from meals and checked first, skipping the RevenueCat call for them.
-      const eligible = isTrialEligible(meals, Date.now()) || (await checkProEntitlement(userId));
+      // Weekly summary runs for users in Free Access OR paid users. Free Access (meals plus
+      // reflections, as the app computes it) is checked first, skipping the RevenueCat call for them.
+      const eligible = (await isFreeAccessEligible(supabase, userId, { meals })) || (await checkProEntitlement(userId));
       if (!eligible) continue;
 
       const sevenDaysAgoDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);

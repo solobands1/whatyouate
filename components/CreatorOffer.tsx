@@ -14,7 +14,7 @@ import {
 
 /**
  * Shown right after someone signs up with a creator code: start the Monthly (Creator) plan with its
- * one month free trial, or carry on with the normal 7 days. Calls onDone straight away when Apple
+ * one month free trial, or carry on with Free Access. Calls onDone straight away when Apple
  * won't give this person the trial, so nobody sees an offer they can't get. In a web browser it
  * shows with the usual price but can't purchase, like the upgrade screen.
  */
@@ -126,7 +126,7 @@ export default function CreatorOffer({
           disabled={buying}
           className="w-full py-2 text-sm font-medium text-muted/60 transition active:opacity-60"
         >
-          {atSignup ? "Not now, start with 7 days free" : "Not now"}
+          {atSignup ? "Not Now, Start With Free Access" : "Not Now"}
         </button>
         <div className="flex items-center justify-center gap-4 pt-1">
           <a href="https://whatyouate.app/terms" target="_blank" rel="noopener noreferrer" className="text-[11px] text-muted/40 underline underline-offset-2">

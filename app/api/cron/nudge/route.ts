@@ -5,7 +5,7 @@ import { buildReflectionSummary } from "../../../../lib/changes";
 import { buildSmartPrompt, sanitizeNudgeFields, SMART_NUDGE_SYSTEM_PROMPT, medicalRedFlag } from "../../../../lib/nudgeGen";
 import { sendPush } from "../../../../lib/apns";
 import type { MealLog, WorkoutSession, UserProfile, SupplementEntry } from "../../../../lib/types";
-import { isTrialEligible } from "../../../../lib/trial";
+import { isFreeAccessEligible } from "../../../../lib/server/freeAccess";
 import { checkProEntitlement } from "../../../../lib/entitlement";
 import { coerceActivityCelebration, EMPTY_ACTIVITY_CELEBRATION, recordConsistencyWin } from "../../../../lib/activityCelebration";
 import { dayKeyFromTs, localTodayKey } from "../../../../lib/utils";
@@ -236,9 +236,9 @@ export async function GET(req: Request) {
       const { data: mealRows } = await supabase.from("meals").select("*").eq("user_id", userId).gte("created_at", sixtyDaysAgo).order("ts", { ascending: false });
       const meals = (mealRows ?? []).map(mapMealRow).filter(Boolean) as MealLog[];
 
-      // The coach runs for active free-trial users OR paid users. Trial is derived
-      // from meals (free) and checked first, so we skip the RevenueCat call for them.
-      const eligible = isTrialEligible(meals, Date.now()) || (await checkProEntitlement(userId));
+      // The coach runs for users in Free Access OR paid users. Free Access (meals plus reflections,
+      // as the app computes it) is checked first, so we skip the RevenueCat call for them.
+      const eligible = (await isFreeAccessEligible(supabase, userId, { meals })) || (await checkProEntitlement(userId));
       if (!eligible) { console.log(`[cron/nudge] skip ${userId.slice(0,8)}: not in trial and not pro`); continue; }
 
       if (meals.length < 5) { console.log(`[cron/nudge] skip ${userId.slice(0,8)}: only ${meals.length} meals (need 5)`); continue; }

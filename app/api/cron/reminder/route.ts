@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { sendPush } from "../../../../lib/apns";
-import { isTrialEligible, type TrialMeal } from "../../../../lib/trial";
+import type { TrialMeal } from "../../../../lib/trial";
+import { isFreeAccessEligible } from "../../../../lib/server/freeAccess";
 import { checkProEntitlement } from "../../../../lib/entitlement";
 import { HABIT_TEMPLATES } from "../../../../lib/habits";
 
@@ -303,7 +304,7 @@ export async function GET(req: Request) {
           .from("meals").select("ts, created_at, status, analysis_json")
           .eq("user_id", userId).gte("created_at", sixtyDaysAgo).order("ts", { ascending: false });
         const histMeals = (histRows ?? []).map(mapReminderMeal).filter(Boolean) as TrialMeal[];
-        const eligible = isTrialEligible(histMeals, Date.now()) || (await checkProEntitlement(userId));
+        const eligible = (await isFreeAccessEligible(supabase, userId, { meals: histMeals })) || (await checkProEntitlement(userId));
         if (!eligible) continue;
 
         const message = getRandomReminder();

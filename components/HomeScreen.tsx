@@ -52,6 +52,7 @@ import {
 } from "../lib/supabaseDb";
 import { computeHomeMarkers, computeRecent } from "../lib/digestEngine";
 import { useTrialStatus } from "../hooks/useTrialStatus";
+import FreeAccessBanner from "./FreeAccessBanner";
 import { openUpgradeModal } from "./UpgradeModal";
 import { getPendingReviewFlag, canShowReviewPrompt, checkAndSetMilestoneFlag } from "../lib/reviewPrompt";
 import { openReviewPrompt } from "./ReviewPromptModal";
@@ -4315,51 +4316,10 @@ export default function HomeScreen() {
         {(() => {
           return (
             <>
-              {/* Hidden while the streak-saver card is up — the two together crowd the top;
-                  the progress bar returns once the card is dismissed/resolved. */}
-              {!isDemoMode && trial.isTrialActive && !streakSaverInfo && (() => {
-                // Progress toward the "core picture" (5 logged days), not a fixed 7-day
-                // calendar — matches the behavior-based trial wall.
-                const loggedDays = countLoggedDays(ctxMeals);
-                const built = loggedDays >= 5;
-                const pct = Math.min(loggedDays / 5, 1) * 100;
-                return (
-                  <div className="mt-2">
-                    <button
-                      type="button"
-                      onClick={openUpgradeModal}
-                      className="w-full rounded-xl border border-primary/15 bg-primary/[0.08] px-4 py-2.5 text-left transition active:opacity-70"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-[12px] font-medium text-ink/60">
-                          {built ? "Free Trial · Your Picture Is Ready" : "Free Trial · Building Your Picture"}
-                        </span>
-                        <span className="text-[11px] text-primary/70 font-medium">See Plans</span>
-                      </div>
-                      <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-ink/10">
-                        <div
-                          className="h-full rounded-full bg-primary/50 transition-all"
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
-                    </button>
-                  </div>
-                );
-              })()}
-              {!isDemoMode && trial.isFree && (
-                <div className="mt-2">
-                  <button
-                    type="button"
-                    onClick={openUpgradeModal}
-                    className="w-full rounded-xl border border-primary/25 bg-primary/10 px-4 py-2.5 text-left transition active:opacity-70"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-[12px] font-medium text-ink/60">Free Trial Ended</span>
-                      <span className="text-[11px] text-primary font-semibold">Upgrade Now →</span>
-                    </div>
-                  </button>
-                </div>
-              )}
+              {/* Free Access progress, its end day, or "Free Access Has Ended". The progress bar
+                  hides while the streak-saver card is up (the two together crowd the top) and
+                  returns once the card is dismissed/resolved. */}
+              {!isDemoMode && <FreeAccessBanner trial={trial} showProgress={!streakSaverInfo} />}
               {!isDemoMode && !trial.isTrialActive && !trial.isFree && showStatsBanner && (
                 <div className="mt-2 flex items-center justify-between gap-3 rounded-xl border border-primary/15 bg-primary/[0.06] px-4 py-2.5">
                   <p className="text-[12px] text-ink/60">Fill Out Your Profile For Better Results</p>
