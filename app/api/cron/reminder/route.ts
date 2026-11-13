@@ -84,6 +84,68 @@ function userTodayStartISO(offsetMinutes: number | null | undefined): string {
   return new Date(localMidnightUtcMs).toISOString();
 }
 
+// "Remind Me After Breakfast", from the first-meal step at the end of onboarding. The app stores an
+// absolute time in profiles.first_meal_reminder_at, so there's no timezone math here: the first
+// hourly run at or after it sends one push, unless the user has logged a meal today. The column is
+// cleared BEFORE sending, so a failed clear can never turn into a repeat push. A reminder more than
+// three hours overdue (missed runs) is cleared without sending, since a breakfast push in the
+// afternoon would be odd. Kept apart from the main loop: if the column doesn't exist yet
+// (supabase/first_meal_reminder.sql not run), the lookup errors and only this part is skipped.
+const FIRST_MEAL_REMINDER_TITLE = "Had Breakfast Yet?";
+const FIRST_MEAL_REMINDER_BODY = "Log it when you get a moment. A photo or a few words is plenty.";
+
+async function sendFirstMealReminders(
+  supabase: ReturnType<typeof adminClient>,
+  tokens: Array<{ user_id: string; token: string }>
+): Promise<number> {
+  const nowMs = Date.now();
+  // Reminders are set on the hour and the cron runs at :00, so allow a few minutes of clock skew.
+  const dueBy = new Date(nowMs + 5 * 60 * 1000).toISOString();
+  const { data: due, error } = await supabase
+    .from("profiles")
+    .select("user_id, first_meal_reminder_at, timezone_offset_minutes")
+    .not("first_meal_reminder_at", "is", null)
+    .lte("first_meal_reminder_at", dueBy);
+  if (error) {
+    console.error("[cron/reminder] first-meal reminder lookup failed:", error.message);
+    return 0;
+  }
+  let sent = 0;
+  for (const row of (due ?? []) as Array<{ user_id: string; first_meal_reminder_at: string; timezone_offset_minutes: number | null }>) {
+    const userId = row.user_id;
+    try {
+      const { error: clearErr } = await supabase
+        .from("profiles")
+        .update({ first_meal_reminder_at: null })
+        .eq("user_id", userId);
+      if (clearErr) {
+        console.error(`[cron/reminder] couldn't clear first-meal reminder for ${userId.slice(0, 8)}, skipping:`, clearErr.message);
+        continue;
+      }
+      const atMs = new Date(row.first_meal_reminder_at).getTime();
+      if (!Number.isFinite(atMs) || nowMs - atMs > 3 * 60 * 60 * 1000) continue;
+      const userTokens = tokens.filter((t) => t.user_id === userId);
+      if (!userTokens.length) continue; // no push permission: the app shows its own prompt on open
+      const { data: todayMeals, error: mealsErr } = await supabase
+        .from("meals").select("id")
+        .eq("user_id", userId).gte("created_at", userTodayStartISO(row.timezone_offset_minutes)).neq("status", "failed").limit(1);
+      if (mealsErr) {
+        console.error(`[cron/reminder] first-meal meal check failed for ${userId.slice(0, 8)}:`, mealsErr.message);
+        continue;
+      }
+      if (todayMeals?.length) continue; // already logged, nothing to remind
+      console.log(`[cron/reminder] first-meal reminder for ${userId.slice(0, 8)}`);
+      for (const t of userTokens) {
+        const ok = await sendPush(t.token, { title: FIRST_MEAL_REMINDER_TITLE, body: FIRST_MEAL_REMINDER_BODY, data: { screen: "home" }, badge: 1 });
+        if (ok) sent++;
+      }
+    } catch (err) {
+      console.error(`[cron/reminder] first-meal reminder error for ${userId.slice(0, 8)}:`, err);
+    }
+  }
+  return sent;
+}
+
 export async function GET(req: Request) {
   const auth = req.headers.get("authorization");
   if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -98,10 +160,12 @@ export async function GET(req: Request) {
     .from("push_tokens")
     .select("user_id, token")
     .eq("platform", "ios");
-  if (!tokens?.length) return NextResponse.json({ ok: true, sent: 0 });
+  // Runs before the no-tokens early return so due reminders still get cleared.
+  const firstMealSent = await sendFirstMealReminders(supabase, (tokens ?? []) as Array<{ user_id: string; token: string }>);
+  if (!tokens?.length) return NextResponse.json({ ok: true, sent: firstMealSent });
 
   const userIds = [...new Set(tokens.map((t: { user_id: string }) => t.user_id))];
-  let sent = 0;
+  let sent = firstMealSent;
 
   for (const userId of userIds) {
     try {

@@ -280,6 +280,20 @@ export async function saveTimezoneOffset(userId: string, offsetMinutes: number):
   else profileCache.delete(userId);
 }
 
+// "Remind Me After Breakfast" from the first-meal step (components/FirstMealStep). The hourly
+// reminder cron sends one push at the first run at or after this time, unless a meal was logged
+// that day, then clears it. Needs the profiles.first_meal_reminder_at column
+// (supabase/first_meal_reminder.sql); without it this rejects and the caller falls back to the
+// in-app prompt. Throws on failure rather than resolving quietly.
+export async function saveFirstMealReminder(userId: string, atIso: string | null): Promise<void> {
+  if (useMemory) return;
+  const { error } = await supabase.from("profiles").upsert(
+    { user_id: userId, first_meal_reminder_at: atIso },
+    { onConflict: "user_id" }
+  );
+  if (error) throw error;
+}
+
 export function clearProfileCache(userId: string) {
   profileCache.delete(userId);
 }

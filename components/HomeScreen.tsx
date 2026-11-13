@@ -24,7 +24,7 @@ import "../lib/mealQueue";
 import BarcodeScannerOverlay from "./BarcodeScannerOverlay";
 import { getFoodCacheEntry, setFoodCacheEntry, deleteFoodCacheEntry, deleteFoodTextEntry, incrementFoodCacheLogCount, incrementFoodTextLogCount, getQuickAddFromMeals, addQuickAddRemoved, getDailySupplements, setDailySupplements, hasDailySuppsLoggedToday, markDailySuppsLoggedToday, clearDailySuppsLoggedToday, dishGroupKey, type QuickAddItem } from "../lib/foodCache";
 import { withLoggedFollowUp } from "../lib/nudgeFollowUp";
-import { addFeelLog, deleteFeelLog, updateFeelLog, upsertWaterLog, saveStreakSaver, saveActivityCelebration, addWeightLog, saveProfile, addReflection, saveHabitState, fetchHabitHistory, saveHabitHistory, type FeelLog } from "../lib/supabaseDb";
+import { addFeelLog, deleteFeelLog, updateFeelLog, upsertWaterLog, saveStreakSaver, saveActivityCelebration, addWeightLog, saveProfile, addReflection, saveHabitState, fetchHabitHistory, saveHabitHistory, saveFirstMealReminder, type FeelLog } from "../lib/supabaseDb";
 import { EMPTY_HABIT_STATE, pickSuggestionId, snoozeSuggestion, snoozeAllSuggestions, declineSuggestion, markHabitEnded, endBuilderCompleted, resolveBuilderForToday, extendBuilder, type HabitState, type ActiveBuilder, type HabitHistoryEntry } from "../lib/habitState";
 import { rescueAvailable, EMPTY_STREAK_SAVER } from "../lib/streakSaver";
 import { detectComebackDay, EMPTY_ACTIVITY_CELEBRATION } from "../lib/activityCelebration";
@@ -55,6 +55,22 @@ import { openUpgradeModal } from "./UpgradeModal";
 import { getPendingReviewFlag, canShowReviewPrompt, checkAndSetMilestoneFlag } from "../lib/reviewPrompt";
 import { openReviewPrompt } from "./ReviewPromptModal";
 import OnboardingFlow from "./OnboardingFlow";
+import FirstMealStep, { FirstMealCelebration, FirstMealReminderPrompt, clearFirstMealView, type FirstMealLogMethod } from "./FirstMealStep";
+import {
+  breakfastReminderTime,
+  clearFirstHabitStart,
+  clearFirstMeal,
+  clearFirstMealReminder,
+  hasPendingMeal,
+  readFirstHabitStart,
+  readFirstMeal,
+  readFirstMealReminder,
+  savedMealCount,
+  writeFirstHabitStart,
+  writeFirstMeal,
+  writeFirstMealReminder,
+} from "../lib/firstMeal";
+import { getPushStatus } from "../lib/push";
 import ProfileAvatar from "./ProfileAvatar";
 import { safeFallbackAnalysis } from "../lib/ai/schema";
 import { useWorkout, WORKOUT_TYPE_OPTIONS } from "../hooks/useWorkout";
@@ -568,7 +584,20 @@ export default function HomeScreen() {
   const [showTourGate, setShowTourGate] = useState(false);
   const [showUpdatePopup, setShowUpdatePopup] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [gateOverlay, setGateOverlay] = useState(false);
+  // First-meal step (end of onboarding, see lib/firstMeal + FirstMealStep). firstMealOpen mirrors
+  // the per-user localStorage record, so the step survives the photo round trip through /capture
+  // and an app restart. firstMealTsRef is the meal time picked on the step, read by whichever
+  // logger it opened; it's only ever set while the step is open.
+  // Read up front so coming back from /capture paints the step, not a frame of Home. On a cold
+  // start (and on the server) user is still null here, and the mount effect below picks it up.
+  const [firstMealOpen, setFirstMealOpen] = useState(() => typeof window !== "undefined" && !!user && !!readFirstMeal(user.id));
+  const [firstMealCelebrate, setFirstMealCelebrate] = useState(false);
+  const [firstMealSaveFailed, setFirstMealSaveFailed] = useState(false);
+  const [firstHabitTick, setFirstHabitTick] = useState(0);
+  const [showBreakfastReminder, setShowBreakfastReminder] = useState(false);
+  const [breakfastReminderTick, setBreakfastReminderTick] = useState(0);
+  const firstMealTsRef = useRef<number | null>(null);
+  const firstMealSawPendingRef = useRef(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [demoData] = useState(() => ({ meals: makeDemoMeals(), workouts: makeDemoWorkouts(), feelLogs: makeDemoFeelLogs() }));
   const loadingData = dataLoading;
@@ -995,6 +1024,16 @@ export default function HomeScreen() {
     setActiveTemplate(FIRST_TEMPLATE);
     setHeroHabit({ status: "suggested", days: freshDays(FIRST_TEMPLATE) });
     setHabitLoaded(true);
+  }, [isDemoMode]);
+  // Leaving the walkthrough on Home (Skip) used to leave the tour's sample suggestion in the hero
+  // until the next remount. A new user's habit is now already running when the tour starts (it
+  // begins with the first meal), so let the load effect below put the real one back. Declared
+  // before that effect so it runs first in the same commit.
+  const wasDemoRef = useRef(false);
+  useEffect(() => {
+    const was = wasDemoRef.current;
+    wasDemoRef.current = isDemoMode;
+    if (was && !isDemoMode) appliedGoalHabitRef.current = false;
   }, [isDemoMode]);
 
   useEffect(() => {
@@ -1508,7 +1547,8 @@ export default function HomeScreen() {
     setQuickAddAllItems(all);
     setQuickAddQuery("");
     setQuickAddSelected({});
-    setQuickAddDate(backfillDate ?? todayDateStr());
+    // Opened from the first-meal step: start on the picked meal's day (it can be last night).
+    setQuickAddDate(backfillDate ?? (firstMealTsRef.current != null ? dayKeyFromTs(firstMealTsRef.current) : todayDateStr()));
     setShowQuickAdd(true);
   };
 
@@ -1614,7 +1654,10 @@ export default function HomeScreen() {
     // the right day straight away (and the missed-day banner clears).
     const capturedDate = quickAddDate;
     const backdated = capturedDate !== todayDateStr() ? new Date(capturedDate + "T12:00:00").getTime() : null;
-    const baseTs = backdated !== null && backdated < now ? backdated : now;
+    // The first-meal step's exact time wins while the sheet is still on that day.
+    const stepTs = firstMealTsRef.current;
+    const exactTs = stepTs != null && stepTs <= now && dayKeyFromTs(stepTs) === capturedDate ? stepTs : null;
+    const baseTs = exactTs ?? (backdated !== null && backdated < now ? backdated : now);
     recentQuickAddRef.current = now;
     quickAddBouncedRef.current = false;
     setTimeout(() => { if (recentQuickAddRef.current === now) recentQuickAddRef.current = 0; }, 60_000);
@@ -2042,9 +2085,10 @@ export default function HomeScreen() {
         reader.readAsDataURL(selected);
       });
       try {
+        // ts: the first-meal step's picked meal time, so a photo of last night's dinner is saved there.
         sessionStorage.setItem(
           "wya_pending_capture",
-          JSON.stringify({ name: selected.name, type: selected.type, dataUrl })
+          JSON.stringify({ name: selected.name, type: selected.type, dataUrl, ...(firstMealTsRef.current != null ? { ts: firstMealTsRef.current } : {}) })
         );
       } catch {}
       router.push("/capture?type=food&from=home");
@@ -2161,7 +2205,8 @@ export default function HomeScreen() {
     setBarcodeEditMode(false);
     setBarcodeFromCache(false);
     try {
-      const created = await addMeal(user.id, analysis);
+      // firstMealTsRef: the meal time picked on the first-meal step (null otherwise, meaning now).
+      const created = await addMeal(user.id, analysis, undefined, undefined, "processing", firstMealTsRef.current ?? undefined);
       if (created?.id) {
         await updateMeal(created.id, analysis, undefined, user?.id);
         const finishedMeal = { ...created, analysisJson: analysis, status: "done" as const };
@@ -2172,6 +2217,7 @@ export default function HomeScreen() {
       setTimeout(() => setBarcodeSuccess(false), 1500);
     } catch (err) {
       console.error("[barcode] save failed:", err);
+      if (firstMealTsRef.current != null) setFirstMealSaveFailed(true);
     } finally {
       setIsAddingBarcode(false);
     }
@@ -2181,7 +2227,7 @@ export default function HomeScreen() {
     if (!barcodeNotFoundText.trim() || !user || barcodeNotFoundAnalyzing) return;
     setBarcodeNotFoundAnalyzing(true);
     try {
-      const created = await addMeal(user.id, safeFallbackAnalysis());
+      const created = await addMeal(user.id, safeFallbackAnalysis(), undefined, undefined, "processing", firstMealTsRef.current ?? undefined);
       if (!created?.id) throw new Error("Failed to create meal");
       const res = await fetch("/api/analyze-food", {
         method: "POST",
@@ -2198,6 +2244,7 @@ export default function HomeScreen() {
       setTimeout(() => setBarcodeSuccess(false), 1500);
     } catch {
       setLoadError("Something went wrong. Try again.");
+      if (firstMealTsRef.current != null) setFirstMealSaveFailed(true);
     } finally {
       setBarcodeNotFoundAnalyzing(false);
     }
@@ -2233,7 +2280,8 @@ export default function HomeScreen() {
     setBarcodeEditMode(false);
     setBarcodeFromCache(false);
     try {
-      const created = await addMeal(user.id, analysis);
+      // firstMealTsRef: the meal time picked on the first-meal step (null otherwise, meaning now).
+      const created = await addMeal(user.id, analysis, undefined, undefined, "processing", firstMealTsRef.current ?? undefined);
       if (created?.id) {
         await updateMeal(created.id, analysis, undefined, user?.id);
         const finishedMeal = { ...created, analysisJson: analysis, status: "done" as const };
@@ -2244,6 +2292,7 @@ export default function HomeScreen() {
       setTimeout(() => setBarcodeSuccess(false), 1500);
     } catch (err) {
       console.error("[barcode] save failed:", err);
+      if (firstMealTsRef.current != null) setFirstMealSaveFailed(true);
     } finally {
       setIsAddingBarcode(false);
     }
@@ -2396,10 +2445,12 @@ export default function HomeScreen() {
       // done today. Sleep habits are the exception: they happen at night, so tonight is
       // still usable and waiting until tomorrow wastes the moment the user said yes.
       const startsTonight = activeTemplate.category === "sleep";
+      // Find Your Rhythm is "log anything today", so it never waits for tomorrow either.
+      const startsAnyTime = activeTemplate.id === "logging-starter";
       const nextStatus =
         choice === "today" ? "active"
         : choice === "tomorrow" ? "committed"
-        : (startsTonight || new Date().getHours() < 10) ? "active" : "committed";
+        : (startsTonight || startsAnyTime || new Date().getHours() < 10) ? "active" : "committed";
       setHeroHabit((h) => ({ ...h, status: nextStatus }));
     }, 2800);
     return () => clearTimeout(t);
@@ -2550,6 +2601,7 @@ export default function HomeScreen() {
 
   useEffect(() => {
     const anyModal = showQuickAdd || showLogFood || showReflection || showFeelingModal || showHabitSpotlight
+      || firstMealOpen || firstMealCelebrate || showBreakfastReminder
       || waterModalOpen || quickConfirmMeal != null || failedMealPrompt != null
       || meals.editingMeal != null || editingFeelLog != null
       || barcodeOpen || barcodeProduct != null || barcodeNotFound || barcodeLookingUp
@@ -2577,7 +2629,7 @@ export default function HomeScreen() {
       body.style.overflow = "";
       window.scrollTo(0, scrollY);
     };
-  }, [showQuickAdd, showLogFood, showReflection, showFeelingModal, showHabitSpotlight, waterModalOpen, quickConfirmMeal, failedMealPrompt, meals.editingMeal, editingFeelLog, barcodeOpen, barcodeProduct, barcodeNotFound, barcodeLookingUp, workout.showManualWorkoutModal, workout.editingWorkout, pendingDelete]);
+  }, [showQuickAdd, showLogFood, showReflection, showFeelingModal, showHabitSpotlight, firstMealOpen, firstMealCelebrate, showBreakfastReminder, waterModalOpen, quickConfirmMeal, failedMealPrompt, meals.editingMeal, editingFeelLog, barcodeOpen, barcodeProduct, barcodeNotFound, barcodeLookingUp, workout.showManualWorkoutModal, workout.editingWorkout, pendingDelete]);
 
   // When a meal is still processing, the "Analyzing food…" label is time-gated
   // at render time (< 90s shows spinner text, >= 90s shows "Analysis failed").
@@ -2688,6 +2740,161 @@ export default function HomeScreen() {
       }
     } catch {}
   }, [user?.id, loadingData, showOnboarding]);
+
+  // ── First-meal step (the end of onboarding) ────────────────────────────────
+  // Reopen the step on mount while its record is still waiting: after the photo round trip through
+  // /capture (Home remounts) or if the app was closed on it.
+  useEffect(() => {
+    if (!user) return;
+    if (readFirstMeal(user.id)) setFirstMealOpen(true);
+  }, [user?.id]);
+
+  // Saved meals from whichever list is fresher: this screen's list has its own saves a beat before
+  // the provider reloads, and the provider has everything on a fresh mount.
+  const savedMealsNow = Math.max(savedMealCount(ctxMeals), savedMealCount(meals.meals));
+  const firstMealSaving = firstMealOpen && (hasPendingMeal(meals.meals) || isAddingBarcode);
+  // Quick Add lists foods already logged, so it's only offered on the step when it has something.
+  const firstMealQuickAddAvailable = useMemo(
+    () => firstMealOpen && getQuickAddFromMeals(meals.meals).all.length > 0,
+    [firstMealOpen, meals.meals]
+  );
+  const firstHabitTemplate = HABIT_TEMPLATES.find((t) => t.id === "logging-starter") ?? FIRST_TEMPLATE;
+
+  // Ends the step, either with a saved meal ("logged") or with Not Now / a reminder ("skipped").
+  // Find Your Rhythm starts today either way (applied by the effect below once the habit engine has
+  // loaded), the old Start Today / Start Tomorrow spotlight is retired for this user, and the welcome
+  // gate follows: straight away after a skip, after the "Nice Start!" celebration after a log.
+  const finishFirstMeal = (outcome: "logged" | "skipped") => {
+    if (!user) return;
+    clearFirstMeal(user.id);
+    clearFirstMealView();
+    writeFirstHabitStart(user.id, outcome);
+    try { localStorage.setItem(`wya_habit_intro_seen_${user.id}`, "true"); } catch {}
+    firstMealTsRef.current = null;
+    firstMealSawPendingRef.current = false;
+    setFirstMealSaveFailed(false);
+    setFirstMealOpen(false);
+    setBarcodeOpen(false);
+    setFirstHabitTick((t) => t + 1);
+    if (outcome === "logged") setFirstMealCelebrate(true);
+    else setShowTourGate(true);
+  };
+
+  // Watch for the first saved meal while the step is open, whichever logger it came from. An
+  // optimistic pill that vanishes or turns "unsaved" without a saved row means the write failed, so
+  // the step says so instead of quietly sitting there as if nothing happened.
+  useEffect(() => {
+    if (!firstMealOpen || !user || isDemoMode) return;
+    const rec = readFirstMeal(user.id);
+    if (!rec) { setFirstMealOpen(false); return; }
+    if (savedMealsNow > rec.baseline) { finishFirstMeal("logged"); return; }
+    if (hasPendingMeal(meals.meals)) {
+      firstMealSawPendingRef.current = true;
+      setFirstMealSaveFailed(false);
+    } else if (firstMealSawPendingRef.current) {
+      firstMealSawPendingRef.current = false;
+      setFirstMealSaveFailed(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firstMealOpen, user, isDemoMode, savedMealsNow, meals.meals]);
+
+  // A logging option on the step: open the app's own logger for it, with the picked meal time.
+  const openFirstMealLogger = (method: FirstMealLogMethod, ts: number) => {
+    if (!user) return;
+    const at = Math.min(ts, Date.now());
+    firstMealTsRef.current = at;
+    setFirstMealSaveFailed(false);
+    if (method === "photo") {
+      if (trial.isFree && !isDemoMode) { openUpgradeModal(); return; }
+      handleFoodPhotoClick();
+    } else if (method === "manual") {
+      meals.openManualMealEntry(at);
+    } else if (method === "barcode") {
+      setBarcodeOpen(true);
+    } else {
+      handleOpenQuickAdd();
+    }
+  };
+
+  // "Remind Me After Breakfast". The in-app fallback is saved first, always. The server copy (which
+  // the hourly reminder cron turns into a push) gets one retry; if it still fails, the step tells the
+  // user the reminder will show in the app rather than promising a notification.
+  const scheduleBreakfastReminder = async (): Promise<{ at: number; push: boolean }> => {
+    const at = breakfastReminderTime();
+    if (!user) return { at, push: false };
+    writeFirstMealReminder(user.id, { at, baseline: savedMealsNow });
+    const iso = new Date(at).toISOString();
+    let saved = false;
+    try {
+      await saveFirstMealReminder(user.id, iso);
+      saved = true;
+    } catch (err) {
+      console.warn("[firstMeal] reminder save failed, retrying", err);
+      try {
+        await saveFirstMealReminder(user.id, iso);
+        saved = true;
+      } catch (err2) {
+        console.error("[firstMeal] reminder save failed after retry; in-app prompt only", err2);
+      }
+    }
+    const pushStatus = await getPushStatus().catch(() => "unsupported" as const);
+    return { at, push: saved && pushStatus === "granted" };
+  };
+
+  const closeFirstMealCelebration = () => {
+    setFirstMealCelebrate(false);
+    setShowTourGate(true);
+  };
+
+  // Start Find Your Rhythm today once the step is done (the flag survives a restart until it's
+  // applied). No Start Today / Start Tomorrow choice, since logging can always start today. After a
+  // log, day 1 is already ticked ("Done For Today", 1 of 3). That's set directly rather than through
+  // the auto-tick, so the daily chime and "Habit Done" banner don't stack on the celebration. Never
+  // replaces a habit that's already in progress.
+  useEffect(() => {
+    if (!user || isDemoMode || !habitLoaded || !appliedGoalHabitRef.current) return;
+    const start = readFirstHabitStart(user.id);
+    if (!start) return;
+    clearFirstHabitStart(user.id);
+    if (habitStateRef.current.builder) return;
+    if (heroHabit.status !== "suggested" && heroHabit.status !== "hidden") return;
+    const tpl = firstHabitTemplate;
+    const days = freshDays(tpl);
+    if (start === "logged") days[0] = days[0].map(() => true);
+    try { localStorage.removeItem(`wya_habit_ignored_${tpl.id}_${user.id}`); } catch {}
+    setActiveTemplate(tpl);
+    setHeroExpanded(true);
+    setHeroHabit({ status: start === "logged" ? "dayComplete" : "active", days, holdDay: null });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, isDemoMode, habitLoaded, heroHabit.status, firstHabitTick]);
+
+  // The in-app half of "Remind Me After Breakfast": on the first open after the chosen time (same
+  // day), if nothing has been logged since, ask once. If the app is open when the time comes, a
+  // timer re-checks then. A tapped reminder push lands here too, since those open Home. The record
+  // is only cleared once they answer (or log, or the day has passed), so a remount while it's up
+  // just shows it again.
+  useEffect(() => {
+    if (!user || loadingData || isDemoMode || runTour || showTourGate || showOnboarding || firstMealOpen || firstMealCelebrate) return;
+    const rec = readFirstMealReminder(user.id);
+    if (!rec) return;
+    if (savedMealsNow > rec.baseline) {
+      clearFirstMealReminder(user.id);
+      setShowBreakfastReminder(false);
+      return;
+    }
+    const wait = rec.at - Date.now();
+    if (wait > 0) {
+      const t = setTimeout(() => setBreakfastReminderTick((n) => n + 1), Math.min(wait + 500, 2_000_000_000));
+      return () => clearTimeout(t);
+    }
+    if (dayKeyFromTs(rec.at) !== todayKey()) { clearFirstMealReminder(user.id); return; } // a missed morning isn't worth a late "breakfast?" prompt
+    setShowBreakfastReminder(true);
+  }, [user, loadingData, isDemoMode, runTour, showTourGate, showOnboarding, firstMealOpen, firstMealCelebrate, savedMealsNow, breakfastReminderTick]);
+  const answerBreakfastReminder = (logNow: boolean) => {
+    if (user) clearFirstMealReminder(user.id);
+    setShowBreakfastReminder(false);
+    if (logNow) { setLogFoodClosing(false); setShowLogFood(true); }
+  };
 
   const displayMeals = isDemoMode ? demoData.meals : meals.meals;
   const displayWorkouts = isDemoMode ? demoData.workouts : workout.workouts;
@@ -2921,13 +3128,27 @@ export default function HomeScreen() {
   const streak = homeMarkers.streak ?? 0;
   // All milestone celebrations surface on Home as top notifications (fired the moment the
   // relevant count crosses its threshold), including the feature unlocks.
+  // Held while the first-meal step, its celebration, the welcome gate or the walkthrough is up, so
+  // "You Logged Your First Meal!" lands on Home afterwards. Holding only delays the check: an armed
+  // milestone still fires once it runs. Without the hold it could be picked up mid-walkthrough and
+  // lost when the tour navigates away from Home.
+  // Only the stages Home itself resumes (see the walkthrough effect), so a tour abandoned on
+  // another tab can't hold celebrations back for good.
+  const walkthroughRunning = (() => {
+    if (!user || typeof window === "undefined") return false;
+    try {
+      const stage = localStorage.getItem(`wya_walkthrough_stage_${user.id}`) ?? "home";
+      return localStorage.getItem(`wya_walkthrough_active_${user.id}`) === "true" && (stage === "home" || stage === "profile-handoff");
+    } catch { return false; }
+  })();
+  const celebrationsReady = !loadingData && !firstMealOpen && !firstMealCelebrate && !showTourGate && !runTour && !isDemoMode && !walkthroughRunning;
   const { pending: firstCel, dismiss: dismissFirstCel } = useUnlockCelebration(user?.id, [
     { key: "firstMeal", title: "You Logged Your First Meal!", sub: "Nice start. Every log teaches your coach what works for you.", unlocked: !isDemoMode && mealCount >= 1, icon: "spark" },
     { key: "firstReflection", title: "You Finished Your First Nightly Reflection!", sub: "This is how your coach learns to connect your food to how you feel.", unlocked: !isDemoMode && ((ctxReflections?.length ?? 0) >= 1 || !!todayReflection), icon: "spark" },
     { key: "nudges", title: "Nudges Just Opened Up", sub: "Your coach can now send you personalized nudges.", unlocked: !isDemoMode && mealCount >= 5, icon: "unlock" },
     { key: "nutrition", title: "Your Nutrition Just Opened Up", sub: "Your macros, micronutrients, and trends are filling in.", unlocked: !isDemoMode && hasEnoughDataForPatterns(ctxMeals ?? []), icon: "unlock" },
     { key: "feeling", title: "Food & Feeling Just Opened Up", sub: "Your coach is starting to connect your food to how you feel.", unlocked: !isDemoMode && (ctxReflections?.length ?? 0) >= 3, icon: "unlock" },
-  ], !loadingData);
+  ], celebrationsReady);
 
   // Record the day nudges first unlocked, tied to the genuine "nudges" unlock celebration (which
   // baselines already-unlocked users to "done"), so the one-time welcome nudge appears only that
@@ -3414,23 +3635,42 @@ export default function HomeScreen() {
           onComplete={() => {
             localStorage.setItem(`wya_onboarding_done_${user.id}`, "true");
             localStorage.setItem(`wya_update_seen_${user.id}`, "1"); // new users get the tour, not the big-update popup
+            // The welcome gate is offered by hand after the first-meal step (finishFirstMeal), so
+            // mark it seen here or the onboarding effect would show it straight away.
             localStorage.setItem(`wya_walkthrough_gate_${user.id}`, "true");
-            // "You're All Set / Let's Go!" already served as the tour intro, so start the
-            // walkthrough directly instead of the redundant "Welcome / Show Me Around" gate.
-            localStorage.setItem(`wya_demo_mode_${user.id}`, "true");
-            localStorage.setItem(`wya_walkthrough_active_${user.id}`, "true");
-            localStorage.setItem(`wya_walkthrough_stage_${user.id}`, "home");
+            // Onboarding now ends on the first-meal step instead of going straight into the
+            // walkthrough: a first real log comes before the tour, the habit and an empty home.
+            // Only written here, so anyone who onboarded before this never sees the step.
+            if (!readFirstMeal(user.id)) {
+              writeFirstMeal(user.id, { startedAt: Date.now(), baseline: Math.max(savedMealCount(ctxMeals), savedMealCount(meals.meals)) });
+            }
             reload();
-            setGateOverlay(true);
+            setFirstMealOpen(true);
             setShowOnboarding(false);
-            setIsDemoMode(true);
-            window.dispatchEvent(new Event("wya_demo_mode_on"));
-            setRunTour(true);
-            setTimeout(() => setGateOverlay(false), 200);
           }}
         />
       )}
-      {gateOverlay && <div className="fixed inset-0 z-50 bg-white" />}
+      {firstMealOpen && user && !showOnboarding && (
+        <FirstMealStep
+          quickAddAvailable={firstMealQuickAddAvailable}
+          saving={firstMealSaving}
+          saveFailed={firstMealSaveFailed}
+          onLog={openFirstMealLogger}
+          onRemind={scheduleBreakfastReminder}
+          onSkip={() => finishFirstMeal("skipped")}
+        />
+      )}
+      {firstMealCelebrate && (
+        <FirstMealCelebration
+          habitTitle={firstHabitTemplate.title}
+          daysDone={1}
+          totalDays={firstHabitTemplate.durationDays}
+          onContinue={closeFirstMealCelebration}
+        />
+      )}
+      {showBreakfastReminder && (
+        <FirstMealReminderPrompt onLog={() => answerBreakfastReminder(true)} onDismiss={() => answerBreakfastReminder(false)} />
+      )}
       {showUpdatePopup && (
         <div className="fixed inset-0 z-40 flex flex-col items-center justify-center bg-white/70 backdrop-blur-sm px-5">
           <div className="flex max-w-xs flex-col items-center text-center -mt-[10vh]">
@@ -3475,7 +3715,9 @@ export default function HomeScreen() {
         </div>
       )}
       {showTourGate && !showUpdatePopup && (
-        <div className="fixed inset-0 z-40 flex flex-col items-center justify-center bg-white/70 backdrop-blur-sm px-5">
+        // A touch more opaque than before: it now opens over a Home that already has the first
+        // meal and the habit on it, not an empty one.
+        <div className="fixed inset-0 z-40 flex flex-col items-center justify-center bg-white/85 backdrop-blur-md px-5">
           <div className="flex max-w-xs flex-col items-center text-center -mt-[10vh]">
             <div className="w-full px-5 py-1 text-center">
               <p className="text-[26px] font-semibold text-ink/80">
@@ -3800,7 +4042,7 @@ export default function HomeScreen() {
         {/* One top banner at a time, queued by precedence — so e.g. "First Meal" and
             "Habit Done" don't compete for the same spot. The lower-priority banner's state
             persists and it slides in the moment the one ahead of it clears. */}
-        {!showUpdatePopup && !showTourGate && !runTour && !isDemoMode && (showSavedMessage ? (
+        {!showUpdatePopup && !showTourGate && !runTour && !isDemoMode && !firstMealOpen && !firstMealCelebrate && (showSavedMessage ? (
           streakSaverNet ? (
             <UnlockCelebrationBanner title="Streak Saved" sub={`You missed yesterday, and that's okay · We saved your ${streakSavedCount || streak}-day streak this time`} icon="flame" onDismiss={() => setShowSavedMessage(false)} />
           ) : (
@@ -5093,19 +5335,15 @@ export default function HomeScreen() {
             <h2 className="mt-1.5 text-xl font-semibold text-ink">{activeTemplate.title}</h2>
             <p className="mt-2 text-[13px] leading-relaxed text-ink/65">{activeTemplate.ask}</p>
             <p className="mt-3 text-[12px] leading-relaxed text-ink/55">This is where WhatYouAte starts learning what helps you feel your best.</p>
+            {/* Only Find Your Rhythm gets this spotlight, and a logging habit can always start
+                today, so there's no Start Tomorrow: it let people log nothing on day one. New
+                users don't see the spotlight at all (the first-meal step starts the habit). */}
             <button
               type="button"
               onClick={() => startHabitFromSpotlight("today")}
               className="mt-6 w-full rounded-2xl bg-primary py-3 text-sm font-semibold text-white transition active:scale-[0.98]"
             >
               Start Today
-            </button>
-            <button
-              type="button"
-              onClick={() => startHabitFromSpotlight("tomorrow")}
-              className="mt-2 w-full rounded-2xl border border-primary/25 bg-white py-3 text-sm font-semibold text-primary transition active:scale-[0.98]"
-            >
-              Start Tomorrow
             </button>
           </div>
         </div>

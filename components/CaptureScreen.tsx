@@ -46,6 +46,9 @@ export default function CaptureScreen() {
   const redirectRef = useRef<number | null>(null);
   const showTimePickerRef = useRef(false);
   const analyzeStartedRef = useRef(false);
+  // Exact meal time handed over with the photo (the first-meal step's "last night's dinner" or
+  // "an hour ago"). Null means now, as before.
+  const captureTsRef = useRef<number | null>(null);
   const [cameraMode, setCameraMode] = useState<"idle" | "live" | "file">("idle");
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -79,9 +82,12 @@ export default function CaptureScreen() {
     const raw = sessionStorage.getItem("wya_pending_capture");
     if (!raw) return;
     try {
-      const parsed = JSON.parse(raw) as { name?: string; type?: string; dataUrl?: string };
+      const parsed = JSON.parse(raw) as { name?: string; type?: string; dataUrl?: string; ts?: number };
       if (!parsed?.dataUrl) return;
       sessionStorage.removeItem("wya_pending_capture");
+      const ts = parsed.ts;
+      captureTsRef.current =
+        typeof ts === "number" && Number.isFinite(ts) && ts <= Date.now() && ts > Date.now() - 14 * 24 * 60 * 60 * 1000 ? ts : null;
       fetch(parsed.dataUrl)
         .then((res) => res.blob())
         .then((blob) => {
@@ -170,7 +176,7 @@ export default function CaptureScreen() {
     const placeholder = safeFallbackAnalysis();
     let pendingMeal;
     try {
-      pendingMeal = await addMeal(user.id, placeholder);
+      pendingMeal = await addMeal(user.id, placeholder, undefined, undefined, "processing", captureTsRef.current ?? undefined);
     } catch {
       setSaveError(true);
       return;

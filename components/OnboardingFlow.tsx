@@ -74,9 +74,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(false);
-  const [showWelcome, setShowWelcome] = useState(false);
   const [showNotifPrompt, setShowNotifPrompt] = useState(false);
-  const [animStep, setAnimStep] = useState(0);
   const [introAnimStep, setIntroAnimStep] = useState(0);
   const [dobMonth, setDobMonth] = useState("");
   const [dobDay, setDobDay] = useState("");
@@ -102,15 +100,6 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
     const t4 = setTimeout(() => setIntroAnimStep(4), 950);
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
   }, []);
-
-  useEffect(() => {
-    if (!showWelcome) return;
-    const t1 = setTimeout(() => setAnimStep(1), 80);
-    const t2 = setTimeout(() => setAnimStep(2), 450);
-    const t3 = setTimeout(() => setAnimStep(3), 820);
-    const t4 = setTimeout(() => setAnimStep(4), 1200);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
-  }, [showWelcome]);
 
   const handleSaveAndFinish = async () => {
     setSaving(true);
@@ -174,18 +163,19 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
   // Notifications ask — the soft pre-prompt lives here in onboarding (peak intent). "Turn On"
   // fires the real iOS dialog; "Maybe Later" defers. Both set the shared wya_push_permission_asked
   // flag so the fallback banner (PushNotificationSetup) won't double-ask.
+  // Either way this is the last onboarding screen: onComplete hands over to HomeScreen, which opens
+  // the first-meal step (components/FirstMealStep). The old "You're All Set" screen's confetti and
+  // check now play after that first log instead.
   const handleEnableNotifs = async () => {
     localStorage.setItem(PUSH_ASKED_KEY, "1");
     localStorage.removeItem(PUSH_DECLINED_AT_KEY);
     if (Capacitor.isNativePlatform()) { try { await initPush(userId); } catch { /* proceed regardless */ } }
-    setShowNotifPrompt(false);
-    setShowWelcome(true);
+    onComplete(); // stays on this screen until HomeScreen unmounts the flow, so nothing flashes
   };
   const handleSkipNotifs = () => {
     localStorage.setItem(PUSH_ASKED_KEY, "declined");
     localStorage.setItem(PUSH_DECLINED_AT_KEY, String(Date.now()));
-    setShowNotifPrompt(false);
-    setShowWelcome(true);
+    onComplete(); // stays on this screen until HomeScreen unmounts the flow, so nothing flashes
   };
 
   const next = () => setStep((s) => s + 1);
@@ -326,88 +316,6 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
           </button>
           <button type="button" className={skipCls} onClick={handleSkipNotifs}>
             Maybe Later
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (showWelcome) {
-    return (
-      <div className="fixed inset-0 z-50 flex flex-col items-center bg-white px-8 pt-[28vh]">
-        <style>{`
-          @keyframes draw-circle { from { stroke-dashoffset: 63; } to { stroke-dashoffset: 0; } }
-          @keyframes draw-check { from { stroke-dashoffset: 12; } to { stroke-dashoffset: 0; } }
-          @keyframes confetti-fall {
-            0%   { transform: translateY(-8vh) translateX(0) rotate(0deg); }
-            25%  { transform: translateY(26vh) translateX(-16px) rotate(70deg); }
-            50%  { transform: translateY(54vh) translateX(14px) rotate(150deg); }
-            75%  { transform: translateY(82vh) translateX(-12px) rotate(240deg); }
-            100% { transform: translateY(112vh) translateX(8px) rotate(320deg); }
-          }
-          @keyframes confetti-fall-alt {
-            0%   { transform: translateY(-8vh) translateX(0) rotate(0deg); }
-            25%  { transform: translateY(24vh) translateX(15px) rotate(-60deg); }
-            50%  { transform: translateY(52vh) translateX(-14px) rotate(-140deg); }
-            75%  { transform: translateY(80vh) translateX(12px) rotate(-230deg); }
-            100% { transform: translateY(112vh) translateX(-8px) rotate(-310deg); }
-          }
-          @keyframes confetti-fall-c {
-            0%   { transform: translateY(-8vh) translateX(0) rotate(0deg); }
-            30%  { transform: translateY(32vh) translateX(-10px) rotate(100deg); }
-            60%  { transform: translateY(62vh) translateX(16px) rotate(190deg); }
-            100% { transform: translateY(112vh) translateX(-6px) rotate(280deg); }
-          }
-          .confetti-piece { position: absolute; top: 0; animation-timing-function: linear; animation-iteration-count: 1; animation-fill-mode: both; will-change: transform, opacity; }
-          @media (prefers-reduced-motion: reduce) { .confetti-piece { animation: none !important; opacity: 0 !important; } }
-        `}</style>
-        <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-          {Array.from({ length: 20 }).map((_, i) => {
-            const palette = ["#82B8FF", "#A9CCFF", "#BBD4FF", "#6FA8FF"];
-            const opacities = [0.3, 0.5, 0.7];
-            const anims = ["confetti-fall", "confetti-fall-alt", "confetti-fall-c"];
-            const w = 6 + (i % 3) * 1.5;     // 6-9px
-            const h = 12 + (i % 4) * 2;      // 12-18px (taller than wide)
-            return (
-              <span
-                key={i}
-                className="confetti-piece"
-                style={{
-                  left: `${(i * 37 + 6) % 100}%`,
-                  width: w,
-                  height: h,
-                  background: palette[i % palette.length],
-                  opacity: opacities[i % 3],            // 3 transparency levels
-                  borderRadius: "2px",                  // slight corner, mostly rectangular
-                  animationName: anims[i % 3],          // 3 fluttering paths
-                  animationDelay: `${(i % 6) * 0.14}s`,         // quick burst at the start
-                  animationDuration: `${5.5 + (i % 5) * 1.1}s`, // varied fall speeds
-                }}
-              />
-            );
-          })}
-        </div>
-        <div className="relative z-10 flex flex-col items-center gap-5 text-center">
-          <div style={animStyle(animStep >= 1)}>
-            <svg className="h-28 w-28 text-primary/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" style={{ strokeDasharray: 63, strokeDashoffset: 63, animation: "draw-circle 0.55s ease-out 0.5s forwards" }} />
-              <path d="M8 12l3 3 5-5" style={{ strokeDasharray: 12, strokeDashoffset: 12, animation: "draw-check 0.35s ease-out 1.0s forwards" }} />
-            </svg>
-          </div>
-          <div style={animStyle(animStep >= 2)}>
-            <p className="text-2xl font-semibold text-ink">You're All Set</p>
-          </div>
-          <div style={animStyle(animStep >= 3)}>
-            <p className="text-sm text-muted/65">Let's take a look around!</p>
-          </div>
-        </div>
-        <div style={animStyle(animStep >= 4)} className="relative z-10 flex justify-center w-full mt-16">
-          <button
-            type="button"
-            className="w-2/3 rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80"
-            onClick={onComplete}
-          >
-            Let's Go!
           </button>
         </div>
       </div>
