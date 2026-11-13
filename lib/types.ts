@@ -38,7 +38,9 @@ export type ActivityLevel = "sedentary" | "lightly_active" | "moderately_active"
 
 // What the user wants to feel better about — the primary, feeling-oriented goal of
 // the app (distinct from the body/weight goalDirection). Drives habit selection + coach.
-export type FeelingGoal = "energy" | "sleep" | "mood" | "focus" | "digestion" | "cravings";
+// "triggers" is "Find Foods That Bother Me" (treated like digestion wherever goals map onto
+// reflection metrics or habit categories).
+export type FeelingGoal = "energy" | "sleep" | "mood" | "focus" | "digestion" | "triggers" | "cravings";
 
 export interface UserProfile {
   id: string;

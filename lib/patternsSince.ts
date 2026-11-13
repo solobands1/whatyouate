@@ -8,8 +8,9 @@ import type { FoodFeelingLink } from "./foodFeeling";
 import type { ActiveChange } from "./changes";
 
 // ── Ordering by stated goal ─────────────────────────────────────────────────
-// Onboarding goals mapped onto what the nightly reflection asks about.
-const GOAL_METRIC: Record<string, string | null> = { energy: "energy", digestion: "digestion", sleep: "sleep", mood: "mood", focus: "energy", cravings: null };
+// Onboarding goals mapped onto what the nightly reflection asks about. "Find Foods That Bother Me"
+// (triggers) leads with digestion, like Better Digestion.
+const GOAL_METRIC: Record<string, string | null> = { energy: "energy", digestion: "digestion", triggers: "digestion", sleep: "sleep", mood: "mood", focus: "energy", cravings: null };
 const METRIC_WORDS: Record<string, RegExp> = {
   energy: /energy|drained|tired/i,
   digestion: /digest/i,

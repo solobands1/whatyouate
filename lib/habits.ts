@@ -20,6 +20,7 @@ export const FEELING_GOAL_CATEGORIES: Record<FeelingGoal, HabitCategory[]> = {
   mood:      ["mind", "movement", "sleep", "micronutrient"],
   focus:     ["protein", "hydration", "caffeine", "mind", "micronutrient", "sleep"],
   digestion: ["produce", "timing", "mind", "hydration"],
+  triggers:  ["mind", "timing", "produce", "hydration"],   // like digestion; mindful eating first
   cravings:  ["protein", "produce", "caffeine", "mind"],
 };
 

@@ -85,6 +85,38 @@ export async function getPushStatus(): Promise<"granted" | "prompt" | "denied" |
   }
 }
 
+// Whether a soft "turn on notifications" ask is worth showing now: iOS hasn't asked yet, and they
+// didn't tap Maybe Later in the last few days. False off native.
+export async function pushAskDue(): Promise<boolean> {
+  if ((await getPushStatus()) !== "prompt") return false;
+  try {
+    if (localStorage.getItem(PUSH_ASKED_KEY) === "declined") {
+      const at = Number(localStorage.getItem(PUSH_DECLINED_AT_KEY) || 0);
+      if (Date.now() - at < PUSH_REDECLINE_DAYS * 24 * 60 * 60 * 1000) return false;
+    }
+  } catch { /* storage blocked: ask */ }
+  return true;
+}
+
+// Shows the real iOS dialog (when it hasn't been answered) and registers the device. Marks it asked
+// first, so the fallback banner (PushNotificationSetup) never asks again on top. Resolves with
+// whether notifications ended up on.
+export async function askPushPermission(userId: string): Promise<boolean> {
+  try {
+    localStorage.setItem(PUSH_ASKED_KEY, "1");
+    localStorage.removeItem(PUSH_DECLINED_AT_KEY);
+  } catch { /* ignore */ }
+  return initPush(userId);
+}
+
+// "Maybe Later" on a soft ask: the fallback banner may ask again after PUSH_REDECLINE_DAYS.
+export function markPushDeclined(): void {
+  try {
+    localStorage.setItem(PUSH_ASKED_KEY, "declined");
+    localStorage.setItem(PUSH_DECLINED_AT_KEY, String(Date.now()));
+  } catch { /* ignore */ }
+}
+
 // Open the iOS Settings page for this app, so a user who denied can re-enable Notifications.
 export async function openPushSettings(): Promise<void> {
   try { window.open("app-settings:", "_system"); } catch { /* no-op */ }
