@@ -67,7 +67,7 @@ begin
     null;
   elsif pth like '/games/%' then
     if substr(pth, 8) not in ('snack-merge', 'beat-the-crash', 'cart-rush', 'berry-dash', 'food-fling', 'food-fight',
-                              'fridge-raid', 'pea-tanks', 'kitchen-golf') then
+                              'fridge-raid', 'pea-tanks', 'kitchen-golf', 'blenders-bacon', 'berry-pong') then
       pth := '/games/other';
     end if;
   else

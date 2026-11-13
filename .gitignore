@@ -5,3 +5,6 @@ node_modules/
 .vercel
 ios/App/App.xcodeproj/xcuserdata/
 ios/App/App.xcworkspace/xcuserdata/
+
+# Supabase CLI link cache
+supabase/.temp/

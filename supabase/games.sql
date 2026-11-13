@@ -89,7 +89,7 @@ returns text language plpgsql immutable as $$
 declare secs numeric := greatest(coalesce(p_duration_ms, 0), 0) / 1000.0;
 begin
   return case
-    when p_game is null or p_game not in ('snack-merge', 'beat-the-crash', 'cart-rush', 'berry-dash', 'food-fling', 'food-fight', 'sugar-showdown', 'fridge-raid', 'pea-tanks', 'food-rally', 'melon-bowling', 'kitchen-golf') then 'game'
+    when p_game is null or p_game not in ('snack-merge', 'beat-the-crash', 'cart-rush', 'berry-dash', 'food-fling', 'food-fight', 'sugar-showdown', 'fridge-raid', 'pea-tanks', 'food-rally', 'melon-bowling', 'kitchen-golf', 'blenders-bacon', 'berry-pong') then 'game'
     when p_mode not in ('daily', 'free') then 'mode'
     when p_score is null or p_score < 0 or p_drops is null or p_drops < 0 or p_drops > 3000 or p_duration_ms is null then 'values'
     -- Snack Merge: one drop every 0.55s at most; a drop can't earn more than 60, even with combos
@@ -169,6 +169,22 @@ begin
     when p_game = 'kitchen-golf' and p_mode = 'daily' and p_drops > 63 then 'values'
     when p_game = 'kitchen-golf' and p_duration_ms < p_drops * 600 then 'too_fast'
     when p_game = 'kitchen-golf' and p_score > p_drops * 1200 + 500 then 'too_high'
+    -- Blenders & Bacon: drops = your turns in one race against the computer up the 96-square pantry (live and same-phone
+    -- races post nothing). Every turn rolls a die that tumbles for over a second, then the computer takes its turn, so
+    -- 1.5 s a turn is a safe floor. A win scores 500 + 40 for each turn under 60; a loss scores 5 a square (95 at most,
+    -- so 475). So the score can never beat that formula for its number of turns
+    when p_game = 'blenders-bacon' and (p_drops < 1 or p_drops > 400) then 'values'
+    when p_game = 'blenders-bacon' and p_duration_ms < p_drops * 1500 then 'too_fast'
+    when p_game = 'blenders-bacon' and p_score > greatest(500 + 40 * greatest(0, 60 - p_drops), 475) then 'too_high'
+    -- Berry Pong: drops = your flicks against the computer (Today is one match; a Free Play run adds up its matches; live
+    -- and same-phone games post nothing). A match pays 100 a sink + floor(400 x sinks / flicks) + (a win: 500 + 100 a bowl
+    -- still standing), so a flawless 6-for-6 match is 2,100 = 350 a flick, and no match can beat 350 a flick. You always
+    -- take your first 2 flicks before the computer throws, and every flick waits for the last flight (over 0.9 s)
+    when p_game = 'berry-pong' and p_drops < 2 then 'values'
+    when p_game = 'berry-pong' and p_mode = 'daily' and p_drops > 120 then 'values'
+    when p_game = 'berry-pong' and p_duration_ms < p_drops * 900 then 'too_fast'
+    when p_game = 'berry-pong' and p_score > p_drops * 350 then 'too_high'
+    when p_game = 'berry-pong' and p_mode = 'daily' and p_score > 2100 then 'too_high'
     else null end;
 end $$;
 
