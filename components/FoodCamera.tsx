@@ -52,7 +52,7 @@ const VIDEO_CONSTRAINTS: MediaTrackConstraints = {
 const JPEG_QUALITY = 0.9;
 // From having a stream to its first frame. The wait for the permission prompt isn't counted.
 const FIRST_FRAME_TIMEOUT_MS = 8000;
-const VIEW_ASPECT = 3 / 4; // width / height of the viewfinder, held upright
+const VIEW_ASPECT = 3 / 4; // width / height of the photo that is kept, held upright
 
 function problemFor(err: unknown): Problem {
   const name = (err as { name?: string } | null)?.name ?? "";
@@ -87,6 +87,7 @@ function FoodCameraScreen({ onClose, onPhoto }: Omit<Props, "open">) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const shotRef = useRef<HTMLCanvasElement | null>(null);
   const flashRef = useRef<HTMLDivElement | null>(null);
+  const guideRef = useRef<HTMLDivElement | null>(null);
   const libraryRef = useRef<HTMLInputElement | null>(null);
   const systemRef = useRef<HTMLInputElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -102,6 +103,8 @@ function FoodCameraScreen({ onClose, onPhoto }: Omit<Props, "open">) {
   phaseRef.current = phase;
   const [torch, setTorch] = useState<{ supported: boolean; on: boolean }>({ supported: false, on: false });
   const [box, setBox] = useState<{ w: number; h: number } | null>(null);
+  // Where the kept 3:4 photo sat on screen, so the frozen shot shows in exactly that spot.
+  const [shotRect, setShotRect] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
 
   const stopStream = useCallback(() => {
     genRef.current += 1;
@@ -218,17 +221,16 @@ function FoodCameraScreen({ onClose, onPhoto }: Omit<Props, "open">) {
     };
   }, [startStream, stopStream]);
 
-  // A 3:4 viewfinder, as large as fits between the top and bottom bars.
+  // The camera fills the screen. This measures the space between the top and bottom bars, where
+  // the corner brackets sit.
   useLayoutEffect(() => {
     const area = areaRef.current;
     if (!area) return;
     const measure = () => {
-      const availW = area.clientWidth - 16;
-      const availH = area.clientHeight;
-      if (availW <= 0 || availH <= 0) return;
-      // A multiple of 3 wide keeps it exactly 3:4, so a 4:3 stream is captured whole.
-      const w = Math.floor(Math.min(availW, availH * VIEW_ASPECT) / 3) * 3;
-      const next = { w, h: (w / 3) * 4 };
+      const w = area.clientWidth;
+      const h = area.clientHeight;
+      if (w <= 0 || h <= 0) return;
+      const next = { w, h };
       setBox((prev) => (prev && prev.w === next.w && prev.h === next.h ? prev : next));
     };
     measure();
@@ -264,15 +266,28 @@ function FoodCameraScreen({ onClose, onPhoto }: Omit<Props, "open">) {
     busyRef.current = true;
     shutterTap();
     flashRef.current?.animate?.([{ opacity: 0.85 }, { opacity: 0 }], { duration: 240, easing: "ease-out" });
-    // Crop to what the viewfinder shows (the video is drawn object-cover), keeping the video's own
-    // pixels: a 4:3 stream comes through whole, a 16:9 one loses its top and bottom.
-    const target = view.clientWidth / view.clientHeight || VIEW_ASPECT;
-    let sw = vw;
-    let sh = vh;
-    if (vw / vh > target) sw = Math.round(vh * target);
-    else sh = Math.round(vw / target);
-    const sx = Math.round((vw - sw) / 2);
-    const sy = Math.round((vh - sh) / 2);
+    // Keep a 3:4 photo of what's on screen around the brackets: the full visible width, centred on
+    // the brackets and kept on screen. The video fills the screen (object-cover), so screen points
+    // are mapped back to the video's own pixels.
+    const vr = view.getBoundingClientRect();
+    const W = vr.width || view.clientWidth;
+    const H = vr.height || view.clientHeight;
+    const scale = Math.max(W / vw, H / vh);
+    const ox = (W - vw * scale) / 2;
+    const oy = (H - vh * scale) / 2;
+    let cw = W;
+    let ch = W / VIEW_ASPECT;
+    if (ch > H) { ch = H; cw = H * VIEW_ASPECT; }
+    const gr = guideRef.current?.getBoundingClientRect();
+    const gcx = gr && gr.width ? gr.left + gr.width / 2 - vr.left : W / 2;
+    const gcy = gr && gr.height ? gr.top + gr.height / 2 - vr.top : H / 2;
+    const cx0 = Math.min(Math.max(gcx - cw / 2, 0), W - cw);
+    const cy0 = Math.min(Math.max(gcy - ch / 2, 0), H - ch);
+    const sx = Math.max(0, Math.round((cx0 - ox) / scale));
+    const sy = Math.max(0, Math.round((cy0 - oy) / scale));
+    const sw = Math.max(1, Math.min(vw - sx, Math.round(cw / scale)));
+    const sh = Math.max(1, Math.min(vh - sy, Math.round(ch / scale)));
+    setShotRect({ x: cx0, y: cy0, w: cw, h: ch });
     canvas.width = sw;
     canvas.height = sh;
     const ctx = canvas.getContext("2d");
@@ -321,116 +336,149 @@ function FoodCameraScreen({ onClose, onPhoto }: Omit<Props, "open">) {
   const live = phase.name === "live";
   const showShot = phase.name === "handoff" && phase.source === "camera";
   const showControls = phase.name === "starting" || phase.name === "live";
-  const guide = box ? Math.round(Math.min(box.w * 0.8, box.h * 0.64)) : 0;
+  const guide = box ? Math.round(Math.min(box.w - 56, box.h * 0.78)) : 0;
 
   return (
     <div
-      className="fixed inset-0 z-[150] flex select-none flex-col bg-black text-white"
-      style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)", touchAction: "manipulation", overscrollBehavior: "contain" }}
+      className="fixed inset-0 z-[150] select-none overflow-hidden bg-black text-white"
+      style={{ touchAction: "manipulation", overscrollBehavior: "contain" }}
       role="dialog"
       aria-modal="true"
       aria-label="Camera"
       data-food-camera
       data-camera-phase={phase.name === "problem" ? phase.problem : phase.name}
     >
-      <div className="flex h-14 shrink-0 items-center px-3">
-        <ChromeButton label="Close Camera" onClick={close} disabled={phase.name === "handoff"}>
-          <svg viewBox="0 0 24 24" className="h-5 w-5" {...iconProps} strokeWidth="2.2"><path d="M6 6l12 12M18 6L6 18" /></svg>
-        </ChromeButton>
+      {/* The camera fills the whole screen; the bars and brackets float over it. */}
+      <div ref={viewRef} className="absolute inset-0 bg-[#0d1016]" data-viewfinder>
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${live ? "opacity-100" : "opacity-0"}`}
+        />
+        <canvas
+          ref={shotRef}
+          className={`absolute ${showShot ? "" : "hidden"}`}
+          style={shotRect ? { left: shotRect.x, top: shotRect.y, width: shotRect.w, height: shotRect.h } : { inset: 0, width: "100%", height: "100%" }}
+        />
+
+        {(phase.name === "starting" || (phase.name === "handoff" && phase.source === "library")) && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3" data-camera-loading>
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/15 border-t-white/80" />
+            {phase.name === "starting" && <p className="text-[13px] font-medium text-white/55">Starting Camera</p>}
+          </div>
+        )}
+
+        <div ref={flashRef} className="pointer-events-none absolute inset-0 bg-white opacity-0" />
       </div>
 
-      <div ref={areaRef} className="relative flex min-h-0 flex-1 items-center justify-center">
+      {/* Under the bars, so Close stays reachable when the camera can't start. */}
+      {phase.name === "problem" && (
+        <ProblemPanel
+          problem={phase.problem}
+          native={isNativeApp()}
+          onSettings={openSettings}
+          onRetry={() => void startStream()}
+          onLibrary={pickFromLibrary}
+          onSystemCamera={openSystemCamera}
+        />
+      )}
+
+      <div className="pointer-events-none relative flex h-full flex-col">
         <div
-          ref={viewRef}
-          className="relative overflow-hidden rounded-[22px] bg-[#0d1016]"
-          style={box ? { width: box.w, height: box.h } : { width: "calc(100% - 16px)", height: "100%" }}
-          data-viewfinder
+          className="flex shrink-0 items-start bg-gradient-to-b from-black/55 via-black/20 to-transparent px-3 pb-8"
+          style={{ paddingTop: "max(env(safe-area-inset-top), 10px)" }}
         >
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            muted
-            className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${live ? "opacity-100" : "opacity-0"}`}
-          />
-          <canvas ref={shotRef} className={`absolute inset-0 h-full w-full ${showShot ? "" : "hidden"}`} />
+          <div className="pointer-events-auto">
+            <ChromeButton label="Close Camera" onClick={close} disabled={phase.name === "handoff"}>
+              <svg viewBox="0 0 24 24" className="h-5 w-5" {...iconProps} strokeWidth="2.2"><path d="M6 6l12 12M18 6L6 18" /></svg>
+            </ChromeButton>
+          </div>
+        </div>
 
+        <div ref={areaRef} className="relative flex min-h-0 flex-1 items-center justify-center">
           {live && guide > 0 && (
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center animate-fadeIn" data-frame-guide>
-              <div
-                className="relative rounded-[30px]"
-                style={{ width: guide, height: guide, border: "1.5px solid rgba(255,255,255,0.72)", boxShadow: "0 0 0 9999px rgba(8,12,20,0.30), inset 0 0 28px rgba(255,255,255,0.06)" }}
+            <div ref={guideRef} className="relative animate-fadeIn" style={{ width: guide, height: guide }} data-frame-guide>
+              <CornerBrackets size={guide} />
+              <p
+                className="absolute left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-black/45 px-3.5 py-1.5 text-[13px] font-medium text-white/95 backdrop-blur-sm"
+                style={{ bottom: "calc(100% + 14px)" }}
               >
-                <p
-                  className="absolute left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-black/45 px-3.5 py-1.5 text-[13px] font-medium text-white/95 backdrop-blur-sm"
-                  style={{ bottom: "calc(100% + 14px)" }}
-                >
-                  Fit Your Meal In The Frame
-                </p>
-              </div>
+                Fit Your Meal In The Frame
+              </p>
             </div>
           )}
-
-          {(phase.name === "starting" || (phase.name === "handoff" && phase.source === "library")) && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3" data-camera-loading>
-              <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/15 border-t-white/80" />
-              {phase.name === "starting" && <p className="text-[13px] font-medium text-white/55">Starting Camera</p>}
-            </div>
-          )}
-
-          {phase.name === "problem" && (
-            <ProblemPanel
-              problem={phase.problem}
-              native={isNativeApp()}
-              onSettings={openSettings}
-              onRetry={() => void startStream()}
-              onLibrary={pickFromLibrary}
-              onSystemCamera={openSystemCamera}
-            />
-          )}
-
-          <div ref={flashRef} className="pointer-events-none absolute inset-0 bg-white opacity-0" />
         </div>
-      </div>
 
-      <div className={`grid shrink-0 grid-cols-3 items-center px-6 pb-5 pt-5 ${showControls ? "" : "invisible"}`}>
-        <div className="flex justify-start">
-          <ToolButton label="Library" ariaLabel="Choose From Library" onClick={pickFromLibrary}>
-            <svg viewBox="0 0 24 24" className="h-[22px] w-[22px]" {...iconProps} strokeWidth="1.8">
-              <rect x="3" y="3" width="18" height="18" rx="4" />
-              <circle cx="8.8" cy="8.8" r="1.7" />
-              <path d="M21 15.5l-4.6-4.6a1.5 1.5 0 0 0-2.1 0L5 20.5" />
-            </svg>
-          </ToolButton>
-        </div>
-        <div className="flex justify-center">
-          <button
-            type="button"
-            onClick={() => void takePhoto()}
-            disabled={!live}
-            aria-label="Take Photo"
-            className="group flex h-[78px] w-[78px] items-center justify-center rounded-full border-[4px] border-white/95 shadow-[0_6px_24px_rgba(111,168,255,0.35)] transition disabled:opacity-40"
-            data-shutter
-          >
-            <span className="block h-[60px] w-[60px] rounded-full bg-white transition-transform duration-100 group-active:scale-90" />
-          </button>
-        </div>
-        <div className="flex justify-end">
-          {torch.supported ? (
-            <ToolButton label="Flash" ariaLabel={torch.on ? "Turn Flash Off" : "Turn Flash On"} onClick={() => void toggleTorch()} active={torch.on}>
-              <svg viewBox="0 0 24 24" className="h-[22px] w-[22px]" {...iconProps} strokeWidth="1.8" fill={torch.on ? "currentColor" : "none"}>
-                <path d="M13.2 2.5L5 13.4h6.3l-.9 8.1 8.6-11.2h-6.4l.6-7.8z" />
+        <div
+          className={`grid shrink-0 grid-cols-3 items-center bg-gradient-to-t from-black/65 via-black/30 to-transparent px-6 pt-12 ${showControls ? "" : "invisible"}`}
+          style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 22px)" }}
+        >
+          <div className="pointer-events-auto flex justify-start">
+            <ToolButton label="Library" ariaLabel="Choose From Library" onClick={pickFromLibrary}>
+              <svg viewBox="0 0 24 24" className="h-[22px] w-[22px]" {...iconProps} strokeWidth="1.8">
+                <rect x="3" y="3" width="18" height="18" rx="4" />
+                <circle cx="8.8" cy="8.8" r="1.7" />
+                <path d="M21 15.5l-4.6-4.6a1.5 1.5 0 0 0-2.1 0L5 20.5" />
               </svg>
             </ToolButton>
-          ) : (
-            <span className="h-12 w-12" aria-hidden="true" />
-          )}
+          </div>
+          <div className="pointer-events-auto flex justify-center">
+            <button
+              type="button"
+              onClick={() => void takePhoto()}
+              disabled={!live}
+              aria-label="Take Photo"
+              className="group flex h-[78px] w-[78px] items-center justify-center rounded-full border-[4px] border-white/95 shadow-[0_6px_24px_rgba(0,0,0,0.35)] transition disabled:opacity-40"
+              data-shutter
+            >
+              <span className="block h-[60px] w-[60px] rounded-full bg-white transition-transform duration-100 group-active:scale-90" />
+            </button>
+          </div>
+          <div className="pointer-events-auto flex justify-end">
+            {torch.supported ? (
+              <ToolButton label="Flash" ariaLabel={torch.on ? "Turn Flash Off" : "Turn Flash On"} onClick={() => void toggleTorch()} active={torch.on}>
+                <svg viewBox="0 0 24 24" className="h-[22px] w-[22px]" {...iconProps} strokeWidth="1.8" fill={torch.on ? "currentColor" : "none"}>
+                  <path d="M13.2 2.5L5 13.4h6.3l-.9 8.1 8.6-11.2h-6.4l.6-7.8z" />
+                </svg>
+              </ToolButton>
+            ) : (
+              <span className="h-12 w-12" aria-hidden="true" />
+            )}
+          </div>
         </div>
       </div>
 
       <input ref={libraryRef} type="file" accept="image/*" className="sr-only" tabIndex={-1} aria-hidden="true" onChange={fileChosen("library")} data-library-input />
       <input ref={systemRef} type="file" accept="image/*" capture="environment" className="sr-only" tabIndex={-1} aria-hidden="true" onChange={fileChosen("camera")} data-system-camera-input />
     </div>
+  );
+}
+
+/** Four rounded white corners marking where the meal goes (no full box, so the food stays in view). */
+function CornerBrackets({ size }: { size: number }) {
+  const i = 2;
+  const r = 22;
+  const l = Math.round(Math.max(34, size * 0.17));
+  const g = size;
+  const d = [
+    `M${i} ${i + l}V${i + r}A${r} ${r} 0 0 1 ${i + r} ${i}H${i + l}`,
+    `M${g - i - l} ${i}H${g - i - r}A${r} ${r} 0 0 1 ${g - i} ${i + r}V${i + l}`,
+    `M${g - i} ${g - i - l}V${g - i - r}A${r} ${r} 0 0 1 ${g - i - r} ${g - i}H${g - i - l}`,
+    `M${i + l} ${g - i}H${i + r}A${r} ${r} 0 0 1 ${i} ${g - i - r}V${g - i - l}`,
+  ];
+  return (
+    <svg
+      className="absolute inset-0 h-full w-full overflow-visible"
+      viewBox={`0 0 ${g} ${g}`}
+      aria-hidden="true"
+      style={{ filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.35))" }}
+    >
+      {d.map((path) => (
+        <path key={path} d={path} fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" />
+      ))}
+    </svg>
   );
 }
 
@@ -443,7 +491,7 @@ function ChromeButton({ label, onClick, disabled, children }: { label: string; o
       onClick={onClick}
       disabled={disabled}
       aria-label={label}
-      className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition active:scale-95 active:bg-white/20 disabled:opacity-40"
+      className="flex h-10 w-10 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur-md transition active:scale-95 active:bg-black/50 disabled:opacity-40"
     >
       {children}
     </button>
@@ -453,10 +501,10 @@ function ChromeButton({ label, onClick, disabled, children }: { label: string; o
 function ToolButton({ label, ariaLabel, onClick, active, children }: { label: string; ariaLabel: string; onClick: () => void; active?: boolean; children: ReactNode }) {
   return (
     <button type="button" onClick={onClick} aria-label={ariaLabel} aria-pressed={active} className="flex flex-col items-center gap-1.5 transition active:scale-95">
-      <span className={`flex h-12 w-12 items-center justify-center rounded-2xl transition ${active ? "bg-primary text-white shadow-[0_4px_16px_rgba(111,168,255,0.45)]" : "bg-white/[0.12] text-white"}`}>
+      <span className={`flex h-12 w-12 items-center justify-center rounded-2xl transition ${active ? "bg-primary text-white shadow-[0_4px_16px_rgba(111,168,255,0.45)]" : "bg-black/35 text-white ring-1 ring-white/15 backdrop-blur-md"}`}>
         {children}
       </span>
-      <span className="text-[11px] font-medium text-white/65">{label}</span>
+      <span className="text-[11px] font-medium text-white/85 [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]">{label}</span>
     </button>
   );
 }
@@ -502,7 +550,7 @@ function ProblemPanel({ problem, native, onSettings, onRetry, onLibrary, onSyste
     : problem === "none" ? { label: "Use Phone Camera", onClick: onSystemCamera }
     : { label: "Try Again", onClick: onRetry };
   return (
-    <div className="absolute inset-0 flex flex-col items-center justify-center px-7 text-center animate-fadeIn" data-camera-problem={problem}>
+    <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0d1016] px-7 text-center animate-fadeIn" data-camera-problem={problem}>
       <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white/10 text-white/85">
         {problem === "denied" ? (
           <svg viewBox="0 0 24 24" className="h-7 w-7" {...iconProps} strokeWidth="1.7">
