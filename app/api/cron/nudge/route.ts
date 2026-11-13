@@ -9,6 +9,8 @@ import { isFreeAccessEligible } from "../../../../lib/server/freeAccess";
 import { checkProEntitlement } from "../../../../lib/entitlement";
 import { coerceActivityCelebration, EMPTY_ACTIVITY_CELEBRATION, recordConsistencyWin } from "../../../../lib/activityCelebration";
 import { dayKeyFromTs, localTodayKey } from "../../../../lib/utils";
+import { buildActivity, isRealMeal } from "../../../../lib/comeback";
+import { comebackLadderReady, quietFrom } from "../../../../lib/server/comeback";
 
 export const maxDuration = 300;
 
@@ -212,6 +214,9 @@ export async function GET(req: Request) {
 
   // Phase 1: generate nudges + save to DB for all users (no sleep between users)
   const pendingPushes: Array<{ userId: string; message: string }> = [];
+  // Comeback ladder (lib/comeback.ts): checked the first time someone's nudge is ready, once per run.
+  let ladderCheck: Promise<boolean> | null = null;
+  const ladderOn = () => (ladderCheck ??= comebackLadderReady(supabase));
 
   const utcHour = new Date().getUTCHours();
   console.log(`[cron/nudge] tick utcHour=${utcHour} users=${userIds.length}`);
@@ -392,8 +397,25 @@ export async function GET(req: Request) {
       }
 
       console.log(`[cron/nudge] saved nudge for ${userId.slice(0,8)} type=${nudge.type}`);
-      pendingPushes.push({ userId, message: nudge.message });
       processed++;
+      // Quiet for 3+ days: the nudge stays saved for when they open the app, but isn't pushed. The
+      // comeback ladder in the reminder cron speaks for the app instead. Read from the rows above.
+      if (await ladderOn()) {
+        const rawMeals = (mealRows ?? []) as Array<{ created_at?: string | null; status?: string | null; analysis_json?: { source?: string | null } | null }>;
+        const mealActs = rawMeals.map((r) => ({ createdAt: r.created_at ? Date.parse(r.created_at) : null, status: r.status, source: r.analysis_json?.source ?? null }));
+        const activity = buildActivity({
+          meals: mealActs,
+          feelTs: ((feelRes.data ?? []) as Array<{ ts: unknown }>).map((r) => r.ts),
+          reflections: profileRow?.reflections_json,
+          waterLogs: profileRow?.water_logs_json,
+        });
+        const quiet = quietFrom({ activity, hasRealMeal: mealActs.some(isRealMeal) }, profileRow, timezoneOffset);
+        if (quiet.quiet) {
+          console.log(`[cron/nudge] push held for ${userId.slice(0,8)}: quiet day ${quiet.quietDays} (nudge saved for the app)`);
+          continue;
+        }
+      }
+      pendingPushes.push({ userId, message: nudge.message });
     } catch (err) {
       console.error(`[cron/nudge] error for user ${userId}:`, err);
     }

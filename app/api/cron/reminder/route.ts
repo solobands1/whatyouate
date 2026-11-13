@@ -5,6 +5,8 @@ import type { TrialMeal } from "../../../../lib/trial";
 import { isFreeAccessEligible } from "../../../../lib/server/freeAccess";
 import { checkProEntitlement } from "../../../../lib/entitlement";
 import { HABIT_TEMPLATES } from "../../../../lib/habits";
+import { COMEBACK_LOCAL_HOUR, dueComebackStage, type QuietState } from "../../../../lib/comeback";
+import { comebackLadderReady, loadActivity, markComebackReturns, quietFrom, sendComebackPush } from "../../../../lib/server/comeback";
 
 export const maxDuration = 60;
 
@@ -238,6 +240,12 @@ export async function GET(req: Request) {
     .eq("platform", "ios");
   // Runs before the no-tokens early return so due reminders still get cleared.
   const firstMeal = await sendFirstMealReminders(supabase, (tokens ?? []) as Array<{ user_id: string; token: string }>);
+  // Comeback ladder (lib/comeback.ts, supabase/comeback.sql): once someone has logged nothing for 3
+  // days, the 2pm and 7pm pushes stop and three comeback pushes go out at 6pm on quiet days 3, 7 and
+  // 14. Checked once per run; without the table everyone keeps today's pushes. Returns are marked
+  // every run, whoever still has a token.
+  const ladder = await comebackLadderReady(supabase);
+  if (ladder) await markComebackReturns(supabase);
   if (!tokens?.length) return NextResponse.json({ ok: true, sent: firstMeal.sent });
 
   const userIds = [...new Set(tokens.map((t: { user_id: string }) => t.user_id))];
@@ -247,16 +255,24 @@ export async function GET(req: Request) {
     // One push per person per run: a first-meal reminder this hour takes the slot.
     if (firstMeal.pushedUsers.has(userId)) continue;
     try {
-      // Timezone offset + reflection history drive both the 2pm meal nag and the 7pm reflection
-      // reminder. Fixed hours (14 / 19) keep them from colliding, so no cross-nudge cooldown.
+      // Timezone offset + reflection history drive the 2pm meal nag, the 6pm comeback and the 7pm
+      // reflection reminder. Fixed hours (14 / 18 / 19) keep them from colliding, so no cross-nudge
+      // cooldown.
       const { data: profileRow } = await supabase
         .from("profiles")
-        .select("timezone_offset_minutes, reflections_json, habit_state_json, onboarding_done, created_at")
+        .select("timezone_offset_minutes, reflections_json, water_logs_json, habit_state_json, onboarding_done, created_at")
         .eq("user_id", userId)
         .maybeSingle();
       const offsetMinutes = (profileRow as Record<string, unknown> | null)?.timezone_offset_minutes as number | null | undefined;
       const localHour = getUserLocalHour(offsetMinutes ?? undefined);
       const userTokens = (tokens as Array<{ user_id: string; token: string }>).filter((t) => t.user_id === userId);
+      // Quiet (3+ days with no log, outside a no-meal first week)? Read only when a ladder-aware
+      // push is due. A failed read leaves the user on today's pushes.
+      const quietNow = async (): Promise<QuietState | null> => {
+        if (!ladder) return null;
+        const loaded = await loadActivity(supabase, userId, profileRow as Record<string, unknown> | null);
+        return loaded ? quietFrom(loaded, profileRow as Record<string, unknown> | null, offsetMinutes) : null;
+      };
 
       if (localHour === 8) {
         // Habit-builder KICKOFF — one push on the morning a "starts tomorrow" habit goes live, so
@@ -290,6 +306,11 @@ export async function GET(req: Request) {
           .from("meals").select("id")
           .eq("user_id", userId).gte("created_at", todayStartISO).neq("status", "failed").limit(1);
         if (todayMeals?.length) continue;
+        const quiet = await quietNow();
+        if (quiet?.quiet) {
+          console.log(`[cron/reminder] 2pm push held for ${userId.slice(0, 8)}: quiet day ${quiet.quietDays}`);
+          continue;
+        }
 
         // First week with nothing logged at all: the trial check below needs a meal, so these
         // users would otherwise only ever get the nightly reflection push. Ask about lunch instead.
@@ -313,14 +334,28 @@ export async function GET(req: Request) {
           const ok = await sendPush(t.token, { title: "WhatYouAte • Coach", body: message, data: { screen: "home" }, badge: 1 });
           if (ok) sent++;
         }
+      } else if (localHour === COMEBACK_LOCAL_HOUR) {
+        // 6pm COMEBACK — quiet day 3, 7 or 14 only (lib/comeback), then nothing more until they log.
+        // No trial/pro gate: free, paid and post-free-access users all follow it. Recorded before
+        // it's sent, so it can't repeat.
+        const quiet = await quietNow();
+        const stage = quiet?.quiet ? dueComebackStage(quiet.quietDays) : null;
+        if (!quiet || !stage) continue;
+        sent += await sendComebackPush(supabase, { userId, stage, quiet, profile: profileRow as Record<string, unknown> | null, tokens: userTokens });
       } else if (localHour === 19) {
         // 7pm REFLECTION REMINDER — only if they haven't reflected today. Reflection is free from
-        // day one, so this is NOT gated on trial/pro; every user with notifications on gets it.
+        // day one, so this is NOT gated on trial/pro; every user with notifications on gets it,
+        // until they've gone quiet (then the comeback ladder speaks instead).
         const reflections = Array.isArray((profileRow as Record<string, unknown> | null)?.reflections_json)
           ? ((profileRow as Record<string, unknown>).reflections_json as Array<{ date?: string }>)
           : [];
         const localToday = userLocalDateStr(offsetMinutes);
         if (reflections.some((r) => r?.date === localToday)) continue; // already reflected today
+        const quiet = await quietNow();
+        if (quiet?.quiet) {
+          console.log(`[cron/reminder] 7pm reflection push held for ${userId.slice(0, 8)}: quiet day ${quiet.quietDays}`);
+          continue;
+        }
 
         for (const t of userTokens) {
           const ok = await sendPush(t.token, { title: REFLECTION_REMINDER_TITLE, body: REFLECTION_REMINDER_BODY, data: { screen: "home" }, badge: 1 });

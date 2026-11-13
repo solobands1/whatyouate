@@ -21,3 +21,10 @@ App usage (owner_usage.sql) has its own stand-in with the app tables it reads. I
     psql -d u -f usage_setup.sql && psql -d u -f ../creators.sql && psql -d u -f ../owner_usage.sql && psql -d u -f usage_tests.sql
 
 should print USAGE TESTS PASSED.
+
+Comeback ladder (comeback.sql) runs on the same stand-in. In a fresh database:
+
+    psql -c "create database c"
+    psql -d c -f usage_setup.sql && psql -d c -f ../creators.sql && psql -d c -f ../owner_usage.sql && psql -d c -f ../comeback.sql && psql -d c -f comeback_tests.sql
+
+should print COMEBACK TESTS PASSED.

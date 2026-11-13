@@ -59,6 +59,7 @@ import { openReviewPrompt } from "./ReviewPromptModal";
 import OnboardingFlow from "./OnboardingFlow";
 import FirstMealStep, { FirstMealCelebration, FirstMealReminderPrompt, clearFirstMealView, type FirstMealLogMethod } from "./FirstMealStep";
 import MealTimeChip from "./MealTimeChip";
+import WelcomeBackCard from "./WelcomeBackCard";
 import {
   clampToToday,
   mealLogCount,
@@ -1208,6 +1209,14 @@ export default function HomeScreen() {
     dismissHabitSpotlight();
     unlockAudio();
     setHeroHabit((h) => ({ ...h, status: "accepting" }));
+  };
+  // Welcome Back card "Start Pick Back Up": puts the comeback habit in the hero and runs the same
+  // accept flow, starting today (it's "log anything", so it never waits for tomorrow).
+  const startComebackHabit = (t: HabitTemplate) => {
+    startChoiceRef.current = "today";
+    unlockAudio();
+    setActiveTemplate(t);
+    setHeroHabit({ status: "accepting", days: freshDays(t) });
   };
 
   // Persist the in-progress builder whenever it changes. "done" is handled by its own
@@ -4191,6 +4200,14 @@ export default function HomeScreen() {
             </button>
           </div>
         )}
+
+        {/* Welcome Back after 3+ quiet days (lib/comeback). Never at the same time as the streak saver
+            above: that needs a log the day before yesterday. */}
+        <WelcomeBackCard
+          ready={habitLoaded && !dataLoading && !isDemoMode && !showOnboarding && !showTourGate && !runTour && !firstMealOpen && !firstMealCelebrate && !showHabitSpotlight}
+          canStart={heroHabit.status === "suggested" || heroHabit.status === "hidden"}
+          onStart={startComebackHabit}
+        />
 
         {/* After each backfilled meal: offer another for the same day (a real day is more
             than one meal), with "All Done" always present so it never feels like a nag. */}
