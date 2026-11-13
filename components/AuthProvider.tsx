@@ -95,6 +95,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.removeItem("wya_push_token");
       }
       resetPurchases();
+      // The Patterns page's "since you last looked" snapshot is per user and device; drop it.
+      if (user) { try { localStorage.removeItem(`wya_patterns_seen_${user.id}`); } catch {} }
       await supabase.auth.signOut();
       setUser(null);
       setSession(null);
