@@ -525,7 +525,10 @@ async function analyzeTextOnly(textDescription: string, provider: string, openai
       });
       if (!response.ok) throw new Error("Anthropic text analysis failed");
       const data = await response.json();
-      return extractJson(data?.content?.[0]?.text ?? "") ?? safeFallbackAnalysis();
+      // An unreadable reply fails like a photo does (the meal gets the fix-it prompt), never a made-up 350-700 guess.
+      const parsed = extractJson(data?.content?.[0]?.text ?? "");
+      if (!parsed) throw new Error("Anthropic text analysis returned non-JSON");
+      return parsed;
     } else if (openaiKey) {
       const model = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
       const response = await fetch(OPENAI_URL, {
@@ -543,9 +546,11 @@ async function analyzeTextOnly(textDescription: string, provider: string, openai
       });
       if (!response.ok) throw new Error("OpenAI text analysis failed");
       const data = await response.json();
-      return extractJson(data?.choices?.[0]?.message?.content ?? "") ?? safeFallbackAnalysis();
+      const parsed = extractJson(data?.choices?.[0]?.message?.content ?? "");
+      if (!parsed) throw new Error("OpenAI text analysis returned non-JSON");
+      return parsed;
     }
-    return safeFallbackAnalysis();
+    throw new Error("No AI provider configured for text analysis");
   } finally {
     clearTimeout(timeoutId);
   }
