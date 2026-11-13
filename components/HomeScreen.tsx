@@ -78,7 +78,9 @@ import {
   writeFirstMeal,
   writeFirstMealReminder,
 } from "../lib/firstMeal";
-import { getPushStatus } from "../lib/push";
+import { askPushPermission, getPushStatus, markPushDeclined, pushAskDue } from "../lib/push";
+import NotificationAsk from "./NotificationAsk";
+import { healthAskKey } from "./HealthKitSetup";
 import ProfileAvatar from "./ProfileAvatar";
 import { useWorkout, WORKOUT_TYPE_OPTIONS } from "../hooks/useWorkout";
 import { useMeals } from "../hooks/useMeals";
@@ -600,6 +602,11 @@ export default function HomeScreen() {
   const [firstMealOpen, setFirstMealOpen] = useState(() => typeof window !== "undefined" && !!user && !!readFirstMeal(user.id));
   // Which "Nice Start!" is up: after a first meal, or after the glass of water from Not Yet.
   const [firstMealCelebrate, setFirstMealCelebrate] = useState<null | "meal" | "water">(null);
+  // The notifications ask that follows "Nice Start!" (NotificationAsk). firstMealCelebrate stays set
+  // while it's up, so everything held back during the celebration stays held. pushAskDueRef: iOS
+  // still has to ask, checked when the celebration opens.
+  const [notifAskOpen, setNotifAskOpen] = useState(false);
+  const pushAskDueRef = useRef(false);
   // The meal time the step's loggers save (their "Today, 12:30 PM" chip). Mirrored in
   // firstMealTsRef for the async save handlers; only set while the step is open.
   const [firstMealTs, setFirstMealTsState] = useState<number | null>(null);
@@ -2910,10 +2917,14 @@ export default function HomeScreen() {
   };
 
   // "Remind Me After Breakfast". If the server copy can't be saved, the step tells the user the
-  // reminder will show in the app rather than promising a notification.
+  // reminder will show in the app rather than promising a notification. They've just asked to be
+  // reminded, so this is when iOS asks about notifications, if it hasn't yet.
   const scheduleBreakfastReminder = async (): Promise<{ at: number; push: boolean }> => {
     const at = breakfastReminderTime();
     if (!user) return { at, push: false };
+    if ((await getPushStatus().catch(() => "unsupported" as const)) === "prompt") {
+      await askPushPermission(user.id).catch(() => false);
+    }
     const saved = await saveStepReminder(at);
     const pushStatus = await getPushStatus().catch(() => "unsupported" as const);
     return { at, push: saved && pushStatus === "granted" };
@@ -3035,7 +3046,27 @@ export default function HomeScreen() {
 
   firstMealScreensUpRef.current = firstMealOpen || firstMealCelebrate != null || showTourGate;
 
+  // Notifications are asked here, once there's a first log and a reminder worth sending, rather
+  // than at the end of onboarding next to the other prompts. Only when iOS hasn't asked yet.
+  useEffect(() => {
+    pushAskDueRef.current = false;
+    if (!firstMealCelebrate) return;
+    let live = true;
+    pushAskDue().then((due) => { if (live) pushAskDueRef.current = due; }).catch(() => {});
+    return () => { live = false; };
+  }, [firstMealCelebrate]);
+
   const closeFirstMealCelebration = () => {
+    if (pushAskDueRef.current) {
+      pushAskDueRef.current = false;
+      setNotifAskOpen(true);
+      return;
+    }
+    setFirstMealCelebrate(null);
+    setShowTourGate(true);
+  };
+  const closeNotifAsk = () => {
+    setNotifAskOpen(false);
     setFirstMealCelebrate(null);
     setShowTourGate(true);
   };
@@ -3842,6 +3873,8 @@ export default function HomeScreen() {
             // The welcome gate is offered by hand after the first-meal step (finishFirstMeal), so
             // mark it seen here or the onboarding effect would show it straight away.
             localStorage.setItem(`wya_walkthrough_gate_${user.id}`, "true");
+            // Apple Health is offered from tomorrow (HealthKitSetup), not during onboarding.
+            try { localStorage.setItem(healthAskKey(user.id), todayKey()); } catch {}
             // Onboarding now ends on the first-meal step instead of going straight into the
             // walkthrough: a first real log comes before the tour, the habit and an empty home.
             // Only written here, so anyone who onboarded before this never sees the step.
@@ -3866,13 +3899,20 @@ export default function HomeScreen() {
           onDone={() => finishFirstMeal("skipped")}
         />
       )}
-      {firstMealCelebrate && (
+      {firstMealCelebrate && !notifAskOpen && (
         <FirstMealCelebration
           kind={firstMealCelebrate}
           habitTitle={firstHabitTemplate.title}
           daysDone={1}
           totalDays={firstHabitTemplate.durationDays}
           onContinue={closeFirstMealCelebration}
+        />
+      )}
+      {notifAskOpen && user && (
+        <NotificationAsk
+          goal={profile?.feelingGoals?.[0]}
+          onEnable={async () => { await askPushPermission(user.id).catch(() => false); closeNotifAsk(); }}
+          onSkip={() => { markPushDeclined(); closeNotifAsk(); }}
         />
       )}
       {reminderPrompt && (

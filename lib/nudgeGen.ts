@@ -78,6 +78,8 @@ suggestions: 1-3 specific foods for micronutrient_low and deficit types only. Em
 const FEELING_GOAL_LABELS: Record<string, string> = {
   energy: "more energy", sleep: "better sleep", mood: "better mood",
   focus: "sharper focus", digestion: "better digestion", cravings: "fewer cravings",
+  // Worded so the coach never guesses at a culprit food from nothing.
+  triggers: "finding foods that bother them (only point to a food their own logs show)",
 };
 
 // --- Medical safety guardrail (injected ONLY when a user has shared health context) ---

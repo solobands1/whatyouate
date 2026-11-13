@@ -47,6 +47,7 @@ const FEELING_GOALS: { value: FeelingGoal; label: string }[] = [
   { value: "mood", label: "Better Mood" },
   { value: "focus", label: "Sharper Focus" },
   { value: "digestion", label: "Better Digestion" },
+  { value: "triggers", label: "Find Foods That Bother Me" },
   { value: "cravings", label: "Fewer Cravings" },
 ];
 

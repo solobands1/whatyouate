@@ -10,6 +10,20 @@ import { supabase } from "../lib/supabaseClient";
 import { creatorNameForCode, normalizeCode, redeemCreatorCode } from "../lib/referral";
 import { openCreatorOffer } from "./CreatorOfferSheet";
 
+// New visitors land on Create Account; anyone who has used an account on this phone before lands on
+// Sign In. wya_has_account is set once an account is open here; the onboarding flag covers people
+// who signed in before that key existed (signing out keeps it).
+const HAS_ACCOUNT_KEY = "wya_has_account";
+function hasAccountOnDevice(): boolean {
+  try {
+    if (localStorage.getItem(HAS_ACCOUNT_KEY) === "1") return true;
+    for (let i = 0; i < localStorage.length; i++) {
+      if (localStorage.key(i)?.startsWith("wya_onboarding_done_")) return true;
+    }
+  } catch { /* storage blocked: treat as new */ }
+  return false;
+}
+
 export default function LoginClient() {
   const router = useRouter();
   const {
@@ -21,9 +35,7 @@ export default function LoginClient() {
     verifyPasswordOtp,
     updatePassword
   } = useAuth();
-  const [mode, setMode] = useState<"signin" | "signup" | "forgot" | "reset" | "confirm">("signin");
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
+  const [mode, setMode] = useState<"signin" | "signup" | "forgot" | "reset" | "confirm">(() => (hasAccountOnDevice() ? "signin" : "signup"));
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -42,6 +54,7 @@ export default function LoginClient() {
 
   useEffect(() => {
     if (!loading && user) {
+      try { localStorage.setItem(HAS_ACCOUNT_KEY, "1"); } catch { /* ignore */ }
       router.replace("/");
     }
   }, [loading, user, router]);
@@ -83,13 +96,13 @@ export default function LoginClient() {
     if (LOCAL_MODE) router.replace("/");
   };
 
-  const handleSignUp = async () => {
-    if (!firstName.trim() || !lastName.trim() || !email || !password || !confirmPassword) {
-      setStatus("Please fill out all fields.");
-      return;
-    }
-    if (password !== confirmPassword) {
-      setStatus("Passwords do not match.");
+  // Sign-up only asks for what the account needs: an email and a password (plus an optional creator
+  // code). The first name is asked in onboarding; a last name can be added in Profile.
+  const handleSignUp = async (event?: React.FormEvent) => {
+    event?.preventDefault();
+    if (submitting) return;
+    if (!email.trim() || !password) {
+      setStatus("Enter your email and a password.");
       return;
     }
     const code = creatorCode.length >= 3 ? creatorCode : "";
@@ -99,8 +112,6 @@ export default function LoginClient() {
     }
     setSubmitting(true);
     const result = await signUpWithEmailPassword(email.trim(), password, {
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
       creatorCode: code || undefined
     });
     if (result.error) {
@@ -195,8 +206,8 @@ export default function LoginClient() {
         }}
       >
 
-        {/* Branding */}
-        {(mode === "signin" || mode === "forgot") && (
+        {/* Branding (matches SplashScreen's "login" variant, so signing in or up never jumps) */}
+        {(mode === "signin" || mode === "forgot" || mode === "signup") && (
           <div className="flex flex-col items-center mb-10">
             <div className="h-16 w-16 mb-4">
               <img src="/icon.svg" alt="WhatYouAte" className="h-full w-full object-cover" />
@@ -262,119 +273,83 @@ export default function LoginClient() {
           </form>
         )}
 
-        {/* Sign up */}
+        {/* Sign up: the first screen for someone new */}
         {mode === "signup" && (
-          <>
-            <img src="/icon.svg" alt="WhatYouAte" className="absolute right-6 top-28 h-9 w-9 object-cover" />
-            <div className="mb-7">
+          <form onSubmit={handleSignUp} className="flex flex-col gap-3" data-signup-form>
+            <input
+              type="email"
+              autoComplete="email"
+              autoCapitalize="none"
+              className={inputClass}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email"
+            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                autoComplete="new-password"
+                autoCapitalize="none"
+                className={inputClass}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Password"
+              />
+              <EyeToggle />
+            </div>
+            <div>
+              <div className="relative">
+                <input
+                  type="text"
+                  autoCapitalize="characters"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  className={`${inputClass} pr-20 ${creatorCode ? "font-semibold tracking-[0.06em]" : ""}`}
+                  value={creatorCode}
+                  onChange={(e) => { setCreatorCode(normalizeCode(e.target.value)); setStatus(""); }}
+                  placeholder="Creator code (optional)"
+                />
+                <button
+                  type="button"
+                  onClick={pasteCode}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary transition active:opacity-60"
+                >
+                  Paste
+                </button>
+              </div>
+              {creatorCode.length >= 3 && codeChecked && (
+                <p className={`mt-1.5 px-1 text-xs ${codeFound ? "text-emerald-600" : "text-red-500/80"}`}>
+                  {codeFound ? `Code from ${codeCheck?.name}. Your first month is free.` : "We couldn't find that code."}
+                </p>
+              )}
+            </div>
+            {status && <p className="text-xs text-red-500/80">{status}</p>}
+            <button
+              type="submit"
+              className="mt-1 w-full rounded-xl bg-primary py-3.5 text-sm font-semibold text-white transition active:opacity-80 disabled:opacity-50"
+              disabled={submitting}
+            >
+              {submitting ? "Creating Account…" : "Create Account"}
+            </button>
+            <p className="text-center text-xs text-muted/60">Start with Free Access. No payment, no commitment.</p>
+            <p className="text-center text-[11px] text-muted/40 leading-relaxed">
+              By creating an account you agree to our{" "}
+              <Link href="/privacy" className="underline underline-offset-2">
+                Privacy Policy and Terms of Use
+              </Link>
+            </p>
+            <p className="mt-3 text-center text-sm text-muted/60">
+              Already have an account?{" "}
               <button
                 type="button"
-                className="mb-5 flex items-center gap-1.5 text-xs text-muted/50 transition active:opacity-60"
+                className="font-semibold text-primary transition active:opacity-60"
                 onClick={() => { setMode("signin"); setStatus(""); }}
               >
-                <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M10 12L6 8l4-4" />
-                </svg>
-                Back
+                Sign In
               </button>
-              <div>
-                <h2 className="text-xl font-semibold text-ink">Create Account</h2>
-                <p className="mt-1 text-sm text-muted/60">7 days free to start. No payment, no commitment.</p>
-              </div>
-            </div>
-            <div className="flex flex-col gap-3">
-              <div className="flex gap-3">
-                <input
-                  type="text"
-                  className={inputClass}
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="First name"
-                />
-                <input
-                  type="text"
-                  className={inputClass}
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  placeholder="Last name"
-                />
-              </div>
-              <input
-                type="email"
-                autoComplete="email"
-                className={inputClass}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Email"
-              />
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="new-password"
-                  autoCapitalize="none"
-                  className={inputClass}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Password"
-                />
-                <EyeToggle />
-              </div>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="new-password"
-                  autoCapitalize="none"
-                  className={inputClass}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Confirm password"
-                />
-                <EyeToggle />
-              </div>
-              <div>
-                <div className="relative">
-                  <input
-                    type="text"
-                    autoCapitalize="characters"
-                    autoComplete="off"
-                    autoCorrect="off"
-                    spellCheck={false}
-                    className={`${inputClass} pr-20 ${creatorCode ? "font-semibold tracking-[0.06em]" : ""}`}
-                    value={creatorCode}
-                    onChange={(e) => setCreatorCode(normalizeCode(e.target.value))}
-                    placeholder="Creator code (optional)"
-                  />
-                  <button
-                    type="button"
-                    onClick={pasteCode}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary transition active:opacity-60"
-                  >
-                    Paste
-                  </button>
-                </div>
-                {creatorCode.length >= 3 && codeChecked && (
-                  <p className={`mt-1.5 px-1 text-xs ${codeFound ? "text-emerald-600" : "text-red-500/80"}`}>
-                    {codeFound ? `Code from ${codeCheck?.name}. Your first month is free.` : "We couldn't find that code."}
-                  </p>
-                )}
-              </div>
-              {status && <p className="text-xs text-red-500/80">{status}</p>}
-              <button
-                type="button"
-                className="mt-1 w-full rounded-xl bg-primary py-3.5 text-sm font-semibold text-white transition active:opacity-80 disabled:opacity-50"
-                onClick={handleSignUp}
-                disabled={submitting}
-              >
-                {submitting ? "Creating Account…" : "Create Account"}
-              </button>
-              <p className="text-center text-[11px] text-muted/40 leading-relaxed">
-                By creating an account you agree to our{" "}
-                <Link href="/privacy" className="underline underline-offset-2">
-                  Privacy Policy and Terms of Use
-                </Link>
-              </p>
-            </div>
-          </>
+            </p>
+          </form>
         )}
 
         {/* Email confirmation required */}

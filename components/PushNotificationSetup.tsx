@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Capacitor } from "@capacitor/core";
 import { useAuth } from "./AuthProvider";
 import { initPush, setPushNavigate, PUSH_ASKED_KEY, PUSH_DECLINED_AT_KEY, PUSH_REDECLINE_DAYS } from "../lib/push";
+import { readFirstMeal } from "../lib/firstMeal";
 
 function BellIcon() {
   return (
@@ -41,15 +42,18 @@ export default function PushNotificationSetup() {
       ? Date.now() - Number(declinedAt) < PUSH_REDECLINE_DAYS * 24 * 60 * 60 * 1000
       : false;
 
-    // The PRIMARY ask now lives in onboarding. This banner is only a fallback re-ask — for people
-    // who tapped "Maybe Later" (after the cooldown) or somehow skipped the onboarding step.
+    // The PRIMARY ask is in the first-meal step: "Remind Me After Breakfast", or NotificationAsk
+    // after the first log. This banner is only a fallback re-ask, on a later launch: for people who
+    // tapped "Maybe Later" (after the cooldown) or skipped the first-meal step.
     if (!asked || (asked === "declined" && !declinedRecently)) {
       let cancelled = false;
       const tryShow = (attempt: number) => {
         if (cancelled || !user) return;
         const walkthroughActive = localStorage.getItem(`wya_walkthrough_active_${user.id}`) === "true";
         const onboardingDone = localStorage.getItem(`wya_onboarding_done_${user.id}`) === "true";
-        if (walkthroughActive || !onboardingDone) return;
+        // Not over the first-meal step either: it asks at its own moments ("Remind Me", or after
+        // the first log), and this waits for a later launch.
+        if (walkthroughActive || !onboardingDone || readFirstMeal(user.id)) return;
         // Don't stack on a home celebration/nudge banner (same top slot) — wait for it to clear.
         if (typeof document !== "undefined" && document.querySelector("[data-top-banner]") && attempt < 8) {
           setTimeout(() => tryShow(attempt + 1), 5000);
@@ -78,7 +82,7 @@ export default function PushNotificationSetup() {
   if (!showPrePrompt) return null;
 
   return (
-    <div className="fixed inset-x-0 top-0 z-50 animate-slide-down mx-auto max-w-md bg-white/60 backdrop-blur-xl border-b border-white/40 px-5 pb-4 safe-top">
+    <div className="fixed inset-x-0 top-0 z-50 animate-slide-down mx-auto max-w-md bg-white/60 backdrop-blur-xl border-b border-white/40 px-5 pb-4 safe-top" data-push-banner>
       <div className="flex items-start gap-3">
         <div className="mt-0.5 text-primary shrink-0">
           <BellIcon />
