@@ -39,16 +39,21 @@ export function useMeals(
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   });
+  // An exact meal time for this entry (the first-meal step's "7 PM yesterday" / "an hour ago").
+  // Only used while manualDate is still that time's day; changing the date falls back to the
+  // usual rule (now for today, noon for an earlier day).
+  const [manualTs, setManualTs] = useState<number | null>(null);
 
   const load = useCallback(async (userId: string) => {
     const mealsData = await listMeals(userId, 100);
     setMeals(mealsData);
     // Rebuild quick-add cache from Supabase history if localStorage was cleared
     seedTextCacheFromMeals(mealsData);
-    // Recover meals stuck in "processing" (e.g. tab closed mid-analysis)
+    // Recover meals stuck in "processing" (e.g. tab closed mid-analysis). Timed from when the row
+    // was saved, not ts: a meal logged for an earlier time is still fresh while it analyses.
     const STUCK_MS = 5 * 60 * 1000;
     const now = Date.now();
-    const stuck = mealsData.filter((m) => m.status === "processing" && now - m.ts > STUCK_MS);
+    const stuck = mealsData.filter((m) => m.status === "processing" && now - (m.createdAt ?? m.ts) > STUCK_MS);
     if (stuck.length > 0) {
       await Promise.all(stuck.map((m) => updateMeal(m.id, safeFallbackAnalysis(), undefined, userId, "failed").catch(() => {})));
       const refreshed = await listMeals(userId, 100);
@@ -56,12 +61,14 @@ export function useMeals(
     }
   }, []);
 
-  const openManualMealEntry = () => {
+  const openManualMealEntry = (atTs?: number) => {
     setManualText("");
     setManualResult(null);
     setManualPortion("medium");
     setManualError(null);
-    const d = new Date();
+    const exact = typeof atTs === "number" && Number.isFinite(atTs) && atTs <= Date.now() ? atTs : null;
+    setManualTs(exact);
+    const d = exact != null ? new Date(exact) : new Date();
     setManualDate(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`);
     setEditForm({ name: "", calories: "", protein: "", carbs: "", fat: "" });
     setEditingMeal({
@@ -209,7 +216,12 @@ export function useMeals(
     const today = new Date();
     const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
     const backdated = capturedDate !== todayStr ? new Date(capturedDate + "T12:00:00").getTime() : null;
-    const optimisticTs = backdated !== null && backdated < Date.now() ? backdated : Date.now();
+    const exactDay = manualTs != null ? new Date(manualTs) : null;
+    const exactTs = exactDay && manualTs != null && manualTs <= Date.now()
+      && capturedDate === `${exactDay.getFullYear()}-${String(exactDay.getMonth() + 1).padStart(2, "0")}-${String(exactDay.getDate()).padStart(2, "0")}`
+      ? manualTs : null;
+    const optimisticTs = exactTs ?? (backdated !== null && backdated < Date.now() ? backdated : Date.now());
+    setManualTs(null);
     const esc = scaledAnalysis.estimated_ranges;
     setMeals((prev) => [{ id: optimisticId, ts: optimisticTs, analysisJson: scaledAnalysis as any, userCorrection: capturedName, calories: approxFromRange(esc.calories_min, esc.calories_max), protein: approxFromRange(esc.protein_g_min, esc.protein_g_max), status: "done" as const }, ...prev]);
     setManualText("");
@@ -408,6 +420,7 @@ export function useMeals(
     manualPortion,
     setManualPortion,
     manualError,
+    setManualError,
     manualScaledRanges,
     openManualMealEntry,
     analyzeManualText,

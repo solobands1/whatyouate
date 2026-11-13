@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { devHooksEnabled } from "../lib/devHooks";
+import { FIRST_MEAL_STORAGE_KEYS } from "../lib/firstMeal";
 import { useKeyboardInset } from "../hooks/useKeyboardInset";
 import Joyride, { STATUS, CallBackProps, type Step } from "react-joyride";
 import { notifyProfileUpdated } from "../lib/dataEvents";
@@ -787,6 +788,7 @@ export default function ProfileScreen() {
       `wya_cel_firstMeal_${user.id}`,
       `wya_cel_firstReflection_${user.id}`,
       `wya_dob_${user.id}`,
+      ...FIRST_MEAL_STORAGE_KEYS(user.id),
     ];
     keysToRemove.forEach((k) => localStorage.removeItem(k));
     // Passive-ignore impression counts are per-habit-template — sweep them all for this user.

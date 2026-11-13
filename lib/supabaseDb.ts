@@ -135,7 +135,11 @@ function mapMeal(row: any): MealLog {
     fat: row.fat ?? undefined,
     userCorrection: analysis?.name ?? undefined,
     imageThumb: row.image_url ?? undefined,
-    status: usedFallback ? "failed" : (row.status ?? "done")
+    status: usedFallback ? "failed" : (row.status ?? "done"),
+    createdAt: (() => {
+      const t = row.created_at ? new Date(row.created_at).getTime() : NaN;
+      return Number.isFinite(t) ? t : undefined;
+    })()
   };
 }
 
@@ -278,6 +282,22 @@ export async function saveTimezoneOffset(userId: string, offsetMinutes: number):
   );
   if (error) console.error("[supabase] saveTimezoneOffset failed:", error.message);
   else profileCache.delete(userId);
+}
+
+// "Remind Me After Breakfast", or the one follow-up after "Not Now", from the first-meal step
+// (components/FirstMealStep). The hourly reminder cron sends one push at the first run at or after
+// this time, unless they've logged a meal since, then clears it. Needs the profiles.first_meal_reminder_at column
+// (supabase/first_meal_reminder.sql); without it this rejects and the caller falls back to the
+// in-app prompt. Throws on failure rather than resolving quietly.
+// The device's current timezone offset rides along, because the cron reads the reminder's local
+// hour from it to pick the message (breakfast, lunch or dinner).
+export async function saveFirstMealReminder(userId: string, atIso: string | null): Promise<void> {
+  if (useMemory) return;
+  const { error } = await supabase.from("profiles").upsert(
+    { user_id: userId, first_meal_reminder_at: atIso, ...(atIso ? { timezone_offset_minutes: new Date().getTimezoneOffset() } : {}) },
+    { onConflict: "user_id" }
+  );
+  if (error) throw error;
 }
 
 export function clearProfileCache(userId: string) {
@@ -662,8 +682,11 @@ export async function markMealFailed(id: string): Promise<void> {
   if (useMemory) return;
   // Never overwrite a meal the server already analyzed successfully — a slow
   // analysis can finish (status "done") after the client gave up on it.
-  await supabase.from("meals").update({ status: "failed" }).eq("id", id).neq("status", "done");
+  // Status only: whatever analysis the row holds is kept (the first-meal path saves zeros, so a
+  // failure never writes invented numbers). Throws on failure; the callers catch.
+  const { error } = await supabase.from("meals").update({ status: "failed" }).eq("id", id).neq("status", "done");
   mealsCache.clear();
+  if (error) throw error;
 }
 
 export async function updateMealTs(id: string, ts: number) {

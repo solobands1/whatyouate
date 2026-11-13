@@ -3,12 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { fileToThumbnailDataUrl } from "../lib/utils";
-import { safeFallbackAnalysis } from "../lib/ai/schema";
 import { notifyMealsUpdated } from "../lib/dataEvents";
 import { useAuth } from "./AuthProvider";
 import { useKeyboardInset } from "../hooks/useKeyboardInset";
 import { useAppData } from "./AppDataProvider";
 import { addMeal, updateMealTs, uploadMealThumbnail, updateMealImageUrl } from "../lib/supabaseDb";
+import { clampToToday, pendingAnalysis } from "../lib/firstMeal";
+import MealTimeChip from "./MealTimeChip";
 import { enqueueMeal } from "../lib/mealQueue";
 
 function nowTimeString() {
@@ -46,6 +47,15 @@ export default function CaptureScreen() {
   const redirectRef = useRef<number | null>(null);
   const showTimePickerRef = useRef(false);
   const analyzeStartedRef = useRef(false);
+  // Meal time handed over with the photo from the first-meal step (now, or about an hour ago,
+  // always today). Null means now, as before.
+  const captureTsRef = useRef<number | null>(null);
+  // Sent from the first-meal step: go straight back instead of waiting on the "Adding To Your Day"
+  // screen. (Every photo now saves the same all-zero placeholder while it analyses.)
+  const firstMealRef = useRef(false);
+  // The first-meal step's meal time, shown as a chip on the preview (today only, never later than
+  // now). Null outside the step, where the photo is saved at the time it's taken, as before.
+  const [firstMealTs, setFirstMealTs] = useState<number | null>(null);
   const [cameraMode, setCameraMode] = useState<"idle" | "live" | "file">("idle");
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -79,9 +89,14 @@ export default function CaptureScreen() {
     const raw = sessionStorage.getItem("wya_pending_capture");
     if (!raw) return;
     try {
-      const parsed = JSON.parse(raw) as { name?: string; type?: string; dataUrl?: string };
+      const parsed = JSON.parse(raw) as { name?: string; type?: string; dataUrl?: string; ts?: number; firstMeal?: boolean };
       if (!parsed?.dataUrl) return;
       sessionStorage.removeItem("wya_pending_capture");
+      const ts = parsed.ts;
+      captureTsRef.current =
+        typeof ts === "number" && Number.isFinite(ts) && ts <= Date.now() && ts > Date.now() - 14 * 24 * 60 * 60 * 1000 ? ts : null;
+      firstMealRef.current = parsed.firstMeal === true;
+      if (firstMealRef.current) setFirstMealTs(clampToToday(captureTsRef.current ?? Date.now()));
       fetch(parsed.dataUrl)
         .then((res) => res.blob())
         .then((blob) => {
@@ -167,10 +182,12 @@ export default function CaptureScreen() {
       buildResizedDataUrl(selected),
       fileToThumbnailDataUrl(selected)
     ]);
-    const placeholder = safeFallbackAnalysis();
+    // Nothing invented while it analyses: an empty placeholder the real analysis replaces (Home shows "Analyzing").
+    const placeholder = pendingAnalysis();
     let pendingMeal;
     try {
-      pendingMeal = await addMeal(user.id, placeholder);
+      const ts = firstMealRef.current && firstMealTs != null ? clampToToday(firstMealTs) : captureTsRef.current ?? undefined;
+      pendingMeal = await addMeal(user.id, placeholder, undefined, undefined, "processing", ts);
     } catch {
       setSaveError(true);
       return;
@@ -184,6 +201,11 @@ export default function CaptureScreen() {
     setMeals((prev) => [{ ...pendingMeal, analysisJson: placeholder, status: "processing" as const }, ...prev]);
     notifyMealsUpdated();
     enqueueMeal(pendingMeal.id, resized, user.id, hintText || undefined);
+    if (firstMealRef.current) {
+      // The analysis carries on in the background (mealQueue); Home shows the "Analyzing" pill.
+      router.push("/");
+      return;
+    }
     if (redirectRef.current) window.clearTimeout(redirectRef.current);
     redirectRef.current = window.setTimeout(() => {
       if (!showTimePickerRef.current) router.push("/");
@@ -381,12 +403,17 @@ export default function CaptureScreen() {
                     />
                     <p className="mt-1.5 text-xs text-ink/40 text-center tracking-wide">Help your food get properly identified with a hint</p>
                   </div>
+                  {firstMealTs != null && (
+                    <div className="flex justify-center"><MealTimeChip value={firstMealTs} onChange={setFirstMealTs} /></div>
+                  )}
                   <button
                     type="button"
                     className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] transition hover:bg-primary/90 active:scale-[0.98]"
                     onClick={handleAnalyzeTap}
                   >
-                    Analyze
+                    {/* From the first-meal step it's saved straight away and analysed in the
+                        background, same as Type It In there, so the same words. */}
+                    {firstMealTs != null ? "Log It" : "Analyze"}
                   </button>
                 </div>
               </div>

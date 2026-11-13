@@ -171,11 +171,12 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       // (it scanned every localStorage key on each reload otherwise).
       if (isInitial) pruneNudgeSnapshots();
 
-      // Recover meals stuck in "processing" (e.g. tab closed mid-analysis)
+      // Recover meals stuck in "processing" (e.g. tab closed mid-analysis). Timed from when the row
+      // was saved, not ts: a meal logged for an earlier time is still fresh while it analyses.
       const STUCK_MS = 5 * 60 * 1000;
       const now = Date.now();
       const stuck = mealsData.filter(
-        (m) => m.status === "processing" && now - m.ts > STUCK_MS
+        (m) => m.status === "processing" && now - (m.createdAt ?? m.ts) > STUCK_MS
       );
       let finalMeals = mealsData;
       if (stuck.length > 0) {
