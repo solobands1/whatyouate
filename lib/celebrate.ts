@@ -173,6 +173,11 @@ export function tapTick() {
   try { nativeHaptics()?.impact?.({ style: "MEDIUM" }); } catch { /* no-op */ }
 }
 
+// The in-app camera's shutter: one firm tap, no sound (the flash on screen is the feedback).
+export function shutterTap() {
+  try { nativeHaptics()?.impact?.({ style: "MEDIUM" }); } catch { /* no-op */ }
+}
+
 export function celebrateDaily() {
   // Two longer pulses ("taaap ... taap") built from rapid MEDIUM impacts — length like a
   // vibration but gentler than a full vibrate (which felt too strong). Intensity is the

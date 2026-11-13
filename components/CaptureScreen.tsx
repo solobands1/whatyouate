@@ -11,6 +11,7 @@ import { addMeal, updateMealTs, uploadMealThumbnail, updateMealImageUrl } from "
 import { clampToToday, pendingAnalysis } from "../lib/firstMeal";
 import MealTimeChip from "./MealTimeChip";
 import { enqueueMeal } from "../lib/mealQueue";
+import FoodCamera, { canUseInAppCamera, type FoodPhotoSource } from "./FoodCamera";
 
 function nowTimeString() {
   const d = new Date();
@@ -56,9 +57,17 @@ export default function CaptureScreen() {
   // The first-meal step's meal time, shown as a chip on the preview (today only, never later than
   // now). Null outside the step, where the photo is saved at the time it's taken, as before.
   const [firstMealTs, setFirstMealTs] = useState<number | null>(null);
-  const [cameraMode, setCameraMode] = useState<"idle" | "live" | "file">("idle");
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
+  // The in-app camera, over this screen: Retake, or on arrival without a photo.
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [photoSource, setPhotoSource] = useState<FoodPhotoSource>("camera");
+  // A photo handed over from Home is being read back; show nothing rather than "No photo selected".
+  const [restoring, setRestoring] = useState(true);
+  const [leaving, setLeaving] = useState(false);
+  // Whether a photo was handed over, read once before the restore below consumes it.
+  const arrivedWithPhotoRef = useRef<boolean | null>(null);
+  if (arrivedWithPhotoRef.current === null && typeof window !== "undefined") {
+    try { arrivedWithPhotoRef.current = !!sessionStorage.getItem("wya_pending_capture"); } catch { arrivedWithPhotoRef.current = false; }
+  }
   const captureContainerRef = useRef<HTMLDivElement | null>(null);
   const [pendingMealId, setPendingMealId] = useState<string | null>(null);
   const [showTimePicker, setShowTimePicker] = useState(false);
@@ -87,11 +96,12 @@ export default function CaptureScreen() {
   useEffect(() => {
     if (file || typeof window === "undefined") return;
     const raw = sessionStorage.getItem("wya_pending_capture");
-    if (!raw) return;
+    if (!raw) { setRestoring(false); return; }
     try {
-      const parsed = JSON.parse(raw) as { name?: string; type?: string; dataUrl?: string; ts?: number; firstMeal?: boolean };
-      if (!parsed?.dataUrl) return;
+      const parsed = JSON.parse(raw) as { name?: string; type?: string; dataUrl?: string; ts?: number; firstMeal?: boolean; source?: string };
+      if (!parsed?.dataUrl) { setRestoring(false); return; }
       sessionStorage.removeItem("wya_pending_capture");
+      setPhotoSource(parsed.source === "library" ? "library" : "camera");
       const ts = parsed.ts;
       captureTsRef.current =
         typeof ts === "number" && Number.isFinite(ts) && ts <= Date.now() && ts > Date.now() - 14 * 24 * 60 * 60 * 1000 ? ts : null;
@@ -104,35 +114,21 @@ export default function CaptureScreen() {
             type: parsed.type ?? blob.type ?? "image/jpeg"
           }));
         })
-        .catch(() => {});
+        .catch(() => {})
+        .finally(() => setRestoring(false));
     } catch {
       // Ignore malformed storage.
+      setRestoring(false);
     }
   }, [file]);
 
   // Analysis is now triggered by the Analyze button, not automatically on file select.
 
+  // Arriving without a photo handed over (opened directly, or reloaded after the photo was read):
+  // open the camera rather than a dead end. Only on mount, so Cancel doesn't reopen it on the way out.
   useEffect(() => {
-    return () => {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop());
-        streamRef.current = null;
-      }
-    };
+    if (!arrivedWithPhotoRef.current && canUseInAppCamera()) setCameraOpen(true);
   }, []);
-
-  useEffect(() => {
-    openCamera();
-  }, []);
-
-  useEffect(() => {
-    if (cameraMode !== "live") return;
-    if (!videoRef.current || !streamRef.current) return;
-    videoRef.current.srcObject = streamRef.current;
-    videoRef.current.onloadedmetadata = () => {
-      videoRef.current?.play().catch(() => {});
-    };
-  }, [cameraMode]);
 
   // Shrink the capture container to the area above the keyboard (native keyboard height via
   // useKeyboardInset; the photo absorbs the change). Cleared when the keyboard closes.
@@ -239,43 +235,27 @@ export default function CaptureScreen() {
     router.push("/");
   };
 
-  async function startLiveCamera() {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "environment" }
-    });
-    streamRef.current = stream;
-    setCameraMode("live");
-  }
-
-  const stopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-    }
-    if (videoRef.current) videoRef.current.srcObject = null;
-    setCameraMode("idle");
+  // Retake (or Take A Photo with nothing selected): the in-app camera, or the system camera where
+  // getUserMedia doesn't exist.
+  const openCamera = () => {
+    try { (document.activeElement as HTMLElement | null)?.blur?.(); } catch {}
+    if (canUseInAppCamera()) setCameraOpen(true);
+    else fileInputRef.current?.click();
   };
 
-  function openCamera() {
-    setCameraMode("file");
-    if (fileInputRef.current) fileInputRef.current.click();
-  }
+  const acceptPhoto = (selected: File, source: FoodPhotoSource) => {
+    setFile(selected);
+    setPhotoSource(source);
+    setCameraOpen(false);
+  };
 
-  const captureFrame = async () => {
-    const video = videoRef.current;
-    if (!video) return;
-    const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth || 1280;
-    canvas.height = video.videoHeight || 720;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const blob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob(resolve, "image/jpeg", 0.9)
-    );
-    if (!blob) return;
-    stopCamera();
-    setFile(new File([blob], "capture.jpg", { type: "image/jpeg" }));
+  const closeCamera = () => {
+    setCameraOpen(false);
+    // Opened on arrival with nothing to go back to: leave, as Cancel does.
+    if (!file) {
+      setLeaving(true);
+      router.push("/");
+    }
   };
 
   if (loading) return <div className="min-h-screen bg-surface" />;
@@ -290,63 +270,42 @@ export default function CaptureScreen() {
             : "mx-auto flex min-h-screen max-w-md flex-col px-5 pb-20 safe-top"
         }
       >
-        {!file && (
+        {/* The system camera, for Retake / Take A Photo where the in-app camera can't run. */}
+        <input
+          id="camera-file"
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          className="sr-only"
+          tabIndex={-1}
+          aria-hidden="true"
+          onChange={(event) => {
+            const selected = event.target.files?.[0] ?? null;
+            event.target.value = "";
+            if (selected) acceptPhoto(selected, "camera");
+          }}
+        />
+
+        {!file && !restoring && !cameraOpen && !leaving && (
           <div className="mt-6">
-            {cameraMode === "live" ? (
-              <div className="space-y-3">
-                <div className="relative h-64 w-full overflow-hidden rounded-xl bg-black">
-                  <video
-                    ref={videoRef}
-                    id="live-video"
-                    autoPlay
-                    playsInline
-                    muted
-                    className="absolute inset-0 h-full w-full object-cover"
-                  />
-                </div>
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    className="flex-1 rounded-xl bg-primary px-5 py-3 text-center text-sm font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] ring-1 ring-white/40 transition hover:bg-primary/90 active:scale-[0.98]"
-                    onClick={captureFrame}
-                  >
-                    Capture
-                  </button>
-                  <button
-                    type="button"
-                    className="rounded-xl border border-ink/10 bg-ink/5 px-4 py-3 text-sm font-semibold text-ink/70 transition hover:bg-ink/10"
-                    onClick={stopCamera}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <>
-                <input
-                  id="camera-file"
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  className="sr-only"
-                  onChange={(event) => {
-                    const selected = event.target.files?.[0] ?? null;
-                    setFile(selected);
-                  }}
-                />
-                <div className="flex flex-col items-center gap-2 pt-16">
-                  <p className="text-sm text-muted/60">No photo selected.</p>
-                  <button
-                    type="button"
-                    className="text-sm font-semibold text-ink/60 underline"
-                    onClick={() => router.push("/")}
-                  >
-                    ← Back
-                  </button>
-                </div>
-              </>
-            )}
+            <div className="flex flex-col items-center gap-3 pt-16">
+              <p className="text-sm text-muted/60">No photo selected.</p>
+              <button
+                type="button"
+                className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] transition hover:bg-primary/90 active:scale-[0.98]"
+                onClick={openCamera}
+              >
+                Take A Photo
+              </button>
+              <button
+                type="button"
+                className="text-sm font-semibold text-ink/60 underline"
+                onClick={() => router.push("/")}
+              >
+                ← Back
+              </button>
+            </div>
           </div>
         )}
 
@@ -356,12 +315,13 @@ export default function CaptureScreen() {
             className="fixed left-0 right-0 top-0 flex flex-col bg-surface"
             style={{ height: "100dvh", paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)", transition: "height 0.25s ease-out, top 0.25s ease-out" }}
           >
-            {/* Cancel */}
-            <div className="px-6 pb-3 flex-shrink-0 w-full max-w-sm mx-auto">
+            {/* Cancel, Retake */}
+            <div className="px-6 pb-3 flex-shrink-0 w-full max-w-sm mx-auto flex items-center justify-between">
               <button
                 type="button"
                 className="text-sm text-ink/50 underline"
                 onClick={() => {
+                  setLeaving(true);
                   setFile(null);
                   setHint("");
                   setAnalyzed(false);
@@ -370,6 +330,18 @@ export default function CaptureScreen() {
                 }}
               >
                 Cancel
+              </button>
+              <button
+                type="button"
+                className="flex items-center gap-1.5 text-sm font-semibold text-primary transition active:opacity-60"
+                onClick={openCamera}
+                data-retake
+              >
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M21 17.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-8.5a2 2 0 0 1 2-2h2.7l1.8-2.5h5l1.8 2.5H19a2 2 0 0 1 2 2z" />
+                  <circle cx="12" cy="13" r="3.4" />
+                </svg>
+                {photoSource === "library" ? "Change Photo" : "Retake"}
               </button>
             </div>
 
@@ -494,6 +466,8 @@ export default function CaptureScreen() {
           </div>
         )}
       </div>
+
+      <FoodCamera open={cameraOpen} onClose={closeCamera} onPhoto={acceptPhoto} />
     </div>
   );
 }

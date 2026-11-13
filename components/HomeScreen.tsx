@@ -18,10 +18,11 @@ import {
   notifyMealsUpdated,
   notifyWorkoutsUpdated
 } from "../lib/dataEvents";
-import { approxFromRange, formatApprox, formatDateShort, todayKey, dayKeyFromTs } from "../lib/utils";
+import { approxFromRange, formatApprox, formatDateShort, todayKey, dayKeyFromTs, fileToBase64, fitPhotoForHandoff } from "../lib/utils";
 import { supabase } from "../lib/supabaseClient";
 import "../lib/mealQueue";
 import BarcodeScannerOverlay from "./BarcodeScannerOverlay";
+import FoodCamera, { canUseInAppCamera, type FoodPhotoSource } from "./FoodCamera";
 import { getFoodCacheEntry, setFoodCacheEntry, deleteFoodCacheEntry, deleteFoodTextEntry, incrementFoodCacheLogCount, incrementFoodTextLogCount, getQuickAddFromMeals, addQuickAddRemoved, setFoodTextEntry, normalizeFoodKey, getDailySupplements, setDailySupplements, hasDailySuppsLoggedToday, markDailySuppsLoggedToday, clearDailySuppsLoggedToday, dishGroupKey, type QuickAddItem } from "../lib/foodCache";
 import { withLoggedFollowUp } from "../lib/nudgeFollowUp";
 import { addFeelLog, deleteFeelLog, updateFeelLog, upsertWaterLog, saveStreakSaver, saveActivityCelebration, addWeightLog, saveProfile, addReflection, saveHabitState, fetchHabitHistory, saveHabitHistory, saveFirstMealReminder, markMealFailed, type FeelLog } from "../lib/supabaseDb";
@@ -650,6 +651,7 @@ export default function HomeScreen() {
   }, [showUpdatePopup, runTour, showTourGate, isDemoMode]);
   const [dailyLimitBanner, setDailyLimitBanner] = useState(false);
   const [barcodeOpen, setBarcodeOpen] = useState(false);
+  const [foodCameraOpen, setFoodCameraOpen] = useState(false);
   const [barcodeNotFound, setBarcodeNotFound] = useState(false);
   const [barcodeNotFoundText, setBarcodeNotFoundText] = useState("");
   const [barcodeNotFoundAnalyzing, setBarcodeNotFoundAnalyzing] = useState(false);
@@ -2082,7 +2084,32 @@ export default function HomeScreen() {
     });
   };
 
-  const handleFoodPhotoClick = () => {
+  // A food photo (in-app camera, library or system camera) goes to /capture, which shows it with the
+  // hint field and Analyze, then saves and analyses it. It travels in sessionStorage as before.
+  const handOffFoodPhoto = async (selected: File, source: FoodPhotoSource) => {
+    let dataUrl: string;
+    try {
+      const photo = await fitPhotoForHandoff(selected).catch(() => selected);
+      dataUrl = await fileToBase64(photo);
+      try {
+        // From the first-meal step: ts is the chip's meal time (the capture screen shows the same chip),
+        // and firstMeal tells it to save straight away and not wait around.
+        sessionStorage.setItem(
+          "wya_pending_capture",
+          JSON.stringify({ name: photo.name, type: photo.type, dataUrl, source, ...(firstMealTsRef.current != null ? { ts: firstMealTsRef.current, firstMeal: true } : {}) })
+        );
+      } catch {}
+    } catch (err) {
+      console.error("[photo] couldn't read the photo", err);
+      setFoodCameraOpen(false);
+      return;
+    }
+    router.push("/capture?type=food&from=home");
+  };
+
+  // The old path: the iOS system camera through a file input with `capture`. Only used where the
+  // in-app camera can't run at all (no getUserMedia).
+  const openSystemFoodCamera = () => {
     const input = document.createElement("input");
     input.type = "file";
     input.accept = "image/*";
@@ -2091,29 +2118,21 @@ export default function HomeScreen() {
     document.body.appendChild(input);
     const cleanup = () => { try { document.body.removeChild(input); } catch {} };
     const safetyTimer = setTimeout(cleanup, 60_000);
-    input.addEventListener("change", async () => {
+    input.addEventListener("change", () => {
       clearTimeout(safetyTimer);
       const selected = input.files?.[0] ?? null;
       cleanup();
-      if (!selected) return;
-      const dataUrl = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(String(reader.result ?? ""));
-        reader.onerror = () => reject(new Error("Failed to read file"));
-        reader.readAsDataURL(selected);
-      });
-      try {
-        // From the first-meal step: ts is the chip's meal time (the capture screen shows the same
-        // chip), and firstMeal tells it to save straight away and not wait around.
-        sessionStorage.setItem(
-          "wya_pending_capture",
-          JSON.stringify({ name: selected.name, type: selected.type, dataUrl, ...(firstMealTsRef.current != null ? { ts: firstMealTsRef.current, firstMeal: true } : {}) })
-        );
-      } catch {}
-      router.push("/capture?type=food&from=home");
+      if (selected) void handOffFoodPhoto(selected, "camera");
     });
     input.addEventListener("cancel", () => { clearTimeout(safetyTimer); cleanup(); });
     input.click();
+  };
+
+  // Every "Take A Photo" (Log Food sheet, first-meal step) opens the in-app camera.
+  const handleFoodPhotoClick = () => {
+    if (!canUseInAppCamera()) { openSystemFoodCamera(); return; }
+    try { router.prefetch("/capture"); } catch {}
+    setFoodCameraOpen(true);
   };
 
   const handleBarcodeDetected = async (barcode: string) => {
@@ -2636,7 +2655,7 @@ export default function HomeScreen() {
       || firstMealOpen || firstMealCelebrate || reminderPrompt != null
       || waterModalOpen || quickConfirmMeal != null || failedMealPrompt != null
       || meals.editingMeal != null || editingFeelLog != null
-      || barcodeOpen || barcodeProduct != null || barcodeNotFound || barcodeLookingUp
+      || barcodeOpen || barcodeProduct != null || barcodeNotFound || barcodeLookingUp || foodCameraOpen
       || workout.showManualWorkoutModal || workout.editingWorkout
       || pendingDelete != null;
     // `anyModal` ends on object-or-null operands, so it is not strictly boolean.
@@ -2661,7 +2680,7 @@ export default function HomeScreen() {
       body.style.overflow = "";
       window.scrollTo(0, scrollY);
     };
-  }, [showQuickAdd, showLogFood, showReflection, showFeelingModal, showHabitSpotlight, firstMealOpen, firstMealCelebrate, reminderPrompt, waterModalOpen, quickConfirmMeal, failedMealPrompt, meals.editingMeal, editingFeelLog, barcodeOpen, barcodeProduct, barcodeNotFound, barcodeLookingUp, workout.showManualWorkoutModal, workout.editingWorkout, pendingDelete]);
+  }, [showQuickAdd, showLogFood, showReflection, showFeelingModal, showHabitSpotlight, firstMealOpen, firstMealCelebrate, reminderPrompt, waterModalOpen, quickConfirmMeal, failedMealPrompt, meals.editingMeal, editingFeelLog, barcodeOpen, barcodeProduct, barcodeNotFound, barcodeLookingUp, foodCameraOpen, workout.showManualWorkoutModal, workout.editingWorkout, pendingDelete]);
 
   // When a meal is still processing, the "Analyzing food…" label is time-gated
   // at render time (< 90s shows spinner text, >= 90s shows "Analysis failed").
@@ -6181,6 +6200,13 @@ export default function HomeScreen() {
         open={barcodeOpen}
         onClose={() => setBarcodeOpen(false)}
         onDetected={handleBarcodeDetected}
+      />
+
+      {/* Stays up on the shot until /capture takes over, so Home doesn't flash in between. */}
+      <FoodCamera
+        open={foodCameraOpen}
+        onClose={() => setFoodCameraOpen(false)}
+        onPhoto={(file, source) => void handOffFoodPhoto(file, source)}
       />
 
       {/* Feel modal */}

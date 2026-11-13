@@ -93,6 +93,39 @@ export async function fileToThumbnailDataUrl(file: File, maxSize = 480) {
   return canvas.toDataURL("image/jpeg", 0.7);
 }
 
+// A food photo going from Home to the capture screen travels through sessionStorage as a data URL,
+// and WebKit caps sessionStorage at about 5 MB. A full-size photo from the library (often 3 to 5 MB,
+// a third more as base64) wouldn't fit and would be dropped, so anything over maxBytes is redrawn
+// at 2048px on its long edge first. The capture screen shrinks every photo to 800px for analysis,
+// so nothing it uses is lost. Camera stills from the in-app camera are well under the limit.
+export async function fitPhotoForHandoff(file: File, maxBytes = 1.5 * 1024 * 1024, maxEdge = 2048): Promise<File> {
+  if (file.size <= maxBytes) return file;
+  const imageUrl = URL.createObjectURL(file);
+  try {
+    const img = new Image();
+    img.src = imageUrl;
+    await new Promise((resolve, reject) => {
+      img.onload = () => resolve(true);
+      img.onerror = reject;
+    });
+    const w = img.naturalWidth || img.width;
+    const h = img.naturalHeight || img.height;
+    if (!w || !h) return file;
+    const scale = Math.min(1, maxEdge / Math.max(w, h));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(w * scale);
+    canvas.height = Math.round(h * scale);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return file;
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.9));
+    if (!blob) return file;
+    return new File([blob], `${file.name.replace(/\.[^.]+$/, "") || "photo"}.jpg`, { type: "image/jpeg" });
+  } finally {
+    URL.revokeObjectURL(imageUrl);
+  }
+}
+
 export function rangeText(min: number, max: number, unit = "") {
   if (!min && !max) return "–";
   const suffix = unit ? ` ${unit}` : "";
