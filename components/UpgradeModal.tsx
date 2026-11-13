@@ -225,16 +225,16 @@ export default function UpgradeModal() {
         </div>
 
         <div className="flex flex-col items-center px-6 pb-5 pt-1">
-          {/* Icon */}
-          <div className="h-14 w-14">
+          {/* Icon (dropped on short screens such as the iPhone SE so the plans stay above the fold) */}
+          <div className="h-14 w-14 [@media(max-height:740px)]:hidden">
             <img src="/icon.svg" alt="WhatYouAte" className="h-full w-full object-cover" />
           </div>
 
           {/* Headline */}
-          <h1 className="mt-3 text-center text-xl font-semibold text-ink">
+          <h1 className="mt-3 text-center text-xl font-semibold text-ink [@media(max-height:740px)]:mt-0">
             Unlock WhatYouAte Pro
           </h1>
-          <p className="mt-1.5 max-w-xs text-center text-sm text-muted/70">
+          <p className={`mt-1.5 max-w-xs text-center text-sm text-muted/70 ${coach ? "[@media(max-height:740px)]:hidden" : ""}`}>
             See how your food affects how you feel, with daily coaching and your full nutrition picture.
           </p>
 
@@ -269,7 +269,7 @@ export default function UpgradeModal() {
           )}
 
           {/* What's included */}
-          <div className="mt-4 w-full rounded-2xl border border-ink/8 bg-white px-5 py-3 space-y-2">
+          <div className="mt-4 w-full rounded-2xl border border-ink/8 bg-white px-5 py-3 space-y-2 [@media(max-height:740px)]:mt-3 [@media(max-height:740px)]:grid [@media(max-height:740px)]:grid-cols-2 [@media(max-height:740px)]:gap-x-3 [@media(max-height:740px)]:gap-y-2 [@media(max-height:740px)]:space-y-0 [@media(max-height:740px)]:px-4 [@media(max-height:740px)]:py-2.5">
             {[
               "Food & Feeling Connections",
               "Daily Coaching Nudges",

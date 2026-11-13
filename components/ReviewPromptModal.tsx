@@ -33,13 +33,13 @@ export default function ReviewPromptModal() {
   const [feedbackStatus, setFeedbackStatus] = useState<"idle" | "sending" | "sent">("idle");
   const kbInset = useKeyboardInset();
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
-  // The review ask never competes with the paywall: not during Free Access (the wall is on its
-  // way, and the paywall sits behind every "See Plans"), not once it has ended and the app is
-  // locked (the paywall is on those screens), and never over the open paywall. Read through a
-  // ref so the window listener below always sees the current state.
+  // The review ask never competes with the paywall: it can come during Free Access (happy people
+  // in their first week are the best reviewers), but not in its last 2 days when the paywall is
+  // close, not once it has ended and the app is locked (the paywall is on those screens), and never
+  // over the open paywall. Read through a ref so the window listener below always sees the current state.
   const trial = useTrialStatus();
   const paywallTime = useRef(false);
-  paywallTime.current = trial.isTrialActive || trial.isFree;
+  paywallTime.current = trial.isFree || (trial.isTrialActive && trial.endsAt != null && trial.endsAt - Date.now() < 2 * 86_400_000);
 
   useEffect(() => {
     const handler = (e: Event) => {
