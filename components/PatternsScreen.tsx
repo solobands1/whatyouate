@@ -3,17 +3,18 @@
 // The Patterns tab (/summary/insights). This file wires data, the walkthrough and the paywall;
 // lib/patterns.ts computes everything shown and components/PatternsView.tsx draws it.
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Joyride, { CallBackProps, STATUS, type Step } from "react-joyride";
 import BottomNav from "./BottomNav";
 import PatternsView from "./PatternsView";
 import { useAuth } from "./AuthProvider";
 import { useAppData } from "./AppDataProvider";
-import { computePatternsModel } from "../lib/patterns";
+import { computePatternsModel, type PatternsModel } from "../lib/patterns";
+import { isFirstPatternMoment, newsSince, parseSnapshot, snapshotOf, type PatternsNews, type PatternsSnapshot } from "../lib/patternsNews";
 import { buildPatternsSample } from "../lib/patternsSample";
 import { computeActiveChanges } from "../lib/changes";
-import { getChangeStatuses, setChangeStatus } from "../lib/changeStatus";
+import { getChangeStatuses } from "../lib/changeStatus";
 import { markWalkthroughDone } from "../lib/supabaseDb";
 import { useTrialStatus } from "../hooks/useTrialStatus";
 
@@ -129,13 +130,44 @@ export default function PatternsScreen() {
   );
 
   // Changes you're making: kept habits, each with a before/after read on the metric it targets.
-  const [ledgerVersion, setLedgerVersion] = useState(0);
+  // (Restarting a paused habit lives in the Home habit builder, not here.)
   const ledger = useMemo(
     () => (sample ? computeActiveChanges(sample.habitHistory, sample.reflections, {}) : computeActiveChanges(habitHistory, reflections, user ? getChangeStatuses(user.id) : {})),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [sample, habitHistory, reflections, user, ledgerVersion],
+    [sample, habitHistory, reflections, user],
   );
-  const restartChange = (templateId: string) => { if (user) { setChangeStatus(user.id, templateId, "active"); setLedgerVersion((v) => v + 1); } };
+
+  // New Since You Last Looked + the one-time first-pattern moment. The previous visit's snapshot
+  // is read once, when the real data is ready; today's snapshot is written when the user leaves
+  // (unmount, app backgrounded), so the news stays put for the whole visit. Never in demo mode.
+  const [visit, setVisit] = useState<{ news: PatternsNews; firstMoment: boolean } | null>(null);
+  const latest = useRef<{ model: PatternsModel; firstMoment: boolean } | null>(null);
+  const live = !!user && !loadingData && !isDemoMode;
+  useEffect(() => {
+    if (!live || !user || visit) return;
+    const seenKey = `wya_patterns_seen_${user.id}`, firstKey = `wya_patterns_first_${user.id}`;
+    let prev: PatternsSnapshot | null = null;
+    let shownBefore = false;
+    try { prev = parseSnapshot(localStorage.getItem(seenKey)); shownBefore = !!localStorage.getItem(firstKey); } catch {}
+    const firstMoment = isFirstPatternMoment(prev, model, shownBefore);
+    setVisit({ news: newsSince(prev, model, { firstMoment }), firstMoment });
+  }, [live, user, model, visit]);
+  useEffect(() => { if (live && visit) latest.current = { model, firstMoment: visit.firstMoment }; }, [live, model, visit]);
+  useEffect(() => {
+    if (!user) return;
+    const seenKey = `wya_patterns_seen_${user.id}`, firstKey = `wya_patterns_first_${user.id}`;
+    const save = () => {
+      const l = latest.current;
+      if (!l) return;
+      try {
+        localStorage.setItem(seenKey, JSON.stringify(snapshotOf(l.model)));
+        if (l.firstMoment) localStorage.setItem(firstKey, new Date().toISOString());
+      } catch {}
+    };
+    const onHide = () => { if (document.visibilityState === "hidden") save(); };
+    document.addEventListener("visibilitychange", onHide);
+    window.addEventListener("pagehide", save);
+    return () => { save(); document.removeEventListener("visibilitychange", onHide); window.removeEventListener("pagehide", save); };
+  }, [user]);
 
   if (!user) return null;
 
@@ -182,7 +214,7 @@ export default function PatternsScreen() {
           }}
         />
       )}
-      <PatternsView key={isDemoMode ? "demo" : "real"} model={model} ledger={ledger} locked={locked} onRestartChange={restartChange} />
+      <PatternsView key={isDemoMode ? "demo" : "real"} model={model} ledger={ledger} locked={locked} news={isDemoMode ? null : visit?.news} firstMoment={!isDemoMode && !!visit?.firstMoment} />
     </>
   );
 }

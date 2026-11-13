@@ -32,7 +32,7 @@ function dipsText(v: number | number[] | undefined): string | null {
 }
 
 function Legend({ withMissed }: { withMissed?: boolean }) {
-  const items: [string, string][] = [["bg-primary", "Good"], ["bg-primary/35", "Okay"], ["bg-ink/25", "Low"]];
+  const items: [string, string][] = [[REFLECTION_DOT.good, "Good"], [REFLECTION_DOT.ok, "Okay"], [REFLECTION_DOT.low, "Low"]];
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
       {items.map(([c, l]) => (

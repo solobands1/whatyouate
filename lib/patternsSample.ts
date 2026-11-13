@@ -10,7 +10,7 @@ import type { HabitHistoryEntry, ReflectionEntry } from "./habitState";
 import type { FeelingGoal, MealLog, WorkoutSession } from "./types";
 import type { FeelingTag } from "./foodTags";
 
-export type SampleUserId = "new" | "twoWeeks" | "sixWeeks";
+export type SampleUserId = "night1" | "new" | "night5" | "twoWeeks" | "sixWeeks" | "mealsOnly";
 
 export interface PatternsSample {
   reflections: ReflectionEntry[];
@@ -98,13 +98,16 @@ function meal(id: string, day: Date, hour: number, minute: number, f: Food): Mea
 
 function clamp(v: number, lo: number, hi: number) { return Math.max(lo, Math.min(hi, v)); }
 
-interface Plan { days: number; seed: number; missed: number[]; habits: { title: string; templateId: string; daysAgo: number; keep: "yes" | "maybe" }[]; goals: FeelingGoal[] }
+interface Plan { days: number; seed: number; missed: number[]; habits: { title: string; templateId: string; daysAgo: number; keep: "yes" | "maybe" }[]; goals: FeelingGoal[]; reflectToday?: boolean; noReflections?: boolean }
 
 const PLANS: Record<SampleUserId, Plan> = {
-  new: { days: 3, seed: 7, missed: [], habits: [], goals: ["digestion", "energy"] },
+  night1: { days: 1, seed: 11, missed: [], habits: [], goals: ["digestion", "energy"], reflectToday: true },
+  new: { days: 3, seed: 7, missed: [], habits: [], goals: ["digestion", "energy"], reflectToday: true },
+  night5: { days: 5, seed: 5, missed: [], habits: [], goals: ["digestion", "energy"], reflectToday: true },
+  mealsOnly: { days: 12, seed: 9, missed: [], habits: [], goals: ["energy"], noReflections: true },
   twoWeeks: { days: 14, seed: 2, missed: [9], habits: [], goals: ["energy"] },
   sixWeeks: {
-    days: 45, seed: 4, missed: [5, 13, 22, 30, 37], goals: ["energy", "digestion"],
+    days: 45, seed: 4, missed: [5, 13, 22, 30, 37], goals: ["digestion", "energy"],
     habits: [
       { title: "Daily Walk", templateId: "walk-10-3", daysAgo: 30, keep: "yes" },
       { title: "Wind Down", templateId: "wind-down-3", daysAgo: 17, keep: "yes" },
@@ -192,7 +195,7 @@ export function buildPatternsSample(user: SampleUserId, now = Date.now(), seedOv
     if (sleep === 0 && r() < 0.55) dips.push(1);
     if (r() < 0.16) dips.push(3);
 
-    const reflectedTonight = !plan.missed.includes(idx) && (user === "new" || !isToday);
+    const reflectedTonight = !plan.noReflections && !plan.missed.includes(idx) && (plan.reflectToday || !isToday);
     if (reflectedTonight) {
       const ts = new Date(day);
       ts.setHours(21, 10, 0, 0);

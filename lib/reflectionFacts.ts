@@ -15,9 +15,12 @@ export const REFLECTION_METRICS: { key: string; label: string; opts: string[] }[
 export const REFLECTION_DIPS_OPTS = ["None", "Morning", "Afternoon", "Evening"];
 const WEEKDAY = ["S", "M", "T", "W", "T", "F", "S"];
 
-// Dark blue / light blue / grey — matches "Your Energy Lately" on the Patterns page.
+// One Good / Okay / Low scale for the app: a single blue ramp, light to dark. Checked with a
+// colour validator (steps read in order, sit far enough apart, and the lightest still shows on
+// a white card). The older bg-primary/35 vs bg-ink/25 pair was nearly impossible to tell apart.
 export type Level = "good" | "ok" | "low";
-export const REFLECTION_DOT: Record<Level, string> = { good: "bg-primary", ok: "bg-primary/35", low: "bg-ink/25" };
+export const LEVEL_HEX: Record<Level, string> = { good: "#3A70D4", ok: "#6A9FF5", low: "#A0B4D4" };
+export const REFLECTION_DOT: Record<Level, string> = { good: "bg-[#3A70D4]", ok: "bg-[#6A9FF5]", low: "bg-[#A0B4D4]" };
 
 // Map an answer index to a good/ok/low band. Stress is inverted (None is good).
 export function levelFor(key: string, idx: number): Level {

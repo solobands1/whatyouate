@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { LEVEL_HEX } from "../lib/reflectionFacts";
 import { riseIn } from "../lib/motion";
 import { useRouter } from "next/navigation";
 import { summarizeLoggedDays, summarizeWeek } from "../lib/summary";
@@ -612,8 +613,8 @@ export default function InsightsScreen() {
               </div>
               <div className="flex items-center gap-2.5">
                 {[
-                  { label: "High Energy", color: "rgba(111,168,255,1)" },
-                  { label: "Low Energy", color: "rgba(111,168,255,0.35)" },
+                  { label: "High Energy", color: LEVEL_HEX.good },
+                  { label: "Low Energy", color: LEVEL_HEX.low },
                 ].map(({ label, color }) => (
                   <div key={label} className="flex items-center gap-1">
                     <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
@@ -657,9 +658,7 @@ export default function InsightsScreen() {
                           // PM at top, AM at bottom — invert the mapping
                           const pct = Math.min(1, Math.max(0, (minuteOfDay - 360) / (1380 - 360)));
                           const topPx = (1 - pct) * (DOT_AREA - DOT_SIZE);
-                          const color = log.tag === "good_energy"
-                            ? "rgba(111,168,255,1)"
-                            : "rgba(111,168,255,0.35)";
+                          const color = log.tag === "good_energy" ? LEVEL_HEX.good : LEVEL_HEX.low;
                           return (
                             <div
                               key={log.ts}

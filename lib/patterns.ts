@@ -83,6 +83,7 @@ export interface PatternFinding {
   strip: StripCell[];
   score: number;
   overlayId: string | null; // which week-grid overlay shows the same condition
+  rowKey: string | null;    // for food findings: the Foods row it came from (metric:id:lag)
 }
 
 export interface FoodRow { id: string; label: string; kind: "food" | "type"; n: number; hits: number; dots: Level[]; lag: boolean }
@@ -99,6 +100,7 @@ export interface FoodLinks {
   low: FoodRow[];
   watching: WatchItem[];
   neutral: string[];
+  all: Record<string, { label: string; n: number; good: number; low: number }>; // same-day counts, every food seen
   goodWords: string;
   lowWords: string;
 }
@@ -116,6 +118,7 @@ export interface CompareRow {
   effect: number;
 }
 export interface BetterSlower {
+  metric: "energy" | "digestion";
   status: "ready" | "building" | "steady";
   mode: "bands" | "thirds";
   nights: number;
@@ -148,6 +151,7 @@ export interface WeekGrid {
   best: WeekdayRead | null;
   slowest: WeekdayRead | null;
   weekdayRemaining: number;
+  weekdayN: number[]; // reflections with an energy answer, per weekday (Sun..Sat)
 }
 
 export interface DipCounts { morning: number; afternoon: number; evening: number; nights: number }
@@ -158,6 +162,7 @@ export interface MetricWeek { key: string; label: string; dir: "up" | "down" | "
 export interface WeekCompare { ready: boolean; rows: MetricWeek[]; thisN: number; lastN: number; readyOn: string | null }
 
 export interface UnlockItem { id: string; title: string; detail: string; have: number; need: number }
+export type Lens = "energy" | "digestion";
 
 export interface PatternsTotals {
   nights: number;
@@ -166,6 +171,7 @@ export interface PatternsTotals {
   waterDays: number;
   spanDays: number;
   topFood: { label: string; count: number } | null;
+  reflectedToday: boolean;
 }
 
 export interface PatternsModel {
@@ -173,10 +179,10 @@ export interface PatternsModel {
   nightsInWindow: number;
   heroStatus: "ready" | "building" | "none";
   findings: PatternFinding[];
-  focusNote: string | null;
-  betterSlower: BetterSlower;
+  betterSlower: { energy: BetterSlower; digestion: BetterSlower };
   foods: { energy: FoodLinks; digestion: FoodLinks };
-  defaultFoodMetric: "energy" | "digestion";
+  lenses: Lens[];                 // Energy / Digestion, in the order of the user's stated focus
+  coverage: { mealDays: number; nights: number; both: number }; // last 6 weeks
   grid: WeekGrid;
   dips: DipRhythm;
   weekCompare: WeekCompare;
@@ -199,6 +205,13 @@ export function shortDate(key: string): string { const d = parseKey(key); return
 export function longDate(key: string): string { const d = parseKey(key); return `${WEEKDAY_ABBR[d.getDay()]}, ${MONTH[d.getMonth()]} ${d.getDate()}`; }
 
 function num(v: unknown): number | null { return typeof v === "number" ? v : null; }
+// Answers are option indexes. Anything outside the question's options (old or hand-edited rows)
+// is treated as unanswered rather than guessed at.
+const ANSWER_MAX: Record<string, number> = { energy: 4, sleep: 3, mood: 3, stress: 3, digestion: 3 };
+function answer(answers: Record<string, unknown>, key: string): number | null {
+  const v = answers?.[key];
+  return typeof v === "number" && Number.isInteger(v) && v >= 0 && v <= ANSWER_MAX[key] ? v : null;
+}
 function plural(n: number, one: string, many = one + "s") { return `${n} ${n === 1 ? one : many}`; }
 
 // ── Meals ───────────────────────────────────────────────────────────────────
@@ -262,25 +275,27 @@ export function buildDays(input: PatternsInput, spanDays: number): DayRecord[] {
     out.push(rec);
   }
   for (const e of input.reflections) {
+    if (!e || typeof e.date !== "string") continue;
     const r = byKey.get(e.date);
     if (!r) continue;
     r.reflected = true;
-    r.energy = num(e.answers.energy);
-    r.sleep = num(e.answers.sleep);
-    r.mood = num(e.answers.mood);
-    r.stress = num(e.answers.stress);
-    r.digestion = num(e.answers.digestion);
-    r.dips = Array.isArray(e.answers.dips) ? (e.answers.dips as number[]) : null;
+    const a = (e.answers ?? {}) as Record<string, unknown>;
+    r.energy = answer(a, "energy");
+    r.sleep = answer(a, "sleep");
+    r.mood = answer(a, "mood");
+    r.stress = answer(a, "stress");
+    r.digestion = answer(a, "digestion");
+    r.dips = Array.isArray(a.dips) ? (a.dips as unknown[]).filter((x): x is number => typeof x === "number" && x >= 0 && x <= 3) : null;
   }
   for (const m of input.meals) {
-    if (!isRealMeal(m)) continue;
+    if (!m || !Number.isFinite(m.ts) || !isRealMeal(m)) continue;
     const name = mealName(m);
     const r = byKey.get(keyOf(new Date(m.ts)));
     if (!r || !name) continue;
     r.meals.push({ name, tags: sanitizeFeelingTags(m.analysisJson?.feeling_tags), hour: new Date(m.ts).getHours(), protein: mealProtein(m) });
   }
   for (const w of input.workouts) {
-    if (typeof w.startTs !== "number") continue;
+    if (typeof w?.startTs !== "number" || !Number.isFinite(w.startTs)) continue;
     const r = byKey.get(keyOf(new Date(w.startTs)));
     if (!r) continue;
     r.moved = true;
@@ -390,7 +405,7 @@ function computeFoodLinks(days: DayRecord[], metric: "energy" | "digestion"): Fo
   const same = tallyFoods(days, metric, false);
   const out: FoodLinks = {
     metric, status: "building", eligible: same.eligible, need: FOODS_MIN_DAYS,
-    baseGood: same.good, baseLow: same.low, good: [], low: [], watching: [], neutral: [],
+    baseGood: same.good, baseLow: same.low, good: [], low: [], watching: [], neutral: [], all: {},
     goodWords: GOOD_WORDS[metric], lowWords: LOW_WORDS[metric],
   };
 
@@ -440,6 +455,8 @@ function computeFoodLinks(days: DayRecord[], metric: "energy" | "digestion"): Fo
     out.status = out.good.length + out.low.length > 0 ? "ready" : "none";
   }
 
+  for (const [id, x] of same.items) out.all[id] = { label: x.item.label, n: x.levels.length, good: x.good, low: x.low };
+
   // Watching: everything logged so far that hasn't got enough days to be compared yet, each
   // counting toward what it needs. Shown from the first night so the card is never empty.
   const all = [...same.items.values()].filter((x) => !shown.has(x.item.id));
@@ -470,10 +487,11 @@ interface Spec {
   condShort: string;
   lagged?: boolean;
   overlayId?: string | null;
+  rowKey?: string;
   minDiff?: number;
 }
 
-function evaluate(days: DayRecord[], spec: Spec, goals: Set<string>): PatternFinding | null {
+function evaluate(days: DayRecord[], spec: Spec, focus: string[]): PatternFinding | null {
   const outcome = (i: number) => { const v = metricValue(days[i], spec.metric); return v == null ? null : spec.outcome(v); };
   const s = splitDays(days.length, spec.cond, outcome);
   // A food headline in the hero needs a little more than a list row: 6 days with the food.
@@ -484,7 +502,8 @@ function evaluate(days: DayRecord[], spec: Spec, goals: Set<string>): PatternFin
   if (rw < 0.4 || diff < (spec.minDiff ?? 0.25) || z < (spec.kind === "food" ? Z_MIN_FOOD : Z_MIN)) return null;
   // Personalise the output, never the input: a pattern about what the user said they want to
   // feel better about leads when it is close, but a clearly stronger one still wins.
-  const focus = goals.has(spec.metric) ? 1.2 : 1;
+  const rank = focus.indexOf(spec.metric);
+  const weight = rank === 0 ? 1.25 : rank > 0 ? 1.1 : 1;
   const strip: StripCell[] = [];
   for (let i = Math.max(0, days.length - STRIP_DAYS); i < days.length; i++) {
     const v = metricValue(days[i], spec.metric);
@@ -494,7 +513,7 @@ function evaluate(days: DayRecord[], spec: Spec, goals: Set<string>): PatternFin
     id: spec.id, kind: spec.kind, metric: spec.metric, headline: rw >= 0.6 && spec.often ? spec.often : spec.headline,
     withLabel: spec.withLabel, withoutLabel: spec.withoutLabel, outcomeLabel: spec.outcomeLabel,
     condShort: spec.condShort, outcomeShort: METRIC_TITLE[spec.metric], lagged: !!spec.lagged,
-    split: s, strip, score: z * focus, overlayId: spec.overlayId ?? null,
+    split: s, strip, score: z * weight, overlayId: spec.overlayId ?? null, rowKey: spec.rowKey ?? null,
   };
 }
 
@@ -580,6 +599,7 @@ function buildSpecs(days: DayRecord[], foods: { energy: FoodLinks; digestion: Fo
         condShort: row.lag ? "Night Before" : row.label,
         lagged: row.lag,
         overlayId: metric === "energy" ? (row.lag ? `food:lag:${row.id}` : `food:${row.id}`) : null,
+        rowKey: `${metric}:${row.id}:${row.lag ? 1 : 0}`,
         minDiff: 0.3,
       });
     }
@@ -602,7 +622,7 @@ function avg(group: DayRecord[], pick: (d: DayRecord) => number | null): { mean:
 }
 // Small groups swing a lot, so a row only counts as different when the gap clears a light bar
 // (z for shares, Welch t for averages). Anything under it is listed as "about the same".
-const ROW_MIN_STAT = 1.5;
+const ROW_MIN_STAT = 1.96;
 
 const SAME_LABEL: Record<Exclude<CompareId, "type">, string> = {
   sleep: "Sleep", move: "Movement", water: "Water", stress: "Stress", meals: "Meals Logged", protein: "Protein",
@@ -616,28 +636,29 @@ const PHRASE: Record<Exclude<CompareId, "type">, [string, string]> = {
   protein: ["had more protein", "had less protein"],
 };
 
-function computeBetterSlower(days: DayRecord[], unit: "ml" | "oz", workoutsInWindow: number, foodsShown: Set<string>): BetterSlower {
-  const rated = days.filter((d) => d.energy != null);
+function computeBetterSlower(days: DayRecord[], unit: "ml" | "oz", workoutsInWindow: number, foodsShown: Set<string>, metric: Lens): BetterSlower {
+  const val = (d: DayRecord) => metricValue(d, metric)!;
+  const rated = days.filter((d) => metricValue(d, metric) != null);
   const out: BetterSlower = {
-    status: "building", mode: "bands", nights: rated.length, need: COMPARE_MIN_NIGHTS, betterN: 0, slowerN: 0,
-    betterDef: "Good or Great energy", slowerDef: "Drained or Low energy", rows: [], same: [], summary: null,
+    metric, status: "building", mode: "bands", nights: rated.length, need: COMPARE_MIN_NIGHTS, betterN: 0, slowerN: 0,
+    betterDef: GOOD_WORDS[metric], slowerDef: LOW_WORDS[metric], rows: [], same: [], summary: null,
   };
   if (rated.length < COMPARE_MIN_NIGHTS) return out;
-  let better = rated.filter((d) => d.energy! >= 3);
-  let slower = rated.filter((d) => d.energy! <= 1);
+  let better = rated.filter((d) => GOOD[metric](val(d)));
+  let slower = rated.filter((d) => LOW[metric](val(d)));
   if (better.length < 3 || slower.length < 3) {
     // Steady users rarely hit the extremes: compare their own top and bottom thirds instead,
     // but only when those are genuinely apart (same guard as lib/dayCompare.ts).
-    const sorted = [...rated].sort((a, b) => b.energy! - a.energy! || b.ts - a.ts);
+    const sorted = [...rated].sort((a, b) => val(b) - val(a) || b.ts - a.ts);
     const k = Math.max(3, Math.floor(sorted.length / 3));
     if (sorted.length < 2 * k) return { ...out, status: "steady" };
     better = sorted.slice(0, k);
     slower = sorted.slice(sorted.length - k);
-    const mean = (g: DayRecord[]) => g.reduce((s, d) => s + d.energy!, 0) / g.length;
-    if (mean(better) - mean(slower) < 0.75) return { ...out, status: "steady" };
+    const mean = (g: DayRecord[]) => g.reduce((s, d) => s + val(d), 0) / g.length;
+    if (mean(better) - mean(slower) < (metric === "energy" ? 0.75 : 0.6)) return { ...out, status: "steady" };
     out.mode = "thirds";
-    out.betterDef = "Your top third by energy";
-    out.slowerDef = "Your bottom third by energy";
+    out.betterDef = `Your top third by ${metric}`;
+    out.slowerDef = `Your bottom third by ${metric}`;
   }
   out.status = "ready";
   out.betterN = better.length;
@@ -705,7 +726,7 @@ function computeBetterSlower(days: DayRecord[], unit: "ml" | "oz", workoutsInWin
   rows.sort((a, b) => b.effect - a.effect);
   out.rows = rows.map(({ phrase: _p, ...r }) => r);
   out.same = same;
-  if (rows.length) out.summary = `Your better days ${rows.slice(0, 2).map((r) => r.phrase).join(" and ")}.`;
+  if (rows.length) out.summary = `${metric === "energy" ? "Your better days" : "Your easier digestion days"} ${rows.slice(0, 2).map((r) => r.phrase).join(" and ")}.`;
   return out;
 }
 
@@ -812,7 +833,7 @@ function computeGrid(allDays: DayRecord[], windowDays: DayRecord[], foods: FoodL
       foods: [...new Set(d.meals.map((m) => m.name))],
     };
   }
-  return { weeks, details, overlays, best, slowest, weekdayRemaining };
+  return { weeks, details, overlays, best, slowest, weekdayRemaining, weekdayN: counts.map((c) => c.n) };
 }
 
 // ── Energy dips ─────────────────────────────────────────────────────────────
@@ -850,12 +871,17 @@ const WEEK_METRICS: { key: "energy" | "sleep" | "mood" | "stress" | "digestion";
 ];
 const LEVEL_SCORE: Record<Level, number> = { good: 2, ok: 1, low: 0 };
 
-function computeWeekCompare(allDays: DayRecord[], now: number): WeekCompare {
+function computeWeekCompare(allDays: DayRecord[], now: number, focus: string[]): WeekCompare {
   const n = allDays.length;
   const thisWeek = allDays.slice(Math.max(0, n - 7));
   const lastWeek = allDays.slice(Math.max(0, n - 14), Math.max(0, n - 7));
   const rows: MetricWeek[] = [];
-  for (const m of WEEK_METRICS) {
+  // What the user said they care about comes first.
+  const ordered = [...WEEK_METRICS].sort((a, b) => {
+    const ra = focus.indexOf(a.key), rb = focus.indexOf(b.key);
+    return (ra < 0 ? 99 : ra) - (rb < 0 ? 99 : rb);
+  });
+  for (const m of ordered) {
     const tally = (g: DayRecord[]): LevelCounts => {
       const c: LevelCounts = { good: 0, ok: 0, low: 0, n: 0 };
       for (const d of g) { const v = d[m.key]; if (v == null) continue; c[levelFor(m.key, v)]++; c.n++; }
@@ -873,11 +899,11 @@ function computeWeekCompare(allDays: DayRecord[], now: number): WeekCompare {
   let readyOn: string | null = null;
   if (!rows.length) {
     // Last week fills as days roll over: it holds 2 nights once the second-oldest recent
-    // reflection is 7 days old.
+    // reflection is 7 days old (assuming the user keeps reflecting each night).
     const recent = allDays.slice(Math.max(0, n - 14)).filter((d) => d.reflected);
     if (recent.length >= 2) {
       const when = addDays(parseKey(recent[1].key), 7);
-      if (when.getTime() > midnight(now).getTime()) readyOn = longDate(keyOf(when));
+      if (when.getTime() > midnight(now).getTime()) readyOn = keyOf(when);
     }
   }
   return { ready: rows.length > 0, rows, thisN, lastN, readyOn };
@@ -885,7 +911,8 @@ function computeWeekCompare(allDays: DayRecord[], now: number): WeekCompare {
 
 // ── Totals ──────────────────────────────────────────────────────────────────
 function computeTotals(input: PatternsInput, now: number): PatternsTotals {
-  const meals = input.meals.filter(isRealMeal);
+  const meals = input.meals.filter((m) => m && Number.isFinite(m.ts) && isRealMeal(m));
+  const reflections = input.reflections.filter((r) => r && typeof r.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(r.date));
   const counts = new Map<string, number>();
   let first = now;
   for (const m of meals) {
@@ -893,79 +920,116 @@ function computeTotals(input: PatternsInput, now: number): PatternsTotals {
     if (name) counts.set(name, (counts.get(name) ?? 0) + 1);
     if (m.ts < first) first = m.ts;
   }
-  for (const r of input.reflections) { const t = parseKey(r.date).getTime(); if (t < first) first = t; }
+  for (const r of reflections) { const t = parseKey(r.date).getTime(); if (t < first) first = t; }
   let topFood: PatternsTotals["topFood"] = null;
   for (const [label, count] of counts) if (count >= 2 && (!topFood || count > topFood.count)) topFood = { label, count };
   const waterDays = Object.entries(input.waterLogs ?? {}).filter(([k, v]) => /^\d{4}-\d{2}-\d{2}$/.test(k) && typeof v === "number" && v > 0).length;
   const spanDays = Math.max(1, Math.round((midnight(now).getTime() - midnight(first).getTime()) / DAY_MS) + 1);
-  return { nights: input.reflections.length, meals: meals.length, workouts: input.workouts.length, waterDays, spanDays, topFood };
+  const todayKey = keyOf(midnight(now));
+  return {
+    nights: reflections.length, meals: meals.length, workouts: input.workouts.filter((w) => typeof w?.startTs === "number").length,
+    waterDays, spanDays, topFood, reflectedToday: reflections.some((r) => r.date === todayKey),
+  };
+}
+
+// ── When each countdown should land ─────────────────────────────────────────
+// Assumes a Nightly Reflection every night from tonight (or tomorrow, if tonight's is done).
+// It's an estimate and the copy says "around".
+const WEEKDAY_FULL = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+function nightOffset(nightsNeeded: number, reflectedToday: boolean): number {
+  return reflectedToday ? nightsNeeded : nightsNeeded - 1;
+}
+export function etaPhrase(offsetDays: number, now: number): string {
+  if (offsetDays <= 0) return "tonight";
+  if (offsetDays === 1) return "tomorrow night";
+  const d = addDays(midnight(now), offsetDays);
+  return offsetDays <= 6 ? `around ${WEEKDAY_FULL[d.getDay()]}` : `around ${longDate(keyOf(d))}`;
+}
+function weekdayOffset(counts: number[], reflectedToday: boolean, now: number): number {
+  const c = [...counts];
+  const today = midnight(now);
+  for (let off = reflectedToday ? 1 : 0; off < 120; off++) {
+    if (c.every((x) => x >= WEEKDAY_MIN)) return Math.max(0, off - 1);
+    c[addDays(today, off).getDay()]++;
+  }
+  return 120;
 }
 
 // ── Model ───────────────────────────────────────────────────────────────────
-const GOAL_WORD: Record<string, string> = { energy: "energy", sleep: "sleep", digestion: "digestion" };
+// Onboarding's feeling goals (profiles.feeling_goals) mapped onto what the Nightly Reflection
+// asks about, in the order the user picked them.
+const GOAL_METRIC: Record<string, string | null> = { energy: "energy", digestion: "digestion", sleep: "sleep", mood: "mood", focus: "energy", cravings: null };
 
 export function computePatternsModel(input: PatternsInput): PatternsModel {
   const now = input.now ?? Date.now();
   const unit = input.waterUnit ?? "ml";
-  const goals = new Set<string>(input.feelingGoals ?? []);
+  const focus: string[] = [];
+  for (const g of input.feelingGoals ?? []) { const m = GOAL_METRIC[g]; if (m && !focus.includes(m)) focus.push(m); }
+  const lenses: Lens[] = focus.indexOf("digestion") >= 0 && (focus.indexOf("energy") < 0 || focus.indexOf("digestion") < focus.indexOf("energy")) ? ["digestion", "energy"] : ["energy", "digestion"];
+
   const allDays = buildDays(input, GRID_WEEKS * 7);
   const days = allDays.slice(allDays.length - WINDOW_DAYS);
   const nightsInWindow = days.filter((d) => d.energy != null).length;
   const workoutsInWindow = days.filter((d) => d.moved).length;
+  const totals = computeTotals(input, now);
+  const coverage = {
+    mealDays: days.filter((d) => d.meals.length > 0).length,
+    nights: days.filter((d) => d.reflected).length,
+    both: days.filter((d) => d.meals.length > 0 && d.reflected).length,
+  };
 
   const foods = { energy: computeFoodLinks(days, "energy"), digestion: computeFoodLinks(days, "digestion") };
 
   let findings: PatternFinding[] = [];
   if (nightsInWindow >= HERO_MIN_NIGHTS) {
     findings = buildSpecs(days, foods, unit)
-      .map((s) => evaluate(days, s, goals))
+      .map((s) => evaluate(days, s, focus))
       .filter((f): f is PatternFinding => f != null)
       .sort((a, b) => b.score - a.score);
   }
   const heroStatus: PatternsModel["heroStatus"] = nightsInWindow < HERO_MIN_NIGHTS ? "building" : findings.length ? "ready" : "none";
 
-  let focusNote: string | null = null;
-  const statedFocus = [...goals].filter((g) => GOAL_WORD[g]);
-  if (findings[0] && statedFocus.length && !goals.has(findings[0].metric)) {
-    focusNote = `You said ${GOAL_WORD[statedFocus[0]]} matters most to you. So far, the clearest pattern in your logs is about ${GOAL_WORD[findings[0].metric]}.`;
-  }
-
-  const foodsShown = new Set([...foods.energy.good, ...foods.energy.low].map((r) => r.id));
-  const betterSlower = computeBetterSlower(days, unit, workoutsInWindow, foodsShown);
+  const shown = (fl: FoodLinks) => new Set([...fl.good, ...fl.low].map((r) => r.id));
+  const betterSlower = {
+    energy: computeBetterSlower(days, unit, workoutsInWindow, shown(foods.energy), "energy"),
+    digestion: computeBetterSlower(days, unit, workoutsInWindow, shown(foods.digestion), "digestion"),
+  };
   const grid = computeGrid(allDays, days, foods.energy, unit, now);
   const dips = computeDips(allDays);
-  const weekCompare = computeWeekCompare(allDays, now);
-  const totals = computeTotals(input, now);
+  const weekCompare = computeWeekCompare(allDays, now, focus);
 
   const unlocks: UnlockItem[] = [];
-  const more = (n: number, what: string, whatMany?: string) => `${plural(n, what, whatMany)} to go`;
+  const rt = totals.reflectedToday;
+  const nights = (k: number) => `${plural(k, "more Nightly Reflection")}, ${etaPhrase(nightOffset(k, rt), now)}`;
   if (heroStatus === "building") {
-    unlocks.push({ id: "hero", title: "Your Clearest Pattern", detail: more(HERO_MIN_NIGHTS - nightsInWindow, "more nightly reflection"), have: nightsInWindow, need: HERO_MIN_NIGHTS });
+    unlocks.push({ id: "hero", title: "Your Clearest Pattern", detail: nights(HERO_MIN_NIGHTS - nightsInWindow), have: nightsInWindow, need: HERO_MIN_NIGHTS });
   }
-  if (betterSlower.status === "building") {
-    unlocks.push({ id: "compare", title: "Your Better Days Vs Your Slower Days", detail: more(COMPARE_MIN_NIGHTS - betterSlower.nights, "more nightly reflection"), have: betterSlower.nights, need: COMPARE_MIN_NIGHTS });
+  if (foods.energy.status === "building") {
+    const k = FOODS_MIN_DAYS - foods.energy.eligible;
+    unlocks.push({ id: "foods", title: "Your First Food And Feeling Read", detail: `${plural(k, "more day", "more days")} with meals and a Nightly Reflection, ${etaPhrase(nightOffset(k, rt), now)}`, have: foods.energy.eligible, need: FOODS_MIN_DAYS });
   }
-  // The foods card opens on the hero's outcome when the hero is a food, else on the stated focus.
-  const heroFood = findings[0]?.kind === "food" ? (findings[0].metric as "energy" | "digestion") : null;
-  const foodMetric: "energy" | "digestion" = heroFood ?? (goals.has("digestion") && !goals.has("energy") ? "digestion" : "energy");
-  if (!weekCompare.ready) {
-    const have = Math.min(2, weekCompare.thisN) + Math.min(2, weekCompare.lastN);
-    unlocks.push({
-      id: "week", title: "Compared To Last Week",
-      detail: weekCompare.readyOn ? `Ready around ${weekCompare.readyOn} if you keep reflecting` : "Needs 2 nightly reflections in each of two weeks",
-      have, need: 4,
-    });
+  const bs = betterSlower[lenses[0]];
+  if (bs.status === "building") {
+    unlocks.push({ id: "compare", title: "Your Better Days Vs Your Slower Days", detail: nights(COMPARE_MIN_NIGHTS - bs.nights), have: bs.nights, need: COMPARE_MIN_NIGHTS });
   }
   if (!dips.recent) {
-    unlocks.push({ id: "dips", title: "When Your Energy Dips", detail: more(DIPS_MIN_NIGHTS - dips.answered, "more nightly reflection"), have: dips.answered, need: DIPS_MIN_NIGHTS });
+    unlocks.push({ id: "dips", title: "When Your Energy Dips", detail: nights(DIPS_MIN_NIGHTS - dips.answered), have: dips.answered, need: DIPS_MIN_NIGHTS });
+  }
+  if (!weekCompare.ready) {
+    const have = Math.min(2, weekCompare.thisN) + Math.min(2, weekCompare.lastN);
+    let off = Math.max(0, nightOffset(2 - Math.min(2, totals.nights), rt)) + 7;
+    if (weekCompare.readyOn) off = Math.round((parseKey(weekCompare.readyOn).getTime() - midnight(now).getTime()) / DAY_MS);
+    const detail = `Ready ${etaPhrase(off, now)}, with 2 Nightly Reflections in each of two weeks`;
+    unlocks.push({ id: "week", title: "Compared To Last Week", detail, have, need: 4 });
   }
   if (!grid.best && !grid.slowest && grid.weekdayRemaining > 0) {
     const need = WEEKDAY_MIN * 7;
-    unlocks.push({ id: "weekday", title: "Your Weekday Rhythm", detail: `${more(grid.weekdayRemaining, "more nightly reflection")}, ${WEEKDAY_MIN} of each weekday`, have: need - grid.weekdayRemaining, need });
+    unlocks.push({
+      id: "weekday", title: "Your Weekday Rhythm",
+      detail: `${plural(grid.weekdayRemaining, "more Nightly Reflection")}, ${WEEKDAY_MIN} of each weekday, ${etaPhrase(weekdayOffset(grid.weekdayN, rt, now), now)}`,
+      have: need - grid.weekdayRemaining, need,
+    });
   }
 
-  return {
-    totals, nightsInWindow, heroStatus, findings, focusNote, betterSlower, foods,
-    defaultFoodMetric: foodMetric, grid, dips, weekCompare, unlocks,
-  };
+  return { totals, nightsInWindow, heroStatus, findings, betterSlower, foods, lenses, coverage, grid, dips, weekCompare, unlocks };
 }
