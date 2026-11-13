@@ -7,10 +7,11 @@
 //                                  so people who onboarded before this shipped never see it)
 //   wya_first_habit_<uid>          "logged" | "skipped": start Find Your Rhythm today, once the habit
 //                                  engine has loaded (consumed by HomeScreen)
-//   wya_first_meal_reminder_<uid>  "Remind Me After Breakfast" fallback: an in-app prompt on the next
-//                                  open after the chosen time, for when a push can't reach them
+//   wya_first_meal_reminder_<uid>  "Remind Me After Breakfast", or the one follow-up after "Not Now":
+//                                  an in-app prompt on the next open after the chosen time (same
+//                                  day), for when a push can't reach them
 
-import type { MealLog } from "./types";
+import type { MealAnalysis, MealLog } from "./types";
 
 const MIN = 60_000;
 
@@ -98,6 +99,59 @@ export function breakfastReminderTime(now: Date = new Date()): number {
   return at;
 }
 
+// The one follow-up after "Not Now" on the step, at the next likely mealtime: before 11:00 it asks
+// about lunch at 1 PM, from 11:00 to 16:00 about dinner at 7 PM, and later than that about
+// breakfast at 9 AM the next morning. Whole hours just after the meal (so "what did you have"
+// makes sense), because the reminder cron runs at the top of each hour.
+export function notNowFollowUpTime(now: Date = new Date()): number {
+  const m = now.getHours() * 60 + now.getMinutes();
+  const d = new Date(now);
+  if (m < 11 * 60) d.setHours(13, 0, 0, 0);
+  else if (m < 16 * 60) d.setHours(19, 0, 0, 0);
+  else {
+    d.setDate(d.getDate() + 1);
+    d.setHours(9, 0, 0, 0);
+  }
+  return d.getTime();
+}
+
+// Which meal a reminder at this local hour is about. The reminder cron derives the same thing from
+// the stored time and the user's timezone offset (see mealKindForLocalHour in the cron), so the
+// push and the in-app prompt always agree without storing a separate kind.
+export type ReminderKind = "breakfast" | "lunch" | "dinner";
+export function mealKindForHour(hour: number): ReminderKind {
+  if (hour >= 4 && hour < 12) return "breakfast";
+  if (hour >= 12 && hour < 17) return "lunch";
+  return "dinner";
+}
+export function reminderKindAt(ts: number): ReminderKind {
+  return mealKindForHour(new Date(ts).getHours());
+}
+
+// Placeholder for a meal saved before its analysis comes back. All zeros, so nothing invented
+// reaches the totals, the history or the coach; the server swaps in the real analysis (status
+// "done") or the meal is marked failed. `name` keeps what the user typed, so the pill can say
+// what's being analysed and the fix-it prompt can start from it.
+export function pendingAnalysis(name?: string): MealAnalysis {
+  const typed = name?.trim();
+  return {
+    ...(typed ? { name: typed } : {}),
+    detected_items: [],
+    estimated_ranges: {
+      calories_min: 0, calories_max: 0,
+      protein_g_min: 0, protein_g_max: 0,
+      carbs_g_min: 0, carbs_g_max: 0,
+      fat_g_min: 0, fat_g_max: 0,
+    },
+    micronutrient_signals: [],
+    confidence_overall_0_1: 0,
+    detected_brand: null,
+    detected_product: null,
+    database_match_confidence_0_1: null,
+    precision_mode_available: false,
+  };
+}
+
 // "9 AM" / "9:30 AM".
 export function shortClockLabel(ts: number): string {
   const d = new Date(ts);
@@ -117,9 +171,18 @@ export function hasPendingMeal(meals: MealLog[]): boolean {
   return meals.some((m) => isFood(m) && m.id.startsWith("optimistic") && m.status === "done");
 }
 
+// Everything someone can log, for "never if they've logged anything since": saved meals (any
+// status but unsaved), feelings, and days with water.
+export function anyLogCount(meals: MealLog[], feelLogCount: number, waterLogs: Record<string, number>): number {
+  const mealCount = meals.filter((m) => isFood(m) && !m.id.startsWith("optimistic") && m.status !== "unsaved").length;
+  const waterDays = Object.entries(waterLogs).filter(([k, ml]) => /^\d{4}-\d{2}-\d{2}$/.test(k) && ml > 0).length;
+  return mealCount + feelLogCount + waterDays;
+}
+
 // ── localStorage records ──────────────────────────────────────────────────
 export type FirstMealRecord = { startedAt: number; baseline: number };
-export type FirstMealReminder = { at: number; baseline: number };
+// baseline: anyLogCount when it was set. kind is derived from `at` when missing (older records).
+export type FirstMealReminder = { at: number; baseline: number; kind?: ReminderKind };
 export type FirstHabitStart = "logged" | "skipped";
 
 const recordKey = (uid: string) => `wya_first_meal_${uid}`;

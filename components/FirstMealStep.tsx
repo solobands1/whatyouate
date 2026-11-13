@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import {
+  type ReminderKind,
   anHourAgoTs,
   breakfastReminderTime,
   firstMealPeriod,
@@ -38,8 +39,10 @@ interface Props {
   // Saves "Remind Me After Breakfast". Never rejects: resolves with the time and whether a push
   // notification will carry it (otherwise it shows in the app on the next open).
   onRemind: () => Promise<{ at: number; push: boolean }>;
-  // "Not Now", and Continue after a reminder is set.
+  // "Not Now" (HomeScreen also books the one follow-up reminder for the next mealtime).
   onSkip: () => void;
+  // Continue after "Remind Me After Breakfast" is set: finishes without a second reminder.
+  onDone: () => void;
 }
 
 function defaultTs(context: LogContext): number {
@@ -72,7 +75,7 @@ export function clearFirstMealView(): void {
   try { sessionStorage.removeItem(VIEW_KEY); } catch { /* ignore */ }
 }
 
-export default function FirstMealStep({ quickAddAvailable, saving, saveFailed, onLog, onRemind, onSkip }: Props) {
+export default function FirstMealStep({ quickAddAvailable, saving, saveFailed, onLog, onRemind, onSkip, onDone }: Props) {
   const [view, setView] = useState<View>(() =>
     readSavedView()?.view ?? (firstMealPeriod() === "morning" ? { name: "morning" } : { name: "log", context: "later", from: null })
   );
@@ -232,7 +235,7 @@ export default function FirstMealStep({ quickAddAvailable, saving, saveFailed, o
                   : "Notifications are off, so we'll ask the next time you open the app after that."}
               </p>
               <div className="mt-12">
-                <button type="button" className={primaryBtn} onClick={onSkip}>Continue</button>
+                <button type="button" className={primaryBtn} onClick={onDone}>Continue</button>
               </div>
             </div>
           )}
@@ -326,7 +329,7 @@ export function FirstMealCelebration({ habitTitle, daysDone, totalDays, onContin
               <span key={d} className={`h-2 w-2 rounded-full ${d < daysDone ? "bg-primary" : "bg-ink/15"}`} />
             ))}
           </div>
-          <p className="mt-2 text-xs text-ink/60">{daysDone} of {totalDays} days done</p>
+          <p className="mt-2 text-xs font-medium text-ink/60" data-celebration-progress>Day {daysDone} Of {totalDays}</p>
         </div>
       </div>
       <div style={animStyle(animStep >= 4)} className="relative z-10 mt-12 flex w-full justify-center">
@@ -338,14 +341,20 @@ export function FirstMealCelebration({ habitTitle, daysDone, totalDays, onContin
   );
 }
 
-// The in-app half of "Remind Me After Breakfast": shown on the first open after the chosen time if
-// nothing has been logged yet. Also where a tapped reminder notification lands.
-export function FirstMealReminderPrompt({ onLog, onDismiss }: { onLog: () => void; onDismiss: () => void }) {
+// The in-app half of the step's reminders ("Remind Me After Breakfast", and the one follow-up after
+// "Not Now"): shown on the first open after the chosen time if nothing has been logged since. Also
+// where a tapped reminder notification lands. The headline matches the push for that mealtime.
+const PROMPT_TITLES: Record<ReminderKind, string> = {
+  breakfast: "Had Breakfast Yet?",
+  lunch: "What Did You Have For Lunch?",
+  dinner: "What Did You Have For Dinner?",
+};
+export function FirstMealReminderPrompt({ kind, onLog, onDismiss }: { kind: ReminderKind; onLog: () => void; onDismiss: () => void }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5" role="dialog" aria-modal="true" aria-label="Log breakfast" data-first-meal-reminder>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5" role="dialog" aria-modal="true" aria-label={PROMPT_TITLES[kind]} data-first-meal-reminder={kind}>
       <div className="w-full max-w-sm rounded-2xl bg-white px-6 pb-5 pt-7 text-center shadow-xl animate-fade-slide-up">
-        <StepIcon><CupIcon /></StepIcon>
-        <h2 className="text-xl font-semibold text-ink">Had Breakfast Yet?</h2>
+        <StepIcon>{kind === "breakfast" ? <CupIcon /> : <PlateIcon />}</StepIcon>
+        <h2 className="text-xl font-semibold text-ink">{PROMPT_TITLES[kind]}</h2>
         <p className="mt-2 text-sm text-muted/70">Log it now and your coach can get started.</p>
         <button type="button" className={`mt-6 ${primaryBtn}`} onClick={onLog}>Log It</button>
         <button type="button" className={`mt-2 ${skipBtn}`} onClick={onDismiss}>Not Now</button>

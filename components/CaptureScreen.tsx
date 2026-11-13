@@ -9,6 +9,7 @@ import { useAuth } from "./AuthProvider";
 import { useKeyboardInset } from "../hooks/useKeyboardInset";
 import { useAppData } from "./AppDataProvider";
 import { addMeal, updateMealTs, uploadMealThumbnail, updateMealImageUrl } from "../lib/supabaseDb";
+import { pendingAnalysis } from "../lib/firstMeal";
 import { enqueueMeal } from "../lib/mealQueue";
 
 function nowTimeString() {
@@ -49,6 +50,9 @@ export default function CaptureScreen() {
   // Exact meal time handed over with the photo (the first-meal step's "last night's dinner" or
   // "an hour ago"). Null means now, as before.
   const captureTsRef = useRef<number | null>(null);
+  // Sent from the first-meal step: save with an all-zero placeholder (no invented numbers while it
+  // analyses) and go straight back instead of waiting on the "Adding To Your Day" screen.
+  const firstMealRef = useRef(false);
   const [cameraMode, setCameraMode] = useState<"idle" | "live" | "file">("idle");
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -82,12 +86,13 @@ export default function CaptureScreen() {
     const raw = sessionStorage.getItem("wya_pending_capture");
     if (!raw) return;
     try {
-      const parsed = JSON.parse(raw) as { name?: string; type?: string; dataUrl?: string; ts?: number };
+      const parsed = JSON.parse(raw) as { name?: string; type?: string; dataUrl?: string; ts?: number; firstMeal?: boolean };
       if (!parsed?.dataUrl) return;
       sessionStorage.removeItem("wya_pending_capture");
       const ts = parsed.ts;
       captureTsRef.current =
         typeof ts === "number" && Number.isFinite(ts) && ts <= Date.now() && ts > Date.now() - 14 * 24 * 60 * 60 * 1000 ? ts : null;
+      firstMealRef.current = parsed.firstMeal === true;
       fetch(parsed.dataUrl)
         .then((res) => res.blob())
         .then((blob) => {
@@ -173,7 +178,7 @@ export default function CaptureScreen() {
       buildResizedDataUrl(selected),
       fileToThumbnailDataUrl(selected)
     ]);
-    const placeholder = safeFallbackAnalysis();
+    const placeholder = firstMealRef.current ? pendingAnalysis() : safeFallbackAnalysis();
     let pendingMeal;
     try {
       pendingMeal = await addMeal(user.id, placeholder, undefined, undefined, "processing", captureTsRef.current ?? undefined);
@@ -190,6 +195,11 @@ export default function CaptureScreen() {
     setMeals((prev) => [{ ...pendingMeal, analysisJson: placeholder, status: "processing" as const }, ...prev]);
     notifyMealsUpdated();
     enqueueMeal(pendingMeal.id, resized, user.id, hintText || undefined);
+    if (firstMealRef.current) {
+      // The analysis carries on in the background (mealQueue); Home shows the "Analyzing" pill.
+      router.push("/");
+      return;
+    }
     if (redirectRef.current) window.clearTimeout(redirectRef.current);
     redirectRef.current = window.setTimeout(() => {
       if (!showTimePickerRef.current) router.push("/");

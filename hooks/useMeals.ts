@@ -49,10 +49,11 @@ export function useMeals(
     setMeals(mealsData);
     // Rebuild quick-add cache from Supabase history if localStorage was cleared
     seedTextCacheFromMeals(mealsData);
-    // Recover meals stuck in "processing" (e.g. tab closed mid-analysis)
+    // Recover meals stuck in "processing" (e.g. tab closed mid-analysis). Timed from when the row
+    // was saved, not ts: a backdated meal (last night's dinner) is still fresh while it analyses.
     const STUCK_MS = 5 * 60 * 1000;
     const now = Date.now();
-    const stuck = mealsData.filter((m) => m.status === "processing" && now - m.ts > STUCK_MS);
+    const stuck = mealsData.filter((m) => m.status === "processing" && now - (m.createdAt ?? m.ts) > STUCK_MS);
     if (stuck.length > 0) {
       await Promise.all(stuck.map((m) => updateMeal(m.id, safeFallbackAnalysis(), undefined, userId, "failed").catch(() => {})));
       const refreshed = await listMeals(userId, 100);
@@ -419,6 +420,7 @@ export function useMeals(
     manualPortion,
     setManualPortion,
     manualError,
+    setManualError,
     manualScaledRanges,
     openManualMealEntry,
     analyzeManualText,
