@@ -88,7 +88,8 @@ function userTodayStartISO(offsetMinutes: number | null | undefined): string {
 // (next likely mealtime: 1 PM lunch, 7 PM dinner, or 9 AM breakfast the next morning). The app
 // stores an absolute time in profiles.first_meal_reminder_at (with the device's current timezone
 // offset alongside), and the first hourly run at or after it sends one push, unless the user has
-// logged anything since (a meal in any state, a feeling, or water). Which meal it asks about comes
+// logged a meal since (in any state). Water and feelings don't count: the step's "Log A Glass Of
+// Water" deliberately leaves the next-mealtime reminder in place. Which meal it asks about comes
 // from that time's local hour, so no separate kind is stored; the app derives it the same way for
 // its in-app prompt (lib/firstMeal mealKindForHour).
 //
@@ -113,13 +114,6 @@ const FIRST_MEAL_MESSAGES: Record<MealKind, { title: string; body: string }> = {
 // follow-up is midnight (13h), behind a 9 AM next-morning one 4 PM the day before (17h).
 const FIRST_MEAL_LOOKBACK_MS = 18 * 60 * 60 * 1000;
 
-function localDayKeysBetween(fromMs: number, toMs: number, offsetMinutes: number | null | undefined): string[] {
-  const keys: string[] = [];
-  for (let t = fromMs; t <= toMs + 1; t += 12 * 60 * 60 * 1000) keys.push(localDateStrOf(t, offsetMinutes));
-  keys.push(localDateStrOf(toMs, offsetMinutes));
-  return [...new Set(keys)];
-}
-
 async function sendFirstMealReminders(
   supabase: ReturnType<typeof adminClient>,
   tokens: Array<{ user_id: string; token: string }>
@@ -130,7 +124,7 @@ async function sendFirstMealReminders(
   const dueBy = new Date(nowMs + 5 * 60 * 1000).toISOString();
   const { data: due, error } = await supabase
     .from("profiles")
-    .select("user_id, first_meal_reminder_at, timezone_offset_minutes, water_logs_json")
+    .select("user_id, first_meal_reminder_at, timezone_offset_minutes")
     .not("first_meal_reminder_at", "is", null)
     .lte("first_meal_reminder_at", dueBy);
   if (error) {
@@ -138,7 +132,7 @@ async function sendFirstMealReminders(
     return { sent: 0, pushedUsers };
   }
   let sent = 0;
-  type DueRow = { user_id: string; first_meal_reminder_at: string; timezone_offset_minutes: number | null; water_logs_json: Record<string, number> | null };
+  type DueRow = { user_id: string; first_meal_reminder_at: string; timezone_offset_minutes: number | null };
   for (const row of (due ?? []) as DueRow[]) {
     const userId = row.user_id;
     try {
@@ -155,7 +149,7 @@ async function sendFirstMealReminders(
       const userTokens = tokens.filter((t) => t.user_id === userId);
       if (!userTokens.length) continue; // no push permission: the app shows its own prompt on open
 
-      // Anything logged since the reminder was chosen? Meals in any state, feelings, water.
+      // A meal logged since the reminder was chosen (any state, even one still analysing or failed)?
       const sinceMs = atMs - FIRST_MEAL_LOOKBACK_MS;
       const { data: recentMeals, error: mealsErr } = await supabase
         .from("meals").select("id")
@@ -165,16 +159,6 @@ async function sendFirstMealReminders(
         continue;
       }
       if (recentMeals?.length) continue;
-      const { data: recentFeels, error: feelsErr } = await supabase
-        .from("feel_logs").select("id")
-        .eq("user_id", userId).gte("ts", Math.floor(sinceMs / 1000)).limit(1);
-      if (feelsErr) {
-        console.error(`[cron/reminder] first-meal feeling check failed for ${userId.slice(0, 8)}:`, feelsErr.message);
-        continue;
-      }
-      if (recentFeels?.length) continue;
-      const water = row.water_logs_json ?? {};
-      if (localDayKeysBetween(sinceMs, nowMs, row.timezone_offset_minutes).some((k) => (water[k] ?? 0) > 0)) continue;
 
       const localHour = new Date(atMs - (row.timezone_offset_minutes ?? 0) * 60 * 1000).getUTCHours();
       const kind = mealKindForLocalHour(localHour);

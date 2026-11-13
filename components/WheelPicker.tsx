@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 interface WheelOption {
   value: string;
@@ -24,6 +24,7 @@ export default function WheelPicker({
   placeholder,
   title,
   defaultValue,
+  renderTrigger,
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -31,6 +32,8 @@ export default function WheelPicker({
   placeholder: string;
   title: string;
   defaultValue: string;
+  // Optional custom trigger (e.g. the meal-time chip); the default is the full-width field.
+  renderTrigger?: (open: () => void) => ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
@@ -70,6 +73,7 @@ export default function WheelPicker({
 
   return (
     <>
+      {renderTrigger ? renderTrigger(() => setOpen(true)) : (
       <button
         type="button"
         onClick={() => setOpen(true)}
@@ -80,6 +84,7 @@ export default function WheelPicker({
           <path d="M8 10.5l4-4 4 4M8 13.5l4 4 4-4" />
         </svg>
       </button>
+      )}
 
       {open && (
         <div className="fixed inset-0 z-[60] flex flex-col justify-end" onClick={() => setOpen(false)}>

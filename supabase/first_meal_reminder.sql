@@ -1,7 +1,7 @@
 -- Reminders from the first-meal step at the end of onboarding: "Remind Me After Breakfast"
 -- (8 to 11 AM local) and the one follow-up after "Not Now" (1 PM lunch, 7 PM dinner or 9 AM the
 -- next morning). The app writes the chosen time here, a whole hour. The hourly /api/cron/reminder
--- job sends one push at the first run at or after it, unless the user has logged anything since,
+-- job sends one push at the first run at or after it, unless the user has logged a meal since,
 -- then sets it back to null so it only ever fires once. The message (breakfast, lunch or dinner)
 -- comes from the time's local hour via profiles.timezone_offset_minutes, so there is no kind
 -- column.

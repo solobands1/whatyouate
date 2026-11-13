@@ -3,28 +3,25 @@
 import { useEffect, useState, type ReactNode } from "react";
 import {
   type ReminderKind,
-  anHourAgoTs,
   breakfastReminderTime,
+  defaultMealTs,
   firstMealPeriod,
-  lastNightDinnerTs,
-  mealTimeLabel,
-  resolvePickedTime,
   shortClockLabel,
-  toTimeInputValue,
 } from "../lib/firstMeal";
 
 // The last step of onboarding: get one real meal logged before the app opens up. It asks a question
 // that fits the time of day, then hands off to the app's own loggers (photo, type it, barcode, quick
 // add) through onLog, so there is no second logger to maintain. HomeScreen owns the wiring: it opens
-// the chosen logger with the picked meal time, watches for the saved meal, and starts the habit.
+// the chosen logger (each shows a "Today, 12:30 PM" time chip, MealTimeChip), watches for the saved
+// meal, and starts the habit. The first meal is always today: nothing here offers another day.
 // Styled to match OnboardingFlow (white screen, centred icon, heading, one line of body text).
 
 export type FirstMealLogMethod = "photo" | "manual" | "barcode" | "quick";
-type LogContext = "breakfast" | "dinner" | "later";
+type LogContext = "breakfast" | "later";
 type View =
   | { name: "morning" }
   | { name: "notYet" }
-  | { name: "log"; context: LogContext; from: "morning" | "notYet" | null }
+  | { name: "log"; context: LogContext; from: "morning" | null }
   | { name: "reminderSet"; at: number; push: boolean };
 
 interface Props {
@@ -35,20 +32,17 @@ interface Props {
   saving: boolean;
   // The last attempt didn't save.
   saveFailed: boolean;
+  // ts: the default meal time for this question (now in the morning, about an hour ago later).
   onLog: (method: FirstMealLogMethod, ts: number) => void;
   // Saves "Remind Me After Breakfast". Never rejects: resolves with the time and whether a push
   // notification will carry it (otherwise it shows in the app on the next open).
   onRemind: () => Promise<{ at: number; push: boolean }>;
+  // "Log A Glass Of Water" on Not Yet. Undefined when water tracking is off (the option is hidden).
+  onWater?: () => void;
   // "Not Now" (HomeScreen also books the one follow-up reminder for the next mealtime).
   onSkip: () => void;
   // Continue after "Remind Me After Breakfast" is set: finishes without a second reminder.
   onDone: () => void;
-}
-
-function defaultTs(context: LogContext): number {
-  if (context === "dinner") return lastNightDinnerTs();
-  if (context === "later") return anHourAgoTs();
-  return Date.now();
 }
 
 const primaryBtn = "w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80 disabled:opacity-50";
@@ -56,17 +50,18 @@ const secondaryBtn = "w-full rounded-xl border border-ink/10 py-4 text-sm font-s
 const skipBtn = "w-full py-2 text-sm font-medium text-ink/40";
 
 // The photo option leaves Home for /capture, which unmounts this step. If they cancel there, put
-// them back where they were (e.g. "Log Last Night's Dinner" at 7 PM) rather than at the first
-// question. Per tab, and only for half an hour.
+// them back where they were (e.g. "Log Your Breakfast") rather than at the first question. Per
+// tab, and only for half an hour.
 const VIEW_KEY = "wya_first_meal_view";
-type SavedView = { view: View; mealTs: number; savedAt: number };
-function readSavedView(): SavedView | null {
+type SavedView = { view: View; savedAt: number };
+function readSavedView(): View | null {
   try {
     const raw = sessionStorage.getItem(VIEW_KEY);
     if (!raw) return null;
     const v = JSON.parse(raw) as SavedView;
-    if (!v?.view?.name || typeof v.mealTs !== "number" || Date.now() - v.savedAt > 30 * 60_000) return null;
-    return v;
+    if (!v?.view?.name || Date.now() - v.savedAt > 30 * 60_000) return null;
+    if (v.view.name === "log" && v.view.context !== "breakfast" && v.view.context !== "later") return null; // from an older build
+    return v.view;
   } catch {
     return null;
   }
@@ -75,22 +70,14 @@ export function clearFirstMealView(): void {
   try { sessionStorage.removeItem(VIEW_KEY); } catch { /* ignore */ }
 }
 
-export default function FirstMealStep({ quickAddAvailable, saving, saveFailed, onLog, onRemind, onSkip, onDone }: Props) {
+export default function FirstMealStep({ quickAddAvailable, saving, saveFailed, onLog, onRemind, onWater, onSkip, onDone }: Props) {
   const [view, setView] = useState<View>(() =>
-    readSavedView()?.view ?? (firstMealPeriod() === "morning" ? { name: "morning" } : { name: "log", context: "later", from: null })
-  );
-  const [mealTs, setMealTs] = useState<number>(() =>
-    readSavedView()?.mealTs ?? (firstMealPeriod() === "morning" ? Date.now() : anHourAgoTs())
+    readSavedView() ?? (firstMealPeriod() === "morning" ? { name: "morning" } : { name: "log", context: "later", from: null })
   );
   const [reminding, setReminding] = useState(false);
   useEffect(() => {
-    try { sessionStorage.setItem(VIEW_KEY, JSON.stringify({ view, mealTs, savedAt: Date.now() })); } catch { /* ignore */ }
-  }, [view, mealTs]);
-
-  const openLog = (context: LogContext, from: "morning" | "notYet") => {
-    setMealTs(defaultTs(context));
-    setView({ name: "log", context, from });
-  };
+    try { sessionStorage.setItem(VIEW_KEY, JSON.stringify({ view, savedAt: Date.now() })); } catch { /* ignore */ }
+  }, [view]);
 
   const handleRemind = async () => {
     if (reminding) return;
@@ -103,8 +90,9 @@ export default function FirstMealStep({ quickAddAvailable, saving, saveFailed, o
   const back =
     view.name === "notYet" ? () => setView({ name: "morning" })
     : view.name === "log" && view.from === "morning" ? () => setView({ name: "morning" })
-    : view.name === "log" && view.from === "notYet" ? () => setView({ name: "notYet" })
     : null;
+  const log = (method: FirstMealLogMethod) =>
+    onLog(method, defaultMealTs(view.name === "log" && view.context === "breakfast" ? "morning" : "later"));
 
   return (
     <div
@@ -132,7 +120,7 @@ export default function FirstMealStep({ quickAddAvailable, saving, saveFailed, o
               <h1 className="text-center text-2xl font-semibold text-ink">Good Morning!<br />Have You Had Breakfast Yet?</h1>
               <p className="mt-2 text-center text-sm text-muted/70">Your first meal is where your coach starts learning what works for you.</p>
               <div className="mt-12 space-y-3">
-                <button type="button" className={primaryBtn} onClick={() => openLog("breakfast", "morning")}>Yes, Log It</button>
+                <button type="button" className={primaryBtn} onClick={() => setView({ name: "log", context: "breakfast", from: "morning" })}>Yes, Log It</button>
                 <button type="button" className={secondaryBtn} onClick={() => setView({ name: "notYet" })}>Not Yet</button>
               </div>
               <div className="mt-6"><button type="button" className={skipBtn} onClick={onSkip}>Not Now</button></div>
@@ -141,60 +129,44 @@ export default function FirstMealStep({ quickAddAvailable, saving, saveFailed, o
 
           {view.name === "notYet" && (
             <div className="mt-[7vh]">
-              <StepIcon><MoonIcon /></StepIcon>
+              <StepIcon><BellIcon large /></StepIcon>
               <h1 className="text-center text-2xl font-semibold text-ink">No Problem</h1>
-              <p className="mt-2 text-center text-sm text-muted/70">Start with last night instead, or we can remind you later.</p>
+              <p className="mt-2 text-center text-sm text-muted/70">
+                {onWater ? "Start your 3 days now, or we'll remind you after breakfast." : "We'll remind you after breakfast."}
+              </p>
               <div className="mt-8 flex flex-col gap-3">
-                <ChoiceRow
-                  icon={<MoonIcon small />}
-                  label="Log Last Night's Dinner"
-                  sub="Last night's dinner affects how you feel this morning."
-                  onClick={() => openLog("dinner", "notYet")}
-                />
                 <ChoiceRow
                   icon={<BellIcon />}
                   label="Remind Me After Breakfast"
-                  sub={reminding ? "Setting it up…" : `We'll check in around ${shortClockLabel(breakfastReminderTime())}.`}
+                  sub={reminding ? "Setting it up…" : `We'll remind you around ${shortClockLabel(breakfastReminderTime())}.`}
                   onClick={handleRemind}
                   disabled={reminding}
                 />
+                {onWater && (
+                  <ChoiceRow
+                    icon={<DropIcon />}
+                    label="Log A Glass Of Water"
+                    sub="One tap starts day 1 of Find Your Rhythm."
+                    onClick={onWater}
+                    disabled={reminding}
+                  />
+                )}
               </div>
               <div className="mt-6"><button type="button" className={skipBtn} onClick={onSkip}>Not Now</button></div>
             </div>
           )}
 
           {view.name === "log" && (
-            <div className="mt-[4vh]">
-              <StepIcon>{view.context === "dinner" ? <MoonIcon /> : view.context === "breakfast" ? <CupIcon /> : <PlateIcon />}</StepIcon>
+            <div className="mt-[5vh]">
+              <StepIcon>{view.context === "breakfast" ? <CupIcon /> : <PlateIcon />}</StepIcon>
               <h1 className="text-center text-2xl font-semibold text-ink">
-                {view.context === "breakfast" ? "Log Your Breakfast" : view.context === "dinner" ? "Log Last Night's Dinner" : "What Did You Last Eat?"}
+                {view.context === "breakfast" ? "Log Your Breakfast" : "What Did You Last Eat?"}
               </h1>
               <p className="mt-2 text-center text-sm text-muted/70">
                 {view.context === "later"
-                  ? "Any recent meal counts, even one from a few hours ago."
-                  : view.context === "dinner"
-                  ? "Roughly what you had is plenty."
+                  ? "Any meal from earlier today counts. You can set the time next."
                   : "A rough log is plenty. You can fix it later."}
               </p>
-
-              {/* Meal time. The native time wheel opens on tap; resolvePickedTime keeps it in the past. */}
-              <div className="mt-5 flex justify-center">
-                <label className="relative inline-flex items-center gap-1.5 rounded-full border border-ink/10 px-3 py-1.5">
-                  <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 shrink-0 text-ink/40" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
-                  <span className="text-xs text-ink/70" data-meal-time-label>{mealTimeLabel(mealTs)}</span>
-                  <span className="text-xs font-semibold text-primary">Change</span>
-                  <input
-                    type="time"
-                    aria-label="Meal time"
-                    className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                    value={toTimeInputValue(mealTs)}
-                    onChange={(e) => {
-                      const ts = resolvePickedTime(e.target.value);
-                      if (ts != null) setMealTs(ts);
-                    }}
-                  />
-                </label>
-              </div>
 
               {saving ? (
                 <div className="mt-12 flex flex-col items-center gap-3" role="status">
@@ -208,12 +180,12 @@ export default function FirstMealStep({ quickAddAvailable, saving, saveFailed, o
                 </div>
               ) : (
                 <>
-                  <div className="mt-6 flex flex-col gap-3">
-                    <ChoiceRow icon={<CameraIcon />} label="Take A Photo" sub="We'll estimate it from the picture." emphasis onClick={() => onLog("photo", mealTs)} />
-                    <ChoiceRow icon={<PencilIcon />} label="Type It In" sub="A few words is enough." onClick={() => onLog("manual", mealTs)} />
-                    <ChoiceRow icon={<BarcodeIcon />} label="Scan A Barcode" sub="For anything in a package." onClick={() => onLog("barcode", mealTs)} />
+                  <div className="mt-7 flex flex-col gap-3">
+                    <ChoiceRow icon={<CameraIcon />} label="Take A Photo" sub="We'll estimate it from the picture." emphasis onClick={() => log("photo")} />
+                    <ChoiceRow icon={<PencilIcon />} label="Type It In" sub="A few words is enough." onClick={() => log("manual")} />
+                    <ChoiceRow icon={<BarcodeIcon />} label="Scan A Barcode" sub="For anything in a package." onClick={() => log("barcode")} />
                     {quickAddAvailable && (
-                      <ChoiceRow icon={<PlusIcon />} label="Quick Add" sub="Pick from foods you've logged." onClick={() => onLog("quick", mealTs)} />
+                      <ChoiceRow icon={<PlusIcon />} label="Quick Add" sub="Pick from foods you've logged." onClick={() => log("quick")} />
                     )}
                   </div>
                   {saveFailed && (
@@ -247,7 +219,9 @@ export default function FirstMealStep({ quickAddAvailable, saving, saveFailed, o
 
 // "Nice Start! Your Coach Is Learning": the celebration that used to close onboarding ("You're All
 // Set"), moved to after the first log. Same confetti and drawn check, plus the habit's first tick.
-export function FirstMealCelebration({ habitTitle, daysDone, totalDays, onContinue }: { habitTitle: string; daysDone: number; totalDays: number; onContinue: () => void }) {
+// kind "water": day 1 started with a glass of water from Not Yet. Same moment, worded for water;
+// no first-meal claim, since water isn't a meal.
+export function FirstMealCelebration({ kind = "meal", habitTitle, daysDone, totalDays, onContinue }: { kind?: "meal" | "water"; habitTitle: string; daysDone: number; totalDays: number; onContinue: () => void }) {
   const [animStep, setAnimStep] = useState(0);
   useEffect(() => {
     const ts = [80, 450, 820, 1200].map((ms, i) => setTimeout(() => setAnimStep(i + 1), ms));
@@ -319,7 +293,7 @@ export function FirstMealCelebration({ habitTitle, daysDone, totalDays, onContin
         </div>
         <div style={animStyle(animStep >= 2)}>
           <p className="text-2xl font-semibold text-ink">Nice Start!</p>
-          <p className="mt-1.5 text-sm font-medium text-muted/70">Your Coach Is Learning</p>
+          <p className="mt-1.5 text-sm font-medium text-muted/70">{kind === "water" ? `Day ${daysDone} Of ${totalDays} Started` : "Your Coach Is Learning"}</p>
         </div>
         <div style={animStyle(animStep >= 3)} className="mt-4 w-full max-w-[280px] rounded-2xl border-2 border-primary/25 bg-primary/[0.05] px-5 py-4">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-primary">Habit Builder</p>
@@ -329,7 +303,9 @@ export function FirstMealCelebration({ habitTitle, daysDone, totalDays, onContin
               <span key={d} className={`h-2 w-2 rounded-full ${d < daysDone ? "bg-primary" : "bg-ink/15"}`} />
             ))}
           </div>
-          <p className="mt-2 text-xs font-medium text-ink/60" data-celebration-progress>Day {daysDone} Of {totalDays}</p>
+          {kind === "water"
+            ? <p className="mt-2 text-xs text-ink/60" data-celebration-progress>Log your first meal whenever you eat today.</p>
+            : <p className="mt-2 text-xs font-medium text-ink/60" data-celebration-progress>Day {daysDone} Of {totalDays}</p>}
         </div>
       </div>
       <div style={animStyle(animStep >= 4)} className="relative z-10 mt-12 flex w-full justify-center">
@@ -342,7 +318,7 @@ export function FirstMealCelebration({ habitTitle, daysDone, totalDays, onContin
 }
 
 // The in-app half of the step's reminders ("Remind Me After Breakfast", and the one follow-up after
-// "Not Now"): shown on the first open after the chosen time if nothing has been logged since. Also
+// "Not Now"): shown on the first open after the chosen time if no meal has been logged since. Also
 // where a tapped reminder notification lands. The headline matches the push for that mealtime.
 const PROMPT_TITLES: Record<ReminderKind, string> = {
   breakfast: "Had Breakfast Yet?",
@@ -396,10 +372,10 @@ function SunriseIcon() {
     </svg>
   );
 }
-function MoonIcon({ small }: { small?: boolean }) {
+function DropIcon() {
   return (
-    <svg className={small ? "h-5 w-5" : "h-10 w-10"} viewBox="0 0 24 24" strokeWidth={small ? 1.8 : 1.5} {...iconProps}>
-      <path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z" />
+    <svg className="h-5 w-5" viewBox="0 0 24 24" strokeWidth="1.8" {...iconProps}>
+      <path d="M12 3C11.4 3 5 11 5 15.5a7 7 0 0 0 14 0C19 11 12.6 3 12 3z" />
     </svg>
   );
 }

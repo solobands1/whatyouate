@@ -286,7 +286,7 @@ export async function saveTimezoneOffset(userId: string, offsetMinutes: number):
 
 // "Remind Me After Breakfast", or the one follow-up after "Not Now", from the first-meal step
 // (components/FirstMealStep). The hourly reminder cron sends one push at the first run at or after
-// this time, unless they've logged anything since, then clears it. Needs the profiles.first_meal_reminder_at column
+// this time, unless they've logged a meal since, then clears it. Needs the profiles.first_meal_reminder_at column
 // (supabase/first_meal_reminder.sql); without it this rejects and the caller falls back to the
 // in-app prompt. Throws on failure rather than resolving quietly.
 // The device's current timezone offset rides along, because the cron reads the reminder's local

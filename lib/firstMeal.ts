@@ -27,58 +27,54 @@ export function firstMealPeriod(now: Date = new Date()): FirstMealPeriod {
   return m >= MORNING_START_MIN && m < MORNING_END_MIN ? "morning" : "later";
 }
 
-// Default meal times for each path.
-export function lastNightDinnerTs(now: Date = new Date()): number {
+// The first meal is always logged today, at a time no later than now (backdating to last night
+// would also start free access a day early, since it starts at the first real meal).
+export function startOfToday(now: Date = new Date()): number {
   const d = new Date(now);
-  d.setDate(d.getDate() - 1);
-  d.setHours(19, 0, 0, 0);
+  d.setHours(0, 0, 0, 0);
   return d.getTime();
 }
+export function clampToToday(ts: number, now: Date = new Date()): number {
+  return Math.min(Math.max(ts, startOfToday(now)), now.getTime());
+}
 
-// About an hour ago, rounded down to five minutes so the picker shows a tidy time.
-export function anHourAgoTs(now: Date = new Date()): number {
+// Default meal time: now for "Yes, Log It" in the morning; about an hour ago (rounded down to five
+// minutes) for "What Did You Last Eat?", but never before midnight.
+export function defaultMealTs(period: FirstMealPeriod, now: Date = new Date()): number {
+  if (period === "morning") return now.getTime();
   const d = new Date(now.getTime() - 60 * MIN);
   d.setMinutes(d.getMinutes() - (d.getMinutes() % 5), 0, 0);
-  return d.getTime();
+  return clampToToday(d.getTime(), now);
 }
 
-// "HH:MM" for a time input.
-export function toTimeInputValue(ts: number): string {
+// Choices for the time wheel: today, every five minutes from midnight up to now, plus now itself
+// and the current pick (so the wheel opens on it). Values are minutes after midnight, so nothing
+// later than now can be picked.
+export function todayTimeOptions(now: Date = new Date(), include?: number): { value: string; label: string }[] {
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const set = new Set<number>();
+  for (let m = 0; m <= nowMin; m += 5) set.add(m);
+  set.add(nowMin);
+  if (include != null && include >= 0 && include <= nowMin) set.add(include);
+  return [...set].sort((a, b) => a - b).map((m) => ({ value: String(m), label: clockLabel(atMinute(m, now)) }));
+}
+export function minuteOfDay(ts: number): number {
   const d = new Date(ts);
-  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  return d.getHours() * 60 + d.getMinutes();
 }
-
-// A picked clock time resolved to a real moment. A meal being logged has already happened, so a time
-// later than now means one of two things: a small overshoot on the wheel (within two hours, treated
-// as now) or a time from yesterday (11:30 PM picked at 12:40 AM, or last night's 8 PM dinner).
-export function resolvePickedTime(hhmm: string, now: Date = new Date()): number | null {
-  const m = /^(\d{1,2}):(\d{2})/.exec(hhmm);
-  if (!m) return null;
-  const h = Number(m[1]);
-  const min = Number(m[2]);
-  if (h > 23 || min > 59) return null;
+export function atMinute(minuteOfDay: number, now: Date = new Date()): number {
   const d = new Date(now);
-  d.setHours(h, min, 0, 0);
-  const ahead = d.getTime() - now.getTime();
-  if (ahead <= MIN) return d.getTime();
-  if (ahead < 2 * 60 * MIN) return now.getTime();
-  d.setDate(d.getDate() - 1);
+  d.setHours(Math.floor(minuteOfDay / 60), minuteOfDay % 60, 0, 0);
   return d.getTime();
 }
 
-function sameDay(a: Date, b: Date): boolean {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+function clockLabel(ts: number): string {
+  return new Date(ts).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 }
 
-// "Today, 1:15 PM" / "Yesterday, 7:00 PM".
-export function mealTimeLabel(ts: number, now: Date = new Date()): string {
-  const d = new Date(ts);
-  const time = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
-  if (sameDay(d, now)) return `Today, ${time}`;
-  const y = new Date(now);
-  y.setDate(y.getDate() - 1);
-  if (sameDay(d, y)) return `Yesterday, ${time}`;
-  return `${d.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${time}`;
+// "Today, 1:15 PM" (the chip on the first-meal loggers).
+export function mealTimeLabel(ts: number): string {
+  return `Today, ${clockLabel(ts)}`;
 }
 
 // "Remind Me After Breakfast": the next whole hour at least an hour away, no earlier than 8 AM and
@@ -171,17 +167,16 @@ export function hasPendingMeal(meals: MealLog[]): boolean {
   return meals.some((m) => isFood(m) && m.id.startsWith("optimistic") && m.status === "done");
 }
 
-// Everything someone can log, for "never if they've logged anything since": saved meals (any
-// status but unsaved), feelings, and days with water.
-export function anyLogCount(meals: MealLog[], feelLogCount: number, waterLogs: Record<string, number>): number {
-  const mealCount = meals.filter((m) => isFood(m) && !m.id.startsWith("optimistic") && m.status !== "unsaved").length;
-  const waterDays = Object.entries(waterLogs).filter(([k, ml]) => /^\d{4}-\d{2}-\d{2}$/.test(k) && ml > 0).length;
-  return mealCount + feelLogCount + waterDays;
+// Meals logged so far, in any state but unsaved, for "stop the first-meal reminders once a meal is
+// logged". Water and feelings don't count: they aren't a first meal (the water option on the step
+// leaves the lunch reminder in place), and the cron applies the same rule.
+export function mealLogCount(meals: MealLog[]): number {
+  return meals.filter((m) => isFood(m) && !m.id.startsWith("optimistic") && m.status !== "unsaved").length;
 }
 
 // ── localStorage records ──────────────────────────────────────────────────
 export type FirstMealRecord = { startedAt: number; baseline: number };
-// baseline: anyLogCount when it was set. kind is derived from `at` when missing (older records).
+// baseline: mealLogCount when it was set. kind is derived from `at` when missing (older records).
 export type FirstMealReminder = { at: number; baseline: number; kind?: ReminderKind };
 export type FirstHabitStart = "logged" | "skipped";
 

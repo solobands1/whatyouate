@@ -56,8 +56,10 @@ import { getPendingReviewFlag, canShowReviewPrompt, checkAndSetMilestoneFlag } f
 import { openReviewPrompt } from "./ReviewPromptModal";
 import OnboardingFlow from "./OnboardingFlow";
 import FirstMealStep, { FirstMealCelebration, FirstMealReminderPrompt, clearFirstMealView, type FirstMealLogMethod } from "./FirstMealStep";
+import MealTimeChip from "./MealTimeChip";
 import {
-  anyLogCount,
+  clampToToday,
+  mealLogCount,
   notNowFollowUpTime,
   pendingAnalysis,
   reminderKindAt,
@@ -77,7 +79,6 @@ import {
 } from "../lib/firstMeal";
 import { getPushStatus } from "../lib/push";
 import ProfileAvatar from "./ProfileAvatar";
-import { safeFallbackAnalysis } from "../lib/ai/schema";
 import { useWorkout, WORKOUT_TYPE_OPTIONS } from "../hooks/useWorkout";
 import { useMeals } from "../hooks/useMeals";
 
@@ -596,7 +597,11 @@ export default function HomeScreen() {
   // Read up front so coming back from /capture paints the step, not a frame of Home. On a cold
   // start (and on the server) user is still null here, and the mount effect below picks it up.
   const [firstMealOpen, setFirstMealOpen] = useState(() => typeof window !== "undefined" && !!user && !!readFirstMeal(user.id));
-  const [firstMealCelebrate, setFirstMealCelebrate] = useState(false);
+  // Which "Nice Start!" is up: after a first meal, or after the glass of water from Not Yet.
+  const [firstMealCelebrate, setFirstMealCelebrate] = useState<null | "meal" | "water">(null);
+  // The meal time the step's loggers save (their "Today, 12:30 PM" chip). Mirrored in
+  // firstMealTsRef for the async save handlers; only set while the step is open.
+  const [firstMealTs, setFirstMealTsState] = useState<number | null>(null);
   const [firstMealSaveFailed, setFirstMealSaveFailed] = useState(false);
   const [firstHabitTick, setFirstHabitTick] = useState(0);
   // The in-app reminder prompt on screen, and which meal it asks about.
@@ -648,6 +653,7 @@ export default function HomeScreen() {
   const [barcodeNotFound, setBarcodeNotFound] = useState(false);
   const [barcodeNotFoundText, setBarcodeNotFoundText] = useState("");
   const [barcodeNotFoundAnalyzing, setBarcodeNotFoundAnalyzing] = useState(false);
+  const [barcodeNotFoundError, setBarcodeNotFoundError] = useState(false);
   const [barcodeSuccess, setBarcodeSuccess] = useState(false);
   const [barcodeLookingUp, setBarcodeLookingUp] = useState(false);
   const [barcodeProduct, setBarcodeProduct] = useState<{
@@ -1559,7 +1565,7 @@ export default function HomeScreen() {
     setQuickAddAllItems(all);
     setQuickAddQuery("");
     setQuickAddSelected({});
-    // Opened from the first-meal step: start on the picked meal's day (it can be last night).
+    // Opened from the first-meal step: today (the chip sets the time; there's no date row).
     setQuickAddDate(backfillDate ?? (firstMealTsRef.current != null ? dayKeyFromTs(firstMealTsRef.current) : todayDateStr()));
     setShowQuickAdd(true);
   };
@@ -2097,8 +2103,8 @@ export default function HomeScreen() {
         reader.readAsDataURL(selected);
       });
       try {
-        // From the first-meal step: ts is the picked meal time (so a photo of last night's dinner is
-        // saved there), and firstMeal tells the capture screen not to wait around.
+        // From the first-meal step: ts is the chip's meal time (the capture screen shows the same
+        // chip), and firstMeal tells it to save straight away and not wait around.
         sessionStorage.setItem(
           "wya_pending_capture",
           JSON.stringify({ name: selected.name, type: selected.type, dataUrl, ...(firstMealTsRef.current != null ? { ts: firstMealTsRef.current, firstMeal: true } : {}) })
@@ -2239,8 +2245,19 @@ export default function HomeScreen() {
   const handleBarcodeNotFoundSubmit = async () => {
     if (!barcodeNotFoundText.trim() || !user || barcodeNotFoundAnalyzing) return;
     setBarcodeNotFoundAnalyzing(true);
+    setBarcodeNotFoundError(false);
+    // From the first-meal step: the same no-wait, no-invented-numbers save as Type It In.
+    if (firstMealOpen) {
+      const ok = await saveFirstMealText(barcodeNotFoundText.trim());
+      setBarcodeNotFoundAnalyzing(false);
+      if (!ok) { setBarcodeNotFoundError(true); return; }
+      setBarcodeNotFound(false);
+      setBarcodeNotFoundText("");
+      setBarcodeOpen(false);
+      return;
+    }
     try {
-      const created = await addMeal(user.id, safeFallbackAnalysis(), undefined, undefined, "processing", firstMealTsRef.current ?? undefined);
+      const created = await addMeal(user.id, pendingAnalysis(barcodeNotFoundText.trim()), undefined, undefined, "processing", firstMealTsRef.current ?? undefined);
       if (!created?.id) throw new Error("Failed to create meal");
       const res = await fetch("/api/analyze-food", {
         method: "POST",
@@ -2782,11 +2799,13 @@ export default function HomeScreen() {
   // Find Your Rhythm starts today either way (applied by the effect below once the habit engine has
   // loaded), the old Start Today / Start Tomorrow spotlight is retired for this user, and the welcome
   // gate follows: straight away after a skip, after the "Nice Start!" celebration after a log.
-  const finishFirstMeal = (outcome: "logged" | "skipped") => {
+  // "water": the glass of water from Not Yet. It starts and ticks Find Your Rhythm like a log, but
+  // it isn't a first meal: no first-meal achievement, and free access still waits for a meal.
+  const finishFirstMeal = (outcome: "logged" | "water" | "skipped") => {
     if (!user) return;
     clearFirstMeal(user.id);
     clearFirstMealView();
-    writeFirstHabitStart(user.id, outcome);
+    writeFirstHabitStart(user.id, outcome === "skipped" ? "skipped" : "logged");
     try { localStorage.setItem(`wya_habit_intro_seen_${user.id}`, "true"); } catch {}
     // "Nice Start!" is this user's first-meal celebration, so the "You Logged Your First Meal!"
     // banner (armed during onboarding) mustn't repeat it later. After Not Now it stays armed and
@@ -2794,15 +2813,20 @@ export default function HomeScreen() {
     if (outcome === "logged") {
       try { localStorage.setItem(`wya_cel_firstMeal_${user.id}`, "done"); } catch {}
     }
-    firstMealTsRef.current = null;
+    setFirstMealTime(null);
     firstMealSawPendingRef.current = false;
     setFirstMealSaveFailed(false);
     setFirstMealOpen(false);
     setBarcodeOpen(false);
     setFirstHabitTick((t) => t + 1);
-    if (outcome === "logged") setFirstMealCelebrate(true);
-    else setShowTourGate(true);
+    if (outcome === "skipped") setShowTourGate(true);
+    else setFirstMealCelebrate(outcome === "water" ? "water" : "meal");
   };
+  function setFirstMealTime(ts: number | null) {
+    const v = ts == null ? null : clampToToday(ts);
+    firstMealTsRef.current = v;
+    setFirstMealTsState(v);
+  }
 
   // Watch for the first saved meal while the step is open, whichever logger it came from. An
   // optimistic pill that vanishes or turns "unsaved" without a saved row means the write failed, so
@@ -2822,11 +2846,12 @@ export default function HomeScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [firstMealOpen, user, isDemoMode, savedMealsNow, meals.meals]);
 
-  // A logging option on the step: open the app's own logger for it, with the picked meal time.
+  // A logging option on the step: open the app's own logger for it. The time starts at the step's
+  // default (now, or about an hour ago) and keeps whatever they picked in an earlier logger.
   const openFirstMealLogger = (method: FirstMealLogMethod, ts: number) => {
     if (!user) return;
-    const at = Math.min(ts, Date.now());
-    firstMealTsRef.current = at;
+    const at = clampToToday(firstMealTsRef.current ?? ts);
+    setFirstMealTime(at);
     setFirstMealSaveFailed(false);
     if (method === "photo") {
       if (trial.isFree && !isDemoMode) { openUpgradeModal(); return; }
@@ -2840,12 +2865,9 @@ export default function HomeScreen() {
     }
   };
 
-  // Everything they've logged so far (meals, feelings, water days), for "only remind them if
-  // nothing has been logged since".
-  const firstMealLogCount = Math.max(
-    anyLogCount(ctxMeals, ctxFeelLogs.length, ctxWaterLogs),
-    anyLogCount(meals.meals, homeFeelLogs.length, ctxWaterLogs)
-  );
+  // Meals logged so far, for "only remind them if no meal has been logged since". Water and
+  // feelings don't stop the first-meal reminders (same rule as the cron).
+  const firstMealLogCount = Math.max(mealLogCount(ctxMeals), mealLogCount(meals.meals));
 
   // Books one reminder: the in-app fallback first, always, then the server copy (which the hourly
   // reminder cron turns into a push) with one retry. Resolves with whether the server has it.
@@ -2879,46 +2901,66 @@ export default function HomeScreen() {
   };
 
   // "Not Now": one follow-up at their next likely mealtime (lib/firstMeal notNowFollowUpTime),
-  // sent once and only if nothing has been logged by then. Never replaces a reminder that's still
+  // sent once and only if no meal has been logged by then. Never replaces a reminder that's still
   // to come. Fire and forget: they've moved on, and the in-app copy is saved either way.
+  const bookFollowUp = () => {
+    if (!user) return;
+    const pending = readFirstMealReminder(user.id);
+    if (!pending || pending.at <= Date.now()) void saveStepReminder(notNowFollowUpTime());
+  };
   const skipFirstMeal = () => {
-    if (user) {
-      const pending = readFirstMealReminder(user.id);
-      if (!pending || pending.at <= Date.now()) void saveStepReminder(notNowFollowUpTime());
-    }
+    bookFollowUp();
     finishFirstMeal("skipped");
+  };
+
+  // "Log A Glass Of Water" on Not Yet: one glass now through Home's own water logging (local first,
+  // then the server with a retry, as every water add does), day 1 of Find Your Rhythm ticked, and
+  // the same next-mealtime follow-up as Not Now, since there's still no meal.
+  const logFirstWater = () => {
+    if (!user || !waterData) return;
+    const glassMl = profile?.waterUnit === "oz" ? Math.round(8 * 29.5735) : 250;
+    waterData.addAmount(glassMl);
+    bookFollowUp();
+    finishFirstMeal("water");
   };
 
   // Type It In from the step: save the meal now as "processing" with nothing but the words, then
   // let the analysis fill it in. The step moves on as soon as the row exists (Nice Start, then the
   // welcome gate) instead of waiting on the AI. Only the insert is waited on, so a failed save
   // keeps the logger open with their text and says so.
-  const logTypedFirstMeal = async () => {
-    const text = meals.manualText.trim();
-    if (!user || !text || firstMealTypedSaving) return;
-    const picked = firstMealTsRef.current;
-    const day = meals.manualDate;
-    const ts = picked != null && dayKeyFromTs(picked) === day ? picked
-      : day !== todayDateStr() ? Math.min(new Date(day + "T12:00:00").getTime(), Date.now())
-      : Date.now();
+  // Saves a described first meal (Type It In, or a barcode that isn't in the database): the row
+  // now, at the chip's time, as "processing" with nothing but the words; the analysis follows in
+  // the background. Resolves false if the row itself didn't save, so the logger can say so.
+  const saveFirstMealText = async (text: string): Promise<boolean> => {
+    if (!user) return false;
+    const ts = clampToToday(firstMealTsRef.current ?? Date.now());
     const placeholder = pendingAnalysis(text);
-    setFirstMealTypedSaving(true);
-    meals.setManualError(null);
     let created: MealLog;
     try {
       created = await addMeal(user.id, placeholder, undefined, undefined, "processing", ts);
     } catch (err) {
       console.error("[firstMeal] typed meal save failed", err);
-      meals.setManualError("That didn't save. Check your connection and try again.");
-      setFirstMealTypedSaving(false);
-      return;
+      return false;
     }
-    setFirstMealTypedSaving(false);
-    meals.setEditingMeal(null);
-    meals.setManualText("");
     meals.setMeals((prev) => [{ ...created, analysisJson: placeholder, status: "processing" as const }, ...prev]);
     notifyMealsUpdated();
     void analyseTypedMeal(created.id, text, user.id);
+    return true;
+  };
+
+  const logTypedFirstMeal = async () => {
+    const text = meals.manualText.trim();
+    if (!user || !text || firstMealTypedSaving) return;
+    setFirstMealTypedSaving(true);
+    meals.setManualError(null);
+    const ok = await saveFirstMealText(text);
+    setFirstMealTypedSaving(false);
+    if (!ok) {
+      meals.setManualError("That didn't save. Check your connection and try again.");
+      return;
+    }
+    meals.setEditingMeal(null);
+    meals.setManualText("");
   };
 
   // The background half: the analyze route writes the result onto the row (status "done"), so this
@@ -2972,10 +3014,10 @@ export default function HomeScreen() {
     notifyMealsUpdated();
   };
 
-  firstMealScreensUpRef.current = firstMealOpen || firstMealCelebrate || showTourGate;
+  firstMealScreensUpRef.current = firstMealOpen || firstMealCelebrate != null || showTourGate;
 
   const closeFirstMealCelebration = () => {
-    setFirstMealCelebrate(false);
+    setFirstMealCelebrate(null);
     setShowTourGate(true);
   };
 
@@ -3002,7 +3044,7 @@ export default function HomeScreen() {
   }, [user, isDemoMode, habitLoaded, heroHabit.status, firstHabitTick]);
 
   // The in-app half of "Remind Me After Breakfast": on the first open after the chosen time (same
-  // day), if nothing has been logged since, ask once. If the app is open when the time comes, a
+  // day), if no meal has been logged since, ask once. If the app is open when the time comes, a
   // timer re-checks then. A tapped reminder push lands here too, since those open Home. The record
   // is only cleared once they answer (or log, or the day has passed), so a remount while it's up
   // just shows it again.
@@ -3305,8 +3347,8 @@ export default function HomeScreen() {
   const hasEverLogged = displayMeals.some((m) => m.analysisJson?.source !== "supplement" && m.status !== "failed");
   // Logging habits (Find Your Rhythm, Pick Back Up) never say "Done": that read as "you can stop
   // logging for today". Their ticked-off day says what was logged instead: "Meal Logged!" when
-  // today's logs include a meal (eaten today or saved today, so last night's dinner counts, and
-  // one still being analysed counts too), otherwise "Logged Today!" (water, a feeling, the tap).
+  // today's logs include a meal (eaten today or saved today, so one logged for yesterday counts,
+  // and one still being analysed counts too), otherwise "Logged Today!" (water, a feeling, the tap).
   const loggingHabit = activeTemplate.category === "logging";
   const todayHasMealLog = displayMeals.some((m) =>
     m.analysisJson?.source !== "supplement" && m.status !== "unsaved"
@@ -3800,12 +3842,14 @@ export default function HomeScreen() {
           saveFailed={firstMealSaveFailed}
           onLog={openFirstMealLogger}
           onRemind={scheduleBreakfastReminder}
+          onWater={waterData ? logFirstWater : undefined}
           onSkip={skipFirstMeal}
           onDone={() => finishFirstMeal("skipped")}
         />
       )}
       {firstMealCelebrate && (
         <FirstMealCelebration
+          kind={firstMealCelebrate}
           habitTitle={firstHabitTemplate.title}
           daysDone={1}
           totalDays={firstHabitTemplate.durationDays}
@@ -4832,8 +4876,8 @@ export default function HomeScreen() {
                       const idx = pillIdx++;
                       const isReanalyzing = reanalyzingMealIds.has(meal.id);
                       const isUnsaved = meal.status === "unsaved";
-                      // Aged from when the row was saved, not ts, so a backdated meal (last night's
-                      // dinner) gets its full 90s of "Analyzing" instead of failing on arrival.
+                      // Aged from when the row was saved, not ts, so a meal logged for an earlier time
+                      // gets its full 90s of "Analyzing" instead of failing on arrival.
                       const analysingFor = Date.now() - (meal.createdAt ?? meal.ts);
                       const isShimmer = isReanalyzing || (meal.status === "processing" && analysingFor < 90_000);
                       const isStaleOrFailed = !isReanalyzing && ((meal.status === "processing" && analysingFor >= 90_000) || meal.status === "failed");
@@ -5089,7 +5133,10 @@ export default function HomeScreen() {
                       </div>
                     </div>
                     <div className="mt-3">
-                      <ManualDateRow manualDate={meals.manualDate} setManualDate={meals.setManualDate} />
+                      {/* From the first-meal step: today only, so a time chip instead of the date. */}
+                      {firstMealOpen && firstMealTs != null
+                        ? <MealTimeChip value={firstMealTs} onChange={setFirstMealTime} />
+                        : <ManualDateRow manualDate={meals.manualDate} setManualDate={meals.setManualDate} />}
                     </div>
                     {meals.manualError && (
                       <p className="mt-3 text-xs text-red-500">{meals.manualError}</p>
@@ -5538,7 +5585,7 @@ export default function HomeScreen() {
       {failedMealPrompt && (
         <div className="kb-avoid fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5" style={{ paddingBottom: kbInset }}>
           <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
-            <h2 className="text-base font-semibold text-ink">What did you eat?</h2>
+            <h2 className="text-base font-semibold text-ink">What Did You Eat?</h2>
             <p className="mt-1 text-xs text-muted/70">
               {failedMealPrompt.photo === false
                 ? "We couldn't read that one. Try describing it a little differently and we'll estimate the nutrition."
@@ -5583,7 +5630,7 @@ export default function HomeScreen() {
       {quickConfirmMeal && (
         <div className="kb-avoid fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5" style={{ paddingBottom: kbInset }}>
           <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
-            <h2 className="text-base font-semibold text-ink">What did you eat?</h2>
+            <h2 className="text-base font-semibold text-ink">What Did You Eat?</h2>
             <p className="mt-1 text-xs text-muted/70">
               {(() => {
                 const conf = quickConfirmMeal.analysisJson?.confidence_overall_0_1 ?? 1;
@@ -6032,6 +6079,10 @@ export default function HomeScreen() {
                 </div>
               </div>
             )}
+            {/* From the first-meal step: today only, at the chip's time. */}
+            {firstMealOpen && firstMealTs != null && (
+              <div className="mt-3"><MealTimeChip value={firstMealTs} onChange={setFirstMealTime} /></div>
+            )}
             <div className="mt-4 flex gap-2 justify-end">
               <button
                 type="button"
@@ -6059,7 +6110,7 @@ export default function HomeScreen() {
                   onClick={handleConfirmBarcodeProduct}
                   disabled={isAddingBarcode}
                 >
-                  {isAddingBarcode ? "Adding…" : "Add to day"}
+                  {isAddingBarcode ? "Adding…" : "Add To Day"}
                 </button>
               )}
             </div>
@@ -6071,7 +6122,7 @@ export default function HomeScreen() {
       {barcodeNotFound && (
         <div className="kb-avoid fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-5" style={{ paddingBottom: kbInset }}>
           <div className="w-full max-w-sm rounded-xl bg-white p-5 shadow-xl">
-            <p className="text-sm font-semibold text-ink">Product not found</p>
+            <p className="text-sm font-semibold text-ink">Product Not Found</p>
             <p className="mt-1 text-xs text-muted/60">This barcode isn&apos;t in our database. Describe what it is and we&apos;ll estimate the nutrition.</p>
             <input
               type="text"
@@ -6082,11 +6133,17 @@ export default function HomeScreen() {
               onKeyDown={(e) => { if (e.key === "Enter" && barcodeNotFoundText.trim()) handleBarcodeNotFoundSubmit(); }}
               autoFocus
             />
+            {firstMealOpen && firstMealTs != null && (
+              <div className="mt-3"><MealTimeChip value={firstMealTs} onChange={setFirstMealTime} /></div>
+            )}
+            {barcodeNotFoundError && (
+              <p className="mt-2 text-xs text-red-500" role="alert">That didn&apos;t save. Check your connection and try again.</p>
+            )}
             <div className="mt-3 flex gap-2 justify-end">
               <button
                 type="button"
                 className="rounded-xl border border-ink/10 bg-white px-4 py-2 text-xs font-semibold text-ink/70 transition active:opacity-60"
-                onClick={() => { setBarcodeNotFound(false); setBarcodeNotFoundText(""); }}
+                onClick={() => { setBarcodeNotFound(false); setBarcodeNotFoundText(""); setBarcodeNotFoundError(false); }}
               >
                 Cancel
               </button>
@@ -6400,7 +6457,11 @@ export default function HomeScreen() {
             )}
             </div>
             {quickAddAllItems.length > 0 && (
-              <div className="mt-3"><ManualDateRow manualDate={quickAddDate} setManualDate={setQuickAddDate} /></div>
+              <div className="mt-3">
+                {firstMealOpen && firstMealTs != null
+                  ? <MealTimeChip value={firstMealTs} onChange={setFirstMealTime} />
+                  : <ManualDateRow manualDate={quickAddDate} setManualDate={setQuickAddDate} />}
+              </div>
             )}
             {quickAddAllItems.length > 0 && (
               <button

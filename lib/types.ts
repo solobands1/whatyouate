@@ -138,7 +138,7 @@ export interface MealLog {
   // It has no row in the database and offers a tap-to-retry.
   status?: "processing" | "done" | "failed" | "unsaved";
   // When the row was saved (created_at), as opposed to ts, the time the meal was eaten. They differ
-  // for a backdated meal ("last night's dinner"), so anything timing an analysis (the 90s
+  // for a meal logged for an earlier time or day, so anything timing an analysis (the 90s
   // "Couldn't Read That" cutoff, stuck-meal recovery) must use this, not ts.
   createdAt?: number;
 }

@@ -50,7 +50,7 @@ export function useMeals(
     // Rebuild quick-add cache from Supabase history if localStorage was cleared
     seedTextCacheFromMeals(mealsData);
     // Recover meals stuck in "processing" (e.g. tab closed mid-analysis). Timed from when the row
-    // was saved, not ts: a backdated meal (last night's dinner) is still fresh while it analyses.
+    // was saved, not ts: a meal logged for an earlier time is still fresh while it analyses.
     const STUCK_MS = 5 * 60 * 1000;
     const now = Date.now();
     const stuck = mealsData.filter((m) => m.status === "processing" && now - (m.createdAt ?? m.ts) > STUCK_MS);
