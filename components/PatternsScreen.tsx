@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Joyride, { CallBackProps, STATUS, type Step } from "react-joyride";
 import BottomNav from "./BottomNav";
@@ -18,13 +18,15 @@ import { getChangeStatuses, setChangeStatus } from "../lib/changeStatus";
 import { markWalkthroughDone } from "../lib/supabaseDb";
 import { useTrialStatus } from "../hooks/useTrialStatus";
 import { openUpgradeModal } from "./UpgradeModal";
+import { firstGoalMetric, goalFirst, parseSeen, seenSnapshot, sinceLines, unlockEta, type SeenSnapshot, type SinceInput } from "../lib/patternsSince";
+import { todayKey } from "../lib/utils";
 
 const METRIC_LABEL: Record<string, string> = { energy: "energy", sleep: "sleep", mood: "mood", stress: "stress", digestion: "digestion" };
 function changeEffectLine(c: Pick<ActiveChange, "targetKey" | "effect">): string | null {
   if (!c.effect) return null;
   // A simple, confident verdict — signal that we've noticed whether it's helping, without
   // over-claiming a specific (and possibly noisy) number.
-  return c.effect.direction === "better" ? "Seems to be helping." : "No clear change yet.";
+  return c.effect.direction === "better" ? "Fewer low nights since you started." : "No clear change yet.";
 }
 // Example ledger for Preview / demo.
 const EX_LEDGER: Pick<ActiveChange, "id" | "templateId" | "label" | "targetKey" | "keep" | "effect" | "stopped" | "regressed">[] = [
@@ -33,6 +35,8 @@ const EX_LEDGER: Pick<ActiveChange, "id" | "templateId" | "label" | "targetKey" 
 ];
 
 type Discovery = { text: string; confidence: "Building" | "Moderate" };
+// Plain words for the confidence chip ("Confidence: Building" read as jargon).
+const CONFIDENCE_CHIP: Record<Discovery["confidence"], string> = { Building: "Early Pattern", Moderate: "Clearer Pattern" };
 
 // A real, deterministic one-line clue in the coach's voice — only ever states true counts.
 function patternsHeadline(facts: ReflectionFacts): string {
@@ -127,7 +131,7 @@ const DOT_LEGEND = (
 export default function PatternsScreen() {
   const { user } = useAuth();
   const trial = useTrialStatus();
-  const { reflections, habitHistory, meals, workouts, loading: loadingData } = useAppData();
+  const { reflections, habitHistory, meals, workouts, profile, loading: loadingData } = useAppData();
   const facts = useMemo(() => computeReflectionFacts(reflections), [reflections]);
   const daysCompared = useMemo(() => computeDaysCompared(reflections, meals, workouts), [reflections, meals, workouts]);
   const foodLinks = useMemo(() => computeFoodFeelingLinks(meals, reflections), [meals, reflections]);
@@ -256,6 +260,43 @@ export default function PatternsScreen() {
     }
   };
 
+  // What the user said matters most at onboarding: their coach insights about it come first.
+  const goal = firstGoalMetric(profile?.feelingGoals);
+
+  // New Since You Last Looked: a line or two inside the coach card. The last visit's snapshot is
+  // read once, when real data has loaded; this visit's is written when the user leaves (unmount,
+  // pagehide, app hidden). No news on a first visit, never in the walkthrough demo.
+  const sinceInput = useMemo<SinceInput>(
+    () => ({ foodLinks, candidates, facts, changes: computeActiveChanges(habitHistory, reflections, user ? getChangeStatuses(user.id) : {}), goal }),
+    [foodLinks, candidates, facts, habitHistory, reflections, user, goal],
+  );
+  const [since, setSince] = useState<string[] | null>(null);
+  const prevSeen = useRef<SeenSnapshot | null | undefined>(undefined); // read exactly once
+  const latestSince = useRef<SinceInput | null>(null);
+  const liveData = !!user && !loadingData && !isDemoMode;
+  useEffect(() => {
+    if (!liveData || !user) return;
+    if (prevSeen.current === undefined) {
+      let prev: SeenSnapshot | null = null;
+      try { prev = parseSeen(localStorage.getItem(`wya_patterns_seen_${user.id}`)); } catch {}
+      prevSeen.current = prev;
+    }
+    if (since === null) setSince(sinceLines(prevSeen.current, sinceInput));
+    latestSince.current = sinceInput; // only saved once the old snapshot has been read
+  }, [liveData, user, since, sinceInput]);
+  useEffect(() => {
+    if (!user) return;
+    const key = `wya_patterns_seen_${user.id}`;
+    const save = () => {
+      if (!latestSince.current) return;
+      try { localStorage.setItem(key, JSON.stringify(seenSnapshot(latestSince.current))); } catch {}
+    };
+    const onHide = () => { if (document.visibilityState === "hidden") save(); };
+    document.addEventListener("visibilitychange", onHide);
+    window.addEventListener("pagehide", save);
+    return () => { save(); document.removeEventListener("visibilitychange", onHide); window.removeEventListener("pagehide", save); };
+  }, [user]);
+
   if (!user) return null;
 
   // Each card decides real-vs-preview from ITS OWN data (reflection volume for the trend
@@ -266,6 +307,7 @@ export default function PatternsScreen() {
   // food->feeling analysis is the paid product — locked, with the live connection count.
   const locked = !demo && trial.isFree;
   const connectionCount = foodLinks.length + discoveries.length;
+  // In the locked view the top insight is shown, so the lock box counts the rest.
 
   // Trend cards (headline, energy) need a few reflections before there's anything real.
   const fewRefl = facts.total < 3;
@@ -284,11 +326,12 @@ export default function PatternsScreen() {
 
   // Coach card: the headline plus up to 2 observed associations (food->feeling links +
   // reflection discoveries). Empty state describes what will appear instead of faking it.
-  const realInsights: Discovery[] = [
+  const realInsights: Discovery[] = goalFirst([
     ...foodLinks.map((l) => ({ text: foodLinkSentence(l), confidence: l.confidence })),
     ...discoveries,
-  ].slice(0, 2);
+  ], goal, (d) => d.text).slice(0, 2);
   const coachEmpty = !demo && realInsights.length === 0;
+  const moreConnections = Math.max(0, connectionCount - (realInsights.length > 0 ? 1 : 0));
   const coachInsights = demo ? EX_INSIGHTS : realInsights; // non-demo: only real, never fake
   const coachHeadline = demo ? EX_HEADLINE : fewRefl ? "Your clearest pattern will land here first" : headline;
 
@@ -298,7 +341,8 @@ export default function PatternsScreen() {
 
   // Compared to last week — needs two weeks of data. Empty shows a descriptive line.
   const realChanges = facts.changes && facts.changes.length ? facts.changes : null;
-  const changes = demo ? EX_CHANGES : (realChanges ?? []);
+  const changes = demo ? EX_CHANGES : goalFirst(realChanges ?? [], goal, (c) => c.key);
+  const sinceNews = !demo && since ? since : [];
 
   // Changes you're making — kept habits, each with a before/after read on the metric it
   // targets. Independent of reflection volume; needs a completed, kept habit.
@@ -351,7 +395,7 @@ export default function PatternsScreen() {
         <div data-tour="patterns-intro">
         <header className="mb-6">
           <h1 className="text-2xl font-semibold text-ink">Patterns</h1>
-          <p className="mt-1 text-sm text-muted/70">What seems to affect how you feel</p>
+          <p className="mt-1 text-sm text-muted/70">What lines up with how you feel</p>
           {!demo && !locked && fewRefl && (
             <div className="mt-3 rounded-2xl border border-primary/20 bg-primary/[0.06] px-4 py-3">
               <div className="flex items-center gap-2">
@@ -359,7 +403,8 @@ export default function PatternsScreen() {
                   <rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" />
                 </svg>
                 <p className="text-[13px] font-semibold text-primary/90">
-                  {3 - facts.total} More Reflection{3 - facts.total !== 1 ? "s" : ""} to Unlock
+                  {3 - facts.total} More Reflection{3 - facts.total !== 1 ? "s" : ""} To Unlock
+                  <span className="font-medium text-muted/70"> · {unlockEta(3 - facts.total, reflections.some((r) => r.date === todayKey()))}</span>
                 </p>
               </div>
               <p className="mt-1 text-[11.5px] leading-snug text-muted/75">
@@ -374,24 +419,30 @@ export default function PatternsScreen() {
             count instead: the coach's analysis is the paid product. */}
         {locked ? (
           <Card className="relative" style={riseIn(ready, 0)}>
-            <Eyebrow>Food &amp; Feeling</Eyebrow>
+            {/* After free access ends: the coach's headline and top insight stay visible in full,
+                as proof; the rest is counted behind the existing upgrade path. */}
+            <Eyebrow>What Your Coach Is Noticing</Eyebrow>
             <div className="mt-3 flex items-start gap-3">
               <div className="-mt-1 shrink-0"><WyaaAvatar size={40} /></div>
-              <p className="text-[15px] font-medium leading-relaxed text-ink/90">
-                {connectionCount > 0
-                  ? `Your coach has found ${connectionCount} connection${connectionCount !== 1 ? "s" : ""} between your food and how you feel.`
-                  : "Your coach is connecting your food to how you feel."}
-              </p>
+              <p className="text-[15px] font-medium leading-relaxed text-ink/90">{coachHeadline}</p>
             </div>
-            <div className="mt-4 rounded-xl border border-primary/20 bg-primary/[0.06] px-4 py-3.5">
+            {realInsights[0] && (
+              <div className="mt-4 rounded-xl border border-primary/15 bg-primary/[0.05] px-3 py-2.5">
+                <p className="text-sm text-ink/90">{realInsights[0].text}</p>
+                <span className="mt-1.5 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary/70">{CONFIDENCE_CHIP[realInsights[0].confidence]}</span>
+              </div>
+            )}
+            <div className="mt-3 rounded-xl border border-primary/20 bg-primary/[0.06] px-4 py-3.5">
               <div className="flex items-start gap-2.5">
                 <svg viewBox="0 0 24 24" className="mt-0.5 h-4 w-4 shrink-0 text-primary/70" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
                 </svg>
                 <p className="text-sm leading-relaxed text-ink/80">
-                  {connectionCount > 0
-                    ? "Unlock Pro to see them, plus your weekly trends and what sets your best days apart. They keep sharpening the more you log."
-                    : "Keep logging and reflecting, then unlock Pro to see the connections as your coach finds them."}
+                  {moreConnections > 0
+                    ? `${moreConnections} more connection${moreConnections !== 1 ? "s" : ""} found. Unlock Pro to see ${moreConnections !== 1 ? "them" : "it"}, plus your weekly trends and what sets your best days apart.`
+                    : connectionCount > 0
+                      ? "Unlock Pro to see new connections as they show up, plus your weekly trends and what sets your best days apart."
+                      : "Keep logging and reflecting, then unlock Pro to see the connections as your coach finds them."}
                 </p>
               </div>
               <button
@@ -410,6 +461,15 @@ export default function PatternsScreen() {
             <div className="-mt-1 shrink-0"><WyaaAvatar size={40} /></div>
             <p className="text-[15px] font-medium leading-relaxed text-ink/90">{coachHeadline}</p>
           </div>
+          {sinceNews.length > 0 && (
+            <div className="mt-3 rounded-xl bg-primary/[0.07] px-3 py-2.5">
+              <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-primary-dark/80">
+                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3.2" /><path d="M12 3v3M12 18v3M3 12h3M18 12h3" /></svg>
+                New Since You Last Looked
+              </p>
+              {sinceNews.map((line) => <p key={line} className="mt-1 text-[13px] leading-snug text-ink/85">{line}</p>)}
+            </div>
+          )}
           {coachEmpty ? (
             <>
               <div className="mt-4 rounded-xl border border-primary/20 bg-primary/[0.05] px-3 py-3">
@@ -425,7 +485,7 @@ export default function PatternsScreen() {
               {coachInsights.map((d, i) => (
                 <div key={i} className="rounded-xl border border-primary/15 bg-primary/[0.05] px-3 py-2.5">
                   <p className="text-sm text-ink/90">{d.text}</p>
-                  <span className="mt-1.5 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary/70">Confidence: {d.confidence}</span>
+                  <span className="mt-1.5 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary/70">{CONFIDENCE_CHIP[d.confidence]}</span>
                 </div>
               ))}
             </div>
@@ -480,6 +540,7 @@ export default function PatternsScreen() {
               </div>
             ) : (
               <div className="mt-3 space-y-2">
+                {!locked && <p className="text-[12px] leading-snug text-muted/70">Fills in once you have reflections in two different weeks.</p>}
                 {[{ up: true, w: "w-24" }, { up: true, w: "w-20" }, { up: false, w: "w-16" }].map((r, i) => (
                   <div key={i} className="flex items-center gap-2.5">
                     <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ink/[0.04] ${r.up ? "text-primary-dark" : "text-muted/40"}`}>
@@ -500,6 +561,7 @@ export default function PatternsScreen() {
             {locked && <ProLockChip />}
           </div>
           <p className="mt-1 text-sm text-muted/65">What tends to set your better days apart</p>
+          {daysPreview && !locked && <p className="mt-1 text-[12px] leading-snug text-muted/70">Fills in once you have enough higher and lower energy days to compare.</p>}
           <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-primary-dark/80">Better Days</p>
             <p className="text-[11px] font-semibold uppercase tracking-wide text-muted/70">Other Days</p>
@@ -579,7 +641,7 @@ export default function PatternsScreen() {
               <Eyebrow>Changes You&apos;re Making</Eyebrow>
               {locked && <ProLockChip />}
             </div>
-            <p className="mt-1 text-sm text-muted/65">Habits you kept, and whether they seem to be helping</p>
+            <p className="mt-1 text-sm text-muted/65">Habits you kept, and how your nights have gone since</p>
             {(locked || changesLedgerPreview) ? (
               <div className="mt-3 space-y-2.5">
                 <div className="rounded-xl border border-primary/15 bg-primary/[0.05] px-3 py-3">
@@ -609,7 +671,7 @@ export default function PatternsScreen() {
                       <div className="mt-1">
                         <p className="text-xs text-ink/80">Your {METRIC_LABEL[c.targetKey] ?? "energy"} slipped since you stopped this.</p>
                         <button type="button" onClick={() => restartChange(c.templateId)} className="mt-1.5 inline-flex items-center gap-0.5 text-[11px] font-semibold text-primary transition active:opacity-60">
-                          Pick it back up
+                          Pick It Back Up
                           <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
                         </button>
                       </div>

@@ -1086,6 +1086,8 @@ export async function markWalkthroughDone(userId: string): Promise<void> {
 }
 
 export async function clearAllData(userId: string) {
+  // Local-only Patterns snapshot ("New Since You Last Looked"); cleared with everything else.
+  if (typeof window !== "undefined") { try { localStorage.removeItem(`wya_patterns_seen_${userId}`); } catch {} }
   if (useMemory) {
     ensureLocalLoaded();
     memMeals = memMeals.filter((entry) => entry.userId !== userId);
