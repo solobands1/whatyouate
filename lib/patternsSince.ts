@@ -74,7 +74,8 @@ const PAIR_PHRASE: Record<string, string> = {
 };
 
 // The connections the coach card can show, in the order it shows them: food links first, then
-// the reflection discoveries (by their underlying candidates), goal first, top two.
+// the reflection discoveries (by their underlying candidates), goal first, top two. The strongest
+// food link always stays in the two, as on the card (it's the finding the paywall quotes).
 function visibleLinks(input: SinceInput): Link[] {
   const food: Link[] = input.foodLinks.map((l) => ({
     key: `food:${l.tag}:${l.lag}`,
@@ -84,7 +85,9 @@ function visibleLinks(input: SinceInput): Link[] {
   const disc: Link[] = input.candidates.slice(0, 3).map((c) => ({
     key: `disc:${c.id}`, phrase: PAIR_PHRASE[c.id] ?? c.text, s: c.hits / c.n, n: c.n, hits: c.hits, c: c.confidence, about: c.id,
   }));
-  return goalFirst([...food, ...disc], input.goal, (l) => l.about.replace("-", " ")).slice(0, 2);
+  const ordered = goalFirst([...food, ...disc], input.goal, (l) => l.about.replace("-", " "));
+  const top = food[0];
+  return top && !ordered.slice(0, 2).includes(top) ? [ordered[0], top] : ordered.slice(0, 2);
 }
 
 function dayKey(now: number) {

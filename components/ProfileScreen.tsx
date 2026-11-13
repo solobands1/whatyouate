@@ -25,6 +25,7 @@ import ProfileAvatar, { AVATAR_COLORS_DARK, AVATAR_COLORS_PASTEL, DEFAULT_AVATAR
 import { useAuth } from "./AuthProvider";
 import { useAppData } from "./AppDataProvider";
 import { useTrialStatus } from "../hooks/useTrialStatus";
+import { freeAccessEndDay, freeAccessLatestDate } from "../lib/trial";
 import { presentRedeemSheet, restorePurchases } from "../lib/purchases";
 import { Capacitor } from "@capacitor/core";
 import { openUpgradeModal } from "./UpgradeModal";
@@ -1638,13 +1639,19 @@ export default function ProfileScreen() {
           <div className="mt-3 flex items-center justify-between gap-3">
             <div>
               <p className="text-sm font-semibold text-ink">
-                {trial.isPro ? "WhatYouAte Pro" : trial.isTrialActive ? "Free Trial" : "Free"}
+                {trial.isPro ? "WhatYouAte Pro" : trial.isTrialActive ? "Free Access" : "Free"}
               </p>
-              <p className="mt-0.5 text-xs leading-relaxed text-muted/60">
+              <p data-profile-plan-sub className="mt-0.5 text-xs leading-relaxed text-muted/60">
                 {trial.isPro
                   ? "Your subscription is active."
                   : trial.isTrialActive
-                    ? "You have full access during your trial."
+                    ? (() => {
+                        const endDay = freeAccessEndDay(trial);
+                        if (endDay) return `You have full access. It ends ${endDay === "Today" || endDay === "Tomorrow" ? endDay.toLowerCase() : `on ${endDay}`}.`;
+                        return trial.endsAt != null
+                          ? `You have full access until 2 days after your coach finds your first food and feeling connection, or ${freeAccessLatestDate(trial.endsAt)} at the latest.`
+                          : "You have full access.";
+                      })()
                     : "Log for free, or unlock the coach with Pro."}
               </p>
             </div>

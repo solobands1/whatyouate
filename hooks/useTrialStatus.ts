@@ -7,12 +7,12 @@ import { devHooksEnabled } from "../lib/devHooks";
 
 export function useTrialStatus(): TrialStatus {
   const { user } = useAuth();
-  const { meals } = useAppData();
+  const { meals, reflections } = useAppData();
   const [rcIsPro, setRcIsPro] = useState(false);
 
   // Dev-only state override (strip pre-merge): ?trial=pro | ?trial=expired |
-  // ?trial=active | ?trialday=N (active trial forced to day N) to preview every
-  // trial/paywall state on any account without juggling data.
+  // ?trial=active | ?trialday=N (Free Access forced to day N of 14, so N >= 13 shows the
+  // end-day heads-up) to preview every free-access/paywall state on any account without juggling data.
   const [override, setOverride] = useState<TrialStatus | null>(null);
   useEffect(() => {
     if (!devHooksEnabled()) return; // inert in any native (TestFlight/App Store) build
@@ -27,12 +27,12 @@ export function useTrialStatus(): TrialStatus {
       else if (!hasDay) t = sessionStorage.getItem("wya_trial_override");
     } catch {}
     if (t === "pro") {
-      setOverride({ hasStarted: true, isTrialActive: false, isExpired: false, isPro: true, isFree: false, currentDay: 0, daysLeft: 7 });
+      setOverride({ hasStarted: true, isTrialActive: false, isExpired: false, isPro: true, isFree: false, endsAt: null, endsBy: null });
     } else if (t === "expired") {
-      setOverride({ hasStarted: true, isTrialActive: false, isExpired: true, isPro: false, isFree: true, currentDay: 7, daysLeft: 0 });
+      setOverride({ hasStarted: true, isTrialActive: false, isExpired: true, isPro: false, isFree: true, endsAt: null, endsBy: null });
     } else if (t === "active" || hasDay) {
-      const d = Math.min(Math.max(hasDay ? dayRaw : 3, 1), 7);
-      setOverride({ hasStarted: true, isTrialActive: true, isExpired: false, isPro: false, isFree: false, currentDay: d, daysLeft: Math.max(0, 8 - d) });
+      const d = Math.min(Math.max(hasDay ? dayRaw : 3, 1), 14);
+      setOverride({ hasStarted: true, isTrialActive: true, isExpired: false, isPro: false, isFree: false, endsAt: Date.now() + (15 - d) * 86_400_000, endsBy: "cap" });
     }
   }, []);
 
@@ -86,10 +86,11 @@ export function useTrialStatus(): TrialStatus {
 
   return useMemo(() => {
     if (override) return override; // dev-only ?trial / ?trialday override
-    const status = computeTrialStatus(meals, user?.id ?? null, user?.email ?? null);
+    // Reflections count too: Free Access ends 2 days after the first food and feeling connection.
+    const status = computeTrialStatus(meals, user?.id ?? null, user?.email ?? null, Date.now(), { reflections });
     if (rcIsPro && !status.isPro) {
-      return { ...status, isPro: true, isFree: false, isTrialActive: false, isExpired: false };
+      return { ...status, isPro: true, isFree: false, isTrialActive: false, isExpired: false, endsAt: null, endsBy: null };
     }
     return status;
-  }, [override, meals, user?.id, user?.email, rcIsPro]);
+  }, [override, meals, reflections, user?.id, user?.email, rcIsPro]);
 }

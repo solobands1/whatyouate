@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { PurchasesPackage } from "@revenuecat/purchases-capacitor";
 import {
   CREATOR_MONTHLY_ID,
@@ -13,8 +13,21 @@ import {
 import { useReferral } from "../hooks/useReferral";
 import { Capacitor } from "@capacitor/core";
 import { setPendingReviewFlag, isPromptDone } from "../lib/reviewPrompt";
+import { useAppData } from "./AppDataProvider";
+import WyaaAvatar from "./WyaaAvatar";
+import { computeFoodFeelingLinks, foodLinkSentence, CONFIDENCE_CHIP } from "../lib/foodFeeling";
 
 export const UPGRADE_EVENT = "wya_show_upgrade";
+
+// Read by the review prompt, which never opens on top of the paywall.
+let upgradeOpen = false;
+export function isUpgradeModalOpen() {
+  return upgradeOpen;
+}
+
+// When the coach has no real finding yet (opened early, or the 14-day cap came first): their
+// numbers plus this, never a promise.
+const STILL_CONNECTING = "Your coach is still connecting your food and how you feel. Keep logging and reflecting, and it'll show up in Patterns.";
 
 export function openUpgradeModal() {
   if (typeof window !== "undefined") {
@@ -51,8 +64,8 @@ export default function UpgradeModal() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [packages, setPackages] = useState<{ monthly: PurchasesPackage | null; yearly: PurchasesPackage | null }>({ monthly: null, yearly: null });
-  const [coachState, setCoachState] = useState<"thinking" | "message" | null>(null);
   const [poppedPlan, setPoppedPlan] = useState<"monthly" | "yearly" | null>(null);
+  const { meals, reflections } = useAppData();
 
   const handlePlanSelect = (p: "monthly" | "yearly") => {
     setPlan(p);
@@ -62,16 +75,29 @@ export default function UpgradeModal() {
   const isNative = Capacitor.isNativePlatform();
 
   useEffect(() => {
-    const handler = () => { setOpen(true); setError(null); setCoachState("thinking"); };
+    const handler = () => { setOpen(true); setError(null); };
     window.addEventListener(UPGRADE_EVENT, handler);
     return () => window.removeEventListener(UPGRADE_EVENT, handler);
   }, []);
 
   useEffect(() => {
-    if (!open) return;
-    const timer = setTimeout(() => setCoachState("message"), 3500);
-    return () => clearTimeout(timer);
+    upgradeOpen = open;
+    return () => { upgradeOpen = false; };
   }, [open]);
+
+  // Their own numbers and the coach's actual top finding: the strongest food and feeling link,
+  // from the same engine and in the same words as Patterns.
+  const coach = useMemo(() => {
+    if (!open) return null;
+    const top = computeFoodFeelingLinks(meals, reflections)[0] ?? null;
+    const realMeals = meals.filter((m) => m.analysisJson?.source !== "supplement" && m.status !== "failed").length;
+    return {
+      finding: top ? { text: foodLinkSentence(top), chip: CONFIDENCE_CHIP[top.confidence] } : null,
+      meals: realMeals,
+      mealsLabel: meals.length >= 400 ? `${realMeals}+` : String(realMeals), // the app loads the newest 400
+      nights: new Set(reflections.map((r) => r.date)).size,
+    };
+  }, [open, meals, reflections]);
 
   // Load offerings when modal opens
   useEffect(() => {
@@ -199,21 +225,51 @@ export default function UpgradeModal() {
         </div>
 
         <div className="flex flex-col items-center px-6 pb-5 pt-1">
-          {/* Icon */}
-          <div className="h-14 w-14">
+          {/* Icon (dropped on short screens such as the iPhone SE so the plans stay above the fold) */}
+          <div className="h-14 w-14 [@media(max-height:740px)]:hidden">
             <img src="/icon.svg" alt="WhatYouAte" className="h-full w-full object-cover" />
           </div>
 
           {/* Headline */}
-          <h1 className="mt-3 text-center text-xl font-semibold text-ink">
+          <h1 className="mt-3 text-center text-xl font-semibold text-ink [@media(max-height:740px)]:mt-0">
             Unlock WhatYouAte Pro
           </h1>
-          <p className="mt-1.5 max-w-xs text-center text-sm text-muted/70">
+          <p className={`mt-1.5 max-w-xs text-center text-sm text-muted/70 ${coach ? "[@media(max-height:740px)]:hidden" : ""}`}>
             See how your food affects how you feel, with daily coaching and your full nutrition picture.
           </p>
 
+          {/* What the coach has so far: a real finding, or an honest "not yet", plus their numbers */}
+          {coach && (
+            <div data-paywall-coach className="mt-4 w-full rounded-2xl border border-primary/20 bg-primary/[0.05] px-4 py-3.5 text-left">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-primary-dark/80">What Your Coach Is Noticing</p>
+              <div className="mt-2.5 flex items-start gap-2.5">
+                <div className="-mt-0.5 shrink-0"><WyaaAvatar size={32} /></div>
+                <div className="min-w-0">
+                  <p data-paywall-finding={coach.finding ? "real" : "none"} className="text-sm leading-snug text-ink/90">
+                    {coach.finding ? coach.finding.text : STILL_CONNECTING}
+                  </p>
+                  {coach.finding && (
+                    <span className="mt-1.5 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary/70">{coach.finding.chip}</span>
+                  )}
+                </div>
+              </div>
+              {(coach.meals > 0 || coach.nights > 0) && (
+                <div className="mt-3 grid grid-cols-2 gap-3 border-t border-primary/15 pt-2.5">
+                  <div>
+                    <p className="text-lg font-semibold leading-tight text-ink">{coach.mealsLabel}</p>
+                    <p className="text-[11px] text-muted/70">{coach.meals === 1 ? "Meal Logged" : "Meals Logged"}</p>
+                  </div>
+                  <div>
+                    <p className="text-lg font-semibold leading-tight text-ink">{coach.nights}</p>
+                    <p className="text-[11px] text-muted/70">{coach.nights === 1 ? "Night Reflected" : "Nights Reflected"}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* What's included */}
-          <div className="mt-4 w-full rounded-2xl border border-ink/8 bg-white px-5 py-3 space-y-2">
+          <div className="mt-4 w-full rounded-2xl border border-ink/8 bg-white px-5 py-3 space-y-2 [@media(max-height:740px)]:mt-3 [@media(max-height:740px)]:grid [@media(max-height:740px)]:grid-cols-2 [@media(max-height:740px)]:gap-x-3 [@media(max-height:740px)]:gap-y-2 [@media(max-height:740px)]:space-y-0 [@media(max-height:740px)]:px-4 [@media(max-height:740px)]:py-2.5">
             {[
               "Food & Feeling Connections",
               "Daily Coaching Nudges",
@@ -304,28 +360,6 @@ export default function UpgradeModal() {
 
           {/* CTA */}
           <div className="mt-4 w-full space-y-2.5">
-            <div className="relative min-h-[44px]">
-              {coachState === "thinking" && (
-                <div
-                  className="rounded-xl border border-primary/35 bg-primary/5 px-4 py-3 flex items-center gap-2.5 transition-all duration-300"
-                  style={{ opacity: coachState === "thinking" ? 1 : 0 }}
-                >
-                  <span className="relative flex h-2 w-2 shrink-0">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
-                    <span className="relative inline-flex h-2 w-2 rounded-full bg-primary/80" />
-                  </span>
-                  <p className="text-sm text-primary/70 font-medium">Coach is thinking…</p>
-                </div>
-              )}
-              {coachState === "message" && (
-                <div
-                  className="rounded-xl border border-primary/60 bg-primary/5 px-4 py-3 space-y-1 transition-all duration-300 animate-fade-slide-up"
-                >
-                  <p className="text-sm font-medium text-ink/90">I've been following your patterns. I have a lot to tell you!</p>
-                  <p className="text-[11px] text-primary/70 font-medium">— Coach</p>
-                </div>
-              )}
-            </div>
             {error && (
               <p className="text-center text-[11px] text-red-500/80">{error}</p>
             )}

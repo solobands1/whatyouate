@@ -12,7 +12,7 @@ import { riseIn } from "../lib/motion";
 import { computeReflectionFacts, REFLECTION_DOT, type ReflectionFacts, type Level, type MetricChange } from "../lib/reflectionFacts";
 import { computeDiscoveryCandidates } from "../lib/discoveries";
 import { computeDaysCompared } from "../lib/dayCompare";
-import { computeFoodFeelingLinks, type FoodFeelingLink } from "../lib/foodFeeling";
+import { computeFoodFeelingLinks, foodLinkSentence, CONFIDENCE_CHIP, type FoodFeelingLink } from "../lib/foodFeeling";
 import { computeActiveChanges, type ActiveChange } from "../lib/changes";
 import { getChangeStatuses, setChangeStatus } from "../lib/changeStatus";
 import { markWalkthroughDone } from "../lib/supabaseDb";
@@ -35,8 +35,8 @@ const EX_LEDGER: Pick<ActiveChange, "id" | "templateId" | "label" | "targetKey" 
 ];
 
 type Discovery = { text: string; confidence: "Building" | "Moderate" };
-// Plain words for the confidence chip ("Confidence: Building" read as jargon).
-const CONFIDENCE_CHIP: Record<Discovery["confidence"], string> = { Building: "Early Pattern", Moderate: "Clearer Pattern" };
+// Plain words for the confidence chip ("Confidence: Building" read as jargon): CONFIDENCE_CHIP,
+// shared with the paywall.
 
 // A real, deterministic one-line clue in the coach's voice — only ever states true counts.
 function patternsHeadline(facts: ReflectionFacts): string {
@@ -104,11 +104,6 @@ const EX_FOOD_LINKS: FoodFeelingLink[] = [
   { tag: "fried_greasy", label: "fried or greasy food", lag: "next_day", lowWith: 0.6, lowWithout: 0.2, nWith: 6, confidence: "Building" },
   { tag: "heavy_large", label: "a large, heavy meal", lag: "same_day", lowWith: 0.55, lowWithout: 0.25, nWith: 7, confidence: "Building" },
 ];
-function foodLinkSentence(l: Pick<FoodFeelingLink, "label" | "lag">): string {
-  return l.lag === "next_day"
-    ? `Your lower-energy days have more often followed ${l.label} the night before.`
-    : `On days with ${l.label}, your energy has more often run low.`;
-}
 // Preview insights for the unified coach card (one food link + one reflection discovery).
 const EX_INSIGHTS: Discovery[] = [
   { text: foodLinkSentence(EX_FOOD_LINKS[0]), confidence: "Building" },
@@ -297,8 +292,6 @@ export default function PatternsScreen() {
     return () => { save(); document.removeEventListener("visibilitychange", onHide); window.removeEventListener("pagehide", save); };
   }, [user]);
 
-  if (!user) return null;
-
   // Each card decides real-vs-preview from ITS OWN data (reflection volume for the trend
   // cards, completed habits for the habits card, etc.), so no card ever just disappears.
   // Example data + a "Preview" label until that card has enough; demo shows it unlabeled.
@@ -326,12 +319,19 @@ export default function PatternsScreen() {
 
   // Coach card: the headline plus up to 2 observed associations (food->feeling links +
   // reflection discoveries). Empty state describes what will appear instead of faking it.
-  const realInsights: Discovery[] = goalFirst([
+  // The strongest food link is the finding the paywall quotes, so it always stays in view: goal
+  // ordering can move it to second place, never off the card. Locked, it's the one shown.
+  const topFood: Discovery | null = foodLinks[0] ? { text: foodLinkSentence(foodLinks[0]), confidence: foodLinks[0].confidence } : null;
+  const ordered: Discovery[] = goalFirst([
     ...foodLinks.map((l) => ({ text: foodLinkSentence(l), confidence: l.confidence })),
     ...discoveries,
-  ], goal, (d) => d.text).slice(0, 2);
+  ], goal, (d) => d.text);
+  const realInsights: Discovery[] = topFood && !ordered.slice(0, 2).some((d) => d.text === topFood.text)
+    ? [ordered[0], topFood]
+    : ordered.slice(0, 2);
+  const lockedInsight: Discovery | undefined = topFood ?? realInsights[0];
   const coachEmpty = !demo && realInsights.length === 0;
-  const moreConnections = Math.max(0, connectionCount - (realInsights.length > 0 ? 1 : 0));
+  const moreConnections = Math.max(0, connectionCount - (lockedInsight ? 1 : 0));
   const coachInsights = demo ? EX_INSIGHTS : realInsights; // non-demo: only real, never fake
   const coachHeadline = demo ? EX_HEADLINE : fewRefl ? "Your clearest pattern will land here first" : headline;
 
@@ -348,6 +348,10 @@ export default function PatternsScreen() {
   // targets. Independent of reflection volume; needs a completed, kept habit.
   const [ledgerVersion, setLedgerVersion] = useState(0);
   const activeChanges = useMemo(() => computeActiveChanges(habitHistory, reflections, user ? getChangeStatuses(user.id) : {}), [habitHistory, reflections, user, ledgerVersion]);
+  // After every hook: on a full page load the screen can render once before the session is back
+  // (user null), and an early return above the two hooks just before this crashed it with
+  // "Rendered more hooks than during the previous render" once the user arrived.
+  if (!user) return null;
   const restartChange = (templateId: string) => { if (user) { setChangeStatus(user.id, templateId, "active"); setLedgerVersion((v) => v + 1); } };
   const changesLedgerPreview = !demo && activeChanges.length === 0;
   const ledger = demo ? EX_LEDGER : activeChanges;
@@ -426,10 +430,10 @@ export default function PatternsScreen() {
               <div className="-mt-1 shrink-0"><WyaaAvatar size={40} /></div>
               <p className="text-[15px] font-medium leading-relaxed text-ink/90">{coachHeadline}</p>
             </div>
-            {realInsights[0] && (
+            {lockedInsight && (
               <div className="mt-4 rounded-xl border border-primary/15 bg-primary/[0.05] px-3 py-2.5">
-                <p className="text-sm text-ink/90">{realInsights[0].text}</p>
-                <span className="mt-1.5 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary/70">{CONFIDENCE_CHIP[realInsights[0].confidence]}</span>
+                <p className="text-sm text-ink/90">{lockedInsight.text}</p>
+                <span className="mt-1.5 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary/70">{CONFIDENCE_CHIP[lockedInsight.confidence]}</span>
               </div>
             )}
             <div className="mt-3 rounded-xl border border-primary/20 bg-primary/[0.06] px-4 py-3.5">

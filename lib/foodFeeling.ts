@@ -14,14 +14,43 @@
 // to surface "what lifts you." Data-gated: returns [] until there's enough tagged history, so
 // the UI shows a Preview until then. See project_food_feeling memory.
 
-import type { ReflectionEntry } from "./habitState";
-import type { MealLog } from "./types";
 import { NEGATIVE_FEELING_TAGS, FEELING_TAG_LABEL, type FeelingTag } from "./foodTags";
 
 const MIN_WITH = 4;       // need >=4 days WHERE the tag was present
 const MIN_WITHOUT = 4;    // and >=4 comparison days without it
 const MIN_DIFF = 0.25;    // low-energy rate must be at least this much higher with the tag
 const EVENING_HOUR = 17;  // "evening" meal cutoff for the next-day lag
+// The fewest nights (an energy answer, plus meals to compare) before any link can show.
+export const MIN_FOOD_FEELING_DAYS = MIN_WITH + MIN_WITHOUT;
+
+// The smallest shapes the engine reads. MealLog and ReflectionEntry satisfy them; the free-access
+// math (lib/trial.ts) and the crons pass rows straight from the database.
+export type FeelingMeal = { ts: number; analysisJson?: { feeling_tags?: string[] | null } | null };
+export type FeelingReflection = { date: string; answers: Record<string, unknown> };
+
+export interface FoodFeelingOptions {
+  // The moment to evaluate at (defaults to now). The 45-day window is measured back from it.
+  now?: number;
+  // getTimezoneOffset() minutes (ET = 300 or 240). When set, days and the evening cutoff are read
+  // in that offset, which is how the server matches the phone. When unset, the runtime's own
+  // timezone is used, which on the phone is the device's.
+  tzOffsetMinutes?: number | null;
+}
+
+type Clock = { dayKey: (ts: number) => string; hour: (ts: number) => number };
+function clockFor(tzOffsetMinutes: number | null | undefined): Clock {
+  if (typeof tzOffsetMinutes === "number" && Number.isFinite(tzOffsetMinutes)) {
+    const shift = tzOffsetMinutes * 60_000;
+    return {
+      dayKey: (ts) => {
+        const d = new Date(ts - shift);
+        return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+      },
+      hour: (ts) => new Date(ts - shift).getUTCHours(),
+    };
+  }
+  return { dayKey: dayKeyOf, hour: (ts) => new Date(ts).getHours() };
+}
 
 function dayKeyOf(ts: number): string {
   const d = new Date(ts);
@@ -44,12 +73,14 @@ export interface FoodFeelingLink {
 }
 
 export function computeFoodFeelingLinks(
-  meals: MealLog[],
-  reflections: ReflectionEntry[],
+  meals: FeelingMeal[],
+  reflections: FeelingReflection[],
   windowDays = 45,
+  opts: FoodFeelingOptions = {},
 ): FoodFeelingLink[] {
-  const cutoffTs = Date.now() - windowDays * 86_400_000;
-  const cutoffKey = dayKeyOf(cutoffTs);
+  const clock = clockFor(opts.tzOffsetMinutes);
+  const cutoffTs = (opts.now ?? Date.now()) - windowDays * 86_400_000;
+  const cutoffKey = clock.dayKey(cutoffTs);
 
   // dayKey -> was energy low that day (only days with an energy answer, within window)
   const energyLow = new Map<string, boolean>();
@@ -68,11 +99,11 @@ export function computeFoodFeelingLinks(
     if (m.ts < cutoffTs) continue;
     const tags = (m.analysisJson?.feeling_tags ?? []) as FeelingTag[];
     if (!tags.length) continue;
-    const key = dayKeyOf(m.ts);
+    const key = clock.dayKey(m.ts);
     const all = dayTags.get(key) ?? new Set<FeelingTag>();
     tags.forEach((t) => all.add(t));
     dayTags.set(key, all);
-    if (new Date(m.ts).getHours() >= EVENING_HOUR) {
+    if (clock.hour(m.ts) >= EVENING_HOUR) {
       const eve = eveTags.get(key) ?? new Set<FeelingTag>();
       tags.forEach((t) => eve.add(t));
       eveTags.set(key, eve);
@@ -113,4 +144,36 @@ export function computeFoodFeelingLinks(
   links.sort((a, b) => (b.lowWith - b.lowWithout) - (a.lowWith - a.lowWithout) || b.nWith - a.nWith);
   const seen = new Set<FeelingTag>();
   return links.filter((l) => (seen.has(l.tag) ? false : (seen.add(l.tag), true))).slice(0, 3);
+}
+
+// Plain words for a link's confidence, on Patterns and the paywall.
+export const CONFIDENCE_CHIP: Record<FoodFeelingLink["confidence"], string> = { Building: "Early Pattern", Moderate: "Clearer Pattern" };
+
+// The one sentence for a link, used word for word by Patterns and the paywall. It says the two
+// things lined up, never that one caused the other.
+export function foodLinkSentence(l: Pick<FoodFeelingLink, "label" | "lag">): string {
+  const label = l.label.charAt(0).toUpperCase() + l.label.slice(1);
+  return l.lag === "next_day"
+    ? `${label} the night before has lined up with more of your low-energy days.`
+    : `Days with ${l.label} have lined up with more of your low-energy days.`;
+}
+
+// Days the engine can already compare: an energy answer that night plus at least one tagged meal
+// that day. It needs MIN_FOOD_FEELING_DAYS of them before a link can show (more if the days are
+// all alike). Drives the Free Access progress bar on Home.
+export function foodFeelingDays(meals: FeelingMeal[], reflections: FeelingReflection[], windowDays = 45, opts: FoodFeelingOptions = {}): number {
+  const clock = clockFor(opts.tzOffsetMinutes);
+  const cutoffTs = (opts.now ?? Date.now()) - windowDays * 86_400_000;
+  const cutoffKey = clock.dayKey(cutoffTs);
+  const tagged = new Set<string>();
+  for (const m of meals) {
+    if (m.ts < cutoffTs || !(m.analysisJson?.feeling_tags ?? []).length) continue;
+    tagged.add(clock.dayKey(m.ts));
+  }
+  const days = new Set<string>();
+  for (const e of reflections) {
+    if (e.date < cutoffKey || typeof e.answers["energy"] !== "number") continue;
+    if (tagged.has(e.date)) days.add(e.date);
+  }
+  return days.size;
 }

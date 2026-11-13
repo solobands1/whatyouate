@@ -16,7 +16,6 @@ import { getRda, supplementToNutrient, canonicalNutrient } from "../lib/rda";
 import { suppName } from "../lib/types";
 import { useTrialStatus } from "../hooks/useTrialStatus";
 import { openUpgradeModal } from "./UpgradeModal";
-import { triggerValueMoment } from "./ValueMomentSheet";
 import { hasEnoughDataForPatterns, countLoggedDays } from "../lib/trial";
 import { checkAndSetMilestoneFlag, getPendingReviewFlag, canShowReviewPrompt } from "../lib/reviewPrompt";
 import { openReviewPrompt } from "./ReviewPromptModal";
@@ -114,18 +113,6 @@ export default function InsightsScreen() {
       router.replace("/login");
     }
   }, [loading, user, router]);
-
-  // Value moment: trigger the "your patterns are ready" sheet once per session
-  // Only fires during an active trial — if expired, user will hit paywall instead
-  useEffect(() => {
-    if (loadingData || trial.isPro || trial.isFree) return;
-    if (hasEnoughDataForPatterns(meals)) {
-      const realMeals = meals.filter(
-        (m) => m.analysisJson?.source !== "supplement" && m.status !== "failed"
-      );
-      triggerValueMoment({ mealCount: realMeals.length, dayCount: countLoggedDays(meals) });
-    }
-  }, [loadingData, meals, trial.isPro, trial.isFree]);
 
   // Review prompt: check milestones and show after 3s dwell if a flag is pending
   useEffect(() => {
