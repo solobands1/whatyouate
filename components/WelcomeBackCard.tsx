@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { useAuth } from "./AuthProvider";
 import { useAppData } from "./AppDataProvider";
 import { HABIT_TEMPLATES, type HabitTemplate } from "../lib/habits";
-import { buildActivity, isRealMeal, quietState, COMEBACK_HABIT_ID } from "../lib/comeback";
+import { buildActivity, isRealMeal, quietState, COMEBACK_HABIT_ID, type QuietState } from "../lib/comeback";
 import { dayKeyFromTs } from "../lib/utils";
 
 // Welcome Back: the card Home shows when someone opens the app after 3+ quiet days (lib/comeback,
@@ -13,22 +13,23 @@ import { dayKeyFromTs } from "../lib/utils";
 // quiet stretch's first day is remembered on the device when the card first appears, and it stays up
 // across tab switches that session until it's used or closed. Never for someone active, never for
 // someone who has logged nothing yet (the first-meal step is theirs), and only while no habit is in
-// progress, so it can't replace one.
+// progress, so it can't replace one. While it's up, Home holds back the hero's habit suggestion so
+// there's one habit offer at a time (onVisibleChange).
 
 const TEMPLATE = HABIT_TEMPLATES.find((t) => t.id === COMEBACK_HABIT_ID) ?? null;
 const NUMBER_WORDS: Record<number, string> = { 2: "two", 3: "three", 4: "four", 5: "five" };
 const seenKey = (userId: string) => `wya_welcome_back_${userId}`;
 // The comeback this session is showing (`${userId}|${since}`), so remounting Home keeps it up.
 let showingThisSession: string | null = null;
+// Decide before paint, so the hero never flashes a suggestion that's about to be held back.
+const useIsoLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
-export default function WelcomeBackCard({ ready, canStart, onStart }: {
-  ready: boolean;     // Home has loaded and nothing else owns the screen (walkthrough, onboarding, first-meal step)
-  canStart: boolean;  // the habit hero is free: a suggestion or nothing, not a habit in progress
-  onStart: (template: HabitTemplate) => void;
-}) {
+// The person's quiet state as the app sees it right now (the device's own clock). Home also reads
+// it to drop "with a 7pm reminder" while that push is held.
+export function useComebackQuiet(): QuietState | null {
   const { user } = useAuth();
   const { meals, feelLogs, reflections, waterLogs } = useAppData();
-  const quiet = useMemo(() => {
+  return useMemo(() => {
     if (!user) return null;
     const created = user.created_at ? Date.parse(user.created_at) : NaN;
     return quietState({
@@ -44,10 +45,20 @@ export default function WelcomeBackCard({ ready, canStart, onStart }: {
       dayOf: dayKeyFromTs,
     });
   }, [user, meals, feelLogs, reflections, waterLogs]);
+}
+
+export default function WelcomeBackCard({ ready, canStart, onStart, onVisibleChange }: {
+  ready: boolean;     // Home has loaded and nothing else owns the screen (walkthrough, onboarding, first-meal step)
+  canStart: boolean;  // the habit hero is free: a suggestion or nothing, not a habit in progress
+  onStart: (template: HabitTemplate) => void;
+  onVisibleChange?: (visible: boolean) => void;
+}) {
+  const { user } = useAuth();
+  const quiet = useComebackQuiet();
   const since = quiet?.quiet && !quiet.neverActive ? quiet.since : null;
   const [open, setOpen] = useState(false);
 
-  useEffect(() => {
+  useIsoLayoutEffect(() => {
     if (open || !ready || !canStart || !user || !since || !TEMPLATE) return;
     const id = `${user.id}|${since}`;
     if (showingThisSession !== id) {
@@ -58,7 +69,11 @@ export default function WelcomeBackCard({ ready, canStart, onStart }: {
     setOpen(true);
   }, [open, ready, canStart, user, since]);
 
-  if (!open || !ready || !canStart || !since || !TEMPLATE) return null;
+  const visible = open && ready && canStart && !!since && !!TEMPLATE;
+  useIsoLayoutEffect(() => { onVisibleChange?.(visible); }, [visible, onVisibleChange]);
+  useEffect(() => () => onVisibleChange?.(false), [onVisibleChange]);
+
+  if (!visible || !TEMPLATE) return null;
   const template = TEMPLATE;
   const close = () => { showingThisSession = null; setOpen(false); };
   const days = NUMBER_WORDS[template.durationDays] ?? String(template.durationDays);
