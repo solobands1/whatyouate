@@ -59,6 +59,7 @@ import { openReviewPrompt } from "./ReviewPromptModal";
 import OnboardingFlow from "./OnboardingFlow";
 import FirstMealStep, { FirstMealCelebration, FirstMealReminderPrompt, clearFirstMealView, type FirstMealLogMethod } from "./FirstMealStep";
 import MealTimeChip from "./MealTimeChip";
+import WelcomeBackCard, { useComebackQuiet } from "./WelcomeBackCard";
 import {
   clampToToday,
   mealLogCount,
@@ -868,6 +869,14 @@ export default function HomeScreen() {
     { status: "suggested", days: freshDays(FIRST_TEMPLATE) }
   );
   const [activeTemplate, setActiveTemplate] = useState<HabitTemplate>(FIRST_TEMPLATE);
+  // One habit offer at a time: while the Welcome Back card is up, a new habit suggestion is held
+  // back and the hero shows the nudge or the greeting, as it does when no habit is on offer.
+  // heroView is what the hero renders; heroHabit stays the real state, so nothing is snoozed or
+  // saved, and the suggestion is back as soon as Pick Back Up starts or the card is closed.
+  const [welcomeBackUp, setWelcomeBackUp] = useState(false);
+  const heroView = welcomeBackUp && heroHabit.status === "suggested" ? "hidden" : heroHabit.status;
+  // Quiet for 3+ days (lib/comeback): the 7pm reflection push is held, so the cards don't promise it.
+  const reflectionReminderHeld = !!useComebackQuiet()?.quiet;
   const [showHabitIdeas, setShowHabitIdeas] = useState(false);
   const [heroExpanded, setHeroExpanded] = useState(false);
   const [heroPulse, setHeroPulse] = useState(false);
@@ -1024,7 +1033,7 @@ export default function HomeScreen() {
   // collapsed, the card shimmers + the eyebrow bounces, the border pulses, it slides
   // down, then pulses again. Collapse happens before paint so there's no flicker.
   useIsoLayoutEffect(() => {
-    if (!habitLoaded || heroHabit.status !== "hidden" || trial.isFree || isDemoMode || !user || !currentWindowNudge) return;
+    if (!habitLoaded || heroView !== "hidden" || trial.isFree || isDemoMode || !user || !currentWindowNudge) return;
     if (nudgeRevealedRef.current) return;
     const key = `wya_nudge_seen_${user.id}`;
     const nid = String(currentWindowNudge.created_at ?? "");
@@ -1039,7 +1048,7 @@ export default function HomeScreen() {
     const t5 = setTimeout(() => setHeroPulse(false), 3850);
     return () => { [t1, t2, t3, t4, t5].forEach(clearTimeout); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [habitLoaded, heroHabit.status, currentWindowNudge, trial.isFree, isDemoMode, user]);
+  }, [habitLoaded, heroView, currentWindowNudge, trial.isFree, isDemoMode, user]);
   const appliedGoalHabitRef = useRef(false);
   // Mirror of the persisted habit state, kept in a ref so the save/cadence effects
   // can read the latest without re-running on it.
@@ -1178,7 +1187,7 @@ export default function HomeScreen() {
   useEffect(() => {
     if (habitSpotlightCheckedRef.current) return;
     if (!habitLoaded || !barsReady || isDemoMode || !user) return;
-    if (heroHabit.status !== "suggested" || activeTemplate.id !== "logging-starter") return;
+    if (heroView !== "suggested" || activeTemplate.id !== "logging-starter") return;
     // Wait until onboarding + the walkthrough are finished/skipped (and nothing tour-related is
     // on screen) so the intro never collides with the tour, then let the home settle first.
     if (showOnboarding || showTourGate || runTour) return;
@@ -1187,7 +1196,7 @@ export default function HomeScreen() {
     try { if (localStorage.getItem(`wya_habit_intro_seen_${user.id}`) === "true") return; } catch {}
     const t = setTimeout(() => setShowHabitSpotlight(true), 2200);
     return () => clearTimeout(t);
-  }, [habitLoaded, barsReady, isDemoMode, user, heroHabit.status, activeTemplate.id, showOnboarding, showTourGate, runTour]);
+  }, [habitLoaded, barsReady, isDemoMode, user, heroView, activeTemplate.id, showOnboarding, showTourGate, runTour]);
 
   // Two-beat entrance: dim/blur the home first, hold, then the card rises in.
   useEffect(() => {
@@ -1208,6 +1217,14 @@ export default function HomeScreen() {
     dismissHabitSpotlight();
     unlockAudio();
     setHeroHabit((h) => ({ ...h, status: "accepting" }));
+  };
+  // Welcome Back card "Start Pick Back Up": puts the comeback habit in the hero and runs the same
+  // accept flow, starting today (it's "log anything", so it never waits for tomorrow).
+  const startComebackHabit = (t: HabitTemplate) => {
+    startChoiceRef.current = "today";
+    unlockAudio();
+    setActiveTemplate(t);
+    setHeroHabit({ status: "accepting", days: freshDays(t) });
   };
 
   // Persist the in-progress builder whenever it changes. "done" is handled by its own
@@ -1367,7 +1384,7 @@ export default function HomeScreen() {
   // animation. We track last-seen per templateId; a layout effect sets the expanded state
   // before paint so a recently-seen suggestion never flashes collapsed.
   useIsoLayoutEffect(() => {
-    if (!habitLoaded || heroHabit.status !== "suggested" || !user) return;
+    if (!habitLoaded || heroView !== "suggested" || !user) return;
     if (heroRevealedRef.current) return; // handle once per mount
     heroRevealedRef.current = true;
     const tplId = activeTemplate.id;
@@ -1384,9 +1401,12 @@ export default function HomeScreen() {
       return;
     }
     // New, or returning after a gap — play the reveal (shimmer + bounce, then expand).
-    const tExpand = setTimeout(() => setHeroExpanded(true), 1700);
-    return () => clearTimeout(tExpand);
-  }, [heroHabit.status, habitLoaded, activeTemplate.id, user]);
+    // If it's cut short (the Welcome Back card holding the suggestion back), let it run again when
+    // the suggestion returns; it's been marked seen, so it then simply opens.
+    let expanded = false;
+    const tExpand = setTimeout(() => { expanded = true; setHeroExpanded(true); }, 1700);
+    return () => { clearTimeout(tExpand); if (!expanded) heroRevealedRef.current = false; };
+  }, [heroView, habitLoaded, activeTemplate.id, user]);
 
   // During the walkthrough/demo, load the hero already expanded — skip the timed shimmer/bounce
   // reveal — so the screen is stable. Otherwise the hero grows mid-tour and the joyride spotlight
@@ -3137,7 +3157,7 @@ export default function HomeScreen() {
   const [nudgeBanner, setNudgeBanner] = useState(false);
   useEffect(() => {
     if (!user || !habitLoaded) return;
-    const nudgeOnHero = heroHabit.status === "hidden" && !!currentWindowNudge && !trial.isFree && !isDemoMode;
+    const nudgeOnHero = heroView === "hidden" && !!currentWindowNudge && !trial.isFree && !isDemoMode;
     // The synthetic welcome nudge follows the same hero/Insights placement, but must NEVER light the
     // nav bell or the "New Nudge" banner — the "Nudges Just Opened Up" celebration already points there.
     const isWelcome = currentWindowNudge?.type === WELCOME_NUDGE_TYPE;
@@ -3173,7 +3193,7 @@ export default function HomeScreen() {
         setNudgeBanner(true);
       }
     }
-  }, [user, habitLoaded, heroHabit.status, currentWindowNudge, trial.isFree, isDemoMode]);
+  }, [user, habitLoaded, heroView, currentWindowNudge, trial.isFree, isDemoMode]);
 
 
   const homeMarkers = useMemo(
@@ -4192,6 +4212,15 @@ export default function HomeScreen() {
           </div>
         )}
 
+        {/* Welcome Back after 3+ quiet days (lib/comeback). Never at the same time as the streak saver
+            above: that needs a log the day before yesterday. */}
+        <WelcomeBackCard
+          ready={habitLoaded && !dataLoading && !isDemoMode && !showOnboarding && !showTourGate && !runTour && !firstMealOpen && !firstMealCelebrate && !showHabitSpotlight}
+          canStart={heroHabit.status === "suggested" || heroHabit.status === "hidden"}
+          onStart={startComebackHabit}
+          onVisibleChange={setWelcomeBackUp}
+        />
+
         {/* After each backfilled meal: offer another for the same day (a real day is more
             than one meal), with "All Done" always present so it never feels like a nag. */}
         {streakAddAnotherOpen && (
@@ -4334,8 +4363,8 @@ export default function HomeScreen() {
 
         <Card className="mt-2" style={riseIn(barsReady && habitLoaded, 0)}>
           {/* Hero — dynamic slot. Priority: active habit builder > suggestion > reflection reminder > discovery > wins > greeting (default). Sample habit wired locally for now. */}
-          <div data-tour="habit-hero" className={`-mx-4 rounded-2xl border-2 border-primary/25 px-4 ${heroHabit.status === "done" || heroHabit.status === "accepting" ? "bg-primary/10" : "bg-primary/[0.05]"} ${heroHabit.status === "hidden" ? (currentWindowNudge && !trial.isFree && !isDemoMode ? "py-5" : "py-7") : heroHabit.status === "done" && doneStep === "rested" ? "pt-5 pb-3" : heroHabit.status === "suggested" && heroExpanded ? "pt-5 pb-3" : "py-5"} ${heroHabit.status === "done" && (doneStep === "celebrate" || (doneStep === "feedback" && !finaleReopened)) ? "animate-habit-built" : ""} ${(heroHabit.status === "done" && (doneStep === "rested" || (doneStep === "feedback" && finaleReopened))) || heroHabit.status === "accepting" ? "animate-habit-glow" : ""} ${(heroHabit.status === "active" && heroHabit.holdDay != null) || (heroHabit.status === "suggested" && !heroExpanded) || (heroHabit.status === "hidden" && !!currentWindowNudge && !nudgeExpanded) ? "animate-habit-shimmer" : ""} ${heroPulse ? "animate-card-pulse" : ""}`}>
-            {heroHabit.status === "suggested" ? (
+          <div data-tour="habit-hero" className={`-mx-4 rounded-2xl border-2 border-primary/25 px-4 ${heroView === "done" || heroView === "accepting" ? "bg-primary/10" : "bg-primary/[0.05]"} ${heroView === "hidden" ? (currentWindowNudge && !trial.isFree && !isDemoMode ? "py-5" : "py-7") : heroView === "done" && doneStep === "rested" ? "pt-5 pb-3" : heroView === "suggested" && heroExpanded ? "pt-5 pb-3" : "py-5"} ${heroView === "done" && (doneStep === "celebrate" || (doneStep === "feedback" && !finaleReopened)) ? "animate-habit-built" : ""} ${(heroView === "done" && (doneStep === "rested" || (doneStep === "feedback" && finaleReopened))) || heroView === "accepting" ? "animate-habit-glow" : ""} ${(heroView === "active" && heroHabit.holdDay != null) || (heroView === "suggested" && !heroExpanded) || (heroView === "hidden" && !!currentWindowNudge && !nudgeExpanded) ? "animate-habit-shimmer" : ""} ${heroPulse ? "animate-card-pulse" : ""}`}>
+            {heroView === "suggested" ? (
               <div className={heroExpanded ? "" : "animate-habit-note"}>
                 {/* Tap the eyebrow to cycle templates (demo/testing). On first appearance
                     the word bounces once while the card shimmers. */}
@@ -4820,7 +4849,7 @@ export default function HomeScreen() {
               </span>
               <span className="flex-1">
                 <span className="block text-sm font-semibold text-ink">Complete Yesterday&apos;s Reflection</span>
-                <span className="block text-[12px] text-ink/55">You missed last night · Tonight&apos;s opens at 5pm, reminder at 7pm</span>
+                <span className="block text-[12px] text-ink/55">You missed last night · Tonight&apos;s opens at 5pm{reflectionReminderHeld ? "" : ", reminder at 7pm"}</span>
               </span>
               <svg viewBox="0 0 24 24" className="h-4 w-4 text-ink/30" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
             </button>
@@ -4836,7 +4865,7 @@ export default function HomeScreen() {
                   <span className="text-sm font-semibold text-ink/75">Nightly Reflection</span>
                   <span className="rounded-full bg-ink/[0.06] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-ink/45">This Evening</span>
                 </span>
-                <span className="mt-0.5 block text-[12px] leading-snug text-ink/55">Available to do at 5pm, with a 7pm reminder</span>
+                <span className="mt-0.5 block text-[12px] leading-snug text-ink/55">{reflectionReminderHeld ? "Available to do at 5pm" : "Available to do at 5pm, with a 7pm reminder"}</span>
               </span>
               <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ink/[0.05] text-ink/45">
                 <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7.5V12l3 1.5" /></svg>
