@@ -10,11 +10,13 @@ import { shutterTap } from "../lib/celebrate";
 // straight to the capture screen, which already shows the photo full size with the hint field,
 // Analyze and Retake. That screen is the review step, so there is no second one in here.
 //
-// The viewfinder is the camera's whole 3:4 frame at the full screen width, like the iPhone Camera
-// app at 1x, with the controls in the space above and below. (Stretching a 3:4 camera over a tall
-// phone screen cuts off the sides, which reads as zoomed in by about 1.6x and makes people back
-// away from their plate.) The still is the same frame at the video's own resolution, saved as a
-// JPEG. The capture screen then compresses it the same way as any photo.
+// The still is cut from the video at its own resolution, cropped to exactly what the viewfinder
+// shows, and saved as a JPEG. The capture screen then compresses it the same way as any photo.
+//
+// The viewfinder fills the screen, and a tall phone screen only has room for about 62% of the width
+// of a 3:4 frame from the standard lens, which reads as zoomed in (you had to back away to fit a
+// plate). So on phones with an ultra-wide lens the camera is widened until the screen shows about
+// what the iPhone Camera app shows at 1x (see widenCamera). Phones without one keep the standard lens.
 //
 // Every way out stops the camera (close, shutter, library pick, unmount, the app going to the
 // background), so the camera light never stays on. When the camera can't run, the panel says why
@@ -55,7 +57,7 @@ const VIDEO_CONSTRAINTS: MediaTrackConstraints = {
 const JPEG_QUALITY = 0.9;
 // From having a stream to its first frame. The wait for the permission prompt isn't counted.
 const FIRST_FRAME_TIMEOUT_MS = 8000;
-const VIEW_ASPECT = 3 / 4; // width / height of the viewfinder and the photo, held upright
+const VIEW_ASPECT = 3 / 4; // width / height of the photo that is kept, held upright
 
 function problemFor(err: unknown): Problem {
   const name = (err as { name?: string } | null)?.name ?? "";
@@ -64,14 +66,83 @@ function problemFor(err: unknown): Problem {
   return "none";
 }
 
-async function openRearCamera(): Promise<MediaStream> {
+function errorName(err: unknown): string {
+  return (err as { name?: string } | null)?.name ?? "";
+}
+
+// The ultra-wide camera's id, once found, so later opens start on it without a restart.
+const WIDE_CAMERA_KEY = "wya.camera.ultraWideId";
+// One label lookup per launch, so phones without an ultra-wide lens don't search on every open.
+let wideLookupDone = false;
+
+function storedWideId(): string | null {
+  try { return localStorage.getItem(WIDE_CAMERA_KEY); } catch { return null; }
+}
+function storeWideId(id: string | null) {
+  try {
+    if (id) localStorage.setItem(WIDE_CAMERA_KEY, id);
+    else localStorage.removeItem(WIDE_CAMERA_KEY);
+  } catch { /* storage unavailable: the lookup just runs again next launch */ }
+}
+
+async function openRearCamera(deviceId: string | null): Promise<MediaStream> {
+  if (deviceId) {
+    try {
+      return await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: { deviceId: { exact: deviceId }, width: { ideal: 1920 }, height: { ideal: 1440 } },
+      });
+    } catch (err) {
+      const name = errorName(err);
+      // A stale id (new phone, cleared site data): forget it and open the default rear camera.
+      if (name !== "OverconstrainedError" && name !== "NotFoundError") throw err;
+      storeWideId(null);
+    }
+  }
   try {
     return await navigator.mediaDevices.getUserMedia({ audio: false, video: VIDEO_CONSTRAINTS });
   } catch (err) {
     // Only ideals are asked for, so this shouldn't happen, but older WebKit has thrown on sizes.
-    if ((err as { name?: string } | null)?.name !== "OverconstrainedError") throw err;
+    if (errorName(err) !== "OverconstrainedError") throw err;
     return navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: "environment" } });
   }
+}
+
+// Widens a freshly opened rear camera so the full-screen viewfinder shows about the iPhone Camera
+// app's 1x view. `target` is the zoom that does that: the share of a 3:4 frame's width the screen
+// has room for (about 0.62 on a modern iPhone).
+//   1. Zoom out, where the camera offers a zoom range below 1. On newer iPhones the default rear
+//      camera is a multi-lens camera where 1 is the standard lens and below 1 is the ultra-wide.
+//   2. Otherwise switch to the ultra-wide camera itself, found by its label (labels show once camera
+//      access is granted) and remembered. It shows a little more than 1x, which is fine for a plate.
+// Returns the stream to use (maybe a new one) and the zoom applied, if any.
+async function widenCamera(stream: MediaStream, target: number, current: () => boolean): Promise<{ stream: MediaStream; zoom: number | null }> {
+  const track = stream.getVideoTracks()[0];
+  if (!track) return { stream, zoom: null };
+  const caps = typeof track.getCapabilities === "function"
+    ? (track.getCapabilities() as MediaTrackCapabilities & { zoom?: { min?: number; max?: number } })
+    : null;
+  const range = caps?.zoom;
+  if (range && typeof range.min === "number" && typeof range.max === "number" && range.min < 0.99) {
+    const zoom = Math.min(Math.max(target, range.min), range.max);
+    try {
+      await track.applyConstraints({ advanced: [{ zoom } as MediaTrackConstraintSet] });
+      return { stream, zoom };
+    } catch { /* fall through to the ultra-wide camera */ }
+  }
+  if (wideLookupDone || storedWideId()) return { stream, zoom: null };
+  wideLookupDone = true;
+  let id: string | null = null;
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const cam = devices.find((d) => d.kind === "videoinput" && /ultra/i.test(d.label) && !/front|facetime/i.test(d.label));
+    id = cam?.deviceId || null;
+  } catch { /* no device list: keep the standard lens */ }
+  const settings = typeof track.getSettings === "function" ? track.getSettings() : null;
+  if (!id || id === settings?.deviceId || !current()) return { stream, zoom: null };
+  storeWideId(id);
+  stream.getTracks().forEach((t) => t.stop());
+  return { stream: await openRearCamera(id), zoom: null };
 }
 
 function isNativeApp(): boolean {
@@ -85,12 +156,12 @@ export default function FoodCamera({ open, ...rest }: Props) {
 }
 
 function FoodCameraScreen({ onClose, onPhoto }: Omit<Props, "open">) {
-  const rootRef = useRef<HTMLDivElement | null>(null);
-  const topRowRef = useRef<HTMLDivElement | null>(null);
-  const shutterRef = useRef<HTMLButtonElement | null>(null);
+  const areaRef = useRef<HTMLDivElement | null>(null);
+  const viewRef = useRef<HTMLDivElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const shotRef = useRef<HTMLCanvasElement | null>(null);
   const flashRef = useRef<HTMLDivElement | null>(null);
+  const guideRef = useRef<HTMLDivElement | null>(null);
   const libraryRef = useRef<HTMLInputElement | null>(null);
   const systemRef = useRef<HTMLInputElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -101,12 +172,15 @@ function FoodCameraScreen({ onClose, onPhoto }: Omit<Props, "open">) {
   const resumeOnShowRef = useRef(false);
   const restartsRef = useRef<number[]>([]);
   const busyRef = useRef(false);
+  // The zoom widenCamera applied, so turning the flash on or off keeps it.
+  const zoomRef = useRef<number | null>(null);
   const [phase, setPhase] = useState<Phase>({ name: "starting" });
   const phaseRef = useRef<Phase>(phase);
   phaseRef.current = phase;
   const [torch, setTorch] = useState<{ supported: boolean; on: boolean }>({ supported: false, on: false });
-  // Where the 3:4 viewfinder sits on screen.
-  const [view, setView] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  const [box, setBox] = useState<{ w: number; h: number } | null>(null);
+  // Where the kept 3:4 photo sat on screen, so the frozen shot shows in exactly that spot.
+  const [shotRect, setShotRect] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
 
   const stopStream = useCallback(() => {
     genRef.current += 1;
@@ -137,10 +211,19 @@ function FoodCameraScreen({ onClose, onPhoto }: Omit<Props, "open">) {
     setPhase({ name: "starting" });
     let stream: MediaStream;
     try {
-      stream = await openRearCamera();
+      stream = await openRearCamera(storedWideId());
+      if (gen === genRef.current) {
+        const view = viewRef.current;
+        const target = view && view.clientWidth && view.clientHeight
+          ? Math.min(1, view.clientWidth / view.clientHeight / VIEW_ASPECT)
+          : 0.62;
+        const wide = await widenCamera(stream, target, () => gen === genRef.current);
+        stream = wide.stream;
+        zoomRef.current = wide.zoom;
+      }
     } catch (err) {
       if (gen !== genRef.current) return;
-      console.warn("[camera] getUserMedia failed", (err as { name?: string } | null)?.name ?? err);
+      console.warn("[camera] getUserMedia failed", errorName(err) || err);
       setPhase({ name: "problem", problem: problemFor(err) });
       return;
     }
@@ -223,28 +306,21 @@ function FoodCameraScreen({ onClose, onPhoto }: Omit<Props, "open">) {
     };
   }, [startStream, stopStream]);
 
-  // A 3:4 viewfinder at the full screen width, centred between the close button and the shutter,
-  // and kept on screen (on a short phone the bars float over its edges).
+  // The camera fills the screen. This measures the space between the top and bottom bars, where
+  // the corner brackets sit.
   useLayoutEffect(() => {
-    const root = rootRef.current;
-    if (!root) return;
+    const area = areaRef.current;
+    if (!area) return;
     const measure = () => {
-      const W = root.clientWidth;
-      const H = root.clientHeight;
-      if (W <= 0 || H <= 0) return;
-      let w = W;
-      let h = W / VIEW_ASPECT;
-      if (h > H) { h = H; w = H * VIEW_ASPECT; }
-      const rr = root.getBoundingClientRect();
-      const upper = topRowRef.current ? topRowRef.current.getBoundingClientRect().bottom - rr.top : 0;
-      const lower = shutterRef.current ? shutterRef.current.getBoundingClientRect().top - rr.top : H;
-      const y = Math.min(Math.max((upper + lower) / 2 - h / 2, 0), H - h);
-      const next = { x: (W - w) / 2, y, w, h };
-      setView((prev) => (prev && prev.x === next.x && prev.y === next.y && prev.w === next.w && prev.h === next.h ? prev : next));
+      const w = area.clientWidth;
+      const h = area.clientHeight;
+      if (w <= 0 || h <= 0) return;
+      const next = { w, h };
+      setBox((prev) => (prev && prev.w === next.w && prev.h === next.h ? prev : next));
     };
     measure();
     const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure) : null;
-    ro?.observe(root);
+    ro?.observe(area);
     window.addEventListener("resize", measure);
     return () => {
       ro?.disconnect();
@@ -266,22 +342,37 @@ function FoodCameraScreen({ onClose, onPhoto }: Omit<Props, "open">) {
 
   const takePhoto = async () => {
     const video = videoRef.current;
+    const view = viewRef.current;
     const canvas = shotRef.current;
-    if (busyRef.current || phaseRef.current.name !== "live" || !video || !canvas) return;
+    if (busyRef.current || phaseRef.current.name !== "live" || !video || !view || !canvas) return;
     const vw = video.videoWidth;
     const vh = video.videoHeight;
     if (!vw || !vh) return;
     busyRef.current = true;
     shutterTap();
     flashRef.current?.animate?.([{ opacity: 0.85 }, { opacity: 0 }], { duration: 240, easing: "ease-out" });
-    // Exactly what the 3:4 viewfinder shows (the video is drawn object-cover in it), in the video's
-    // own pixels: a 4:3 stream comes through whole, a 16:9 one loses its top and bottom.
-    let sw = vw;
-    let sh = vh;
-    if (vw / vh > VIEW_ASPECT) sw = Math.round(vh * VIEW_ASPECT);
-    else sh = Math.round(vw / VIEW_ASPECT);
-    const sx = Math.round((vw - sw) / 2);
-    const sy = Math.round((vh - sh) / 2);
+    // Keep a 3:4 photo of what's on screen around the brackets: the full visible width, centred on
+    // the brackets and kept on screen. The video fills the screen (object-cover), so screen points
+    // are mapped back to the video's own pixels.
+    const vr = view.getBoundingClientRect();
+    const W = vr.width || view.clientWidth;
+    const H = vr.height || view.clientHeight;
+    const scale = Math.max(W / vw, H / vh);
+    const ox = (W - vw * scale) / 2;
+    const oy = (H - vh * scale) / 2;
+    let cw = W;
+    let ch = W / VIEW_ASPECT;
+    if (ch > H) { ch = H; cw = H * VIEW_ASPECT; }
+    const gr = guideRef.current?.getBoundingClientRect();
+    const gcx = gr && gr.width ? gr.left + gr.width / 2 - vr.left : W / 2;
+    const gcy = gr && gr.height ? gr.top + gr.height / 2 - vr.top : H / 2;
+    const cx0 = Math.min(Math.max(gcx - cw / 2, 0), W - cw);
+    const cy0 = Math.min(Math.max(gcy - ch / 2, 0), H - ch);
+    const sx = Math.max(0, Math.round((cx0 - ox) / scale));
+    const sy = Math.max(0, Math.round((cy0 - oy) / scale));
+    const sw = Math.max(1, Math.min(vw - sx, Math.round(cw / scale)));
+    const sh = Math.max(1, Math.min(vh - sy, Math.round(ch / scale)));
+    setShotRect({ x: cx0, y: cy0, w: cw, h: ch });
     canvas.width = sw;
     canvas.height = sh;
     const ctx = canvas.getContext("2d");
@@ -307,7 +398,8 @@ function FoodCameraScreen({ onClose, onPhoto }: Omit<Props, "open">) {
     if (!track || !torch.supported) return;
     const next = !torch.on;
     try {
-      await track.applyConstraints({ advanced: [{ torch: next } as MediaTrackConstraintSet] });
+      const set = zoomRef.current != null ? { torch: next, zoom: zoomRef.current } : { torch: next };
+      await track.applyConstraints({ advanced: [set as MediaTrackConstraintSet] });
       setTorch((t) => ({ ...t, on: next }));
     } catch {
       setTorch({ supported: false, on: false });
@@ -330,11 +422,10 @@ function FoodCameraScreen({ onClose, onPhoto }: Omit<Props, "open">) {
   const live = phase.name === "live";
   const showShot = phase.name === "handoff" && phase.source === "camera";
   const showControls = phase.name === "starting" || phase.name === "live";
-  const guide = view ? Math.round(Math.min(view.w - 48, view.h * 0.78)) : 0;
+  const guide = box ? Math.round(Math.min(box.w - 56, box.h * 0.78)) : 0;
 
   return (
     <div
-      ref={rootRef}
       className="fixed inset-0 z-[150] select-none overflow-hidden bg-black text-white"
       style={{ touchAction: "manipulation", overscrollBehavior: "contain" }}
       role="dialog"
@@ -343,12 +434,8 @@ function FoodCameraScreen({ onClose, onPhoto }: Omit<Props, "open">) {
       data-food-camera
       data-camera-phase={phase.name === "problem" ? phase.problem : phase.name}
     >
-      {/* The camera's whole 3:4 frame at the full screen width; the bars float above and below it. */}
-      <div
-        className="absolute overflow-hidden bg-[#0d1016]"
-        style={view ? { left: view.x, top: view.y, width: view.w, height: view.h } : { left: 0, right: 0, top: "50%", aspectRatio: "3 / 4", transform: "translateY(-50%)" }}
-        data-viewfinder
-      >
+      {/* The camera fills the whole screen; the bars and brackets float over it. */}
+      <div ref={viewRef} className="absolute inset-0 bg-[#0d1016]" data-viewfinder>
         <video
           ref={videoRef}
           autoPlay
@@ -356,21 +443,11 @@ function FoodCameraScreen({ onClose, onPhoto }: Omit<Props, "open">) {
           muted
           className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${live ? "opacity-100" : "opacity-0"}`}
         />
-        <canvas ref={shotRef} className={`absolute inset-0 h-full w-full ${showShot ? "" : "hidden"}`} />
-
-        {live && guide > 0 && (
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-            <div className="relative animate-fadeIn" style={{ width: guide, height: guide }} data-frame-guide>
-              <CornerBrackets size={guide} />
-              <p
-                className="absolute left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-black/45 px-3.5 py-1.5 text-[13px] font-medium text-white/95 backdrop-blur-sm"
-                style={{ bottom: "calc(100% + 14px)" }}
-              >
-                Fit Your Meal In The Frame
-              </p>
-            </div>
-          </div>
-        )}
+        <canvas
+          ref={shotRef}
+          className={`absolute ${showShot ? "" : "hidden"}`}
+          style={shotRect ? { left: shotRect.x, top: shotRect.y, width: shotRect.w, height: shotRect.h } : { inset: 0, width: "100%", height: "100%" }}
+        />
 
         {(phase.name === "starting" || (phase.name === "handoff" && phase.source === "library")) && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3" data-camera-loading>
@@ -399,14 +476,26 @@ function FoodCameraScreen({ onClose, onPhoto }: Omit<Props, "open">) {
           className="flex shrink-0 items-start bg-gradient-to-b from-black/55 via-black/20 to-transparent px-3 pb-8"
           style={{ paddingTop: "max(env(safe-area-inset-top), 10px)" }}
         >
-          <div ref={topRowRef} className="pointer-events-auto">
+          <div className="pointer-events-auto">
             <ChromeButton label="Close Camera" onClick={close} disabled={phase.name === "handoff"}>
               <svg viewBox="0 0 24 24" className="h-5 w-5" {...iconProps} strokeWidth="2.2"><path d="M6 6l12 12M18 6L6 18" /></svg>
             </ChromeButton>
           </div>
         </div>
 
-        <div className="min-h-0 flex-1" />
+        <div ref={areaRef} className="relative flex min-h-0 flex-1 items-center justify-center">
+          {live && guide > 0 && (
+            <div ref={guideRef} className="relative animate-fadeIn" style={{ width: guide, height: guide }} data-frame-guide>
+              <CornerBrackets size={guide} />
+              <p
+                className="absolute left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-black/45 px-3.5 py-1.5 text-[13px] font-medium text-white/95 backdrop-blur-sm"
+                style={{ bottom: "calc(100% + 14px)" }}
+              >
+                Fit Your Meal In The Frame
+              </p>
+            </div>
+          )}
+        </div>
 
         <div
           className={`grid shrink-0 grid-cols-3 items-center bg-gradient-to-t from-black/65 via-black/30 to-transparent px-6 pt-12 ${showControls ? "" : "invisible"}`}
@@ -423,7 +512,6 @@ function FoodCameraScreen({ onClose, onPhoto }: Omit<Props, "open">) {
           </div>
           <div className="pointer-events-auto flex justify-center">
             <button
-              ref={shutterRef}
               type="button"
               onClick={() => void takePhoto()}
               disabled={!live}
