@@ -10,8 +10,11 @@ import { shutterTap } from "../lib/celebrate";
 // straight to the capture screen, which already shows the photo full size with the hint field,
 // Analyze and Retake. That screen is the review step, so there is no second one in here.
 //
-// The still is cut from the video at its own resolution, cropped to exactly what the viewfinder
-// shows, and saved as a JPEG. The capture screen then compresses it the same way as any photo.
+// The viewfinder is the camera's whole 3:4 frame at the full screen width, like the iPhone Camera
+// app at 1x, with the controls in the space above and below. (Stretching a 3:4 camera over a tall
+// phone screen cuts off the sides, which reads as zoomed in by about 1.6x and makes people back
+// away from their plate.) The still is the same frame at the video's own resolution, saved as a
+// JPEG. The capture screen then compresses it the same way as any photo.
 //
 // Every way out stops the camera (close, shutter, library pick, unmount, the app going to the
 // background), so the camera light never stays on. When the camera can't run, the panel says why
@@ -52,7 +55,7 @@ const VIDEO_CONSTRAINTS: MediaTrackConstraints = {
 const JPEG_QUALITY = 0.9;
 // From having a stream to its first frame. The wait for the permission prompt isn't counted.
 const FIRST_FRAME_TIMEOUT_MS = 8000;
-const VIEW_ASPECT = 3 / 4; // width / height of the photo that is kept, held upright
+const VIEW_ASPECT = 3 / 4; // width / height of the viewfinder and the photo, held upright
 
 function problemFor(err: unknown): Problem {
   const name = (err as { name?: string } | null)?.name ?? "";
@@ -82,12 +85,12 @@ export default function FoodCamera({ open, ...rest }: Props) {
 }
 
 function FoodCameraScreen({ onClose, onPhoto }: Omit<Props, "open">) {
-  const areaRef = useRef<HTMLDivElement | null>(null);
-  const viewRef = useRef<HTMLDivElement | null>(null);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const topRowRef = useRef<HTMLDivElement | null>(null);
+  const shutterRef = useRef<HTMLButtonElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const shotRef = useRef<HTMLCanvasElement | null>(null);
   const flashRef = useRef<HTMLDivElement | null>(null);
-  const guideRef = useRef<HTMLDivElement | null>(null);
   const libraryRef = useRef<HTMLInputElement | null>(null);
   const systemRef = useRef<HTMLInputElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -102,9 +105,8 @@ function FoodCameraScreen({ onClose, onPhoto }: Omit<Props, "open">) {
   const phaseRef = useRef<Phase>(phase);
   phaseRef.current = phase;
   const [torch, setTorch] = useState<{ supported: boolean; on: boolean }>({ supported: false, on: false });
-  const [box, setBox] = useState<{ w: number; h: number } | null>(null);
-  // Where the kept 3:4 photo sat on screen, so the frozen shot shows in exactly that spot.
-  const [shotRect, setShotRect] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  // Where the 3:4 viewfinder sits on screen.
+  const [view, setView] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
 
   const stopStream = useCallback(() => {
     genRef.current += 1;
@@ -221,21 +223,28 @@ function FoodCameraScreen({ onClose, onPhoto }: Omit<Props, "open">) {
     };
   }, [startStream, stopStream]);
 
-  // The camera fills the screen. This measures the space between the top and bottom bars, where
-  // the corner brackets sit.
+  // A 3:4 viewfinder at the full screen width, centred between the close button and the shutter,
+  // and kept on screen (on a short phone the bars float over its edges).
   useLayoutEffect(() => {
-    const area = areaRef.current;
-    if (!area) return;
+    const root = rootRef.current;
+    if (!root) return;
     const measure = () => {
-      const w = area.clientWidth;
-      const h = area.clientHeight;
-      if (w <= 0 || h <= 0) return;
-      const next = { w, h };
-      setBox((prev) => (prev && prev.w === next.w && prev.h === next.h ? prev : next));
+      const W = root.clientWidth;
+      const H = root.clientHeight;
+      if (W <= 0 || H <= 0) return;
+      let w = W;
+      let h = W / VIEW_ASPECT;
+      if (h > H) { h = H; w = H * VIEW_ASPECT; }
+      const rr = root.getBoundingClientRect();
+      const upper = topRowRef.current ? topRowRef.current.getBoundingClientRect().bottom - rr.top : 0;
+      const lower = shutterRef.current ? shutterRef.current.getBoundingClientRect().top - rr.top : H;
+      const y = Math.min(Math.max((upper + lower) / 2 - h / 2, 0), H - h);
+      const next = { x: (W - w) / 2, y, w, h };
+      setView((prev) => (prev && prev.x === next.x && prev.y === next.y && prev.w === next.w && prev.h === next.h ? prev : next));
     };
     measure();
     const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure) : null;
-    ro?.observe(area);
+    ro?.observe(root);
     window.addEventListener("resize", measure);
     return () => {
       ro?.disconnect();
@@ -257,37 +266,22 @@ function FoodCameraScreen({ onClose, onPhoto }: Omit<Props, "open">) {
 
   const takePhoto = async () => {
     const video = videoRef.current;
-    const view = viewRef.current;
     const canvas = shotRef.current;
-    if (busyRef.current || phaseRef.current.name !== "live" || !video || !view || !canvas) return;
+    if (busyRef.current || phaseRef.current.name !== "live" || !video || !canvas) return;
     const vw = video.videoWidth;
     const vh = video.videoHeight;
     if (!vw || !vh) return;
     busyRef.current = true;
     shutterTap();
     flashRef.current?.animate?.([{ opacity: 0.85 }, { opacity: 0 }], { duration: 240, easing: "ease-out" });
-    // Keep a 3:4 photo of what's on screen around the brackets: the full visible width, centred on
-    // the brackets and kept on screen. The video fills the screen (object-cover), so screen points
-    // are mapped back to the video's own pixels.
-    const vr = view.getBoundingClientRect();
-    const W = vr.width || view.clientWidth;
-    const H = vr.height || view.clientHeight;
-    const scale = Math.max(W / vw, H / vh);
-    const ox = (W - vw * scale) / 2;
-    const oy = (H - vh * scale) / 2;
-    let cw = W;
-    let ch = W / VIEW_ASPECT;
-    if (ch > H) { ch = H; cw = H * VIEW_ASPECT; }
-    const gr = guideRef.current?.getBoundingClientRect();
-    const gcx = gr && gr.width ? gr.left + gr.width / 2 - vr.left : W / 2;
-    const gcy = gr && gr.height ? gr.top + gr.height / 2 - vr.top : H / 2;
-    const cx0 = Math.min(Math.max(gcx - cw / 2, 0), W - cw);
-    const cy0 = Math.min(Math.max(gcy - ch / 2, 0), H - ch);
-    const sx = Math.max(0, Math.round((cx0 - ox) / scale));
-    const sy = Math.max(0, Math.round((cy0 - oy) / scale));
-    const sw = Math.max(1, Math.min(vw - sx, Math.round(cw / scale)));
-    const sh = Math.max(1, Math.min(vh - sy, Math.round(ch / scale)));
-    setShotRect({ x: cx0, y: cy0, w: cw, h: ch });
+    // Exactly what the 3:4 viewfinder shows (the video is drawn object-cover in it), in the video's
+    // own pixels: a 4:3 stream comes through whole, a 16:9 one loses its top and bottom.
+    let sw = vw;
+    let sh = vh;
+    if (vw / vh > VIEW_ASPECT) sw = Math.round(vh * VIEW_ASPECT);
+    else sh = Math.round(vw / VIEW_ASPECT);
+    const sx = Math.round((vw - sw) / 2);
+    const sy = Math.round((vh - sh) / 2);
     canvas.width = sw;
     canvas.height = sh;
     const ctx = canvas.getContext("2d");
@@ -336,10 +330,11 @@ function FoodCameraScreen({ onClose, onPhoto }: Omit<Props, "open">) {
   const live = phase.name === "live";
   const showShot = phase.name === "handoff" && phase.source === "camera";
   const showControls = phase.name === "starting" || phase.name === "live";
-  const guide = box ? Math.round(Math.min(box.w - 56, box.h * 0.78)) : 0;
+  const guide = view ? Math.round(Math.min(view.w - 48, view.h * 0.78)) : 0;
 
   return (
     <div
+      ref={rootRef}
       className="fixed inset-0 z-[150] select-none overflow-hidden bg-black text-white"
       style={{ touchAction: "manipulation", overscrollBehavior: "contain" }}
       role="dialog"
@@ -348,8 +343,12 @@ function FoodCameraScreen({ onClose, onPhoto }: Omit<Props, "open">) {
       data-food-camera
       data-camera-phase={phase.name === "problem" ? phase.problem : phase.name}
     >
-      {/* The camera fills the whole screen; the bars and brackets float over it. */}
-      <div ref={viewRef} className="absolute inset-0 bg-[#0d1016]" data-viewfinder>
+      {/* The camera's whole 3:4 frame at the full screen width; the bars float above and below it. */}
+      <div
+        className="absolute overflow-hidden bg-[#0d1016]"
+        style={view ? { left: view.x, top: view.y, width: view.w, height: view.h } : { left: 0, right: 0, top: "50%", aspectRatio: "3 / 4", transform: "translateY(-50%)" }}
+        data-viewfinder
+      >
         <video
           ref={videoRef}
           autoPlay
@@ -357,11 +356,21 @@ function FoodCameraScreen({ onClose, onPhoto }: Omit<Props, "open">) {
           muted
           className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${live ? "opacity-100" : "opacity-0"}`}
         />
-        <canvas
-          ref={shotRef}
-          className={`absolute ${showShot ? "" : "hidden"}`}
-          style={shotRect ? { left: shotRect.x, top: shotRect.y, width: shotRect.w, height: shotRect.h } : { inset: 0, width: "100%", height: "100%" }}
-        />
+        <canvas ref={shotRef} className={`absolute inset-0 h-full w-full ${showShot ? "" : "hidden"}`} />
+
+        {live && guide > 0 && (
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+            <div className="relative animate-fadeIn" style={{ width: guide, height: guide }} data-frame-guide>
+              <CornerBrackets size={guide} />
+              <p
+                className="absolute left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-black/45 px-3.5 py-1.5 text-[13px] font-medium text-white/95 backdrop-blur-sm"
+                style={{ bottom: "calc(100% + 14px)" }}
+              >
+                Fit Your Meal In The Frame
+              </p>
+            </div>
+          </div>
+        )}
 
         {(phase.name === "starting" || (phase.name === "handoff" && phase.source === "library")) && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3" data-camera-loading>
@@ -390,26 +399,14 @@ function FoodCameraScreen({ onClose, onPhoto }: Omit<Props, "open">) {
           className="flex shrink-0 items-start bg-gradient-to-b from-black/55 via-black/20 to-transparent px-3 pb-8"
           style={{ paddingTop: "max(env(safe-area-inset-top), 10px)" }}
         >
-          <div className="pointer-events-auto">
+          <div ref={topRowRef} className="pointer-events-auto">
             <ChromeButton label="Close Camera" onClick={close} disabled={phase.name === "handoff"}>
               <svg viewBox="0 0 24 24" className="h-5 w-5" {...iconProps} strokeWidth="2.2"><path d="M6 6l12 12M18 6L6 18" /></svg>
             </ChromeButton>
           </div>
         </div>
 
-        <div ref={areaRef} className="relative flex min-h-0 flex-1 items-center justify-center">
-          {live && guide > 0 && (
-            <div ref={guideRef} className="relative animate-fadeIn" style={{ width: guide, height: guide }} data-frame-guide>
-              <CornerBrackets size={guide} />
-              <p
-                className="absolute left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-black/45 px-3.5 py-1.5 text-[13px] font-medium text-white/95 backdrop-blur-sm"
-                style={{ bottom: "calc(100% + 14px)" }}
-              >
-                Fit Your Meal In The Frame
-              </p>
-            </div>
-          )}
-        </div>
+        <div className="min-h-0 flex-1" />
 
         <div
           className={`grid shrink-0 grid-cols-3 items-center bg-gradient-to-t from-black/65 via-black/30 to-transparent px-6 pt-12 ${showControls ? "" : "invisible"}`}
@@ -426,6 +423,7 @@ function FoodCameraScreen({ onClose, onPhoto }: Omit<Props, "open">) {
           </div>
           <div className="pointer-events-auto flex justify-center">
             <button
+              ref={shutterRef}
               type="button"
               onClick={() => void takePhoto()}
               disabled={!live}
