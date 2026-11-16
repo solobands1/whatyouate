@@ -8,7 +8,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 export const FROM_ADDR = "contact@whatyouate.app";
 const FROM = `WhatYouAte <${FROM_ADDR}>`;
-export const OWNER_EMAIL = "dillonpoulin.1@gmail.com";
+export const OWNER_EMAIL = "s4fe.dev@icloud.com"; // daily preview + Friday summary (Dillon, 2026-11-16: not the gmail)
 const ICLOUD_USER = () => process.env.ICLOUD_MAIL_USER || "";
 const ICLOUD_PASS = () => process.env.ICLOUD_APP_PASSWORD || "";
 const FONT = "-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif";
