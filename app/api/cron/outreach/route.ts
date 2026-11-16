@@ -10,6 +10,9 @@ import { sendStep, sendOwner, syncReplies, syncJoins, type Contact } from "../..
 // GET ?test=EMAIL (with the cron secret) sends all three emails to EMAIL as one thread, as a preview.
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
+// Next 14 keeps GET fetches in the Vercel Data Cache in a GET-only route even with force-dynamic, so supabase reads
+// came back stale (the Oct 30 settings row with sending off). Every read here must hit the database.
+export const fetchCache = "force-no-store";
 
 const SEND_DAYS = new Set([1, 2, 3, 4]); // Mon to Thu
 const WINDOW: [number, number] = [10.5, 14];
