@@ -97,7 +97,7 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
     const t1 = setTimeout(() => setIntroAnimStep(1), 80);
     const t2 = setTimeout(() => setIntroAnimStep(2), 380);
     const t3 = setTimeout(() => setIntroAnimStep(3), 660);
-    const t4 = setTimeout(() => setIntroAnimStep(4), 950);
+    const t4 = setTimeout(() => setIntroAnimStep(4), 700);
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
   }, []);
 
@@ -218,7 +218,9 @@ export default function OnboardingFlow({ userId, firstName, lastName, onComplete
               You can update everything anytime from your profile.
             </p>
           </div>
-          <div style={animStyle(introAnimStep >= 4)} className="w-1/2 mt-10">
+          {/* The button never waits on the animation: it is always clickable, and if the screen is
+              re-mounted while the app is still starting it is already visible (2026-11-17). */}
+          <div style={{ ...animStyle(introAnimStep >= 4), opacity: 1 }} className="w-1/2 mt-10">
             <button
               type="button"
               className="w-full rounded-xl bg-primary py-4 text-sm font-semibold text-white transition active:opacity-80"

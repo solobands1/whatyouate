@@ -73,11 +73,22 @@ const AppDataContext = createContext<AppDataContextValue | undefined>(undefined)
 
 // Retry a fetch a couple of times with backoff. Flaky connections drop requests
 // intermittently; without this a single dropped query fails the whole load.
+// Each attempt gets a time limit. On iOS a request that stalls on a weak connection can hang for
+// about 60 s before the web view gives up, which held new users on the home screen for a minute
+// before onboarding opened (2026-11-17). A stalled attempt now fails after 10 s and is retried.
+const ATTEMPT_TIMEOUT_MS = 10000;
+function withTimeout<T>(p: Promise<T>, ms = ATTEMPT_TIMEOUT_MS): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error("timeout")), ms);
+    p.then((v) => { clearTimeout(t); resolve(v); }, (e) => { clearTimeout(t); reject(e); });
+  });
+}
+
 async function withRetry<T>(fn: () => Promise<T>, retries = 2, delayMs = 500): Promise<T> {
   let lastErr: unknown;
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      return await fn();
+      return await withTimeout(fn());
     } catch (err) {
       lastErr = err;
       if (attempt < retries) await new Promise((r) => setTimeout(r, delayMs * (attempt + 1)));
@@ -135,8 +146,18 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
 
   const load = useCallback(async (userId: string, isInitial = false) => {
     try {
+      // A NEW user (no profile yet, or onboarding not done) doesn't need meals, logs and the rest to
+      // start onboarding, so their profile is marked resolved the moment its query answers instead of
+      // after all nine queries (one stalled query held onboarding back about a minute, 2026-11-17).
+      // Existing users keep the full load first, so nothing can mistake them for new.
+      const profilePromise = withRetry(() => getProfile(userId));
+      profilePromise.then((p) => {
+        if (!mountedRef.current || (p && p.onboardingDone)) return;
+        if (p) setProfile((prev) => prev ?? p);
+        setProfileResolved(true);
+      }, () => {});
       const settled = await Promise.allSettled([
-        withRetry(() => getProfile(userId)),
+        profilePromise,
         withRetry(() => listMeals(userId, 400)),
         withRetry(() => listWorkouts(userId, 50)),
         withRetry(() => getFeelLogs(userId, 50)),

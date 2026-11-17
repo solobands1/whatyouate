@@ -2756,7 +2756,9 @@ export default function HomeScreen() {
       setShowOnboarding(true);
       return;
     }
-    if (!user || loadingData) return;
+    // Wait for the full load, except for a new user whose profile has already answered: onboarding
+    // can open straight away for them (AppDataProvider marks only new users resolved early).
+    if (!user || (loadingData && !(profileResolved && !ctxProfile?.onboardingDone))) return;
     const key = `wya_walkthrough_${user.id}`;
     const gateKey = `wya_walkthrough_gate_${user.id}`;
     const activeKey = `wya_walkthrough_active_${user.id}`;
