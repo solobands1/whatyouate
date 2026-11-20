@@ -4,8 +4,8 @@ import { COLORS } from "../../../../lib/server/discord";
 import { sendStep, sendOwner, syncReplies, syncJoins, type Contact } from "../../../../lib/server/outreach";
 
 // Creator outreach, every 5 minutes. Syncs replies, bounces and creator sign-ups, then sends at most one email:
-// a due follow-up first, otherwise the next approved creator's first email. Sends Mon to Thu, 10:30 to 2:00 in each
-// creator's own time zone, at most 12 new and 20 total a day, 4 to 9 minutes apart. Nothing sends unless the owner has
+// a due follow-up first, otherwise the next approved creator's first email. Sends Mon to Fri, 9:30 to 3:30 in each
+// creator's own time zone, at most 12 new and 35 total a day, 4 to 9 minutes apart. Nothing sends unless the owner has
 // turned sending on (and not paused) on whatyouate.app/creators/owner/outreach.
 // GET ?test=EMAIL (with the cron secret) sends all three emails to EMAIL as one thread, as a preview.
 export const maxDuration = 60;
@@ -14,10 +14,10 @@ export const dynamic = "force-dynamic";
 // came back stale (the Oct 30 settings row with sending off). Every read here must hit the database.
 export const fetchCache = "force-no-store";
 
-const SEND_DAYS = new Set([1, 2, 3, 4]); // Mon to Thu
-const WINDOW: [number, number] = [10.5, 14];
-const FIRST_PER_DAY = 8; // start gently for the first two weeks, then raise to 12
-const TOTAL_PER_DAY = 20;
+const SEND_DAYS = new Set([1, 2, 3, 4, 5]); // Mon to Fri (Dillon, 2026-11-20: about 50 new creators a week)
+const WINDOW: [number, number] = [9.5, 15.5]; // 9:30 to 3:30 in the creator's time zone
+const FIRST_PER_DAY = 12; // raised from 8 on 2026-11-20 (Dillon OK); next step 15 if bounces and complaints stay low
+const TOTAL_PER_DAY = 35; // first emails plus day-4 and day-10 follow-ups
 const FOLLOW_DAYS = [4, 10];
 
 function localParts(tz: string, d = new Date()) {
